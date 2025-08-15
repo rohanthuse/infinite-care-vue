@@ -11,35 +11,37 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 
 const ClientDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { tenantSlug } = useTenant();
   const [pageTitle, setPageTitle] = useState("Overview");
   const [isLoading, setIsLoading] = useState(true);
   
-  // Menu items for top navigation
+  // Generate tenant-aware menu items
   const menuItems = [
-    { label: "Overview", icon: Home, path: "/client-dashboard" },
-    { label: "Appointments", icon: Calendar, path: "/client-dashboard/appointments" },
-    { label: "Care Plans", icon: FileText, path: "/client-dashboard/care-plans" },
-    { label: "My Forms", icon: FileText, path: "/client-dashboard/forms" },
-    { label: "Reviews", icon: Star, path: "/client-dashboard/reviews" },
-    { label: "Payments", icon: CreditCard, path: "/client-dashboard/payments" },
-    { label: "Documents", icon: File, path: "/client-dashboard/documents" },
-    { label: "Service Reports", icon: BarChart, path: "/client-dashboard/service-reports" },
-    { label: "Health Monitoring", icon: Activity, path: "/client-dashboard/health-monitoring" },
-    { label: "Messages", icon: MessageCircle, path: "/client-dashboard/messages" },
-    { label: "Profile", icon: User, path: "/client-dashboard/profile" },
-    { label: "Support", icon: HelpCircle, path: "/client-dashboard/support" }
+    { label: "Overview", icon: Home, path: `/${tenantSlug}/client-dashboard` },
+    { label: "Appointments", icon: Calendar, path: `/${tenantSlug}/client-dashboard/appointments` },
+    { label: "Care Plans", icon: FileText, path: `/${tenantSlug}/client-dashboard/care-plans` },
+    { label: "My Forms", icon: FileText, path: `/${tenantSlug}/client-dashboard/forms` },
+    { label: "Reviews", icon: Star, path: `/${tenantSlug}/client-dashboard/reviews` },
+    { label: "Payments", icon: CreditCard, path: `/${tenantSlug}/client-dashboard/payments` },
+    { label: "Documents", icon: File, path: `/${tenantSlug}/client-dashboard/documents` },
+    { label: "Service Reports", icon: BarChart, path: `/${tenantSlug}/client-dashboard/service-reports` },
+    { label: "Health Monitoring", icon: Activity, path: `/${tenantSlug}/client-dashboard/health-monitoring` },
+    { label: "Messages", icon: MessageCircle, path: `/${tenantSlug}/client-dashboard/messages` },
+    { label: "Profile", icon: User, path: `/${tenantSlug}/client-dashboard/profile` },
+    { label: "Support", icon: HelpCircle, path: `/${tenantSlug}/client-dashboard/support` }
   ];
   
   // Determine the page title based on the current route
   useEffect(() => {
     const path = location.pathname;
     
-    if (path === "/client-dashboard") {
+    if (path === `/${tenantSlug}/client-dashboard` || path.endsWith("/client-dashboard")) {
       setPageTitle("Overview");
     } else if (path.includes("/appointments")) {
       setPageTitle("Appointments");
@@ -64,7 +66,7 @@ const ClientDashboard = () => {
     } else if (path.includes("/support")) {
       setPageTitle("Help & Support");
     }
-  }, [location]);
+  }, [location, tenantSlug]);
   
   // Verify client authentication using centralized auth
   useEffect(() => {
@@ -78,7 +80,7 @@ const ClientDashboard = () => {
           localStorage.removeItem("userType");
           localStorage.removeItem("clientName");
           localStorage.removeItem("clientId");
-          navigate("/client-login", { replace: true });
+          navigate(`/${tenantSlug}/client-login`, { replace: true });
           return;
         }
 
@@ -100,7 +102,7 @@ const ClientDashboard = () => {
             description: "You are not authorized to access this area.",
             variant: "destructive",
           });
-          navigate("/client-login", { replace: true });
+          navigate(`/${tenantSlug}/client-login`, { replace: true });
           return;
         }
 
@@ -112,7 +114,7 @@ const ClientDashboard = () => {
         
       } catch (error) {
         console.error('Auth check error:', error);
-        navigate("/client-login", { replace: true });
+        navigate(`/${tenantSlug}/client-login`, { replace: true });
       } finally {
         setIsLoading(false);
       }
@@ -128,21 +130,22 @@ const ClientDashboard = () => {
         localStorage.removeItem("userType");
         localStorage.removeItem("clientName");
         localStorage.removeItem("clientId");
-        navigate("/client-login", { replace: true });
+        navigate(`/${tenantSlug}/client-login`, { replace: true });
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
   
-  // Fix: Only redirect if directly at /client-dashboard with no children routes
+  // Fix: Only redirect if directly at /tenantSlug/client-dashboard with no children routes
   useEffect(() => {
-    // Check if we're exactly at /client-dashboard with no children routes
-    if (location.pathname === "/client-dashboard" && location.pathname.split("/").filter(Boolean).length === 1) {
-      // Navigate to the overview page
-      navigate("/client-dashboard", { replace: true });
+    // Check if we're exactly at the tenant client dashboard with no children routes
+    const expectedBasePath = `/${tenantSlug}/client-dashboard`;
+    if (location.pathname === expectedBasePath) {
+      // Navigate to the overview page (stay at same path since index route handles it)
+      // No need to navigate, the index route will handle showing the overview
     }
-  }, []); // Run only once on component mount
+  }, [tenantSlug]); // Run when tenant slug changes
   
   if (isLoading) {
     return (
@@ -165,7 +168,7 @@ const ClientDashboard = () => {
               to={item.path}
               className={cn(
                 "flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                location.pathname === item.path || (item.path === "/client-dashboard" && location.pathname === "/client-dashboard")
+                location.pathname === item.path || (item.path === `/${tenantSlug}/client-dashboard` && location.pathname === `/${tenantSlug}/client-dashboard`)
                   ? "border-blue-600 text-blue-700"
                   : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
               )}
@@ -186,7 +189,7 @@ const ClientDashboard = () => {
               to={item.path}
               className={cn(
                 "flex flex-col items-center py-3 px-3 min-w-[80px] text-xs font-medium border-b-2 transition-colors",
-                location.pathname === item.path || (item.path === "/client-dashboard" && location.pathname === "/client-dashboard")
+                location.pathname === item.path || (item.path === `/${tenantSlug}/client-dashboard` && location.pathname === `/${tenantSlug}/client-dashboard`)
                   ? "border-blue-600 text-blue-700"
                   : "border-transparent text-gray-700 hover:text-blue-600 hover:border-blue-200"
               )}
