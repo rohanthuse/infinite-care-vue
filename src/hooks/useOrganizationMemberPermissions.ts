@@ -182,13 +182,15 @@ export const managerOrganizationMemberPermissions: OrganizationMemberPermissions
 };
 
 export const getPermissionTemplateByRole = (role: string): OrganizationMemberPermissions => {
-  switch (role) {
+  switch (role.toLowerCase()) {
     case 'admin':
       return adminOrganizationMemberPermissions;
     case 'manager':
       return managerOrganizationMemberPermissions;
     case 'member':
+      return defaultOrganizationMemberPermissions;
     default:
+      // For custom roles, return member permissions as the base template
       return defaultOrganizationMemberPermissions;
   }
 };

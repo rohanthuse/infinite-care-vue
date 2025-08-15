@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Plus, UserPlus, Loader2, User, Shield } from "lucide-react";
@@ -233,16 +233,19 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
 
                 <div className="space-y-2">
                   <Label htmlFor="role">Role *</Label>
-                  <Select value={role} onValueChange={handleRoleChange} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="member">Member</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={[
+                      { value: "member", label: "Member" },
+                      { value: "manager", label: "Manager" },
+                      { value: "admin", label: "Admin" },
+                    ]}
+                    value={role}
+                    onValueChange={handleRoleChange}
+                    placeholder="Select or enter a role"
+                    searchPlaceholder="Search roles..."
+                    emptyText="No roles found."
+                    allowCustom={true}
+                  />
                 </div>
               </TabsContent>
 
