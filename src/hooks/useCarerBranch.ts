@@ -26,8 +26,8 @@ export const useCarerBranch = () => {
             address
           )
         `)
-        .eq('id', user.id)
-        .single();
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
 
       if (error) {
         console.error('[useCarerBranch] Error fetching staff record:', error);
