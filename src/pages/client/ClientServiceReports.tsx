@@ -14,18 +14,19 @@ import { Calendar, Clock, BarChart as BarChartIcon, Users, TrendingUp, CheckSqua
 import { useClientServiceReports } from "@/hooks/useClientServiceReports";
 import { useClientAppointments } from "@/hooks/useClientAppointments";
 import { useClientServiceActions } from "@/hooks/useClientServiceActions";
+import { useClientAuth } from "@/hooks/useClientAuth";
 import { format } from "date-fns";
 
 const ClientServiceReports = () => {
   const [timeFilter, setTimeFilter] = useState("month");
   const [serviceFilter, setServiceFilter] = useState("all");
   
-  // Get client ID from localStorage (or context in a real implementation)
-  const clientId = localStorage.getItem("clientId") || "";
+  // Get authenticated client data
+  const { clientId, isAuthenticated, loading: authLoading } = useClientAuth();
   
-  const { data: reportData, isLoading, error } = useClientServiceReports(clientId, timeFilter, serviceFilter);
-  const { data: appointments } = useClientAppointments(clientId);
-  const { data: serviceActions } = useClientServiceActions(clientId);
+  const { data: reportData, isLoading, error } = useClientServiceReports(clientId || "", timeFilter, serviceFilter);
+  const { data: appointments } = useClientAppointments(clientId || "");
+  const { data: serviceActions } = useClientServiceActions(clientId || "");
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
   
@@ -76,11 +77,22 @@ const ClientServiceReports = () => {
     return hasVariation && hasReasonableValues;
   };
   
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin mr-2" />
         <span>Loading your service reports...</span>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !clientId) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">Authentication required to view service reports</p>
+        <Button onClick={() => window.location.href = '/client-login'} className="mt-2">
+          Login
+        </Button>
       </div>
     );
   }

@@ -230,11 +230,8 @@ async function generateProgressData(
         const avgCompletion = activeCarePlans.reduce((sum, cp) => sum + (cp.completion_percentage || 0), 0) / activeCarePlans.length;
         periodProgress = Math.round(avgCompletion);
       } else {
-        // As a last resort, show gradual progress for visual continuity
-        // This represents the expected progression rather than random data
-        const progressionBase = Math.max(0, 30 + (periodCount - i - 1) * 15);
-        periodProgress = Math.min(100, progressionBase + Math.random() * 10);
-        periodProgress = Math.round(periodProgress);
+        // No data available - show 0 progress rather than simulated data
+        periodProgress = 0;
       }
     }
 
