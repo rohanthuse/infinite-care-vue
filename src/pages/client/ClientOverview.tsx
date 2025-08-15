@@ -14,6 +14,7 @@ import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { useClientAuth } from "@/hooks/useClientAuth";
 import { useTenant } from "@/contexts/TenantContext";
+import { useClientCarePlans } from "@/hooks/useClientData";
 
 const ClientOverview = () => {
   // Get authenticated client ID using centralized auth
@@ -28,6 +29,7 @@ const ClientOverview = () => {
   const { data: invoices } = useEnhancedClientBilling(clientId || undefined);
   const { data: reviews } = useClientReviews(clientId || undefined);
   const { data: pendingReviews, count: pendingReviewsCount } = usePendingReviews(clientId || undefined);
+  const { data: carePlans } = useClientCarePlans(clientId || undefined);
 
   if (!isAuthenticated || !clientId) {
     return <div>Please log in to view your overview.</div>;
@@ -202,41 +204,65 @@ const ClientOverview = () => {
         </Card>
       )}
 
-      {/* Care Plan Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <FileText className="h-5 w-5 mr-2" />
-            Care Plan Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center space-x-3">
-                <div className="bg-green-100 p-2 rounded-full">
-                  <FileText className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <div className="font-medium text-sm">Current Care Plan</div>
-                  <div className="text-sm text-gray-600">Active and up to date</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Last updated: {format(new Date(), 'MMM d, yyyy')}
+      {/* Care Plan Status - Dynamic */}
+      {carePlans && carePlans.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FileText className="h-5 w-5 mr-2" />
+              Care Plan Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {carePlans.slice(0, 2).map((carePlan) => (
+                <div key={carePlan.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-blue-100 p-2 rounded-full">
+                      <FileText className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{carePlan.title}</div>
+                      <div className="text-sm text-gray-600">{carePlan.provider_name}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Started: {format(parseISO(carePlan.start_date), 'MMM d, yyyy')}
+                        {carePlan.review_date && (
+                          <span> • Review: {format(parseISO(carePlan.review_date), 'MMM d, yyyy')}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      carePlan.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : carePlan.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {carePlan.status.charAt(0).toUpperCase() + carePlan.status.slice(1)}
+                    </span>
+                    <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/care-plans` : "/client-dashboard/care-plans"}>
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
-                <Button variant="outline" size="sm">
-                  View Details
-                </Button>
-              </div>
+              ))}
+              {carePlans.length > 2 && (
+                <div className="text-center">
+                  <Link to={tenantSlug ? `/${tenantSlug}/client-dashboard/care-plans` : "/client-dashboard/care-plans"}>
+                    <Button variant="outline" size="sm">
+                      View All Care Plans ({carePlans.length})
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pending Reviews */}
       <Card>
