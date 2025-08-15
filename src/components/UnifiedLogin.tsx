@@ -270,6 +270,20 @@ const UnifiedLogin = () => {
       {/* Right Column - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white">
         <div className="w-full max-w-md space-y-8">
+          {/* Back to Home Button */}
+          <div className="flex justify-start">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Home
+            </button>
+          </div>
+
           {/* Logo and Title */}
           <div className="text-center">
             <div className="flex justify-center mb-6">
