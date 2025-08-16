@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface WorkflowContentProps {
   branchId?: string;
@@ -20,6 +21,7 @@ const WorkflowContent = ({
 }: WorkflowContentProps) => {
   const navigate = useNavigate();
   const { id, branchName: paramBranchName } = useParams();
+  const { tenantSlug } = useTenant();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -31,9 +33,12 @@ const WorkflowContent = ({
     console.log("WorkflowContent navigating to:", path);
     console.log("Effective Branch ID:", effectiveBranchId);
     console.log("Effective Branch Name:", effectiveBranchName);
+    console.log("Tenant Slug:", tenantSlug);
     
     if (effectiveBranchId && effectiveBranchName) {
-      const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/${path}`;
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/${path}`
+        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/${path}`;
       console.log("Full path from WorkflowContent:", fullPath);
       navigate(fullPath);
     } else {
@@ -43,7 +48,10 @@ const WorkflowContent = ({
 
   const handleTaskMatrixClick = () => {
     if (effectiveBranchId && effectiveBranchName) {
-      navigate(`/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`
+        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`;
+      navigate(fullPath);
     } else {
       navigate(`/task-matrix`);
     }
@@ -51,7 +59,10 @@ const WorkflowContent = ({
   
   const handleTrainingMatrixClick = () => {
     if (effectiveBranchId && effectiveBranchName) {
-      navigate(`/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`
+        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`;
+      navigate(fullPath);
     } else {
       navigate(`/training-matrix`);
     }
