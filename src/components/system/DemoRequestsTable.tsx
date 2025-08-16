@@ -21,15 +21,14 @@ import { useToast } from "@/hooks/use-toast";
 interface DemoRequest {
   id: string;
   full_name: string;
-  organization_name: string | null;
+  company_name: string | null;
   email: string;
-  phone_number: string | null;
+  phone: string | null;
   message: string | null;
   status: 'pending' | 'contacted' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
-  contacted_by: string | null;
-  contacted_at: string | null;
+  submitted_at: string | null;
   notes: string | null;
 }
 
@@ -43,38 +42,45 @@ export const DemoRequestsTable: React.FC = () => {
   const { data: demoRequests, isLoading, error } = useQuery({
     queryKey: ['demo-requests'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('demo_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        console.log('[DemoRequestsTable] Fetching demo requests...');
+        
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[DemoRequestsTable] Current session:', session ? 'authenticated' : 'not authenticated');
+        
+        // Use the security definer function that bypasses RLS
+        const { data, error } = await supabase.rpc('get_demo_requests');
 
-      if (error) throw error;
-      return data as DemoRequest[];
+        if (error) {
+          console.error('Error fetching demo requests:', error);
+          throw error;
+        }
+
+        console.log('[DemoRequestsTable] Demo requests data:', data);
+        return data as DemoRequest[];
+      } catch (error) {
+        console.error('Unexpected error fetching demo requests:', error);
+        throw error;
+      }
     },
+    retry: 2,
+    retryDelay: 1000,
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+    staleTime: 1000, // Consider data stale after 1 second to force fresh data
   });
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ id, status, notes }: { id: string; status: string; notes?: string }) => {
-      const updateData: any = {
-        status,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (status === 'contacted' || status === 'completed') {
-        updateData.contacted_at = new Date().toISOString();
-        updateData.contacted_by = (await supabase.auth.getUser()).data.user?.id;
-      }
-
-      if (notes) {
-        updateData.notes = notes;
-      }
-
-      const { error } = await supabase
-        .from('demo_requests')
-        .update(updateData)
-        .eq('id', id);
+      // Use the security definer function that bypasses RLS
+      const { data, error } = await supabase.rpc('update_demo_request_status', {
+        request_id: id,
+        new_status: status,
+        new_notes: notes || null
+      });
 
       if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demo-requests'] });
@@ -199,19 +205,19 @@ export const DemoRequestsTable: React.FC = () => {
                           <Mail className="h-3 w-3" />
                           {request.email}
                         </div>
-                        {request.phone_number && (
+                        {request.phone && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Phone className="h-3 w-3" />
-                            {request.phone_number}
+                            {request.phone}
                           </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      {request.organization_name ? (
+                      {request.company_name ? (
                         <div className="flex items-center gap-2">
                           <Building className="h-4 w-4 text-muted-foreground" />
-                          {request.organization_name}
+                          {request.company_name}
                         </div>
                       ) : (
                         <span className="text-muted-foreground">Not specified</span>
@@ -254,7 +260,7 @@ export const DemoRequestsTable: React.FC = () => {
                                 <div>
                                   <Label className="text-sm font-medium">Organization</Label>
                                   <p className="text-sm text-muted-foreground">
-                                    {selectedRequest.organization_name || "Not specified"}
+                                    {selectedRequest.company_name || "Not specified"}
                                   </p>
                                 </div>
                                 <div>
@@ -264,7 +270,7 @@ export const DemoRequestsTable: React.FC = () => {
                                 <div>
                                   <Label className="text-sm font-medium">Phone</Label>
                                   <p className="text-sm text-muted-foreground">
-                                    {selectedRequest.phone_number || "Not provided"}
+                                    {selectedRequest.phone || "Not provided"}
                                   </p>
                                 </div>
                               </div>

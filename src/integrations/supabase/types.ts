@@ -6644,6 +6644,22 @@ export type Database = {
           total_requests: number
         }[]
       }
+      get_demo_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          company_name: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string
+          notes: string
+          phone: string
+          status: string
+          submitted_at: string
+          updated_at: string
+        }[]
+      }
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
@@ -6909,6 +6925,10 @@ export type Database = {
       system_validate_session: {
         Args: { p_session_token: string }
         Returns: Json
+      }
+      update_demo_request_status: {
+        Args: { new_notes?: string; new_status: string; request_id: string }
+        Returns: boolean
       }
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
