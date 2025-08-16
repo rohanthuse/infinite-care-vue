@@ -306,6 +306,11 @@ html {
   scrollbar-width: thin !important;
   scrollbar-color: hsl(var(--border)) transparent !important;
   -ms-overflow-style: scrollbar !important;
+  /* iPad/Touch device scrolling support */
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y !important;
+  overflow-y: auto !important;
+  max-height: 300px !important;
 }
 
 [data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar,
@@ -333,6 +338,24 @@ html {
 [role="dialog"] [cmdk-list]::-webkit-scrollbar-thumb:hover,
 .command-dropdown [cmdk-list]::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--foreground) / 0.5) !important;
+}
+
+/* Touch device specific overrides for iPad and mobile */
+@media (hover: none) and (pointer: coarse) {
+  [data-radix-popper-content-wrapper] [cmdk-list],
+  [role="dialog"] [cmdk-list],
+  .command-dropdown [cmdk-list] {
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    overflow-y: scroll !important;
+    scrollbar-width: none !important;
+  }
+  
+  [data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar,
+  [role="dialog"] [cmdk-list]::-webkit-scrollbar,
+  .command-dropdown [cmdk-list]::-webkit-scrollbar {
+    display: none !important;
+  }
 }
 
 /* Improved mobile experience */
