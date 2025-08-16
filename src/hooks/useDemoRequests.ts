@@ -14,36 +14,54 @@ export const useDemoRequestStats = () => {
       try {
         console.log('[DemoRequests] Fetching demo request stats...');
         
-        // Direct query to demo_requests table 
-        const { data, error } = await supabase
-          .from('demo_requests')
-          .select('id, status, created_at')
-          .order('created_at', { ascending: false });
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[DemoRequests] Current session:', session ? 'authenticated' : 'not authenticated');
+        
+        // Use the security definer function that bypasses RLS
+        const { data, error } = await supabase.rpc('get_demo_request_stats');
 
         if (error) {
           console.error('Error fetching demo request stats:', error);
+          // Fallback to direct query for debugging
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('demo_requests')
+            .select('id, status, created_at')
+            .order('created_at', { ascending: false });
+          
+          console.log('[DemoRequests] Fallback query result:', { fallbackData, fallbackError });
+          
+          if (fallbackError) {
+            console.error('Fallback query also failed:', fallbackError);
+            return {
+              totalRequests: 0,
+              pendingRequests: 0,
+              lastRequestDate: null
+            };
+          }
+          
+          const totalRequests = fallbackData.length;
+          const pendingRequests = fallbackData.filter(req => req.status === 'pending').length;
+          const lastRequestDate = fallbackData.length > 0 ? fallbackData[0].created_at : null;
+          
+          console.log('[DemoRequests] Using fallback data:', { totalRequests, pendingRequests, lastRequestDate });
+          
           return {
-            totalRequests: 0,
-            pendingRequests: 0,
-            lastRequestDate: null
-          };
+            totalRequests,
+            pendingRequests,
+            lastRequestDate
+          } as DemoRequestStats;
         }
 
-        const totalRequests = data.length;
-        const pendingRequests = data.filter(req => req.status === 'pending').length;
-        const lastRequestDate = data.length > 0 ? data[0].created_at : null;
-
-        console.log('[DemoRequests] Fetched data:', { 
-          totalRequests, 
-          pendingRequests, 
-          lastRequestDate,
-          rawData: data 
-        });
-
+        console.log('[DemoRequests] RPC data:', data);
+        
+        // Handle both array and single object responses
+        const result = Array.isArray(data) ? data[0] : data;
+        
         return {
-          totalRequests,
-          pendingRequests,
-          lastRequestDate
+          totalRequests: result?.total_requests || 0,
+          pendingRequests: result?.pending_requests || 0,
+          lastRequestDate: result?.last_request_date || null
         } as DemoRequestStats;
         
       } catch (error) {

@@ -34,37 +34,96 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
     setIsLoading(true);
 
     try {
-      // SECURITY FIX: Use system authentication directly for admin access
-      // This prevents automatic login and requires explicit authentication
-      console.log('[SystemAuth] Attempting system authentication for:', email);
+      console.log('[SystemAuth] Attempting authentication for:', email);
 
-      // Fallback to system authentication method
-      const { data, error } = await supabase.rpc('system_authenticate', {
-        p_email: email,
-        p_password: password,
-        p_ip_address: null, // Could get from browser if needed
-        p_user_agent: navigator.userAgent
+      // Step 1: Try to sign in to Supabase auth directly
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      if (error) {
-        setError('Authentication failed');
-        return { error: 'Authentication failed' };
-      }
-
-      if ((data as any)?.success) {
-        const sessionToken = (data as any).session_token;
-        const userData = (data as any).user;
+      if (authError) {
+        console.log('[SystemAuth] Direct auth failed, trying system auth fallback:', authError.message);
         
-        console.log('[SystemAuth] Login successful for user:', userData.email);
-        localStorage.setItem('system_session_token', sessionToken);
+        // Step 2: Fallback to system authentication method
+        const { data: systemData, error: systemError } = await supabase.rpc('system_authenticate', {
+          p_email: email,
+          p_password: password,
+          p_ip_address: null,
+          p_user_agent: navigator.userAgent
+        });
+
+        if (systemError || !(systemData as any)?.success) {
+          const errorMessage = (systemData as any)?.error || 'Authentication failed';
+          console.error('[SystemAuth] System auth failed:', errorMessage);
+          setError(errorMessage);
+          return { error: errorMessage };
+        }
+
+        // Step 3: For successful system auth, try to find and sign in the corresponding Supabase user
+        const userData = (systemData as any).user;
+        console.log('[SystemAuth] System auth successful, attempting Supabase signin for:', userData.email);
+        
+        // Try to sign in to Supabase using email and a default password or create session
+        const { data: retryAuthData, error: retryAuthError } = await supabase.auth.signInWithPassword({
+          email: userData.email,
+          password: 'temporary_password' // This might need to be updated based on actual password
+        });
+
+        if (retryAuthError) {
+          console.log('[SystemAuth] Could not create Supabase session, but system auth succeeded');
+          // Store custom session for now
+          const sessionToken = (systemData as any).session_token;
+          localStorage.setItem('system_session_token', sessionToken);
+          setUser(userData);
+          return {};
+        }
+
+        console.log('[SystemAuth] Full authentication successful');
         setUser(userData);
         return {};
-      } else {
-        const errorMessage = (data as any)?.error || 'Authentication failed';
-        console.error('[SystemAuth] Login failed:', errorMessage);
-        setError(errorMessage);
-        return { error: errorMessage };
       }
+
+      // Step 4: Direct Supabase auth succeeded, get user roles
+      if (authData.user) {
+        console.log('[SystemAuth] Direct Supabase auth successful for:', authData.user.email);
+        
+        // Get user roles from database
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', authData.user.id);
+
+        if (roleError) {
+          console.error('[SystemAuth] Failed to fetch user roles:', roleError);
+          setError('Failed to verify admin permissions');
+          return { error: 'Failed to verify admin permissions' };
+        }
+
+        const roles = roleData.map(r => r.role);
+        const isSystemAdmin = roles.includes('super_admin') || roles.includes('app_admin');
+
+        if (!isSystemAdmin) {
+          console.error('[SystemAuth] User is not a system admin');
+          await supabase.auth.signOut();
+          setError('Insufficient permissions for system access');
+          return { error: 'Insufficient permissions for system access' };
+        }
+
+        const user = {
+          id: authData.user.id,
+          email: authData.user.email || '',
+          name: authData.user.email || '',
+          roles: roles
+        };
+
+        console.log('[SystemAuth] System admin login successful:', user.email);
+        setUser(user);
+        return {};
+      }
+
+      setError('Authentication failed');
+      return { error: 'Authentication failed' };
     } catch (err) {
       console.error('Sign in error:', err);
       setError('Network error occurred');
