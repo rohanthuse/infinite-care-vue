@@ -46,6 +46,7 @@ export const useDemoRequestStats = () => {
     },
     retry: 2,
     retryDelay: 1000,
-    refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
+    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 };

@@ -30,6 +30,8 @@ export const useSystemDashboard = () => {
       );
       return { totalTenants, activeUsers } as { totalTenants: number; activeUsers: number };
     },
+    refetchInterval: 10000, // Refresh every 10 seconds
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   const userStats = useSystemUserStats();
