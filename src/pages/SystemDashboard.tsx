@@ -111,10 +111,13 @@ export default function SystemDashboard() {
             if (v === 'dashboard' || v === 'reports') setTab(v as SystemTabValue);
           }} className="w-full">
           <SystemSectionTabs value={tab} />
+        </Tabs>
 
-          <TabsContent value="dashboard" className="space-y-6">
+        {/* Dashboard Content */}
+        {tab === 'dashboard' && (
+          <>
             {/* Welcome Section */}
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-2">
                 Welcome back, {user.name}
               </h2>
@@ -143,7 +146,7 @@ export default function SystemDashboard() {
             </div>
 
             {/* System Statistics */}
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
               <SystemDashboardStats 
                 stats={systemStats}
                 isLoading={isLoading}
@@ -152,7 +155,7 @@ export default function SystemDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
               <h3 className="text-xl font-semibold text-foreground mb-6">Quick Actions</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {user?.roles && hasRole('super_admin') && (
@@ -228,12 +231,11 @@ export default function SystemDashboard() {
                 <DevTenantSwitcher />
               </div>
             )}
-          </TabsContent>
+          </>
+        )}
 
-          <TabsContent value="reports" className="space-y-6">
-            <ReportsTab />
-          </TabsContent>
-        </Tabs>
+        {/* Reports Content */}
+        {tab === 'reports' && <ReportsTab />}
       </main>
     </div>
   );
