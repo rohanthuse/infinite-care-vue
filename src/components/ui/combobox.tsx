@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/popover"
 
 interface ComboboxProps {
-  options: { value: string; label: string }[]
+  options: { value: string; label: string; description?: string }[]
   value?: string
   onValueChange?: (value: string) => void
   placeholder?: string
@@ -62,7 +62,8 @@ export function Combobox({
     : placeholder
 
   const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchValue.toLowerCase())
+    option.label.toLowerCase().includes(searchValue.toLowerCase()) ||
+    option.description?.toLowerCase().includes(searchValue.toLowerCase())
   )
 
   const showCustomOption = allowCustom && searchValue && !options.find(opt => opt.value === searchValue)
@@ -80,7 +81,7 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-full p-0" style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <Command>
           <CommandInput 
             placeholder={searchPlaceholder}
@@ -119,7 +120,12 @@ export function Combobox({
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {option.label}
+                  <div className="flex flex-col">
+                    <span>{option.label}</span>
+                    {option.description && (
+                      <span className="text-xs text-muted-foreground">{option.description}</span>
+                    )}
+                  </div>
                 </CommandItem>
               ))}
               {showCustomOption && (
