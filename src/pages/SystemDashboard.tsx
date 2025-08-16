@@ -146,13 +146,11 @@ export default function SystemDashboard() {
             </div>
 
             {/* System Statistics */}
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
-              <SystemDashboardStats 
-                stats={systemStats}
-                isLoading={isLoading}
-                onStatClick={handleStatClick}
-              />
-            </div>
+            <SystemDashboardStats 
+              stats={systemStats}
+              isLoading={isLoading}
+              onStatClick={handleStatClick}
+            />
 
             {/* Quick Actions */}
             <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
