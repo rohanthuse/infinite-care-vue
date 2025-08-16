@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SearchableOrganizationSelect } from './SearchableOrganizationSelect';
 import { Plus, Loader2 } from 'lucide-react';
 import { useCreateSystemUser } from '@/hooks/useSystemUsers';
 import { useOrganizations } from '@/hooks/useOrganizations';
@@ -178,27 +179,13 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
 
           <div className="space-y-2">
             <Label htmlFor="organization">Organization</Label>
-            <Select
+            <SearchableOrganizationSelect
+              organizations={organizations || []}
               value={formData.organization_id}
               onValueChange={(value) => handleInputChange('organization_id', value)}
-            >
-              <SelectTrigger className={orgError ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Select organization" />
-              </SelectTrigger>
-              <SelectContent>
-                {orgLoading ? (
-                  <SelectItem value="" disabled>Loading organizations...</SelectItem>
-                ) : organizations && organizations.length > 0 ? (
-                  organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>
-                      {org.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="" disabled>No organizations available</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+              isLoading={orgLoading}
+              error={orgError || undefined}
+            />
             {orgError && (
               <p className="text-sm text-red-500">{orgError}</p>
             )}
