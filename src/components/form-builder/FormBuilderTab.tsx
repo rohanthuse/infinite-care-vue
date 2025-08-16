@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ interface FormBuilderTabProps {
 export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branchName }) => {
   const navigate = useNavigate();
   const { user } = useAuthSafe();
+  const { tenantSlug } = useTenant();
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
@@ -109,11 +111,17 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   };
 
   const handleEditForm = (formId: string) => {
-    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`);
+    const fullPath = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`
+      : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`;
+    navigate(fullPath);
   };
 
   const handleViewForm = (formId: string) => {
-    navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`);
+    const fullPath = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`
+      : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?source=forms`;
+    navigate(fullPath);
   };
 
   const handleDuplicateForm = (formId: string) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTenant } from '@/contexts/TenantContext';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
@@ -25,6 +26,7 @@ const FormBuilder = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuthSafe();
+  const { tenantSlug } = useTenant();
   
   // Move all hooks to the top before any conditional logic
   const { 
@@ -138,7 +140,10 @@ const FormBuilder = () => {
           description: 'The requested form could not be found',
           variant: 'destructive',
         });
-        navigate(`/branch-dashboard/${branchId}/${branchName}`);
+        const fullPath = tenantSlug 
+          ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}`
+          : `/branch-dashboard/${branchId}/${branchName}`;
+        navigate(fullPath);
       } else if (existingForm && !isLoadingForm) {
         toast({
           title: 'Form Loaded',
@@ -254,7 +259,9 @@ const FormBuilder = () => {
         console.log('Form created, updating URL:', createdForm);
         // Update the URL to include the new form ID without page refresh
         const encodedBranchName = encodeURIComponent(branchName || 'branch');
-        const newUrl = `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${createdForm.id}`;
+        const newUrl = tenantSlug 
+          ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${createdForm.id}`
+          : `/branch-dashboard/${branchId}/${encodedBranchName}/form-builder/${createdForm.id}`;
         window.history.replaceState({}, '', newUrl);
         
         // Update local form state with the created form data
@@ -346,7 +353,10 @@ const FormBuilder = () => {
       
       setIsFormDirty(false);
       
-      navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}`
+        : `/branch-dashboard/${branchId}/${branchName}`;
+      navigate(fullPath);
     } catch (error) {
       console.error('Error publishing form:', error);
     }
@@ -453,7 +463,10 @@ const FormBuilder = () => {
 
   const handleNavigate = (tab: string) => {
     if (tab !== "form-builder" && branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/${tab}`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/${tab}`
+        : `/branch-dashboard/${branchId}/${branchName}/${tab}`;
+      navigate(fullPath);
     }
   };
 

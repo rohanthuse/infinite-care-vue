@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +27,7 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
   const navigate = useNavigate();
   const { id: branchId, branchName } = useParams<{ id: string; branchName: string }>();
   const [searchParams] = useSearchParams();
+  const { tenantSlug } = useTenant();
   const [title, setTitle] = useState<string>(form.title);
   const [description, setDescription] = useState<string>(form.description || '');
   const [isTitleEditing, setIsTitleEditing] = useState<boolean>(false);
@@ -35,11 +37,20 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
     const source = searchParams.get('source');
     
     if (source === 'forms') {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/forms`
+        : `/branch-dashboard/${branchId}/${branchName}/forms`;
+      navigate(fullPath);
     } else if (source === 'workflow') {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/workflow`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/workflow`
+        : `/branch-dashboard/${branchId}/${branchName}/workflow`;
+      navigate(fullPath);
     } else {
-      navigate(`/branch-dashboard/${branchId}/${branchName}`);
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}`
+        : `/branch-dashboard/${branchId}/${branchName}`;
+      navigate(fullPath);
     }
   };
 
