@@ -15,21 +15,51 @@ serve(async (req) => {
       auth: { autoRefreshToken: false, persistSession: false }
     })
 
-    // Validate user (must be super_admin)
+    // Validate user (must be super_admin) - support both standard auth and system session
     const authHeader = req.headers.get('Authorization')
-    const supabaseUser = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
-      global: { headers: { Authorization: authHeader ?? '' } }
-    })
+    const body = await req.json()
+    const { id, systemSessionToken } = body || {}
+    
+    let userId = null;
+    let hasValidAuth = false;
 
-    const { data: userData, error: userErr } = await supabaseUser.auth.getUser()
-    if (userErr || !userData?.user) {
+    // Try standard Supabase authentication first
+    if (authHeader) {
+      const supabaseUser = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: authHeader } }
+      })
+
+      const { data: userData, error: userErr } = await supabaseUser.auth.getUser()
+      if (!userErr && userData?.user) {
+        userId = userData.user.id
+        hasValidAuth = true
+      }
+    }
+
+    // If standard auth failed, try system session token
+    if (!hasValidAuth && systemSessionToken) {
+      try {
+        const { data: authResult, error: authErr } = await supabaseAdmin.rpc('system_authenticate', {
+          session_token: systemSessionToken
+        })
+        
+        if (!authErr && authResult?.user_id) {
+          userId = authResult.user_id
+          hasValidAuth = true
+        }
+      } catch (err) {
+        console.error('[delete-system-tenant] System auth error:', err)
+      }
+    }
+
+    if (!hasValidAuth || !userId) {
       return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    const userId = userData.user.id
+    // Check if user has super_admin role
     const { data: roles, error: roleErr } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -41,9 +71,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-
-    const body = await req.json()
-    const { id } = body || {}
 
     if (!id) {
       return new Response(JSON.stringify({ success: false, error: 'Missing tenant id' }), {

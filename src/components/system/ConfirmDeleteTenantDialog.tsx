@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getSystemSessionToken } from '@/utils/systemSession';
 
 interface ConfirmDeleteTenantDialogProps {
   open: boolean;
@@ -18,8 +19,15 @@ export const ConfirmDeleteTenantDialog: React.FC<ConfirmDeleteTenantDialogProps>
   const { mutate: deleteTenant, isPending } = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Missing tenant id');
+      
+      // Get system session token for authentication
+      const systemSessionToken = getSystemSessionToken();
+      
       const { data, error } = await supabase.functions.invoke('delete-system-tenant', {
-        body: { id: tenant.id }
+        body: { 
+          id: tenant.id,
+          systemSessionToken
+        }
       });
       if (error) throw error;
       if (!(data as any)?.success) throw new Error((data as any)?.error || 'Delete failed');
