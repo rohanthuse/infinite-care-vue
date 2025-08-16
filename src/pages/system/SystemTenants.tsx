@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemAuth } from '@/contexts/SystemAuthContext';
@@ -20,6 +21,8 @@ import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 
 export default function SystemTenants() {
   const { user } = useSystemAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -27,6 +30,17 @@ export default function SystemTenants() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  // Check for action=create URL parameter and auto-open dialog
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'create') {
+      setIsCreateDialogOpen(true);
+      // Remove the action parameter from URL
+      params.delete('action');
+      navigate(`${location.pathname}${params.toString() ? '?' + params.toString() : ''}`, { replace: true });
+    }
+  }, [location.search, navigate, location.pathname]);
 
   const handleCreateSuccess = () => {
     // Invalidate queries to refresh the data

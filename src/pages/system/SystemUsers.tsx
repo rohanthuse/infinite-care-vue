@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Activity, Clock } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useSystemUserStats } from '@/hooks/useSystemUsers';
 import { AddSystemUserDialog } from '@/components/system/AddSystemUserDialog';
+import { AddSystemUserDialogControlled } from '@/components/system/AddSystemUserDialogControlled';
 import { SystemUsersTable } from '@/components/system/SystemUsersTable';
 import { Badge } from '@/components/ui/badge';
 import { SystemUsersStats } from '@/components/system/SystemUsersStats';
@@ -12,8 +14,22 @@ import { Tabs } from '@/components/ui/tabs';
 import { SystemSectionTabs } from '@/components/system/SystemSectionTabs';
 import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 export default function SystemUsers() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   const { data: stats, isLoading: statsLoading } = useSystemUserStats();
+
+  // Check for action=create URL parameter and auto-open dialog
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('action') === 'create') {
+      setIsAddDialogOpen(true);
+      // Remove the action parameter from URL
+      params.delete('action');
+      navigate(`${location.pathname}${params.toString() ? '?' + params.toString() : ''}`, { replace: true });
+    }
+  }, [location.search, navigate, location.pathname]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <DashboardHeader />
@@ -85,6 +101,12 @@ export default function SystemUsers() {
             <SystemUsersTable />
           </div>
         </div>
+
+        {/* Controlled dialog for URL parameter triggering */}
+        <AddSystemUserDialogControlled 
+          open={isAddDialogOpen} 
+          onOpenChange={setIsAddDialogOpen} 
+        />
       </main>
     </div>
   );

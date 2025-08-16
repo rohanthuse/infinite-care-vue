@@ -153,7 +153,7 @@ export default function SystemDashboard() {
                     <Button
                       variant="outline"
                       className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                      onClick={() => navigate('/system-dashboard/tenants/new')}
+                      onClick={() => navigate('/system-dashboard/tenants?action=create')}
                     >
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <Building className="h-6 w-6 text-primary" />
@@ -164,7 +164,7 @@ export default function SystemDashboard() {
                     <Button
                       variant="outline"
                       className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                      onClick={() => navigate('/system-dashboard/users/new')}
+                      onClick={() => navigate('/system-dashboard/users?action=create')}
                     >
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <Users className="h-6 w-6 text-primary" />
