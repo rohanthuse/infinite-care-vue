@@ -6636,6 +6636,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_demo_request_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          last_request_date: string
+          pending_requests: number
+          total_requests: number
+        }[]
+      }
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
