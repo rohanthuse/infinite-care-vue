@@ -6661,6 +6661,20 @@ export type Database = {
         }
         Returns: Json
       }
+      get_optimized_tenant_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          activeusers: number
+          contact_email: string
+          created_at: string
+          id: string
+          name: string
+          slug: string
+          subscription_plan: string
+          subscription_status: string
+          users: Json
+        }[]
+      }
       get_service_reports_data: {
         Args: {
           p_branch_id: string
