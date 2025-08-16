@@ -6466,6 +6466,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      client_can_access_thread: {
+        Args: { thread_id_param: string; user_id_param: string }
+        Returns: boolean
+      }
       create_auth_user_for_system_user: {
         Args:
           | { p_email: string; p_password?: string; p_system_user_id: string }
