@@ -12,29 +12,50 @@ export const useDemoRequestStats = () => {
     queryKey: ['demo-request-stats'],
     queryFn: async () => {
       try {
+        console.log('[DemoRequests] Fetching demo request stats...');
+        
+        // Use direct query without RLS for system dashboard
         const { data, error } = await supabase
-          .from('demo_requests')
-          .select('id, status, created_at')
-          .order('created_at', { ascending: false });
+          .rpc('get_demo_request_stats');
 
         if (error) {
           console.error('Error fetching demo request stats:', error);
+          // Fallback to direct table query
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('demo_requests')
+            .select('id, status, created_at')
+            .order('created_at', { ascending: false });
+          
+          if (fallbackError) {
+            console.error('Fallback query also failed:', fallbackError);
+            return {
+              totalRequests: 0,
+              pendingRequests: 0,
+              lastRequestDate: null
+            };
+          }
+          
+          const totalRequests = fallbackData.length;
+          const pendingRequests = fallbackData.filter(req => req.status === 'pending').length;
+          const lastRequestDate = fallbackData.length > 0 ? fallbackData[0].created_at : null;
+          
+          console.log('[DemoRequests] Fallback data:', { totalRequests, pendingRequests });
+          
           return {
-            totalRequests: 0,
-            pendingRequests: 0,
-            lastRequestDate: null
-          };
+            totalRequests,
+            pendingRequests,
+            lastRequestDate
+          } as DemoRequestStats;
         }
 
-        const totalRequests = data.length;
-        const pendingRequests = data.filter(req => req.status === 'pending').length;
-        const lastRequestDate = data.length > 0 ? data[0].created_at : null;
-
+        console.log('[DemoRequests] RPC data:', data);
+        
         return {
-          totalRequests,
-          pendingRequests,
-          lastRequestDate
+          totalRequests: data?.total_requests || 0,
+          pendingRequests: data?.pending_requests || 0,
+          lastRequestDate: data?.last_request_date || null
         } as DemoRequestStats;
+        
       } catch (error) {
         console.error('Unexpected error fetching demo request stats:', error);
         return {
@@ -46,7 +67,7 @@ export const useDemoRequestStats = () => {
     },
     retry: 2,
     retryDelay: 1000,
-    refetchInterval: 10000, // Refresh every 10 seconds for real-time updates
-    staleTime: 5000, // Consider data stale after 5 seconds
+    refetchInterval: 5000, // Refresh every 5 seconds for real-time updates
+    staleTime: 1000, // Consider data stale after 1 second to force fresh data
   });
 };

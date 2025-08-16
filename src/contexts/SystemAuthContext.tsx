@@ -24,47 +24,10 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check for existing session on mount
+  // NO automatic session checking on mount - require explicit login
   useEffect(() => {
-    checkExistingSession();
+    setIsLoading(false);
   }, []);
-
-  const checkExistingSession = async () => {
-    try {
-      // SECURITY FIX: Don't automatically log in super_admin users
-      // They must explicitly sign in through the system login page
-      console.log('[SystemAuth] Checking for explicit system session token...');
-
-      // Fallback to system session token method
-      const sessionToken = localStorage.getItem('system_session_token');
-      if (!sessionToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase.rpc('system_validate_session', {
-        p_session_token: sessionToken
-      });
-
-      if (error) {
-        console.error('Session validation error:', error);
-        localStorage.removeItem('system_session_token');
-        setIsLoading(false);
-        return;
-      }
-
-      if ((data as any)?.success) {
-        setUser((data as any).user);
-      } else {
-        localStorage.removeItem('system_session_token');
-      }
-    } catch (err) {
-      console.error('Error checking session:', err);
-      localStorage.removeItem('system_session_token');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     setError(null);
@@ -126,8 +89,15 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
+      // Clear ALL possible session tokens and storage
       localStorage.removeItem('system_session_token');
+      localStorage.removeItem('systemSessionToken');
+      localStorage.removeItem('system-session-token');
+      sessionStorage.removeItem('system_session_token');
+      sessionStorage.removeItem('systemSessionToken');
+      sessionStorage.removeItem('system-session-token');
       setUser(null);
+      setError(null);
     }
   };
 
