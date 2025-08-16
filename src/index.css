@@ -299,6 +299,42 @@ html {
   display: none;
 }
 
+/* Force scrollbar visibility in command dropdowns */
+[data-radix-popper-content-wrapper] [cmdk-list],
+[role="dialog"] [cmdk-list],
+.command-dropdown [cmdk-list] {
+  scrollbar-width: thin !important;
+  scrollbar-color: hsl(var(--border)) transparent !important;
+  -ms-overflow-style: scrollbar !important;
+}
+
+[data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar,
+[role="dialog"] [cmdk-list]::-webkit-scrollbar,
+.command-dropdown [cmdk-list]::-webkit-scrollbar {
+  display: block !important;
+  width: 8px !important;
+}
+
+[data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar-track,
+[role="dialog"] [cmdk-list]::-webkit-scrollbar-track,
+.command-dropdown [cmdk-list]::-webkit-scrollbar-track {
+  background: hsl(var(--muted)) !important;
+  border-radius: 4px !important;
+}
+
+[data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar-thumb,
+[role="dialog"] [cmdk-list]::-webkit-scrollbar-thumb,
+.command-dropdown [cmdk-list]::-webkit-scrollbar-thumb {
+  background: hsl(var(--border)) !important;
+  border-radius: 4px !important;
+}
+
+[data-radix-popper-content-wrapper] [cmdk-list]::-webkit-scrollbar-thumb:hover,
+[role="dialog"] [cmdk-list]::-webkit-scrollbar-thumb:hover,
+.command-dropdown [cmdk-list]::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.5) !important;
+}
+
 /* Improved mobile experience */
 @layer utilities {
   .safe-top {
