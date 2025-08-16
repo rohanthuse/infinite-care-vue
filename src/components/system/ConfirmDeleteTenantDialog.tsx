@@ -29,6 +29,8 @@ export const ConfirmDeleteTenantDialog: React.FC<ConfirmDeleteTenantDialogProps>
       toast.success('Tenant deleted');
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
       onSuccess?.();
       onOpenChange(false);
     },

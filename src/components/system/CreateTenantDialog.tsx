@@ -68,6 +68,8 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       toast.success(`Organization "${org.name}" created successfully!`);
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
       resetForm();
       onOpenChange(false);
       onSuccess?.();

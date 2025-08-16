@@ -37,6 +37,7 @@ export const useAssignUserToOrganization = () => {
       toast.success('User assigned to organization successfully');
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
     },
     onError: (error: Error) => {
       toast.error(`Failed to assign user: ${error.message}`);

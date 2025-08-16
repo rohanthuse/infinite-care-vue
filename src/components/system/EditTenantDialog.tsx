@@ -54,6 +54,8 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
       toast.success('Tenant updated');
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
       onSuccess?.();
       onOpenChange(false);
     },

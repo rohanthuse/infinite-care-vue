@@ -21,5 +21,6 @@ export const useOrganizations = () => {
   return useQuery({
     queryKey: ['organizations', 'system-tenants'],
     queryFn: fetchOrganizations,
+    staleTime: 0, // Always refetch to ensure fresh data for dropdowns
   });
 };
