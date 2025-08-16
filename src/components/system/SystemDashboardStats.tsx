@@ -1,13 +1,12 @@
 import React from "react";
 import { DashboardStat } from "@/components/dashboard/DashboardStat";
-import { Building, Users, Globe, FileText } from "lucide-react";
+import { Building, Users, FileText } from "lucide-react";
 
 interface SystemStatsData {
   totalTenants: number;
   totalUsers: number;
   systemUptime: string;
   databaseHealth: string;
-  activeConnections: number;
   securityScore: string;
   demoRequests: {
     total: number;
@@ -27,7 +26,7 @@ export const SystemDashboardStats = ({
   onStatClick
 }: SystemDashboardStatsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <DashboardStat
         title="Total Tenants"
         value={stats.totalTenants.toString()}
@@ -56,16 +55,6 @@ export const SystemDashboardStats = ({
         positive={stats.demoRequests.pending === 0}
         isLoading={isLoading}
         onClick={() => onStatClick?.('demo_requests')}
-      />
-      
-      <DashboardStat
-        title="Active Connections"
-        value={stats.activeConnections.toString()}
-        change="+15% peak hours"
-        icon={<Globe className="h-5 w-5" />}
-        positive={true}
-        isLoading={isLoading}
-        onClick={() => onStatClick?.('connections')}
       />
       
     </div>

@@ -8,7 +8,6 @@ export interface SystemStatsData {
   totalUsers: number;
   systemUptime: string;
   databaseHealth: string;
-  activeConnections: number;
   securityScore: string;
   demoRequests: {
     total: number;
@@ -24,11 +23,7 @@ export const useSystemDashboard = () => {
       if (error) throw error;
       const tenants = Array.isArray(data) ? data : data?.tenants || [];
       const totalTenants = tenants.length;
-      const activeUsers = tenants.reduce(
-        (sum: number, t: any) => sum + (t.activeUsers ?? 0),
-        0
-      );
-      return { totalTenants, activeUsers } as { totalTenants: number; activeUsers: number };
+      return { totalTenants };
     },
     refetchInterval: 10000, // Refresh every 10 seconds
     staleTime: 5000, // Consider data stale after 5 seconds
@@ -43,7 +38,6 @@ export const useSystemDashboard = () => {
     totalUsers: userStats.data?.total ?? 0,
     systemUptime: 'Operational',
     databaseHealth: 'Good',
-    activeConnections: tenantsSummary.data?.activeUsers ?? 0,
     securityScore: 'A+',
     demoRequests: {
       total: demoStats.data?.totalRequests ?? 0,
