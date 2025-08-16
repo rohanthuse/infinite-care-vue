@@ -39,15 +39,14 @@ export const useOrganizationsWithUsers = () => {
         const { data: userAssocs, error: userError } = await supabase
           .from('system_user_organizations')
           .select(`
-            system_users!inner (
+            system_user_id,
+            role,
+            system_users (
               id,
               email,
               first_name,
               last_name,
-              is_active,
-              system_user_roles!inner (
-                role
-              )
+              is_active
             )
           `)
           .eq('organization_id', org.id);
@@ -61,14 +60,16 @@ export const useOrganizationsWithUsers = () => {
           continue;
         }
 
-        const systemUsers = (userAssocs || []).map((assoc: any) => ({
-          id: assoc.system_users.id,
-          email: assoc.system_users.email,
-          first_name: assoc.system_users.first_name,
-          last_name: assoc.system_users.last_name,
-          is_active: assoc.system_users.is_active,
-          role: assoc.system_users.system_user_roles?.[0]?.role || 'support_admin',
-        }));
+        const systemUsers = (userAssocs || [])
+          .filter((assoc: any) => assoc.system_users) // Only include associations with valid user data
+          .map((assoc: any) => ({
+            id: assoc.system_users.id,
+            email: assoc.system_users.email,
+            first_name: assoc.system_users.first_name,
+            last_name: assoc.system_users.last_name,
+            is_active: assoc.system_users.is_active,
+            role: assoc.role || 'support_admin',
+          }));
 
         organizationsWithUsers.push({
           ...org,
