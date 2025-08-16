@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemUserStats } from '@/hooks/useSystemUsers';
+import { useDemoRequestStats } from '@/hooks/useDemoRequests';
 
 export interface SystemStatsData {
   totalTenants: number;
@@ -9,6 +10,10 @@ export interface SystemStatsData {
   databaseHealth: string;
   activeConnections: number;
   securityScore: string;
+  demoRequests: {
+    total: number;
+    pending: number;
+  };
 }
 
 export const useSystemDashboard = () => {
@@ -28,8 +33,9 @@ export const useSystemDashboard = () => {
   });
 
   const userStats = useSystemUserStats();
+  const demoStats = useDemoRequestStats();
 
-  const isLoading = tenantsSummary.isLoading || userStats.isLoading;
+  const isLoading = tenantsSummary.isLoading || userStats.isLoading || demoStats.isLoading;
   const systemStats: SystemStatsData = {
     totalTenants: tenantsSummary.data?.totalTenants ?? 0,
     totalUsers: userStats.data?.total ?? 0,
@@ -37,11 +43,15 @@ export const useSystemDashboard = () => {
     databaseHealth: 'Good',
     activeConnections: tenantsSummary.data?.activeUsers ?? 0,
     securityScore: 'A+',
+    demoRequests: {
+      total: demoStats.data?.totalRequests ?? 0,
+      pending: demoStats.data?.pendingRequests ?? 0,
+    },
   };
 
   return {
     systemStats,
     isLoading,
-    error: (tenantsSummary.error as any) || (userStats.error as any) || null,
+    error: (tenantsSummary.error as any) || (userStats.error as any) || (demoStats.error as any) || null,
   };
 };

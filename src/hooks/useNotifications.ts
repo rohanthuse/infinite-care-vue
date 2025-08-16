@@ -8,7 +8,7 @@ export interface Notification {
   id: string;
   user_id: string;
   branch_id?: string;
-  type: 'booking' | 'task' | 'appointment' | 'document' | 'system' | 'staff' | 'client' | 'medication' | 'rota' | 'message';
+  type: 'booking' | 'task' | 'appointment' | 'document' | 'system' | 'staff' | 'client' | 'medication' | 'rota' | 'message' | 'demo_request';
   category: 'info' | 'warning' | 'error' | 'success';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   title: string;

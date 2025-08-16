@@ -4,6 +4,7 @@ import { useSystemAuth } from '@/contexts/SystemAuthContext';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 import { SystemDashboardStats } from '@/components/system/SystemDashboardStats';
+import { useDemoRequestStats } from '@/hooks/useDemoRequests';
 
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,7 +17,8 @@ import {
   Database,
   FileText,
   Plus,
-  Activity
+  Activity,
+  MessageSquare
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -57,6 +59,7 @@ export default function SystemDashboard() {
 
 
   const { systemStats, isLoading } = useSystemDashboard();
+  const { data: demoStats } = useDemoRequestStats();
 
   // Mock system info - in real app, this would come from API
   const systemInfo = {
@@ -74,6 +77,10 @@ export default function SystemDashboard() {
         break;
       case 'users':
         navigate('/system-dashboard/users');
+        break;
+      case 'demo_requests':
+        // Navigate to the reports tab where demo requests are displayed
+        navigate('/system-dashboard?tab=reports');
         break;
       case 'uptime':
       case 'database':
@@ -194,6 +201,22 @@ export default function SystemDashboard() {
                     <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <span className="font-medium">Recent Activity</span>
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow relative"
+                  onClick={() => navigate('/system-dashboard?tab=reports')}
+                >
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MessageSquare className="h-6 w-6 text-primary" />
+                  </div>
+                  <span className="font-medium">Demo Requests</span>
+                  {demoStats?.pendingRequests && demoStats.pendingRequests > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs rounded-full h-6 w-6 flex items-center justify-center font-semibold">
+                      {demoStats.pendingRequests}
+                    </span>
+                  )}
                 </Button>
               </div>
             </div>
