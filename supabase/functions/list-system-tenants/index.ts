@@ -56,8 +56,7 @@ serve(async (req) => {
                 id,
                 is_active,
                 system_sessions(
-                  last_activity_at,
-                  is_active
+                  last_activity_at
                 )
               )
             `)
@@ -70,7 +69,7 @@ serve(async (req) => {
             if (!user?.system_sessions || !Array.isArray(user.system_sessions)) return false
             
             return user.system_sessions.some((session: any) => {
-              if (!session.is_active || !session.last_activity_at) return false
+              if (!session.last_activity_at) return false
               const lastActivity = new Date(session.last_activity_at)
               const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
               return lastActivity > thirtyDaysAgo
