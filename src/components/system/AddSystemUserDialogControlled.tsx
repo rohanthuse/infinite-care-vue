@@ -137,7 +137,7 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
         <DialogHeader>
           <DialogTitle>Create System User</DialogTitle>
           <DialogDescription>
-            Add a new system administrator user. They will receive an email with login instructions.
+            Add a new organization super admin user. They will receive an email with login instructions.
           </DialogDescription>
         </DialogHeader>
         

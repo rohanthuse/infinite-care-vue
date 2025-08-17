@@ -130,7 +130,7 @@ export const SystemReports: React.FC = () => {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            System administrator accounts and access management
+            Organization super admin accounts and access management
           </p>
         </div>
 

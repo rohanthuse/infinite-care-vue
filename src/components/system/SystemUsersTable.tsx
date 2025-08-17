@@ -17,7 +17,6 @@ import {
   PowerOff, 
   Shield, 
   User,
-  Calendar,
   Key,
   Building2
 } from 'lucide-react';
@@ -83,7 +82,6 @@ export const SystemUsersTable: React.FC = () => {
             <TableHead>Role</TableHead>
             <TableHead>Organizations</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Last Login</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="w-[70px]">Actions</TableHead>
           </TableRow>
@@ -152,17 +150,6 @@ export const SystemUsersTable: React.FC = () => {
                   )}
                   <span>{user.is_active ? 'Active' : 'Inactive'}</span>
                 </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  <span>
-                    {user.last_login_at 
-                      ? format(new Date(user.last_login_at), 'MMM d, yyyy')
-                      : 'Never'
-                    }
-                  </span>
-                </div>
               </TableCell>
               <TableCell>
                 <div className="text-sm text-muted-foreground">
