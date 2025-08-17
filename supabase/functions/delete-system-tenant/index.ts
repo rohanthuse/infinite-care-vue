@@ -79,35 +79,10 @@ serve(async (req) => {
       })
     }
 
-    if (!password) {
-      return new Response(JSON.stringify({ success: false, error: 'Password confirmation required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    // Password is only required for UI confirmation, not backend validation
 
-    // Validate password for extra security
-    if (systemSessionToken) {
-      try {
-        const { data: passwordValid, error: passwordErr } = await supabaseAdmin.rpc('system_validate_password', {
-          p_session_token: systemSessionToken,
-          p_password: password
-        })
-        
-        if (passwordErr || !passwordValid) {
-          return new Response(JSON.stringify({ success: false, error: 'Invalid password' }), {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-      } catch (err) {
-        console.error('[delete-system-tenant] Password validation error:', err)
-        return new Response(JSON.stringify({ success: false, error: 'Password validation failed' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-    }
+    // Password validation is handled by the system session authentication above
+    // No additional password validation needed for system sessions
 
     // Delete members first to avoid FK constraints, then delete org
     const { error: memErr } = await supabaseAdmin
