@@ -21,7 +21,7 @@ export const SystemTenantsStats = ({ stats, isLoading }: SystemTenantsStatsProps
       positive: true,
     },
     {
-      title: 'Active Users',
+      title: 'Active Users (30 days)',
       value: stats?.activeUsers?.toString() || '0',
       change: '+8% from last month',
       icon: <Users className="h-5 w-5" />,

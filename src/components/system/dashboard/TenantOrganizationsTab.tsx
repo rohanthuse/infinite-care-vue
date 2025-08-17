@@ -11,7 +11,8 @@ export const TenantOrganizationsTab: React.FC = () => {
 
   const stats = {
     totalTenants: organizations?.length ?? 0,
-    activeUsers: organizationsWithUsers?.reduce((total, org) => total + org.system_users.length, 0) ?? 0,
+    activeUsers: organizationsWithUsers?.reduce((total, org) => 
+      total + org.system_users.filter(user => user.is_active).length, 0) ?? 0,
   };
 
   return (
@@ -42,7 +43,10 @@ export const TenantOrganizationsTab: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className="flex items-center space-x-1">
                           <Users className="h-3 w-3" />
-                          <span>{org.system_users.length} users</span>
+                          <span>{org.system_users.length} total</span>
+                        </Badge>
+                        <Badge variant="secondary" className="flex items-center space-x-1">
+                          <span>{org.system_users.filter(user => user.is_active).length} active</span>
                         </Badge>
                         <Badge 
                           variant={org.subscription_status === 'active' ? 'success' : 'secondary'}
@@ -67,17 +71,23 @@ export const TenantOrganizationsTab: React.FC = () => {
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium">
                                   {user.first_name} {user.last_name}
+                                  {!user.is_active && <span className="ml-1 text-xs text-destructive">(Inactive)</span>}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
                                   {user.email}
                                 </span>
                               </div>
-                              <Badge 
-                                variant={user.is_active ? 'success' : 'destructive'}
-                                className="text-xs"
-                              >
-                                {user.role}
-                              </Badge>
+                              <div className="flex items-center gap-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {user.role}
+                                </Badge>
+                                <Badge 
+                                  variant={user.is_active ? 'default' : 'secondary'}
+                                  className={`text-xs ${user.is_active ? 'bg-green-100 text-green-800' : ''}`}
+                                >
+                                  {user.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </div>
                             </div>
                           ))}
                         </div>

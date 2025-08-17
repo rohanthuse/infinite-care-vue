@@ -23,11 +23,11 @@ serve(async (req) => {
     if (tenantsErr) {
       console.error('[list-system-tenants] Error from optimized query:', tenantsErr)
       
-      // Fallback to basic organization fetch if custom function fails
+      // Fallback to basic organization fetch with manual user counting
       console.log('[list-system-tenants] Falling back to basic organization fetch...')
       const { data: orgs, error: orgErr } = await supabaseAdmin
         .from('organizations')
-        .select('id, name, slug, contact_email, subscription_plan, subscription_status, created_at')
+        .select('id, name, slug, contact_email, contact_phone, subscription_plan, subscription_status, created_at')
         .order('created_at', { ascending: false })
 
       if (orgErr) {
@@ -38,24 +38,80 @@ serve(async (req) => {
         )
       }
 
-      // Return basic data without user counts for now
-      const tenants = (orgs || []).map((org) => ({
-        ...org,
-        activeUsers: 0,
-        users: [],
+      // Calculate user counts manually for each organization
+      const tenantsWithCounts = await Promise.all((orgs || []).map(async (org) => {
+        try {
+          // Get total users for this organization
+          const { count: totalUsers } = await supabaseAdmin
+            .from('system_user_organizations')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', org.id)
+
+          // Get users with their session data to determine activity
+          const { data: userSessions } = await supabaseAdmin
+            .from('system_user_organizations')
+            .select(`
+              system_user_id,
+              system_users!inner(
+                id,
+                is_active,
+                system_sessions(
+                  last_activity_at,
+                  is_active
+                )
+              )
+            `)
+            .eq('organization_id', org.id)
+            .eq('system_users.is_active', true)
+
+          // Count active users (with sessions in last 30 days)
+          const activeUsers = userSessions?.filter(userOrg => {
+            const user = userOrg.system_users
+            if (!user?.system_sessions || !Array.isArray(user.system_sessions)) return false
+            
+            return user.system_sessions.some((session: any) => {
+              if (!session.is_active || !session.last_activity_at) return false
+              const lastActivity = new Date(session.last_activity_at)
+              const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+              return lastActivity > thirtyDaysAgo
+            })
+          })?.length || 0
+
+          return {
+            ...org,
+            total_users: totalUsers || 0,
+            active_users: activeUsers,
+            recent_activity_count: activeUsers
+          }
+        } catch (error) {
+          console.error(`[list-system-tenants] Error calculating user counts for org ${org.id}:`, error)
+          return {
+            ...org,
+            total_users: 0,
+            active_users: 0,
+            recent_activity_count: 0
+          }
+        }
       }))
 
       return new Response(
-        JSON.stringify({ success: true, tenants }),
+        JSON.stringify({ success: true, tenants: tenantsWithCounts }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    console.log(`[list-system-tenants] Successfully fetched ${tenantsData?.length || 0} tenants`)
-    const tenants = tenantsData || []
+    console.log(`[list-system-tenants] Successfully fetched ${tenantsData?.length || 0} tenants with optimized data`)
+    
+    // Format the optimized data to ensure proper number formatting
+    const formattedTenants = (tenantsData || []).map((tenant: any) => ({
+      ...tenant,
+      total_users: parseInt(tenant.total_users) || 0,
+      active_users: parseInt(tenant.active_users) || 0,
+      recent_activity_count: parseInt(tenant.recent_activity_count) || 0
+    }))
 
     return new Response(
-      JSON.stringify({ success: true, tenants }),
+      JSON.stringify({ success: true, tenants: formattedTenants }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (e) {

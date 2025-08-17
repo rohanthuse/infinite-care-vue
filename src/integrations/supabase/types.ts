@@ -6688,15 +6688,17 @@ export type Database = {
       get_optimized_tenant_data: {
         Args: Record<PropertyKey, never>
         Returns: {
-          activeusers: number
+          active_users: number
           contact_email: string
+          contact_phone: string
           created_at: string
           id: string
           name: string
+          recent_activity_count: number
           slug: string
           subscription_plan: string
           subscription_status: string
-          users: Json
+          total_users: number
         }[]
       }
       get_service_reports_data: {
