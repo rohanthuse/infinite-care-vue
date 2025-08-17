@@ -18,7 +18,7 @@ serve(async (req) => {
     // Validate user (must be super_admin) - support both standard auth and system session
     const authHeader = req.headers.get('Authorization')
     const body = await req.json()
-    const { id, systemSessionToken } = body || {}
+    const { id, systemSessionToken, password } = body || {}
     
     let userId = null;
     let hasValidAuth = false;
@@ -39,8 +39,8 @@ serve(async (req) => {
     // If standard auth failed, try system session token
     if (!hasValidAuth && systemSessionToken) {
       try {
-        const { data: authResult, error: authErr } = await supabaseAdmin.rpc('system_authenticate', {
-          session_token: systemSessionToken
+        const { data: authResult, error: authErr } = await supabaseAdmin.rpc('system_validate_session', {
+          p_session_token: systemSessionToken
         })
         
         if (!authErr && authResult?.user_id) {
@@ -77,6 +77,36 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
+    }
+
+    if (!password) {
+      return new Response(JSON.stringify({ success: false, error: 'Password confirmation required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Validate password for extra security
+    if (systemSessionToken) {
+      try {
+        const { data: passwordValid, error: passwordErr } = await supabaseAdmin.rpc('system_validate_password', {
+          p_session_token: systemSessionToken,
+          p_password: password
+        })
+        
+        if (passwordErr || !passwordValid) {
+          return new Response(JSON.stringify({ success: false, error: 'Invalid password' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+      } catch (err) {
+        console.error('[delete-system-tenant] Password validation error:', err)
+        return new Response(JSON.stringify({ success: false, error: 'Password validation failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
     }
 
     // Delete members first to avoid FK constraints, then delete org
