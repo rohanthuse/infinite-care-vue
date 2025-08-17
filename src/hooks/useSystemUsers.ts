@@ -162,12 +162,24 @@ export const useToggleUserStatus = () => {
 
   return useMutation({
     mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
-      const { error } = await supabase
-        .from('system_users')
-        .update({ is_active: isActive })
-        .eq('id', userId);
+      const sessionToken = getSystemSessionToken();
+      
+      if (!sessionToken) {
+        throw new Error('No valid system session found. Please log in again.');
+      }
+
+      const { data, error } = await supabase.rpc('toggle_system_user_status_with_session', {
+        p_session_token: sessionToken,
+        p_user_id: userId,
+        p_is_active: isActive
+      });
 
       if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string };
+      if (result && !result.success) {
+        throw new Error(result.error || 'Failed to update user status');
+      }
     },
     onMutate: async ({ userId, isActive }) => {
       await Promise.all([

@@ -6928,6 +6928,14 @@ export type Database = {
         Args: { p_session_token: string }
         Returns: Json
       }
+      toggle_system_user_status_with_session: {
+        Args: {
+          p_is_active: boolean
+          p_session_token: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       update_demo_request_status: {
         Args: { new_notes?: string; new_status: string; request_id: string }
         Returns: boolean
