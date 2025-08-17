@@ -315,30 +315,30 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
                       No branches available
                     </div>
                   ) : (
-                    <div className="border rounded-lg p-4 bg-muted/20 max-h-72 overflow-y-auto">
-                      <div className="space-y-4">
+                    <div className="border rounded-lg p-4 bg-card max-h-72 overflow-y-auto">
+                      <div className="space-y-3">
                         {branches.map((branch) => (
-                          <div key={branch.id} className="flex items-start space-x-3 p-2 rounded hover:bg-muted/30">
+                          <div key={branch.id} className="flex items-start space-x-3 p-3 rounded-md border border-border/40 bg-background hover:bg-accent/20 hover:border-primary/30 transition-colors duration-200">
                             <Checkbox
                               id={branch.id}
                               checked={formData.branch_ids.includes(branch.id)}
                               onCheckedChange={(checked) => 
                                 handleBranchToggle(branch.id, checked as boolean)
                               }
-                              className="mt-1"
+                              className="mt-0.5 flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <Label 
                                 htmlFor={branch.id}
-                                className="text-sm font-medium cursor-pointer block"
+                                className="text-sm font-medium cursor-pointer block leading-tight hover:text-primary transition-colors"
                               >
                                 <div className="flex items-center gap-2">
                                   <Building2 className="h-4 w-4 text-muted-foreground" />
-                                  {branch.name}
+                                  <span className="text-foreground">{branch.name}</span>
                                 </div>
                               </Label>
                               {branch.address && (
-                                <p className="text-xs text-muted-foreground mt-1 ml-6">
+                                <p className="text-xs text-muted-foreground mt-1 ml-6 leading-relaxed">
                                   {branch.address}
                                 </p>
                               )}
