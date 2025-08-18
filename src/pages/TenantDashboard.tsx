@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CustomButton } from '@/components/ui/CustomButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { OrganizationAdminsTable } from "@/components/OrganizationAdminsTable";
@@ -43,6 +44,7 @@ const TenantDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
+  const { data: systemUserRole } = useUserRole();
   
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -73,7 +75,7 @@ const TenantDashboard = () => {
           return;
         }
 
-        // Verify user access
+        // Verify user access - check both organization membership and system role
         const { data: memberData, error: memberError } = await supabase
           .from('organization_members')
           .select('role, status')
@@ -82,7 +84,11 @@ const TenantDashboard = () => {
           .eq('status', 'active')
           .single();
 
-        if (memberError || !memberData) {
+        // Allow access if user is a super_admin (system role) or has organization membership
+        const hasSystemAccess = systemUserRole?.role === 'super_admin';
+        const hasOrgAccess = memberData && !memberError;
+
+        if (!hasSystemAccess && !hasOrgAccess) {
           toast({
             title: 'Access Denied',
             description: 'You don\'t have permission to access this organization.',
@@ -94,7 +100,8 @@ const TenantDashboard = () => {
         }
 
         setOrganization(orgData);
-        setUserRole(memberData);
+        // Use organization role if available, otherwise use system role
+        setUserRole(memberData || { role: systemUserRole?.role || 'member', status: 'active' });
         
         // Apply branding
         if (orgData.primary_color) {
@@ -153,8 +160,8 @@ const TenantDashboard = () => {
     return null;
   }
 
-  // Check if user has admin role (owner/admin) to show old-style dashboard
-  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin');
+  // Check if user has admin role (owner/admin/super_admin) to show old-style dashboard
+  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin');
 
   // If user is organization admin, show the old Dashboard style interface
   if (isOrganizationAdmin) {
