@@ -5,6 +5,9 @@ import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
+import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
+import { SignAgreementDialog } from "@/components/agreements/SignAgreementDialog";
+import { ScheduleAgreementDialog } from "@/components/agreements/ScheduleAgreementDialog";
 import { ClientDetail } from "@/components/clients/ClientDetail";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServices } from "@/data/hooks/useServices";
@@ -100,6 +103,11 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [clientDetailOpen, setClientDetailOpen] = useState<boolean>(false);
   const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
   const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
+  
+  // Quick Add dialog states
+  const [isQuickUploadDialogOpen, setIsQuickUploadDialogOpen] = useState(false);
+  const [isSignAgreementDialogOpen, setIsSignAgreementDialogOpen] = useState(false);
+  const [isScheduleAgreementDialogOpen, setIsScheduleAgreementDialogOpen] = useState(false);
 
   // State for access control
   const [accessDenied, setAccessDenied] = useState(false);
@@ -225,6 +233,28 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleNewClient = () => {
     setAddClientDialogOpen(true);
+  };
+
+  // Quick Add handlers
+  const handleQuickUploadDocument = () => {
+    setIsQuickUploadDialogOpen(true);
+  };
+
+  const handleNewAgreement = () => {
+    // For now, default to sign agreement - could add a choice dialog later
+    setIsSignAgreementDialogOpen(true);
+  };
+
+  const handleNewStaff = () => {
+    // No staff creation dialog exists yet, so show coming soon message
+    console.log("New Staff feature coming soon");
+  };
+
+  const handleQuickUploadSave = async (uploadData: any) => {
+    console.log("Quick upload document:", uploadData);
+    setIsQuickUploadDialogOpen(false);
+    // Refresh documents list
+    queryClient.invalidateQueries({ queryKey: ['unified-documents', id] });
   };
 
   const handleClientAdded = () => {
@@ -355,6 +385,25 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
         />
       )}
+
+      {/* Quick Add Dialogs */}
+      <UnifiedUploadDialog
+        open={isQuickUploadDialogOpen}
+        onOpenChange={setIsQuickUploadDialogOpen}
+        onSave={handleQuickUploadSave}
+      />
+
+      <SignAgreementDialog
+        open={isSignAgreementDialogOpen}
+        onOpenChange={setIsSignAgreementDialogOpen}
+        branchId={id || ""}
+      />
+
+      <ScheduleAgreementDialog
+        open={isScheduleAgreementDialogOpen}
+        onOpenChange={setIsScheduleAgreementDialogOpen}
+        branchId={id || ""}
+      />
       
       <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
         <BranchInfoHeader 
@@ -369,6 +418,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             onChange={enhancedHandleTabChange}
             onNewClient={handleNewClient}
             onNewBooking={handleNewBooking}
+            onNewStaff={handleNewStaff}
+            onNewAgreement={handleNewAgreement}
+            onUploadDocument={handleQuickUploadDocument}
           />
         </div>
         
