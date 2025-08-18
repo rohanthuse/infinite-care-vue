@@ -142,8 +142,8 @@ const AdminRoutes = () => [
     <Route path="branch-dashboard/:id/:branchName/care-plan" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/agreements" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/notifications" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/notifications/:categoryId" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
+    <Route path="branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
     
     {/* Specific Branch Dashboard Sub-pages */}
     <Route path="branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
