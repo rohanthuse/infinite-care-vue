@@ -20,12 +20,23 @@ export const useBranchDashboardNavigation = () => {
     'third-party', 'reports'
   ];
 
-  // Extract the active tab from the current path - simplified logic
+  // Extract the active tab from the current path - improved logic for tenant-aware paths
   const pathParts = location.pathname.split('/').filter(Boolean);
-  const lastPathPart = pathParts[pathParts.length - 1];
   
-  // If the last part of the path is a valid tab, use it; otherwise default to dashboard
-  const activeTab = validTabs.includes(lastPathPart) ? lastPathPart : 'dashboard';
+  // Look for valid tab in the path parts
+  // Path structure: [tenant]/branch-dashboard/id/branchName/[tab]
+  // or: branch-dashboard/id/branchName/[tab]
+  let activeTab = 'dashboard';
+  
+  // Find the branch-dashboard index to determine the correct position for the tab
+  const branchDashboardIndex = pathParts.findIndex(part => part === 'branch-dashboard');
+  if (branchDashboardIndex >= 0 && pathParts.length > branchDashboardIndex + 3) {
+    // Tab should be at position branchDashboardIndex + 3 (after branch-dashboard/id/branchName)
+    const potentialTab = pathParts[branchDashboardIndex + 3];
+    if (validTabs.includes(potentialTab)) {
+      activeTab = potentialTab;
+    }
+  }
 
   const handleTabChange = (tab: string) => {
     if (id && branchName && tenantSlug) {

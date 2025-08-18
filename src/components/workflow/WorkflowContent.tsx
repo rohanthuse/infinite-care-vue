@@ -48,10 +48,10 @@ const WorkflowContent = ({
 
   const handleTaskMatrixClick = () => {
     if (effectiveBranchId && effectiveBranchName) {
-      const basePath = tenantSlug 
-        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}`
-        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}`;
-      navigate(`${basePath}?tab=task-matrix`);
+      const targetPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`
+        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/task-matrix`;
+      navigate(targetPath);
     } else {
       navigate(`/task-matrix`);
     }
@@ -59,10 +59,10 @@ const WorkflowContent = ({
   
   const handleTrainingMatrixClick = () => {
     if (effectiveBranchId && effectiveBranchName) {
-      const basePath = tenantSlug 
-        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}`
-        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}`;
-      navigate(`${basePath}?tab=training-matrix`);
+      const targetPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`
+        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`;
+      navigate(targetPath);
     } else {
       navigate(`/training-matrix`);
     }

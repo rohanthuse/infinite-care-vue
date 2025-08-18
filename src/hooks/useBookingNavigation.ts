@@ -1,9 +1,11 @@
 
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useTenant } from '@/contexts/TenantContext';
 
 export const useBookingNavigation = () => {
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
 
   const navigateToBookings = (options?: {
     branchId?: string;
@@ -14,23 +16,27 @@ export const useBookingNavigation = () => {
     const { branchId, branchName, date, clientId } = options || {};
     
     if (branchId && branchName) {
-      // Navigate to the bookings tab in the branch dashboard
-      const basePath = `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
+      // Navigate to the bookings tab in the branch dashboard using path-based routing
+      const basePath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`
+        : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
+      
+      let targetPath = `${basePath}/bookings`;
+      
+      // Add query parameters for date and client filtering if needed
       const params = new URLSearchParams();
-      
-      // Add tab parameter to show bookings tab
-      params.set('tab', 'bookings');
-      
       if (date) {
         params.set('date', format(date, 'yyyy-MM-dd'));
       }
-      
       if (clientId) {
         params.set('client', clientId);
       }
       
-      const fullPath = `${basePath}?${params.toString()}`;
-      navigate(fullPath);
+      if (params.toString()) {
+        targetPath += `?${params.toString()}`;
+      }
+      
+      navigate(targetPath);
     } else {
       // Generic navigation - might be useful for other contexts
       console.warn('Branch navigation requires branchId and branchName');
