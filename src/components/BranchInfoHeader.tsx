@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, Clock, CalendarRange, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
+import { useBranchInfo } from "@/hooks/useBranchInfo";
 
 interface BranchInfoHeaderProps {
   branchName: string;
@@ -17,17 +18,19 @@ export const BranchInfoHeader = ({
   onNewBooking
 }: BranchInfoHeaderProps) => {
   const { user } = useAuthSafe();
+  const { data: branchInfo, isLoading } = useBranchInfo(branchId);
   
-  // These would typically come from an API call based on branchId
-  // For now, we'll use static mock data
-  const branchInfo = {
-    status: "Active",
-    address: "Milton Keynes, MK9 3NZ",
-    phone: "+44 20 7946 0587",
-    email: "milton@med-infinite.com",
-    operatingHours: "Mon-Fri: 8:00 - 18:00",
-    establishedDate: "Est. 2020"
-  };
+  // If data is still loading, show loading state or use fallbacks
+  if (isLoading || !branchInfo) {
+    return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    );
+  }
 
   return <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -40,20 +43,30 @@ export const BranchInfoHeader = ({
           </div>
           
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5 text-gray-500" />
-              <span>{branchInfo.address}</span>
-            </div>
-            <div className="hidden md:flex items-center text-gray-300">|</div>
-            <div className="flex items-center gap-1">
-              <Phone className="h-3.5 w-3.5 text-gray-500" />
-              <span>{branchInfo.phone}</span>
-            </div>
-            <div className="hidden md:flex items-center text-gray-300">|</div>
-            <div className="flex items-center gap-1">
-              <Mail className="h-3.5 w-3.5 text-gray-500" />
-              <span>{branchInfo.email}</span>
-            </div>
+            {branchInfo.address && (
+              <>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5 text-gray-500" />
+                  <span>{branchInfo.address}</span>
+                </div>
+                <div className="hidden md:flex items-center text-gray-300">|</div>
+              </>
+            )}
+            {branchInfo.phone && (
+              <>
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3.5 w-3.5 text-gray-500" />
+                  <span>{branchInfo.phone}</span>
+                </div>
+                <div className="hidden md:flex items-center text-gray-300">|</div>
+              </>
+            )}
+            {branchInfo.email && (
+              <div className="flex items-center gap-1">
+                <Mail className="h-3.5 w-3.5 text-gray-500" />
+                <span>{branchInfo.email}</span>
+              </div>
+            )}
           </div>
           
           

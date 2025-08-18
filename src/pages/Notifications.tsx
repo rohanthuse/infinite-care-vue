@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import NotificationCategory from "@/components/notifications/NotificationCategory";
+import { useBranchInfo } from "@/hooks/useBranchInfo";
 import {
   Card,
   CardContent,
@@ -50,6 +51,7 @@ const Notifications = () => {
   const [filter, setFilter] = useState("all");
   const [view, setView] = useState("grid");
   const { toast } = useToast();
+  const { data: branchInfo } = useBranchInfo(id);
   
   const isInBranchContext = location.pathname.includes('/branch-dashboard/');
   
@@ -219,18 +221,24 @@ const Notifications = () => {
                   </Badge>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 text-gray-600">
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span>Milton Keynes, UK</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2" />
-                    <span>+44 20 7946 0958</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2" />
-                    <span>milton@med-infinite.com</span>
-                  </div>
+                  {branchInfo?.address && (
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      <span>{branchInfo.address}</span>
+                    </div>
+                  )}
+                  {branchInfo?.phone && (
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 mr-2" />
+                      <span>{branchInfo.phone}</span>
+                    </div>
+                  )}
+                  {branchInfo?.email && (
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 mr-2" />
+                      <span>{branchInfo.email}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
