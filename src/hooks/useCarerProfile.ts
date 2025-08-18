@@ -111,11 +111,16 @@ export const useCarerProfileById = (carerId?: string) => {
           invitation_accepted_at
         `)
         .eq('id', carerId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('[useCarerProfileById] Error fetching profile:', error);
         throw error;
+      }
+
+      if (!data) {
+        console.error('[useCarerProfileById] No profile found for carerId:', carerId);
+        throw new Error('Profile not found');
       }
 
       return data as CarerProfile;
