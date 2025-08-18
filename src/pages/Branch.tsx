@@ -90,11 +90,12 @@ const Branch = () => {
     },
   });
 
-  const handleViewBranchDetails = (branchId: string) => {
+  const handleViewBranchDetails = (branch: Branch) => {
+    const encodedBranchName = encodeURIComponent(branch.name);
     if (tenantSlug) {
-      navigate(`/${tenantSlug}/branch-details/${branchId}`);
+      navigate(`/${tenantSlug}/branch-dashboard/${branch.id}/${encodedBranchName}`);
     } else {
-      navigate(`/branch-details/${branchId}`);
+      navigate(`/branch-dashboard/${branch.id}/${encodedBranchName}`);
     }
   };
 
@@ -186,7 +187,7 @@ const Branch = () => {
               variant="ghost"
               size="sm"
               className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
-              onClick={() => handleViewBranchDetails(branch.id)}
+              onClick={() => handleViewBranchDetails(branch)}
             >
               <Eye className="h-4 w-4" />
             </Button>
