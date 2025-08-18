@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { TabNavigation } from "@/components/TabNavigation";
@@ -40,6 +40,7 @@ import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
 import KeyParametersContent from "@/components/keyparameters/KeyParametersContent";
 import WorkflowContent from "@/components/workflow/WorkflowContent";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
+import NotificationCategory from "@/components/notifications/NotificationCategory";
 import TaskMatrix from "./TaskMatrix";
 import TrainingMatrix from "./TrainingMatrix";
 import AccountingTab from "@/components/accounting/AccountingTab";
@@ -64,6 +65,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleTabChange,
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
+
+  // Get categoryId from URL params for notification routing
+  const { categoryId } = useParams<{ categoryId?: string }>();
 
   // Always call branch access hook - we'll handle the logic inside
   const { data: branchAccess, isLoading: accessLoading, error: accessError } = useBranchAdminAccess(id || "");
@@ -699,10 +703,19 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {/* Notifications Tab */}
         {activeTab === "notifications" && (
           canAccessTab("notifications") ? (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-              <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-              <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
-              <NotificationsOverview branchId={id} branchName={branchName} />
+            categoryId ? (
+              // Render specific notification category
+              <NotificationCategory 
+                categoryId={categoryId} 
+                branchId={id || ""} 
+                branchName={branchName || ""} 
+              />
+            ) : (
+              // Render notifications overview
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <h2 className="text-2xl font-bold mb-4">Notifications</h2>
+                <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
+                <NotificationsOverview branchId={id} branchName={branchName} />
             
             <div className="mt-6 space-y-4">
               <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-start">
@@ -760,7 +773,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 </div>
               </div>
             </div>
-          </div>
+              </div>
+            )
           ) : (
             <AccessDeniedTab tabName="Notifications" />
           )
