@@ -7,6 +7,7 @@ import {
 import NotificationCard, { NotificationCardProps } from "./NotificationCard";
 import { useDynamicNotificationData } from "@/hooks/useNotifications";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface NotificationsOverviewProps {
   branchId?: string;
@@ -16,6 +17,7 @@ interface NotificationsOverviewProps {
 const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewProps) => {
   const navigate = useNavigate();
   const { id, branchName: paramBranchName } = useParams();
+  const { tenantSlug } = useTenant();
   
   // Use props if provided, otherwise fall back to URL params
   const effectiveBranchId = branchId || id;
@@ -29,9 +31,13 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       console.log("Navigating to:", path);
       console.log("Branch ID:", effectiveBranchId);
       console.log("Branch Name:", effectiveBranchName);
+      console.log("Tenant Slug:", tenantSlug);
       
       if (effectiveBranchId && effectiveBranchName) {
-        const fullPath = `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
+        // Include tenant slug if available for tenant-aware navigation
+        const fullPath = tenantSlug 
+          ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`
+          : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/notifications/${path}`;
         console.log("Full navigation path:", fullPath);
         navigate(fullPath);
       } else {
