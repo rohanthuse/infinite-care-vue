@@ -158,7 +158,7 @@ const AdminRoutes = () => [
     <Route path="branch-dashboard/:id/:branchName/documents" element={<Documents />} />
     <Route path="branch-dashboard/:id/:branchName/library" element={<Library />} />
     <Route path="branch-dashboard/:id/:branchName/third-party" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/reports" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/reports" element={<Reports />} />
     <Route path="branch-dashboard/:id/:branchName/library" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
   </Route>
