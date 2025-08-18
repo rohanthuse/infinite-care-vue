@@ -1,13 +1,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/lib/tenant-context";
+import { useTenant } from "@/contexts/TenantContext";
 
 export const useReportTypeOptions = () => {
-  const { currentOrganization } = useTenant();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['report-type-options', currentOrganization?.id],
+    queryKey: ['report-type-options', organization?.id],
     queryFn: async () => {
       // First try to get from report_types table
       let query = supabase
@@ -17,8 +17,8 @@ export const useReportTypeOptions = () => {
         .order('title');
       
       // Filter by organization if in tenant context
-      if (currentOrganization?.id) {
-        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      if (organization?.id) {
+        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
       }
         
       const { data: reportTypes, error } = await query;
@@ -52,10 +52,10 @@ export const useReportTypeOptions = () => {
 };
 
 export const useCommunicationTypeOptions = () => {
-  const { currentOrganization } = useTenant();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['communication-type-options', currentOrganization?.id],
+    queryKey: ['communication-type-options', organization?.id],
     queryFn: async () => {
       // First try to get from communication_types table
       let query = supabase
@@ -65,8 +65,8 @@ export const useCommunicationTypeOptions = () => {
         .order('title');
       
       // Filter by organization if in tenant context
-      if (currentOrganization?.id) {
-        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      if (organization?.id) {
+        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
       }
         
       const { data: communicationTypes, error } = await query;
@@ -95,10 +95,10 @@ export const useCommunicationTypeOptions = () => {
 };
 
 export const useFileCategoryOptions = () => {
-  const { currentOrganization } = useTenant();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['file-category-options', currentOrganization?.id],
+    queryKey: ['file-category-options', organization?.id],
     queryFn: async () => {
       // First try to get from file_categories table
       let query = supabase
@@ -108,8 +108,8 @@ export const useFileCategoryOptions = () => {
         .order('title');
       
       // Filter by organization if in tenant context
-      if (currentOrganization?.id) {
-        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      if (organization?.id) {
+        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
       }
         
       const { data: fileCategories, error } = await query;
@@ -140,10 +140,10 @@ export const useFileCategoryOptions = () => {
 
 // Hook for expense type options from database
 export const useExpenseTypeOptions = () => {
-  const { currentOrganization } = useTenant();
+  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['expense-type-options', currentOrganization?.id],
+    queryKey: ['expense-type-options', organization?.id],
     queryFn: async () => {
       // First try to get from expense_types table
       let query = supabase
@@ -153,8 +153,8 @@ export const useExpenseTypeOptions = () => {
         .order('title');
       
       // Filter by organization if in tenant context
-      if (currentOrganization?.id) {
-        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      if (organization?.id) {
+        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
       }
         
       const { data: expenseTypes, error } = await query;
