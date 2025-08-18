@@ -79,21 +79,21 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
             <TabsList className="bg-transparent border-b-0 px-4 pt-2">
               <TabsTrigger 
                 value="signed" 
-                className="data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none border-b-2 border-transparent px-4 pb-3"
+                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-green-600 rounded-none border-b-2 border-transparent px-4 pb-3"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Signed
               </TabsTrigger>
               <TabsTrigger 
                 value="scheduled" 
-                className="data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none border-b-2 border-transparent px-4 pb-3"
+                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-green-600 rounded-none border-b-2 border-transparent px-4 pb-3"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 Scheduled
               </TabsTrigger>
               <TabsTrigger 
                 value="templates" 
-                className="data-[state=active]:bg-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-blue-600 rounded-none border-b-2 border-transparent px-4 pb-3"
+                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-green-600 rounded-none border-b-2 border-transparent px-4 pb-3"
               >
                 <FileCheck className="mr-2 h-4 w-4" />
                 Templates

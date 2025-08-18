@@ -241,21 +241,21 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
         <TabsList className="bg-gray-100 p-1 rounded-lg">
           <TabsTrigger 
             value="patients" 
-            className="data-[state=active]:bg-white rounded-md px-4 py-2"
+            className="data-[state=active]:bg-green-500 data-[state=active]:text-white rounded-md px-4 py-2"
             onClick={() => setViewMode("patients")}
           >
             Patients ({patients.length})
           </TabsTrigger>
           <TabsTrigger 
             value="pending" 
-            className="data-[state=active]:bg-white rounded-md px-4 py-2"
+            className="data-[state=active]:bg-green-500 data-[state=active]:text-white rounded-md px-4 py-2"
             onClick={() => setViewMode("pending")}
           >
             Pending ({pendingMedications.length})
           </TabsTrigger>
           <TabsTrigger 
             value="mar" 
-            className="data-[state=active]:bg-white rounded-md px-4 py-2"
+            className="data-[state=active]:bg-green-500 data-[state=active]:text-white rounded-md px-4 py-2"
             onClick={() => setViewMode("mar")}
           >
             MAR Overview

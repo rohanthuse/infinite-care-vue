@@ -272,7 +272,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
           <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
             <TabsTrigger 
               value="report-types" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <FileText className="h-4 w-4" />
               <span className="hidden md:inline">Report Types</span>
@@ -280,7 +280,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="file-categories" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <Folder className="h-4 w-4" />
               <span className="hidden md:inline">File Categories</span>
@@ -288,7 +288,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="bank-holidays" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <Calendar className="h-4 w-4" />
               <span className="hidden md:inline">Bank Holidays</span>
@@ -296,7 +296,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="travel-rates" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <Car className="h-4 w-4" />
               <span className="hidden md:inline">Travel Rates</span>
@@ -304,7 +304,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="communication-types" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <MessageSquare className="h-4 w-4" />
               <span className="hidden md:inline">Communication Types</span>
@@ -312,7 +312,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="expense-types" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <DollarSign className="h-4 w-4" />
               <span className="hidden md:inline">Expense Types</span>
@@ -320,7 +320,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="services" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
             >
               <Briefcase className="h-4 w-4" />
               <span className="hidden md:inline">Services</span>

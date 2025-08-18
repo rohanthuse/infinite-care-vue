@@ -57,42 +57,42 @@ const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) =
           <TabsList className="bg-gray-100 p-1 rounded-lg w-full md:w-auto grid grid-cols-3 md:grid-cols-6 mb-6">
             <TabsTrigger 
               value="invoices-payments" 
-              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <Receipt className="h-4 w-4" />
               <span>Invoices & Payments</span>
             </TabsTrigger>
             <TabsTrigger 
               value="extra-time" 
-              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <Clock className="h-4 w-4" />
               <span>Extra Time</span>
             </TabsTrigger>
             <TabsTrigger 
               value="expenses" 
-              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <FileText className="h-4 w-4" />
               <span>Expenses</span>
             </TabsTrigger>
             <TabsTrigger 
               value="travel" 
-              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <Car className="h-4 w-4" />
               <span>Travel & Mileage</span>
             </TabsTrigger>
             <TabsTrigger 
               value="payroll" 
-              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <DollarSign className="h-4 w-4" />
               <span>Payroll</span>
             </TabsTrigger>
             <TabsTrigger 
               value="rates" 
-              className="flex items-center gap-2 rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <Percent className="h-4 w-4" />
               <span>Rate Management</span>
