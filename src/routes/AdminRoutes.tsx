@@ -127,10 +127,10 @@ const AdminRoutes = () => [
     {/* Branch Dashboard Routes - Enhanced error handling */}
     <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/key-parameters" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/workflow" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/key-parameters" element={<KeyParameters />} />
+    <Route path="branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
+    <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
+    <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
     <Route path="branch-dashboard/:id/:branchName/bookings" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
@@ -157,9 +157,8 @@ const AdminRoutes = () => [
     <Route path="branch-dashboard/:id/:branchName/form-builder/:formId" element={<FormBuilder />} />
     <Route path="branch-dashboard/:id/:branchName/documents" element={<Documents />} />
     <Route path="branch-dashboard/:id/:branchName/library" element={<Library />} />
-    <Route path="branch-dashboard/:id/:branchName/third-party" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/third-party" element={<ThirdPartyAccess />} />
     <Route path="branch-dashboard/:id/:branchName/reports" element={<Reports />} />
-    <Route path="branch-dashboard/:id/:branchName/library" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/booking-approvals" element={<BookingApprovals />} />
   </Route>
 ];
