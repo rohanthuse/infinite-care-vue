@@ -604,6 +604,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string
           registered_by: string
           registered_on: string
           status: string
@@ -613,6 +614,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id: string
           registered_by: string
           registered_on: string
           status?: string
@@ -622,13 +624,22 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string
           registered_by?: string
           registered_on?: string
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bank_holidays_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       body_map_points: {
         Row: {
@@ -2405,7 +2416,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string | null
+          organization_id: string
           status: string
           title: string
           updated_at: string
@@ -2413,7 +2424,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           status?: string
           title: string
           updated_at?: string
@@ -2421,7 +2432,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           status?: string
           title?: string
           updated_at?: string
@@ -2668,7 +2679,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
-          organization_id: string | null
+          organization_id: string
           status: string
           tax: number
           title: string
@@ -2679,7 +2690,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           status?: string
           tax?: number
           title: string
@@ -2690,7 +2701,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           status?: string
           tax?: number
           title?: string
@@ -2957,7 +2968,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string | null
+          organization_id: string
           status: string
           title: string
           updated_at: string
@@ -2965,7 +2976,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           status?: string
           title: string
           updated_at?: string
@@ -2973,7 +2984,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           status?: string
           title?: string
           updated_at?: string
@@ -4375,7 +4386,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string | null
+          organization_id: string
           status: string
           title: string
           updated_at: string
@@ -4383,7 +4394,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id: string
           status?: string
           title: string
           updated_at?: string
@@ -4391,7 +4402,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string | null
+          organization_id?: string
           status?: string
           title?: string
           updated_at?: string
@@ -5871,6 +5882,7 @@ export type Database = {
           created_at: string
           from_date: string
           id: string
+          organization_id: string
           rate_per_hour: number
           rate_per_mile: number
           status: string
@@ -5882,6 +5894,7 @@ export type Database = {
           created_at?: string
           from_date: string
           id?: string
+          organization_id: string
           rate_per_hour: number
           rate_per_mile: number
           status?: string
@@ -5893,6 +5906,7 @@ export type Database = {
           created_at?: string
           from_date?: string
           id?: string
+          organization_id?: string
           rate_per_hour?: number
           rate_per_mile?: number
           status?: string
@@ -5900,7 +5914,15 @@ export type Database = {
           updated_at?: string
           user_type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "travel_rates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       travel_records: {
         Row: {

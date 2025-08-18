@@ -18,7 +18,7 @@ export const useReportTypeOptions = () => {
       
       // Filter by organization if in tenant context
       if (organization?.id) {
-        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
+        query = query.eq('organization_id', organization.id);
       }
         
       const { data: reportTypes, error } = await query;
@@ -66,7 +66,7 @@ export const useCommunicationTypeOptions = () => {
       
       // Filter by organization if in tenant context
       if (organization?.id) {
-        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
+        query = query.eq('organization_id', organization.id);
       }
         
       const { data: communicationTypes, error } = await query;
@@ -109,7 +109,7 @@ export const useFileCategoryOptions = () => {
       
       // Filter by organization if in tenant context
       if (organization?.id) {
-        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
+        query = query.eq('organization_id', organization.id);
       }
         
       const { data: fileCategories, error } = await query;
@@ -154,7 +154,7 @@ export const useExpenseTypeOptions = () => {
       
       // Filter by organization if in tenant context
       if (organization?.id) {
-        query = query.or(`organization_id.eq.${organization.id},organization_id.is.null`);
+        query = query.eq('organization_id', organization.id);
       }
         
       const { data: expenseTypes, error } = await query;

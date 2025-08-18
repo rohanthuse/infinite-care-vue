@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 
 // Types for each parameter
 export interface ReportType {
@@ -104,18 +105,25 @@ export interface ExpenseTypeInsert {
 // Report Types hook
 export function useReportTypes() {
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['report_types'],
+    queryKey: ['report_types', organization?.id],
     queryFn: async () => {
-      console.log('Fetching report_types');
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return [];
+      }
+      
+      console.log('Fetching report_types for organization:', organization.id);
       const { data, error } = await supabase
         .from('report_types')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -126,14 +134,20 @@ export function useReportTypes() {
       console.log('Fetched report_types:', data);
       return data as ReportType[];
     },
+    enabled: !!organization?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (newItem: ReportTypeInsert) => {
-      console.log('Creating report_types:', newItem);
+      if (!organization?.id) {
+        throw new Error('No organization selected');
+      }
+      
+      const itemWithOrg = { ...newItem, organization_id: organization.id };
+      console.log('Creating report_types:', itemWithOrg);
       const { data, error } = await supabase
         .from('report_types')
-        .insert([newItem])
+        .insert([itemWithOrg])
         .select()
         .single();
 
@@ -146,7 +160,7 @@ export function useReportTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['report_types'] });
+      queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
       toast({
         title: "Success",
         description: "Report type created successfully",
@@ -181,7 +195,7 @@ export function useReportTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['report_types'] });
+      queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
       toast({
         title: "Success",
         description: "Report type updated successfully",
@@ -213,7 +227,7 @@ export function useReportTypes() {
       console.log('Deleted report_types:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['report_types'] });
+      queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
       toast({
         title: "Success",
         description: "Report type deleted successfully",
@@ -245,18 +259,25 @@ export function useReportTypes() {
 // File Categories hook
 export function useFileCategories() {
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['file_categories'],
+    queryKey: ['file_categories', organization?.id],
     queryFn: async () => {
-      console.log('Fetching file_categories');
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return [];
+      }
+      
+      console.log('Fetching file_categories for organization:', organization.id);
       const { data, error } = await supabase
         .from('file_categories')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -267,14 +288,20 @@ export function useFileCategories() {
       console.log('Fetched file_categories:', data);
       return data as FileCategory[];
     },
+    enabled: !!organization?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (newItem: FileCategoryInsert) => {
-      console.log('Creating file_categories:', newItem);
+      if (!organization?.id) {
+        throw new Error('No organization selected');
+      }
+      
+      const itemWithOrg = { ...newItem, organization_id: organization.id };
+      console.log('Creating file_categories:', itemWithOrg);
       const { data, error } = await supabase
         .from('file_categories')
-        .insert([newItem])
+        .insert([itemWithOrg])
         .select()
         .single();
 
@@ -287,7 +314,7 @@ export function useFileCategories() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['file_categories'] });
+      queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
       toast({
         title: "Success",
         description: "File category created successfully",
@@ -322,7 +349,7 @@ export function useFileCategories() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['file_categories'] });
+      queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
       toast({
         title: "Success",
         description: "File category updated successfully",
@@ -354,7 +381,7 @@ export function useFileCategories() {
       console.log('Deleted file_categories:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['file_categories'] });
+      queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
       toast({
         title: "Success",
         description: "File category deleted successfully",
@@ -386,18 +413,25 @@ export function useFileCategories() {
 // Bank Holidays hook
 export function useBankHolidays() {
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['bank_holidays'],
+    queryKey: ['bank_holidays', organization?.id],
     queryFn: async () => {
-      console.log('Fetching bank_holidays');
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return [];
+      }
+      
+      console.log('Fetching bank_holidays for organization:', organization.id);
       const { data, error } = await supabase
         .from('bank_holidays')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -408,14 +442,20 @@ export function useBankHolidays() {
       console.log('Fetched bank_holidays:', data);
       return data as BankHoliday[];
     },
+    enabled: !!organization?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (newItem: BankHolidayInsert) => {
-      console.log('Creating bank_holidays:', newItem);
+      if (!organization?.id) {
+        throw new Error('No organization selected');
+      }
+      
+      const itemWithOrg = { ...newItem, organization_id: organization.id };
+      console.log('Creating bank_holidays:', itemWithOrg);
       const { data, error } = await supabase
         .from('bank_holidays')
-        .insert([newItem])
+        .insert([itemWithOrg])
         .select()
         .single();
 
@@ -428,7 +468,7 @@ export function useBankHolidays() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bank_holidays'] });
+      queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
       toast({
         title: "Success",
         description: "Bank holiday created successfully",
@@ -463,7 +503,7 @@ export function useBankHolidays() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bank_holidays'] });
+      queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
       toast({
         title: "Success",
         description: "Bank holiday updated successfully",
@@ -495,7 +535,7 @@ export function useBankHolidays() {
       console.log('Deleted bank_holidays:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bank_holidays'] });
+      queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
       toast({
         title: "Success",
         description: "Bank holiday deleted successfully",
@@ -527,18 +567,25 @@ export function useBankHolidays() {
 // Travel Rates hook
 export function useTravelRates() {
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['travel_rates'],
+    queryKey: ['travel_rates', organization?.id],
     queryFn: async () => {
-      console.log('Fetching travel_rates');
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return [];
+      }
+      
+      console.log('Fetching travel_rates for organization:', organization.id);
       const { data, error } = await supabase
         .from('travel_rates')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -549,14 +596,20 @@ export function useTravelRates() {
       console.log('Fetched travel_rates:', data);
       return data as TravelRate[];
     },
+    enabled: !!organization?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (newItem: TravelRateInsert) => {
-      console.log('Creating travel_rates:', newItem);
+      if (!organization?.id) {
+        throw new Error('No organization selected');
+      }
+      
+      const itemWithOrg = { ...newItem, organization_id: organization.id };
+      console.log('Creating travel_rates:', itemWithOrg);
       const { data, error } = await supabase
         .from('travel_rates')
-        .insert([newItem])
+        .insert([itemWithOrg])
         .select()
         .single();
 
@@ -569,7 +622,7 @@ export function useTravelRates() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel_rates'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
       toast({
         title: "Success",
         description: "Travel rate created successfully",
@@ -604,7 +657,7 @@ export function useTravelRates() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel_rates'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
       toast({
         title: "Success",
         description: "Travel rate updated successfully",
@@ -636,7 +689,7 @@ export function useTravelRates() {
       console.log('Deleted travel_rates:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel_rates'] });
+      queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
       toast({
         title: "Success",
         description: "Travel rate deleted successfully",
@@ -668,18 +721,25 @@ export function useTravelRates() {
 // Communication Types hook
 export function useCommunicationTypes() {
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['communication_types'],
+    queryKey: ['communication_types', organization?.id],
     queryFn: async () => {
-      console.log('Fetching communication_types');
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return [];
+      }
+      
+      console.log('Fetching communication_types for organization:', organization.id);
       const { data, error } = await supabase
         .from('communication_types')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -690,14 +750,20 @@ export function useCommunicationTypes() {
       console.log('Fetched communication_types:', data);
       return data as CommunicationType[];
     },
+    enabled: !!organization?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (newItem: CommunicationTypeInsert) => {
-      console.log('Creating communication_types:', newItem);
+      if (!organization?.id) {
+        throw new Error('No organization selected');
+      }
+      
+      const itemWithOrg = { ...newItem, organization_id: organization.id };
+      console.log('Creating communication_types:', itemWithOrg);
       const { data, error } = await supabase
         .from('communication_types')
-        .insert([newItem])
+        .insert([itemWithOrg])
         .select()
         .single();
 
@@ -710,7 +776,7 @@ export function useCommunicationTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication_types'] });
+      queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
       toast({
         title: "Success",
         description: "Communication type created successfully",
@@ -745,7 +811,7 @@ export function useCommunicationTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication_types'] });
+      queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
       toast({
         title: "Success",
         description: "Communication type updated successfully",
@@ -777,7 +843,7 @@ export function useCommunicationTypes() {
       console.log('Deleted communication_types:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication_types'] });
+      queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
       toast({
         title: "Success",
         description: "Communication type deleted successfully",
@@ -809,18 +875,25 @@ export function useCommunicationTypes() {
 // Expense Types hook
 export function useExpenseTypes() {
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['expense_types'],
+    queryKey: ['expense_types', organization?.id],
     queryFn: async () => {
-      console.log('Fetching expense_types');
+      if (!organization?.id) {
+        console.log('No organization ID available');
+        return [];
+      }
+      
+      console.log('Fetching expense_types for organization:', organization.id);
       const { data, error } = await supabase
         .from('expense_types')
         .select('*')
+        .eq('organization_id', organization.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -831,14 +904,20 @@ export function useExpenseTypes() {
       console.log('Fetched expense_types:', data);
       return data as ExpenseType[];
     },
+    enabled: !!organization?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (newItem: ExpenseTypeInsert) => {
-      console.log('Creating expense_types:', newItem);
+      if (!organization?.id) {
+        throw new Error('No organization selected');
+      }
+      
+      const itemWithOrg = { ...newItem, organization_id: organization.id };
+      console.log('Creating expense_types:', itemWithOrg);
       const { data, error } = await supabase
         .from('expense_types')
-        .insert([newItem])
+        .insert([itemWithOrg])
         .select()
         .single();
 
@@ -851,7 +930,7 @@ export function useExpenseTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense_types'] });
+      queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
       toast({
         title: "Success",
         description: "Expense type created successfully",
@@ -886,7 +965,7 @@ export function useExpenseTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense_types'] });
+      queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
       toast({
         title: "Success",
         description: "Expense type updated successfully",
@@ -918,7 +997,7 @@ export function useExpenseTypes() {
       console.log('Deleted expense_types:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense_types'] });
+      queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
       toast({
         title: "Success",
         description: "Expense type deleted successfully",
