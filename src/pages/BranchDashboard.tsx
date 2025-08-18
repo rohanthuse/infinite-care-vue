@@ -512,6 +512,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             <AccessDeniedTab tabName="Form Builder" />
           )
         )}
+
+        {activeTab === "form-builder" && (
+          canAccessTab("form-builder") ? (
+            <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />
+          ) : (
+            <AccessDeniedTab tabName="Form Builder" />
+          )
+        )}
         
         {/* Events & Logs fallback - redirect to dedicated page */}
         {activeTab === "events-logs" && (() => {
@@ -583,6 +591,54 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             </div>
           ) : (
             <AccessDeniedTab tabName="Third Party Access" />
+          )
+        )}
+
+        {/* Library Tab */}
+        {activeTab === "library" && (
+          canAccessTab("library") ? (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Resource Library</h2>
+                    <p className="text-gray-500 mt-1">
+                      Training materials and guides for {displayBranchName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <p className="text-gray-500">Resource library functionality coming soon...</p>
+              </div>
+            </div>
+          ) : (
+            <AccessDeniedTab tabName="Library" />
+          )
+        )}
+
+        {/* Reports Tab */}
+        {activeTab === "reports" && (
+          canAccessTab("reports") ? (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Reports & Analytics</h2>
+                    <p className="text-gray-500 mt-1">
+                      Data analysis and reporting for {displayBranchName}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <p className="text-gray-500">Reports functionality coming soon...</p>
+              </div>
+            </div>
+          ) : (
+            <AccessDeniedTab tabName="Reports" />
           )
         )}
 
