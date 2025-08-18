@@ -171,8 +171,10 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     }
     
     if (tabValue === "events-logs" && id && branchName) {
-      // Navigate to dedicated Events & Logs page
-      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
+      // Navigate to dedicated Events & Logs page with tenant context
+      const tenantSlug = window.location.pathname.split('/')[1];
+      const targetPath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}/events-logs` : `/branch-dashboard/${id}/${branchName}/events-logs`;
+      navigate(targetPath);
     } else {
       // Use the provided onChange for other tabs
       onChange(tabValue);
