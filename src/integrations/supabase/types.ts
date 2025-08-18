@@ -604,7 +604,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           registered_by: string
           registered_on: string
           status: string
@@ -614,7 +614,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           registered_by: string
           registered_on: string
           status?: string
@@ -624,7 +624,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           registered_by?: string
           registered_on?: string
           status?: string
@@ -2416,7 +2416,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2424,7 +2424,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2432,7 +2432,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -2679,7 +2679,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           status: string
           tax: number
           title: string
@@ -2690,7 +2690,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           status?: string
           tax?: number
           title: string
@@ -2701,7 +2701,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           status?: string
           tax?: number
           title?: string
@@ -2968,7 +2968,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2976,7 +2976,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2984,7 +2984,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -4386,7 +4386,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          organization_id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -4394,7 +4394,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -4402,7 +4402,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -5882,7 +5882,7 @@ export type Database = {
           created_at: string
           from_date: string
           id: string
-          organization_id: string
+          organization_id: string | null
           rate_per_hour: number
           rate_per_mile: number
           status: string
@@ -5894,7 +5894,7 @@ export type Database = {
           created_at?: string
           from_date: string
           id?: string
-          organization_id: string
+          organization_id?: string | null
           rate_per_hour: number
           rate_per_mile: number
           status?: string
@@ -5906,7 +5906,7 @@ export type Database = {
           created_at?: string
           from_date?: string
           id?: string
-          organization_id?: string
+          organization_id?: string | null
           rate_per_hour?: number
           rate_per_mile?: number
           status?: string
