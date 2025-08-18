@@ -175,7 +175,7 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
     const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` : `/branch-dashboard/${id}/${branchName}`;
     
     // Navigate to dedicated pages for modules that have them
-    const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms'];
+    const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms', 'notifications'];
     
     if (dedicatedModules.includes(tabValue) && id && branchName) {
       navigate(`${basePath}/${tabValue}`);
