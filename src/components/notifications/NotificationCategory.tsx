@@ -16,6 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
+import { useNotifications, useDynamicNotificationData } from "@/hooks/useNotifications";
 
 interface NotificationCategoryProps {
   categoryId: string;
@@ -74,116 +76,93 @@ const categoryConfig = {
   }
 };
 
-// Mock data for demonstration
-const mockNotifications = {
-  staff: [
-    {
-      id: "1",
-      title: "Staff member John Doe is overdue for training renewal",
-      message: "Training certification expires in 2 days",
-      time: "2 hours ago",
-      priority: "high",
-      read: false
-    },
-    {
-      id: "2", 
-      title: "New staff application received",
-      message: "Sarah Smith has applied for Carer position",
-      time: "4 hours ago",
-      priority: "medium",
-      read: true
-    }
-  ],
-  system: [
-    {
-      id: "1",
-      title: "Database backup completed successfully",
-      message: "Daily backup completed at 2:00 AM",
-      time: "6 hours ago", 
-      priority: "low",
-      read: true
-    },
-    {
-      id: "2",
-      title: "System maintenance scheduled",
-      message: "Maintenance window: Tonight 11 PM - 2 AM",
-      time: "1 day ago",
-      priority: "medium",
-      read: false
-    }
-  ],
-  client: [
-    {
-      id: "1",
-      title: "Client appointment request",
-      message: "Mrs. Johnson has requested an appointment for tomorrow",
-      time: "30 minutes ago",
-      priority: "high",
-      read: false
-    },
-    {
-      id: "2",
-      title: "Client feedback received",
-      message: "5-star rating from Mr. Williams",
-      time: "2 hours ago",
-      priority: "low", 
-      read: true
-    }
-  ],
-  medication: [
-    {
-      id: "1",
-      title: "Medication reminder due",
-      message: "Mrs. Thompson - Blood pressure medication at 2 PM",
-      time: "1 hour ago",
-      priority: "high",
-      read: false
-    },
-    {
-      id: "2",
-      title: "Prescription renewal needed",
-      message: "Mr. Davis prescription expires in 3 days",
-      time: "3 hours ago",
-      priority: "medium",
-      read: false
-    }
-  ],
-  rota: [
-    {
-      id: "1",
-      title: "Schedule conflict detected",
-      message: "Double booking for Jane Smith on Thursday 2 PM",
-      time: "45 minutes ago",
-      priority: "high",
-      read: false
-    },
-    {
-      id: "2",
-      title: "Staff shortage alert",
-      message: "Weekend shift understaffed by 2 carers",
-      time: "2 hours ago",
-      priority: "medium",
-      read: false
-    }
-  ],
-  document: [
-    {
-      id: "1",
-      title: "Care plan updated",
-      message: "Mrs. Brown's care plan has been revised",
-      time: "1 hour ago", 
-      priority: "medium",
-      read: false
-    },
-    {
-      id: "2",
-      title: "Policy document uploaded",
-      message: "New safeguarding policy v2.1 available",
-      time: "4 hours ago",
-      priority: "low",
-      read: true
-    }
-  ]
+// Helper function to generate dynamic notifications based on category and data
+const generateDynamicNotifications = (categoryId: string, dynamicData: any, notifications: any[]) => {
+  const formatTime = (date: string) => {
+    const diff = Date.now() - new Date(date).getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return 'Just now';
+  };
+
+  switch (categoryId) {
+    case 'staff':
+      const staffNotifications = [];
+      if (dynamicData?.overdueBookings > 0) {
+        staffNotifications.push({
+          id: 'staff-overdue',
+          title: `${dynamicData.overdueBookings} overdue booking${dynamicData.overdueBookings > 1 ? 's' : ''} requiring attention`,
+          message: 'Some bookings are past their scheduled time and need immediate review',
+          time: '1 hour ago',
+          priority: 'high',
+          read: false
+        });
+      }
+      return [...staffNotifications, ...notifications.filter(n => n.category === 'staff').slice(0, 5)];
+
+    case 'client':
+      const clientNotifications = [];
+      if (dynamicData?.pendingAppointments > 0) {
+        clientNotifications.push({
+          id: 'client-pending',
+          title: `${dynamicData.pendingAppointments} pending appointment${dynamicData.pendingAppointments > 1 ? 's' : ''}`,
+          message: 'Client appointments waiting for confirmation',
+          time: '30 minutes ago',
+          priority: 'high',
+          read: false
+        });
+      }
+      return [...clientNotifications, ...notifications.filter(n => n.category === 'client').slice(0, 5)];
+
+    case 'medication':
+      const medicationNotifications = [];
+      if (dynamicData?.medicationSchedules > 0) {
+        medicationNotifications.push({
+          id: 'medication-upcoming',
+          title: `${dynamicData.medicationSchedules} upcoming medication reminder${dynamicData.medicationSchedules > 1 ? 's' : ''}`,
+          message: 'Medications scheduled for administration soon',
+          time: '15 minutes ago',
+          priority: 'high',
+          read: false
+        });
+      }
+      return [...medicationNotifications, ...notifications.filter(n => n.category === 'medication').slice(0, 5)];
+
+    case 'rota':
+      const rotaNotifications = [];
+      if (dynamicData?.rotaConflicts > 0) {
+        rotaNotifications.push({
+          id: 'rota-conflicts',
+          title: `${dynamicData.rotaConflicts} schedule conflict${dynamicData.rotaConflicts > 1 ? 's' : ''} detected`,
+          message: 'Staff scheduling conflicts need resolution',
+          time: '45 minutes ago',
+          priority: 'high',
+          read: false
+        });
+      }
+      return [...rotaNotifications, ...notifications.filter(n => n.category === 'rota').slice(0, 5)];
+
+    case 'document':
+      const documentNotifications = [];
+      if (dynamicData?.recentReports > 0) {
+        documentNotifications.push({
+          id: 'document-recent',
+          title: `${dynamicData.recentReports} recent document update${dynamicData.recentReports > 1 ? 's' : ''}`,
+          message: 'New documents have been uploaded or modified',
+          time: '2 hours ago',
+          priority: 'medium',
+          read: false
+        });
+      }
+      return [...documentNotifications, ...notifications.filter(n => n.category === 'document').slice(0, 5)];
+
+    case 'system':
+    default:
+      return notifications.filter(n => n.category === 'system' || !n.category).slice(0, 10);
+  }
 };
 
 const NotificationCategory: React.FC<NotificationCategoryProps> = ({
@@ -193,9 +172,16 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { tenantSlug } = useTenant();
+  
+  // Get dynamic data and notifications from hooks
+  const { data: dynamicData, isLoading: dynamicDataLoading } = useDynamicNotificationData(branchId);
+  const { notifications: allNotifications, isLoading: notificationsLoading, markAsRead } = useNotifications();
   
   const config = categoryConfig[categoryId as keyof typeof categoryConfig];
-  const notifications = mockNotifications[categoryId as keyof typeof mockNotifications] || [];
+  
+  // Generate dynamic notifications based on category and data
+  const notifications = generateDynamicNotifications(categoryId, dynamicData, allNotifications || []);
   
   if (!config) {
     return (
@@ -209,13 +195,18 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
 
   const handleBack = () => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/notifications`);
+      // Include tenant slug if available for tenant-aware navigation
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/notifications`
+        : `/branch-dashboard/${branchId}/${branchName}/notifications`;
+      navigate(fullPath);
     } else {
       navigate('/notifications');
     }
   };
 
   const handleMarkAsRead = (notificationId: string) => {
+    markAsRead(notificationId);
     toast({
       title: "Marked as read",
       description: "Notification has been marked as read",
@@ -364,7 +355,12 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
           <CardTitle>Recent Notifications</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {notifications.length > 0 ? (
+          {(dynamicDataLoading || notificationsLoading) ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading notifications...</p>
+            </div>
+          ) : notifications.length > 0 ? (
             <div className="divide-y">
               {notifications.map((notification) => (
                 <div 
