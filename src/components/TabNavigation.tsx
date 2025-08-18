@@ -170,11 +170,15 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
       return;
     }
     
-    if (tabValue === "events-logs" && id && branchName) {
-      // Navigate to dedicated Events & Logs page with tenant context
-      const tenantSlug = window.location.pathname.split('/')[1];
-      const targetPath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}/events-logs` : `/branch-dashboard/${id}/${branchName}/events-logs`;
-      navigate(targetPath);
+    // Get tenant context for all navigations
+    const tenantSlug = window.location.pathname.split('/')[1];
+    const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` : `/branch-dashboard/${id}/${branchName}`;
+    
+    // Navigate to dedicated pages for modules that have them
+    const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms'];
+    
+    if (dedicatedModules.includes(tabValue) && id && branchName) {
+      navigate(`${basePath}/${tabValue}`);
     } else {
       // Use the provided onChange for other tabs
       onChange(tabValue);

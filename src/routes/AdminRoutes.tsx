@@ -32,6 +32,7 @@ import Library from "@/pages/Library";
 import ThirdPartyAccess from "@/pages/ThirdPartyAccess";
 import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
+import Accounting from "@/pages/Accounting";
 import ClientEdit from "@/pages/client/ClientEdit";
 import TenantLogin from "@/pages/TenantLogin";
 
@@ -131,17 +132,17 @@ const AdminRoutes = () => [
     <Route path="branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
     <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
     <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
-    <Route path="branch-dashboard/:id/:branchName/bookings" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/bookings" element={<BookingApprovals />} />
     <Route path="branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/reviews" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/communication" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/medication" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/accounting" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
     <Route path="branch-dashboard/:id/:branchName/finance" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/care-plan" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/agreements" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/forms" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/care-plan" element={<CarePlanView />} />
+    <Route path="branch-dashboard/:id/:branchName/agreements" element={<Agreement />} />
+    <Route path="branch-dashboard/:id/:branchName/forms" element={<FormBuilder />} />
     <Route path="branch-dashboard/:id/:branchName/notifications" element={<Notifications />} />
     <Route path="branch-dashboard/:id/:branchName/notifications/:categoryId" element={<Notifications />} />
     
