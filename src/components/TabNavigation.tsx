@@ -92,9 +92,24 @@ interface TabNavigationProps {
   onChange: (value: string) => void;
   hideActionsOnMobile?: boolean;
   hideQuickAdd?: boolean;
+  onNewClient?: () => void;
+  onNewBooking?: () => void;
+  onNewStaff?: () => void;
+  onNewAgreement?: () => void;
+  onUploadDocument?: () => void;
 }
 
-export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false, hideQuickAdd = false }: TabNavigationProps) => {
+export const TabNavigation = ({ 
+  activeTab, 
+  onChange, 
+  hideActionsOnMobile = false, 
+  hideQuickAdd = false,
+  onNewClient,
+  onNewBooking,
+  onNewStaff,
+  onNewAgreement,
+  onUploadDocument
+}: TabNavigationProps) => {
   const navigate = useNavigate();
   const { id, branchName } = useParams();
   const { data: userRole } = useUserRole();
@@ -145,10 +160,63 @@ export const TabNavigation = ({ activeTab, onChange, hideActionsOnMobile = false
   );
   
   const handleQuickAddAction = (action: string) => {
-    toast.success(`${action} action selected`, {
-      description: `The ${action.toLowerCase()} feature will be available soon`,
-      position: "top-center",
-    });
+    switch (action) {
+      case "New Client":
+        if (onNewClient) {
+          onNewClient();
+        } else {
+          toast.info("Feature coming soon", {
+            description: "The new client feature will be available soon",
+            position: "top-center",
+          });
+        }
+        break;
+      case "New Booking":
+        if (onNewBooking) {
+          onNewBooking();
+        } else {
+          toast.info("Feature coming soon", {
+            description: "The new booking feature will be available soon",
+            position: "top-center",
+          });
+        }
+        break;
+      case "New Staff":
+        if (onNewStaff) {
+          onNewStaff();
+        } else {
+          toast.info("Feature coming soon", {
+            description: "The new staff feature will be available soon",
+            position: "top-center",
+          });
+        }
+        break;
+      case "New Agreement":
+        if (onNewAgreement) {
+          onNewAgreement();
+        } else {
+          toast.info("Feature coming soon", {
+            description: "The new agreement feature will be available soon",
+            position: "top-center",
+          });
+        }
+        break;
+      case "Upload Document":
+        if (onUploadDocument) {
+          onUploadDocument();
+        } else {
+          toast.info("Feature coming soon", {
+            description: "The upload document feature will be available soon",
+            position: "top-center",
+          });
+        }
+        break;
+      default:
+        toast.info("Feature coming soon", {
+          description: `The ${action.toLowerCase()} feature will be available soon`,
+          position: "top-center",
+        });
+    }
     console.log(`Quick Add action selected: ${action}`);
   };
 

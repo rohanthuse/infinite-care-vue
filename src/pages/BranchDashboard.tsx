@@ -367,6 +367,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           <TabNavigation 
             activeTab={activeTab} 
             onChange={enhancedHandleTabChange}
+            onNewClient={handleNewClient}
+            onNewBooking={handleNewBooking}
           />
         </div>
         
