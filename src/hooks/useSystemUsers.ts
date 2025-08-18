@@ -299,3 +299,90 @@ export const useUpdateSystemUser = () => {
     },
   });
 };
+
+// Delete system user data interface
+interface DeleteSystemUserData {
+  userId: string;
+}
+
+interface DeleteSystemUserResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  deleted_user?: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
+export const useDeleteSystemUser = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation<DeleteSystemUserResponse, Error, DeleteSystemUserData>({
+    mutationFn: async ({ userId }) => {
+      console.log('[useDeleteSystemUser] Attempting to delete user:', userId);
+      
+      const token = getSystemSessionToken();
+      if (!token) {
+        throw new Error('No system session found');
+      }
+
+      const { data, error } = await supabase.rpc('delete_system_user_with_session', {
+        p_user_id: userId,
+        p_session_token: token,
+      });
+
+      if (error) {
+        console.error('[useDeleteSystemUser] Supabase error:', error);
+        throw new Error(error.message || 'Failed to delete system user');
+      }
+
+      const result = data as unknown as DeleteSystemUserResponse;
+      if (!result?.success) {
+        console.error('[useDeleteSystemUser] Operation failed:', result?.error);
+        throw new Error(result?.error || 'Failed to delete system user');
+      }
+
+      console.log('[useDeleteSystemUser] User deleted successfully:', result);
+      return result;
+    },
+    onSuccess: (data) => {
+      // Invalidate and refetch system users data
+      queryClient.invalidateQueries({ queryKey: ['system-users'] });
+      queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
+      
+      // Show success toast
+      toast({
+        title: "Success",
+        description: `System user ${data.deleted_user?.name || 'user'} has been deleted successfully.`,
+        variant: "default",
+      });
+    },
+    onError: (error: Error) => {
+      console.error('[useDeleteSystemUser] Delete failed:', error.message);
+      
+      // Show specific error toast based on error message
+      let description = 'An unexpected error occurred while deleting the user.';
+      
+      if (error.message.includes('Cannot delete your own account')) {
+        description = 'You cannot delete your own account.';
+      } else if (error.message.includes('Cannot delete the last super admin')) {
+        description = 'Cannot delete the last super admin user in the system.';
+      } else if (error.message.includes('Insufficient permissions')) {
+        description = 'You do not have permission to delete system users.';
+      } else if (error.message.includes('Invalid or expired session')) {
+        description = 'Your session has expired. Please log in again.';
+      } else if (error.message.includes('User not found')) {
+        description = 'The user you are trying to delete does not exist.';
+      }
+      
+      toast({
+        title: "Error",
+        description,
+        variant: "destructive",
+      });
+    },
+  });
+};

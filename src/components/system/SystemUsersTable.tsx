@@ -18,7 +18,8 @@ import {
   Shield, 
   User,
   Key,
-  Building2
+  Building2,
+  Trash2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,12 +33,14 @@ import { useSystemUsers, useToggleUserStatus } from '@/hooks/useSystemUsers';
 import { format } from 'date-fns';
 import { EditSystemUserDialog } from '@/components/system/EditSystemUserDialog';
 import { SetSystemUserPasswordDialog } from '@/components/system/SetSystemUserPasswordDialog';
+import { DeleteSystemUserDialog } from '@/components/system/DeleteSystemUserDialog';
 
 export const SystemUsersTable: React.FC = () => {
   const { data: users, isLoading } = useSystemUsers();
   const toggleUserStatus = useToggleUserStatus();
   const [editingUser, setEditingUser] = React.useState<any | null>(null);
   const [passwordResetUser, setPasswordResetUser] = React.useState<any | null>(null);
+  const [deleteDialogUser, setDeleteDialogUser] = React.useState<any | null>(null);
 
   const handleToggleStatus = (userId: string, currentStatus: boolean) => {
     toggleUserStatus.mutate({ userId, isActive: !currentStatus });
@@ -195,6 +198,14 @@ export const SystemUsersTable: React.FC = () => {
                         </>
                       )}
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => setDeleteDialogUser(user)}
+                      className="flex items-center space-x-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>Delete User</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -214,6 +225,13 @@ export const SystemUsersTable: React.FC = () => {
             open={!!passwordResetUser}
             onOpenChange={(o) => { if (!o) setPasswordResetUser(null); }}
             user={passwordResetUser}
+          />
+        )}
+        {deleteDialogUser && (
+          <DeleteSystemUserDialog
+            user={deleteDialogUser}
+            open={!!deleteDialogUser}
+            onOpenChange={(open) => !open && setDeleteDialogUser(null)}
           />
         )}
       </div>

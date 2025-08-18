@@ -6538,6 +6538,10 @@ export type Database = {
         Args: { admin_user_id: string }
         Returns: Json
       }
+      delete_system_user_with_session: {
+        Args: { p_session_token: string; p_user_id: string }
+        Returns: Json
+      }
       expire_third_party_access: {
         Args: Record<PropertyKey, never>
         Returns: undefined
