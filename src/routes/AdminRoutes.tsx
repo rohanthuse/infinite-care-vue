@@ -130,8 +130,6 @@ const AdminRoutes = () => [
     <Route path="branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/key-parameters" element={<KeyParameters />} />
     <Route path="branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
-    <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix />} />
-    <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix />} />
     <Route path="branch-dashboard/:id/:branchName/bookings" element={<BookingApprovals />} />
     <Route path="branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
