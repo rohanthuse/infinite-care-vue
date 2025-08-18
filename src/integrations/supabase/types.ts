@@ -2405,6 +2405,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2412,6 +2413,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2419,11 +2421,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "communication_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_settings: {
         Row: {
@@ -2657,6 +2668,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          organization_id: string | null
           status: string
           tax: number
           title: string
@@ -2667,6 +2679,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           tax?: number
           title: string
@@ -2677,13 +2690,22 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           tax?: number
           title?: string
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expense_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -2935,6 +2957,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -2942,6 +2965,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2949,11 +2973,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "file_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       form_assignees: {
         Row: {
@@ -4342,6 +4375,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -4349,6 +4383,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -4356,11 +4391,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "report_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -6900,6 +6944,10 @@ export type Database = {
       safe_setup_client_messaging_auth: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      seed_default_parameters_for_organization: {
+        Args: { org_id: string }
+        Returns: undefined
       }
       sync_client_message_participants: {
         Args: Record<PropertyKey, never>

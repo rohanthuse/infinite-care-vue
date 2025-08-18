@@ -1,17 +1,27 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/lib/tenant-context";
 
 export const useReportTypeOptions = () => {
+  const { currentOrganization } = useTenant();
+  
   return useQuery({
-    queryKey: ['report-type-options'],
+    queryKey: ['report-type-options', currentOrganization?.id],
     queryFn: async () => {
       // First try to get from report_types table
-      const { data: reportTypes, error } = await supabase
+      let query = supabase
         .from('report_types')
-        .select('title')
+        .select('title, id')
         .eq('status', 'Active')
         .order('title');
+      
+      // Filter by organization if in tenant context
+      if (currentOrganization?.id) {
+        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      }
+        
+      const { data: reportTypes, error } = await query;
       
       if (error) {
         console.error('Error fetching report types:', error);
@@ -34,7 +44,7 @@ export const useReportTypeOptions = () => {
       
       // Convert database results to option format
       return reportTypes.map(type => ({
-        value: type.title.toLowerCase().replace(/\s+/g, '_'),
+        value: type.id || type.title.toLowerCase().replace(/\s+/g, '_'),
         label: type.title
       }));
     },
@@ -42,15 +52,24 @@ export const useReportTypeOptions = () => {
 };
 
 export const useCommunicationTypeOptions = () => {
+  const { currentOrganization } = useTenant();
+  
   return useQuery({
-    queryKey: ['communication-type-options'],
+    queryKey: ['communication-type-options', currentOrganization?.id],
     queryFn: async () => {
       // First try to get from communication_types table
-      const { data: communicationTypes, error } = await supabase
+      let query = supabase
         .from('communication_types')
-        .select('title')
+        .select('title, id')
         .eq('status', 'Active')
         .order('title');
+      
+      // Filter by organization if in tenant context
+      if (currentOrganization?.id) {
+        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      }
+        
+      const { data: communicationTypes, error } = await query;
       
       if (error) {
         console.error('Error fetching communication types:', error);
@@ -68,7 +87,7 @@ export const useCommunicationTypeOptions = () => {
       
       // Convert database results to option format
       return communicationTypes.map(type => ({
-        value: type.title.toLowerCase().replace(/\s+/g, '_'),
+        value: type.id || type.title.toLowerCase().replace(/\s+/g, '_'),
         label: type.title
       }));
     },
@@ -76,15 +95,24 @@ export const useCommunicationTypeOptions = () => {
 };
 
 export const useFileCategoryOptions = () => {
+  const { currentOrganization } = useTenant();
+  
   return useQuery({
-    queryKey: ['file-category-options'],
+    queryKey: ['file-category-options', currentOrganization?.id],
     queryFn: async () => {
       // First try to get from file_categories table
-      const { data: fileCategories, error } = await supabase
+      let query = supabase
         .from('file_categories')
-        .select('title')
+        .select('title, id')
         .eq('status', 'Active')
         .order('title');
+      
+      // Filter by organization if in tenant context
+      if (currentOrganization?.id) {
+        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      }
+        
+      const { data: fileCategories, error } = await query;
       
       if (error) {
         console.error('Error fetching file categories:', error);
@@ -103,7 +131,7 @@ export const useFileCategoryOptions = () => {
       
       // Convert database results to option format
       return fileCategories.map(category => ({
-        value: category.title.toLowerCase().replace(/\s+/g, '_'),
+        value: category.id || category.title.toLowerCase().replace(/\s+/g, '_'),
         label: category.title
       }));
     },
@@ -112,15 +140,24 @@ export const useFileCategoryOptions = () => {
 
 // Hook for expense type options from database
 export const useExpenseTypeOptions = () => {
+  const { currentOrganization } = useTenant();
+  
   return useQuery({
-    queryKey: ['expense-type-options'],
+    queryKey: ['expense-type-options', currentOrganization?.id],
     queryFn: async () => {
       // First try to get from expense_types table
-      const { data: expenseTypes, error } = await supabase
+      let query = supabase
         .from('expense_types')
-        .select('title')
+        .select('title, id')
         .eq('status', 'Active')
         .order('title');
+      
+      // Filter by organization if in tenant context
+      if (currentOrganization?.id) {
+        query = query.or(`organization_id.eq.${currentOrganization.id},organization_id.is.null`);
+      }
+        
+      const { data: expenseTypes, error } = await query;
       
       if (error) {
         console.error('Error fetching expense types:', error);
@@ -141,7 +178,7 @@ export const useExpenseTypeOptions = () => {
       
       // Convert database results to option format
       return expenseTypes.map(type => ({
-        value: type.title.toLowerCase().replace(/\s+/g, '_'),
+        value: type.id || type.title.toLowerCase().replace(/\s+/g, '_'),
         label: type.title
       }));
     },
