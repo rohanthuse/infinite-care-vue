@@ -14,9 +14,12 @@ export const useBookingNavigation = () => {
     const { branchId, branchName, date, clientId } = options || {};
     
     if (branchId && branchName) {
-      // Branch dashboard bookings navigation
-      const basePath = `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/bookings`;
+      // Navigate to the bookings tab in the branch dashboard
+      const basePath = `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
       const params = new URLSearchParams();
+      
+      // Add tab parameter to show bookings tab
+      params.set('tab', 'bookings');
       
       if (date) {
         params.set('date', format(date, 'yyyy-MM-dd'));
@@ -26,7 +29,7 @@ export const useBookingNavigation = () => {
         params.set('client', clientId);
       }
       
-      const fullPath = params.toString() ? `${basePath}?${params.toString()}` : basePath;
+      const fullPath = `${basePath}?${params.toString()}`;
       navigate(fullPath);
     } else {
       // Generic navigation - might be useful for other contexts
