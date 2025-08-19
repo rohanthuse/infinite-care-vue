@@ -77,6 +77,7 @@ export function useBookingData(branchId?: string) {
           client = getOrCreatePlaceholderClient(bk.client_id);
         if (!carer && bk.staff_id)
           carer = getOrCreatePlaceholderCarer(bk.staff_id);
+        
         // Parse datetime properly - handle both space and T-separated formats
         const parseDateTime = (dateTimeStr: string) => {
           if (!dateTimeStr) return null;
@@ -105,7 +106,10 @@ export function useBookingData(branchId?: string) {
           endTime: endDate ? endDate.toTimeString().slice(0, 5) : "07:30",
           date: startDate ? startDate.toISOString().slice(0, 10) : "",
           status: bk.status || "assigned",
-          notes: "",
+          notes: bk.notes || "",
+          // Include service information
+          service_id: bk.service_id,
+          serviceName: bk.services?.title || null,
         };
       });
     } else if (!branchId) {

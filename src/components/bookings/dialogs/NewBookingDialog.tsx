@@ -1,9 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown } from "lucide-react";
 
-import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
-
+import React, { useState, useEffect } from "react";
+import { Calendar as CalendarIcon, Clock, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -35,683 +33,461 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { BankHolidayNotification } from "@/components/scheduling/BankHolidayNotification";
+import { format } from "date-fns";
 
-const scheduleSchema = z.object({
-  startTime: z.string().min(5, { message: "Start time required" }),
-  endTime: z.string().min(5, { message: "End time required" }),
-  services: z.array(z.string()).optional(),
-  mon: z.boolean().optional(),
-  tue: z.boolean().optional(),
-  wed: z.boolean().optional(),
-  thu: z.boolean().optional(),
-  fri: z.boolean().optional(),
-  sat: z.boolean().optional(),
-  sun: z.boolean().optional(),
+const newBookingSchema = z.object({
+  clientId: z.string().min(1, "Client is required"),
+  carerId: z.string().min(1, "Carer is required"),
+  services: z.array(z.string()).min(1, "At least one service is required"),
+  fromDate: z.date(),
+  untilDate: z.date(),
+  schedules: z.array(z.object({
+    startTime: z.string().min(1, "Start time is required"),
+    endTime: z.string().min(1, "End time is required"),
+    days: z.object({
+      mon: z.boolean().optional(),
+      tue: z.boolean().optional(),
+      wed: z.boolean().optional(),
+      thu: z.boolean().optional(),
+      fri: z.boolean().optional(),
+      sat: z.boolean().optional(),
+      sun: z.boolean().optional(),
+    }),
+    services: z.array(z.string()),
+  })).min(1, "At least one schedule is required"),
+  notes: z.string().optional(), // Add notes field
 });
 
-const formSchema = z.object({
-  clientId: z.string().min(1, { message: "Client ID required" }),
-  carerIds: z.array(z.string()).min(1, { message: "At least one carer required" }),
-  fromDate: z.date({
-    required_error: "A date is required.",
-  }),
-  untilDate: z.date({
-    required_error: "A date is required.",
-  }),
-  schedules: z.array(scheduleSchema).min(1, { message: "At least one schedule is required" }),
-});
+type NewBookingFormData = z.infer<typeof newBookingSchema>;
 
 interface NewBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateBooking: (data: any, carers: any[]) => void;
-  carers: Array<{ id: string; name?: string; first_name?: string; last_name?: string; initials?: string }>;
+  clients: Array<{ id: string; name: string }>;
+  carers: Array<{ id: string; name: string }>;
   services: Array<{ id: string; title: string }>;
-  branchId?: string;
-  prefilledData?: {
-    date?: Date;
-    startTime?: string;
+  onCreateBooking: (data: any, carers: any[]) => void;
+  initialData?: {
+    date: Date;
+    startTime: string;
     clientId?: string;
     carerId?: string;
-  };
-  preSelectedClientId?: string;
+  } | null;
+  isCreating?: boolean;
 }
 
 export function NewBookingDialog({
   open,
   onOpenChange,
-  onCreateBooking,
+  clients,
   carers,
   services,
-  branchId,
-  prefilledData,
-  preSelectedClientId,
+  onCreateBooking,
+  initialData,
+  isCreating = false,
 }: NewBookingDialogProps) {
-  const [scheduleCount, setScheduleCount] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
-  // Fetch clients and staff data
-  const { clients, isLoading: isLoadingClients } = useBranchStaffAndClients(branchId || "");
-
-  // Filter carers based on search query
-  const filteredCarers = useMemo(() => {
-    if (!searchQuery.trim()) return carers;
-    const query = searchQuery.toLowerCase();
-    return carers.filter(carer => {
-      const carerName = (carer.name || `${carer.first_name} ${carer.last_name}`).toLowerCase();
-      return carerName.includes(query);
-    });
-  }, [carers, searchQuery]);
-
-  // Filter clients based on search query
-  const filteredClients = useMemo(() => {
-    if (!clientSearchQuery.trim()) return clients;
-    const query = clientSearchQuery.toLowerCase();
-    return clients.filter(client => {
-      const clientName = `${client.first_name} ${client.last_name}`.toLowerCase();
-      const clientEmail = (client.email || "").toLowerCase();
-      return clientName.includes(query) || clientEmail.includes(query);
-    });
-  }, [clients, clientSearchQuery]);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<NewBookingFormData>({
+    resolver: zodResolver(newBookingSchema),
     defaultValues: {
       clientId: "",
-      carerIds: prefilledData?.carerId ? [prefilledData.carerId] : [],
-      fromDate: prefilledData?.date || new Date(),
-      untilDate: prefilledData?.date || new Date(),
-      schedules: [
-        {
-          startTime: prefilledData?.startTime || "09:00",
-          endTime: "17:00",
-          services: [],
-          mon: true,
-          tue: true,
-          wed: true,
-          thu: true,
-          fri: true,
-          sat: false,
-          sun: false,
-        },
-      ],
+      carerId: "",
+      services: [],
+      fromDate: new Date(),
+      untilDate: new Date(),
+      schedules: [{
+        startTime: "09:00",
+        endTime: "10:00",
+        days: { mon: true, tue: true, wed: true, thu: true, fri: true },
+        services: [],
+      }],
+      notes: "", // Initialize notes
     },
   });
 
+  // Update form when initialData changes
   useEffect(() => {
-    if (open && preSelectedClientId) {
-      form.setValue("clientId", preSelectedClientId);
+    if (initialData && open) {
+      form.setValue("fromDate", initialData.date);
+      form.setValue("untilDate", initialData.date);
+      form.setValue("schedules", [{
+        startTime: initialData.startTime,
+        endTime: "10:00",
+        days: { mon: true, tue: true, wed: true, thu: true, fri: true },
+        services: [],
+      }]);
+      
+      if (initialData.clientId) {
+        form.setValue("clientId", initialData.clientId);
+      }
+      if (initialData.carerId) {
+        form.setValue("carerId", initialData.carerId);
+      }
     }
-  }, [open, preSelectedClientId, form]);
+  }, [initialData, open, form]);
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    // Create bookings for each selected carer
-    const bookingsToCreate = data.carerIds.map(carerId => ({
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      form.reset();
+      setSelectedServices([]);
+    }
+  }, [open, form]);
+
+  const onSubmit = (data: NewBookingFormData) => {
+    console.log("[NewBookingDialog] Form submitted with data:", data);
+    
+    // Pass the complete data including notes
+    const bookingData = {
       ...data,
-      carerId, // Convert back to single carerId for each booking
-    }));
+      schedules: data.schedules.map(schedule => ({
+        ...schedule,
+        services: selectedServices,
+      })),
+    };
     
-    // Create bookings sequentially for each carer
-    bookingsToCreate.forEach(bookingData => {
-      onCreateBooking(bookingData, carers);
-    });
+    onCreateBooking(bookingData, carers);
+  };
+
+  const handleServiceToggle = (serviceId: string) => {
+    setSelectedServices(prev => 
+      prev.includes(serviceId) 
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    );
     
-    form.reset();
-    onOpenChange(false);
-    toast("Bookings submitted", {
-      description: `Created bookings for ${data.carerIds.length} carer(s)`,
-    });
-  }
+    // Update form services field
+    const currentServices = selectedServices.includes(serviceId) 
+      ? selectedServices.filter(id => id !== serviceId)
+      : [...selectedServices, serviceId];
+    
+    form.setValue("services", currentServices);
+  };
 
   const addSchedule = () => {
-    setScheduleCount(scheduleCount + 1);
+    const currentSchedules = form.getValues("schedules");
     form.setValue("schedules", [
-      ...form.getValues().schedules,
+      ...currentSchedules,
       {
         startTime: "09:00",
-        endTime: "17:00",
-        services: [],
-        mon: true,
-        tue: true,
-        wed: true,
-        thu: true,
-        fri: true,
-        sat: false,
-        sun: false,
-      },
+        endTime: "10:00",
+        days: { mon: true, tue: true, wed: true, thu: true, fri: true },
+        services: selectedServices,
+      }
     ]);
   };
 
   const removeSchedule = (index: number) => {
-    const schedules = [...form.getValues().schedules];
-    schedules.splice(index, 1);
-    form.setValue("schedules", schedules);
-    setScheduleCount(scheduleCount - 1);
+    const currentSchedules = form.getValues("schedules");
+    if (currentSchedules.length > 1) {
+      form.setValue("schedules", currentSchedules.filter((_, i) => i !== index));
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Clock className="h-5 w-5" />
-            Schedule Booking
+            Create New Booking
           </DialogTitle>
           <DialogDescription>
-            Schedule a new booking for a client with a carer.
+            Fill in the details to create a new booking appointment.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto pr-2">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="clientId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Client</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Client and Carer Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="clientId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a client" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="carerId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Carer</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a carer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {carers.map((carer) => (
+                          <SelectItem key={carer.id} value={carer.id}>
+                            {carer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Services Selection */}
+            <div className="space-y-3">
+              <FormLabel>Services</FormLabel>
+              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-3">
+                {services.map((service) => (
+                  <div key={service.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={service.id}
+                      checked={selectedServices.includes(service.id)}
+                      onCheckedChange={() => handleServiceToggle(service.id)}
+                    />
+                    <label
+                      htmlFor={service.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {service.title}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {selectedServices.length === 0 && (
+                <p className="text-sm text-red-500">At least one service is required</p>
+              )}
+            </div>
+
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="fromDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>From Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
                           <Button
                             variant="outline"
-                            role="combobox"
                             className={cn(
-                              "w-full justify-between",
+                              "w-full pl-3 text-left font-normal",
                               !field.value && "text-muted-foreground"
                             )}
                           >
-                            {field.value 
-                              ? (() => {
-                                  const selectedClient = clients.find(c => c.id === field.value);
-                                  return selectedClient 
-                                    ? `${selectedClient.first_name} ${selectedClient.last_name}`
-                                    : "Unknown Client";
-                                })()
-                              : "Select client..."
-                            }
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[320px] p-0" align="start" sideOffset={4}>
-                          <div className="p-3 border-b">
-                            <Input
-                              placeholder="Search clients..."
-                              value={clientSearchQuery}
-                              onChange={(e) => setClientSearchQuery(e.target.value)}
-                              className="h-8"
-                            />
-                          </div>
-                          <div className="max-h-60 overflow-y-auto">
-                            {isLoadingClients ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                Loading clients...
-                              </div>
-                            ) : filteredClients.length === 0 ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                No clients found
-                              </div>
+                            {field.value ? (
+                              format(field.value, "PPP")
                             ) : (
-                              <div className="p-1">
-                                {filteredClients.map((client) => (
-                                  <div
-                                    key={client.id}
-                                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                    onClick={() => {
-                                      field.onChange(client.id);
-                                      setClientSearchQuery("");
-                                    }}
-                                  >
-                                    <div className="flex-1">
-                                      <div className="font-medium">
-                                        {client.first_name} {client.last_name}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        ID: {client.id.slice(0, 8)}... • {client.email}
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
+                              <span>Pick a date</span>
                             )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="carerIds"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Carers</FormLabel>
-                      <div className="space-y-3">
-                        {/* Dropdown trigger */}
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                "w-full justify-between",
-                                !field.value?.length && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value?.length 
-                                ? `${field.value.length} carer${field.value.length !== 1 ? 's' : ''} selected`
-                                : "Select carers..."
-                              }
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[320px] p-0" align="start" sideOffset={4}>
-                            <div className="p-3 border-b">
-                              <Input
-                                placeholder="Search carers..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-8"
-                              />
-                            </div>
-                            <div className="p-2">
-                              <div className="flex items-center justify-between mb-2">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const allCarerIds = filteredCarers.map(c => c.id);
-                                    field.onChange(allCarerIds);
-                                  }}
-                                  className="h-6 px-2 text-xs"
-                                >
-                                  Select All
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => field.onChange([])}
-                                  className="h-6 px-2 text-xs"
-                                >
-                                  Clear All
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="max-h-60 overflow-y-auto">
-                              {filteredCarers.length === 0 ? (
-                                <div className="p-4 text-center text-sm text-muted-foreground">
-                                  No carers found
-                                </div>
-                              ) : (
-                                <div className="p-1">
-                                  {filteredCarers.map((carer) => {
-                                    const isSelected = field.value?.includes(carer.id);
-                                    const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
-                                    
-                                    return (
-                                      <div
-                                        key={carer.id}
-                                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                        onClick={() => {
-                                          const currentValue = field.value || [];
-                                          if (isSelected) {
-                                            field.onChange(currentValue.filter((id: string) => id !== carer.id));
-                                          } else {
-                                            field.onChange([...currentValue, carer.id]);
-                                          }
-                                        }}
-                                      >
-                                        <Checkbox
-                                          checked={isSelected}
-                                          className="pointer-events-none"
-                                        />
-                                        <span className="flex-1">{carerName}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                        
-                        {/* Selected carers display */}
-                        {field.value && field.value.length > 0 && (
-                          <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
-                            {field.value.map((carerId) => {
-                              const carer = carers.find(c => c.id === carerId);
-                              const carerName = carer?.name || `${carer?.first_name} ${carer?.last_name}` || 'Unknown';
-                              
-                              return (
-                                <Badge
-                                  key={carerId}
-                                  variant="secondary"
-                                  className="text-xs px-2 py-1"
-                                >
-                                  {carerName}
-                                  <X 
-                                    className="h-3 w-3 ml-1 cursor-pointer hover:text-destructive"
-                                    onClick={() => {
-                                      const currentValue = field.value || [];
-                                      field.onChange(currentValue.filter((id: string) => id !== carerId));
-                                    }}
-                                  />
-                                </Badge>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="fromDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>From Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="untilDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Until Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < form.getValues("fromDate")}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="untilDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Until Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Bank Holiday Notifications */}
-              {form.watch("fromDate") && (
-                <BankHolidayNotification 
-                  date={form.watch("fromDate")} 
-                  variant="info"
-                  className="mb-4"
-                />
-              )}
-              {form.watch("untilDate") && form.watch("untilDate") !== form.watch("fromDate") && (
-                <BankHolidayNotification 
-                  date={form.watch("untilDate")} 
-                  variant="info"
-                  className="mb-4"
-                />
-              )}
-
-              <div>
+            {/* Schedules */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <FormLabel>Schedules</FormLabel>
-                {form.watch("schedules")?.map((schedule, index) => (
-                  <div key={index} className="border rounded-md p-4 mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-sm font-medium">Schedule {index + 1}</h4>
-                      {form.watch("schedules")?.length > 1 && (
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeSchedule(index)}>
-                          <X className="h-4 w-4" />
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.startTime` as const}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Start Time</FormLabel>
-                            <FormControl>
-                              <Input type="time" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`schedules.${index}.endTime` as const}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>End Time</FormLabel>
-                            <FormControl>
-                              <Input type="time" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                <Button type="button" variant="outline" size="sm" onClick={addSchedule}>
+                  Add Schedule
+                </Button>
+              </div>
+              
+              {form.watch("schedules").map((schedule, index) => (
+                <div key={index} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Schedule {index + 1}</h4>
+                    {form.watch("schedules").length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeSchedule(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name={`schedules.${index}.services` as const}
+                      name={`schedules.${index}.startTime`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Services</FormLabel>
-                          <Select onValueChange={(value) => field.onChange([value])} defaultValue={field.value?.[0]}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a service" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {services.map((service) => (
-                                <SelectItem key={service.id} value={service.id}>
-                                  {service.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Start Time</FormLabel>
+                          <FormControl>
+                            <Input type="time" {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="mt-2">
-                      <FormLabel>Days</FormLabel>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+
+                    <FormField
+                      control={form.control}
+                      name={`schedules.${index}.endTime`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Time</FormLabel>
+                          <FormControl>
+                            <Input type="time" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Days Selection */}
+                  <div className="space-y-2">
+                    <FormLabel>Days</FormLabel>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { key: 'mon', label: 'Mon' },
+                        { key: 'tue', label: 'Tue' },
+                        { key: 'wed', label: 'Wed' },
+                        { key: 'thu', label: 'Thu' },
+                        { key: 'fri', label: 'Fri' },
+                        { key: 'sat', label: 'Sat' },
+                        { key: 'sun', label: 'Sun' },
+                      ].map((day) => (
                         <FormField
+                          key={day.key}
                           control={form.control}
-                          name={`schedules.${index}.mon` as const}
+                          name={`schedules.${index}.days.${day.key as keyof typeof schedule.days}`}
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                               <FormControl>
                                 <Checkbox
-                                  checked={field.value}
+                                  checked={field.value || false}
                                   onCheckedChange={field.onChange}
                                 />
                               </FormControl>
-                              <FormLabel className="font-normal">Mon</FormLabel>
+                              <FormLabel className="text-sm font-normal">
+                                {day.label}
+                              </FormLabel>
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name={`schedules.${index}.tue` as const}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">Tue</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`schedules.${index}.wed` as const}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">Wed</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`schedules.${index}.thu` as const}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">Thu</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`schedules.${index}.fri` as const}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">Fri</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`schedules.${index}.sat` as const}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">Sat</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`schedules.${index}.sun` as const}
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-1 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
-                              <FormLabel className="font-normal">Sun</FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-                <Button type="button" onClick={addSchedule} variant="outline" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Schedule
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </div>
-        <DialogFooter className="flex-shrink-0 mt-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
-            Create Booking
-          </Button>
-        </DialogFooter>
+                </div>
+              ))}
+            </div>
+
+            {/* Notes Field */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add any additional notes or instructions for this booking..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isCreating}>
+                {isCreating ? "Creating..." : "Create Booking"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
