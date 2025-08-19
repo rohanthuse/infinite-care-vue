@@ -99,24 +99,32 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
 
     const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
 
-    // Use secure function to create document record - bypasses RLS issues
-    const { data: docId, error: docError } = await supabase.rpc('upload_staff_document', {
+    // Use the new bypass RLS function to create document record
+    const { data: result, error: docError } = await supabase.rpc('upload_staff_document_bypass_rls', {
       p_staff_id: carerId,
       p_document_type: category,
       p_file_path: filePath,
-      p_file_size: formattedSize,
-      p_file_name: file.name
+      p_file_size: formattedSize
     });
-
+    
     if (docError) {
       console.error('[CarerDocuments] Database function error:', docError);
       // Clean up uploaded file if database insert fails
       await supabase.storage.from('staff-documents').remove([filePath]);
       throw new Error(`Failed to save document: ${docError.message}`);
     }
+    
+    // Check if the function returned an error result
+    const resultObj = result as { success: boolean; error?: string; document_id?: string };
+    if (resultObj && !resultObj.success) {
+      // Clean up uploaded file if document creation fails
+      await supabase.storage.from('staff-documents').remove([filePath]);
+      throw new Error(resultObj.error || 'Unknown error from upload function');
+    }
 
-    console.log('[CarerDocuments] Document record created with ID:', docId);
-    return { id: docId, file_path: filePath, document_type: category };
+    const documentId = resultObj?.document_id || 'unknown';
+    console.log('[CarerDocuments] Document record created with ID:', documentId);
+    return { id: documentId, file_path: filePath, document_type: category };
   } catch (error) {
     console.error('[CarerDocuments] Upload failed:', error);
     throw error;
