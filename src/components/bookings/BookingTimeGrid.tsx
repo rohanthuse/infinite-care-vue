@@ -65,7 +65,7 @@ interface BookingTimeGridProps {
   bookings: Booking[];
   clients: Client[];
   carers: Carer[];
-  viewType: "daily" | "weekly";
+  viewType: "daily" | "weekly" | "monthly";
   viewMode: "client" | "group";
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
   onUpdateBooking?: (booking: Booking, carers: Carer[]) => void;
@@ -591,6 +591,29 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       </DragDropContext>
     );
   };
+
+  // For monthly view, show a message directing users to the appropriate view
+  if (viewType === "monthly") {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="p-8 text-center">
+          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly View</h3>
+          <p className="text-gray-500 mb-4">
+            The time grid view is not available for monthly view. 
+            Please use the Calendar tab for monthly booking overview.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+          >
+            Switch to Calendar View
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-white rounded-lg border border-gray-200 shadow-sm`}>

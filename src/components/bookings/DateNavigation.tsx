@@ -2,13 +2,13 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
-import { format, addDays, subDays, startOfWeek, endOfWeek, isValid } from "date-fns";
+import { format, addDays, subDays, startOfWeek, endOfWeek, isValid, addMonths, subMonths } from "date-fns";
 
 interface DateNavigationProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
-  viewType: "daily" | "weekly";
-  onViewTypeChange: (viewType: "daily" | "weekly") => void;
+  viewType: "daily" | "weekly" | "monthly";
+  onViewTypeChange: (viewType: "daily" | "weekly" | "monthly") => void;
 }
 
 export const DateNavigation: React.FC<DateNavigationProps> = ({
@@ -23,18 +23,22 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
   const handlePreviousDate = () => {
     if (viewType === "daily") {
       onDateChange(subDays(validDate, 1));
-    } else {
-      // For weekly view, go back 7 days
+    } else if (viewType === "weekly") {
       onDateChange(subDays(validDate, 7));
+    } else {
+      // For monthly view, go back 1 month
+      onDateChange(subMonths(validDate, 1));
     }
   };
 
   const handleNextDate = () => {
     if (viewType === "daily") {
       onDateChange(addDays(validDate, 1));
-    } else {
-      // For weekly view, go forward 7 days
+    } else if (viewType === "weekly") {
       onDateChange(addDays(validDate, 7));
+    } else {
+      // For monthly view, go forward 1 month
+      onDateChange(addMonths(validDate, 1));
     }
   };
 
@@ -46,10 +50,13 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     try {
       if (viewType === "daily") {
         return format(validDate, "dd MMM yyyy");
-      } else {
+      } else if (viewType === "weekly") {
         const weekStart = startOfWeek(validDate, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(validDate, { weekStartsOn: 1 });
         return `${format(weekStart, "dd MMM")} - ${format(weekEnd, "dd MMM yyyy")}`;
+      } else {
+        // Monthly view
+        return format(validDate, "MMMM yyyy");
       }
     } catch (error) {
       console.error("Date formatting error:", error);
@@ -111,6 +118,14 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
           className={`h-8 rounded-none text-xs px-3 ${viewType === "weekly" ? "bg-blue-600" : "bg-white text-gray-700"}`}
         >
           Weekly
+        </Button>
+        <Button 
+          variant={viewType === "monthly" ? "default" : "ghost"} 
+          size="sm" 
+          onClick={() => onViewTypeChange("monthly")}
+          className={`h-8 rounded-none text-xs px-3 ${viewType === "monthly" ? "bg-blue-600" : "bg-white text-gray-700"}`}
+        >
+          Monthly
         </Button>
       </div>
     </div>

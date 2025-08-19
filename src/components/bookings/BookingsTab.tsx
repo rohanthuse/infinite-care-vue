@@ -48,7 +48,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   }, [dateParam]);
   
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
-  const [viewType, setViewType] = useState<"daily" | "weekly">("daily");
+  const [viewType, setViewType] = useState<"daily" | "weekly" | "monthly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedClientId, setSelectedClientId] = useState<string>(clientParam || "all-clients");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("all-carers");
