@@ -41,24 +41,14 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
 
-    const staffQuery = (supabase as any).from('staff').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    const clientsQuery = (supabase as any).from('clients').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    const bookingsQuery = (supabase as any).from('bookings').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    const reviewsQuery = (supabase as any).from('reviews').select('id', { count: 'exact', head: true }).eq('branch_id', branchId);
-    
-    const todaysBookingsQuery = (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(5);
-    
-    // First, get staff IDs for the given branch
-    const { data: staffInBranch, error: staffErrorForDocs } = await supabase.from('staff').select('id').eq('branch_id', branchId);
-    if (staffErrorForDocs) throw staffErrorForDocs;
-    const staffIds = staffInBranch?.map(s => s.id) || [];
-
-    // Then, query for expired documents for those staff members
-    const expiryAlertsQuery = staffIds.length > 0
-        ? (supabase as any).from('staff_documents').select('id, document_type, expiry_date, staff:staff!inner(first_name, last_name)').in('staff_id', staffIds).eq('status', 'Expired').limit(4)
-        : Promise.resolve({ data: [], error: null });
-
-    const latestReviewsQuery = (supabase as any).from('reviews').select('id, rating, comment, created_at, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).order('created_at', { ascending: false }).limit(3);
+    // Core queries that must succeed
+    const coreQueries = [
+        (supabase as any).from('staff').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
+        (supabase as any).from('clients').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
+        (supabase as any).from('bookings').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
+        (supabase as any).from('reviews').select('id', { count: 'exact', head: true }).eq('branch_id', branchId),
+        (supabase as any).from('bookings').select('id, start_time, end_time, client:clients(first_name, last_name), staff:staff(first_name, last_name)').eq('branch_id', branchId).gte('start_time', startOfDay).lte('start_time', endOfDay).order('start_time').limit(5)
+    ];
 
     const [
         { count: staffCount, error: staffError },
@@ -66,21 +56,53 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
         { count: bookingsCount, error: bookingsError },
         { count: reviewsCount, error: reviewsError },
         { data: todaysBookings, error: todaysBookingsError },
-        { data: expiryAlerts, error: expiryAlertsError },
-        { data: latestReviews, error: latestReviewsError },
-    ] = await Promise.all([
-        staffQuery,
-        clientsQuery,
-        bookingsQuery,
-        reviewsQuery,
-        todaysBookingsQuery,
-        expiryAlertsQuery,
-        latestReviewsQuery
-    ]);
+    ] = await Promise.all(coreQueries);
 
-    const errors = [staffError, clientsError, bookingsError, reviewsError, todaysBookingsError, expiryAlertsError, latestReviewsError].filter(Boolean);
-    if (errors.length > 0) {
-        throw new Error(errors.map(e => (e as Error).message).join(', '));
+    // Check for critical errors that should fail the entire query
+    const criticalErrors = [staffError, clientsError, bookingsError, reviewsError, todaysBookingsError].filter(Boolean);
+    if (criticalErrors.length > 0) {
+        throw new Error(criticalErrors.map(e => (e as Error).message).join(', '));
+    }
+
+    // Non-critical queries - handle errors gracefully
+    let expiryAlerts: ExpiryAlert[] = [];
+    let latestReviews: ReviewWithDetails[] = [];
+
+    // Try to get expiry alerts - fail gracefully if RLS or table issues
+    try {
+        const { data: staffInBranch } = await supabase.from('staff').select('id').eq('branch_id', branchId);
+        const staffIds = staffInBranch?.map(s => s.id) || [];
+        
+        if (staffIds.length > 0) {
+            const { data: alertsData, error: alertsError } = await (supabase as any)
+                .from('staff_documents')
+                .select('id, document_type, expiry_date, staff:staff!inner(first_name, last_name)')
+                .in('staff_id', staffIds)
+                .eq('status', 'Expired')
+                .limit(4);
+            
+            if (!alertsError && alertsData) {
+                expiryAlerts = alertsData;
+            }
+        }
+    } catch (error) {
+        console.warn('Failed to load expiry alerts:', error);
+    }
+
+    // Try to get latest reviews - fail gracefully if issues
+    try {
+        const { data: reviewsData, error: reviewsError } = await (supabase as any)
+            .from('reviews')
+            .select('id, rating, comment, created_at, client:clients(first_name, last_name), staff:staff(first_name, last_name)')
+            .eq('branch_id', branchId)
+            .order('created_at', { ascending: false })
+            .limit(3);
+        
+        if (!reviewsError && reviewsData) {
+            latestReviews = reviewsData;
+        }
+    } catch (error) {
+        console.warn('Failed to load latest reviews:', error);
     }
     
     return {
@@ -89,8 +111,8 @@ const fetchBranchStatistics = async (branchId: string): Promise<BranchStatistics
         bookingsCount,
         reviewsCount,
         todaysBookings: (todaysBookings || []) as BookingWithDetails[],
-        expiryAlerts: (expiryAlerts || []) as ExpiryAlert[],
-        latestReviews: (latestReviews || []) as ReviewWithDetails[],
+        expiryAlerts,
+        latestReviews,
     };
 };
 
