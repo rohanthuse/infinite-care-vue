@@ -42,6 +42,7 @@ import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
 import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
 import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 import DemoRequest from "./pages/DemoRequest";
+import { SharedClientProfile } from "./pages/shared/SharedClientProfile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,7 +83,9 @@ const AppContent = () => {
     '/carer-onboarding',
     '/tenant-setup',
     '/system-login'
-  ].includes(window.location.pathname) || window.location.pathname.includes('/login');
+  ].includes(window.location.pathname) || 
+  window.location.pathname.includes('/login') ||
+  window.location.pathname.startsWith('/shared/client/');
 
   if (loading && !isPublicRoute) {
     return <LoadingScreen />;
@@ -110,6 +113,8 @@ const AppContent = () => {
               <Route path="/tenant-error" element={<TenantError />} />
               <Route path="/system-login" element={<SystemLogin />} />
               
+              {/* Shared Client Profile Route - Must be before tenant routes */}
+              <Route path="/shared/client/:clientId" element={<SharedClientProfile />} />
               
               {/* System Dashboard Routes */}
               <Route path="/system-dashboard" element={
