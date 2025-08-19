@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { 
-  PlusCircle, 
   Download, 
   FileText, 
   Clock, 
@@ -27,6 +26,38 @@ interface AccountingTabProps {
 const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) => {
   console.log('[AccountingTab] Received props:', { branchId, branchName });
   const [activeTab, setActiveTab] = useState("invoices-payments");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const getExportButtonText = () => {
+    switch (activeTab) {
+      case "invoices-payments": return "Export Invoices";
+      case "extra-time": return "Export Extra Time";
+      case "expenses": return "Export Expenses";
+      case "travel": return "Export Travel";
+      case "payroll": return "Export Payroll";
+      case "rates": return "Export Rates";
+      default: return "Export";
+    }
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Dispatch a custom event that the active tab can listen to
+      const exportEvent = new CustomEvent('accounting-export', {
+        detail: { tabName: activeTab }
+      });
+      window.dispatchEvent(exportEvent);
+      
+      // Show feedback to user
+      setTimeout(() => {
+        setIsExporting(false);
+      }, 1000); // Give some time for the export to process
+    } catch (error) {
+      console.error('Export error:', error);
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -38,13 +69,15 @@ const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) =
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={handleExport}
+              disabled={isExporting}
+            >
               <Download className="h-4 w-4" />
-              <span>Export</span>
-            </Button>
-            <Button variant="default" size="sm" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
-              <PlusCircle className="h-4 w-4" />
-              <span>New Record</span>
+              <span>{isExporting ? "Exporting..." : getExportButtonText()}</span>
             </Button>
           </div>
         </div>

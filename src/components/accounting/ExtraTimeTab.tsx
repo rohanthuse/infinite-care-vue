@@ -143,6 +143,21 @@ const ExtraTimeTab: React.FC<ExtraTimeTabProps> = ({ branchId, branchName }) => 
     setFilteredRecords(result);
   }, [extraTimeRecords, searchTerm, filters, staffList, clientsList]);
 
+  // Listen for export events from parent component
+  useEffect(() => {
+    const handleAccountingExport = (event: CustomEvent) => {
+      if (event.detail.tabName === 'extra-time') {
+        handleExportExtraTime();
+      }
+    };
+
+    window.addEventListener('accounting-export', handleAccountingExport as EventListener);
+    
+    return () => {
+      window.removeEventListener('accounting-export', handleAccountingExport as EventListener);
+    };
+  }, []);
+
   // Export function
   const handleExportExtraTime = async () => {
     try {
