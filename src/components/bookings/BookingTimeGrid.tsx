@@ -3,11 +3,11 @@ import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, RefreshCw, Plus } from "lucide-react";
-import { BookingList } from "./BookingList";
+import { BookingsList } from "./BookingsList";
 import { NewBookingDialog } from "./dialogs/NewBookingDialog";
 import { EditBookingDialog } from "./dialogs/EditBookingDialog";
 import { ViewBookingDialog } from "./dialogs/ViewBookingDialog";
-import { BookingOverlapAlert } from "./dialogs/BookingOverlapAlert";
+import { BookingOverlapAlert } from "./BookingOverlapAlert";
 import { useBookingData } from "./hooks/useBookingData";
 import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useBranchServices } from "@/data/hooks/useBranchServices";
@@ -137,10 +137,10 @@ export function BookingTimeGrid({ selectedDate, branchId, user, className }: Boo
           </div>
         </CardHeader>
         <CardContent>
-          <BookingList
+          <BookingsList
             bookings={todaysBookings}
-            onEdit={handleEditBooking}
-            onView={handleViewBooking}
+            onEditBooking={handleEditBooking}
+            onViewBooking={handleViewBooking}
           />
         </CardContent>
       </Card>

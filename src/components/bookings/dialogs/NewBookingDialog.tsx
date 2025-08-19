@@ -1,7 +1,8 @@
-
 import React, { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Clock, Save, X } from "lucide-react";
+import { format, parseISO, addDays, isBefore, startOfDay } from "date-fns";
+import { Calendar as CalendarIcon, Clock, Plus, X, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +39,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { toast } from "sonner";
+import { useBranchClients } from "@/data/hooks/useBranchClients";
 
 const newBookingSchema = z.object({
   clientId: z.string().min(1, "Client is required"),
@@ -68,10 +70,10 @@ type NewBookingFormData = z.infer<typeof newBookingSchema>;
 interface NewBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clients: Array<{ id: string; name: string }>;
-  carers: Array<{ id: string; name: string }>;
+  clients?: Array<{ id: string; name: string; initials: string }>;
+  carers: Array<{ id: string; name: string; initials: string }>;
   services: Array<{ id: string; title: string }>;
-  onCreateBooking: (data: any, carers: any[]) => void;
+  onCreateBooking: (bookingData: any, carers?: any[]) => void;
   initialData?: {
     date: Date;
     startTime: string;
@@ -79,17 +81,23 @@ interface NewBookingDialogProps {
     carerId?: string;
   } | null;
   isCreating?: boolean;
+  branchId?: string;
+  prefilledData?: any;
+  preSelectedClientId?: string;
 }
 
 export function NewBookingDialog({
   open,
   onOpenChange,
-  clients,
+  clients = [],
   carers,
   services,
   onCreateBooking,
   initialData,
   isCreating = false,
+  branchId,
+  prefilledData,
+  preSelectedClientId,
 }: NewBookingDialogProps) {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
