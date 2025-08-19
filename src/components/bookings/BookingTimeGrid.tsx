@@ -436,8 +436,8 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const renderCalendar = (entityType: "client" | "carer", entity: Client | Carer | null) => {
     if (!entity) {
       return (
-        <div className="flex items-center justify-center h-full bg-gray-50 border rounded-md">
-          <p className="text-gray-500 text-sm">Select a {entityType} to view their schedule</p>
+        <div className="flex items-center justify-center h-full bg-muted border border-border rounded-md">
+          <p className="text-muted-foreground text-sm">Select a {entityType} to view their schedule</p>
         </div>
       );
     }
@@ -445,13 +445,13 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     return (
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className={`booking-view ${viewType === "weekly" ? "weekly-view" : "daily-view"} h-full`}>
-          <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-blue-50' : 'bg-purple-50'}`}>
+          <div className={`entity-header p-2 rounded-md ${entityType === "client" ? 'bg-accent' : 'bg-accent'}`}>
             <div className="flex items-center">
-              <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'} flex items-center justify-center text-sm font-medium mr-2`}>
+              <div className={`h-8 w-8 rounded-full ${entityType === "client" ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary-foreground'} flex items-center justify-center text-sm font-medium mr-2`}>
                 {entity.initials}
               </div>
-              <div className="text-sm font-medium">{entity.name}</div>
-              <Badge className={`ml-2 ${entityType === "client" ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'} text-xs`}>
+              <div className="text-sm font-medium text-foreground">{entity.name}</div>
+              <Badge className={`ml-2 ${entityType === "client" ? 'bg-primary/10 text-primary' : 'bg-secondary/10 text-secondary-foreground'} text-xs`}>
                 {entity.bookings?.length || 0} bookings
               </Badge>
             </div>
@@ -480,7 +480,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                   >
                     {(provided, snapshot) => (
                       <div 
-                        className={`day-content ${snapshot.isDraggingOver ? 'bg-gray-50' : ''}`}
+                        className={`day-content ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
                         onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                         ref={provided.innerRef}
                         {...provided.droppableProps}
@@ -541,7 +541,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                         >
                           {(provided, snapshot) => (
                             <div 
-                              className={`day-content ${snapshot.isDraggingOver ? 'bg-gray-50' : ''}`}
+                              className={`day-content ${snapshot.isDraggingOver ? 'bg-muted/50' : ''}`}
                               onContextMenu={(e) => handleContextMenuOpen(e, e.currentTarget)}
                               ref={provided.innerRef}
                               {...provided.droppableProps}
@@ -595,18 +595,17 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   // For monthly view, show a message directing users to the appropriate view
   if (viewType === "monthly") {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+      <div className="bg-card rounded-lg border border-border shadow-sm">
         <div className="p-8 text-center">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Monthly View</h3>
-          <p className="text-gray-500 mb-4">
+          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">Monthly View</h3>
+          <p className="text-muted-foreground mb-4">
             The time grid view is not available for monthly view. 
             Please use the Calendar tab for monthly booking overview.
           </p>
           <Button 
             variant="outline" 
             onClick={() => window.location.reload()}
-            className="text-blue-600 border-blue-600 hover:bg-blue-50"
           >
             Switch to Calendar View
           </Button>
@@ -616,16 +615,16 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   }
 
   return (
-    <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-white rounded-lg border border-gray-200 shadow-sm`}>
-      <div className="p-4 border-b border-gray-100 flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
+    <div className={`${isFullScreen ? 'booking-fullscreen' : ''} bg-card rounded-lg border border-border shadow-sm`}>
+      <div className="p-4 border-b border-border flex flex-wrap md:flex-nowrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
-          <Calendar className="h-4 w-4 text-gray-500" />
+          <Calendar className="h-4 w-4 text-muted-foreground" />
           {viewType === "daily" ? (
-            <span className="font-medium">
+            <span className="font-medium text-foreground">
               {validDate && !isNaN(validDate.getTime()) ? format(validDate, 'EEEE, MMMM d, yyyy') : 'Invalid Date'}
             </span>
           ) : (
-            <span className="font-medium">
+            <span className="font-medium text-foreground">
               {weekDates.length > 0 && weekDates[0] && weekDates[6] ? 
                 `${format(weekDates[0], 'MMM d')} - ${format(weekDates[6], 'MMM d, yyyy')}` : 
                 'Invalid Date Range'
@@ -700,45 +699,45 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
               
               {pendingBookingMove && (
                 <>
-                  <div className="border rounded-md p-3 bg-gray-50">
-                    <h4 className="font-medium mb-2">Booking Details:</h4>
+                  <div className="border border-border rounded-md p-3 bg-muted">
+                    <h4 className="font-medium mb-2 text-foreground">Booking Details:</h4>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <p className="text-gray-500">Client:</p>
-                        <p className="font-medium">{pendingBookingMove.booking.clientName}</p>
+                        <p className="text-muted-foreground">Client:</p>
+                        <p className="font-medium text-foreground">{pendingBookingMove.booking.clientName}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Carer:</p>
-                        <p className="font-medium">{pendingBookingMove.booking.carerName}</p>
+                        <p className="text-muted-foreground">Carer:</p>
+                        <p className="font-medium text-foreground">{pendingBookingMove.booking.carerName}</p>
                       </div>
                     </div>
                   </div>
                 
                   <div className="flex gap-4">
-                    <div className="border rounded-md p-3 flex-1 bg-red-50">
-                      <h4 className="font-medium mb-2 text-red-700">From:</h4>
+                    <div className="border border-border rounded-md p-3 flex-1 bg-destructive/10">
+                      <h4 className="font-medium mb-2 text-destructive">From:</h4>
                       <div className="text-sm">
                         <div className="flex items-center mb-1">
-                          <Calendar className="h-4 w-4 mr-1 text-red-600" />
-                          <span>{formatBookingDate(pendingBookingMove.originalDate)}</span>
+                          <Calendar className="h-4 w-4 mr-1 text-destructive" />
+                          <span className="text-foreground">{formatBookingDate(pendingBookingMove.originalDate)}</span>
                         </div>
                         <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1 text-red-600" />
-                          <span>{pendingBookingMove.originalStartTime} - {pendingBookingMove.originalEndTime}</span>
+                          <Clock className="h-4 w-4 mr-1 text-destructive" />
+                          <span className="text-foreground">{pendingBookingMove.originalStartTime} - {pendingBookingMove.originalEndTime}</span>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="border rounded-md p-3 flex-1 bg-green-50">
-                      <h4 className="font-medium mb-2 text-green-700">To:</h4>
+                    <div className="border border-border rounded-md p-3 flex-1 bg-primary/10">
+                      <h4 className="font-medium mb-2 text-primary">To:</h4>
                       <div className="text-sm">
                         <div className="flex items-center mb-1">
-                          <Calendar className="h-4 w-4 mr-1 text-green-600" />
-                          <span>{formatBookingDate(pendingBookingMove.newDate)}</span>
+                          <Calendar className="h-4 w-4 mr-1 text-primary" />
+                          <span className="text-foreground">{formatBookingDate(pendingBookingMove.newDate)}</span>
                         </div>
                         <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-1 text-green-600" />
-                          <span>{pendingBookingMove.newStartTime} - {pendingBookingMove.newEndTime}</span>
+                          <Clock className="h-4 w-4 mr-1 text-primary" />
+                          <span className="text-foreground">{pendingBookingMove.newStartTime} - {pendingBookingMove.newEndTime}</span>
                         </div>
                       </div>
                     </div>
@@ -749,7 +748,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancelBookingMove}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={isUpdatingBooking} className="bg-blue-600 hover:bg-blue-700" onClick={handleConfirmBookingMove}>
+            <AlertDialogAction disabled={isUpdatingBooking} onClick={handleConfirmBookingMove}>
               {isUpdatingBooking ? "Updating..." : "Confirm Change"}
             </AlertDialogAction>
           </AlertDialogFooter>

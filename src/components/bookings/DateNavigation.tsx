@@ -76,8 +76,8 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
       </Button>
       
       <div className="flex items-center space-x-1">
-        <CalendarIcon className="h-4 w-4 text-gray-500" />
-        <span className="text-sm font-medium">
+        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium text-foreground">
           {getDateDisplay()}
         </span>
       </div>
@@ -100,14 +100,14 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
         Today
       </Button>
 
-      <div className="h-8 border-l border-gray-200 mx-2"></div>
+      <div className="h-8 border-l border-border mx-2"></div>
       
-      <div className="flex rounded-md overflow-hidden border border-gray-200">
+      <div className="flex rounded-md overflow-hidden border border-border bg-background">
         <Button 
           variant={viewType === "daily" ? "default" : "ghost"} 
           size="sm" 
           onClick={() => onViewTypeChange("daily")}
-          className={`h-8 rounded-none text-xs px-3 ${viewType === "daily" ? "bg-blue-600" : "bg-white text-gray-700"}`}
+          className="h-8 rounded-none text-xs px-3"
         >
           Daily
         </Button>
@@ -115,7 +115,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
           variant={viewType === "weekly" ? "default" : "ghost"} 
           size="sm" 
           onClick={() => onViewTypeChange("weekly")}
-          className={`h-8 rounded-none text-xs px-3 ${viewType === "weekly" ? "bg-blue-600" : "bg-white text-gray-700"}`}
+          className="h-8 rounded-none text-xs px-3"
         >
           Weekly
         </Button>
@@ -123,7 +123,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
           variant={viewType === "monthly" ? "default" : "ghost"} 
           size="sm" 
           onClick={() => onViewTypeChange("monthly")}
-          className={`h-8 rounded-none text-xs px-3 ${viewType === "monthly" ? "bg-blue-600" : "bg-white text-gray-700"}`}
+          className="h-8 rounded-none text-xs px-3"
         >
           Monthly
         </Button>

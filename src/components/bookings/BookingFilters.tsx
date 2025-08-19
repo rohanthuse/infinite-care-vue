@@ -32,7 +32,7 @@ export const BookingFilters: React.FC<BookingFiltersProps> = ({
   carers,
 }) => {
   return (
-    <div className="space-y-4 bg-white p-4 rounded-lg border border-gray-200 shadow-sm">  
+    <div className="space-y-4 bg-card p-4 rounded-lg border border-border shadow-sm">  
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>

@@ -26,34 +26,34 @@
   grid-template-areas: "clients client-calendar carers carer-calendar";
   gap: 1px;
   height: 700px;
-  background-color: #e5e7eb;
-  border: 1px solid #e5e7eb;
+  background-color: hsl(var(--border));
+  border: 1px solid hsl(var(--border));
   overflow: hidden;
 }
 
 .entity-lists {
   grid-area: clients;
-  background-color: white;
-  border-right: 1px solid #e5e7eb;
+  background-color: hsl(var(--card));
+  border-right: 1px solid hsl(var(--border));
   overflow: hidden;
 }
 
 .client-calendar {
   grid-area: client-calendar;
-  background-color: white;
+  background-color: hsl(var(--card));
   overflow: hidden;
 }
 
 .carer-lists {
   grid-area: carers;
-  background-color: white;
-  border-right: 1px solid #e5e7eb;
+  background-color: hsl(var(--card));
+  border-right: 1px solid hsl(var(--border));
   overflow: hidden;
 }
 
 .carer-calendar {
   grid-area: carer-calendar;
-  background-color: white;
+  background-color: hsl(var(--card));
   overflow: hidden;
 }
 
@@ -76,7 +76,7 @@
   .carer-calendar {
     height: 500px;
     border-right: none;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid hsl(var(--border));
   }
 }
 
@@ -88,7 +88,7 @@
   right: 0;
   bottom: 0;
   z-index: 50;
-  background-color: white;
+  background-color: hsl(var(--background));
   overflow: hidden;
   padding: 1rem;
 }
@@ -128,15 +128,15 @@
 
 /* Common Booking View Styles */
 .booking-view {
-  background-color: white;
+  background-color: hsl(var(--card));
   border-radius: 0.375rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid hsl(var(--border));
   overflow: hidden;
 }
 
 /* Client/Carer Header */
 .entity-header {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 /* Booking Grid Container */
@@ -144,7 +144,7 @@
   display: flex;
   height: 600px;
   position: relative;
-  background-color: white;
+  background-color: hsl(var(--card));
 }
 
 /* Scrolling container styles */
@@ -154,7 +154,7 @@
   height: 100%;
   position: relative;
   flex: 1;
-  background-color: white;
+  background-color: hsl(var(--card));
 }
 
 /* Time Column */
@@ -162,25 +162,25 @@
   width: 60px;
   min-width: 60px;
   flex-shrink: 0;
-  border-right: 1px solid #e5e7eb;
-  background-color: #f9fafb;
+  border-right: 1px solid hsl(var(--border));
+  background-color: hsl(var(--muted));
   position: relative;
   z-index: 2;
 }
 
 .time-slot {
   height: 60px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  background-color: #f9fafb;
+  background-color: hsl(var(--muted));
 }
 
 .time-slot span {
   font-size: 0.7rem;
-  color: #6b7280;
+  color: hsl(var(--muted-foreground));
 }
 
 /* Day Columns Container */
@@ -189,7 +189,7 @@
   flex: 1;
   min-width: 0;
   position: relative;
-  background-color: white;
+  background-color: hsl(var(--card));
   overflow: visible; /* Changed from auto to ensure borders are visible */
 }
 
@@ -197,9 +197,9 @@
 .day-column {
   flex: 1;
   min-width: 140px;
-  border-right: 2px solid #e5e7eb; /* Increased border width for visibility */
+  border-right: 2px solid hsl(var(--border)); /* Increased border width for visibility */
   position: relative;
-  background-color: white;
+  background-color: hsl(var(--card));
   display: flex;
   flex-direction: column;
   overflow: visible; /* Ensure borders remain visible */
@@ -217,8 +217,8 @@
 /* Hour Cell */
 .hour-cell {
   height: 60px;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: white;
+  border-bottom: 1px solid hsl(var(--border));
+  background-color: hsl(var(--card));
   position: relative;
   z-index: 1;
   border-right: 1px solid transparent; /* Invisible right border to maintain width */
@@ -231,7 +231,7 @@
   right: 0;
   bottom: 0;
   height: 1px;
-  background-color: #e5e7eb;
+  background-color: hsl(var(--border));
   z-index: 1;
 }
 
@@ -242,7 +242,7 @@
   right: 0;
   top: 50%;
   height: 1px;
-  border-top: 1px dashed #e5e7eb;
+  border-top: 1px dashed hsl(var(--border));
   z-index: 1;
 }
 
@@ -251,52 +251,52 @@
   height: 40px;
   padding: 4px;
   text-align: center;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: hsl(var(--muted));
+  border-bottom: 1px solid hsl(var(--border));
   position: sticky;
   top: 0;
   z-index: 5;
-  border-right: 2px solid #e5e7eb; /* Increased border width for visibility */
+  border-right: 2px solid hsl(var(--border)); /* Increased border width for visibility */
 }
 
 .day-name {
   font-weight: 500;
   font-size: 0.8rem;
-  color: #374151;
+  color: hsl(var(--foreground));
 }
 
 .day-date {
   font-size: 0.7rem;
-  color: #6b7280;
+  color: hsl(var(--muted-foreground));
 }
 
 /* Day Content */
 .day-content {
   position: relative;
   min-height: 1440px; /* 24 hours * 60px */
-  background-color: white;
+  background-color: hsl(var(--card));
   z-index: 1;
-  border-right: 2px solid #e5e7eb; /* Increased border width for visibility */
+  border-right: 2px solid hsl(var(--border)); /* Increased border width for visibility */
   flex: 1;
   transition: background-color 0.2s ease;
 }
 
 .day-content[data-rbd-droppable-id]:hover {
-  background-color: rgba(243, 244, 246, 0.5);
+  background-color: hsl(var(--muted) / 0.5);
 }
 
 .day-content[data-rbd-droppable-id].drag-over {
-  background-color: rgba(219, 234, 254, 0.5);
+  background-color: hsl(var(--accent) / 0.5);
 }
 
 /* Fix specifically for the daily view */
 .daily-view .day-content {
-  border-right: 2px solid #e5e7eb; /* Increased border width for visibility */
+  border-right: 2px solid hsl(var(--border)); /* Increased border width for visibility */
 }
 
 /* Add borders to all day columns in weekly view */
 .weekly-view .day-columns .day-column {
-  border-right: 2px solid #e5e7eb;
+  border-right: 2px solid hsl(var(--border));
 }
 
 .weekly-view .day-columns .day-column:last-child {
@@ -441,16 +441,16 @@
 
 /* Strengthening the border visibility in weekly view */
 .weekly-view .day-column {
-  border-right: 2px solid #e5e7eb !important;
+  border-right: 2px solid hsl(var(--border)) !important;
   overflow: visible !important;
 }
 
 .weekly-view .day-content {
-  border-right: 2px solid #e5e7eb !important;
+  border-right: 2px solid hsl(var(--border)) !important;
 }
 
 .weekly-view .day-header {
-  border-right: 2px solid #e5e7eb !important;
+  border-right: 2px solid hsl(var(--border)) !important;
 }
 
 /* Force vertical borders to be visible */

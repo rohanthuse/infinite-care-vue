@@ -18,9 +18,9 @@ export function BookingValidationAlert({
 }: BookingValidationAlertProps) {
   if (isValidating) {
     return (
-      <Alert className="border-blue-200 bg-blue-50">
-        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-        <AlertDescription className="text-blue-800">
+      <Alert className="border-border bg-accent">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        <AlertDescription className="text-foreground">
           <strong>Validating booking...</strong> Checking for conflicts in real-time.
         </AlertDescription>
       </Alert>
@@ -48,9 +48,9 @@ export function BookingValidationAlert({
 
   if (isValid === true) {
     return (
-      <Alert className="border-green-200 bg-green-50">
-        <CheckCircle className="h-4 w-4 text-green-600" />
-        <AlertDescription className="text-green-800">
+      <Alert className="border-border bg-accent text-accent-foreground">
+        <CheckCircle className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-foreground">
           <strong>Validation Passed:</strong> No booking conflicts detected.
         </AlertDescription>
       </Alert>
