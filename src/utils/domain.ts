@@ -5,7 +5,7 @@
 
 /**
  * Get the base URL for the application
- * Uses environment variables when available, falls back to window.location.origin in development
+ * Uses environment variables when available, falls back to window.location.origin only for localhost
  */
 export const getBaseUrl = (): string => {
   // For server-side edge functions, use SITE_URL environment variable
@@ -29,18 +29,22 @@ export const getBaseUrl = (): string => {
     return 'https://medinfinite.com';
   }
 
-  // For client-side code
-  // Check if we're in development
-  const isDevelopment = window.location.hostname === 'localhost' || 
-                       window.location.hostname === '127.0.0.1' ||
-                       window.location.hostname.includes('preview');
+  // For client-side code, prioritize VITE_SITE_URL environment variable
+  const siteUrl = import.meta.env.VITE_SITE_URL;
+  if (siteUrl) {
+    return siteUrl;
+  }
 
-  if (isDevelopment) {
+  // Only use window.location.origin for true local development (localhost)
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+
+  if (isLocalhost) {
     return window.location.origin;
   }
 
-  // In production, use the actual domain
-  return window.location.origin;
+  // For all other environments (including preview), use the custom domain
+  return 'https://medinfinite.com';
 };
 
 /**
