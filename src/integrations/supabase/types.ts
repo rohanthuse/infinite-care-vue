@@ -4964,7 +4964,7 @@ export type Database = {
           file_size: string | null
           file_type: string | null
           id: string
-          staff_id: string | null
+          staff_id: string
           status: string
           updated_at: string | null
         }
@@ -4976,7 +4976,7 @@ export type Database = {
           file_size?: string | null
           file_type?: string | null
           id?: string
-          staff_id?: string | null
+          staff_id: string
           status: string
           updated_at?: string | null
         }
@@ -4988,11 +4988,18 @@ export type Database = {
           file_size?: string | null
           file_type?: string | null
           id?: string
-          staff_id?: string | null
+          staff_id?: string
           status?: string
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_staff_documents_staff_id"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "staff_documents_staff_id_fkey"
             columns: ["staff_id"]
@@ -7044,6 +7051,10 @@ export type Database = {
       user_is_admin: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      verify_staff_auth_context: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
     }
     Enums: {

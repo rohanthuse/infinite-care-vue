@@ -72,6 +72,21 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
   console.log('[CarerDocuments] Authenticated user ID:', user.id);
   console.log('[CarerDocuments] Staff profile ID (carerId):', carerId);
   
+  // Verify that the staff ID matches the authenticated user using our verification function
+  const { data: verifyData, error: verifyError } = await supabase.rpc('verify_staff_auth_context');
+  
+  if (verifyError) {
+    console.error('[CarerDocuments] Auth verification error:', verifyError);
+    throw new Error(`Authentication verification failed: ${verifyError.message}`);
+  }
+  
+  if (verifyData !== carerId) {
+    console.error('[CarerDocuments] Staff ID mismatch. Expected:', carerId, 'Got:', verifyData);
+    throw new Error('Staff ID does not match authenticated user');
+  }
+  
+  console.log('[CarerDocuments] Authentication verified for staff ID:', verifyData);
+  
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
   const filePath = `${carerId}/${fileName}`;
@@ -93,7 +108,7 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
   const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
 
   // Save document record to staff_documents table
-  // Use the staff database ID (carerId) as staff_id since RLS policy checks for staff.id = staff_documents.staff_id
+  // The staff_id is now verified and NOT NULL due to our schema changes
   const { data, error } = await supabase
     .from('staff_documents')
     .insert({
@@ -109,6 +124,13 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
 
   if (error) {
     console.error('[CarerDocuments] Database insert error:', error);
+    console.error('[CarerDocuments] Error details:', {
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      message: error.message
+    });
+    
     // Clean up uploaded file if database insert fails
     await supabase.storage.from('staff-documents').remove([filePath]);
     throw new Error(`Failed to save document: ${error.message}`);
