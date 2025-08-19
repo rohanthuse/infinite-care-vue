@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ import { Edit, FileText, Calendar, User, Target, Activity, Pill, Heart, Utensils
          UserCheck, Stethoscope, Home, UtensilsCrossed, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface CarePlanViewDialogProps {
   carePlanId: string;
@@ -20,6 +22,9 @@ interface CarePlanViewDialogProps {
 }
 
 export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanViewDialogProps) {
+  const navigate = useNavigate();
+  const { id: branchId, branchName } = useParams();
+  const { tenantSlug } = useTenant();
   const [isEditMode, setIsEditMode] = useState(false);
   const { data: carePlan, isLoading } = useCarePlanData(carePlanId);
   
@@ -38,7 +43,12 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
   };
 
   const handleEditToggle = () => {
-    setIsEditMode(!isEditMode);
+    // Navigate to edit mode using tenant-aware URLs
+    if (branchId && branchName && carePlan?.client?.id) {
+      const basePath = tenantSlug ? `/${tenantSlug}` : '';
+      const editPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.client.id}/edit?tab=care-plans&careplan=${carePlanId}`;
+      navigate(editPath);
+    }
   };
 
   const handleExport = () => {

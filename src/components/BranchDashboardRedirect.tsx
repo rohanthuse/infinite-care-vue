@@ -24,9 +24,9 @@ export const BranchDashboardRedirect: React.FC = () => {
     // In development, try to get tenant from localStorage
     let devTenant = localStorage.getItem('dev-tenant');
     
-    // If no dev tenant, set a default one for development
+    // If no dev tenant, set a default one for development using an existing tenant
     if (!devTenant) {
-      devTenant = 'dev';
+      devTenant = 'demo'; // Use an existing tenant slug from the database
       localStorage.setItem('dev-tenant', devTenant);
       console.log('[BranchDashboardRedirect] Set default dev tenant:', devTenant);
     }
