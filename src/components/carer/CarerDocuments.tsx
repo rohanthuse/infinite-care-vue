@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
-import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -63,14 +62,21 @@ const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> =>
 const uploadDocument = async (file: File, carerId: string, category: string, type: string) => {
   console.log('[CarerDocuments] Starting upload for:', file.name, 'Category:', category, 'Type:', type);
   
-  // Get current user to verify auth
-  const { data: { user } } = await supabase.auth.getUser();
+  // Get current session to verify auth
+  const { data: { session }, error: authError } = await supabase.auth.getSession();
+  if (authError || !session) {
+    console.error('[CarerDocuments] Authentication error:', authError);
+    throw new Error('User not authenticated or session expired');
+  }
+  
+  const user = session.user;
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error('No user in session');
   }
   
   console.log('[CarerDocuments] Authenticated user ID:', user.id);
   console.log('[CarerDocuments] Staff profile ID (carerId):', carerId);
+  console.log('[CarerDocuments] Session valid:', !!session.access_token);
   
   // RLS policy will handle authentication verification automatically
   // No need for separate RPC call that can cause timing/context issues
@@ -129,7 +135,7 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
 };
 
 export const CarerDocuments: React.FC = () => {
-  const { data: carerProfile } = useCarerProfile();
+  const { carerProfile, isAuthenticated, loading } = useCarerAuthSafe();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -144,10 +150,14 @@ export const CarerDocuments: React.FC = () => {
     enabled: !!carerProfile?.id,
   });
 
-  // Upload mutation
+  // Upload mutation with authentication verification
   const uploadMutation = useMutation({
-    mutationFn: ({ file, category, type }: { file: File; category: string; type: string }) =>
-      uploadDocument(file, carerProfile!.id, category, type),
+    mutationFn: async ({ file, category, type }: { file: File; category: string; type: string }) => {
+      if (!isAuthenticated || !carerProfile?.id) {
+        throw new Error('Not authenticated or missing carer profile');
+      }
+      return uploadDocument(file, carerProfile.id, category, type);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carer-documents', carerProfile?.id] });
       toast({ title: "Document uploaded successfully" });
@@ -290,7 +300,7 @@ export const CarerDocuments: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (loading || isLoading) {
     return (
       <Card>
         <CardHeader>
