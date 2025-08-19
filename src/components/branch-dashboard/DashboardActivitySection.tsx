@@ -65,7 +65,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                className="text-primary border-primary/20 hover:bg-primary/10"
                 onClick={handleViewAllBookings}
               >
                 View All
@@ -77,22 +77,22 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
             <div className="space-y-1 min-w-[400px]">
               {isLoadingBranchStats ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="py-2 border-b last:border-0 flex items-center justify-between">
+                  <div key={i} className="py-2 border-b border-border last:border-0 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-8 w-8 bg-muted rounded animate-pulse" />
                       <div className="space-y-1">
-                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                        <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+                        <div className="h-3 w-24 bg-muted rounded animate-pulse" />
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-5 w-14 bg-gray-200 rounded-full animate-pulse" />
+                      <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+                      <div className="h-5 w-14 bg-muted rounded-full animate-pulse" />
                     </div>
                   </div>
                 ))
               ) : branchStatsError ? (
-                <p className="text-red-500 text-center py-4">Error loading bookings.</p>
+                <p className="text-destructive text-center py-4">Error loading bookings.</p>
               ) : branchStats?.todaysBookings && branchStats.todaysBookings.length > 0 ? (
                 branchStats.todaysBookings.map((booking, index) => {
                   const now = new Date();
@@ -120,7 +120,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                   );
                 })
               ) : (
-                <p className="text-gray-500 text-center py-4">No bookings for today.</p>
+                <p className="text-muted-foreground text-center py-4">No bookings for today.</p>
               )}
             </div>
           </CardContent>
@@ -136,7 +136,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
               {isLoadingBranchStats ? (
                 Array.from({ length: 3 }).map((_, i) => <ReviewItemSkeleton key={i} />)
               ) : branchStatsError ? (
-                <p className="text-red-500 text-center py-4">Error loading reviews.</p>
+                <p className="text-destructive text-center py-4">Error loading reviews.</p>
               ) : branchStats?.latestReviews && branchStats.latestReviews.length > 0 ? (
                 branchStats.latestReviews.map((review) => {
                   const clientName = review.client ? `${review.client.first_name} ${review.client.last_name.charAt(0)}.` : 'Anonymous';
@@ -155,7 +155,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                   )
                 })
               ) : (
-                <p className="text-gray-500 text-center py-4">No reviews yet.</p>
+                <p className="text-muted-foreground text-center py-4">No reviews yet.</p>
               )}
             </div>
           </CardContent>
@@ -173,7 +173,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                className="text-primary border-primary/20 hover:bg-primary/10"
                 onClick={handleViewAllTasks}
               >
                 View All Tasks
@@ -185,16 +185,16 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {isLoadingTasks ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm">
+                  <div key={i} className="p-3 rounded-lg border border-border bg-card shadow-sm">
                     <div className="space-y-2">
-                      <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-3 w-1/4 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-1/4 bg-muted rounded animate-pulse" />
                     </div>
                   </div>
                 ))
               ) : tasksError ? (
-                <p className="text-red-500 text-center py-4 col-span-full">Error loading tasks.</p>
+                <p className="text-destructive text-center py-4 col-span-full">Error loading tasks.</p>
               ) : urgentTasks.length > 0 ? (
                 urgentTasks.map((task) => {
                   const assigneeName = task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : 'Unassigned';
@@ -212,8 +212,8 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                   );
                 })
               ) : (
-                <div className="col-span-full text-center py-8 text-gray-500">
-                  <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <ClipboardCheck className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                   <p>No urgent tasks found.</p>
                 </div>
               )}
@@ -236,16 +236,16 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
             <div className="space-y-3">
               {isLoadingBranchStats ? (
                 Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="flex items-start gap-4 p-4 border rounded-lg">
-                    <div className="h-6 w-6 bg-gray-200 rounded animate-pulse mt-1" />
+                  <div key={i} className="flex items-start gap-4 p-4 border border-border rounded-lg">
+                    <div className="h-6 w-6 bg-muted rounded animate-pulse mt-1" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 w-1/3 bg-gray-200 rounded animate-pulse" />
-                      <div className="h-3 w-2/3 bg-gray-200 rounded animate-pulse" />
+                      <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
+                      <div className="h-3 w-2/3 bg-muted rounded animate-pulse" />
                     </div>
                   </div>
                 ))
               ) : branchStatsError ? (
-                <p className="text-red-500 text-center py-4 col-span-full">Error loading action items.</p>
+                <p className="text-destructive text-center py-4 col-span-full">Error loading action items.</p>
               ) : branchStats?.expiryAlerts && branchStats.expiryAlerts.length > 0 ? (
                 branchStats.expiryAlerts.map((alert) => (
                   <ActionItem
@@ -257,8 +257,8 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                   />
                 ))
               ) : (
-                <div className="col-span-full text-center py-8 text-gray-500">
-                  <ClipboardCheck className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                <div className="col-span-full text-center py-8 text-muted-foreground">
+                  <ClipboardCheck className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                   <p>No urgent action items found.</p>
                 </div>
               )}

@@ -54,57 +54,57 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
       <div className="grid grid-cols-2 gap-3 mb-6">
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start"
+          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
           onClick={onNewClient}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-blue-100 flex items-center justify-center">
-            <Plus className="h-3.5 md:h-4 w-3.5 md:w-4 text-blue-600" />
+          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-primary/10 flex items-center justify-center">
+            <Plus className="h-3.5 md:h-4 w-3.5 md:w-4 text-primary" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm">New Client</div>
-            <div className="text-xs text-gray-500 hidden md:block">Add client details</div>
+            <div className="font-medium text-xs md:text-sm text-card-foreground">New Client</div>
+            <div className="text-xs text-muted-foreground hidden md:block">Add client details</div>
           </div>
         </Button>
         
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start"
+          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
           onClick={() => onTabChange("bookings")}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-green-100 flex items-center justify-center">
+          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-green-500/10 flex items-center justify-center">
             <Calendar className="h-3.5 md:h-4 w-3.5 md:w-4 text-green-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm">Schedule</div>
-            <div className="text-xs text-gray-500 hidden md:block">View calendar</div>
+            <div className="font-medium text-xs md:text-sm text-card-foreground">Schedule</div>
+            <div className="text-xs text-muted-foreground hidden md:block">View calendar</div>
           </div>
         </Button>
         
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start"
+          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
           onClick={() => onTabChange("reports")}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-100 flex items-center justify-center">
+          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-500/10 flex items-center justify-center">
             <FileText className="h-3.5 md:h-4 w-3.5 md:w-4 text-amber-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm">Reports</div>
-            <div className="text-xs text-gray-500 hidden md:block">Generate reports</div>
+            <div className="font-medium text-xs md:text-sm text-card-foreground">Reports</div>
+            <div className="text-xs text-muted-foreground hidden md:block">Generate reports</div>
           </div>
         </Button>
         
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-gray-200 shadow-sm bg-white hover:bg-gray-50 text-left justify-start"
+          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
           onClick={() => onTabChange("carers")}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-purple-100 flex items-center justify-center">
+          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-purple-500/10 flex items-center justify-center">
             <Users className="h-3.5 md:h-4 w-3.5 md:w-4 text-purple-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm">Carers</div>
-            <div className="text-xs text-gray-500 hidden md:block">Manage carers</div>
+            <div className="font-medium text-xs md:text-sm text-card-foreground">Carers</div>
+            <div className="text-xs text-muted-foreground hidden md:block">Manage carers</div>
           </div>
         </Button>
       </div>

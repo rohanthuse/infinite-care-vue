@@ -14,27 +14,27 @@ const SidebarItem = ({ icon: Icon, label, active, hasSubmenu, onClick }: Sidebar
   return (
     <div 
       className={cn(
-        "flex items-center px-4 py-3 cursor-pointer hover:bg-blue-50 transition-colors",
-        active && "bg-blue-50 border-l-4 border-blue-600"
+        "flex items-center px-4 py-3 cursor-pointer hover:bg-accent transition-colors",
+        active && "bg-accent border-l-4 border-primary"
       )}
       onClick={onClick}
     >
-      <Icon className="h-5 w-5 mr-3 text-gray-600" />
-      <span className="text-gray-700 flex-1">{label}</span>
-      {hasSubmenu && <ChevronDown className="h-4 w-4 text-gray-500" />}
+      <Icon className="h-5 w-5 mr-3 text-muted-foreground" />
+      <span className="text-card-foreground flex-1">{label}</span>
+      {hasSubmenu && <ChevronDown className="h-4 w-4 text-muted-foreground" />}
     </div>
   );
 };
 
 export function DashboardSidebar() {
   return (
-    <div className="w-64 border-r border-gray-200 h-screen bg-white">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-64 border-r border-border h-screen bg-card">
+      <div className="p-4 border-b border-border">
         <div className="flex items-center space-x-2">
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-6 w-6" />
           <div className="flex flex-col">
-            <h2 className="text-sm font-bold text-blue-600">MED-INFINITE</h2>
-            <span className="text-xs text-gray-500 -mt-0.5">ENDLESS CARE</span>
+            <h2 className="text-sm font-bold text-primary">MED-INFINITE</h2>
+            <span className="text-xs text-muted-foreground -mt-0.5">ENDLESS CARE</span>
           </div>
         </div>
       </div>

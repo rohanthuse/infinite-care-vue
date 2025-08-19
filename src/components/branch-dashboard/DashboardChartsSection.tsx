@@ -60,10 +60,11 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
                   <YAxis yAxisId="left" />
                   <YAxis yAxisId="right" orientation="right" />
                   <Tooltip contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #f0f0f0",
+                    backgroundColor: "hsl(var(--card))",
+                    color: "hsl(var(--card-foreground))",
+                    border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                   }} />
                   <Legend />
                   <Bar yAxisId="left" dataKey="visits" name="Visits" fill="#a5b4fc" radius={[4, 4, 0, 0]} />
@@ -98,10 +99,11 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
                     )}
                   </Pie>
                   <Tooltip formatter={(value, name) => [`${value} clients`, name]} contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #f0f0f0",
+                    backgroundColor: "hsl(var(--card))",
+                    color: "hsl(var(--card-foreground))",
+                    border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
                   }} />
                 </PieChart>
               </ResponsiveContainer>

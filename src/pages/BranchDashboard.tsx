@@ -197,10 +197,10 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Show loading while initializing
   if (isInitializing || authLoading || roleLoading || (userRole?.role === 'branch_admin' && accessLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -209,12 +209,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Show access denied if necessary
   if (accessDenied || !id) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">
+          <h1 className="text-2xl font-bold text-destructive mb-4">
             {!id ? "Branch Not Found" : "Access Denied"}
           </h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             {!id 
               ? "The branch you're looking for could not be found."
               : "You don't have access to this branch dashboard."
@@ -222,7 +222,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           </p>
           <button
             onClick={() => navigate('/branch-admin-login')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
           >
             Return to Login
           </button>
@@ -347,13 +347,13 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   // Component to show access denied for restricted content
   const AccessDeniedTab = ({ tabName }: { tabName: string }) => (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 text-center">
-      <div className="text-red-500 text-6xl mb-4">🔒</div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
-      <p className="text-gray-600 mb-4">
+    <div className="bg-card rounded-lg border border-border shadow-sm p-8 text-center">
+      <div className="text-destructive text-6xl mb-4">🔒</div>
+      <h2 className="text-2xl font-bold text-card-foreground mb-2">Access Restricted</h2>
+      <p className="text-muted-foreground mb-4">
         You don't have permission to access the {tabName} section.
       </p>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted-foreground">
         Contact your administrator if you need access to this feature.
       </p>
     </div>
@@ -361,7 +361,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white w-full">
+      <div className="min-h-screen flex flex-col bg-background w-full">
         <DashboardHeader />
         
         <div className="flex flex-1 w-full relative">
