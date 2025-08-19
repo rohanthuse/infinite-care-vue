@@ -349,6 +349,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             service_id: serviceId,
             revenue: null,
             status: "assigned",
+            notes: bookingData.notes || null,
           });
         }
         curr.setDate(curr.getDate() + 1);

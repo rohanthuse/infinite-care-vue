@@ -12,6 +12,7 @@ interface UpdateBookingPayload {
     end_time: string;
     status: string;
     service_id: string;
+    notes: string;
   }>;
 }
 

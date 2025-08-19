@@ -11,6 +11,7 @@ export interface CreateBookingInput {
   service_id?: string;
   revenue?: number;
   status?: string; // <-- ADDED
+  notes?: string;
 }
 
 export async function createBooking(input: CreateBookingInput) {
@@ -26,6 +27,7 @@ export async function createBooking(input: CreateBookingInput) {
         service_id: input.service_id || null,
         revenue: input.revenue || null,
         status: input.status || "assigned", // <-- ADDED
+        notes: input.notes || null,
       },
     ])
     .select()

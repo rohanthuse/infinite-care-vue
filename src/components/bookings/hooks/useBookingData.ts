@@ -105,7 +105,7 @@ export function useBookingData(branchId?: string) {
           endTime: endDate ? endDate.toTimeString().slice(0, 5) : "07:30",
           date: startDate ? startDate.toISOString().slice(0, 10) : "",
           status: bk.status || "assigned",
-          notes: "",
+          notes: bk.notes || "",
         };
       });
     } else if (!branchId) {

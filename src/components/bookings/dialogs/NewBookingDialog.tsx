@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -68,6 +69,7 @@ const formSchema = z.object({
     required_error: "A date is required.",
   }),
   schedules: z.array(scheduleSchema).min(1, { message: "At least one schedule is required" }),
+  notes: z.string().optional(),
 });
 
 interface NewBookingDialogProps {
@@ -131,6 +133,7 @@ export function NewBookingDialog({
       carerIds: prefilledData?.carerId ? [prefilledData.carerId] : [],
       fromDate: prefilledData?.date || new Date(),
       untilDate: prefilledData?.date || new Date(),
+      notes: "",
       schedules: [
         {
           startTime: prefilledData?.startTime || "09:00",
@@ -701,6 +704,25 @@ export function NewBookingDialog({
                   Add Schedule
                 </Button>
               </div>
+
+              {/* Additional Information Field */}
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Information</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter any additional information or special requirements..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </form>
           </Form>
         </div>
