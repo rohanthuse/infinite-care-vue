@@ -76,7 +76,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     }
 
     // For development, allow overriding tenant via localStorage
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('.lovableproject.com')) {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
       const devTenant = localStorage.getItem('dev-tenant');
       if (devTenant) {
         console.log('[TenantProvider] Development mode - using tenant from localStorage:', devTenant);

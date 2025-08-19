@@ -18,7 +18,7 @@ export const CarerDashboardRedirect: React.FC = () => {
   // Check if running in development mode
   const isDevelopment = window.location.hostname === 'localhost' || 
                        window.location.hostname === '127.0.0.1' || 
-                       window.location.hostname.includes('.lovableproject.com');
+                       window.location.hostname.includes('preview');
 
   if (isDevelopment) {
     // In development, try to get tenant from localStorage

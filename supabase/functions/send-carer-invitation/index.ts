@@ -46,8 +46,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('[send-carer-invitation] Sending invitation to:', email, 'for staff:', staff_id);
 
-    // Create the invitation URL
-    const invitationUrl = `${Deno.env.get('SUPABASE_URL')?.replace('//', '//').replace('supabase.co', 'lovable.app')}/carer-invitation?token=${invitation_token}`;
+    // Create the invitation URL using proper site URL
+    const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'medinfinite.com') || 'https://medinfinite.com';
+    const invitationUrl = `${siteUrl}/carer-invitation?token=${invitation_token}`;
 
     // Send the invitation email
     const emailResponse = await resend.emails.send({

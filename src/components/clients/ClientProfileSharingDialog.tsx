@@ -21,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { useThirdPartyAccess, CreateThirdPartyAccessData } from "@/hooks/useThirdPartyAccess";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { toast } from "@/hooks/use-toast";
+import { generateShareableUrl } from "@/utils/domain";
 
 interface ClientProfileSharingDialogProps {
   open: boolean;
@@ -111,8 +112,8 @@ export function ClientProfileSharingDialog({
   };
 
   const generateShareableLink = () => {
-    // This would generate a temporary shareable link in a real implementation
-    const shareableUrl = `${window.location.origin}/shared/client/${client.id}?token=temp_token_123`;
+    // Generate a temporary shareable link using the domain utility
+    const shareableUrl = generateShareableUrl(client.id, 'temp_token_123');
     
     navigator.clipboard.writeText(shareableUrl).then(() => {
       toast({
