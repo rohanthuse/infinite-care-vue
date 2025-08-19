@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useClientAuth } from './useClientAuth';
+import { useSimpleClientAuth } from './useSimpleClientAuth';
 import { toast } from 'sonner';
 
 export interface ClientProfileData {
@@ -60,17 +60,17 @@ export interface ClientMedicalInfo {
 
 // Get client profile data
 export const useClientProfile = () => {
-  const { clientProfile, isAuthenticated } = useClientAuth();
+  const { data: authData, isLoading } = useSimpleClientAuth();
   
   return useQuery({
-    queryKey: ['client-profile', clientProfile?.id],
+    queryKey: ['client-profile', authData?.client?.id],
     queryFn: async (): Promise<ClientProfileData | null> => {
-      if (!clientProfile?.id) return null;
+      if (!authData?.client?.id) return null;
 
       const { data, error } = await supabase
         .from('clients')
         .select('*')
-        .eq('id', clientProfile.id)
+        .eq('id', authData.client.id)
         .maybeSingle();
 
       if (error) {
@@ -80,24 +80,24 @@ export const useClientProfile = () => {
 
       return data;
     },
-    enabled: !!clientProfile?.id && isAuthenticated,
+    enabled: !!authData?.client?.id && !isLoading,
     staleTime: 300000, // 5 minutes
   });
 };
 
 // Get client personal information
 export const useClientPersonalInfo = () => {
-  const { clientProfile } = useClientAuth();
+  const { data: authData, isLoading } = useSimpleClientAuth();
   
   return useQuery({
-    queryKey: ['client-personal-info', clientProfile?.id],
+    queryKey: ['client-personal-info', authData?.client?.id],
     queryFn: async (): Promise<ClientPersonalInfo | null> => {
-      if (!clientProfile?.id) return null;
+      if (!authData?.client?.id) return null;
 
       const { data, error } = await supabase
         .from('client_personal_info')
         .select('*')
-        .eq('client_id', clientProfile.id)
+        .eq('client_id', authData.client.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -107,23 +107,23 @@ export const useClientPersonalInfo = () => {
 
       return data || null;
     },
-    enabled: !!clientProfile?.id,
+    enabled: !!authData?.client?.id && !isLoading,
   });
 };
 
 // Get client medical information
 export const useClientMedicalInfo = () => {
-  const { clientProfile } = useClientAuth();
+  const { data: authData, isLoading } = useSimpleClientAuth();
   
   return useQuery({
-    queryKey: ['client-medical-info', clientProfile?.id],
+    queryKey: ['client-medical-info', authData?.client?.id],
     queryFn: async (): Promise<ClientMedicalInfo | null> => {
-      if (!clientProfile?.id) return null;
+      if (!authData?.client?.id) return null;
 
       const { data, error } = await supabase
         .from('client_medical_info')
         .select('*')
-        .eq('client_id', clientProfile.id)
+        .eq('client_id', authData.client.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -133,21 +133,21 @@ export const useClientMedicalInfo = () => {
 
       return data || null;
     },
-    enabled: !!clientProfile?.id,
+    enabled: !!authData?.client?.id && !isLoading,
   });
 };
 
 // Update client profile
 export const useUpdateClientProfile = () => {
   const queryClient = useQueryClient();
-  const { clientProfile } = useClientAuth();
+  const { data: authData } = useSimpleClientAuth();
 
   return useMutation({
     mutationFn: async (updates: Partial<ClientProfileData>) => {
-      if (!clientProfile?.id) throw new Error('Client not authenticated');
+      if (!authData?.client?.id) throw new Error('Client not authenticated');
 
       console.log('[useUpdateClientProfile] Updating with:', updates);
-      console.log('[useUpdateClientProfile] Client ID:', clientProfile.id);
+      console.log('[useUpdateClientProfile] Client ID:', authData.client.id);
       
       // Verify authentication first
       const { data: user, error: authError } = await supabase.auth.getUser();
@@ -161,7 +161,7 @@ export const useUpdateClientProfile = () => {
       const { data: clientCheck } = await supabase
         .from('clients')
         .select('id, auth_user_id, email')
-        .eq('id', clientProfile.id)
+        .eq('id', authData.client.id)
         .maybeSingle();
         
       if (!clientCheck) {
@@ -181,7 +181,7 @@ export const useUpdateClientProfile = () => {
       const { data, error } = await supabase
         .from('clients')
         .update(updates)
-        .eq('id', clientProfile.id)
+        .eq('id', authData.client.id)
         .select()
         .maybeSingle();
 
@@ -221,17 +221,17 @@ export const useUpdateClientProfile = () => {
 // Update client personal information
 export const useUpdateClientPersonalInfo = () => {
   const queryClient = useQueryClient();
-  const { clientProfile } = useClientAuth();
+  const { data: authData } = useSimpleClientAuth();
 
   return useMutation({
     mutationFn: async (updates: Partial<ClientPersonalInfo>) => {
-      if (!clientProfile?.id) throw new Error('Client not authenticated');
+      if (!authData?.client?.id) throw new Error('Client not authenticated');
 
       // Check if record exists
       const { data: existing } = await supabase
         .from('client_personal_info')
         .select('id')
-        .eq('client_id', clientProfile.id)
+        .eq('client_id', authData.client.id)
         .single();
 
       if (existing) {
@@ -239,7 +239,7 @@ export const useUpdateClientPersonalInfo = () => {
         const { data, error } = await supabase
           .from('client_personal_info')
           .update(updates)
-          .eq('client_id', clientProfile.id)
+          .eq('client_id', authData.client.id)
           .select()
           .single();
 
@@ -249,7 +249,7 @@ export const useUpdateClientPersonalInfo = () => {
         // Create new record
         const { data, error } = await supabase
           .from('client_personal_info')
-          .insert({ ...updates, client_id: clientProfile.id })
+          .insert({ ...updates, client_id: authData.client.id })
           .select()
           .single();
 
@@ -271,17 +271,17 @@ export const useUpdateClientPersonalInfo = () => {
 // Update client medical information
 export const useUpdateClientMedicalInfo = () => {
   const queryClient = useQueryClient();
-  const { clientProfile } = useClientAuth();
+  const { data: authData } = useSimpleClientAuth();
 
   return useMutation({
     mutationFn: async (updates: Partial<ClientMedicalInfo>) => {
-      if (!clientProfile?.id) throw new Error('Client not authenticated');
+      if (!authData?.client?.id) throw new Error('Client not authenticated');
 
       // Check if record exists
       const { data: existing } = await supabase
         .from('client_medical_info')
         .select('id')
-        .eq('client_id', clientProfile.id)
+        .eq('client_id', authData.client.id)
         .single();
 
       if (existing) {
@@ -289,7 +289,7 @@ export const useUpdateClientMedicalInfo = () => {
         const { data, error } = await supabase
           .from('client_medical_info')
           .update(updates)
-          .eq('client_id', clientProfile.id)
+          .eq('client_id', authData.client.id)
           .select()
           .single();
 
@@ -299,7 +299,7 @@ export const useUpdateClientMedicalInfo = () => {
         // Create new record
         const { data, error } = await supabase
           .from('client_medical_info')
-          .insert({ ...updates, client_id: clientProfile.id })
+          .insert({ ...updates, client_id: authData.client.id })
           .select()
           .single();
 

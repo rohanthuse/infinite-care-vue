@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Save, Eye, EyeOff, User, Heart, Phone, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { useClientAuth } from "@/hooks/useClientAuth";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import {
   useClientProfile,
   useClientPersonalInfo,
@@ -23,7 +23,7 @@ import {
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 
 const ClientProfile = () => {
-  const { clientProfile: authProfile, isAuthenticated, loading: authLoading } = useClientAuth();
+  const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
   const { data: profile, isLoading: profileLoading } = useClientProfile();
   const { data: personalInfo, isLoading: personalLoading } = useClientPersonalInfo();
   const { data: medicalInfo, isLoading: medicalLoading } = useClientMedicalInfo();
@@ -193,8 +193,8 @@ const ClientProfile = () => {
       let photoUrl = profile?.profile_photo_url || null;
       
       // Upload photo if a new one was selected
-      if (selectedFile && authProfile?.id) {
-        const uploadedUrl = await uploadPhoto(selectedFile, authProfile.id);
+      if (selectedFile && authData?.client?.id) {
+        const uploadedUrl = await uploadPhoto(selectedFile, authData.client.id);
         if (uploadedUrl) {
           photoUrl = uploadedUrl;
         }
@@ -284,10 +284,10 @@ const ClientProfile = () => {
     );
   }
 
-  if (!isAuthenticated || !authProfile) {
+  if (authError || !authData?.client) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Please log in to view your profile.</div>
+        <div className="text-red-500">Unable to load profile. Please try again.</div>
       </div>
     );
   }
