@@ -236,35 +236,35 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
     <Sidebar
       side="right"
       className={cn(
-        "border-l border-gray-200 bg-white",
+        "border-l border-border bg-background text-foreground z-50",
         collapsed ? "w-16" : "w-80"
       )}
       collapsible="icon"
     >
-      <SidebarHeader className="border-b border-gray-200 p-4">
+      <SidebarHeader className="border-b border-border p-4 bg-background">
         {!collapsed && (
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Navigation</h2>
-            <SidebarTrigger className="h-6 w-6" />
+            <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
+            <SidebarTrigger className="h-8 w-8 text-foreground hover:bg-accent" />
           </div>
         )}
         {collapsed && (
           <div className="flex justify-center">
-            <SidebarTrigger className="h-6 w-6" />
+            <SidebarTrigger className="h-8 w-8 text-foreground hover:bg-accent" />
           </div>
         )}
       </SidebarHeader>
 
       <SidebarContent>
         {!collapsed && (
-          <div className="p-4 border-b border-gray-100">
+          <div className="p-4 border-b border-border bg-background">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search modules..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-background text-foreground border-input"
               />
             </div>
           </div>
@@ -272,12 +272,12 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
 
         {/* Quick Actions */}
         {!collapsed && (
-          <div className="p-4 border-b border-gray-100">
+          <div className="p-4 border-b border-border bg-background">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-gray-900">Quick Actions</h3>
+              <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="h-8 w-8 p-0">
+                  <Button size="sm" className="h-8 w-8 p-0" variant="outline">
                     <Plus className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -337,18 +337,18 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                 
                 return (
                   <SidebarMenuItem key={tab.value}>
-                    <SidebarMenuButton 
-                      asChild
-                      className={cn(
-                        "w-full justify-start",
-                        active && "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                      )}
-                    >
-                      <button onClick={() => handleTabNavigation(tab.value)}>
-                        <Icon className={cn("h-4 w-4", collapsed ? "mx-auto" : "mr-2")} />
-                        {!collapsed && <span>{tab.label}</span>}
-                      </button>
-                    </SidebarMenuButton>
+                      <SidebarMenuButton 
+                        asChild
+                        className={cn(
+                          "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
+                          active && "bg-primary/10 text-primary border-r-2 border-primary"
+                        )}
+                      >
+                        <button onClick={() => handleTabNavigation(tab.value)}>
+                          <Icon className={cn("h-4 w-4", collapsed ? "mx-auto" : "mr-2")} />
+                          {!collapsed && <span className="text-sm">{tab.label}</span>}
+                        </button>
+                      </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
               })}
@@ -371,8 +371,8 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                 onOpenChange={() => toggleGroup(group.label)}
               >
                 <CollapsibleTrigger asChild>
-                  <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:text-gray-900">
-                    <span>{group.label}</span>
+                  <SidebarGroupLabel className="flex items-center justify-between cursor-pointer text-muted-foreground hover:text-foreground">
+                    <span className="text-sm font-medium">{group.label}</span>
                     <ChevronDown className={cn(
                       "h-4 w-4 transition-transform",
                       openGroups[group.label] && "rotate-180"
@@ -388,18 +388,18 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                         
                         return (
                           <SidebarMenuItem key={tab.value}>
-                            <SidebarMenuButton 
-                              asChild
-                              className={cn(
-                                "w-full justify-start",
-                                active && "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                              )}
-                            >
-                              <button onClick={() => handleTabNavigation(tab.value)}>
-                                <Icon className="h-4 w-4 mr-2" />
-                                <span>{tab.label}</span>
-                              </button>
-                            </SidebarMenuButton>
+                             <SidebarMenuButton 
+                               asChild
+                               className={cn(
+                                 "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
+                                 active && "bg-primary/10 text-primary border-r-2 border-primary"
+                               )}
+                             >
+                               <button onClick={() => handleTabNavigation(tab.value)}>
+                                 <Icon className="h-4 w-4 mr-2" />
+                                 <span className="text-sm">{tab.label}</span>
+                               </button>
+                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         );
                       })}
@@ -422,18 +422,18 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                   
                   return (
                     <SidebarMenuItem key={tab.value}>
-                      <SidebarMenuButton 
-                        asChild
-                        className={cn(
-                          "w-full justify-center",
-                          active && "bg-blue-50 text-blue-600"
-                        )}
-                        tooltip={tab.label}
-                      >
-                        <button onClick={() => handleTabNavigation(tab.value)}>
-                          <Icon className="h-4 w-4" />
-                        </button>
-                      </SidebarMenuButton>
+                       <SidebarMenuButton 
+                         asChild
+                         className={cn(
+                           "w-full justify-center text-foreground hover:bg-accent hover:text-accent-foreground",
+                           active && "bg-primary/10 text-primary"
+                         )}
+                         tooltip={tab.label}
+                       >
+                         <button onClick={() => handleTabNavigation(tab.value)}>
+                           <Icon className="h-4 w-4" />
+                         </button>
+                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
                 })}

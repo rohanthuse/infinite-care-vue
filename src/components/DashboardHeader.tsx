@@ -140,7 +140,7 @@ export function DashboardHeader() {
             onViewAll={handleViewAllNotifications}
           />
           {isBranchDashboard && sidebarState && (
-            <SidebarTrigger className="h-9 w-9" />
+            <SidebarTrigger className="h-9 w-9 text-primary hover:bg-primary/10" />
           )}
         </div>
         
