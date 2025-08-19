@@ -188,14 +188,20 @@ export const CarerDocuments: React.FC = () => {
 
       console.log('[CarerDocuments] Viewing document:', document.file_path);
 
-      const { data } = supabase.storage
+      // Use signed URL for private bucket access
+      const { data, error } = await supabase.storage
         .from('staff-documents')
-        .getPublicUrl(document.file_path);
+        .createSignedUrl(document.file_path, 3600); // 1 hour expiry
 
-      if (data?.publicUrl) {
-        window.open(data.publicUrl, '_blank');
+      if (error) {
+        console.error('[CarerDocuments] Signed URL error:', error);
+        throw new Error(`Failed to create secure URL: ${error.message}`);
+      }
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
       } else {
-        throw new Error('Could not generate file URL');
+        throw new Error('Could not generate secure file URL');
       }
     } catch (error: any) {
       console.error('[CarerDocuments] View error:', error);
