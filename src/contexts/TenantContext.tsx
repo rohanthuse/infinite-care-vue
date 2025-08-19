@@ -29,7 +29,7 @@ interface TenantContextType {
   refreshOrganization: () => void;
 }
 
-const TenantContext = createContext<TenantContextType | undefined>(undefined);
+export const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const useTenant = () => {
   const context = useContext(TenantContext);

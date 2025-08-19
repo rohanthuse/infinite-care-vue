@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantSafe } from './useTenantSafe';
 
 export interface CarerAuthState {
   user: User | null;
@@ -23,7 +23,7 @@ export function useCarerAuthSafe() {
   const [carerProfile, setCarerProfile] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { tenantSlug } = useTenant();
+  const { tenantSlug } = useTenantSafe();
 
   useEffect(() => {
     let mounted = true;
