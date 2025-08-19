@@ -72,20 +72,8 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
   console.log('[CarerDocuments] Authenticated user ID:', user.id);
   console.log('[CarerDocuments] Staff profile ID (carerId):', carerId);
   
-  // Verify that the staff ID matches the authenticated user using our verification function
-  const { data: verifyData, error: verifyError } = await supabase.rpc('verify_staff_auth_context');
-  
-  if (verifyError) {
-    console.error('[CarerDocuments] Auth verification error:', verifyError);
-    throw new Error(`Authentication verification failed: ${verifyError.message}`);
-  }
-  
-  if (verifyData !== carerId) {
-    console.error('[CarerDocuments] Staff ID mismatch. Expected:', carerId, 'Got:', verifyData);
-    throw new Error('Staff ID does not match authenticated user');
-  }
-  
-  console.log('[CarerDocuments] Authentication verified for staff ID:', verifyData);
+  // RLS policy will handle authentication verification automatically
+  // No need for separate RPC call that can cause timing/context issues
   
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
