@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -133,12 +134,13 @@ export function DashboardHeader() {
           </div>
         </div>
         
-        {/* Bell notification and sidebar trigger on right for desktop view */}
+        {/* Bell notification, theme switcher and sidebar trigger on right for desktop view */}
         <div className="hidden md:flex items-center gap-2">
           <NotificationDropdown 
             branchId={branchId} 
             onViewAll={handleViewAllNotifications}
           />
+          <ThemeSwitcher />
           {isBranchDashboard && sidebarState && (
             <SidebarTrigger className="h-9 w-9 text-primary hover:bg-primary/10" />
           )}
@@ -185,11 +187,12 @@ export function DashboardHeader() {
                 onChange={(e) => setSearchValue(e.target.value)}
               />
             </div>
-            <div className="ml-2">
+            <div className="ml-2 flex items-center gap-2">
               <NotificationDropdown 
                 branchId={branchId} 
                 onViewAll={handleViewAllNotifications}
               />
+              <ThemeSwitcher />
             </div>
           </div>
           
