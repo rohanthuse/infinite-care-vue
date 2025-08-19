@@ -62,12 +62,12 @@ const SidebarItem = ({ item, active, onClick, expanded, onExpand, collapsed }: S
       <div 
         className={cn(
           "flex flex-col items-center justify-center p-3 my-1 rounded-md cursor-pointer transition-colors",
-          active ? "bg-blue-50 text-blue-600" : "hover:bg-gray-100"
+          active ? "bg-primary/10 text-primary" : "hover:bg-muted"
         )}
         onClick={onClick}
         title={item.label}
       >
-        <Icon className={cn("h-5 w-5", active ? "text-blue-600" : "text-gray-600")} />
+        <Icon className={cn("h-5 w-5", active ? "text-primary" : "text-muted-foreground")} />
         <span className="text-xs mt-1 text-center">
           {item.label.length > 6 ? `${item.label.substring(0, 6)}...` : item.label}
         </span>
@@ -80,27 +80,27 @@ const SidebarItem = ({ item, active, onClick, expanded, onExpand, collapsed }: S
       <div 
         className={cn(
           "flex items-center justify-between px-4 py-3 my-1 rounded-md cursor-pointer transition-colors",
-          active ? "bg-blue-50 text-blue-600" : "hover:bg-gray-100"
+          active ? "bg-primary/10 text-primary" : "hover:bg-muted"
         )}
         onClick={onClick}
       >
         <div className="flex items-center gap-3">
-          <Icon className={cn("h-5 w-5", active ? "text-blue-600" : "text-gray-600")} />
-          <span className={cn("text-sm font-medium", active ? "text-blue-600" : "text-gray-700")}>
+          <Icon className={cn("h-5 w-5", active ? "text-primary" : "text-muted-foreground")} />
+          <span className={cn("text-sm font-medium", active ? "text-primary" : "text-foreground")}>
             {item.label}
           </span>
         </div>
         {item.expandable && (
           <button 
-            className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+            className="p-1 rounded-full hover:bg-muted/50 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onExpand?.();
             }}
           >
             {expanded ? 
-              <ChevronDown className="h-4 w-4 text-gray-500" /> : 
-              <ChevronRight className="h-4 w-4 text-gray-500" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" /> : 
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             }
           </button>
         )}
@@ -150,19 +150,19 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
       animate={{ width: collapsed ? 80 : 250 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "fixed top-[4.5rem] left-0 bottom-0 bg-white border-r border-gray-200 z-30 overflow-y-auto",
+        "fixed top-[4.5rem] left-0 bottom-0 bg-card border-r border-border z-30 overflow-y-auto",
         collapsed ? "w-20" : "w-64"
       )}
     >
-      <div className="sticky top-0 z-20 bg-white p-3 border-b border-gray-100 flex justify-between items-center">
+      <div className="sticky top-0 z-20 bg-card p-3 border-b border-border flex justify-between items-center">
         {!collapsed && (
-          <h2 className="text-lg font-bold text-gray-800 truncate">{branchName}</h2>
+          <h2 className="text-lg font-bold text-foreground truncate">{branchName}</h2>
         )}
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={toggleCollapse} 
-          className="rounded-full hover:bg-gray-100"
+          className="rounded-full hover:bg-muted/50"
         >
           {collapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
         </Button>
@@ -185,11 +185,11 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
       </div>
       
       <div className={cn(
-        "border-t border-gray-200 mt-auto p-3",
+        "border-t border-border mt-auto p-3",
         collapsed ? "text-center" : "px-4"
       )}>
         <div className={cn(
-          "flex items-center text-xs text-gray-500",
+          "flex items-center text-xs text-muted-foreground",
           collapsed ? "flex-col" : "justify-between"
         )}>
           <span>Powered by</span>

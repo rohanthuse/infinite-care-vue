@@ -49,14 +49,14 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'sent': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'refunded': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'paid': return 'bg-green-500/10 text-green-700 dark:text-green-400';
+      case 'sent': return 'bg-blue-500/10 text-blue-700 dark:text-blue-400';
+      case 'pending': return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400';
+      case 'overdue': return 'bg-red-500/10 text-red-700 dark:text-red-400';
+      case 'draft': return 'bg-muted text-muted-foreground';
+      case 'cancelled': return 'bg-red-500/10 text-red-700 dark:text-red-400';
+      case 'refunded': return 'bg-purple-500/10 text-purple-700 dark:text-purple-400';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -96,56 +96,56 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               <h3 className="text-lg font-semibold mb-3">Invoice Details</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Status:</span>
+                  <span className="text-muted-foreground">Status:</span>
                   <Badge className={getStatusColor(invoice.status)}>
                     {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Invoice Date:</span>
-                  <span>{format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
+                  <span className="text-muted-foreground">Invoice Date:</span>
+                  <span className="text-foreground">{format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Due Date:</span>
-                  <span>{format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
+                  <span className="text-muted-foreground">Due Date:</span>
+                  <span className="text-foreground">{format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
                 </div>
                 {invoice.paid_date && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Paid Date:</span>
-                    <span>{format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
+                    <span className="text-muted-foreground">Paid Date:</span>
+                    <span className="text-foreground">{format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
                   </div>
                 )}
                 {invoice.service_provided_date && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Service Date:</span>
-                    <span>{format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}</span>
+                    <span className="text-muted-foreground">Service Date:</span>
+                    <span className="text-foreground">{format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}</span>
                   </div>
                 )}
               </div>
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-3">Amount Summary</h3>
+              <h3 className="text-lg font-semibold mb-3 text-foreground">Amount Summary</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span>{formatCurrency(subtotal)}</span>
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span className="text-foreground">{formatCurrency(subtotal)}</span>
                 </div>
                 {totalDiscounts > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Discounts:</span>
-                    <span>-{formatCurrency(totalDiscounts)}</span>
+                    <span className="text-muted-foreground">Total Discounts:</span>
+                    <span className="text-foreground">-{formatCurrency(totalDiscounts)}</span>
                   </div>
                 )}
                 {taxPercentage > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Tax ({taxPercentage}%):</span>
-                    <span>{formatCurrency(taxAmount)}</span>
+                    <span className="text-muted-foreground">Tax ({taxPercentage}%):</span>
+                    <span className="text-foreground">{formatCurrency(taxAmount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between font-semibold text-lg border-t pt-2">
-                  <span>Total:</span>
-                  <span>{formatCurrency(total)}</span>
+                <div className="flex justify-between font-semibold text-lg border-t border-border pt-2">
+                  <span className="text-foreground">Total:</span>
+                  <span className="text-foreground">{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>
@@ -153,8 +153,8 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
           {/* Description */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-gray-700">{invoice.description}</p>
+            <h3 className="text-lg font-semibold mb-2 text-foreground">Description</h3>
+            <p className="text-foreground">{invoice.description}</p>
           </div>
 
           {/* Line Items */}
@@ -218,8 +218,8 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
           {/* Notes */}
           {invoice.notes && (
             <div>
-              <h3 className="text-lg font-semibold mb-2">Notes</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{invoice.notes}</p>
+              <h3 className="text-lg font-semibold mb-2 text-foreground">Notes</h3>
+              <p className="text-foreground whitespace-pre-wrap">{invoice.notes}</p>
             </div>
           )}
         </div>

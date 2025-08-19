@@ -128,16 +128,16 @@ export function UploadDocumentDialog({
               <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                   dragActive 
-                    ? "border-blue-400 bg-blue-50" 
-                    : "border-gray-300 hover:border-gray-400"
+                    ? "border-primary bg-primary/5" 
+                    : "border-border hover:border-border/80"
                 }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                <p className="text-sm text-gray-600 mb-2">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mb-2">
                   Drag and drop your file here, or click to browse
                 </p>
                 <input
@@ -157,13 +157,13 @@ export function UploadDocumentDialog({
                 </Button>
               </div>
             ) : (
-              <div className="border rounded-lg p-4 bg-gray-50">
+              <div className="border rounded-lg p-4 bg-muted">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <FileText className="h-8 w-8 text-blue-500" />
+                    <FileText className="h-8 w-8 text-primary" />
                     <div>
-                      <p className="font-medium text-sm">{selectedFile.name}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-medium text-sm text-foreground">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {formatFileSize(selectedFile.size)}
                       </p>
                     </div>

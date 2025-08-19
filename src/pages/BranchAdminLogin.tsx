@@ -228,22 +228,22 @@ const BranchAdminLogin = () => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-muted px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden text-center">
             <div className="flex items-center justify-center space-x-3 mb-6">
-              <Shield className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900">Med-Infinite</span>
+              <Shield className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-bold text-foreground">Med-Infinite</span>
             </div>
           </div>
 
           {/* Header */}
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl font-bold text-foreground mb-2">
               Welcome Back
             </h2>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Sign in to your branch admin account
             </p>
           </div>
@@ -251,17 +251,17 @@ const BranchAdminLogin = () => {
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email Address
               </Label>
               <div className="relative mt-1">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 pr-3 block w-full border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-3 block w-full border border-border rounded-md py-2"
                   placeholder="Enter your email"
                   required
                 />
@@ -270,25 +270,25 @@ const BranchAdminLogin = () => {
 
             <div>
               <div className="flex justify-between items-center">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
                 </Label>
                 <a
                   href="#"
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-primary hover:text-primary/80"
                   onClick={(e) => e.preventDefault()}
                 >
                   Forgot password?
                 </a>
               </div>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 block w-full border border-gray-300 rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-10 block w-full border border-border rounded-md py-2"
                   placeholder="Enter your password"
                   required
                 />
@@ -298,9 +298,9 @@ const BranchAdminLogin = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
+                    <Eye className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
               </div>
@@ -315,7 +315,7 @@ const BranchAdminLogin = () => {
               />
               <Label
                 htmlFor="remember"
-                className="text-sm text-gray-700 cursor-pointer"
+                className="text-sm text-foreground cursor-pointer"
               >
                 Remember me
               </Label>
@@ -324,7 +324,7 @@ const BranchAdminLogin = () => {
             {/* Sign In Button */}
             <CustomButton
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md transition duration-200 font-medium"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 px-4 rounded-md transition duration-200 font-medium"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
@@ -332,11 +332,11 @@ const BranchAdminLogin = () => {
 
             {/* Contact Support */}
             <div className="text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Having trouble signing in?{" "}
                 <a
                   href="#"
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-primary hover:text-primary/80 font-medium"
                   onClick={(e) => e.preventDefault()}
                 >
                   Contact Support
@@ -349,7 +349,7 @@ const BranchAdminLogin = () => {
               <CustomButton
                 variant="ghost"
                 onClick={() => navigate("/")}
-                className="text-blue-600 hover:text-blue-800 flex items-center justify-center space-x-2"
+                className="text-primary hover:text-primary/80 flex items-center justify-center space-x-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Return to homepage</span>

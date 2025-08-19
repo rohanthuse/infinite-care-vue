@@ -76,9 +76,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-center">Loading client details...</p>
+        <div className="bg-card rounded-xl p-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-center text-foreground">Loading client details...</p>
         </div>
       </div>
     );
@@ -86,15 +86,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
+            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
               {realClientData?.avatar_initials || client.avatar}
             </div>
             <div>
-              <h2 className="text-xl font-bold">{displayName}</h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <span>Client ID: {client.id}</span>
                 <span>•</span>
                 <span>Registered: {realClientData?.registered_on || client.registeredOn}</span>
@@ -124,30 +124,30 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
         <div className="flex-1 overflow-auto p-6">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
             <div className="w-full md:w-1/3">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                <div className="p-4 border-b">
-                  <h3 className="text-lg font-medium">Client Information</h3>
+              <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-border">
+                  <h3 className="text-lg font-medium text-foreground">Client Information</h3>
                 </div>
                 <div className="p-4 space-y-4">
                   <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{realClientData?.email || client.email}</p>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium text-foreground">{realClientData?.email || client.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium">{realClientData?.phone || client.phone}</p>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium text-foreground">{realClientData?.phone || client.phone}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Address</p>
-                    <p className="font-medium">{realClientData?.address || client.location}</p>
+                    <p className="text-sm text-muted-foreground">Address</p>
+                    <p className="font-medium text-foreground">{realClientData?.address || client.location}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Region</p>
-                    <p className="font-medium">{realClientData?.region || client.region}</p>
+                    <p className="text-sm text-muted-foreground">Region</p>
+                    <p className="font-medium text-foreground">{realClientData?.region || client.region}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="font-medium">{realClientData?.status || client.status}</p>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <p className="font-medium text-foreground">{realClientData?.status || client.status}</p>
                   </div>
                 </div>
               </div>
