@@ -215,9 +215,16 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           />
 
           <BookingTimeGrid
-            selectedDate={selectedDate}
-            branchId={branchId}
-            user={user}
+            date={selectedDate}
+            bookings={filteredBookings}
+            clients={clients}
+            carers={carers}
+            viewType={viewType}
+            viewMode="client"
+            onCreateBooking={handleContextMenuBooking}
+            onUpdateBooking={handleUpdateBooking}
+            onEditBooking={handleEditBooking}
+            isCheckingOverlap={isCheckingOverlap}
           />
         </TabsContent>
         
@@ -255,6 +262,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         carers={carers}
         services={services}
         onCreateBooking={handleCreateBooking}
+        branchId={branchId}
         prefilledData={newBookingData}
         preSelectedClientId={selectedClientId !== "all-clients" ? selectedClientId : undefined}
       />

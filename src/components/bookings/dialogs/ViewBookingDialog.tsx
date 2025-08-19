@@ -1,4 +1,3 @@
-
 import React from "react";
 import { format, parseISO } from "date-fns";
 import { Eye, Clock, User, Calendar, FileText } from "lucide-react";
@@ -31,12 +30,7 @@ export function ViewBookingDialog({
 }: ViewBookingDialogProps) {
   if (!booking) return null;
 
-  // Find service by ID if booking has service_id, otherwise use serviceName
-  const service = booking.service_id 
-    ? services.find((s) => s.id === booking.service_id)
-    : null;
-  
-  const serviceName = service?.title || booking.serviceName || "No service selected";
+  const service = services.find((s) => s.id === booking.service_id);
   
   // Construct proper Date objects from booking date and time strings
   const startTime = new Date(`${booking.date}T${booking.startTime}:00`);
@@ -52,10 +46,6 @@ export function ViewBookingDialog({
         return "bg-red-100 text-red-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
-      case "in_progress":
-        return "bg-purple-100 text-purple-800";
-      case "assigned":
-        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -151,9 +141,15 @@ export function ViewBookingDialog({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Service:</span>
                 <span className="text-sm font-medium">
-                  {serviceName}
+                  {service?.title || "No service selected"}
                 </span>
               </div>
+              {booking.notes && (
+                <div className="flex justify-between mt-1">
+                  <span className="text-sm text-gray-600">Notes:</span>
+                  <span className="text-sm font-medium">{booking.notes}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -174,14 +170,6 @@ export function ViewBookingDialog({
                 <span className="text-sm text-gray-600">Date:</span>
                 <span className="text-sm font-medium">{booking.date}</span>
               </div>
-              {booking.notes && (
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-gray-600">Notes:</span>
-                  <div className="text-sm font-medium bg-gray-50 p-2 rounded border">
-                    {booking.notes}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

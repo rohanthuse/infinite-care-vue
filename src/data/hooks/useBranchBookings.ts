@@ -13,12 +13,6 @@ export interface BookingDB {
   service_id: string | null;
   created_at: string | null;
   status: string | null;
-  notes: string | null;
-  // Service information
-  services?: {
-    id: string;
-    title: string;
-  } | null;
 }
 
 export async function fetchBranchBookings(branchId?: string) {
@@ -31,23 +25,9 @@ export async function fetchBranchBookings(branchId?: string) {
   
   const { data, error } = await supabase
     .from("bookings")
-    .select(`
-      id, 
-      client_id, 
-      staff_id, 
-      branch_id, 
-      start_time, 
-      end_time, 
-      revenue, 
-      service_id, 
-      created_at, 
-      status,
-      notes,
-      services (
-        id,
-        title
-      )
-    `)
+    .select(
+      "id, client_id, staff_id, branch_id, start_time, end_time, revenue, service_id, created_at, status"
+    )
     .eq("branch_id", branchId)
     .order("start_time", { ascending: true });
 

@@ -156,7 +156,6 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       client_id: bookingToUpdate.clientId,
       staff_id: bookingToUpdate.carerId,
       status: bookingToUpdate.status,
-      notes: bookingToUpdate.notes || null, // Include notes in update
     };
     
     if (bookingToUpdate.date && bookingToUpdate.startTime) {
@@ -350,7 +349,6 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             service_id: serviceId,
             revenue: null,
             status: "assigned",
-            notes: bookingData.notes || null, // Include notes in creation
           });
         }
         curr.setDate(curr.getDate() + 1);
@@ -367,8 +365,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       client_id: b.client_id,
       staff_id: b.staff_id,
       start_time: b.start_time,
-      end_time: b.end_time,
-      notes: b.notes
+      end_time: b.end_time
     })));
 
     createMultipleBookingsMutation.mutate(bookingsToCreate, {

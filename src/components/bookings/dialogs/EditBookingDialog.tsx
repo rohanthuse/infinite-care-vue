@@ -20,7 +20,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -45,7 +44,6 @@ const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
   service_id: z.string().min(1, "Service is required"),
-  notes: z.string().optional(), // Add notes field
 });
 
 type EditBookingFormData = z.infer<typeof editBookingSchema>;
@@ -73,7 +71,6 @@ export function EditBookingDialog({
       start_time: "",
       end_time: "",
       service_id: "",
-      notes: "", // Initialize notes
     },
   });
 
@@ -86,7 +83,6 @@ export function EditBookingDialog({
       form.setValue("start_time", format(startDate, "yyyy-MM-dd'T'HH:mm"));
       form.setValue("end_time", format(endDate, "yyyy-MM-dd'T'HH:mm"));
       form.setValue("service_id", booking.service_id || "");
-      form.setValue("notes", booking.notes || ""); // Set notes value
     }
   }, [booking, open, form]);
 
@@ -98,7 +94,6 @@ export function EditBookingDialog({
           start_time: new Date(data.start_time).toISOString(),
           end_time: new Date(data.end_time).toISOString(),
           service_id: data.service_id,
-          notes: data.notes || null, // Include notes in update
         },
       });
       
@@ -197,25 +192,6 @@ export function EditBookingDialog({
                   )}
                 />
               </div>
-
-              {/* Notes Field */}
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Add any additional notes or instructions for this booking..."
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <DialogFooter className="gap-2 sm:gap-0">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -125,28 +125,27 @@ const AdminRoutes = () => [
     <Route path="key-parameters" element={<KeyParameters />} />
     <Route path="booking-approvals" element={<BookingApprovals />} />
     
-    {/* Branch Dashboard Routes - Main dashboard with tabs */}
+    {/* Branch Dashboard Routes - All tabs handled by BranchDashboard */}
     <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/dashboard" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/key-parameters" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/workflow" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/bookings" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/carers" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/care-plan" element={<BranchDashboard />} />
+    <Route path="branch-dashboard/:id/:branchName/clients" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/reviews" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/communication" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/medication" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/finance" element={<BranchDashboard />} />
     <Route path="branch-dashboard/:id/:branchName/notifications" element={<BranchDashboard />} />
-    <Route path="branch-dashboard/:id/:branchName/notifications/:categoryId" element={<BranchDashboard />} />
     
-    {/* Standalone pages that render their own components */}
-    <Route path="branch-dashboard/:id/:branchName/workflow" element={<Workflow />} />
-    <Route path="branch-dashboard/:id/:branchName/key-parameters" element={<KeyParameters />} />
-    <Route path="branch-dashboard/:id/:branchName/task-matrix" element={<TaskMatrix branchId="" branchName="" />} />
-    <Route path="branch-dashboard/:id/:branchName/training-matrix" element={<TrainingMatrix branchId="" branchName="" />} />
+    {/* Standalone pages that should render their own components */}
     <Route path="branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
     <Route path="branch-dashboard/:id/:branchName/agreements" element={<Agreement />} />
     <Route path="branch-dashboard/:id/:branchName/forms" element={<FormBuilder />} />
+    <Route path="branch-dashboard/:id/:branchName/notifications/:categoryId" element={<BranchDashboard />} />
     
     {/* Specific Branch Dashboard Sub-pages */}
     <Route path="branch-dashboard/:id/:branchName/carers/:carerId" element={<CarerProfilePage />} />
