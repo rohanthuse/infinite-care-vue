@@ -516,7 +516,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                   onViewDocument={viewDocument}
                   onDownloadDocument={downloadDocument}
                   onDeleteDocument={deleteDocument}
-                  branchId={id || ""}
                 />
               ) : (
                 <AccessDeniedTab tabName="Documents" />
