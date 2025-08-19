@@ -26,7 +26,7 @@ export const DashboardStat = ({
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm text-gray-500">{title}</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
             {isLoading ? (
               <div className="mt-1 space-y-2">
                 <Skeleton className="h-7 w-24" />
@@ -42,7 +42,7 @@ export const DashboardStat = ({
               </>
             )}
           </div>
-          <div className="p-2 rounded-md bg-gray-50 border border-gray-100">
+          <div className="p-2 rounded-md bg-muted border border-border">
             {icon}
           </div>
         </div>

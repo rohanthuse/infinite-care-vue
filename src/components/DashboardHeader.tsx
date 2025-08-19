@@ -108,7 +108,7 @@ export function DashboardHeader() {
     }
   };
   
-  return <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
+  return <header className="bg-background shadow-sm border-b border-border py-3 md:py-4 sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo aligned to the left - simplified for mobile */}
         <div className="flex items-center gap-2 md:gap-4">
@@ -117,17 +117,17 @@ export function DashboardHeader() {
             <h2 className="text-sm md:text-lg font-bold tracking-tight">
               MED-INFINITE 
             </h2>
-            <span className="text-xs text-gray-500 -mt-0.5 hidden md:block">ENDLESS CARE</span>
+            <span className="text-xs text-muted-foreground -mt-0.5 hidden md:block">ENDLESS CARE</span>
           </div>
         </div>
         
         {/* Search in center for desktop view */}
         <div className="hidden md:flex items-center justify-center flex-1 mx-4">
           <div className="relative max-w-md w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search..." 
-              className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-full transition-all duration-300"
+              className="pl-10 pr-4 py-2 rounded-full bg-background border-border w-full transition-all duration-300"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
             />
@@ -179,10 +179,10 @@ export function DashboardHeader() {
           {/* Search and Bell for mobile view */}
           <div className="flex items-center justify-between w-full md:hidden mb-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Search..." 
-                className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200"
+                className="pl-10 pr-4 py-2 rounded-full bg-background border-border"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
               />
@@ -196,24 +196,24 @@ export function DashboardHeader() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
+          <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm py-2 px-4 rounded-full border border-border/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
             <div>
-              <div className="text-gray-800 font-semibold">
+              <div className="text-foreground font-semibold">
                 {location.pathname.startsWith('/system') ? 'Organization Super Admin' : (userRoleLoading ? 'Loading...' : getUserDisplayName())}
               </div>
-              <div className="text-gray-500 text-xs font-medium">
+              <div className="text-muted-foreground text-xs font-medium">
                 {location.pathname.startsWith('/system') ? 'admin@system.local' : (userRoleLoading ? 'Loading...' : getUserRole())}
               </div>
             </div>
-            <div className="h-8 border-r border-gray-200/80 mx-1 hidden md:block"></div>
-            <CustomButton variant="ghost" size="icon" className="flex items-center p-1.5 hover:bg-gray-100/80 text-gray-700 rounded-full transition-all" onClick={handleLogout}>
+            <div className="h-8 border-r border-border/80 mx-1 hidden md:block"></div>
+            <CustomButton variant="ghost" size="icon" className="flex items-center p-1.5 hover:bg-accent text-foreground rounded-full transition-all" onClick={handleLogout}>
               <LogOut className="h-5 w-5" />
             </CustomButton>
           </div>
           
           {/* Mobile logout option */}
           <div className="md:hidden w-full">
-            <Button variant="ghost" className="w-full flex justify-between items-center text-gray-700 hover:bg-gray-50/80 rounded-lg py-3" onClick={handleLogout}>
+            <Button variant="ghost" className="w-full flex justify-between items-center text-foreground hover:bg-accent rounded-lg py-3" onClick={handleLogout}>
               <span className="font-medium">Logout</span>
               <LogOut className="h-5 w-5" />
             </Button>

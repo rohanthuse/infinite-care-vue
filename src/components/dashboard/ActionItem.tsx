@@ -13,16 +13,16 @@ export const ActionItem = ({
   date: string;
   priority: string;
 }) => {
-  let priorityColor = 'bg-gray-100 text-gray-600';
+  let priorityColor = 'bg-muted text-muted-foreground';
   if (priority === 'High') priorityColor = 'bg-red-100 text-red-700';
   else if (priority === 'Medium') priorityColor = 'bg-amber-100 text-amber-700';
   else if (priority === 'Low') priorityColor = 'bg-green-100 text-green-700';
 
   return (
-    <div className="p-4 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow min-w-0">
+    <div className="p-4 rounded-lg border border-border bg-card shadow-sm hover:shadow-md transition-shadow min-w-0">
       <div className="flex items-start justify-between gap-2 mb-3">
         <h4 
-          className="font-medium text-sm leading-5 text-gray-900 min-w-0 flex-1 line-clamp-2" 
+          className="font-medium text-sm leading-5 text-card-foreground min-w-0 flex-1 line-clamp-2" 
           title={title}
         >
           {title}
@@ -33,12 +33,12 @@ export const ActionItem = ({
       </div>
       <div className="flex items-center justify-between text-xs gap-2">
         <div 
-          className="text-gray-600 truncate min-w-0 flex-1" 
+          className="text-muted-foreground truncate min-w-0 flex-1" 
           title={name}
         >
           {name}
         </div>
-        <div className="flex items-center text-gray-500 shrink-0">
+        <div className="flex items-center text-muted-foreground shrink-0">
           <CalendarIcon className="h-3 w-3 mr-1" />
           <span className="whitespace-nowrap">{date}</span>
         </div>

@@ -29,10 +29,10 @@ export const BranchQuickNavigation = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading branches...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Loading branches...</span>
         </div>
       </div>
     );
@@ -40,9 +40,9 @@ export const BranchQuickNavigation = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="text-center py-8">
-          <p className="text-red-600">Error loading branches: {error.message}</p>
+          <p className="text-destructive">Error loading branches: {error.message}</p>
         </div>
       </div>
     );

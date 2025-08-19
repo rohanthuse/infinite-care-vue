@@ -21,9 +21,9 @@ export const ReviewItem = ({
       <div className="flex justify-between">
         <div>
           <div className="text-xs md:text-sm font-medium">{client}</div>
-          <div className="text-xs text-gray-500">for {staff}</div>
+          <div className="text-xs text-muted-foreground">for {staff}</div>
         </div>
-        <div className="text-xs text-gray-500">{date}</div>
+        <div className="text-xs text-muted-foreground">{date}</div>
       </div>
       <div className="flex items-center mt-1">
         <div className="flex">
@@ -33,7 +33,7 @@ export const ReviewItem = ({
               <ThumbsUp key={i} className="h-3 w-3 text-yellow-500" />
             ))}
         </div>
-        <p className="ml-2 text-xs md:text-sm text-gray-700">{comment}</p>
+        <p className="ml-2 text-xs md:text-sm text-foreground">{comment}</p>
       </div>
     </div>
   );
