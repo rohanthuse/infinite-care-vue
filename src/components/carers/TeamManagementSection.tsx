@@ -14,6 +14,7 @@ import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
+import { ViewCarerProfileDialog } from "./ViewCarerProfileDialog";
 import { useBranchCarers, CarerDB, useDeleteCarer, useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import {
   Table,
@@ -70,16 +71,14 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
+  const [viewingCarer, setViewingCarer] = useState<CarerDB | null>(null);
 
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
   const updateCarerMutation = useUpdateCarer();
 
   const handleViewDetails = (carer: CarerDB) => {
-    const path = tenantSlug 
-      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`
-      : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`;
-    navigate(path);
+    setViewingCarer(carer);
   };
 
   const filteredCarers = useMemo(() => {
@@ -427,6 +426,14 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         onOpenChange={setShowStatusChangeDialog}
         carers={selectedCarers}
         onStatusChange={handleBulkStatusChange}
+      />
+
+      <ViewCarerProfileDialog
+        carer={viewingCarer}
+        isOpen={!!viewingCarer}
+        onClose={() => setViewingCarer(null)}
+        branchId={branchId}
+        branchName={branchName}
       />
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
