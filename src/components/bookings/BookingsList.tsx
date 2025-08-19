@@ -93,17 +93,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "done":
-        return "bg-green-100 text-green-800 border-0";
+        return "bg-green-500/10 text-green-700 dark:text-green-400 border-0";
       case "assigned":
-        return "bg-blue-100 text-blue-800 border-0";
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-0";
       case "in-progress":
-        return "bg-amber-100 text-amber-800 border-0";
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-0";
       case "departed":
-        return "bg-purple-100 text-purple-800 border-0";
+        return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-0";
       case "cancelled":
-        return "bg-red-100 text-red-800 border-0";
+        return "bg-red-500/10 text-red-700 dark:text-red-400 border-0";
       default:
-        return "bg-gray-100 text-gray-800 border-0";
+        return "bg-muted text-muted-foreground border-0";
     }
   };
 
@@ -121,12 +121,12 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
+    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-border">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Bookings List</h2>
-            <p className="text-gray-500 text-sm mt-1">
+            <h2 className="text-xl font-bold text-foreground">Bookings List</h2>
+            <p className="text-muted-foreground text-sm mt-1">
               View and manage all booked appointments
             </p>
           </div>
@@ -138,22 +138,22 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[240px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Search client, carer or booking ID" 
-                className="pl-10 pr-4 py-2 rounded-md bg-white border-gray-200"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search client, carer or booking ID" 
+              className="pl-10 pr-4 py-2 rounded-md bg-background border-border"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
           </div>
           <div className="w-[200px]">
             <Select 
               value={statusFilter}
               onValueChange={setStatusFilter}
             >
-              <SelectTrigger className="w-full rounded-md border-gray-200">
+              <SelectTrigger className="w-full rounded-md border-border">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -177,7 +177,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50">
+            <TableRow className="bg-muted">
               <TableHead className="font-medium">Booking ID</TableHead>
               <TableHead className="font-medium">Date</TableHead>
               <TableHead className="font-medium">Time</TableHead>
@@ -202,23 +202,23 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                 const durationText = `${hours}h ${mins > 0 ? `${mins}m` : ''}`;
                 
                 return (
-                  <TableRow key={booking.id} className="hover:bg-gray-50">
+                  <TableRow key={booking.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">{booking.id}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
                         {formatBookingDate(booking.date)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                         {booking.startTime} - {booking.endTime}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-sm mr-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm mr-2">
                           {booking.clientInitials}
                         </div>
                         {booking.clientName}
@@ -226,7 +226,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center">
-                        <User className="h-4 w-4 mr-2 text-gray-500" />
+                        <User className="h-4 w-4 mr-2 text-muted-foreground" />
                         {booking.carerName}
                       </div>
                     </TableCell>
@@ -265,7 +265,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-6 text-gray-500">
+                <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                   No bookings found matching your criteria
                 </TableCell>
               </TableRow>
@@ -275,8 +275,8 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       </div>
       
       {paginatedBookings.length > 0 && (
-        <div className="flex items-center justify-between p-4 border-t border-gray-100">
-          <div className="text-sm text-gray-500">
+        <div className="flex items-center justify-between p-4 border-t border-border">
+          <div className="text-sm text-muted-foreground">
             Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredBookings.length)} of {filteredBookings.length} bookings
           </div>
           <div className="flex items-center gap-2">

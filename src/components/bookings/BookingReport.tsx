@@ -50,13 +50,13 @@ interface BookingReportProps {
 
 // A mapping of status to color for the badges
 const statusColors: Record<string, string> = {
-  "assigned": "bg-green-100 text-green-800 border-green-200",
-  "unassigned": "bg-amber-100 text-amber-800 border-amber-200",
-  "done": "bg-blue-100 text-blue-800 border-blue-200",
-  "in-progress": "bg-purple-100 text-purple-800 border-purple-200",
-  "cancelled": "bg-red-100 text-red-800 border-red-200",
-  "departed": "bg-teal-100 text-teal-800 border-teal-200",
-  "suspended": "bg-gray-100 text-gray-800 border-gray-200",
+  "assigned": "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  "unassigned": "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+  "done": "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+  "in-progress": "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
+  "cancelled": "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+  "departed": "bg-teal-500/10 text-teal-700 dark:text-teal-400 border-teal-500/20",
+  "suspended": "bg-muted text-muted-foreground border-border",
 }
 
 export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchName = "Med-Infinite Branch" }) => {
@@ -201,16 +201,16 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">Booking Reports</h2>
-          <p className="text-gray-500 mt-1">Generate and export comprehensive booking reports with Med-Infinite branding</p>
+      <div className="bg-card rounded-xl border border-border shadow-sm">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-xl font-semibold text-foreground">Booking Reports</h2>
+          <p className="text-muted-foreground mt-1">Generate and export comprehensive booking reports with Med-Infinite branding</p>
         </div>
         
         <div className="p-6 space-y-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Search clients or carers..." 
                 className="pl-9" 
@@ -417,16 +417,16 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               <div className="space-y-3">
                 {reportData.topCarers.map((carer, index) => (
                   <div key={carer.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{carer.name}</p>
-                        <p className="text-sm text-gray-500">{carer.bookings} bookings</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                     <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                         {index + 1}
+                       </div>
+                       <div>
+                         <p className="font-medium">{carer.name}</p>
+                         <p className="text-sm text-muted-foreground">{carer.bookings} bookings</p>
+                       </div>
+                     </div>
+                     <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400">
                       {carer.completionRate.toFixed(1)}%
                     </Badge>
                   </div>
@@ -443,15 +443,15 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
               <div className="space-y-3">
                 {reportData.topClients.map((client, index) => (
                   <div key={client.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium">{client.name}</p>
-                        <p className="text-sm text-gray-500">{client.bookings} bookings</p>
-                      </div>
-                    </div>
+                     <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-400 flex items-center justify-center text-sm font-medium">
+                         {index + 1}
+                       </div>
+                       <div>
+                         <p className="font-medium">{client.name}</p>
+                         <p className="text-sm text-muted-foreground">{client.bookings} bookings</p>
+                       </div>
+                     </div>
                   </div>
                 ))}
               </div>
@@ -461,11 +461,11 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
       )}
       
       {/* Report Results Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-lg font-semibold text-foreground">
             Detailed Booking Data 
-            <span className="text-sm font-normal text-gray-500 ml-2">
+            <span className="text-sm font-normal text-muted-foreground ml-2">
               ({filteredBookings.length} bookings)
             </span>
           </h2>
@@ -503,10 +503,10 @@ export const BookingReport: React.FC<BookingReportProps> = ({ bookings, branchNa
                       <TableCell>{booking.clientName}</TableCell>
                       <TableCell>{booking.carerName}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant="outline" 
-                          className={cn("capitalize", statusColors[booking.status] || "bg-gray-100")}
-                        >
+                         <Badge 
+                           variant="outline" 
+                           className={cn("capitalize", statusColors[booking.status] || "bg-muted text-muted-foreground")}
+                         >
                           {booking.status}
                         </Badge>
                       </TableCell>
