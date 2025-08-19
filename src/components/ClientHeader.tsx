@@ -66,12 +66,8 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
       });
       
       // The navigation will be handled by the auth state listener in ClientDashboard
-      // But we'll also manually navigate as a fallback
-      if (tenantSlug) {
-        navigate(`/${tenantSlug}/client-login`);
-      } else {
-        navigate("/client-login");
-      }
+      // But we'll also manually navigate as a fallback to the main landing page
+      navigate('/');
     } catch (error) {
       console.error('Unexpected logout error:', error);
       toast({

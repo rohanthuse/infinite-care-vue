@@ -130,7 +130,7 @@ const ClientDashboard = () => {
         localStorage.removeItem("userType");
         localStorage.removeItem("clientName");
         localStorage.removeItem("clientId");
-        navigate(`/${tenantSlug}/client-login`, { replace: true });
+        navigate('/', { replace: true });
       }
     });
 
