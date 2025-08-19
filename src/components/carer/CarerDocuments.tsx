@@ -63,6 +63,15 @@ const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> =>
 const uploadDocument = async (file: File, carerId: string, category: string, type: string) => {
   console.log('[CarerDocuments] Starting upload for:', file.name, 'Category:', category, 'Type:', type);
   
+  // Get current user to verify auth
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  
+  console.log('[CarerDocuments] Authenticated user ID:', user.id);
+  console.log('[CarerDocuments] Staff profile ID (carerId):', carerId);
+  
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
   const filePath = `${carerId}/${fileName}`;
@@ -84,6 +93,7 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
   const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
 
   // Save document record to staff_documents table
+  // Use the staff database ID (carerId) as staff_id since RLS policy checks for staff.id = staff_documents.staff_id
   const { data, error } = await supabase
     .from('staff_documents')
     .insert({
