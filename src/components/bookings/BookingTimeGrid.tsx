@@ -154,6 +154,7 @@ export function BookingTimeGrid({ selectedDate, branchId, user, className }: Boo
         onCreateBooking={handleCreateBooking}
         initialData={newBookingData}
         isCreating={createMultipleBookingsMutation.isPending || isCheckingOverlap}
+        branchId={branchId}
       />
 
       <EditBookingDialog
@@ -175,7 +176,11 @@ export function BookingTimeGrid({ selectedDate, branchId, user, className }: Boo
       <BookingOverlapAlert
         open={overlapAlertOpen}
         onOpenChange={setOverlapAlertOpen}
-        overlapData={overlapData}
+        conflictingBookings={overlapData?.conflictingBookings || []}
+        carerName={overlapData?.carerName || ""}
+        proposedTime={overlapData?.proposedTime || ""}
+        proposedDate={overlapData?.proposedDate || ""}
+        availableCarers={overlapData?.availableCarers || []}
         onChooseDifferentCarer={handleOverlapChooseDifferentCarer}
         onModifyTime={handleOverlapModifyTime}
         onForceCreate={handleOverlapForceCreate}
@@ -184,11 +189,14 @@ export function BookingTimeGrid({ selectedDate, branchId, user, className }: Boo
       <BookingOverlapAlert
         open={updateOverlapAlertOpen}
         onOpenChange={setUpdateOverlapAlertOpen}
-        overlapData={updateOverlapData}
+        conflictingBookings={updateOverlapData?.conflictingBookings || []}
+        carerName={updateOverlapData?.carerName || ""}
+        proposedTime={updateOverlapData?.proposedTime || ""}
+        proposedDate={updateOverlapData?.proposedDate || ""}
+        availableCarers={updateOverlapData?.availableCarers || []}
         onChooseDifferentCarer={handleUpdateOverlapChooseDifferentCarer}
         onModifyTime={handleUpdateOverlapModifyTime}
         onForceCreate={handleUpdateOverlapForceUpdate}
-        isUpdate={true}
       />
     </div>
   );
