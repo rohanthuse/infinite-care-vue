@@ -143,7 +143,6 @@ const AdminRoutes = () => [
     
     {/* Standalone pages that should render their own components */}
     <Route path="branch-dashboard/:id/:branchName/accounting" element={<Accounting />} />
-    <Route path="branch-dashboard/:id/:branchName/care-plan" element={<CarePlanView />} />
     <Route path="branch-dashboard/:id/:branchName/agreements" element={<Agreement />} />
     <Route path="branch-dashboard/:id/:branchName/forms" element={<FormBuilder />} />
     <Route path="branch-dashboard/:id/:branchName/notifications/:categoryId" element={<BranchDashboard />} />

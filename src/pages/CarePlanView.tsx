@@ -22,8 +22,14 @@ export function CarePlanView() {
     }
   };
 
+  // Handle missing carePlanId in useEffect to avoid navigation during render
+  useEffect(() => {
+    if (!carePlanId) {
+      navigate(-1);
+    }
+  }, [carePlanId, navigate]);
+
   if (!carePlanId) {
-    navigate(-1);
     return null;
   }
 
