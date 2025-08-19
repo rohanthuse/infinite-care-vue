@@ -234,6 +234,73 @@ const CarerSchedule: React.FC = () => {
         </h2>
       </div>
 
+      {/* Summary */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>
+            {viewMode === 'month' ? 'Month Summary' : 
+             viewMode === 'week' ? 'Week Summary' : 'Day Summary'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {viewMode === 'day' 
+                  ? weekBookings.filter(booking => 
+                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+                    ).length
+                  : currentViewBookings.length
+                }
+              </div>
+              <div className="text-sm text-gray-600">Total Appointments</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {viewMode === 'day'
+                  ? weekBookings.filter(booking => 
+                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
+                      booking.status === 'completed'
+                    ).length
+                  : currentViewBookings.filter(booking => booking.status === 'completed').length
+                }
+              </div>
+              <div className="text-sm text-gray-600">Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {viewMode === 'day'
+                  ? weekBookings.filter(booking => 
+                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
+                      (booking.status === 'assigned' || booking.status === 'scheduled')
+                    ).length
+                  : currentViewBookings.filter(booking => 
+                      booking.status === 'assigned' || booking.status === 'scheduled'
+                    ).length
+                }
+              </div>
+              <div className="text-sm text-gray-600">Scheduled</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                £{viewMode === 'day'
+                  ? weekBookings
+                      .filter(booking => 
+                        format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+                      )
+                      .reduce((total, booking) => total + (booking.revenue || 0), 0)
+                      .toFixed(2)
+                  : currentViewBookings
+                      .reduce((total, booking) => total + (booking.revenue || 0), 0)
+                      .toFixed(2)
+                }
+              </div>
+              <div className="text-sm text-gray-600">Total Revenue</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Week View */}
       {viewMode === "week" && (
         <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
@@ -421,70 +488,6 @@ const CarerSchedule: React.FC = () => {
           )}
         </div>
       )}
-
-      {/* Overall Summary */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>
-            {viewMode === 'month' ? 'Month Summary' : 
-             viewMode === 'week' ? 'Week Summary' : 'Day Summary'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {viewMode === 'day' 
-                  ? weekBookings.filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
-                    ).length
-                  : currentViewBookings.length
-                }
-              </div>
-              <div className="text-sm text-gray-600">Total Appointments</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {viewMode === 'day'
-                  ? weekBookings.filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
-                      booking.status === 'completed'
-                    ).length
-                  : currentViewBookings.filter(b => b.status === 'completed').length
-                }
-              </div>
-              <div className="text-sm text-gray-600">Completed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-amber-600">
-                {viewMode === 'day'
-                  ? weekBookings.filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
-                      (booking.status === 'assigned' || booking.status === 'scheduled')
-                    ).length
-                  : currentViewBookings.filter(b => b.status === 'assigned' || b.status === 'scheduled').length
-                }
-              </div>
-              <div className="text-sm text-gray-600">Scheduled</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                £{viewMode === 'day'
-                  ? weekBookings
-                      .filter(booking => format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd'))
-                      .reduce((sum, booking) => sum + (booking.revenue || 0), 0)
-                      .toFixed(2)
-                  : currentViewBookings.reduce((sum, booking) => sum + (booking.revenue || 0), 0).toFixed(2)
-                }
-              </div>
-              <div className="text-sm text-gray-600">
-                {viewMode === 'month' ? 'Month Revenue' : 
-                 viewMode === 'week' ? 'Week Revenue' : 'Day Revenue'}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
