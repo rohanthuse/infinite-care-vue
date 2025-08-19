@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useTenant } from "@/contexts/TenantContext";
 import { Plus, FileText, Calendar, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,9 @@ interface Client {
 }
 
 export const CareTab: React.FC = () => {
-  const { id: branchId } = useParams();
+  const { id: branchId, branchName } = useParams();
+  const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
   const [selectedClientData, setSelectedClientData] = useState<Client | undefined>(undefined);
@@ -39,6 +42,14 @@ export const CareTab: React.FC = () => {
   const handleOpenWizard = () => {
     if (selectedClientId && selectedClientName) {
       setIsWizardOpen(true);
+    }
+  };
+
+  const handleViewExistingPlans = () => {
+    if (selectedClientId && branchId && branchName) {
+      const basePath = tenantSlug ? `/${tenantSlug}` : '';
+      const carePlanPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/care-plan`;
+      navigate(carePlanPath);
     }
   };
 
@@ -109,7 +120,7 @@ export const CareTab: React.FC = () => {
               </Button>
               
               {selectedClientId && (
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" onClick={handleViewExistingPlans}>
                   <Calendar className="h-4 w-4" />
                   View Existing Plans
                 </Button>

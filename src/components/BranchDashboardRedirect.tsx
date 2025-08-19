@@ -22,7 +22,14 @@ export const BranchDashboardRedirect: React.FC = () => {
 
   if (isDevelopment) {
     // In development, try to get tenant from localStorage
-    const devTenant = localStorage.getItem('dev-tenant');
+    let devTenant = localStorage.getItem('dev-tenant');
+    
+    // If no dev tenant, set a default one for development
+    if (!devTenant) {
+      devTenant = 'dev';
+      localStorage.setItem('dev-tenant', devTenant);
+      console.log('[BranchDashboardRedirect] Set default dev tenant:', devTenant);
+    }
     
     if (devTenant) {
       const tenantAwarePath = `/${devTenant}${location.pathname}${location.search}${location.hash}`;
@@ -30,7 +37,7 @@ export const BranchDashboardRedirect: React.FC = () => {
       return <Navigate to={tenantAwarePath} replace />;
     }
 
-    // If no dev tenant, redirect to login with a warning
+    // If still no dev tenant, redirect to login with a warning
     console.warn('[BranchDashboardRedirect] No dev tenant found in localStorage, redirecting to main page');
     return <Navigate to="/" replace />;
   }

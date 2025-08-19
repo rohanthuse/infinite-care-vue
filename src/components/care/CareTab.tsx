@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from '@/hooks/useUserRole';
+import { useTenant } from '@/contexts/TenantContext';
 import { AdminCarePlanManagement } from '@/components/admin/AdminCarePlanManagement';
 import { 
   Table, TableHeader, TableBody, TableHead, 
@@ -274,6 +275,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { data: userRole } = useUserRole();
+  const { tenantSlug } = useTenant();
   
   // Use the hook to fetch care plans - MUST be at the top
   const { data: carePlans = [], isLoading, error } = useCarePlans(branchId);
@@ -446,7 +448,10 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     console.log('[CareTab] Using navigation ID:', navigationId);
     
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/care-plan/${navigationId}`);
+      const basePath = tenantSlug ? `/${tenantSlug}` : '';
+      const carePlanPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/care-plan/${navigationId}`;
+      console.log('[CareTab] Navigating to tenant-aware path:', carePlanPath);
+      navigate(carePlanPath);
     }
   };
   
