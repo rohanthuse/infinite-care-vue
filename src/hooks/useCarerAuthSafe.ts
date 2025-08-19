@@ -110,8 +110,7 @@ export function useCarerAuthSafe() {
         console.log('[useCarerAuthSafe] User signed out');
         setCarerProfile(null);
         setError(null);
-        const loginPath = tenantSlug ? `/${tenantSlug}/carer-login` : '/carer-login';
-        navigate(loginPath);
+      navigate('/');
       }
 
       setLoading(false);
@@ -216,8 +215,7 @@ export function useCarerAuthSafe() {
       setCarerProfile(null);
       setError(null);
       toast.success('Signed out successfully');
-      const loginPath = tenantSlug ? `/${tenantSlug}/carer-login` : '/carer-login';
-      navigate(loginPath);
+      navigate('/');
     } catch (error: any) {
       console.error('[useCarerAuthSafe] Sign out error:', error);
       setError('Sign out failed. Please try again.');
