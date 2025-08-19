@@ -1,5 +1,5 @@
 
-import { LogOut, HelpCircle, Menu, Heart, Search } from "lucide-react";
+import { LogOut, HelpCircle, Menu, Heart, Search, PanelRightOpen } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -9,6 +9,7 @@ import { NotificationDropdown } from "@/components/notifications/NotificationDro
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -18,6 +19,19 @@ export function DashboardHeader() {
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  
+  // Check if we're in a branch dashboard context where sidebar should be available
+  const isBranchDashboard = location.pathname.includes('/branch-dashboard/');
+  
+  // Only use sidebar hooks if we're in branch dashboard context
+  let sidebarState = null;
+  try {
+    if (isBranchDashboard) {
+      sidebarState = useSidebar();
+    }
+  } catch (error) {
+    // Sidebar provider not available, ignore
+  }
 
   // Extract branch ID from URL if we're in a branch context
   const branchId = location.pathname.includes('/branch-dashboard/') 
@@ -119,12 +133,15 @@ export function DashboardHeader() {
           </div>
         </div>
         
-        {/* Bell notification on right for desktop view */}
-        <div className="hidden md:flex items-center">
+        {/* Bell notification and sidebar trigger on right for desktop view */}
+        <div className="hidden md:flex items-center gap-2">
           <NotificationDropdown 
             branchId={branchId} 
             onViewAll={handleViewAllNotifications}
           />
+          {isBranchDashboard && sidebarState && (
+            <SidebarTrigger className="h-9 w-9" />
+          )}
         </div>
         
         {/* Mobile menu button */}

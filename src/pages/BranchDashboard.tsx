@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
-import { TabNavigation } from "@/components/TabNavigation";
+import { BranchRightSidebar } from "@/components/branch-dashboard/BranchRightSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
@@ -359,66 +360,192 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
-      
-      {/* Dialogs */}
-      {id && (
-        <AddClientDialog
-          open={addClientDialogOpen}
-          onOpenChange={setAddClientDialogOpen}
-          branchId={id}
-          onSuccess={handleClientAdded}
-        />
-      )}
-      
-      <NewBookingDialog
-        open={newBookingDialogOpen}
-        onOpenChange={setNewBookingDialogOpen}
-        carers={bookingCarers}
-        services={services}
-        onCreateBooking={handleCreateBooking}
-        branchId={id}
-      />
-      
-      {selectedClient && (
-        <ClientDetail
-          client={selectedClient}
-          onClose={() => setSelectedClient(null)}
-          onAddNote={() => setIsAddNoteDialogOpen(true)}
-          onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
-        />
-      )}
-
-      {/* Quick Add Dialogs */}
-      <UnifiedUploadDialog
-        open={isQuickUploadDialogOpen}
-        onOpenChange={setIsQuickUploadDialogOpen}
-        onSave={handleQuickUploadSave}
-      />
-
-      <SignAgreementDialog
-        open={isSignAgreementDialogOpen}
-        onOpenChange={setIsSignAgreementDialogOpen}
-        branchId={id || ""}
-      />
-
-      <ScheduleAgreementDialog
-        open={isScheduleAgreementDialogOpen}
-        onOpenChange={setIsScheduleAgreementDialogOpen}
-        branchId={id || ""}
-      />
-      
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 w-full">
-        <BranchInfoHeader 
-          branchName={displayBranchName} 
-          branchId={id || ""}
-          onNewBooking={handleNewBooking}
-        />
+    <SidebarProvider defaultOpen={false}>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white w-full">
+        <DashboardHeader />
         
-        <div className="mb-6">
-          <TabNavigation 
-            activeTab={activeTab} 
+        <div className="flex flex-1 w-full">
+          <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6">
+            <BranchInfoHeader 
+              branchName={displayBranchName} 
+              branchId={id || ""}
+              onNewBooking={handleNewBooking}
+            />
+            
+            {/* Main Content */}
+            {/* Dashboard Tab */}
+            {activeTab === "dashboard" && (
+              canAccessTab("dashboard") ? (
+                <>
+                  <DashboardStatsSection
+                    branchId={id}
+                    onNewClient={handleNewClient}
+                    onTabChange={enhancedHandleTabChange}
+                  />
+                  <DashboardChartsSection branchId={id} />
+                  <DashboardActivitySection branchId={id} />
+                </>
+              ) : (
+                <AccessDeniedTab tabName="Dashboard" />
+              )
+            )}
+            
+            {/* Other Tabs with Permission Checks */}
+            {activeTab === "key-parameters" && (
+              canAccessTab("key-parameters") ? (
+                <KeyParametersContent branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Key Parameters" />
+              )
+            )}
+            
+            {activeTab === "workflow" && (
+              canAccessTab("workflow") ? (
+                <WorkflowContent branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Workflow" />
+              )
+            )}
+            
+            {activeTab === "task-matrix" && (
+              canAccessTab("task-matrix") ? (
+                <TaskMatrix branchId={id || "main"} branchName={displayBranchName} />
+              ) : (
+                <AccessDeniedTab tabName="Task Matrix" />
+              )
+            )}
+            
+            {activeTab === "training-matrix" && (
+              canAccessTab("training-matrix") ? (
+                <TrainingMatrix branchId={id || "main"} branchName={displayBranchName} />
+              ) : (
+                <AccessDeniedTab tabName="Training Matrix" />
+              )
+            )}
+            
+            {activeTab === "bookings" && (
+              canAccessTab("bookings") ? (
+                <BookingsTab branchId={id} />
+              ) : (
+                <AccessDeniedTab tabName="Bookings" />
+              )
+            )}
+            
+            {activeTab === "clients" && (
+              canAccessTab("clients") ? (
+                <ClientsManagementSection 
+                  branchId={id}
+                  onNewClient={handleNewClient}
+                  onViewClient={handleViewClient}
+                  onEditClient={handleEditClient}
+                />
+              ) : (
+                <AccessDeniedTab tabName="Clients" />
+              )
+            )}
+            
+            {activeTab === "carers" && (
+              canAccessTab("carers") ? (
+                <CarersTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Staff" />
+              )
+            )}
+            
+            {activeTab === "reviews" && (
+              canAccessTab("reviews") ? (
+                <ReviewsTab branchId={id} />
+              ) : (
+                <AccessDeniedTab tabName="Reviews" />
+              )
+            )}
+            
+            {activeTab === "communication" && (
+              canAccessTab("communication") ? (
+                <CommunicationsTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Communication" />
+              )
+            )}
+            
+            {activeTab === "medication" && (
+              canAccessTab("medication") ? (
+                <MedicationTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Medication" />
+              )
+            )}
+            
+            {activeTab === "care-plan" && (
+              canAccessTab("care-plan") ? (
+                <CareTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Care Plan" />
+              )
+            )}
+            
+            {activeTab === "agreements" && (
+              canAccessTab("agreements") ? (
+                <BranchAgreementsTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Agreements" />
+              )
+            )}
+            
+            {activeTab === "form-builder" && (
+              canAccessTab("form-builder") ? (
+                <FormBuilderTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Form Builder" />
+              )
+            )}
+            
+            {activeTab === "third-party" && (
+              canAccessTab("third-party") ? (
+                <ThirdPartyAccessManagement branchId={id} />
+              ) : (
+                <AccessDeniedTab tabName="Third Party Access" />
+              )
+            )}
+            
+            {activeTab === "documents" && (
+              canAccessTab("documents") ? (
+                <UnifiedDocumentsList 
+                  documents={documents} 
+                  isLoading={documentsLoading} 
+                  onViewDocument={viewDocument}
+                  onDownloadDocument={downloadDocument}
+                  onDeleteDocument={deleteDocument}
+                  branchId={id || ""}
+                />
+              ) : (
+                <AccessDeniedTab tabName="Documents" />
+              )
+            )}
+            
+            {activeTab === "notifications" && (
+              canAccessTab("notifications") ? (
+                categoryId ? (
+                  <NotificationCategory categoryId={categoryId || ""} />
+                ) : (
+                  <NotificationsOverview branchId={id} branchName={branchName} />
+                )
+              ) : (
+                <AccessDeniedTab tabName="Notifications" />
+              )
+            )}
+            
+            {activeTab === "finance" && (
+              canAccessTab("finance") ? (
+                <AccountingTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Finance" />
+              )
+            )}
+          </main>
+          
+          <BranchRightSidebar
+            activeTab={activeTab}
             onChange={enhancedHandleTabChange}
             onNewClient={handleNewClient}
             onNewBooking={handleNewBooking}
@@ -428,359 +555,54 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           />
         </div>
         
-        {/* Dashboard Tab */}
-        {activeTab === "dashboard" && (
-          canAccessTab("dashboard") ? (
-            <>
-              <DashboardStatsSection
-                branchId={id}
-                onNewClient={handleNewClient}
-                onTabChange={enhancedHandleTabChange}
-              />
-              <DashboardChartsSection branchId={id} />
-              <DashboardActivitySection branchId={id} />
-            </>
-          ) : (
-            <AccessDeniedTab tabName="Dashboard" />
-          )
+        {/* Dialogs */}
+        {id && (
+          <AddClientDialog
+            open={addClientDialogOpen}
+            onOpenChange={setAddClientDialogOpen}
+            branchId={id}
+            onSuccess={handleClientAdded}
+          />
         )}
         
-        {/* Other Tabs with Permission Checks */}
-        {activeTab === "key-parameters" && (
-          canAccessTab("key-parameters") ? (
-            <KeyParametersContent branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Key Parameters" />
-          )
-        )}
+        <NewBookingDialog
+          open={newBookingDialogOpen}
+          onOpenChange={setNewBookingDialogOpen}
+          carers={bookingCarers}
+          services={services}
+          onCreateBooking={handleCreateBooking}
+          branchId={id}
+        />
         
-        {activeTab === "workflow" && (
-          canAccessTab("workflow") ? (
-            <WorkflowContent branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Workflow" />
-          )
-        )}
-        
-        {activeTab === "task-matrix" && (
-          canAccessTab("task-matrix") ? (
-            <TaskMatrix branchId={id || "main"} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Task Matrix" />
-          )
-        )}
-        
-        {activeTab === "training-matrix" && (
-          canAccessTab("training-matrix") ? (
-            <TrainingMatrix branchId={id || "main"} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Training Matrix" />
-          )
-        )}
-        
-        {activeTab === "bookings" && (
-          canAccessTab("bookings") ? (
-            <BookingsTab branchId={id} />
-          ) : (
-            <AccessDeniedTab tabName="Bookings" />
-          )
-        )}
-        
-        {activeTab === "carers" && (
-          canAccessTab("carers") ? (
-            <CarersTab branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Staff" />
-          )
-        )}
-        
-        {activeTab === "clients" && (
-          canAccessTab("clients") ? (
-            <ClientsManagementSection
-              branchId={id}
-              onNewClient={handleNewClient}
-              onViewClient={handleViewClient}
-              onEditClient={handleEditClient}
-            />
-          ) : (
-            <AccessDeniedTab tabName="Clients" />
-          )
-        )}
-        
-        {activeTab === "reviews" && (
-          canAccessTab("reviews") ? (
-            <ReviewsTab branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Reviews" />
-          )
-        )}
-        
-        {activeTab === "communication" && (
-          canAccessTab("communication") ? (
-            <CommunicationsTab branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Communication" />
-          )
-        )}
-        
-        {activeTab === "medication" && (
-          canAccessTab("medication") ? (
-            <MedicationTab branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Medication" />
-          )
-        )}
-        
-        {activeTab === "accounting" && (
-          canAccessTab("finance") ? (
-            <AccountingTab branchId={id} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Accounting" />
-          )
-        )}
-        
-        {activeTab === "finance" && (
-          canAccessTab("finance") ? (
-            <AccountingTab branchId={id} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Finance" />
-          )
-        )}
-        
-        {activeTab === "care-plan" && (
-          canAccessTab("care-plan") ? (
-            <CareTab branchId={id} branchName={branchName} />
-          ) : (
-            <AccessDeniedTab tabName="Care Plan" />
-          )
-        )}
-        
-        {activeTab === "agreements" && (
-          canAccessTab("agreements") ? (
-            <BranchAgreementsTab branchId={id || ""} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Agreements" />
-          )
-        )}
-        
-        {activeTab === "forms" && (
-          canAccessTab("form-builder") ? (
-            <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Form Builder" />
-          )
+        {selectedClient && (
+          <ClientDetail
+            client={selectedClient}
+            onClose={() => setSelectedClient(null)}
+            onAddNote={() => setIsAddNoteDialogOpen(true)}
+            onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
+          />
         )}
 
-        {activeTab === "form-builder" && (
-          canAccessTab("form-builder") ? (
-            <FormBuilderTab branchId={id || ""} branchName={displayBranchName} />
-          ) : (
-            <AccessDeniedTab tabName="Form Builder" />
-          )
-        )}
-        
-        {/* Events & Logs fallback - redirect to dedicated page */}
-        {activeTab === "events-logs" && (() => {
-          React.useEffect(() => {
-            if (id && branchName) {
-              navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
-            }
-          }, []);
-          return (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-              <h2 className="text-2xl font-bold mb-4">Redirecting to Events & Logs...</h2>
-              <p className="text-gray-500">Loading Events & Logs page...</p>
-            </div>
-          );
-        })()}
-        
-        {/* Documents Tab */}
-        {activeTab === "documents" && (
-          canAccessTab("documents") ? (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Documents & Resources</h2>
-                    <p className="text-gray-500 mt-1">
-                      Manage documents for {displayBranchName} - {documents.length} documents
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <UnifiedDocumentsList
-                  documents={documents}
-                  onViewDocument={viewDocument}
-                  onDownloadDocument={downloadDocument}
-                  onDeleteDocument={async (documentId: string) => {
-                    if (window.confirm('Are you sure you want to delete this document?')) {
-                      await deleteDocument(documentId);
-                    }
-                  }}
-                  isLoading={documentsLoading}
-                />
-              </div>
-            </div>
-          ) : (
-            <AccessDeniedTab tabName="Documents" />
-          )
-        )}
+        {/* Quick Add Dialogs */}
+        <UnifiedUploadDialog
+          open={isQuickUploadDialogOpen}
+          onOpenChange={setIsQuickUploadDialogOpen}
+          onSave={handleQuickUploadSave}
+        />
 
-        {/* Third Party Access Tab */}
-        {activeTab === "third-party" && (
-          canAccessTab("third-party") ? (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Third Party Access</h2>
-                    <p className="text-gray-500 mt-1">
-                      Manage external access for {displayBranchName}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <ThirdPartyAccessManagement branchId={id || ""} />
-              </div>
-            </div>
-          ) : (
-            <AccessDeniedTab tabName="Third Party Access" />
-          )
-        )}
+        <SignAgreementDialog
+          open={isSignAgreementDialogOpen}
+          onOpenChange={setIsSignAgreementDialogOpen}
+          branchId={id || ""}
+        />
 
-        {/* Library Tab */}
-        {activeTab === "library" && (
-          canAccessTab("library") ? (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Resource Library</h2>
-                    <p className="text-gray-500 mt-1">
-                      Training materials and guides for {displayBranchName}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <p className="text-gray-500">Resource library functionality coming soon...</p>
-              </div>
-            </div>
-          ) : (
-            <AccessDeniedTab tabName="Library" />
-          )
-        )}
-
-        {/* Reports Tab */}
-        {activeTab === "reports" && (
-          canAccessTab("reports") ? (
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-                    <p className="text-gray-500 mt-1">
-                      Data analysis and reporting for {displayBranchName}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                <p className="text-gray-500">Reports functionality coming soon...</p>
-              </div>
-            </div>
-          ) : (
-            <AccessDeniedTab tabName="Reports" />
-          )
-        )}
-
-        {/* Notifications Tab */}
-        {activeTab === "notifications" && (
-          canAccessTab("notifications") ? (
-            categoryId ? (
-              // Render specific notification category
-              <NotificationCategory 
-                categoryId={categoryId} 
-                branchId={id || ""} 
-                branchName={branchName || ""} 
-              />
-            ) : (
-              // Render notifications overview
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                <h2 className="text-2xl font-bold mb-4">Notifications</h2>
-                <p className="text-gray-500 mb-6">Branch: {displayBranchName} (ID: {id})</p>
-                <NotificationsOverview branchId={id} branchName={branchName} />
-            
-            <div className="mt-6 space-y-4">
-              <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <Bell className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">System Update</h3>
-                  <p className="text-sm text-gray-600 mt-1">The Med-Infinite system will be updated tonight at 2 AM. Expected downtime: 30 minutes.</p>
-                  <div className="text-xs text-gray-500 mt-2">2 hours ago</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-amber-200 rounded-lg bg-amber-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">New Protocol</h3>
-                  <p className="text-sm text-gray-600 mt-1">Updated safety protocols have been published. Please review and acknowledge by Friday.</p>
-                  <div className="text-xs text-gray-500 mt-2">Yesterday</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-green-200 rounded-lg bg-green-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <Users className="h-4 w-4 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">New Client Assigned</h3>
-                  <p className="text-sm text-gray-600 mt-1">Emma Thompson has been assigned to your branch. Initial assessment scheduled for next week.</p>
-                  <div className="text-xs text-gray-500 mt-2">2 days ago</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-purple-200 rounded-lg bg-purple-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <Calendar className="h-4 w-4 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Upcoming Training</h3>
-                  <p className="text-sm text-gray-600 mt-1">Mandatory training session on new medication dispensing procedures on May 15th at 10 AM.</p>
-                  <div className="text-xs text-gray-500 mt-2">3 days ago</div>
-                </div>
-              </div>
-              
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-start">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                  <FileText className="h-4 w-4 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Document Expiring</h3>
-                  <p className="text-sm text-gray-600 mt-1">Annual service agreement for Robert Johnson is expiring in 15 days. Please initiate renewal process.</p>
-                  <div className="text-xs text-gray-500 mt-2">5 days ago</div>
-                </div>
-              </div>
-            </div>
-              </div>
-            )
-          ) : (
-            <AccessDeniedTab tabName="Notifications" />
-          )
-        )}
-      </main>
-    </div>
+        <ScheduleAgreementDialog
+          open={isScheduleAgreementDialogOpen}
+          onOpenChange={setIsScheduleAgreementDialogOpen}
+          branchId={id || ""}
+        />
+      </div>
+    </SidebarProvider>
   );
 };
 
