@@ -144,22 +144,38 @@ export function ViewBookingDialog({
                   {service?.title || "No service selected"}
                 </span>
               </div>
-              {booking.notes && (
-                <div className="flex justify-between mt-1">
-                  <span className="text-sm text-gray-600">Notes:</span>
-                  <span className="text-sm font-medium">{booking.notes}</span>
-                </div>
-              )}
             </div>
           </div>
 
+          {booking.notes && (
+            <>
+              <Separator />
+              
+              {/* Additional Information */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <FileText className="h-4 w-4" />
+                  Additional Information
+                </div>
+                <div className="pl-6">
+                  <div className="space-y-1">
+                    <span className="text-sm text-gray-600">Notes:</span>
+                    <div className="text-sm font-medium whitespace-pre-wrap break-words bg-gray-50 p-3 rounded-md">
+                      {booking.notes}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           <Separator />
 
-          {/* Additional Information */}
+          {/* Booking Details */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <Clock className="h-4 w-4" />
-              Additional Information
+              Booking Details
             </div>
             <div className="pl-6 space-y-1">
               <div className="flex justify-between">
