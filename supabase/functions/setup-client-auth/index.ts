@@ -60,183 +60,40 @@ serve(async (req) => {
       }
     });
 
-    // Get client information first
-    console.log('[setup-client-auth] Fetching client information');
-    const { data: clientData, error: clientError } = await supabaseAdmin
-      .from('clients')
-      .select('id, email, first_name, last_name, auth_user_id, branch_id')
-      .eq('id', clientId)
-      .single();
+    console.log('[setup-client-auth] Calling safe_setup_client_auth function');
+    
+    // Use the existing database function that handles all the complexity
+    const { data: result, error } = await supabaseAdmin.rpc('safe_setup_client_auth', {
+      p_client_id: clientId,
+      p_password: password,
+      p_admin_id: adminId
+    });
 
-    if (clientError || !clientData) {
-      console.error('[setup-client-auth] Client not found:', clientError);
-      throw new Error('Client not found');
+    if (error) {
+      console.error('[setup-client-auth] Database function error:', error);
+      throw new Error(`Authentication setup failed: ${error.message}`);
     }
 
-    console.log('[setup-client-auth] Client found:', clientData.email);
-
-    // Check admin permissions
-    const { data: adminRoles, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', adminId)
-      .in('role', ['super_admin', 'branch_admin']);
-
-    if (roleError || !adminRoles || adminRoles.length === 0) {
-      console.error('[setup-client-auth] Insufficient permissions');
-      throw new Error('Insufficient permissions');
+    if (!result?.success) {
+      console.error('[setup-client-auth] Database function returned error:', result?.error);
+      throw new Error(result?.error || 'Authentication setup failed');
     }
 
-    let authUserId;
-    let userCreated = false;
+    console.log('[setup-client-auth] Setup successful:', result);
 
-    try {
-      console.log('[setup-client-auth] Attempting to create new user');
-      
-      // Try to create new user first - this avoids the listUsers() issue
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: clientData.email,
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: clientData.first_name,
-          last_name: clientData.last_name
-        }
-      });
-      
-      if (createError) {
-        console.log('[setup-client-auth] Create failed, checking if user exists:', createError.message);
-        
-        // If user already exists, try to find and update them
-        if (createError.message.includes('already registered') || createError.message.includes('User already registered')) {
-          console.log('[setup-client-auth] User already exists, attempting to find and update');
-          
-          // Use the database function to link the client, which will handle finding the auth user
-          const { data: linkResult, error: linkError } = await supabaseAdmin.rpc('link_client_to_auth_user', {
-            p_client_id: clientId,
-            p_auth_user_id: null, // Will be found by the function
-            p_admin_id: adminId
-          });
-
-          if (linkError) {
-            console.error('[setup-client-auth] Error with initial link attempt:', linkError);
-          }
-
-          // Try to get the auth user by email to update password
-          const { data: authUsers, error: getUserError } = await supabaseAdmin
-            .rpc('get_user_by_email', { user_email: clientData.email });
-          
-          // If that doesn't work, try a simpler approach by checking clients table
-          if (getUserError || !authUsers) {
-            console.log('[setup-client-auth] Could not find auth user, checking client record');
-            
-            // Check if client already has auth_user_id set
-            const { data: clientCheck, error: clientCheckError } = await supabaseAdmin
-              .from('clients')
-              .select('auth_user_id')
-              .eq('id', clientId)
-              .single();
-              
-            if (clientCheck?.auth_user_id) {
-              authUserId = clientCheck.auth_user_id;
-              console.log('[setup-client-auth] Found auth_user_id in client record:', authUserId);
-              
-              // Update the password for existing user
-              const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-                authUserId,
-                { password: password }
-              );
-              
-              if (updateError) {
-                console.error('[setup-client-auth] Error updating password:', updateError);
-                throw new Error('Failed to update existing user password');
-              }
-              
-              userCreated = false;
-            } else {
-              throw new Error('User exists but could not be found for update');
-            }
-          } else {
-            authUserId = authUsers.id;
-            console.log('[setup-client-auth] Found existing user:', authUserId);
-            
-            // Update existing user's password
-            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-              authUserId,
-              { password: password }
-            );
-            
-            if (updateError) {
-              console.error('[setup-client-auth] Error updating user password:', updateError);
-              throw new Error('Failed to update existing user password');
-            }
-            
-            userCreated = false;
-          }
-        } else {
-          console.error('[setup-client-auth] Unexpected error creating user:', createError);
-          throw new Error(`Failed to create user: ${createError.message}`);
-        }
-      } else {
-        authUserId = newUser.user.id;
-        userCreated = true;
-        console.log('[setup-client-auth] Successfully created new user:', authUserId);
+    // Return success response
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: result.message || 'Client authentication setup completed successfully',
+        auth_user_id: result.auth_user_id,
+        user_created: result.user_created || false,
+        client_linked: result.client_linked || true
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-
-      // Ensure client role exists
-      const { error: roleInsertError } = await supabaseAdmin
-        .from('user_roles')
-        .upsert({ 
-          user_id: authUserId, 
-          role: 'client' 
-        }, { 
-          onConflict: 'user_id,role' 
-        });
-
-      if (roleInsertError) {
-        console.error('[setup-client-auth] Error inserting role:', roleInsertError);
-        // Don't throw here as this is not critical
-      }
-
-      // Update client record with auth_user_id link
-      const { error: clientUpdateError } = await supabaseAdmin
-        .from('clients')
-        .update({
-          auth_user_id: authUserId,
-          temporary_password: password,
-          invitation_sent_at: new Date().toISOString(),
-          password_set_by: adminId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', clientId);
-
-      if (clientUpdateError) {
-        console.error('[setup-client-auth] Error updating client:', clientUpdateError);
-        throw new Error(`Failed to link client to auth user: ${clientUpdateError.message}`);
-      }
-
-      console.log('[setup-client-auth] Client authentication setup completed successfully');
-
-      // Return success response
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: userCreated 
-            ? 'Client authentication created and linked successfully'
-            : 'Client authentication updated and linked successfully',
-          auth_user_id: authUserId,
-          user_created: userCreated,
-          client_linked: true
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-
-    } catch (authError: any) {
-      console.error('[setup-client-auth] Authentication error:', authError);
-      throw new Error(`Authentication setup failed: ${authError.message}`);
-    }
+    );
 
   } catch (error: any) {
     console.error('[setup-client-auth] Error:', {
