@@ -215,7 +215,7 @@ export function useCarerAuthSafe() {
       setCarerProfile(null);
       setError(null);
       toast.success('Signed out successfully');
-      navigate('/');
+      navigate('/login');
     } catch (error: any) {
       console.error('[useCarerAuthSafe] Sign out error:', error);
       setError('Sign out failed. Please try again.');

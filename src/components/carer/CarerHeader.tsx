@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
@@ -55,7 +55,7 @@ const iconMap = {
 export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMobileMenuToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useCarerAuth();
+  const { signOut } = useCarerAuthSafe();
   const { data: carerProfile } = useCarerProfile();
   const { getCarerMenuItems, createCarerPath } = useCarerNavigation();
   const [searchValue, setSearchValue] = useState("");

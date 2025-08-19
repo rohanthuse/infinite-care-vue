@@ -241,7 +241,7 @@ export function useCarerAuth() {
       
       setIsCarerRole(false);
       toast.success('Signed out successfully');
-      navigate('/carer-login');
+      navigate('/login');
     } catch (error: any) {
       console.error('[useCarerAuth] Sign out error:', error);
       toast.error('Sign out failed', {

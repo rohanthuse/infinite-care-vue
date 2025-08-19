@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
@@ -27,7 +27,7 @@ const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, loading, signOut } = useCarerAuth();
+  const { user, isAuthenticated, loading, signOut } = useCarerAuthSafe();
   const { data: carerProfile } = useCarerProfile();
   const { getCarerMenuItems, createCarerPath, tenantSlug } = useCarerNavigation();
 
