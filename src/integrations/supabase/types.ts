@@ -7036,6 +7036,16 @@ export type Database = {
         }
         Returns: Json
       }
+      upload_staff_document: {
+        Args: {
+          p_document_type: string
+          p_file_name: string
+          p_file_path: string
+          p_file_size: string
+          p_staff_id: string
+        }
+        Returns: string
+      }
       user_belongs_to_organization: {
         Args: { org_id: string; user_id_param: string }
         Returns: boolean

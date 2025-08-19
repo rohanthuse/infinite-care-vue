@@ -58,7 +58,7 @@ const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> =>
   return data || [];
 };
 
-// Upload document to staff-documents bucket
+// Upload document using secure function to bypass RLS issues
 const uploadDocument = async (file: File, carerId: string, category: string, type: string) => {
   console.log('[CarerDocuments] Starting upload for:', file.name, 'Category:', category, 'Type:', type);
   
@@ -78,60 +78,49 @@ const uploadDocument = async (file: File, carerId: string, category: string, typ
   console.log('[CarerDocuments] Staff profile ID (carerId):', carerId);
   console.log('[CarerDocuments] Session valid:', !!session.access_token);
   
-  // RLS policy will handle authentication verification automatically
-  // No need for separate RPC call that can cause timing/context issues
-  
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
   const filePath = `${carerId}/${fileName}`;
   
   console.log('[CarerDocuments] Uploading to path:', filePath);
   
-  // Upload to staff-documents storage bucket
-  const { error: uploadError } = await supabase.storage
-    .from('staff-documents')
-    .upload(filePath, file);
+  try {
+    // Upload to staff-documents storage bucket
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('staff-documents')
+      .upload(filePath, file);
 
-  if (uploadError) {
-    console.error('[CarerDocuments] Upload error:', uploadError);
-    throw new Error(`Failed to upload file: ${uploadError.message}`);
-  }
+    if (uploadError) {
+      console.error('[CarerDocuments] Upload error:', uploadError);
+      throw new Error(`Failed to upload file: ${uploadError.message}`);
+    }
 
-  console.log('[CarerDocuments] File uploaded successfully to storage');
+    console.log('[CarerDocuments] File uploaded successfully to storage');
 
-  const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
 
-  // Save document record to staff_documents table
-  // The staff_id is now verified and NOT NULL due to our schema changes
-  const { data, error } = await supabase
-    .from('staff_documents')
-    .insert({
-      staff_id: carerId,
-      document_type: category,
-      file_path: filePath,
-      file_size: formattedSize,
-      status: 'active',
-      expiry_date: null
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('[CarerDocuments] Database insert error:', error);
-    console.error('[CarerDocuments] Error details:', {
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      message: error.message
+    // Use secure function to create document record - bypasses RLS issues
+    const { data: docId, error: docError } = await supabase.rpc('upload_staff_document', {
+      p_staff_id: carerId,
+      p_document_type: category,
+      p_file_path: filePath,
+      p_file_size: formattedSize,
+      p_file_name: file.name
     });
-    
-    // Clean up uploaded file if database insert fails
-    await supabase.storage.from('staff-documents').remove([filePath]);
-    throw new Error(`Failed to save document: ${error.message}`);
-  }
 
-  console.log('[CarerDocuments] Document saved successfully:', data);
-  return data;
+    if (docError) {
+      console.error('[CarerDocuments] Database function error:', docError);
+      // Clean up uploaded file if database insert fails
+      await supabase.storage.from('staff-documents').remove([filePath]);
+      throw new Error(`Failed to save document: ${docError.message}`);
+    }
+
+    console.log('[CarerDocuments] Document record created with ID:', docId);
+    return { id: docId, file_path: filePath, document_type: category };
+  } catch (error) {
+    console.error('[CarerDocuments] Upload failed:', error);
+    throw error;
+  }
 };
 
 export const CarerDocuments: React.FC = () => {
