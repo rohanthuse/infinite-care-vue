@@ -40,6 +40,7 @@ import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminPermissions, hasTabPermission } from "@/hooks/useAdminPermissions";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface TabItem {
   icon: React.ElementType;
@@ -124,6 +125,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
   const { id, branchName } = useParams();
   const { data: userRole } = useUserRole();
   const { data: permissions } = useAdminPermissions(id);
+  const { tenantSlug } = useTenant();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -209,14 +211,23 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
       return;
     }
     
-    // Get tenant context for all navigations
-    const tenantSlug = window.location.pathname.split('/')[1];
+    // Ensure we have the required parameters
+    if (!id || !branchName) {
+      toast.error("Navigation error", {
+        description: "Branch information is missing",
+        position: "top-center",
+      });
+      return;
+    }
+    
+    // Use proper tenant context from hook instead of parsing URL
     const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` : `/branch-dashboard/${id}/${branchName}`;
     
     // Navigate to dedicated pages for modules that have them
     const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms', 'notifications', 'workflow'];
     
-    if (dedicatedModules.includes(tabValue) && id && branchName) {
+    if (dedicatedModules.includes(tabValue)) {
+      console.log(`Navigating to: ${basePath}/${tabValue}`); // Debug log
       navigate(`${basePath}/${tabValue}`);
     } else {
       onChange(tabValue);
