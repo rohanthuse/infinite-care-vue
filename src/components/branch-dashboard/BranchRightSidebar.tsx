@@ -128,9 +128,9 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Operations": true,
-    "Administration": false,
-    "Resources": false,
-    "Reports": false,
+    "Administration": true,
+    "Resources": true,
+    "Reports": true,
   });
 
   // Filter tabs based on permissions for branch admins
@@ -357,7 +357,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
         </SidebarGroup>
 
         {/* Secondary Navigation Groups */}
-        {!collapsed && filteredSecondaryTabGroups.map((group) => {
+        {filteredSecondaryTabGroups.map((group) => {
           const groupItems = searchTerm 
             ? filteredTabs.filter(tab => group.items.some(item => item.value === tab.value))
             : group.items;
@@ -366,47 +366,36 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
 
           return (
             <SidebarGroup key={group.label}>
-              <Collapsible 
-                open={openGroups[group.label]} 
-                onOpenChange={() => toggleGroup(group.label)}
-              >
-                <CollapsibleTrigger asChild>
-                  <SidebarGroupLabel className="flex items-center justify-between cursor-pointer text-muted-foreground hover:text-foreground">
-                    <span className="text-sm font-medium">{group.label}</span>
-                    <ChevronDown className={cn(
-                      "h-4 w-4 transition-transform",
-                      openGroups[group.label] && "rotate-180"
-                    )} />
-                  </SidebarGroupLabel>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {groupItems.map((tab) => {
-                        const Icon = tab.icon;
-                        const active = isActive(tab.value);
-                        
-                        return (
-                          <SidebarMenuItem key={tab.value}>
-                             <SidebarMenuButton 
-                               asChild
-                               className={cn(
-                                 "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
-                                 active && "bg-primary/10 text-primary border-r-2 border-primary"
-                               )}
-                             >
-                               <button onClick={() => handleTabNavigation(tab.value)}>
-                                 <Icon className="h-4 w-4 mr-2" />
-                                 <span className="text-sm">{tab.label}</span>
-                               </button>
-                             </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </Collapsible>
+              {!collapsed && (
+                <SidebarGroupLabel className="text-sm font-medium text-muted-foreground">
+                  {group.label}
+                </SidebarGroupLabel>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {groupItems.map((tab) => {
+                    const Icon = tab.icon;
+                    const active = isActive(tab.value);
+                    
+                    return (
+                      <SidebarMenuItem key={tab.value}>
+                         <SidebarMenuButton 
+                           asChild
+                           className={cn(
+                             "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
+                             active && "bg-primary/10 text-primary border-r-2 border-primary"
+                           )}
+                         >
+                           <button onClick={() => handleTabNavigation(tab.value)}>
+                             <Icon className={cn("h-4 w-4", collapsed ? "mx-auto" : "mr-2")} />
+                             {!collapsed && <span className="text-sm">{tab.label}</span>}
+                           </button>
+                         </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
             </SidebarGroup>
           );
         })}
