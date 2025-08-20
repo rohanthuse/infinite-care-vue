@@ -63,7 +63,7 @@ export const AuthHealthDebugger: React.FC = () => {
           onClick={() => setIsVisible(true)}
           variant="outline"
           size="sm"
-          className="bg-white shadow-lg border-gray-300"
+          className="bg-card shadow-lg border-border"
         >
           🔧 Auth Debug
         </Button>
@@ -141,14 +141,14 @@ export const AuthHealthDebugger: React.FC = () => {
 
               {issueCount > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-red-700">Users with Issues:</h4>
+                  <h4 className="text-sm font-medium text-destructive">Users with Issues:</h4>
                   <div className="max-h-32 overflow-y-auto space-y-1">
                     {healthData
                       .filter(user => user.issue_type === 'missing_role')
                       .map(user => (
                         <div
                           key={user.user_id}
-                          className="flex items-center justify-between text-xs bg-red-50 p-2 rounded"
+                          className="flex items-center justify-between text-xs bg-destructive/10 p-2 rounded"
                         >
                           <span className="truncate" title={user.email}>
                             {user.email.split('@')[0]}
@@ -163,7 +163,7 @@ export const AuthHealthDebugger: React.FC = () => {
               )}
 
               {issueCount === 0 && healthData.length > 0 && (
-                <div className="flex items-center gap-2 text-green-600 text-sm">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
                   <CheckCircle className="h-4 w-4" />
                   <span>All users have proper authentication setup!</span>
                 </div>

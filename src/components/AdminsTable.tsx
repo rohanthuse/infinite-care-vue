@@ -209,12 +209,12 @@ export const AdminsTable = () => {
   if (tenantError && !tenantLoading) {
     return (
       <div className="p-4 text-center space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium mb-2">Organization Context Error</h3>
-          <p className="text-red-700 text-sm mb-3">{tenantError.message}</p>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <h3 className="text-destructive font-medium mb-2">Organization Context Error</h3>
+          <p className="text-destructive/90 text-sm mb-3">{tenantError.message}</p>
           <details className="text-left">
-            <summary className="text-red-600 cursor-pointer text-sm font-medium">Show Debug Info</summary>
-            <div className="mt-2 text-xs text-red-600 bg-red-100 p-2 rounded border font-mono">
+            <summary className="text-destructive/80 cursor-pointer text-sm font-medium">Show Debug Info</summary>
+            <div className="mt-2 text-xs text-destructive/80 bg-destructive/5 p-2 rounded border font-mono">
               Unable to load organization context. Check console for details.
             </div>
           </details>
@@ -222,7 +222,7 @@ export const AdminsTable = () => {
         <Button 
           onClick={() => window.location.reload()} 
           variant="outline"
-          className="border-red-300 text-red-700 hover:bg-red-50"
+          className="border-destructive/30 text-destructive hover:bg-destructive/10"
         >
           Refresh Page
         </Button>
@@ -234,12 +234,12 @@ export const AdminsTable = () => {
   if (authError && !authLoading) {
     return (
       <div className="p-4 text-center space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="text-red-800 font-medium mb-2">Authentication Error</h3>
-          <p className="text-red-700 text-sm mb-3">{authError.message}</p>
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <h3 className="text-destructive font-medium mb-2">Authentication Error</h3>
+          <p className="text-destructive/90 text-sm mb-3">{authError.message}</p>
           <details className="text-left">
-            <summary className="text-red-600 cursor-pointer text-sm font-medium">Show Debug Info</summary>
-            <div className="mt-2 text-xs text-red-600 bg-red-100 p-2 rounded border font-mono">
+            <summary className="text-destructive/80 cursor-pointer text-sm font-medium">Show Debug Info</summary>
+            <div className="mt-2 text-xs text-destructive/80 bg-destructive/5 p-2 rounded border font-mono">
               Open browser console (F12) to see detailed debugging information.
             </div>
           </details>
@@ -247,7 +247,7 @@ export const AdminsTable = () => {
         <Button 
           onClick={() => window.location.reload()} 
           variant="outline"
-          className="border-red-300 text-red-700 hover:bg-red-50"
+          className="border-destructive/30 text-destructive hover:bg-destructive/10"
         >
           Refresh Page
         </Button>
@@ -259,12 +259,12 @@ export const AdminsTable = () => {
   if (!authLoading && (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'branch_admin'))) {
     return (
       <div className="p-4 text-center space-y-4">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-yellow-800 font-medium mb-2">Access Denied</h3>
-          <p className="text-yellow-700">You need admin privileges to view this page.</p>
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+          <h3 className="text-yellow-700 dark:text-yellow-400 font-medium mb-2">Access Denied</h3>
+          <p className="text-yellow-600 dark:text-yellow-300">You need admin privileges to view this page.</p>
           {currentUser && (
-            <div className="mt-2 text-sm text-yellow-600">
-              Current role: <code className="bg-yellow-100 px-1 rounded">{currentUser.role}</code>
+            <div className="mt-2 text-sm text-yellow-600 dark:text-yellow-300">
+              Current role: <code className="bg-yellow-500/10 px-1 rounded">{currentUser.role}</code>
             </div>
           )}
         </div>
@@ -281,7 +281,7 @@ export const AdminsTable = () => {
   if (error) {
     return (
       <div className="p-4 text-center">
-        <p className="text-red-600">Error loading admins: {error.message}</p>
+        <p className="text-destructive">Error loading admins: {error.message}</p>
         <Button onClick={() => refetch()} className="mt-2">
           Try Again
         </Button>
