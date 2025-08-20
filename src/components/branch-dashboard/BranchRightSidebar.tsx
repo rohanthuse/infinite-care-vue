@@ -350,10 +350,10 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                   <SidebarMenuItem key={tab.value}>
                       <SidebarMenuButton 
                         asChild
-                        className={cn(
-                          "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
-                          active && "bg-primary/10 text-primary border-r-2 border-primary"
-                        )}
+                            className={cn(
+                              "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
+                              active && "bg-primary text-primary-foreground border-r-4 border-primary-foreground font-medium shadow-sm"
+                            )}
                       >
                         <button onClick={() => handleTabNavigation(tab.value)}>
                           <Icon className={cn("h-4 w-4", collapsed ? "mx-auto" : "mr-2")} />
@@ -392,10 +392,10 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                       <SidebarMenuItem key={tab.value}>
                          <SidebarMenuButton 
                            asChild
-                           className={cn(
-                             "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
-                             active && "bg-primary/10 text-primary border-r-2 border-primary"
-                           )}
+                            className={cn(
+                              "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
+                              active && "bg-primary text-primary-foreground border-r-4 border-primary-foreground font-medium shadow-sm"
+                            )}
                          >
                            <button onClick={() => handleTabNavigation(tab.value)}>
                              <Icon className={cn("h-4 w-4", collapsed ? "mx-auto" : "mr-2")} />
