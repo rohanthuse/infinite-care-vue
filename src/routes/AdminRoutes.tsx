@@ -15,6 +15,7 @@ import BranchDetails from "@/pages/BranchDetails";
 import BranchDashboard from "@/pages/BranchDashboard";
 import BranchAdmins from "@/pages/BranchAdmins";
 import Agreement from "@/pages/Agreement";
+import BranchAgreements from "@/pages/BranchAgreements";
 import CarerProfilePage from "@/pages/CarerProfilePage";
 import ApplicationDetailsPage from "@/components/carers/ApplicationDetailsPage";
 import PostJobPage from "@/components/carers/PostJobPage";
@@ -149,7 +150,7 @@ const AdminRoutes = () => [
           
           {/* Standalone pages using BranchLayout */}
           <Route path="accounting" element={<Accounting />} />
-          <Route path="agreements" element={<Agreement />} />
+          <Route path="agreements" element={<BranchAgreements />} />
           <Route path="forms" element={<FormBuilder />} />
           
           {/* Specific Branch Dashboard Sub-pages */}
