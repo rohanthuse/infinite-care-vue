@@ -26,14 +26,23 @@ export interface InvoicePdfData {
 }
 
 export const generateInvoicePDF = (data: InvoicePdfData) => {
-  const { invoice, clientName, clientAddress, clientEmail, companyInfo } = data;
-  
-  const doc = new jsPDF();
-  
-  // Add autoTable plugin
-  autoTable(doc, {});
-  
-  const pageWidth = doc.internal.pageSize.width;
+  try {
+    console.log('Starting PDF generation with data:', data);
+    
+    const { invoice, clientName, clientAddress, clientEmail, companyInfo } = data;
+    
+    // Validate required data
+    if (!invoice) {
+      throw new Error('Invoice data is required');
+    }
+    
+    if (!invoice.invoice_number) {
+      throw new Error('Invoice number is required');
+    }
+    
+    console.log('Creating PDF document...');
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
   const margin = 20;
   let yPosition = margin;
 
@@ -117,11 +126,11 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
   // Line Items Table
   const tableData = invoice.line_items?.map(item => [
-    item.description,
-    item.quantity.toString(),
-    formatCurrency(item.unit_price),
-    formatCurrency(item.discount_amount),
-    formatCurrency(item.line_total)
+    item.description || 'Service',
+    (item.quantity || 1).toString(),
+    formatCurrency(item.unit_price || 0),
+    formatCurrency(item.discount_amount || 0),
+    formatCurrency(item.line_total || (item.quantity || 1) * (item.unit_price || 0))
   ]) || [];
 
   doc.autoTable({
@@ -153,10 +162,10 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
 
   // Totals Section
   const totalsX = pageWidth - margin - 80;
-  const subtotal = invoice.line_items?.reduce((sum, item) => sum + item.line_total, 0) || invoice.amount;
-  const totalDiscounts = invoice.line_items?.reduce((sum, item) => sum + item.discount_amount, 0) || 0;
+  const subtotal = invoice.line_items?.reduce((sum, item) => sum + (item.line_total || 0), 0) || invoice.amount || 0;
+  const totalDiscounts = invoice.line_items?.reduce((sum, item) => sum + (item.discount_amount || 0), 0) || 0;
   const taxPercentage = invoice.tax_amount || 0;
-  const taxAmount = (subtotal + totalDiscounts) * (taxPercentage / 100);
+  const taxAmount = subtotal * (taxPercentage / 100);
   
   doc.setFontSize(10);
   doc.setTextColor('#000000');
@@ -188,7 +197,7 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
   doc.text('Total:', totalsX, yPosition);
-  doc.text(formatCurrency(subtotal + taxAmount), totalsX + 50, yPosition);
+  doc.text(formatCurrency(subtotal - totalDiscounts + taxAmount), totalsX + 50, yPosition);
 
   // Payment History (if any)
   if (invoice.payment_records && invoice.payment_records.length > 0) {
@@ -247,6 +256,12 @@ export const generateInvoicePDF = (data: InvoicePdfData) => {
   doc.text('Thank you for your business!', margin, footerY);
   doc.text(`Generated on ${format(new Date(), 'dd/MM/yyyy')}`, pageWidth - margin - 60, footerY);
 
-  // Download the PDF
-  doc.save(`Invoice-${invoice.invoice_number}.pdf`);
+    // Download the PDF
+    console.log('Saving PDF document...');
+    doc.save(`Invoice-${invoice.invoice_number}.pdf`);
+    console.log('PDF generated successfully');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw error;
+  }
 };

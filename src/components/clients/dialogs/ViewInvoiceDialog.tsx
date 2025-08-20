@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Eye, Download } from "lucide-react";
+import React, { useState } from "react";
+import { Eye, Download, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { formatCurrency } from "@/utils/currencyFormatter";
+import { useToast } from "@/hooks/use-toast";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -25,26 +26,53 @@ interface ViewInvoiceDialogProps {
 
 export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
   const { data: clientData } = useAdminClientDetail(invoice?.client_id || '');
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
 
-  const handleDownload = () => {
-    if (!invoice) return;
+  const handleDownload = async () => {
+    if (!invoice) {
+      toast({
+        title: "Error",
+        description: "No invoice data available for download.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    const clientName = clientData ? 
-      `${clientData.preferred_name || clientData.first_name || ''} ${clientData.last_name || ''}`.trim() : 
-      'Client';
+    setIsDownloading(true);
     
-    generateInvoicePDF({
-      invoice,
-      clientName,
-      clientAddress: clientData?.address,
-      clientEmail: clientData?.email,
-      companyInfo: {
-        name: 'Your Company Name',
-        address: 'Company Address',
-        phone: 'Company Phone',
-        email: 'Company Email'
-      }
-    });
+    try {
+      const clientName = clientData ? 
+        `${clientData.preferred_name || clientData.first_name || ''} ${clientData.last_name || ''}`.trim() : 
+        'Client';
+      
+      await generateInvoicePDF({
+        invoice,
+        clientName,
+        clientAddress: clientData?.address || '',
+        clientEmail: clientData?.email || '',
+        companyInfo: {
+          name: 'Care Service Provider',
+          address: '123 Care Street, City, Country',
+          phone: '+1 (555) 123-4567',
+          email: 'billing@careservice.com'
+        }
+      });
+      
+      toast({
+        title: "Success",
+        description: `Invoice ${invoice.invoice_number} downloaded successfully.`,
+      });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast({
+        title: "Download Failed",
+        description: error instanceof Error ? error.message : "Unable to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -82,9 +110,18 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 View detailed invoice information and download PDF
               </DialogDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
-              Download PDF
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownload}
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              {isDownloading ? 'Generating...' : 'Download PDF'}
             </Button>
           </div>
         </DialogHeader>
