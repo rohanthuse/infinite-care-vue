@@ -51,7 +51,7 @@ const Index = () => {
   }, []);
 
   return (
-    <main className="bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50 min-h-screen">
+    <main className="home-page-light bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50 min-h-screen">
       <div className="absolute top-0 right-0 w-full h-screen pointer-events-none overflow-hidden">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-blue-100/20 to-transparent -translate-y
         -1/3 translate-x-1/3 blur-3xl"></div>
