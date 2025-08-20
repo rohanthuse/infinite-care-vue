@@ -411,36 +411,6 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
           );
         })}
 
-        {/* Collapsed state navigation */}
-        {collapsed && (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {[...filteredPrimaryTabs, ...filteredSecondaryTabGroups.flatMap(g => g.items)].map((tab) => {
-                  const Icon = tab.icon;
-                  const active = isActive(tab.value);
-                  
-                  return (
-                    <SidebarMenuItem key={tab.value}>
-                       <SidebarMenuButton 
-                         asChild
-                         className={cn(
-                           "w-full justify-center text-foreground hover:bg-accent hover:text-accent-foreground",
-                           active && "bg-primary/10 text-primary"
-                         )}
-                         tooltip={tab.label}
-                       >
-                         <button onClick={() => handleTabNavigation(tab.value)}>
-                           <Icon className="h-4 w-4" />
-                         </button>
-                       </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
     </Sidebar>
   );

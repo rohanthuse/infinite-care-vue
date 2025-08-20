@@ -1,127 +1,48 @@
-
-import React, { useState, useEffect } from "react";
-import { DashboardHeader } from "@/components/DashboardHeader";
-import { BranchInfoHeader } from "@/components/BranchInfoHeader";
+import React, { useState } from "react";
+import { useParams } from "react-router-dom";
+import { BranchLayout } from "@/components/branch-dashboard/BranchLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useParams, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { TabNavigation } from "@/components/TabNavigation";
-import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { AttendanceForm } from "@/components/attendance/AttendanceForm";
+import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { AttendanceLeaveManagement } from "@/components/attendance/AttendanceLeaveManagement";
 
 const Attendance = () => {
-  const { id, branchName } = useParams();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("view");
-  const [activeNavTab, setActiveNavTab] = useState("attendance");
-  const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
-
-  // Set active tab based on URL if needed
-  useEffect(() => {
-    document.title = `Attendance | ${decodedBranchName}`;
-  }, [decodedBranchName]);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-  
-  const handleNavTabChange = (value: string) => {
-    setActiveNavTab(value);
-    
-    // Navigate to the appropriate route based on the selected tab
-    if (value !== "attendance") {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
-    }
-  };
-  
-  const handleNewBooking = () => {
-    toast.info("New booking functionality will be implemented soon");
-  };
+  const [activeTab, setActiveTab] = useState("record");
+  const { id, branchName } = useParams<{ id: string; branchName: string }>();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
-      
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full max-w-[1600px] mx-auto">
-        <BranchInfoHeader 
-          branchName={decodedBranchName} 
-          branchId={id || ""}
-          onNewBooking={handleNewBooking}
-        />
+    <BranchLayout>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-1">Attendance Management</h2>
+        <p className="text-sm text-muted-foreground mb-4">Track staff attendance and manage leave requests</p>
         
-        <div className="mt-6">
-          <TabNavigation 
-            activeTab={activeNavTab} 
-            onChange={handleNavTabChange} 
-            hideActionsOnMobile={true}
-          />
-        </div>
-        
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold">Attendance Management</h2>
-            <p className="text-gray-500 mt-1">Record and monitor staff and client attendance</p>
-          </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
+          <TabsList className="grid grid-cols-3 mb-6 w-full lg:w-auto">
+            <TabsTrigger value="record" className="flex items-center gap-1">
+              <span>Record Attendance</span>
+            </TabsTrigger>
+            <TabsTrigger value="view" className="flex items-center gap-1">
+              <span>View Attendance</span>
+            </TabsTrigger>
+            <TabsTrigger value="leave" className="flex items-center gap-1">
+              <span>Leave Management</span>
+            </TabsTrigger>
+          </TabsList>
           
-          <Tabs 
-            value={activeTab} 
-            onValueChange={handleTabChange} 
-            className="w-full flex flex-col flex-1"
-          >
-            <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
-              <TabsList className="w-full grid grid-cols-3 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
-                <TabsTrigger 
-                  value="new" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:bg-green-500"
-                >
-                  Record Attendance
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="view" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:bg-green-500"
-                >
-                  View Attendance
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="leave" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:bg-green-500"
-                >
-                  Leave Management
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <div className="flex-1 overflow-hidden">
-              <TabsContent 
-                value="new" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <AttendanceForm branchId={id || ""} />
-                </div>
-              </TabsContent>
-              <TabsContent 
-                value="view" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <AttendanceList branchId={id || ""} />
-                </div>
-              </TabsContent>
-              <TabsContent 
-                value="leave" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <AttendanceLeaveManagement branchId={id || ""} />
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-      </main>
-    </div>
+          <TabsContent value="record" className="space-y-6">
+            <AttendanceForm branchId={id || ''} />
+          </TabsContent>
+          
+          <TabsContent value="view" className="space-y-6">
+            <AttendanceList branchId={id || ''} />
+          </TabsContent>
+          
+          <TabsContent value="leave" className="space-y-6">
+            <AttendanceLeaveManagement branchId={id || ''} />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </BranchLayout>
   );
 };
 

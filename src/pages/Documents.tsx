@@ -1,34 +1,27 @@
-
 import React, { useState, useEffect } from "react";
-import { DashboardHeader } from "@/components/DashboardHeader";
-import { BranchInfoHeader } from "@/components/BranchInfoHeader";
+import { useParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BranchLayout } from "@/components/branch-dashboard/BranchLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { useParams, useNavigate } from "react-router-dom";
-import { FilePlus } from "lucide-react";
-import { TabNavigation } from "@/components/TabNavigation";
 import { UnifiedDocumentsList } from "@/components/documents/UnifiedDocumentsList";
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
 import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
-import { useQuery } from "@tanstack/react-query";
+import { Upload, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Documents = () => {
-  const { id, branchName } = useParams();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("view");
-  const [activeNavTab, setActiveNavTab] = useState("documents");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+  const { id, branchName } = useParams<{ id: string; branchName: string }>();
+  const queryClient = useQueryClient();
 
   const {
     documents,
-    isLoading,
-    uploadDocument,
+    isLoading: documentsLoading,
     deleteDocument,
     downloadDocument,
-    viewDocument,
-    isUploading
+    viewDocument
   } = useUnifiedDocuments(id || '');
 
   // Fetch clients and staff for the upload dialog
@@ -62,26 +55,22 @@ const Documents = () => {
     enabled: !!id,
   });
 
-  // Set page title
   useEffect(() => {
-    document.title = `Documents | ${decodedBranchName}`;
-  }, [decodedBranchName]);
-  
+    if (branchName) {
+      document.title = `Documents - ${decodeURIComponent(branchName)}`;
+    }
+  }, [branchName]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
-  
-  const handleNavTabChange = (value: string) => {
-    setActiveNavTab(value);
-    
-    if (value !== "documents") {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(decodedBranchName)}/${value}`);
-    }
-  };
 
-  const handleUploadDocument = async (documentData: any) => {
-    await uploadDocument(documentData);
+  const handleUploadDocument = async (uploadData: any) => {
+    console.log("Uploading document:", uploadData);
+    // Handle document upload here
     setIsUploadDialogOpen(false);
+    // Refresh documents list
+    queryClient.invalidateQueries({ queryKey: ['unified-documents', id] });
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -91,115 +80,68 @@ const Documents = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-      <DashboardHeader />
-      
-      <main className="flex-1 px-4 md:px-8 pt-4 pb-8 md:py-6 w-full max-w-[1600px] mx-auto">
-        <BranchInfoHeader 
-          branchName={decodedBranchName} 
-          branchId={id || ""}
-          onNewBooking={() => {}}
-        />
-        
-        <div className="mt-6">
-          <TabNavigation 
-            activeTab={activeNavTab} 
-            onChange={handleNavTabChange} 
-            hideActionsOnMobile={true}
-          />
+    <BranchLayout onUploadDocument={() => setIsUploadDialogOpen(true)}>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold mb-1">Documents</h2>
+            <p className="text-sm text-muted-foreground">Manage and organize branch documents</p>
+          </div>
+          <Button 
+            onClick={() => setIsUploadDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Document
+          </Button>
         </div>
         
-        <div className="mt-6 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Documents & Resources</h2>
-                <p className="text-gray-500 mt-1">
-                  Unified document management system - {documents.length} documents across all sources
-                </p>
-              </div>
-              <Button onClick={() => setIsUploadDialogOpen(true)} disabled={isUploading}>
-                <FilePlus className="mr-2 h-4 w-4" />
-                {isUploading ? 'Uploading...' : 'Upload Document'}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-2">
+          <TabsList className="grid grid-cols-2 mb-6 w-full lg:w-auto">
+            <TabsTrigger value="view" className="flex items-center gap-1">
+              <Eye className="h-4 w-4" />
+              <span>View Documents</span>
+            </TabsTrigger>
+            <TabsTrigger value="upload" className="flex items-center gap-1">
+              <Upload className="h-4 w-4" />
+              <span>Upload Documents</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="view" className="space-y-6">
+            <UnifiedDocumentsList
+              documents={documents}
+              isLoading={documentsLoading}
+              onDeleteDocument={handleDeleteDocument}
+              onDownloadDocument={downloadDocument}
+              onViewDocument={viewDocument}
+            />
+          </TabsContent>
+          
+          <TabsContent value="upload" className="space-y-6">
+            <div className="flex items-center justify-center py-12">
+              <Button 
+                onClick={() => setIsUploadDialogOpen(true)}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                Upload New Document
               </Button>
             </div>
-          </div>
-          
-          <Tabs 
-            value={activeTab} 
-            onValueChange={handleTabChange} 
-            className="w-full flex flex-col flex-1"
-          >
-            <div className="bg-gray-50 border-b border-gray-100 p-1.5 sm:p-2.5 sticky top-0 z-20">
-              <TabsList className="w-full grid grid-cols-2 rounded-md overflow-hidden bg-gray-100/80 p-0.5 sm:p-1">
-                <TabsTrigger 
-                  value="view" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:bg-green-500"
-                >
-                  View Documents
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="upload" 
-                  className="text-base font-medium py-2.5 rounded-md transition-all duration-200 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=active]:bg-green-500"
-                >
-                  Upload Document
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            
-            <div className="flex-1 overflow-hidden">
-              <TabsContent 
-                value="view" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <UnifiedDocumentsList
-                    documents={documents}
-                    onViewDocument={viewDocument}
-                    onDownloadDocument={downloadDocument}
-                    onDeleteDocument={handleDeleteDocument}
-                    isLoading={isLoading}
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent 
-                value="upload" 
-                className="p-0 focus:outline-none m-0 h-full overflow-y-auto"
-              >
-                <div className="p-4 md:p-6 max-w-full">
-                  <div className="max-w-2xl mx-auto">
-                    <div className="text-center mb-8">
-                      <h3 className="text-lg font-semibold mb-2">Upload New Document</h3>
-                      <p className="text-gray-600">
-                        Upload documents with proper categorization, tagging, and relationships to clients, staff, or other entities.
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => setIsUploadDialogOpen(true)} 
-                      size="lg"
-                      className="w-full"
-                      disabled={isUploading}
-                    >
-                      <FilePlus className="mr-2 h-5 w-5" />
-                      {isUploading ? 'Uploading...' : 'Choose File to Upload'}
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-      </main>
+          </TabsContent>
+        </Tabs>
+      </div>
 
+      {/* Upload Dialog */}
       <UnifiedUploadDialog
         open={isUploadDialogOpen}
         onOpenChange={setIsUploadDialogOpen}
         onSave={handleUploadDocument}
-        clients={clients}
-        staff={staff}
+        clients={clients || []}
+        staff={staff || []}
       />
-    </div>
+    </BranchLayout>
   );
 };
 
