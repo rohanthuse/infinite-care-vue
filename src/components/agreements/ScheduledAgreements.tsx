@@ -73,7 +73,7 @@ export function ScheduledAgreements({
     <div className="w-full overflow-auto">
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-50/50">
+          <TableRow>
             <TableHead className="w-[25%]">Title</TableHead>
             <TableHead className="w-[15%]">Scheduled With</TableHead>
             <TableHead className="w-[15%]">Scheduled For</TableHead>
@@ -85,22 +85,22 @@ export function ScheduledAgreements({
         <TableBody>
           {agreements && agreements.length > 0 ? (
             agreements.map((agreement) => (
-              <TableRow key={agreement.id} className="border-b border-gray-100 hover:bg-gray-50/40">
+              <TableRow key={agreement.id} className="hover:bg-accent/50">
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-blue-500" />
-                    <span className="font-medium text-gray-800">{agreement.title}</span>
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="font-medium">{agreement.title}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-muted-foreground" />
                     <span>{agreement.scheduled_with_name || 'N/A'}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>
                       {agreement.scheduled_for 
                         ? format(new Date(agreement.scheduled_for), 'dd MMM yyyy')
@@ -110,7 +110,7 @@ export function ScheduledAgreements({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="text-gray-600">
+                  <span className="text-muted-foreground">
                     {agreement.agreement_types?.name || 'N/A'}
                   </span>
                 </TableCell>
@@ -118,12 +118,12 @@ export function ScheduledAgreements({
                   <Badge 
                     className={
                       agreement.status === "Upcoming" 
-                        ? "bg-green-100 text-green-800 hover:bg-green-100" 
+                        ? "bg-green-500/10 text-green-500 hover:bg-green-500/10" 
                         : agreement.status === "Under Review"
-                          ? "bg-amber-100 text-amber-800 hover:bg-amber-100"
+                          ? "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/10"
                           : agreement.status === "Pending Approval"
-                            ? "bg-blue-100 text-blue-800 hover:bg-blue-100"
-                            : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+                            ? "bg-blue-500/10 text-blue-500 hover:bg-blue-500/10"
+                            : "bg-muted text-muted-foreground hover:bg-muted"
                     }
                   >
                     {agreement.status}
@@ -137,17 +137,17 @@ export function ScheduledAgreements({
                       className="h-8 w-8 p-0"
                       onClick={() => handleView(agreement.id)}
                     >
-                      <Eye className="h-4 w-4 text-blue-600" />
+                      <Eye className="h-4 w-4 text-primary" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 
                           size="sm"
                           variant="ghost"
-                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                          className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
                           disabled={deleteScheduledMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4 text-gray-600 hover:text-red-600" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
@@ -170,17 +170,17 @@ export function ScheduledAgreements({
               </TableRow>
             ))
           ) : (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
-                <div className="flex flex-col items-center justify-center gap-1 py-4 text-gray-500">
-                  <Calendar className="h-10 w-10 text-gray-300" />
-                  <p className="text-sm">No scheduled agreements found</p>
-                  {searchQuery && (
-                    <p className="text-xs text-gray-400">Try a different search term</p>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center gap-1 py-4 text-muted-foreground">
+                    <Calendar className="h-10 w-10 text-muted-foreground/50" />
+                    <p className="text-sm">No scheduled agreements found</p>
+                    {searchQuery && (
+                      <p className="text-xs text-muted-foreground/70">Try a different search term</p>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
           )}
         </TableBody>
       </Table>

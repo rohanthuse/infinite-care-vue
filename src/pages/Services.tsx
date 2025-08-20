@@ -29,7 +29,7 @@ const Services = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen flex flex-col bg-background">
       <DashboardHeader />
       <DashboardNavbar />
       
@@ -39,23 +39,23 @@ const Services = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 md:p-8 mb-8">
+        <div className="bg-muted/50 rounded-2xl p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm">
-                <Briefcase className="h-7 w-7 text-blue-600" />
+              <div className="p-3 bg-card rounded-xl shadow-sm">
+                <Briefcase className="h-7 w-7 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Services</h1>
-                <p className="text-gray-500 text-sm md:text-base">Manage client service offerings</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Services</h1>
+                <p className="text-muted-foreground text-sm md:text-base">Manage client service offerings</p>
               </div>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  className="pl-9 bg-white border-gray-200 focus:border-blue-300 w-full sm:w-64" 
+                  className="pl-9 bg-card border-border focus:border-primary w-full sm:w-64" 
                   placeholder="Search services..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -64,7 +64,7 @@ const Services = () => {
               
               <CustomButton 
                 variant="pill" 
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20"
                 onClick={() => setShowAddServiceDialog(true)}
               >
                 <Plus className="mr-1.5 h-4 w-4" /> Add Service
@@ -73,13 +73,13 @@ const Services = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
-          <div className="border-b border-gray-100 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+          <div className="border-b border-border p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <Filter className="h-4 w-4" />
               <div className="flex gap-2 flex-wrap">
                 <select 
-                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  className="px-3 py-1.5 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={filterCategory || ""}
                   onChange={(e) => handleFilterChange(e.target.value || null, filterDoubleHanded)}
                 >
@@ -96,7 +96,7 @@ const Services = () => {
                   <option value="Long-term Support">Long-term Support</option>
                 </select>
                 <select 
-                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  className="px-3 py-1.5 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={filterDoubleHanded === null ? "" : filterDoubleHanded ? "yes" : "no"}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -112,7 +112,7 @@ const Services = () => {
                 </select>
                 {(filterCategory !== null || filterDoubleHanded !== null) && (
                   <button 
-                    className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-300"
+                    className="px-3 py-1.5 bg-card border border-border rounded-md text-sm hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary"
                     onClick={() => handleFilterChange(null, null)}
                   >
                     Clear Filters
@@ -124,7 +124,7 @@ const Services = () => {
             <CustomButton 
               variant="outline" 
               size="sm"
-              className="text-gray-600 border-gray-200 hover:bg-gray-50"
+              className="text-muted-foreground border-border hover:bg-accent"
             >
               <Download className="mr-1.5 h-4 w-4" /> Export
             </CustomButton>

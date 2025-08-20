@@ -150,9 +150,9 @@ export function ServicesTable({
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50/80 hover:bg-gray-50/90">
-              <TableHead className="w-[10%] text-gray-700">ID</TableHead>
-              <TableHead className="w-[40%] font-semibold text-gray-700">
+            <TableRow>
+              <TableHead className="w-[10%]">ID</TableHead>
+              <TableHead className="w-[40%] font-semibold">
                 <Button
                   variant="ghost"
                   className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent"
@@ -162,7 +162,7 @@ export function ServicesTable({
                   <ArrowUpDown className="h-4 w-4 ml-1" />
                 </Button>
               </TableHead>
-              <TableHead className="w-[30%] font-semibold text-gray-700">
+              <TableHead className="w-[30%] font-semibold">
                 <Button
                   variant="ghost"
                   className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent"
@@ -172,7 +172,7 @@ export function ServicesTable({
                   <ArrowUpDown className="h-4 w-4 ml-1" />
                 </Button>
               </TableHead>
-              <TableHead className="w-[10%] font-semibold text-gray-700">
+              <TableHead className="w-[10%] font-semibold">
                 <Button
                   variant="ghost"
                   className="flex items-center gap-1 font-semibold p-0 hover:bg-transparent"
@@ -187,9 +187,9 @@ export function ServicesTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
+                <TableRow>
                 <TableCell colSpan={5} className="text-center py-8">
-                  <div className="flex items-center justify-center gap-2 text-gray-500">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
                     <span>Loading services...</span>
                   </div>
@@ -197,43 +197,43 @@ export function ServicesTable({
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-red-500">
+                <TableCell colSpan={5} className="text-center py-8 text-destructive">
                   Error loading services: {error.message}
                 </TableCell>
               </TableRow>
             ) : paginatedServices.length > 0 ? (
               paginatedServices.map((service, index) => (
-                <TableRow key={service.id} className="hover:bg-gray-50/70 group">
-                  <TableCell className="text-gray-500 text-sm">#{startIndex + index + 1}</TableCell>
-                  <TableCell className="font-medium text-gray-800">{service.title}</TableCell>
+                <TableRow key={service.id} className="hover:bg-accent/50 group">
+                  <TableCell className="text-muted-foreground text-sm">#{startIndex + index + 1}</TableCell>
+                  <TableCell className="font-medium">{service.title}</TableCell>
                   <TableCell>
-                    <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                    <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                       {service.category || 'General'}
                     </span>
                   </TableCell>
                   <TableCell>
                     {service.double_handed ? (
                       <div className="flex items-center">
-                        <span className="bg-green-100 text-green-700 rounded-full p-1">
+                        <span className="bg-green-500/10 text-green-500 rounded-full p-1">
                           <Check className="w-4 h-4" />
                         </span>
                       </div>
                     ) : (
-                      <span className="text-gray-400 text-sm">—</span>
+                      <span className="text-muted-foreground text-sm">—</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                           <MoreHorizontal className="h-5 w-5" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-white">
+                      <DropdownMenuContent align="end">
                         <DropdownMenuItem className="cursor-pointer flex items-center gap-2" onClick={() => handleEdit(service)}>
                           <Edit className="h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer text-red-600 flex items-center gap-2" onClick={() => handleDelete(service.id)}>
+                        <DropdownMenuItem className="cursor-pointer text-destructive flex items-center gap-2" onClick={() => handleDelete(service.id)}>
                           <Trash2 className="h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -243,7 +243,7 @@ export function ServicesTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   No services found matching your criteria
                 </TableCell>
               </TableRow>
@@ -253,8 +253,8 @@ export function ServicesTable({
       </div>
       
       {filteredAndSortedServices.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-4 border-t border-gray-100 bg-gray-50/50">
-          <div className="text-sm text-gray-600">
+        <div className="flex items-center justify-between px-4 py-4 border-t border-border bg-muted/30">
+          <div className="text-sm text-muted-foreground">
             Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredAndSortedServices.length)} of {filteredAndSortedServices.length} entries
           </div>
           
@@ -263,7 +263,7 @@ export function ServicesTable({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 p-0 border-gray-200"
+                className="h-8 w-8 p-0"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(1)}
               >
@@ -273,7 +273,7 @@ export function ServicesTable({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 p-0 border-gray-200"
+                className="h-8 w-8 p-0"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               >
@@ -281,15 +281,15 @@ export function ServicesTable({
               </Button>
               
               <div className="flex items-center px-2">
-                <span className="text-sm font-medium text-gray-700">
-                  {currentPage} <span className="text-gray-400">of</span> {totalPages}
+                <span className="text-sm font-medium text-foreground">
+                  {currentPage} <span className="text-muted-foreground">of</span> {totalPages}
                 </span>
               </div>
               
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 p-0 border-gray-200"
+                className="h-8 w-8 p-0"
                 disabled={currentPage === totalPages || totalPages === 0}
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               >
@@ -298,7 +298,7 @@ export function ServicesTable({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 p-0 border-gray-200"
+                className="h-8 w-8 p-0"
                 disabled={currentPage === totalPages || totalPages === 0}
                 onClick={() => setCurrentPage(totalPages)}
               >
@@ -308,7 +308,7 @@ export function ServicesTable({
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Show</span>
+              <span className="text-sm text-muted-foreground">Show</span>
               <Select
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => {
@@ -316,7 +316,7 @@ export function ServicesTable({
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="w-16 h-8 border-gray-200">
+                <SelectTrigger className="w-16 h-8">
                   <SelectValue placeholder={itemsPerPage.toString()} />
                 </SelectTrigger>
                 <SelectContent>

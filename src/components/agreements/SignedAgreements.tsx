@@ -98,11 +98,11 @@ export function SignedAgreements({
   return (
     <>
       {branchId && (
-        <div className="px-4 py-2 bg-white">
-          <div className="flex items-center gap-3 text-sm text-gray-600">
+        <div className="px-4 py-2 bg-card">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className="font-medium">Filter by:</span>
             <select 
-              className="px-2 py-1 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+              className="px-2 py-1 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               value={partyFilter}
               onChange={(e) => setPartyFilter(e.target.value as AgreementPartyFilter)}
             >
@@ -117,7 +117,7 @@ export function SignedAgreements({
       <div className="w-full overflow-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50/50">
+            <TableRow>
               <TableHead className="w-[5%]">#</TableHead>
               <TableHead className="w-[20%]">Title</TableHead>
               <TableHead className="w-[20%]">Signed By</TableHead>
@@ -130,20 +130,20 @@ export function SignedAgreements({
           <TableBody>
             {agreements && agreements.length > 0 ? (
               agreements.map((agreement, index) => (
-                <TableRow key={agreement.id} className="border-b border-gray-100 hover:bg-gray-50/40">
+                <TableRow key={agreement.id} className="hover:bg-accent/50">
                   <TableCell className="font-medium">{index + 1}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium text-gray-800">{agreement.title}</span>
+                      <FileText className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{agreement.title}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {agreement.signing_party === "client" ? (
-                        <User className="h-4 w-4 text-gray-400" />
+                        <User className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <UserCheck className="h-4 w-4 text-blue-400" />
+                        <UserCheck className="h-4 w-4 text-primary" />
                       )}
                       <span>{agreement.signed_by_name}</span>
                       {agreement.signing_party && <Badge variant="outline" className="text-xs capitalize">
@@ -153,12 +153,12 @@ export function SignedAgreements({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span>{agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A'}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-gray-600">{agreement.agreement_types?.name || 'N/A'}</span>
+                    <span className="text-muted-foreground">{agreement.agreement_types?.name || 'N/A'}</span>
                   </TableCell>
                   <TableCell>
                     <Badge 
@@ -175,7 +175,7 @@ export function SignedAgreements({
                         className="h-8 w-8 p-0"
                         onClick={() => setViewingAgreementId(agreement.id)}
                       >
-                        <Eye className="h-4 w-4 text-blue-600" />
+                        <Eye className="h-4 w-4 text-primary" />
                       </Button>
                       <Button 
                         size="sm"
@@ -183,16 +183,16 @@ export function SignedAgreements({
                         className="h-8 w-8 p-0"
                         onClick={() => handleDownload(agreement)}
                       >
-                        <Download className="h-4 w-4 text-blue-600" />
+                        <Download className="h-4 w-4 text-primary" />
                       </Button>
                       <Button 
                         size="sm"
                         variant="ghost"
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => handleDeleteAgreement(agreement.id)}
                         disabled={deleteAgreementMutation.isPending}
                       >
-                        <Trash2 className="h-4 w-4 text-gray-600 hover:text-red-600" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -201,11 +201,11 @@ export function SignedAgreements({
             ) : (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1 py-4 text-gray-500">
-                    <FileText className="h-10 w-10 text-gray-300" />
+                  <div className="flex flex-col items-center justify-center gap-1 py-4 text-muted-foreground">
+                    <FileText className="h-10 w-10 text-muted-foreground/50" />
                     <p className="text-sm">No signed agreements found</p>
                     {searchQuery && (
-                      <p className="text-xs text-gray-400">Try a different search term</p>
+                      <p className="text-xs text-muted-foreground/70">Try a different search term</p>
                     )}
                   </div>
                 </TableCell>

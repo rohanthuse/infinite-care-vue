@@ -69,7 +69,7 @@ export function AgreementTemplates({
       <div className="w-full overflow-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50/50">
+            <TableRow>
               <TableHead className="w-[30%]">Template Name</TableHead>
               <TableHead className="w-[15%]">Type</TableHead>
               <TableHead className="w-[15%]">Created</TableHead>
@@ -81,23 +81,23 @@ export function AgreementTemplates({
           <TableBody>
             {templates && templates.length > 0 ? (
               templates.map((template) => (
-                <TableRow key={template.id} className="border-b border-gray-100 hover:bg-gray-50/40">
+                <TableRow key={template.id} className="hover:bg-accent/50">
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium text-gray-800">{template.title}</span>
+                      <FileText className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{template.title}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{template.agreement_types?.name || 'N/A'}</span>
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{template.agreement_types?.name || 'N/A'}</span>
                     </div>
                   </TableCell>
                   <TableCell>{format(new Date(template.created_at), 'dd MMM yyyy')}</TableCell>
                   <TableCell>{format(new Date(template.updated_at), 'dd MMM yyyy')}</TableCell>
                   <TableCell>
-                    <span className="text-gray-600">{template.usage_count} times</span>
+                    <span className="text-muted-foreground">{template.usage_count} times</span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -107,7 +107,7 @@ export function AgreementTemplates({
                         className="h-8 w-8 p-0"
                         onClick={() => setViewingTemplate(template)}
                       >
-                        <Eye className="h-4 w-4 text-blue-600" />
+                        <Eye className="h-4 w-4 text-primary" />
                       </Button>
                       <Button 
                         size="sm"
@@ -115,7 +115,7 @@ export function AgreementTemplates({
                         className="h-8 w-8 p-0"
                         onClick={() => setEditingTemplate(template)}
                       >
-                        <PenLine className="h-4 w-4 text-blue-600" />
+                        <PenLine className="h-4 w-4 text-primary" />
                       </Button>
                       <Button 
                         size="sm"
@@ -124,17 +124,17 @@ export function AgreementTemplates({
                         onClick={() => handleCopy(template.id)}
                         disabled={copyTemplateMutation.isPending}
                       >
-                        <Copy className="h-4 w-4 text-blue-600" />
+                        <Copy className="h-4 w-4 text-primary" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button 
                             size="sm"
                             variant="ghost"
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                            className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
                             disabled={deleteTemplateMutation.isPending}
                           >
-                            <Trash2 className="h-4 w-4 text-gray-600 hover:text-red-600" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -159,11 +159,11 @@ export function AgreementTemplates({
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center gap-1 py-4 text-gray-500">
-                    <FileText className="h-10 w-10 text-gray-300" />
+                  <div className="flex flex-col items-center justify-center gap-1 py-4 text-muted-foreground">
+                    <FileText className="h-10 w-10 text-muted-foreground/50" />
                     <p className="text-sm">No templates found</p>
                     {searchQuery && (
-                      <p className="text-xs text-gray-400">Try a different search term</p>
+                      <p className="text-xs text-muted-foreground/70">Try a different search term</p>
                     )}
                   </div>
                 </TableCell>

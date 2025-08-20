@@ -166,22 +166,22 @@ const Settings = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen flex flex-col bg-background">
         <DashboardHeader />
         <DashboardNavbar />
         <motion.main 
           className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
         >
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 md:p-8 mb-8">
+          <div className="bg-muted/50 rounded-2xl p-6 md:p-8 mb-8">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm"><SettingsIcon className="h-7 w-7 text-blue-600" /></div>
+              <div className="p-3 bg-card rounded-xl shadow-sm"><SettingsIcon className="h-7 w-7 text-primary" /></div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Settings</h1>
-                <p className="text-gray-500 text-sm md:text-base">Manage your company profile and settings</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+                <p className="text-muted-foreground text-sm md:text-base">Manage your company profile and settings</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-8">
+          <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: 9 }).map((_, i) => (
                 <div key={i} className={`space-y-2 ${i === 6 ? 'md:col-span-2' : ''}`}>
@@ -198,10 +198,10 @@ const Settings = () => {
 
   if (isError) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen flex flex-col bg-background">
         <DashboardHeader />
         <DashboardNavbar />
-        <div className="flex-1 flex items-center justify-center text-red-500">
+        <div className="flex-1 flex items-center justify-center text-destructive">
           Error fetching settings: {error.message}
         </div>
       </div>
@@ -209,7 +209,7 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen flex flex-col bg-background">
       <DashboardHeader />
       <DashboardNavbar />
       
@@ -219,80 +219,80 @@ const Settings = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 md:p-8 mb-8">
+        <div className="bg-muted/50 rounded-2xl p-6 md:p-8 mb-8">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              <SettingsIcon className="h-7 w-7 text-blue-600" />
+            <div className="p-3 bg-card rounded-xl shadow-sm">
+              <SettingsIcon className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Settings</h1>
-              <p className="text-gray-500 text-sm md:text-base">Manage your company profile and settings</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+              <p className="text-muted-foreground text-sm md:text-base">Manage your company profile and settings</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-8">
-          <div className="border-b border-gray-100 p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden mb-8">
+          <div className="border-b border-border p-5">
             <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Company Profile</h2>
+              <Building2 className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Company Profile</h2>
             </div>
           </div>
           
           <form onSubmit={handleSubmit} className="p-5 md:p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="companyName" className="text-gray-700 font-medium">
-                  Company Name <span className="text-red-500">*</span>
+                <Label htmlFor="companyName" className="text-foreground font-medium">
+                  Company Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="companyName"
                   value={formData.company_name || ''}
                   onChange={(e) => handleChange("company_name", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="registrationNumber" className="text-gray-700 font-medium">
-                  Registration Number <span className="text-red-500">*</span>
+                <Label htmlFor="registrationNumber" className="text-foreground font-medium">
+                  Registration Number <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="registrationNumber"
                   value={formData.registration_number || ''}
                   onChange={(e) => handleChange("registration_number", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="director" className="text-gray-700 font-medium">
-                  Director <span className="text-red-500">*</span>
+                <Label htmlFor="director" className="text-foreground font-medium">
+                  Director <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="director"
                   value={formData.director || ''}
                   onChange={(e) => handleChange("director", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="country" className="text-gray-700 font-medium">
-                  Country <span className="text-red-500">*</span>
+                <Label htmlFor="country" className="text-foreground font-medium">
+                  Country <span className="text-destructive">*</span>
                 </Label>
                 <Select
                   value={formData.country || ''}
                   onValueChange={(value) => handleChange("country", value)}
                   disabled={isUpdating}
                 >
-                  <SelectTrigger className="border-gray-200 focus:border-blue-300">
+                  <SelectTrigger className="border-border focus:border-primary">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -305,82 +305,82 @@ const Settings = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="mobileNumber" className="text-gray-700 font-medium">
-                  Mobile Number <span className="text-red-500">*</span>
+                <Label htmlFor="mobileNumber" className="text-foreground font-medium">
+                  Mobile Number <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="mobileNumber"
                   value={formData.mobile_number || ''}
                   onChange={(e) => handleChange("mobile_number", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="telephone" className="text-gray-700 font-medium">
-                  Telephone <span className="text-red-500">*</span>
+                <Label htmlFor="telephone" className="text-foreground font-medium">
+                  Telephone <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="telephone"
                   value={formData.telephone || ''}
                   onChange={(e) => handleChange("telephone", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="address" className="text-gray-700 font-medium">
-                  Address <span className="text-red-500">*</span>
+                <Label htmlFor="address" className="text-foreground font-medium">
+                  Address <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="address"
                   value={formData.address || ''}
                   onChange={(e) => handleChange("address", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="website" className="text-gray-700 font-medium">
-                  Website <span className="text-red-500">*</span>
+                <Label htmlFor="website" className="text-foreground font-medium">
+                  Website <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="website"
                   value={formData.website || ''}
                   onChange={(e) => handleChange("website", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 font-medium">
-                  Email <span className="text-red-500">*</span>
+                <Label htmlFor="email" className="text-foreground font-medium">
+                  Email <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => handleChange("email", e.target.value)}
-                  className="border-gray-200 focus:border-blue-300"
+                  className="border-border focus:border-primary"
                   required
                   disabled={isUpdating}
                 />
               </div>
             </div>
             
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <CustomButton
                 type="button"
                 variant="outline"
-                className="text-gray-700 border-gray-200"
+                className="text-foreground border-border"
                 onClick={handleCancel}
                 disabled={isUpdating}
               >
@@ -388,7 +388,7 @@ const Settings = () => {
               </CustomButton>
               <CustomButton
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isUpdating}
               >
                 {isUpdating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
@@ -398,11 +398,11 @@ const Settings = () => {
           </form>
         </div>
         
-        <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden mb-8">
-          <div className="border-b border-gray-100 p-5">
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden mb-8">
+          <div className="border-b border-border p-5">
             <div className="flex items-center gap-3">
-              <Lock className="h-5 w-5 text-blue-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Change Password</h2>
+              <Lock className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Change Password</h2>
             </div>
           </div>
           
@@ -415,19 +415,19 @@ const Settings = () => {
                     name="currentPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-700 font-medium">Current Password</FormLabel>
+                        <FormLabel className="text-foreground font-medium">Current Password</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               type={showCurrentPassword ? "text" : "password"}
-                              className="border-gray-200 focus:border-blue-300 pr-10"
+                              className="border-border focus:border-primary pr-10"
                               disabled={isUpdatingPassword}
                               {...field}
                             />
                             <button
                               type="button"
                               onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                              className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
                               aria-label={showCurrentPassword ? "Hide password" : "Show password"}
                             >
                               {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -445,19 +445,19 @@ const Settings = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700 font-medium">New Password</FormLabel>
+                      <FormLabel className="text-foreground font-medium">New Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
                             type={showPassword ? "text" : "password"}
-                            className="border-gray-200 focus:border-blue-300 pr-10"
+                            className="border-border focus:border-primary pr-10"
                             disabled={isUpdatingPassword}
                             {...field}
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
                             aria-label={showPassword ? "Hide password" : "Show password"}
                           >
                             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -473,19 +473,19 @@ const Settings = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-700 font-medium">Confirm New Password</FormLabel>
+                      <FormLabel className="text-foreground font-medium">Confirm New Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                            <Input
                             type={showConfirmPassword ? "text" : "password"}
-                            className="border-gray-200 focus:border-blue-300 pr-10"
+                            className="border-border focus:border-primary pr-10"
                             disabled={isUpdatingPassword}
                             {...field}
                           />
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
                             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                           >
                             {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -497,10 +497,10 @@ const Settings = () => {
                   )}
                 />
               </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-3 pt-4 border-t border-border">
                 <CustomButton
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={isUpdatingPassword}
                 >
                   {isUpdatingPassword ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
