@@ -13,6 +13,7 @@ import { TravelRecord } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
 import { createFutureDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
+import { useTenant } from '@/contexts/TenantContext';
 
 const travelSchema = z.object({
   travel_date: createFutureDateValidation("Travel date"),
@@ -82,6 +83,9 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
   isEditing = false,
   branchId,
 }) => {
+  // Get organization context
+  const { organization } = useTenant();
+  
   // Fetch staff and clients for the branch
   const { staff, clients, isLoading } = useBranchStaffAndClients(branchId || "");
 
@@ -178,6 +182,8 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
         notes: data.notes || null,
         // Include status field - preserve for edits, default to pending for new records
         status: initialData?.status || 'pending',
+        // Include organization_id from tenant context for RLS compliance
+        organization_id: initialData?.organization_id || organization?.id || null,
         // Preserve existing approval status when editing
         approved_by: initialData?.approved_by || null,
         approved_at: initialData?.approved_at || null,

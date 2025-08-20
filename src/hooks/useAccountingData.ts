@@ -86,6 +86,7 @@ export interface TravelRecord {
   approved_by?: string;
   approved_at?: string;
   reimbursed_at?: string;
+  organization_id?: string;
   created_at: string;
   updated_at: string;
   staff?: {
@@ -298,6 +299,7 @@ export function useTravelRecords(branchId?: string) {
           approved_by,
           approved_at,
           reimbursed_at,
+          organization_id,
           created_at,
           updated_at
         `)
