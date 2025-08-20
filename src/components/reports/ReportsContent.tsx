@@ -13,7 +13,7 @@ import {
   Users, 
   Briefcase, 
   ClipboardCheck, 
-  DollarSign, 
+  PoundSterling, 
   BarChart3, 
   ShieldCheck, 
   Stethoscope 
@@ -66,7 +66,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       id: "financial",
       title: "Financial Reports",
       description: "Track revenue, expenses, and profitability",
-      icon: <DollarSign className="h-6 w-6" />
+      icon: <PoundSterling className="h-6 w-6" />
     },
     {
       id: "operational",

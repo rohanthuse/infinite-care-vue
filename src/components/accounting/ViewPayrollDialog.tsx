@@ -2,7 +2,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, DollarSign } from "lucide-react";
+import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, PoundSterling } from "lucide-react";
 import { format } from "date-fns";
 
 // Define payroll-related types locally since we're using database types
@@ -227,7 +227,7 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
             {/* Deductions */}
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
-                <DollarSign className="h-4 w-4 mr-1" />
+                <PoundSterling className="h-4 w-4 mr-1" />
                 Deductions
               </h3>
               <div className="bg-white p-4 rounded-lg border border-gray-200">

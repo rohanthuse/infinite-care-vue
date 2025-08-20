@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { format, isToday, startOfDay, addHours, isSameHour } from "date-fns";
-import { Search, Filter, Users, Clock, MapPin, DollarSign } from "lucide-react";
+import { Search, Filter, Users, Clock, MapPin, PoundSterling } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -406,7 +406,7 @@ export function StaffScheduleCalendar({
                 <span>{bookings.length} Bookings</span>
               </div>
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <PoundSterling className="h-4 w-4 text-muted-foreground" />
                 <span>Revenue: £{(bookings.length * 25).toFixed(2)}</span>
               </div>
             </div>

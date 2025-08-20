@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
-  Calendar, Star, MessageSquare, Pill, DollarSign, 
+  Calendar, Star, MessageSquare, Pill, PoundSterling, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings,
   ChevronRight, ChevronDown, Menu, X, FileArchive,
@@ -31,7 +31,7 @@ const menuItems: MenuItem[] = [
   { icon: Star, label: "Reviews", path: "/branch-reviews" },
   { icon: MessageSquare, label: "Communication", path: "/branch-communication" },
   { icon: Pill, label: "Medication", path: "/branch-medication", expandable: true },
-  { icon: DollarSign, label: "Accounting", path: "/branch-accounting", expandable: true },
+  { icon: PoundSterling, label: "Accounting", path: "/branch-accounting", expandable: true },
   { icon: ClipboardList, label: "Care Plan", path: "/branch-care-plan", expandable: true },
   { icon: FileText, label: "Agreements", path: "/branch-agreements", expandable: true },
   { icon: Bell, label: "Events & Logs", path: "/branch-events-logs" },

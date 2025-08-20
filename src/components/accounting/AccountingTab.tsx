@@ -6,7 +6,7 @@ import {
   Download, 
   FileText, 
   Clock, 
-  DollarSign, 
+  PoundSterling, 
   Car, 
   Percent,
   Receipt
@@ -120,7 +120,7 @@ const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) =
               value="payroll" 
               className="flex items-center gap-2 rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
-              <DollarSign className="h-4 w-4" />
+              <PoundSterling className="h-4 w-4" />
               <span>Payroll</span>
             </TabsTrigger>
             <TabsTrigger 

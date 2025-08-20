@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { 
-  CreditCard, Clock, Plus, DollarSign, AlertTriangle, 
+  CreditCard, Clock, Plus, PoundSterling, AlertTriangle, 
   Eye, Edit, Send, Check, X, FileText, Download 
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -242,7 +242,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                             <p className="text-sm text-gray-600">{invoice.description}</p>
                             <div className="flex items-center gap-6 text-sm text-gray-600">
                               <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
+                                <PoundSterling className="h-4 w-4" />
                                 <span className="font-medium">{formatCurrency(total)}</span>
                                 {(invoice.tax_amount || 0) > 0 && (
                                   <span className="text-xs">(+{invoice.tax_amount}% tax)</span>

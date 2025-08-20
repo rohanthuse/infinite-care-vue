@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronRight, FileText, Calendar, Car, MessageSquare, DollarSign, Folder, ListChecks, Plus, Search, Briefcase, Edit, Trash, Loader2 } from "lucide-react";
+import { ChevronRight, FileText, Calendar, Car, MessageSquare, PoundSterling, Folder, ListChecks, Plus, Search, Briefcase, Edit, Trash, Loader2 } from "lucide-react";
 import { 
   Tabs, TabsList, TabsTrigger, TabsContent 
 } from "@/components/ui/tabs";
@@ -92,7 +92,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
       case "communication-types":
         return <MessageSquare className="h-5 w-5 text-muted-foreground" />;
       case "expense-types":
-        return <DollarSign className="h-5 w-5 text-muted-foreground" />;
+        return <PoundSterling className="h-5 w-5 text-muted-foreground" />;
       case "services":
         return <Briefcase className="h-5 w-5 text-muted-foreground" />;
       default:
@@ -314,7 +314,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
               value="expense-types" 
               className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
-              <DollarSign className="h-4 w-4" />
+              <PoundSterling className="h-4 w-4" />
               <span className="hidden md:inline">Expense Types</span>
               <span className="md:hidden">Expenses</span>
             </TabsTrigger>

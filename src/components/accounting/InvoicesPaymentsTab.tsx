@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, DollarSign } from 'lucide-react';
+import { PlusCircle, FileText, PoundSterling } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FinancialSummaryCards from './FinancialSummaryCards';
 import InvoicesDataTable from './InvoicesDataTable';
@@ -151,7 +151,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               onClick={() => setIsRecordPaymentOpen(true)}
               disabled={unpaidInvoices.length === 0}
             >
-              <DollarSign className="h-4 w-4" />
+              <PoundSterling className="h-4 w-4" />
               Record Payment
             </Button>
             <Button variant="outline" className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
             Invoices
           </TabsTrigger>
           <TabsTrigger value="payments" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+            <PoundSterling className="h-4 w-4" />
             Payments
           </TabsTrigger>
         </TabsList>

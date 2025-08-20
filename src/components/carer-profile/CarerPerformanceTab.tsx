@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp, Star, Target, DollarSign, Clock, Users } from 'lucide-react';
+import { TrendingUp, Star, Target, PoundSterling, Clock, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useCarerPerformance } from '@/hooks/useCarerPerformance';
@@ -91,7 +91,7 @@ export const CarerPerformanceTab: React.FC<CarerPerformanceTabProps> = ({ carerI
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <DollarSign className="h-4 w-4 text-blue-600" />
+              <PoundSterling className="h-4 w-4 text-blue-600" />
               Monthly Earnings
             </CardTitle>
           </CardHeader>

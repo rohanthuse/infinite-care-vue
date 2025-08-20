@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
-  Calendar, Star, MessageSquare, Pill, DollarSign, 
+  Calendar, Star, MessageSquare, Pill, PoundSterling, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Activity, Briefcase, PanelLeft, Paperclip,
@@ -45,7 +45,7 @@ const primaryTabs: TabItem[] = [
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
   { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
-  { icon: DollarSign, label: "Finance", value: "finance", description: "Financial management" },
+  { icon: PoundSterling, label: "Finance", value: "finance", description: "Financial management" },
   { icon: Star, label: "Reviews", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
 ];

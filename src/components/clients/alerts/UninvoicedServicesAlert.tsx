@@ -1,6 +1,6 @@
 
 import React from "react";
-import { AlertTriangle, Clock, DollarSign } from "lucide-react";
+import { AlertTriangle, Clock, PoundSterling } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,7 +42,7 @@ export function UninvoicedServicesAlert({ uninvoicedBookings, onCreateInvoice }:
                       </div>
                       <div className="flex items-center gap-3 mt-1">
                         <div className="flex items-center gap-1 text-xs text-gray-600">
-                          <DollarSign className="h-3 w-3" />
+                          <PoundSterling className="h-3 w-3" />
                           <span>${booking.revenue.toFixed(2)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-600">

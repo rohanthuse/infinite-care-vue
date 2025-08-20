@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, DollarSign, TrendingUp, Clock } from 'lucide-react';
+import { AlertTriangle, PoundSterling, TrendingUp, Clock } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useBranchInvoiceStats } from '@/hooks/useBranchInvoices';
 import { useBranchPaymentStats } from '@/hooks/useBranchPayments';
@@ -19,7 +19,7 @@ const FinancialSummaryCards: React.FC<FinancialSummaryCardsProps> = ({ branchId 
     {
       title: "Outstanding Amount",
       value: formatCurrency(invoiceStats?.totalOutstanding || 0),
-      icon: DollarSign,
+      icon: PoundSterling,
       description: `${invoiceStats?.pendingCount || 0} pending invoices`,
       className: "text-orange-600"
     },

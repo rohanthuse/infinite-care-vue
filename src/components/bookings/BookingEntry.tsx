@@ -1,6 +1,6 @@
 import React from "react";
 import { Booking } from "./BookingTimeGrid";
-import { Clock, Info, MapPin, Phone, User, DollarSign, FileText, AlertCircle } from "lucide-react";
+import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle } from "lucide-react";
 import { 
   Tooltip, 
   TooltipContent, 

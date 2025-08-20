@@ -17,7 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, ArrowUpDown, Eye, DollarSign } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Eye, PoundSterling } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useBranchInvoices, BranchInvoiceFilters, BranchInvoiceSorting } from '@/hooks/useBranchInvoices';
 
@@ -197,7 +197,7 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
                         size="sm"
                         onClick={() => onRecordPayment?.(invoice.id)}
                       >
-                        <DollarSign className="h-4 w-4" />
+                        <PoundSterling className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
