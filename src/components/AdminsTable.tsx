@@ -294,7 +294,7 @@ export const AdminsTable = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Search admins..."
             value={searchTerm}
@@ -304,7 +304,6 @@ export const AdminsTable = () => {
         </div>
         <Button
           onClick={() => setIsAddFormOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Admin
@@ -312,7 +311,7 @@ export const AdminsTable = () => {
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -336,7 +335,7 @@ export const AdminsTable = () => {
               </TableRow>
             ) : filteredAdmins.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? "No admins match your search." : 
                    organization?.name ? `No branch admins found for ${organization.name}.` : 
                    "No branch admins found."}
@@ -415,7 +414,7 @@ export const AdminsTable = () => {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDeleteAdmin(admin.id)}
-                              className="bg-red-600 hover:bg-red-700"
+                              className="bg-destructive hover:bg-destructive/90"
                             >
                               Delete
                             </AlertDialogAction>

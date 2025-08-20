@@ -147,9 +147,9 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
   // Handle case where user has no branch access
   if (userRole && !['super_admin', 'branch_admin'].includes(userRole.role)) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+      <div className="bg-card rounded-lg border border-border p-6 mb-8">
         <div className="text-center py-8">
-          <p className="text-gray-600">You don't have permission to access branches.</p>
+          <p className="text-muted-foreground">You don't have permission to access branches.</p>
         </div>
       </div>
     );
@@ -160,20 +160,20 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-white rounded-lg border border-gray-200 p-6 mb-8"
+      className="bg-card rounded-lg border border-border p-6 mb-8"
     >
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Building2 className="h-6 w-6 text-blue-600" />
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">Organization Branches</h2>
-            <p className="text-gray-500 text-sm">Navigate to any branch within your organization</p>
+            <h2 className="text-xl font-semibold text-foreground">Organization Branches</h2>
+            <p className="text-muted-foreground text-sm">Navigate to any branch within your organization</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             {branches?.length || 0} active branches
           </div>
           <AddBranchDialog />
@@ -182,7 +182,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
       {/* Search */}
       <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           placeholder="Search branches by name, country, or type..."
           value={searchQuery}
@@ -193,7 +193,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
       {/* Branches Grid */}
       {filteredBranches.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-muted-foreground">
           {searchQuery 
             ? "No branches match your search." 
             : userRole?.role === 'branch_admin' 
@@ -210,27 +210,27 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="hover:shadow-md transition-shadow cursor-pointer border-gray-200 hover:border-blue-300">
+              <Card className="hover:shadow-md transition-shadow cursor-pointer border-border hover:border-primary/50">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">
+                      <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
                         {branch.name}
                       </h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <MapPin className="h-3 w-3" />
                         <span>{branch.country}</span>
                       </div>
                     </div>
                     <Badge 
                       variant="secondary" 
-                      className="text-xs bg-green-100 text-green-800 border-green-200"
+                      className="text-xs"
                     >
                       {branch.status}
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                     <span className="flex items-center gap-1">
                       <Globe className="h-3 w-3" />
                       {branch.currency}
@@ -240,7 +240,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
                   <Button
                     onClick={() => handleEnterBranch(branch)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full"
                     size="sm"
                   >
                     Enter Branch

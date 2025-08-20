@@ -19,7 +19,7 @@ const Dashboard = () => {
   // The old loading and auth check logic is now handled by the AuthProvider and protected route.
   
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
       <DashboardHeader />
       <DashboardNavbar />
       
@@ -34,8 +34,8 @@ const Dashboard = () => {
         
         <div className="flex justify-between items-center mb-6 md:mb-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Branch Administrators</h1>
-            <p className="text-gray-500 mt-2 font-medium">Manage and monitor all branch administrators.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Branch Administrators</h1>
+            <p className="text-muted-foreground mt-2 font-medium">Manage and monitor all branch administrators.</p>
           </div>
         </div>
 
