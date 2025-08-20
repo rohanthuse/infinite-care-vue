@@ -131,8 +131,8 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   };
 
   const renderPermissionSwitch = (key: keyof OrganizationMemberPermissions, label: string) => (
-    <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-white/50 transition-colors">
-      <Label htmlFor={key} className="text-gray-700 text-sm cursor-pointer flex-1">{label}</Label>
+    <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-accent/50 transition-colors">
+      <Label htmlFor={key} className="text-foreground text-sm cursor-pointer flex-1">{label}</Label>
       <Switch 
         id={key} 
         checked={permissions[key] || false} 
@@ -169,7 +169,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className={`bg-blue-600 hover:bg-blue-700 ${triggerClassName}`}>
+        <Button className={`bg-primary hover:bg-primary/90 text-primary-foreground ${triggerClassName}`}>
           <Plus className="h-4 w-4 mr-2" />
           Add Member
         </Button>
@@ -268,11 +268,11 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
 
               <TabsContent value="permissions" className="space-y-6 m-0 pr-2">
                 {/* Select All Toggle */}
-                <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-indigo-50 to-indigo-100/30">
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-gray-800 flex items-center text-base">Select All Permissions</h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <h3 className="font-semibold text-foreground flex items-center text-base">Select All Permissions</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
                         {areAllPermissionsEnabled() ? 'All permissions enabled' : 
                          areAllPermissionsDisabled() ? 'All permissions disabled' : 
                          `${Object.values(permissions).filter(Boolean).length} of ${Object.keys(permissions).length} permissions enabled`}
@@ -287,8 +287,8 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                 </div>
 
                 {/* Core Features */}
-                <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-blue-100/30">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <h3 className="font-semibold text-foreground flex items-center text-base">
                     Core Features
                   </h3>
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
@@ -302,8 +302,8 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                 </div>
 
                 {/* Advanced Features */}
-                <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-green-50 to-green-100/30">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <h3 className="font-semibold text-foreground flex items-center text-base">
                     Advanced Features
                   </h3>
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
@@ -326,8 +326,8 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                 </div>
 
                 {/* Accounting Features */}
-                <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-purple-50 to-purple-100/30">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <h3 className="font-semibold text-foreground flex items-center text-base">
                     Accounting & Finance
                   </h3>
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
@@ -346,8 +346,8 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                 </div>
 
                 {/* Reports Features */}
-                <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-orange-50 to-orange-100/30">
-                  <h3 className="font-semibold text-gray-800 flex items-center text-base">
+                <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+                  <h3 className="font-semibold text-foreground flex items-center text-base">
                     Reports & Analytics
                   </h3>
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
@@ -377,7 +377,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
               <Button 
                 type="submit" 
                 disabled={addMember.isPending}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {addMember.isPending ? (
                   <>

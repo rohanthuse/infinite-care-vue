@@ -113,7 +113,7 @@ export function AddBodyMapPointDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20 rounded-full">
+        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20 rounded-full">
           <Plus className="mr-1.5 h-4 w-4" /> New Body Map Point
         </Button>
       </DialogTrigger>
@@ -155,16 +155,16 @@ export function AddBodyMapPointDialog() {
               <Label htmlFor="color" className="text-right">
                 Color
               </Label>
-              <div className="col-span-3 flex gap-2 items-center">
+        <div className="col-span-3 flex gap-2 items-center">
                 <div
-                  className="h-8 w-12 rounded border border-gray-200"
+                  className="h-8 w-12 rounded border border-border"
                   style={{ backgroundColor: color }}
                 />
                 <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="flex-1 justify-between border-gray-200"
+                      className="flex-1 justify-between"
                     >
                       {color}
                       <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
@@ -177,8 +177,8 @@ export function AddBodyMapPointDialog() {
                           key={colorOption.value}
                           variant="outline"
                           className={cn(
-                            "justify-start gap-2 border-gray-200",
-                            color === colorOption.value && "border-blue-600 ring-1 ring-blue-200"
+                            "justify-start gap-2",
+                            color === colorOption.value && "border-primary ring-1 ring-primary/20"
                           )}
                           onClick={() => {
                             setColor(colorOption.value);
@@ -191,7 +191,7 @@ export function AddBodyMapPointDialog() {
                           />
                           <span>{colorOption.label}</span>
                           {color === colorOption.value && (
-                            <Check className="ml-auto h-4 w-4 text-blue-600" />
+                            <Check className="ml-auto h-4 w-4 text-primary" />
                           )}
                         </Button>
                       ))}
@@ -205,7 +205,7 @@ export function AddBodyMapPointDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isPending}>
+            <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isPending}>
               {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Point'}
             </Button>
           </DialogFooter>

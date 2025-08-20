@@ -91,8 +91,8 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md rounded-xl p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-2 border-b">
-          <DialogTitle className="text-xl font-semibold text-gray-800">Add New Service</DialogTitle>
-          <DialogDescription className="text-gray-500">
+          <DialogTitle className="text-xl font-semibold text-foreground">Add New Service</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Enter the details for the new service
           </DialogDescription>
           <Button 
@@ -107,24 +107,24 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
         <form onSubmit={handleSubmit} className="px-6">
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right text-gray-700">
-                Title<span className="text-red-500 ml-1">*</span>
+              <Label htmlFor="title" className="text-right text-foreground">
+                Title<span className="text-destructive ml-1">*</span>
               </Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="col-span-3 h-10 rounded-md border-gray-300"
+                className="col-span-3 h-10 rounded-md"
                 placeholder="E.g., Medication Assistance, Meal Preparation..."
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="category" className="text-right text-gray-700">
-                Category<span className="text-red-500 ml-1">*</span>
+              <Label htmlFor="category" className="text-right text-foreground">
+                Category<span className="text-destructive ml-1">*</span>
               </Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger id="category" className="col-span-3 h-10 rounded-md border-gray-300">
+                <SelectTrigger id="category" className="col-span-3 h-10 rounded-md">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -138,20 +138,20 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right text-gray-700">
+              <Label htmlFor="description" className="text-right text-foreground">
                 Description
               </Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3 min-h-[100px] rounded-md border-gray-300"
+                className="col-span-3 min-h-[100px] rounded-md"
                 placeholder="Provide a description of the service..."
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="doubleHanded" className="text-right text-gray-700">
+              <Label htmlFor="doubleHanded" className="text-right text-foreground">
                 Double Handed
               </Label>
               <div className="flex items-center space-x-2 col-span-3">
@@ -160,19 +160,19 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
                   checked={doubleHanded}
                   onCheckedChange={setDoubleHanded}
                 />
-                <Label htmlFor="doubleHanded" className="text-sm text-gray-500 cursor-pointer">
+                <Label htmlFor="doubleHanded" className="text-sm text-muted-foreground cursor-pointer">
                   {doubleHanded ? "Yes" : "No"}
                 </Label>
               </div>
             </div>
           </div>
           
-          <DialogFooter className="py-4 border-t mt-4 bg-gray-50/50 -mx-6 px-6">
+          <DialogFooter className="py-4 border-t mt-4 bg-muted/30 -mx-6 px-6">
             <div className="flex justify-end gap-2 w-full">
-              <Button type="button" variant="outline" onClick={onClose} className="border-gray-200 rounded-md" disabled={isPending}>
+              <Button type="button" variant="outline" onClick={onClose} disabled={isPending}>
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white rounded-md" disabled={isPending}>
+              <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-md" disabled={isPending}>
                  {isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding...</> : 'Add Service'}
               </Button>
             </div>
