@@ -176,9 +176,9 @@ export const useExpenseTypeOptions = () => {
         ];
       }
       
-      // Convert database results to option format
+      // Convert database results to option format - always use string keys for consistency
       return expenseTypes.map(type => ({
-        value: type.id || type.title.toLowerCase().replace(/\s+/g, '_'),
+        value: type.title.toLowerCase().replace(/\s+/g, '_'),
         label: type.title
       }));
     },

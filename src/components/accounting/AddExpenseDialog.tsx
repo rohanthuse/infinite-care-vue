@@ -32,22 +32,14 @@ interface AddExpenseDialogProps {
   branchId?: string;
 }
 
-const formSchema = z.object({
+const createFormSchema = (availableCategories: string[]) => z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
   amount: z.coerce.number().positive("Amount must be positive"),
   expense_date: z.date(),
-  category: z.enum([
-    "office_supplies", 
-    "travel", 
-    "meals", 
-    "equipment", 
-    "utilities", 
-    "rent", 
-    "software", 
-    "training", 
-    "medical_supplies", 
-    "other"
-  ] as const),
+  category: z.string().refine(
+    (value) => availableCategories.includes(value),
+    "Please select a valid category"
+  ),
   payment_method: z.enum([
     "credit_card", 
     "cash", 
@@ -89,6 +81,9 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
 }) => {
   const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
   
+  const availableCategories = expenseTypeOptions.map(option => option.value);
+  const formSchema = createFormSchema(availableCategories);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData ? {
@@ -103,7 +98,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
       description: "",
       amount: 0,
       expense_date: new Date(),
-      category: "office_supplies",
+      category: availableCategories[0] || "office_supplies",
       payment_method: "credit_card",
       receipt_url: "",
       notes: "",
