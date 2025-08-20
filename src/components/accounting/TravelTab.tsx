@@ -155,6 +155,11 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
     if (!currentRecord) return;
     
     try {
+      console.log('Updating travel record with data:', {
+        id: currentRecord.id,
+        ...updatedData
+      });
+      
       await updateTravelRecord.mutateAsync({
         id: currentRecord.id,
         ...updatedData
@@ -163,7 +168,12 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
       setCurrentRecord(undefined);
     } catch (error) {
       console.error('Failed to update travel record:', error);
-      // Error is already handled by the mutation's onError
+      // Provide more detailed error logging
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+      }
+      // Error toast is already handled by the mutation's onError
     }
   };
 

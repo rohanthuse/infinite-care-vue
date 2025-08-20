@@ -60,7 +60,7 @@ type TravelFormData = z.infer<typeof travelSchema>;
 interface AddTravelRecordDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client">) => void;
+  onSave: (travelData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client">) => void;
   initialData?: TravelRecord;
   isEditing?: boolean;
   branchId?: string;
@@ -160,7 +160,7 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
         return;
       }
 
-      const travelData: Omit<TravelRecord, "id" | "status" | "created_at" | "updated_at" | "staff" | "client"> = {
+      const travelData: Omit<TravelRecord, "id" | "created_at" | "updated_at" | "staff" | "client"> = {
         branch_id: branchId,
         staff_id: data.staff_id,
         client_id: data.client_id || null,
@@ -168,14 +168,16 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
         travel_date: data.travel_date,
         start_location: data.start_location,
         end_location: data.end_location,
-        distance_miles: data.distance_miles,
+        distance_miles: Number(data.distance_miles),
         travel_time_minutes: data.travel_time_minutes || null,
         vehicle_type: data.vehicle_type,
-        mileage_rate: data.mileage_rate,
-        total_cost: data.total_cost,
+        mileage_rate: Number(data.mileage_rate),
+        total_cost: Number(data.total_cost),
         purpose: data.purpose,
         receipt_url: data.receipt_url || null,
         notes: data.notes || null,
+        // Include status field - preserve for edits, default to pending for new records
+        status: initialData?.status || 'pending',
         // Preserve existing approval status when editing
         approved_by: initialData?.approved_by || null,
         approved_at: initialData?.approved_at || null,
@@ -189,7 +191,22 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Error saving travel record:', error);
-      toast.error('Failed to save travel record');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to save travel record';
+      if (error instanceof Error) {
+        if (error.message.includes('organization_id')) {
+          errorMessage = 'Organization access error. Please contact support.';
+        } else if (error.message.includes('branch_id')) {
+          errorMessage = 'Branch access error. Please contact support.';
+        } else if (error.message.includes('staff_id')) {
+          errorMessage = 'Invalid staff member selected.';
+        } else if (error.message.includes('required')) {
+          errorMessage = 'Please fill in all required fields.';
+        }
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
