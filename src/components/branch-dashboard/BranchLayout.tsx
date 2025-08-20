@@ -2,7 +2,6 @@ import React from 'react';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { BranchInfoHeader } from '@/components/BranchInfoHeader';
 import { BranchRightSidebar } from '@/components/branch-dashboard/BranchRightSidebar';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { useBranchDashboardNavigation } from '@/hooks/useBranchDashboardNavigation';
 
 interface BranchLayoutProps {
@@ -56,32 +55,30 @@ export const BranchLayout: React.FC<BranchLayoutProps> = ({
   };
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex flex-col bg-background w-full">
-        <DashboardHeader />
-        
-        <div className="flex flex-1 w-full relative">
-          <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 transition-all duration-200">
-            <BranchInfoHeader 
-              branchName={displayBranchName} 
-              branchId={id || ""}
-              onNewBooking={handleNewBookingAction}
-            />
-            
-            {children}
-          </main>
-          
-          <BranchRightSidebar
-            activeTab={activeTab}
-            onChange={handleTabChange}
-            onNewClient={onNewClient}
-            onNewBooking={onNewBooking}
-            onNewStaff={handleNewStaffAction}
-            onNewAgreement={handleNewAgreementAction}
-            onUploadDocument={handleQuickUploadDocument}
+    <div className="min-h-screen flex flex-col bg-background w-full">
+      <DashboardHeader />
+      
+      <div className="flex flex-1 w-full relative">
+        <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 transition-all duration-200">
+          <BranchInfoHeader 
+            branchName={displayBranchName} 
+            branchId={id || ""}
+            onNewBooking={handleNewBookingAction}
           />
-        </div>
+          
+          {children}
+        </main>
+        
+        <BranchRightSidebar
+          activeTab={activeTab}
+          onChange={handleTabChange}
+          onNewClient={onNewClient}
+          onNewBooking={onNewBooking}
+          onNewStaff={handleNewStaffAction}
+          onNewAgreement={handleNewAgreementAction}
+          onUploadDocument={handleQuickUploadDocument}
+        />
       </div>
-    </SidebarProvider>
+    </div>
   );
 };

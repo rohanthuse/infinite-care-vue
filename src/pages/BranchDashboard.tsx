@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { BranchRightSidebar } from "@/components/branch-dashboard/BranchRightSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
@@ -360,8 +360,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   );
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen flex flex-col bg-background w-full">
+    <div className="min-h-screen flex flex-col bg-background w-full">
         <DashboardHeader />
         
         <div className="flex flex-1 w-full relative">
@@ -601,7 +600,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           branchId={id || ""}
         />
       </div>
-    </SidebarProvider>
   );
 };
 
