@@ -85,7 +85,7 @@ const ClientLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="login-page-light min-h-screen flex">
       {/* Left section with gradient background */}
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-500 text-white p-8 flex-col justify-center relative overflow-hidden">
         <div className="z-10 max-w-lg">

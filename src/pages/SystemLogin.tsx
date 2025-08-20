@@ -44,7 +44,7 @@ export default function SystemLogin() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="login-page-light min-h-screen flex">
       {/* Left section with gradient background */}
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-8 flex-col justify-center relative overflow-hidden">
         <div className="z-10 max-w-lg">

@@ -180,7 +180,7 @@ const BranchAdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="login-page-light min-h-screen flex">
       {/* Left Side - Blue Gradient */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-blue-500 relative overflow-hidden">
         {/* Wave Pattern Background */}
