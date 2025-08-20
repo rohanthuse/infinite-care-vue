@@ -36,23 +36,23 @@ const NavTile = ({
     <div 
       className={cn(
         "relative flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl transition-all duration-300",
-        "border border-gray-100 w-full",
+        "border border-border w-full",
         isActive 
-          ? "bg-blue-50 shadow-sm border-blue-100" 
-          : "bg-white hover:bg-gray-50 hover:border-blue-50"
+          ? "bg-primary/10 shadow-sm border-primary/50" 
+          : "bg-card hover:bg-accent hover:border-primary/30"
       )}
       onClick={onClick}
     >
       <div className="relative">
         <Icon className={cn(
           "h-6 w-6 mb-2",
-          isActive ? "text-blue-600" : "text-gray-500"
+          isActive ? "text-primary" : "text-muted-foreground"
         )} />
       </div>
       
       <span className={cn(
         "text-sm font-medium text-center",
-        isActive ? "text-blue-700" : "text-gray-700"
+        isActive ? "text-primary" : "text-foreground"
       )}>
         {label}
       </span>
@@ -60,9 +60,9 @@ const NavTile = ({
       {hasSubmenu && (
         <div className="absolute top-2 right-2">
           {isSubmenuOpen ? (
-            <ChevronUp className="h-4 w-4 text-gray-400" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           )}
         </div>
       )}
@@ -97,8 +97,8 @@ const SubNavTile = ({
         "relative cursor-pointer rounded-xl transition-all duration-300 p-3",
         "hover:shadow-soft border", 
         isActive 
-          ? "bg-white border-med-200 shadow-soft" 
-          : "bg-white/60 backdrop-blur-sm border-transparent hover:border-med-100"
+          ? "bg-card border-primary/50 shadow-soft" 
+          : "bg-card/60 backdrop-blur-sm border-transparent hover:border-primary/20"
       )}
       onClick={onClick}
     >
@@ -106,13 +106,13 @@ const SubNavTile = ({
         <div className="relative mb-1.5">
           <Icon className={cn(
             "h-5 w-5",
-            isActive ? "text-med-500" : "text-gray-500"
+            isActive ? "text-primary" : "text-muted-foreground"
           )} />
         </div>
         
         <span className={cn(
           "text-xs font-medium text-center",
-          isActive ? "text-med-600" : "text-gray-600"
+          isActive ? "text-primary" : "text-muted-foreground"
         )}>
           {label}
         </span>
@@ -199,7 +199,7 @@ export function DashboardNavbar() {
 
   return (
     <div className="sticky top-[4.5rem] z-10">
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-100/40 py-6">
+      <nav className="bg-card/80 backdrop-blur-md border-b border-border/40 py-6">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {mainNavItems.map((item) => (
@@ -225,7 +225,7 @@ export function DashboardNavbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-gray-50/80 backdrop-blur-sm py-8 shadow-sm border-b border-gray-100"
+            className="bg-muted/80 backdrop-blur-sm py-8 shadow-sm border-b border-border"
           >
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-4 md:grid-cols-8 gap-4">

@@ -37,15 +37,15 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-2xl p-6 md:p-8">
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm">
-              <FileText className="h-7 w-7 text-blue-600" />
+            <div className="p-3 bg-card rounded-xl shadow-sm">
+              <FileText className="h-7 w-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Agreements</h1>
-              <p className="text-gray-500 text-sm md:text-base">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Agreements</h1>
+              <p className="text-muted-foreground text-sm md:text-base">
                 Manage agreements for {decodeURIComponent(branchName)}
               </p>
             </div>
@@ -53,9 +53,9 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
 
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                className="pl-9 bg-white border-gray-200 focus:border-blue-300 w-full sm:w-64" 
+                className="pl-9 bg-background border-border focus:border-primary w-full sm:w-64" 
                 placeholder="Search agreements..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -64,7 +64,7 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
             
             <CustomButton 
               variant="pill" 
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20"
               onClick={() => setShowSignDialog(true)}
             >
               <PlusCircle className="mr-1.5 h-4 w-4" /> Sign New
@@ -73,27 +73,27 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-border">
             <TabsList className="bg-transparent border-b-0 px-4 pt-2">
               <TabsTrigger 
                 value="signed" 
-                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-green-600 rounded-none border-b-2 border-transparent px-4 pb-3"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 pb-3"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Signed
               </TabsTrigger>
               <TabsTrigger 
                 value="scheduled" 
-                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-green-600 rounded-none border-b-2 border-transparent px-4 pb-3"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 pb-3"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 Scheduled
               </TabsTrigger>
               <TabsTrigger 
                 value="templates" 
-                className="data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-green-600 rounded-none border-b-2 border-transparent px-4 pb-3"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 pb-3"
               >
                 <FileCheck className="mr-2 h-4 w-4" />
                 Templates
@@ -101,12 +101,12 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
             </TabsList>
           </div>
 
-          <div className="border-b border-gray-200 p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex items-center gap-3 text-sm text-gray-600">
+          <div className="border-b border-border p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <Filter className="h-4 w-4" />
               <div className="flex gap-2 flex-wrap">
                 <select 
-                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  className="px-3 py-1.5 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
                 >
@@ -117,7 +117,7 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
                   <option value="Data Agreement">Data Agreement</option>
                 </select>
                 <select 
-                  className="px-3 py-1.5 bg-white border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-300"
+                  className="px-3 py-1.5 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
                 >
@@ -134,7 +134,7 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-primary border-border hover:bg-accent"
                   onClick={() => setShowSignDialog(true)}
                 >
                   <PlusCircle className="mr-1.5 h-4 w-4" /> Sign New
@@ -145,7 +145,7 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-primary border-border hover:bg-accent"
                   onClick={() => setShowScheduleDialog(true)}
                 >
                   <Clock className="mr-1.5 h-4 w-4" /> Schedule New
@@ -156,7 +156,7 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
                 <Button 
                   variant="outline" 
                   size="sm"
-                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="text-primary border-border hover:bg-accent"
                   onClick={() => setShowTemplateDialog(true)}
                 >
                   <PlusCircle className="mr-1.5 h-4 w-4" /> New Template
@@ -166,7 +166,7 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
               <Button 
                 variant="outline" 
                 size="sm"
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                className="text-primary border-border hover:bg-accent"
               >
                 <Download className="mr-1.5 h-4 w-4" /> Export
               </Button>

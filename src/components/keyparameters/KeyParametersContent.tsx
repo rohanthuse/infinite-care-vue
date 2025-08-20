@@ -82,21 +82,21 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
   const getParameterTypeIcon = (parameterType: string) => {
     switch (parameterType) {
       case "report-types":
-        return <FileText className="h-5 w-5 text-gray-600" />;
+        return <FileText className="h-5 w-5 text-muted-foreground" />;
       case "file-categories":
-        return <Folder className="h-5 w-5 text-gray-600" />;
+        return <Folder className="h-5 w-5 text-muted-foreground" />;
       case "bank-holidays":
-        return <Calendar className="h-5 w-5 text-gray-600" />;
+        return <Calendar className="h-5 w-5 text-muted-foreground" />;
       case "travel-rates":
-        return <Car className="h-5 w-5 text-gray-600" />;
+        return <Car className="h-5 w-5 text-muted-foreground" />;
       case "communication-types":
-        return <MessageSquare className="h-5 w-5 text-gray-600" />;
+        return <MessageSquare className="h-5 w-5 text-muted-foreground" />;
       case "expense-types":
-        return <DollarSign className="h-5 w-5 text-gray-600" />;
+        return <DollarSign className="h-5 w-5 text-muted-foreground" />;
       case "services":
-        return <Briefcase className="h-5 w-5 text-gray-600" />;
+        return <Briefcase className="h-5 w-5 text-muted-foreground" />;
       default:
-        return <ListChecks className="h-5 w-5 text-gray-600" />;
+        return <ListChecks className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -243,18 +243,18 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <ListChecks className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <ListChecks className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Key Parameters</h1>
-                <p className="text-gray-500 text-sm md:text-base">Manage system parameters and configurations</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Key Parameters</h1>
+                <p className="text-muted-foreground text-sm md:text-base">Manage system parameters and configurations</p>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
               <div className="relative w-full md:w-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   className="pl-9 pr-4 py-2 w-full md:w-64" 
                   placeholder="Search parameters..."
@@ -269,10 +269,10 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
 
       <Card className="mb-8 border-none shadow-md">
         <Tabs value={activeSectionTab} onValueChange={setActiveSectionTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 p-0 rounded-t-lg rounded-b-none border-b bg-gray-50">
+          <TabsList className="w-full grid grid-cols-3 md:grid-cols-7 p-0 rounded-t-lg rounded-b-none border-b bg-muted">
             <TabsTrigger 
               value="report-types" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <FileText className="h-4 w-4" />
               <span className="hidden md:inline">Report Types</span>
@@ -280,7 +280,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="file-categories" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Folder className="h-4 w-4" />
               <span className="hidden md:inline">File Categories</span>
@@ -288,7 +288,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="bank-holidays" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Calendar className="h-4 w-4" />
               <span className="hidden md:inline">Bank Holidays</span>
@@ -296,7 +296,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="travel-rates" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Car className="h-4 w-4" />
               <span className="hidden md:inline">Travel Rates</span>
@@ -304,7 +304,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="communication-types" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <MessageSquare className="h-4 w-4" />
               <span className="hidden md:inline">Communication Types</span>
@@ -312,7 +312,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="expense-types" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <DollarSign className="h-4 w-4" />
               <span className="hidden md:inline">Expense Types</span>
@@ -320,7 +320,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
             </TabsTrigger>
             <TabsTrigger 
               value="services" 
-              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-green-600"
+              className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Briefcase className="h-4 w-4" />
               <span className="hidden md:inline">Services</span>
@@ -331,11 +331,11 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
           {["report-types", "file-categories", "bank-holidays", "travel-rates", "communication-types", "expense-types", "services"].map((paramType) => (
             <TabsContent key={paramType} value={paramType} className="p-0 border-0">
               {paramType === 'services' ? (
-                <div className="p-4 border-t-0 rounded-b-lg bg-white">
+                <div className="p-4 border-t-0 rounded-b-lg bg-card">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {getParameterTypeIcon(paramType)}
-                      <h2 className="text-xl font-semibold text-gray-800">
+                      <h2 className="text-xl font-semibold text-foreground">
                         {getParameterTypeTitle(paramType)}s
                       </h2>
                     </div>
@@ -352,11 +352,11 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
                   </div>
                 </div>
               ) : (
-                <div className="p-4 border-t-0 rounded-b-lg bg-white">
+                <div className="p-4 border-t-0 rounded-b-lg bg-card">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {getParameterTypeIcon(paramType)}
-                      <h2 className="text-xl font-semibold text-gray-800">
+                      <h2 className="text-xl font-semibold text-foreground">
                         {getParameterTypeTitle(paramType)}s
                       </h2>
                     </div>

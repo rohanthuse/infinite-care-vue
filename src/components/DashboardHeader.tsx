@@ -148,7 +148,7 @@ export function DashboardHeader() {
         
         {/* Mobile menu button */}
         <div className="md:hidden">
-          <Button variant="outline" size="icon" className="text-blue-600 border border-blue-200 bg-white shadow-sm hover:bg-blue-50 rounded-full" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <Button variant="outline" size="icon" className="text-primary border border-border bg-card shadow-sm hover:bg-accent rounded-full" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             <Menu className="h-5 w-5" />
           </Button>
         </div>
@@ -160,10 +160,10 @@ export function DashboardHeader() {
             top-[56px] md:top-auto
             left-0 md:left-auto
             right-0 md:right-auto
-            bg-white md:bg-transparent 
+            bg-card md:bg-transparent 
             py-4 md:py-0 
             border-b md:border-b-0 
-            border-gray-100 
+            border-border
             shadow-md md:shadow-none 
             z-[500] md:z-auto
             ${mobileMenuOpen ? 'flex' : 'hidden md:flex'} 
