@@ -48,9 +48,21 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB limit
+        globPatterns: ['**/*.{css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024, // 20 MB limit
+        globIgnores: ['**/assets/index-*.js'],
         runtimeCaching: [
+          {
+            urlPattern: /\/assets\/.*\.js$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'js-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 86400, // 24 hours
+              },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
             handler: 'NetworkFirst',
