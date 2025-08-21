@@ -103,9 +103,10 @@ const CarerVisitWorkflow = () => {
   // Get appointment data from location state or fetch from API
   const appointment = location.state?.appointment;
   
-  // Determine if we're in view-only mode
+  // Determine if we're in view-only mode - check multiple sources
   const searchParams = new URLSearchParams(location.search);
-  const viewOnly = searchParams.get('mode') === 'view' || location.state?.viewOnly;
+  const urlViewMode = searchParams.get('mode') === 'view';
+  const stateViewOnly = location.state?.viewOnly;
   
   // Visit management hooks
   const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit, autoCreateVisitRecord } = useVisitRecord(appointmentId);
@@ -170,14 +171,17 @@ const CarerVisitWorkflow = () => {
   // Use appointmentData if available, otherwise fall back to location state
   const currentAppointment = appointmentData || appointment;
   
-  // Enhanced view-only check: URL param, state, or completed status
-  const isViewOnly = viewOnly || currentAppointment?.status === 'completed';
+  // Enhanced view-only check: URL param, state, completed status, or existing visit record status
+  const isViewOnly = urlViewMode || stateViewOnly || 
+    currentAppointment?.status === 'completed' || 
+    visitRecord?.status === 'completed';
 
   // Auto-create visit record for in-progress appointments without visit records
   const [autoCreateAttempted, setAutoCreateAttempted] = useState(false);
   
   useEffect(() => {
-    if (currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && user && !autoCreateAttempted) {
+    // Don't auto-create visit records in view-only mode
+    if (!isViewOnly && currentAppointment?.status === 'in_progress' && !visitRecord && !visitLoading && user && !autoCreateAttempted) {
       console.log('Auto-creating visit record for in-progress appointment');
       setAutoCreateAttempted(true);
       autoCreateVisitRecord.mutate({
@@ -187,7 +191,7 @@ const CarerVisitWorkflow = () => {
         branch_id: currentAppointment.clients?.branch_id || currentAppointment.branch_id,
       });
     }
-  }, [currentAppointment, visitRecord, visitLoading, user, autoCreateVisitRecord, autoCreateAttempted]);
+  }, [currentAppointment, visitRecord, visitLoading, user, autoCreateVisitRecord, autoCreateAttempted, isViewOnly]);
 
   // Check if visit has been started and initialize data
   useEffect(() => {
@@ -195,26 +199,34 @@ const CarerVisitWorkflow = () => {
       setVisitStarted(true);
     }
     
-    // Set initial tab to "complete" for view-only mode
-    if (isViewOnly && currentAppointment) {
+    // Set initial tab to "complete" immediately for view-only mode
+    if (isViewOnly) {
+      console.log('Setting view-only mode to complete tab');
       setActiveTab("complete");
+      
+      // Set visit timer from actual duration if available
+      if (visitRecord?.actual_duration_minutes) {
+        setVisitTimer(visitRecord.actual_duration_minutes * 60);
+      }
     }
-  }, [currentAppointment, isViewOnly]);
+  }, [isViewOnly, currentAppointment, visitRecord]);
 
   // Initialize tasks and medications when visit record is created
   const [tasksInitialized, setTasksInitialized] = useState(false);
   const [medicationsInitialized, setMedicationsInitialized] = useState(false);
 
   useEffect(() => {
-    if (visitRecord && !tasksInitialized && (tasks?.length === 0 || tasks === undefined)) {
+    // Don't initialize tasks in view-only mode
+    if (!isViewOnly && visitRecord && !tasksInitialized && (tasks?.length === 0 || tasks === undefined)) {
       console.log('Initializing common tasks for visit record:', visitRecord.id);
       setTasksInitialized(true);
       addCommonTasks.mutate(visitRecord.id);
     }
-  }, [visitRecord, tasks, addCommonTasks, tasksInitialized]);
+  }, [visitRecord, tasks, addCommonTasks, tasksInitialized, isViewOnly]);
 
   useEffect(() => {
-    if (visitRecord && !medicationsInitialized && (medications?.length === 0 || medications === undefined) && currentAppointment?.client_id) {
+    // Don't initialize medications in view-only mode
+    if (!isViewOnly && visitRecord && !medicationsInitialized && (medications?.length === 0 || medications === undefined) && currentAppointment?.client_id) {
       console.log('Initializing common medications for visit record:', visitRecord.id);
       setMedicationsInitialized(true);
       addCommonMedications.mutate({ 
@@ -222,7 +234,7 @@ const CarerVisitWorkflow = () => {
         clientId: currentAppointment.client_id 
       });
     }
-  }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id, medicationsInitialized]);
+  }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id, medicationsInitialized, isViewOnly]);
 
   // Load existing visit data (but don't overwrite existing signatures)
   useEffect(() => {
@@ -824,14 +836,14 @@ const CarerVisitWorkflow = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => isViewOnly ? navigateToCarerPage("") : navigate(-1)}
               className="p-2 hover:bg-gray-100 rounded-lg"
             >
               <PanelLeftClose className="w-5 h-5" />
             </button>
             <div>
               <h1 className="text-lg font-semibold text-gray-900">
-                Visit with {currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}
+                {isViewOnly ? "Visit Summary - " : "Visit with "}{currentAppointment.clients?.first_name} {currentAppointment.clients?.last_name}
               </h1>
               <p className="text-sm text-gray-500">
                 {format(new Date(currentAppointment.start_time), "EEEE, MMMM d, yyyy 'at' h:mm a")}
@@ -839,31 +851,47 @@ const CarerVisitWorkflow = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-sm font-medium text-gray-900">{formatTime(visitTimer)}</div>
-              <div className="text-xs text-gray-500">Visit Duration</div>
+          {!isViewOnly ? (
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium text-gray-900">{formatTime(visitTimer)}</div>
+                <div className="text-xs text-gray-500">Visit Duration</div>
+              </div>
+              <Button
+                onClick={handlePauseVisit}
+                variant={visitStarted ? "destructive" : "default"}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <PauseCircle className="w-4 h-4" />
+                {visitStarted ? "Pause" : "Resume"}
+              </Button>
             </div>
-            <Button
-              onClick={handlePauseVisit}
-              variant={visitStarted ? "destructive" : "default"}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <PauseCircle className="w-4 h-4" />
-              {visitStarted ? "Pause" : "Resume"}
-            </Button>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-sm font-medium text-green-700">Visit Completed</div>
+                <div className="text-xs text-gray-500">
+                  Duration: {visitRecord?.actual_duration_minutes ? 
+                    `${Math.floor(visitRecord.actual_duration_minutes / 60)}h ${visitRecord.actual_duration_minutes % 60}m` : 
+                    formatTime(visitTimer)
+                  }
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         
-        {/* Progress bar */}
-        <div className="max-w-4xl mx-auto mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Progress</span>
-            <span className="text-sm text-gray-500">{Math.round((currentStep / 9) * 100)}% complete</span>
+        {/* Progress bar - only show for non-view mode */}
+        {!isViewOnly && (
+          <div className="max-w-4xl mx-auto mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Progress</span>
+              <span className="text-sm text-gray-500">{Math.round((currentStep / 9) * 100)}% complete</span>
+            </div>
+            <Progress value={(currentStep / 9) * 100} className="h-2" />
           </div>
-          <Progress value={(currentStep / 9) * 100} className="h-2" />
-        </div>
+        )}
       </div>
 
       {/* Main Content */}
@@ -1139,20 +1167,24 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={handlePreviousStep}
-                  disabled={activeTab === "check-in"}
-                >
-                  Back
-                </Button>
-                <Button 
-                  onClick={handleNextStep}
-                  disabled={!isTabCompleted("tasks")}
-                >
-                  Next Step
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                {!isViewOnly && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                      disabled={activeTab === "check-in"}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!isTabCompleted("tasks")}
+                    >
+                      Next Step
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </>
+                )}
               </div>
             </Card>
           </TabsContent>
@@ -1177,11 +1209,12 @@ const CarerVisitWorkflow = () => {
                     <div className="space-y-3">
                       {medications.map((med) => (
                         <div key={med.id} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50">
-                          <Checkbox
-                            checked={med.is_administered}
-                            onCheckedChange={() => handleMedicationToggle(med.id)}
-                            className="flex-shrink-0"
-                          />
+                           <Checkbox
+                             checked={med.is_administered}
+                             onCheckedChange={() => handleMedicationToggle(med.id)}
+                             className="flex-shrink-0"
+                             disabled={isViewOnly}
+                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
@@ -1221,20 +1254,24 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={handlePreviousStep}
-                  disabled={activeTab === "check-in"}
-                >
-                  Back
-                </Button>
-                <Button 
-                  onClick={handleNextStep}
-                  disabled={!isTabCompleted("medication")}
-                >
-                  Next Step
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                {!isViewOnly && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                      disabled={activeTab === "check-in"}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!isTabCompleted("medication")}
+                    >
+                      Next Step
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </>
+                )}
               </div>
             </Card>
           </TabsContent>

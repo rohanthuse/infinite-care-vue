@@ -165,6 +165,15 @@ export const CarerAppointmentDetailDialog = ({
           {/* Action Buttons */}
           <Separator />
           <div className="flex gap-3">
+            {appointment.status === 'completed' && (
+              <Button onClick={() => {
+                onOpenChange(false);
+                // Navigate to view summary mode
+                window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=view`;
+              }} className="flex-1 bg-green-600 hover:bg-green-700">
+                View Summary
+              </Button>
+            )}
             {appointment.status === 'in-progress' && (
               <Button onClick={handleContinueVisit} className="flex-1">
                 Continue Visit
