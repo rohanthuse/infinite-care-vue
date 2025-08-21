@@ -45,14 +45,7 @@ import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 import DemoRequest from "./pages/DemoRequest";
 import { SharedClientProfile } from "./pages/shared/SharedClientProfile";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
-  },
-});
+import { queryClient } from "./lib/queryClient";
 
 // Fallback component for routing errors
 const RoutingErrorFallback = () => (

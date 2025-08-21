@@ -12,27 +12,45 @@ import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { Link } from "react-router-dom";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
-import { useClientAuth } from "@/hooks/useClientAuth";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { useTenant } from "@/contexts/TenantContext";
 import { useClientCarePlans } from "@/hooks/useClientData";
 
 const ClientOverview = () => {
-  // Get authenticated client ID using centralized auth
-  const { clientId, isAuthenticated } = useClientAuth();
+  // Use the simple auth hook for better performance
+  const { data: authData, isLoading: authLoading } = useSimpleClientAuth();
   const { tenantSlug } = useTenant();
 
   // State for review dialog
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
-  const { data: appointments } = useClientAppointments(clientId || undefined);
-  const { data: invoices } = useEnhancedClientBilling(clientId || undefined);
-  const { data: reviews } = useClientReviews(clientId || undefined);
-  const { data: pendingReviews, count: pendingReviewsCount } = usePendingReviews(clientId || undefined);
-  const { data: carePlans } = useClientCarePlans(clientId || undefined);
+  const clientId = authData?.client?.id;
 
-  if (!isAuthenticated || !clientId) {
-    return <div>Please log in to view your overview.</div>;
+  const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments(clientId || undefined);
+  const { data: invoices, isLoading: invoicesLoading } = useEnhancedClientBilling(clientId || undefined);
+  const { data: reviews, isLoading: reviewsLoading } = useClientReviews(clientId || undefined);
+  const { data: pendingReviews, count: pendingReviewsCount, isLoading: pendingReviewsLoading } = usePendingReviews(clientId || undefined);
+  const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans(clientId || undefined);
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!authData?.isClient || !clientId) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-500">Please log in to view your dashboard.</p>
+        </div>
+      </div>
+    );
   }
 
   // Calculate summaries with proper date filtering
@@ -76,24 +94,20 @@ const ClientOverview = () => {
     setSelectedAppointment(null);
   };
 
-  if (!clientId) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your dashboard.</p>
-        </div>
-      </div>
-    );
-  }
+  const isLoadingAnyData = appointmentsLoading || invoicesLoading || carePlansLoading;
 
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-xl">
-        <h1 className="text-2xl font-bold mb-2">Welcome back!</h1>
+        <h1 className="text-2xl font-bold mb-2">Welcome back, {authData.client.first_name}!</h1>
         <p className="text-blue-100">Here's an overview of your care services and recent activity.</p>
+        {isLoadingAnyData && (
+          <div className="flex items-center mt-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            <span className="text-sm text-blue-100">Loading your data...</span>
+          </div>
+        )}
       </div>
 
       {/* Quick Stats */}

@@ -68,60 +68,10 @@ const ClientDashboard = () => {
     }
   }, [location, tenantSlug]);
   
-  // Verify client authentication using centralized auth
+  // Streamlined auth check - rely on RequireClientAuth guard
   useEffect(() => {
-    const checkClientAuth = async () => {
-      try {
-        // Check Supabase session
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          // No session, redirect to login
-          localStorage.removeItem("userType");
-          localStorage.removeItem("clientName");
-          localStorage.removeItem("clientId");
-          navigate(`/${tenantSlug}/client-login`, { replace: true });
-          return;
-        }
-
-        // Verify the user is actually a client in our database
-        const { data: clientData, error } = await supabase
-          .from('clients')
-          .select('id, first_name, last_name, status')
-          .eq('email', session.user.email)
-          .single();
-
-        if (error || !clientData) {
-          console.error('Client verification failed:', error);
-          await supabase.auth.signOut();
-          localStorage.removeItem("userType");
-          localStorage.removeItem("clientName");
-          localStorage.removeItem("clientId");
-          toast({
-            title: "Access Denied",
-            description: "You are not authorized to access this area.",
-            variant: "destructive",
-          });
-          navigate(`/${tenantSlug}/client-login`, { replace: true });
-          return;
-        }
-
-        // Status check removed - allow clients to access dashboard regardless of status
-
-        // Update local storage with current client info
-        localStorage.setItem("clientName", clientData.first_name);
-        localStorage.setItem("clientId", clientData.id);
-        
-      } catch (error) {
-        console.error('Auth check error:', error);
-        navigate(`/${tenantSlug}/client-login`, { replace: true });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkClientAuth();
-  }, [navigate, toast]);
+    setIsLoading(false);
+  }, []);
 
   // Set up auth state listener
   useEffect(() => {

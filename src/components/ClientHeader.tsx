@@ -65,9 +65,12 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
         description: "You have been logged out of your account",
       });
       
-      // The navigation will be handled by the auth state listener in ClientDashboard
-      // But we'll also manually navigate as a fallback to the main landing page
-      navigate('/');
+      // Navigate to tenant-aware login or main page
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/client-login`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (error) {
       console.error('Unexpected logout error:', error);
       toast({
