@@ -97,6 +97,7 @@ export const useEventsLogs = (branchId?: string, filters?: {
   statusFilter?: string;
   categoryFilter?: string;
   dateFilter?: string;
+  assignedToMe?: string;
 }) => {
   return useQuery({
     queryKey: ['events-logs', branchId, filters],
@@ -144,6 +145,10 @@ export const useEventsLogs = (branchId?: string, filters?: {
         else if (filters.dateFilter === 'last30days') filterDate.setDate(now.getDate() - 30);
         else if (filters.dateFilter === 'last90days') filterDate.setDate(now.getDate() - 90);
         query = query.gte('created_at', filterDate.toISOString());
+      }
+
+      if (filters?.assignedToMe) {
+        query = query.or(`follow_up_assigned_to.eq.${filters.assignedToMe},recorded_by_staff_id.eq.${filters.assignedToMe}`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });

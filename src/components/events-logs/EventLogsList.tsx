@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertTriangle, Search, Filter, Calendar, MapPin, User, Eye, Trash2, RotateCcw } from 'lucide-react';
 import { useEventsLogs, useUpdateEventLogStatus, useDeleteEventLog } from '@/data/hooks/useEventsLogs';
 import { EventDetailsDialog } from './EventDetailsDialog';
 import { EventLog } from '@/data/hooks/useEventsLogs';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 
 interface EventLogsListProps {
@@ -21,8 +23,11 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [assignedToMe, setAssignedToMe] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  const { data: userRole } = useUserRole();
 
   const filters = {
     searchQuery: searchQuery || undefined,
@@ -30,6 +35,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     statusFilter: statusFilter !== 'all' ? statusFilter : undefined,
     categoryFilter: categoryFilter !== 'all' ? categoryFilter : undefined,
     dateFilter: dateFilter !== 'all' ? dateFilter : undefined,
+    assignedToMe: assignedToMe ? userRole?.staffId || userRole?.id : undefined,
   };
 
   const { data: events = [], isLoading, error } = useEventsLogs(branchId, filters);
@@ -181,6 +187,20 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                 <SelectItem value="last90days">Last 90 Days</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="assignedToMe" 
+              checked={assignedToMe}
+              onCheckedChange={(checked) => setAssignedToMe(checked === true)}
+            />
+            <label 
+              htmlFor="assignedToMe" 
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Show only events assigned to me
+            </label>
           </div>
         </CardContent>
       </Card>

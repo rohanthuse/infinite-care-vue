@@ -6,7 +6,7 @@ import { EventLogForm } from "@/components/events-logs/EventLogForm";
 import { EventLogsList } from "@/components/events-logs/EventLogsList";
 
 const EventsLogs = () => {
-  const [activeTab, setActiveTab] = useState("new");
+  const [activeTab, setActiveTab] = useState("view");
   const { id, branchName } = useParams<{ id: string; branchName: string }>();
 
   useEffect(() => {
