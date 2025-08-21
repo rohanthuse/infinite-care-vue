@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, isToday, isTomorrow, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerContext } from "@/hooks/useCarerContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useBookingAttendance } from "@/hooks/useBookingAttendance";
@@ -21,15 +21,26 @@ const CarerAppointments: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const { user } = useCarerAuth();
+  const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
   const bookingAttendance = useBookingAttendance();
 
   // Get appointments from database
   const { data: appointments = [], isLoading } = useQuery({
-    queryKey: ['carer-appointments-full', user?.id, statusFilter],
+    queryKey: ['carer-appointments-full', carerContext?.staffId, statusFilter],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!carerContext?.staffId) return [];
+      
+      console.log('[CarerAppointments] Fetching appointments for staffId:', carerContext.staffId, 'statusFilter:', statusFilter);
+      
+      // Map UI status labels to database values
+      const statusMapping: { [key: string]: string } = {
+        'in-progress': 'in_progress',
+        'assigned': 'assigned',
+        'scheduled': 'scheduled', 
+        'completed': 'completed',
+        'cancelled': 'cancelled'
+      };
       
       let query = supabase
         .from('bookings')
@@ -38,18 +49,24 @@ const CarerAppointments: React.FC = () => {
           clients(first_name, last_name, phone, address),
           services(title, description)
         `)
-        .eq('staff_id', user.id)
+        .eq('staff_id', carerContext.staffId)
         .order('start_time');
 
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
+        const dbStatus = statusMapping[statusFilter] || statusFilter;
+        query = query.eq('status', dbStatus);
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('[CarerAppointments] Error fetching appointments:', error);
+        throw error;
+      }
+      
+      console.log('[CarerAppointments] Fetched', data?.length || 0, 'appointments for staff ID:', carerContext.staffId);
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!carerContext?.staffId && !isContextLoading,
   });
 
   // Filter appointments based on search term
@@ -147,7 +164,7 @@ const CarerAppointments: React.FC = () => {
   const handleStartVisit = async (appointment: any) => {
     try {
       console.log('[handleStartVisit] Starting visit for appointment:', appointment);
-      console.log('[handleStartVisit] User context:', user);
+      console.log('[handleStartVisit] Carer context:', carerContext);
       
       // Validate required data first
       if (!appointment.id) {
@@ -156,29 +173,17 @@ const CarerAppointments: React.FC = () => {
         return;
       }
 
-      if (!user?.id) {
-        console.error('[handleStartVisit] Missing user ID');
-        toast.error('User not authenticated');
+      if (!carerContext?.staffId) {
+        console.error('[handleStartVisit] Missing staff ID');
+        toast.error('Carer not authenticated');
         return;
       }
 
       // Get branch ID - first try from appointment, then from user context
       let branchId = appointment.branch_id;
       if (!branchId) {
-        console.log('[handleStartVisit] Getting branch ID from user context');
-        const { data: staffData, error: staffError } = await supabase
-          .from('staff')
-          .select('branch_id')
-          .eq('id', user.id)
-          .single();
-        
-        if (staffError) {
-          console.error('[handleStartVisit] Error fetching staff branch:', staffError);
-          toast.error('Unable to determine branch information');
-          return;
-        }
-        
-        branchId = staffData?.branch_id;
+        console.log('[handleStartVisit] Getting branch ID from carer context');
+        branchId = carerContext?.branchInfo?.id;
       }
 
       if (!branchId) {
@@ -195,7 +200,7 @@ const CarerAppointments: React.FC = () => {
       // Process booking attendance
       await bookingAttendance.mutateAsync({
         bookingId: appointment.id,
-        staffId: user.id,
+        staffId: carerContext.staffId,
         branchId: branchId,
         action: 'start_visit',
         location: {
@@ -308,7 +313,7 @@ const CarerAppointments: React.FC = () => {
     return null;
   };
 
-  if (isLoading) {
+  if (isLoading || isContextLoading) {
     return (
       <div>
         <h1 className="text-2xl font-bold mb-6">My Appointments</h1>
