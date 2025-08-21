@@ -96,7 +96,10 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       
       // Only show error toast if not in silent mode
       if (!options?.silent) {
-        toast.error('Failed to update visit status');
+        const errorMessage = error?.message || 'Failed to update visit status';
+        toast.error('Failed to update visit status', {
+          description: errorMessage
+        });
       }
     },
   });
