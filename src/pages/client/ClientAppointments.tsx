@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +42,12 @@ const ClientAppointments = () => {
   // Get authenticated client ID using centralized auth
   const { clientId, isAuthenticated } = useClientAuth();
 
+  console.log('[ClientAppointments] Client ID:', clientId, 'Is Authenticated:', isAuthenticated);
+
   const { data: appointments, isLoading, error } = useClientAppointments(clientId || undefined);
+
+  console.log('[ClientAppointments] Appointments data:', appointments);
+  console.log('[ClientAppointments] Loading:', isLoading, 'Error:', error);
 
   if (!isAuthenticated || !clientId) {
     return (
@@ -57,33 +61,78 @@ const ClientAppointments = () => {
     );
   }
 
-  // Filter appointments by status and date
+  // Improved appointment categorization with better status handling
   const now = new Date();
   const upcomingAppointments = appointments?.filter(app => {
     const appointmentDate = parseISO(app.appointment_date);
     const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
-    return (app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
+    
+    // Include confirmed, scheduled, assigned, and pending appointments that are in the future
+    const isUpcomingStatus = ['confirmed', 'scheduled', 'assigned', 'pending'].includes(app.status.toLowerCase());
+    
+    console.log('[ClientAppointments] Checking upcoming:', {
+      id: app.id,
+      date: app.appointment_date,
+      status: app.status,
+      isFutureOrToday,
+      isUpcomingStatus,
+      included: isFutureOrToday && isUpcomingStatus
+    });
+    
+    return isFutureOrToday && isUpcomingStatus;
   }) || [];
   
   const completedAppointments = appointments?.filter(app => {
     const appointmentDate = parseISO(app.appointment_date);
     const isPastDate = !isAfter(appointmentDate, now) && !isSameDay(appointmentDate, now);
-    return app.status === 'completed' || (isPastDate && app.status === 'confirmed');
+    
+    // Include completed, done, cancelled appointments, or past confirmed appointments
+    const isCompletedStatus = ['completed', 'done', 'cancelled'].includes(app.status.toLowerCase());
+    const isPastConfirmed = ['confirmed', 'assigned'].includes(app.status.toLowerCase()) && isPastDate;
+    
+    console.log('[ClientAppointments] Checking completed:', {
+      id: app.id,
+      date: app.appointment_date,
+      status: app.status,
+      isPastDate,
+      isCompletedStatus,
+      isPastConfirmed,
+      included: isCompletedStatus || isPastConfirmed
+    });
+    
+    return isCompletedStatus || isPastConfirmed;
   }) || [];
 
+  console.log('[ClientAppointments] Filtered appointments:', {
+    total: appointments?.length || 0,
+    upcoming: upcomingAppointments.length,
+    completed: completedAppointments.length
+  });
+
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'confirmed':
       case 'scheduled':
+      case 'assigned':
         return 'bg-green-100 text-green-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800';
-      case 'rescheduled':
+      case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'completed':
+      case 'done':
+        return 'bg-blue-100 text-blue-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatAppointmentStatus = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return 'Completed';
+      default:
+        return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     }
   };
 
@@ -126,17 +175,29 @@ const ClientAppointments = () => {
   }
 
   if (error) {
+    console.error('[ClientAppointments] Error loading appointments:', error);
     return (
       <div className="text-center py-12">
         <Calendar className="h-12 w-12 text-red-500 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading appointments</h3>
-        <p className="text-gray-600">Unable to load your appointments. Please try refreshing the page.</p>
+        <p className="text-gray-600 mb-4">Unable to load your appointments. Please try refreshing the page.</p>
+        {error && (
+          <p className="text-sm text-red-600">Error details: {error.message}</p>
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Debug info for development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs">
+          <strong>Debug Info:</strong> Client ID: {clientId}, Total appointments: {appointments?.length || 0}, 
+          Upcoming: {upcomingAppointments.length}, Completed: {completedAppointments.length}
+        </div>
+      )}
+
       {/* Review Prompt for completed appointments */}
       <ReviewPrompt completedAppointments={completedAppointments.map(app => ({
         id: app.id,
@@ -166,7 +227,7 @@ const ClientAppointments = () => {
                       </div>
                     </div>
                     <Badge className={getStatusColor(appointment.status)}>
-                      {appointment.status}
+                      {formatAppointmentStatus(appointment.status)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -213,6 +274,11 @@ const ClientAppointments = () => {
             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming appointments</h3>
             <p className="text-gray-600">Your scheduled appointments will appear here.</p>
+            {appointments && appointments.length > 0 && (
+              <p className="text-sm text-blue-600 mt-2">
+                You have {appointments.length} total appointment(s) in the system.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -228,6 +294,8 @@ const ClientAppointments = () => {
                 key={appointment.id} 
                 appointment={appointment}
                 onLeaveReview={handleLeaveReview}
+                getStatusColor={getStatusColor}
+                formatAppointmentStatus={formatAppointmentStatus}
               />
             ))}
           </div>
@@ -236,6 +304,11 @@ const ClientAppointments = () => {
             <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No past appointments</h3>
             <p className="text-gray-600">Your completed appointments will appear here.</p>
+            {appointments && appointments.length > 0 && (
+              <p className="text-sm text-blue-600 mt-2">
+                You have {appointments.length} total appointment(s) in the system.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -263,7 +336,7 @@ const ClientAppointments = () => {
 };
 
 // Component to handle individual appointment with review functionality
-const AppointmentWithReview = ({ appointment, onLeaveReview }: any) => {
+const AppointmentWithReview = ({ appointment, onLeaveReview, getStatusColor, formatAppointmentStatus }: any) => {
   const { clientId } = useClientAuth();
   const { data: existingReview } = useCheckExistingReview(clientId || '', appointment.id);
 
@@ -279,8 +352,8 @@ const AppointmentWithReview = ({ appointment, onLeaveReview }: any) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className="bg-blue-100 text-blue-800">
-              {appointment.status}
+            <Badge className={getStatusColor(appointment.status)}>
+              {formatAppointmentStatus(appointment.status)}
             </Badge>
           </div>
         </div>

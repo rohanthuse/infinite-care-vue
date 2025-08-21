@@ -56,6 +56,7 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
       staff_id,
       created_at,
       revenue,
+      notes,
       services:service_id (
         title
       ),
@@ -65,12 +66,14 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
       )
     `)
     .eq('client_id', clientId)
-    .order('start_time', { ascending: true }); // Changed to ascending for chronological order
+    .order('start_time', { ascending: true });
 
   if (error) {
-    console.error('Error fetching client appointments:', error);
+    console.error('[fetchClientAppointments] Error fetching client appointments:', error);
     throw error;
   }
+
+  console.log(`[fetchClientAppointments] Raw booking data for client ${clientId}:`, data);
 
   // Transform the data to match the expected ClientAppointment interface
   const transformedData: ClientAppointment[] = (data || []).map((booking: any) => {
@@ -79,8 +82,8 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
     // Use our custom function to format time without timezone conversion
     const appointmentTime = formatTimeFromUTC(booking.start_time);
     
-    // Map booking status to appointment status
-    let appointmentStatus = booking.status;
+    // Map booking status to appointment status - handle various status values
+    let appointmentStatus = booking.status || 'confirmed';
     if (booking.status === 'assigned') {
       appointmentStatus = 'confirmed';
     }
@@ -91,7 +94,7 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
       ? `${booking.staff.first_name} ${booking.staff.last_name}`
       : 'Assigned Staff';
 
-    return {
+    const transformedAppointment = {
       id: booking.id,
       appointment_type: serviceTitle,
       provider_name: providerName,
@@ -99,14 +102,19 @@ const fetchClientAppointments = async (clientId: string): Promise<ClientAppointm
       appointment_time: appointmentTime,
       location: 'Home Visit', // Default location - could be enhanced with actual location data
       status: appointmentStatus,
-      notes: undefined, // Notes not available in bookings table
+      notes: booking.notes || undefined,
       client_id: booking.client_id,
       staff_id: booking.staff_id,
       created_at: booking.created_at,
       updated_at: booking.created_at // Using created_at as fallback for updated_at
     };
+
+    console.log(`[fetchClientAppointments] Transformed booking ${booking.id}:`, transformedAppointment);
+    
+    return transformedAppointment;
   });
 
+  console.log(`[fetchClientAppointments] Final transformed data for client ${clientId}:`, transformedData);
   return transformedData;
 };
 
@@ -115,6 +123,8 @@ export const useClientAppointments = (clientId: string) => {
     queryKey: ['client-appointments', clientId],
     queryFn: () => fetchClientAppointments(clientId),
     enabled: Boolean(clientId),
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -124,7 +134,9 @@ export const useCompletedAppointments = (clientId: string) => {
     queryKey: ['completed-appointments', clientId],
     queryFn: async () => {
       const appointments = await fetchClientAppointments(clientId);
-      return appointments.filter(appointment => appointment.status === 'completed');
+      return appointments.filter(appointment => 
+        ['completed', 'done'].includes(appointment.status.toLowerCase())
+      );
     },
     enabled: Boolean(clientId),
   });
