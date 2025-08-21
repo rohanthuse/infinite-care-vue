@@ -79,7 +79,8 @@ export const useVisitVitals = (visitRecordId?: string, clientId?: string) => {
     },
     onError: (error) => {
       console.error('Error recording vitals:', error);
-      toast.error('Failed to record vital signs');
+      const errorMessage = error?.message || 'Failed to record vital signs';
+      toast.error(`Failed to record vital signs: ${errorMessage}`);
     },
   });
 
