@@ -48,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 interface Task {
   id: string;
@@ -96,6 +97,7 @@ const CarerVisitWorkflow = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user } = useCarerAuth();
+  const { navigateToCarerPage } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
   
   // Get appointment data from location state or fetch from API
@@ -721,7 +723,7 @@ const CarerVisitWorkflow = () => {
       
       // Delay navigation slightly to ensure all operations complete
       setTimeout(() => {
-        navigate("/carer-dashboard");
+        navigateToCarerPage("");
       }, 500);
       
     } catch (error) {
