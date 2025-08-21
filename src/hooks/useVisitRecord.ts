@@ -32,15 +32,33 @@ export const useVisitRecord = (bookingId?: string) => {
     queryFn: async () => {
       if (!bookingId) return null;
       
-      const { data, error } = await supabase
+      // First try to get in-progress visit record
+      const { data: inProgressRecord, error: inProgressError } = await supabase
         .from('visit_records')
         .select('*')
         .eq('booking_id', bookingId)
         .eq('status', 'in_progress')
         .maybeSingle();
 
-      if (error) throw error;
-      return data as VisitRecord | null;
+      if (inProgressError) throw inProgressError;
+      
+      // If in-progress record exists, return it
+      if (inProgressRecord) {
+        return inProgressRecord as VisitRecord;
+      }
+      
+      // Fallback: get the most recent completed visit record for this booking
+      const { data: completedRecord, error: completedError } = await supabase
+        .from('visit_records')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .eq('status', 'completed')
+        .order('visit_end_time', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (completedError) throw completedError;
+      return completedRecord as VisitRecord | null;
     },
     enabled: !!bookingId,
   });

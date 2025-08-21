@@ -240,8 +240,10 @@ const CarerAppointments: React.FC = () => {
           size="sm" 
           className="flex items-center gap-2"
           onClick={() => {
-            console.log('[getActionButton] Navigating to completed visit:', appointment.id);
-            navigate(createCarerPath(`/visit/${appointment.id}`));
+            console.log('[getActionButton] Navigating to completed visit in view mode:', appointment.id);
+            navigate(createCarerPath(`/visit/${appointment.id}?mode=view`), { 
+              state: { viewOnly: true } 
+            });
           }}
           disabled={isLoading}
         >

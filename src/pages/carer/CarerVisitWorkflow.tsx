@@ -103,6 +103,10 @@ const CarerVisitWorkflow = () => {
   // Get appointment data from location state or fetch from API
   const appointment = location.state?.appointment;
   
+  // Determine if we're in view-only mode
+  const searchParams = new URLSearchParams(location.search);
+  const viewOnly = searchParams.get('mode') === 'view' || location.state?.viewOnly;
+  
   // Visit management hooks
   const { visitRecord, isLoading: visitLoading, updateVisitRecord, completeVisit, autoCreateVisitRecord } = useVisitRecord(appointmentId);
   const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
@@ -165,6 +169,9 @@ const CarerVisitWorkflow = () => {
   
   // Use appointmentData if available, otherwise fall back to location state
   const currentAppointment = appointmentData || appointment;
+  
+  // Enhanced view-only check: URL param, state, or completed status
+  const isViewOnly = viewOnly || currentAppointment?.status === 'completed';
 
   // Auto-create visit record for in-progress appointments without visit records
   const [autoCreateAttempted, setAutoCreateAttempted] = useState(false);
@@ -187,7 +194,12 @@ const CarerVisitWorkflow = () => {
     if (currentAppointment?.status === 'in_progress') {
       setVisitStarted(true);
     }
-  }, [currentAppointment]);
+    
+    // Set initial tab to "complete" for view-only mode
+    if (isViewOnly && currentAppointment) {
+      setActiveTab("complete");
+    }
+  }, [currentAppointment, isViewOnly]);
 
   // Initialize tasks and medications when visit record is created
   const [tasksInitialized, setTasksInitialized] = useState(false);
@@ -322,6 +334,11 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleTaskToggle = (taskId: string) => {
+    if (isViewOnly) {
+      toast.info("Task details are read-only for completed visits");
+      return;
+    }
+    
     const task = tasks?.find(t => t.id === taskId);
     if (task) {
       updateTask.mutate({
@@ -334,6 +351,11 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleMedicationToggle = (medId: string) => {
+    if (isViewOnly) {
+      toast.info("Medication records are read-only for completed visits");
+      return;
+    }
+    
     const medication = medications?.find(m => m.id === medId);
     if (medication) {
       administerMedication.mutate({
@@ -996,7 +1018,7 @@ const CarerVisitWorkflow = () => {
                   </div>
                 </div>
 
-                {!visitStarted ? (
+                {!visitStarted && !isViewOnly ? (
                   <div className="text-center py-8">
                     <div className="space-y-4">
                       <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
@@ -1010,6 +1032,23 @@ const CarerVisitWorkflow = () => {
                         <UserCheck className="w-5 h-5 mr-2" />
                         Start Visit
                       </Button>
+                    </div>
+                  </div>
+                ) : isViewOnly ? (
+                  <div className="text-center py-8">
+                    <div className="space-y-4">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                        <CheckCircle className="w-8 h-8 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900">Visit Completed</h3>
+                        <p className="text-gray-600 mt-1">This visit has been completed and archived.</p>
+                        {visitRecord?.actual_duration_minutes && (
+                          <p className="text-lg font-mono text-blue-600 mt-2">
+                            Duration: {Math.floor(visitRecord.actual_duration_minutes / 60)}h {visitRecord.actual_duration_minutes % 60}m
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1028,7 +1067,7 @@ const CarerVisitWorkflow = () => {
                 )}
               </CardContent>
               
-              {visitStarted && (
+              {(visitStarted || isViewOnly) && !isViewOnly && (
                 <div className="border-t p-6 flex justify-end">
                   <Button 
                     onClick={handleNextStep}
@@ -1066,6 +1105,7 @@ const CarerVisitWorkflow = () => {
                             checked={task.is_completed}
                             onCheckedChange={() => handleTaskToggle(task.id)}
                             className="flex-shrink-0"
+                            disabled={isViewOnly}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -1677,23 +1717,25 @@ const CarerVisitWorkflow = () => {
                         <p className="text-sm text-gray-500 mb-3">
                           Please ask the client to sign below to confirm the visit
                         </p>
-                         <div className="border rounded-lg p-2">
-                           <SignatureCanvas
-                             width={300}
-                             height={150}
-                             onSave={(signature) => {
-                               setClientSignature(signature);
-                               // Immediately save to database
-                               if (visitRecord?.id) {
-                                 updateVisitRecord.mutate({
-                                   id: visitRecord.id,
-                                   updates: { client_signature_data: signature }
-                                 });
-                               }
-                             }}
-                             initialSignature={clientSignature || undefined}
-                           />
-                         </div>
+                          <div className="border rounded-lg p-2">
+                            <SignatureCanvas
+                              width={300}
+                              height={150}
+                              onSave={(signature) => {
+                                if (isViewOnly) return;
+                                setClientSignature(signature);
+                                // Immediately save to database
+                                if (visitRecord?.id) {
+                                  updateVisitRecord.mutate({
+                                    id: visitRecord.id,
+                                    updates: { client_signature_data: signature }
+                                  });
+                                }
+                              }}
+                              initialSignature={clientSignature || undefined}
+                              disabled={isViewOnly}
+                            />
+                          </div>
                       </div>
                     </div>
                     
@@ -1703,23 +1745,25 @@ const CarerVisitWorkflow = () => {
                         <p className="text-sm text-gray-500 mb-3">
                           Sign below to confirm the completion of the visit
                         </p>
-                         <div className="border rounded-lg p-2">
-                           <SignatureCanvas
-                             width={300}
-                             height={150}
-                             onSave={(signature) => {
-                               setCarerSignature(signature);
-                               // Immediately save to database
-                               if (visitRecord?.id) {
-                                 updateVisitRecord.mutate({
-                                   id: visitRecord.id,
-                                   updates: { staff_signature_data: signature }
-                                 });
-                               }
-                             }}
-                             initialSignature={carerSignature || undefined}
-                           />
-                         </div>
+                          <div className="border rounded-lg p-2">
+                            <SignatureCanvas
+                              width={300}
+                              height={150}
+                              onSave={(signature) => {
+                                if (isViewOnly) return;
+                                setCarerSignature(signature);
+                                // Immediately save to database
+                                if (visitRecord?.id) {
+                                  updateVisitRecord.mutate({
+                                    id: visitRecord.id,
+                                    updates: { staff_signature_data: signature }
+                                  });
+                                }
+                              }}
+                              initialSignature={carerSignature || undefined}
+                              disabled={isViewOnly}
+                            />
+                          </div>
                       </div>
                     </div>
                   </div>
@@ -1739,20 +1783,24 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={handlePreviousStep}
-                  disabled={activeTab === "check-in"}
-                >
-                  Back
-                </Button>
-                <Button 
-                  onClick={handleNextStep}
-                  disabled={!isTabCompleted("sign-off")}
-                >
-                  Complete Visit
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                {!isViewOnly && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                      disabled={activeTab === "check-in"}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleNextStep}
+                      disabled={!isTabCompleted("sign-off")}
+                    >
+                      Complete Visit
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </>
+                )}
               </div>
             </Card>
           </TabsContent>
@@ -1769,7 +1817,15 @@ const CarerVisitWorkflow = () => {
               <CardContent>
                 <div className="space-y-6">
                    <div className="text-center py-6">
-                     {isTabCompleted("complete") ? (
+                     {isViewOnly ? (
+                       <>
+                         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                           <CheckCircle className="w-8 h-8 text-green-600" />
+                         </div>
+                         <h3 className="text-lg font-medium text-gray-900">Visit Completed</h3>
+                         <p className="text-gray-600 mt-1">This visit has been successfully completed and archived.</p>
+                       </>
+                     ) : isTabCompleted("complete") ? (
                        <>
                          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                            <CheckCircle className="w-8 h-8 text-green-600" />
@@ -1837,7 +1893,7 @@ const CarerVisitWorkflow = () => {
                         <li><span className="text-gray-500">Client:</span> {currentAppointment?.clients?.first_name} {currentAppointment?.clients?.last_name}</li>
                         <li><span className="text-gray-500">Address:</span> {currentAppointment?.clients?.address}</li>
                         <li><span className="text-gray-500">Date:</span> {format(new Date(currentAppointment?.start_time), "EEEE, MMMM d, yyyy")}</li>
-                        <li><span className="text-gray-500">Visit Duration:</span> {formatTime(visitTimer)}</li>
+                        <li><span className="text-gray-500">Visit Duration:</span> {isViewOnly && visitRecord?.actual_duration_minutes ? `${Math.floor(visitRecord.actual_duration_minutes / 60)}h ${visitRecord.actual_duration_minutes % 60}m` : formatTime(visitTimer)}</li>
                       </ul>
                     </div>
                     
@@ -1855,30 +1911,44 @@ const CarerVisitWorkflow = () => {
               </CardContent>
               
               <div className="border-t p-6 flex justify-between">
-                <Button 
-                  variant="outline" 
-                  onClick={handlePreviousStep}
-                  disabled={activeTab === "check-in"}
-                >
-                  Back
-                </Button>
-                <Button 
-                  onClick={handleCompleteVisit} 
-                  size="lg"
-                  disabled={isCompletingVisit || !carerSignature}
-                >
-                  {isCompletingVisit ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Completing...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5 mr-2" />
-                      Complete Visit
-                    </>
-                  )}
-                </Button>
+                {!isViewOnly ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={handlePreviousStep}
+                      disabled={activeTab === "check-in"}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleCompleteVisit} 
+                      size="lg"
+                      disabled={isCompletingVisit || !carerSignature}
+                    >
+                      {isCompletingVisit ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Completing...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5 mr-2" />
+                          Complete Visit
+                        </>
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="w-full flex justify-center">
+                    <Button 
+                      onClick={() => navigateToCarerPage("")}
+                      variant="default"
+                      size="lg"
+                    >
+                      Back to Dashboard
+                    </Button>
+                  </div>
+                )}
               </div>
             </Card>
           </TabsContent>
