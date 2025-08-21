@@ -210,12 +210,18 @@ const CarerVisitWorkflow = () => {
     }
   }, [visitRecord, medications, addCommonMedications, currentAppointment?.client_id, medicationsInitialized]);
 
-  // Load existing visit data
+  // Load existing visit data (but don't overwrite existing signatures)
   useEffect(() => {
     if (visitRecord) {
       setNotes(visitRecord.visit_notes || "");
-      setClientSignature(visitRecord.client_signature_data || null);
-      setCarerSignature(visitRecord.staff_signature_data || null);
+      
+      // Only load signatures if they don't already exist locally
+      if (!clientSignature) {
+        setClientSignature(visitRecord.client_signature_data || null);
+      }
+      if (!carerSignature) {
+        setCarerSignature(visitRecord.staff_signature_data || null);
+      }
       
       // Calculate visit timer from start time
       if (visitRecord.visit_start_time) {
@@ -225,7 +231,7 @@ const CarerVisitWorkflow = () => {
         setVisitTimer(elapsedSeconds);
       }
     }
-  }, [visitRecord]);
+  }, [visitRecord, clientSignature, carerSignature]);
   
   // Timer functionality
   useEffect(() => {
@@ -525,7 +531,7 @@ const CarerVisitWorkflow = () => {
       case "notes":
         return notes.trim().length >= 10; // Minimum note length
       case "sign-off":
-        return !!clientSignature;
+        return !!clientSignature && !!carerSignature;
       case "complete":
         return tabOrder.slice(0, -1).every(tab => isTabCompleted(tab));
       default:
@@ -1669,13 +1675,23 @@ const CarerVisitWorkflow = () => {
                         <p className="text-sm text-gray-500 mb-3">
                           Please ask the client to sign below to confirm the visit
                         </p>
-                        <div className="border rounded-lg p-2">
-                          <SignatureCanvas
-                            width={300}
-                            height={150}
-                            onSave={setClientSignature}
-                          />
-                        </div>
+                         <div className="border rounded-lg p-2">
+                           <SignatureCanvas
+                             width={300}
+                             height={150}
+                             onSave={(signature) => {
+                               setClientSignature(signature);
+                               // Immediately save to database
+                               if (visitRecord?.id) {
+                                 updateVisitRecord.mutate({
+                                   id: visitRecord.id,
+                                   updates: { client_signature_data: signature }
+                                 });
+                               }
+                             }}
+                             initialSignature={clientSignature || undefined}
+                           />
+                         </div>
                       </div>
                     </div>
                     
@@ -1685,13 +1701,23 @@ const CarerVisitWorkflow = () => {
                         <p className="text-sm text-gray-500 mb-3">
                           Sign below to confirm the completion of the visit
                         </p>
-                        <div className="border rounded-lg p-2">
-                          <SignatureCanvas
-                            width={300}
-                            height={150}
-                            onSave={setCarerSignature}
-                          />
-                        </div>
+                         <div className="border rounded-lg p-2">
+                           <SignatureCanvas
+                             width={300}
+                             height={150}
+                             onSave={(signature) => {
+                               setCarerSignature(signature);
+                               // Immediately save to database
+                               if (visitRecord?.id) {
+                                 updateVisitRecord.mutate({
+                                   id: visitRecord.id,
+                                   updates: { staff_signature_data: signature }
+                                 });
+                               }
+                             }}
+                             initialSignature={carerSignature || undefined}
+                           />
+                         </div>
                       </div>
                     </div>
                   </div>
