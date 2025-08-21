@@ -9,6 +9,7 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, isToday, isTomorrow, 
 import { useCarerDashboard } from "@/hooks/useCarerDashboard";
 import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useCarerContext } from "@/hooks/useCarerContext";
 import { useLeaveStatus } from "@/hooks/useLeaveManagement";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
@@ -22,13 +23,14 @@ const CarerSchedule: React.FC = () => {
   const [showAllAppointments, setShowAllAppointments] = useState(false);
   const { user } = useCarerAuth();
   const { createCarerPath } = useCarerNavigation();
+  const { data: carerContext } = useCarerContext();
   
   // Use real booking data instead of mock data
-  const { data: allBookings = [], isLoading } = useCarerBookings(user?.id || '');
+  const { data: allBookings = [], isLoading } = useCarerBookings(carerContext?.staffId || '');
   
   // Filter bookings for current view period
-  const weekStart = startOfWeek(currentDate);
-  const weekEnd = endOfWeek(currentDate);
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   
@@ -70,8 +72,14 @@ const CarerSchedule: React.FC = () => {
 
   const visibleAppointments = showAllAppointments ? periodAppointments : periodAppointments.slice(0, 8);
 
+  // Helper to normalize status for display
+  const normalizeStatus = (status: string) => {
+    return status === 'in_progress' ? 'in-progress' : status;
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+    const normalizedStatus = normalizeStatus(status);
+    switch (normalizedStatus?.toLowerCase()) {
       case 'completed':
         return 'bg-green-100 text-green-700';
       case 'in-progress':
@@ -321,7 +329,7 @@ const CarerSchedule: React.FC = () => {
           </div>
 
           {/* Appointments List */}
-          {periodAppointments.length > 0 && (
+          {periodAppointments.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium text-sm text-gray-700">Appointments</h4>
@@ -363,13 +371,17 @@ const CarerSchedule: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={`${getStatusColor(appointment.status)} text-xs`}>
-                        {appointment.status === 'assigned' ? 'Scheduled' : appointment.status}
+                        {appointment.status === 'assigned' ? 'Scheduled' : normalizeStatus(appointment.status)}
                       </Badge>
                       <Eye className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 text-center py-4">
+              No appointments found for this period
             </div>
           )}
         </CardContent>
@@ -410,7 +422,7 @@ const CarerSchedule: React.FC = () => {
                     <div className="text-gray-600 truncate">{booking.client_name}</div>
                     <div className="text-gray-500 truncate">{booking.service_name}</div>
                     <Badge className={`${getStatusColor(booking.status)} text-xs mt-1`}>
-                      {booking.status === 'assigned' ? 'Scheduled' : booking.status}
+                      {booking.status === 'assigned' ? 'Scheduled' : normalizeStatus(booking.status)}
                     </Badge>
                   </div>
                   ))

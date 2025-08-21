@@ -24,8 +24,14 @@ export const CarerAppointmentDetailDialog = ({
 }: CarerAppointmentDetailDialogProps) => {
   if (!appointment) return null;
 
+  // Helper to normalize status for display and logic
+  const normalizeStatus = (status: string) => {
+    return status === 'in_progress' ? 'in-progress' : status;
+  };
+
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+    const normalizedStatus = normalizeStatus(status);
+    switch (normalizedStatus?.toLowerCase()) {
       case 'assigned':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'in-progress':
@@ -66,7 +72,7 @@ export const CarerAppointmentDetailDialog = ({
           <DialogTitle className="flex items-center justify-between">
             <span>Appointment Details</span>
             <Badge className={getStatusColor(appointment.status)}>
-              {appointment.status}
+              {normalizeStatus(appointment.status)}
             </Badge>
           </DialogTitle>
         </DialogHeader>
@@ -180,7 +186,7 @@ export const CarerAppointmentDetailDialog = ({
                 View Summary
               </Button>
             )}
-            {appointment.status === 'in-progress' && (
+            {(appointment.status === 'in-progress' || appointment.status === 'in_progress') && (
               <Button onClick={handleContinueVisit} className="flex-1">
                 Continue Visit
               </Button>
