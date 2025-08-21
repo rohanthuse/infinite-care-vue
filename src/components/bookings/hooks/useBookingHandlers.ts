@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { useQueryClient, useIsFetching } from "@tanstack/react-query";
 import { Booking } from "../BookingTimeGrid";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
@@ -29,14 +30,55 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const [pendingUpdateData, setPendingUpdateData] = useState<any>(null);
   const [isValidatingUpdate, setIsValidatingUpdate] = useState(false);
 
+  const queryClient = useQueryClient();
+  const isRefreshing = useIsFetching({
+    predicate: (query) => {
+      const queryKey = query.queryKey;
+      return (queryKey[0] === "branch-bookings" || 
+              queryKey[0] === "branch-carers" || 
+              queryKey[0] === "branch-clients") && 
+              queryKey[1] === branchId;
+    }
+  }) > 0;
+
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
   const updateBookingMutation = useUpdateBooking(branchId);
   const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
   const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
   const { validateBooking, isValidating: isEnhancedValidating } = useEnhancedOverlapValidation(branchId);
 
-  const handleRefresh = () => {
-    toast.success("Bookings refreshed successfully");
+  const handleRefresh = async () => {
+    if (!branchId) {
+      toast.error("Branch ID is required for refresh");
+      return;
+    }
+
+    try {
+      toast.info("Refreshing bookings data...", {
+        duration: 1000
+      });
+
+      // Invalidate and refetch all booking-related queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] }),
+        queryClient.invalidateQueries({ queryKey: ["branch-carers", branchId] }),
+        queryClient.invalidateQueries({ 
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === "branch-clients" && 
+                   (queryKey.length > 1 && queryKey[1] && 
+                    typeof queryKey[1] === 'object' && 
+                    'branchId' in queryKey[1] && 
+                    (queryKey[1] as any).branchId === branchId);
+          }
+        })
+      ]);
+
+      toast.success("Data refreshed successfully!");
+    } catch (error) {
+      console.error("Failed to refresh data:", error);
+      toast.error("Failed to refresh data. Please try again.");
+    }
   };
 
   const handleNewBooking = () => {
@@ -453,6 +495,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setUpdateOverlapAlertOpen,
     updateOverlapData,
     isCheckingOverlap,
+    isRefreshing,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,

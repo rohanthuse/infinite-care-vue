@@ -2,6 +2,12 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Booking } from "./BookingTimeGrid";
 import { BookingTimeGrid } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
@@ -94,6 +100,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     setUpdateOverlapAlertOpen,
     updateOverlapData,
     isCheckingOverlap,
+    isRefreshing,
     handleRefresh,
     handleNewBooking,
     handleEditBooking,
@@ -158,15 +165,25 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoading}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isLoading || isRefreshing}
+                  className="transition-all duration-200 hover:scale-105 active:scale-95"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 transition-transform duration-200 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh bookings, carers, and clients data</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button
             variant="outline"
             size="sm"
