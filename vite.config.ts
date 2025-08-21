@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -24,6 +25,22 @@ export default defineConfig(({ mode }) => ({
       ]
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          supabase: ['@supabase/supabase-js'],
+          utils: ['date-fns', 'clsx', 'tailwind-merge'],
+          charts: ['recharts'],
+          pdf: ['jspdf', 'jspdf-autotable'],
+          router: ['react-router-dom'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
   plugins: [
     react(),
     mode === 'development' &&
@@ -32,6 +49,7 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15 MB limit
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
