@@ -22,6 +22,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { OrganizationAdminsTable } from "@/components/OrganizationAdminsTable";
 import { TenantBranchNavigation } from "@/components/dashboard/TenantBranchNavigation";
+import { normalizeToHslVar } from '@/lib/colors';
 
 interface Organization {
   id: string;
@@ -104,11 +105,20 @@ const TenantDashboard = () => {
         setUserRole(memberData || { role: systemUserRole?.role || 'member', status: 'active' });
         
         // Apply branding
-        if (orgData.primary_color) {
-          document.documentElement.style.setProperty('--primary', orgData.primary_color);
-        }
-        if (orgData.secondary_color) {
-          document.documentElement.style.setProperty('--secondary', orgData.secondary_color);
+        try {
+          if (orgData.primary_color) {
+            const primaryHsl = normalizeToHslVar(orgData.primary_color);
+            document.documentElement.style.setProperty('--primary', primaryHsl);
+          }
+          if (orgData.secondary_color) {
+            const secondaryHsl = normalizeToHslVar(orgData.secondary_color);
+            document.documentElement.style.setProperty('--secondary', secondaryHsl);
+          }
+        } catch (error) {
+          console.error('Error applying organization colors:', error);
+          // Fallback to default colors if normalization fails
+          document.documentElement.style.setProperty('--primary', '222.2 84% 4.9%');
+          document.documentElement.style.setProperty('--secondary', '210 40% 96%');
         }
         
         document.title = `${orgData.name} - Dashboard`;

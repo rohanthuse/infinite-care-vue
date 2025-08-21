@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { normalizeToHslVar } from '@/lib/colors';
 
 interface Organization {
   id: string;
@@ -219,8 +220,20 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   useEffect(() => {
     if (organization) {
       const root = document.documentElement;
-      root.style.setProperty('--primary', organization.primary_color);
-      root.style.setProperty('--secondary', organization.secondary_color);
+      
+      try {
+        // Normalize colors to HSL format for CSS custom properties
+        const primaryHsl = normalizeToHslVar(organization.primary_color);
+        const secondaryHsl = normalizeToHslVar(organization.secondary_color);
+        
+        root.style.setProperty('--primary', primaryHsl);
+        root.style.setProperty('--secondary', secondaryHsl);
+      } catch (error) {
+        console.error('Error applying organization colors:', error);
+        // Fallback to default colors if normalization fails
+        root.style.setProperty('--primary', '222.2 84% 4.9%');
+        root.style.setProperty('--secondary', '210 40% 96%');
+      }
       
       // Update document title to include organization name
       document.title = `${organization.name} - Care Management System`;
