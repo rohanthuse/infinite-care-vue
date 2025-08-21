@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useBookingAttendance } from "@/hooks/useBookingAttendance";
 import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { toast } from "sonner";
 
 const CarerAppointments: React.FC = () => {
@@ -23,6 +24,7 @@ const CarerAppointments: React.FC = () => {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
+  const { createCarerPath } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
 
   // Get appointments from database
@@ -213,7 +215,7 @@ const CarerAppointments: React.FC = () => {
       toast.dismiss('start-visit');
 
       // Navigate to visit workflow
-      navigate(`/carer-dashboard/visit/${appointment.id}`);
+      navigate(createCarerPath(`/visit/${appointment.id}`));
     } catch (error) {
       console.error('[handleStartVisit] Error starting visit:', error);
       toast.dismiss('start-visit');
@@ -239,7 +241,7 @@ const CarerAppointments: React.FC = () => {
           className="flex items-center gap-2"
           onClick={() => {
             console.log('[getActionButton] Navigating to completed visit:', appointment.id);
-            navigate(`/carer-dashboard/visit/${appointment.id}`);
+            navigate(createCarerPath(`/visit/${appointment.id}`));
           }}
           disabled={isLoading}
         >
@@ -257,7 +259,7 @@ const CarerAppointments: React.FC = () => {
           className="flex items-center gap-2"
           onClick={() => {
             console.log('[getActionButton] Navigating to in-progress visit:', appointment.id);
-            navigate(`/carer-dashboard/visit/${appointment.id}`);
+            navigate(createCarerPath(`/visit/${appointment.id}`));
           }}
           disabled={isLoading}
         >
@@ -520,7 +522,7 @@ const CarerAppointments: React.FC = () => {
         open={showDetailDialog}
         onOpenChange={setShowDetailDialog}
         onStartVisit={handleStartVisit}
-        onContinueVisit={(appointment) => navigate(`/carer-dashboard/visit/${appointment.id}`)}
+        onContinueVisit={(appointment) => navigate(createCarerPath(`/visit/${appointment.id}`))}
       />
     </div>
   );

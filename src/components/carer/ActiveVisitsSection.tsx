@@ -5,14 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, User, Play, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveVisits } from '@/hooks/useActiveVisits';
+import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 import { format, differenceInMinutes } from 'date-fns';
 
 export const ActiveVisitsSection: React.FC = () => {
   const navigate = useNavigate();
+  const { createCarerPath } = useCarerNavigation();
   const { data: activeVisits = [], isLoading } = useActiveVisits();
 
   const handleContinueVisit = (bookingId: string) => {
-    navigate(`/carer-dashboard/visit/${bookingId}`);
+    navigate(createCarerPath(`/visit/${bookingId}`));
   };
 
   if (isLoading) {

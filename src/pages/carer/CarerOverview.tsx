@@ -11,12 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { CarePlanStatusWidget } from "@/components/carer/CarePlanStatusWidget";
 import { ActiveVisitBanner } from "@/components/carer/ActiveVisitBanner";
 import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
+  const { createCarerPath } = useCarerNavigation();
   const { user, isAuthenticated } = useCarerAuth();
   const { data: carerProfile } = useCarerProfile();
   const {
@@ -220,7 +222,7 @@ const CarerOverview: React.FC = () => {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => navigate('/carer-dashboard/appointments')}
+                  onClick={() => navigate(createCarerPath('/appointments'))}
                 >
                   View All Appointments
                 </Button>
@@ -291,7 +293,7 @@ const CarerOverview: React.FC = () => {
               <Button 
                 variant="outline" 
                 className="w-full"
-                onClick={() => navigate('/carer-dashboard/tasks')}
+                onClick={() => navigate(createCarerPath('/tasks'))}
               >
                 View All Tasks
               </Button>

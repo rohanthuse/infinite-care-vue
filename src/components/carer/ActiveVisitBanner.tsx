@@ -5,10 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, User, ArrowRight, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useActiveVisits } from '@/hooks/useActiveVisits';
+import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 import { format, differenceInMinutes } from 'date-fns';
 
 export const ActiveVisitBanner: React.FC = () => {
   const navigate = useNavigate();
+  const { createCarerPath } = useCarerNavigation();
   const { data: activeVisits = [], isLoading } = useActiveVisits();
 
   if (isLoading || activeVisits.length === 0) {
@@ -20,7 +22,7 @@ export const ActiveVisitBanner: React.FC = () => {
   const durationMinutes = differenceInMinutes(new Date(), startTime);
 
   const handleContinueVisit = () => {
-    navigate(`/carer-dashboard/visit/${activeVisit.booking_id}`);
+    navigate(createCarerPath(`/visit/${activeVisit.booking_id}`));
   };
 
   return (
