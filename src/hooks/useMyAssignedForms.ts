@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,7 +23,35 @@ const fetchMyAssignedForms = async (userId: string, userType: 'client' | 'carer'
     return [];
   }
 
+  console.log('Fetching assigned forms for:', { userId, userType });
+
+  // For carers/staff, we need to get the staff database ID from auth_user_id
+  let assigneeId = userId;
+  if (userType === 'carer' || userType === 'staff') {
+    const { data: staffData, error: staffError } = await supabase
+      .from('staff')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .single();
+
+    if (staffError) {
+      console.error('Error fetching staff record:', staffError);
+      throw staffError;
+    }
+
+    if (!staffData) {
+      console.log('No staff record found for auth user:', userId);
+      return [];
+    }
+
+    assigneeId = staffData.id;
+    console.log('Found staff database ID:', assigneeId);
+  }
+
   // Query form_assignees to get forms assigned to this user
+  // For carers, we need to check both 'carer' and 'staff' assignee types
+  const assigneeTypes = userType === 'carer' ? ['carer', 'staff'] : [userType];
+  
   const { data: assignees, error: assigneesError } = await supabase
     .from('form_assignees')
     .select(`
@@ -41,13 +70,15 @@ const fetchMyAssignedForms = async (userId: string, userType: 'client' | 'carer'
         requires_review
       )
     `)
-    .eq('assignee_id', userId)
-    .eq('assignee_type', userType);
+    .eq('assignee_id', assigneeId)
+    .in('assignee_type', assigneeTypes);
 
   if (assigneesError) {
     console.error('Error fetching assigned forms:', assigneesError);
     throw assigneesError;
   }
+
+  console.log('Found assigned forms:', assignees);
 
   if (!assignees || assignees.length === 0) {
     return [];
@@ -57,11 +88,14 @@ const fetchMyAssignedForms = async (userId: string, userType: 'client' | 'carer'
   const formIds = assignees.map(a => a.form_id);
   
   // Query form_submissions to check submission status
+  // Use auth.uid() for the submission check since form_submissions.submitted_by stores auth user IDs
   const { data: submissions } = await supabase
     .from('form_submissions')
     .select('form_id, status, submitted_at, reviewed_at')
     .in('form_id', formIds)
-    .eq('submitted_by', userId);
+    .eq('submitted_by', userId); // userId is the auth user ID
+
+  console.log('Found submissions:', submissions);
 
   // Create a map of form submissions
   const submissionMap = new Map();

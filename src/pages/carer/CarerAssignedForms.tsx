@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { useCarerProfile } from '@/hooks/useCarerProfile';
+import { useAuth } from '@/hooks/useAuth';
 import { useMyAssignedForms } from '@/hooks/useMyAssignedForms';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +9,16 @@ import { FileText, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-reac
 import { format } from 'date-fns';
 
 const CarerAssignedForms = () => {
-  const { data: carerProfile } = useCarerProfile();
-  const carerId = carerProfile?.id;
+  const { user } = useAuth();
+  const authUserId = user?.id;
   
   const { data: assignedForms, isLoading, error } = useMyAssignedForms(
-    carerId || '', 
+    authUserId || '', 
     'carer'
   );
+
+  console.log('CarerAssignedForms - Auth User ID:', authUserId);
+  console.log('CarerAssignedForms - Assigned Forms:', assignedForms);
 
   if (isLoading) {
     return (
@@ -25,6 +29,7 @@ const CarerAssignedForms = () => {
   }
 
   if (error) {
+    console.error('Error in CarerAssignedForms:', error);
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
