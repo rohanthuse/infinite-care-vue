@@ -252,8 +252,9 @@ const CarerAppointments: React.FC = () => {
     if (status === 'in_progress') {
       return (
         <Button 
+          variant="success"
           size="sm" 
-          className="flex items-center gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+          className="flex items-center gap-2"
           onClick={() => {
             console.log('[getActionButton] Navigating to in-progress visit:', appointment.id);
             navigate(`/carer-dashboard/visit/${appointment.id}`);
@@ -269,8 +270,9 @@ const CarerAppointments: React.FC = () => {
     if (canStartAppointment(appointment)) {
       return (
         <Button 
+          variant="default"
           size="sm" 
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          className="flex items-center gap-2"
           onClick={() => handleStartVisit(appointment)}
           disabled={isLoading}
         >
