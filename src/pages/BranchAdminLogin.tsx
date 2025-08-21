@@ -21,6 +21,11 @@ const BranchAdminLogin = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Clear any existing dev-tenant to avoid conflicts
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
+      localStorage.removeItem('dev-tenant');
+    }
+
     try {
       console.log('[BranchAdminLogin] Attempting login for:', email);
       
@@ -114,6 +119,14 @@ const BranchAdminLogin = () => {
         
         // Store branch information
         localStorage.setItem("userType", "branch_admin");
+        
+        // Set dev tenant from the branch's organization if in development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
+          // For now, we'll use a default tenant in development
+          // TODO: Properly fetch organization slug from branch data
+          localStorage.setItem('dev-tenant', 'demo');
+          console.log('[BranchAdminLogin] Set dev-tenant to demo for development');
+        }
         
         // If admin has multiple branches, navigate to branch selection
         if (adminBranchData.length > 1) {

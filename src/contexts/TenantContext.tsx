@@ -75,7 +75,22 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
       return;
     }
 
-    // For development, allow overriding tenant via localStorage
+    // First path segment should be the tenant slug
+    const extractedSlug = pathParts[0]?.toLowerCase();
+    console.log('[TenantProvider] Extracted tenant slug:', extractedSlug);
+    
+    // If we have a URL tenant slug, use it and update localStorage for consistency
+    if (extractedSlug) {
+      setTenantSlug(extractedSlug);
+      
+      // Update dev-tenant in localStorage for development consistency
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
+        localStorage.setItem('dev-tenant', extractedSlug);
+      }
+      return;
+    }
+    
+    // For development, fall back to localStorage tenant if no URL tenant
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
       const devTenant = localStorage.getItem('dev-tenant');
       if (devTenant) {
@@ -84,11 +99,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         return;
       }
     }
-
-    // First path segment should be the tenant slug
-    const extractedSlug = pathParts[0]?.toLowerCase();
-    console.log('[TenantProvider] Extracted tenant slug:', extractedSlug);
-    setTenantSlug(extractedSlug);
+    
+    // No tenant slug found
+    setTenantSlug(null);
   }, [window.location.pathname]);
 
   // Fetch organization data

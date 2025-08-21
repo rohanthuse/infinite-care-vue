@@ -50,6 +50,16 @@ const BranchSelection = () => {
     localStorage.setItem("currentBranchId", selectedBranch.id);
     localStorage.setItem("currentBranchName", selectedBranch.name);
     
+    // Set dev tenant from branch if in development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
+      // Since we're in branch selection, we should already have the dev-tenant set from login
+      // But let's ensure it's set properly for the navigation
+      const devTenant = localStorage.getItem('dev-tenant');
+      if (devTenant) {
+        console.log('[BranchSelection] Dev tenant confirmed:', devTenant);
+      }
+    }
+    
     // Clean up temporary data
     localStorage.removeItem("availableBranches");
     

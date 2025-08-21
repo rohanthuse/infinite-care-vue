@@ -21,25 +21,24 @@ export const BranchDashboardRedirect: React.FC = () => {
                        window.location.hostname.includes('preview');
 
   if (isDevelopment) {
-    // In development, try to get tenant from localStorage
-    let devTenant = localStorage.getItem('dev-tenant');
+    // In development, try to infer tenant from current branch data
+    const currentBranchId = localStorage.getItem('currentBranchId');
     
-    // If no dev tenant, set a default one for development using an existing tenant
-    if (!devTenant) {
-      devTenant = 'demo'; // Use an existing tenant slug from the database
-      localStorage.setItem('dev-tenant', devTenant);
-      console.log('[BranchDashboardRedirect] Set default dev tenant:', devTenant);
-    }
-    
-    if (devTenant) {
-      const tenantAwarePath = `/${devTenant}${location.pathname}${location.search}${location.hash}`;
-      console.log('[BranchDashboardRedirect] Redirecting to tenant-aware URL:', tenantAwarePath);
-      return <Navigate to={tenantAwarePath} replace />;
+    if (currentBranchId) {
+      // Try to infer tenant from branch data in localStorage or fetch it
+      // For now, get dev tenant from localStorage or redirect to branch selection
+      let devTenant = localStorage.getItem('dev-tenant');
+      
+      if (devTenant) {
+        const tenantAwarePath = `/${devTenant}${location.pathname}${location.search}${location.hash}`;
+        console.log('[BranchDashboardRedirect] Redirecting to tenant-aware URL:', tenantAwarePath);
+        return <Navigate to={tenantAwarePath} replace />;
+      }
     }
 
-    // If still no dev tenant, redirect to login with a warning
-    console.warn('[BranchDashboardRedirect] No dev tenant found in localStorage, redirecting to main page');
-    return <Navigate to="/" replace />;
+    // If no proper tenant context, redirect to branch login
+    console.warn('[BranchDashboardRedirect] No tenant context found, redirecting to branch login');
+    return <Navigate to="/branch-admin-login" replace />;
   }
 
   // In production, we should have a proper tenant domain

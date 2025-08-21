@@ -9,9 +9,10 @@ interface TenantNotFoundProps {
 
 export const TenantNotFound: React.FC<TenantNotFoundProps> = ({ subdomain }) => {
   const handleGoHome = () => {
-    // Clear dev subdomain and redirect to main domain
+    // Clear tenant-related localStorage and redirect to main domain
     if (window.location.hostname === 'localhost') {
       localStorage.removeItem('dev-subdomain');
+      localStorage.removeItem('dev-tenant');
       window.location.href = '/';
     } else {
       // Redirect to main domain

@@ -33,6 +33,11 @@ export default function CarerLoginSafe() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+
+    // Clear any existing dev-tenant to avoid conflicts
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
+      localStorage.removeItem('dev-tenant');
+    }
     
     if (!email || !password) {
       return;
