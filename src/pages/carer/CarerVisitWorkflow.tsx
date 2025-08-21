@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
@@ -145,6 +145,7 @@ const CarerVisitWorkflow = () => {
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
   
   const { uploadPhoto, deletePhoto, uploading } = usePhotoUpload();
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [eventCategory, setEventCategory] = useState("incident");
   const [eventDetails, setEventDetails] = useState("");
   const [eventLocation, setEventLocation] = useState("");
@@ -1576,23 +1577,23 @@ const CarerVisitWorkflow = () => {
                   
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                        <Button
-                          variant="outline"
-                          className="flex items-center gap-2"
-                          disabled={uploading}
-                        >
-                          <Camera className="w-4 h-4" />
-                          {uploading ? "Uploading..." : "Add Photos"}
-                        </Button>
-                      </label>
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        disabled={uploading}
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        <Camera className="w-4 h-4" />
+                        {uploading ? "Uploading..." : "Add Photos"}
+                      </Button>
                       
                       {uploadedPhotos.length > 0 && (
                         <div className="flex items-center gap-2 text-green-600">

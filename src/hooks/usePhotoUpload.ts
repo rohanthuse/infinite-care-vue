@@ -25,7 +25,8 @@ export const usePhotoUpload = () => {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        toast.error('Failed to upload photo');
+        const errorMessage = uploadError?.message || 'Unknown error occurred';
+        toast.error(`Failed to upload photo: ${errorMessage}`);
         return null;
       }
 
