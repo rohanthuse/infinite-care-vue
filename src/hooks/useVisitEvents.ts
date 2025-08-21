@@ -71,7 +71,8 @@ export const useVisitEvents = (visitRecordId?: string) => {
     },
     onError: (error) => {
       console.error('Error recording event:', error);
-      toast.error('Failed to record event');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      toast.error(`Failed to record event: ${errorMessage}`);
     },
   });
 
@@ -94,7 +95,8 @@ export const useVisitEvents = (visitRecordId?: string) => {
     },
     onError: (error) => {
       console.error('Error updating event:', error);
-      toast.error('Failed to update event');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      toast.error(`Failed to update event: ${errorMessage}`);
     },
   });
 
