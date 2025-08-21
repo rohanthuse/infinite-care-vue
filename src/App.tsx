@@ -44,6 +44,9 @@ import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
 import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 import DemoRequest from "./pages/DemoRequest";
 import { SharedClientProfile } from "./pages/shared/SharedClientProfile";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -90,6 +93,9 @@ const AppContent = () => {
       <BrowserRouter>
         <TaskProvider>
           <ErrorBoundary fallback={<RoutingErrorFallback />}>
+            <PWAInstallPrompt />
+            <OfflineIndicator />
+            <PWAUpdatePrompt />
             <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
