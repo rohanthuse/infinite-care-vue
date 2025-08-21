@@ -115,29 +115,35 @@ export const useUnifiedDocuments = (branchId: string) => {
         email: user.email
       });
 
-      // Check user permissions for this branch - handle multiple roles
-      console.log('[useUnifiedDocuments] Checking user roles for user:', user.id);
+      // Check user permissions for this branch - more inclusive access checking
+      console.log('[useUnifiedDocuments] Checking user access for branch:', branchId);
+      
+      // Check user roles first
       const { data: userRolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id);
 
       if (roleError) {
-        console.error('[useUnifiedDocuments] Error fetching user roles:', roleError);
-        // Don't throw error immediately - check if user has branch access anyway
-        console.log('[useUnifiedDocuments] Continuing with branch access check despite role query error');
+        console.log('[useUnifiedDocuments] No user roles found, checking direct branch access');
       }
 
       const userRoles = userRolesData?.map(r => r.role) || [];
       console.log('[useUnifiedDocuments] User roles found:', userRoles);
 
-      // Verify user can access this branch
+      // Check multiple access methods
       let hasAccess = false;
+      let accessMethod = '';
       
+      // 1. Check super admin role
       if (userRoles.includes('super_admin')) {
         hasAccess = true;
+        accessMethod = 'super_admin';
         console.log('[useUnifiedDocuments] Super admin access granted');
-      } else if (userRoles.includes('branch_admin')) {
+      }
+      
+      // 2. Check admin_branches table (regardless of role)
+      if (!hasAccess) {
         const { data: adminBranch, error: adminError } = await supabase
           .from('admin_branches')
           .select('branch_id')
@@ -145,13 +151,15 @@ export const useUnifiedDocuments = (branchId: string) => {
           .eq('branch_id', branchId)
           .single();
         
-        if (adminError) {
-          console.error('[useUnifiedDocuments] Error checking admin branch access:', adminError);
+        if (!adminError && adminBranch) {
+          hasAccess = true;
+          accessMethod = 'admin_branches';
+          console.log('[useUnifiedDocuments] Admin branch access granted:', adminBranch);
         }
-        
-        hasAccess = !!adminBranch;
-        console.log('[useUnifiedDocuments] Branch admin access check:', { hasAccess, adminBranch });
-      } else if (userRoles.includes('carer')) {
+      }
+      
+      // 3. Check staff table (regardless of role)
+      if (!hasAccess) {
         const { data: staffData, error: staffError } = await supabase
           .from('staff')
           .select('branch_id')
@@ -159,16 +167,15 @@ export const useUnifiedDocuments = (branchId: string) => {
           .eq('branch_id', branchId)
           .single();
         
-        if (staffError) {
-          console.error('[useUnifiedDocuments] Error checking staff branch access:', staffError);
+        if (!staffError && staffData) {
+          hasAccess = true;
+          accessMethod = 'staff';
+          console.log('[useUnifiedDocuments] Staff access granted:', staffData);
         }
-        
-        hasAccess = !!staffData;
-        console.log('[useUnifiedDocuments] Staff access check:', { hasAccess, staffData });
       }
 
       if (!hasAccess) {
-        console.error('[useUnifiedDocuments] Access denied for branch:', branchId);
+        console.error('[useUnifiedDocuments] Access denied for branch:', branchId, 'User ID:', user.id);
         throw new Error('You do not have permission to upload documents to this branch');
       }
 
