@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useCarerContext } from './useCarerContext';
 
 export interface CarerScheduleData {
   availableHours: {
@@ -105,11 +106,16 @@ const fetchCarerSchedule = async (carerId: string): Promise<CarerScheduleData> =
   };
 };
 
-export const useCarerSchedule = (carerId: string) => {
+export const useCarerSchedule = (carerId?: string) => {
+  const { data: carerContext } = useCarerContext();
+  
+  // Use carerId from prop or from context
+  const effectiveCarerId = carerId || carerContext?.staffId;
+
   return useQuery({
-    queryKey: ['carer-schedule', carerId],
-    queryFn: () => fetchCarerSchedule(carerId),
-    enabled: Boolean(carerId),
+    queryKey: ['carer-schedule', effectiveCarerId],
+    queryFn: () => fetchCarerSchedule(effectiveCarerId!),
+    enabled: Boolean(effectiveCarerId),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };

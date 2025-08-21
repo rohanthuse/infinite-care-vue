@@ -1,19 +1,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCarerAuth } from "./useCarerAuth";
-import { useCarerBranch } from "./useCarerBranch";
+import { useCarerContext } from "./useCarerContext";
 import { format, startOfWeek, endOfWeek, isToday, isTomorrow } from "date-fns";
 
 export const useCarerDashboard = () => {
-  const { user } = useCarerAuth();
-  const { data: carerBranch } = useCarerBranch();
+  const { data: carerContext, isLoading: contextLoading } = useCarerContext();
 
   // Get today's appointments/bookings
   const { data: todayAppointments = [], isLoading: appointmentsLoading } = useQuery({
-    queryKey: ['carer-appointments', user?.id],
+    queryKey: ['carer-appointments', carerContext?.staffId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!carerContext?.staffId) return [];
       
       const today = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
@@ -23,7 +21,7 @@ export const useCarerDashboard = () => {
           clients(first_name, last_name),
           services(title)
         `)
-        .eq('staff_id', user.id)
+        .eq('staff_id', carerContext.staffId)
         .gte('start_time', `${today}T00:00:00`)
         .lt('start_time', `${today}T23:59:59`)
         .order('start_time');
@@ -31,14 +29,14 @@ export const useCarerDashboard = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!carerContext?.staffId,
   });
 
   // Get upcoming appointments (next 7 days)
   const { data: upcomingAppointments = [], isLoading: upcomingLoading } = useQuery({
-    queryKey: ['carer-upcoming-appointments', user?.id],
+    queryKey: ['carer-upcoming-appointments', carerContext?.staffId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!carerContext?.staffId) return [];
       
       const today = format(new Date(), 'yyyy-MM-dd');
       const nextWeek = format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
@@ -50,7 +48,7 @@ export const useCarerDashboard = () => {
           clients(first_name, last_name),
           services(title)
         `)
-        .eq('staff_id', user.id)
+        .eq('staff_id', carerContext.staffId)
         .gte('start_time', `${today}T00:00:00`)
         .lte('start_time', `${nextWeek}T23:59:59`)
         .order('start_time')
@@ -59,14 +57,14 @@ export const useCarerDashboard = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!carerContext?.staffId,
   });
 
   // Get carer's tasks
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ['carer-tasks', user?.id],
+    queryKey: ['carer-tasks', carerContext?.staffId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!carerContext?.staffId) return [];
       
       const { data, error } = await supabase
         .from('tasks')
@@ -75,7 +73,7 @@ export const useCarerDashboard = () => {
           assignee:staff(first_name, last_name),
           client:clients(first_name, last_name)
         `)
-        .eq('assignee_id', user.id)
+        .eq('assignee_id', carerContext.staffId)
         .neq('status', 'done')
         .order('due_date')
         .limit(5);
@@ -86,32 +84,32 @@ export const useCarerDashboard = () => {
       }
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!carerContext?.staffId,
   });
 
   // Get client count for the branch
   const { data: clientCount = 0, isLoading: clientCountLoading } = useQuery({
-    queryKey: ['branch-client-count', carerBranch?.branch_id],
+    queryKey: ['branch-client-count', carerContext?.branchInfo?.id],
     queryFn: async () => {
-      if (!carerBranch?.branch_id) return 0;
+      if (!carerContext?.branchInfo?.id) return 0;
       
       const { count, error } = await supabase
         .from('clients')
         .select('*', { count: 'exact', head: true })
-        .eq('branch_id', carerBranch.branch_id)
+        .eq('branch_id', carerContext.branchInfo.id)
         .eq('status', 'active');
 
       if (error) throw error;
       return count || 0;
     },
-    enabled: !!carerBranch?.branch_id,
+    enabled: !!carerContext?.branchInfo?.id,
   });
 
   // Get work hours for current week
   const { data: weeklyHours = 0, isLoading: hoursLoading } = useQuery({
-    queryKey: ['carer-weekly-hours', user?.id],
+    queryKey: ['carer-weekly-hours', carerContext?.staffId],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!carerContext?.staffId) return 0;
       
       const weekStart = format(startOfWeek(new Date()), 'yyyy-MM-dd');
       const weekEnd = format(endOfWeek(new Date()), 'yyyy-MM-dd');
@@ -119,7 +117,7 @@ export const useCarerDashboard = () => {
       const { data, error } = await supabase
         .from('attendance_records')
         .select('hours_worked')
-        .eq('person_id', user.id)
+        .eq('person_id', carerContext.staffId)
         .gte('attendance_date', weekStart)
         .lte('attendance_date', weekEnd);
 
@@ -128,7 +126,7 @@ export const useCarerDashboard = () => {
       const totalHours = data?.reduce((sum, record) => sum + (record.hours_worked || 0), 0) || 0;
       return Math.round(totalHours * 100) / 100;
     },
-    enabled: !!user?.id,
+    enabled: !!carerContext?.staffId,
   });
 
   // Transform appointments for display
@@ -154,7 +152,7 @@ export const useCarerDashboard = () => {
     category: task.category || 'General',
   }));
 
-  const isLoading = appointmentsLoading || upcomingLoading || tasksLoading || clientCountLoading || hoursLoading;
+  const isLoading = contextLoading || appointmentsLoading || upcomingLoading || tasksLoading || clientCountLoading || hoursLoading;
 
   return {
     todayAppointments,
@@ -163,7 +161,14 @@ export const useCarerDashboard = () => {
     clientCount,
     weeklyHours,
     isLoading,
-    user,
-    carerBranch,
+    // New unified context
+    carerContext,
+    // Backward compatibility
+    user: carerContext?.staffProfile ? { id: carerContext.staffProfile.auth_user_id } : null,
+    carerBranch: carerContext?.branchInfo ? { 
+      ...carerContext.staffProfile,
+      branch_id: carerContext.branchInfo.id,
+      branches: carerContext.branchInfo
+    } : null,
   };
 };

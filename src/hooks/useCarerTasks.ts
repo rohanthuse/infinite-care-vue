@@ -2,8 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useCarerAuthSafe } from "./useCarerAuthSafe";
-import { useCarerBranch } from "./useCarerBranch";
+import { useCarerContext } from "./useCarerContext";
 
 export interface CarerTask {
   id: string;
@@ -24,15 +23,14 @@ export interface CarerTask {
 }
 
 export const useCarerTasks = () => {
-  const { user, carerProfile } = useCarerAuthSafe();
-  const { data: carerBranch } = useCarerBranch();
+  const { data: carerContext } = useCarerContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: tasks = [], isLoading, error } = useQuery({
-    queryKey: ['carer-tasks', carerProfile?.id],
+    queryKey: ['carer-tasks', carerContext?.staffId],
     queryFn: async () => {
-      if (!carerProfile?.id) return [];
+      if (!carerContext?.staffId) return [];
       
       const { data, error } = await supabase
         .from('tasks')
@@ -40,7 +38,7 @@ export const useCarerTasks = () => {
           *,
           client:clients(first_name, last_name)
         `)
-        .eq('assignee_id', carerProfile.id)
+        .eq('assignee_id', carerContext.staffId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -56,7 +54,7 @@ export const useCarerTasks = () => {
         createdAt: task.created_at
       }));
     },
-    enabled: !!carerProfile?.id,
+    enabled: !!carerContext?.staffId,
   });
 
   const updateTaskMutation = useMutation({
@@ -82,7 +80,7 @@ export const useCarerTasks = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerProfile?.id] });
+      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerContext?.staffId] });
       toast({
         title: "Task updated",
         description: "Task has been updated successfully.",
@@ -99,17 +97,17 @@ export const useCarerTasks = () => {
 
   const addTaskMutation = useMutation({
     mutationFn: async (newTask: Omit<CarerTask, 'id' | 'created_at'>) => {
-      if (!carerBranch?.branch_id) {
+      if (!carerContext?.branchInfo?.id) {
         throw new Error('Branch information not available');
       }
 
-      if (!carerProfile?.id) {
-        throw new Error('Carer profile not available');
+      if (!carerContext?.staffId) {
+        throw new Error('Carer context not available');
       }
 
       console.log('[useCarerTasks] Creating task:', {
-        carerProfileId: carerProfile.id,
-        branchId: carerBranch.branch_id,
+        staffId: carerContext.staffId,
+        branchId: carerContext.branchInfo.id,
         taskData: newTask
       });
 
@@ -119,10 +117,10 @@ export const useCarerTasks = () => {
         status: newTask.completed ? 'done' : 'todo',
         priority: newTask.priority,
         due_date: newTask.due_date,
-        assignee_id: carerProfile.id,
+        assignee_id: carerContext.staffId,
         client_id: newTask.client_id,
         category: newTask.category || 'General',
-        branch_id: carerBranch.branch_id,
+        branch_id: carerContext.branchInfo.id,
       };
 
       const { data, error } = await supabase
@@ -140,7 +138,7 @@ export const useCarerTasks = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerProfile?.id] });
+      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerContext?.staffId] });
       toast({
         title: "Task created",
         description: "New task has been created successfully.",
@@ -181,7 +179,7 @@ export const useCarerTasks = () => {
       return taskId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerProfile?.id] });
+      queryClient.invalidateQueries({ queryKey: ['carer-tasks', carerContext?.staffId] });
       toast({
         title: "Task deleted",
         description: "Task has been deleted successfully.",
