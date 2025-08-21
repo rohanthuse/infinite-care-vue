@@ -6664,6 +6664,10 @@ export type Database = {
         }
         Returns: string
       }
+      form_is_in_admins_branch: {
+        Args: { p_form_id: string; p_user_id?: string }
+        Returns: boolean
+      }
       generate_invite_token: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -7091,6 +7095,10 @@ export type Database = {
       }
       user_is_admin: {
         Args: { user_id_param: string }
+        Returns: boolean
+      }
+      user_is_assigned_to_form: {
+        Args: { p_form_id: string }
         Returns: boolean
       }
       verify_staff_auth_context: {
