@@ -9,7 +9,8 @@ import { useClientCarePlansWithDetails } from "@/hooks/useCarePlanData";
 import { useToast } from "@/hooks/use-toast";
 import { ClientCarePlanApprovalDialog } from "@/components/client/ClientCarePlanApprovalDialog";
 import { ClientChangeRequestDialog } from "@/components/client/ClientChangeRequestDialog";
-import { useApproveCarePlan, useRejectCarePlan, useCarePlanRequiresApproval, useCarePlanStatus, useRequestChanges, useCarePlanHasChangeRequest } from "@/hooks/useCarePlanApproval";
+import { useClientApproveCarePlan, useClientRejectCarePlan, useClientCarePlanStatus } from "@/hooks/useClientCarePlanApproval";
+import { CarePlanStatusTracker } from "@/components/care-plan/CarePlanStatusTracker";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { CarePlanDataEnhancer } from "@/components/care/CarePlanDataEnhancer";
 const ClientCarePlans = () => {
@@ -19,9 +20,8 @@ const ClientCarePlans = () => {
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [changeRequestDialogOpen, setChangeRequestDialogOpen] = useState(false);
   const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
-  const approveCarePlanMutation = useApproveCarePlan();
-  const rejectCarePlanMutation = useRejectCarePlan();
-  const requestChangesMutation = useRequestChanges();
+  const approveCarePlanMutation = useClientApproveCarePlan();
+  const rejectCarePlanMutation = useClientRejectCarePlan();
 
   // Get authenticated client using proper Supabase auth
   const {
@@ -43,7 +43,7 @@ const ClientCarePlans = () => {
   const handleSubmitChangeRequest = (comments: string) => {
     if (!selectedCarePlan) return;
     
-    requestChangesMutation.mutate(
+    rejectCarePlanMutation.mutate(
       { carePlanId: selectedCarePlan.id, comments },
       {
         onSuccess: () => {
@@ -96,6 +96,8 @@ const ClientCarePlans = () => {
       signatureData,
       comments
     });
+    setApprovalDialogOpen(false);
+    setSelectedCarePlan(null);
   };
   const handleRejectCarePlan = async (comments: string) => {
     if (!selectedCarePlan) return;
@@ -103,14 +105,22 @@ const ClientCarePlans = () => {
       carePlanId: selectedCarePlan.id,
       comments
     });
+    setApprovalDialogOpen(false);
+    setSelectedCarePlan(null);
   };
+
+  // Helper functions
+  const requiresClientApproval = (carePlan: any) => {
+    return (carePlan.status === 'pending_client_approval') || 
+           (carePlan.status === 'approved' && !carePlan.client_acknowledged_at);
   const handleOpenApprovalDialog = (carePlan: any) => {
     setSelectedCarePlan(carePlan);
     setApprovalDialogOpen(true);
   };
 
-  // Count pending approvals for summary
-  const pendingApprovals = carePlans.filter(cp => useCarePlanRequiresApproval(cp)).length;
+  // Separate care plans into categories
+  const pendingApprovalPlans = carePlans.filter(requiresClientApproval);
+  const otherPlans = carePlans.filter(cp => !requiresClientApproval(cp));
 
   // Function to render goal status badge
   const renderGoalStatus = (status: string) => {
@@ -136,8 +146,8 @@ const ClientCarePlans = () => {
             </h1>
             <p className="text-gray-600 mt-1">
               You have {carePlans.length} care plan{carePlans.length !== 1 ? 's' : ''}
-              {pendingApprovals > 0 && <span className="text-orange-600 font-medium">
-                  {' • '}{pendingApprovals} requiring your approval
+              {pendingApprovalPlans.length > 0 && <span className="text-orange-600 font-medium">
+                  {' • '}{pendingApprovalPlans.length} requiring your approval
                 </span>}
             </p>
           </div>
@@ -148,29 +158,84 @@ const ClientCarePlans = () => {
         </div>
       </div>
 
-      {/* Global Approval Alert */}
-      {pendingApprovals > 0 && <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-orange-100 rounded-full">
-                <AlertCircle className="h-5 w-5 text-orange-600" />
+      {/* Awaiting Your Approval Section */}
+      {pendingApprovalPlans.length > 0 && (
+        <div className="space-y-4">
+          <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-red-50">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-full">
+                  <PenTool className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-orange-800">Awaiting Your Approval</CardTitle>
+                  <p className="text-sm text-orange-700 mt-1">
+                    {pendingApprovalPlans.length} care plan{pendingApprovalPlans.length > 1 ? 's' : ''} ready for your review and signature
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-800 mb-1">
-                  Care Plan{pendingApprovals > 1 ? 's' : ''} Approval Required
-                </h3>
-                <p className="text-sm text-orange-700 mb-3">
-                  You have {pendingApprovals} care plan{pendingApprovals > 1 ? 's' : ''} that require{pendingApprovals === 1 ? 's' : ''} your review and approval. 
-                  Please review each plan below and provide your digital signature.
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {pendingApprovalPlans.map(carePlan => {
+                  const statusInfo = useClientCarePlanStatus(carePlan);
+                  return (
+                    <div key={carePlan.id} className="bg-white border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-medium">{carePlan.title}</h4>
+                            <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">Provider: {carePlan.provider_name}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
+                            <PenTool className="h-4 w-4 mr-2" />
+                            Review & Sign
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => handleOpenChangeRequestDialog(carePlan)}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-2" />
+                            Request Changes
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Empty state for no pending approvals */}
+      {pendingApprovalPlans.length === 0 && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-green-100 rounded-full">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-green-800 mb-1">All Set!</h3>
+                <p className="text-sm text-green-700">
+                  No care plans need your approval right now. Your care team is working on your plans or they're already active.
                 </p>
               </div>
             </div>
           </CardContent>
-        </Card>}
+        </Card>
+      )}
 
-      {/* Care Plans List */}
-      <div className="space-y-4">
-        {carePlans.map(carePlan => {
+      {/* All Care Plans */}
+      {(otherPlans.length > 0 || pendingApprovalPlans.length > 0) && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">All Care Plans</h2>
+          {carePlans.map(carePlan => {
         // Add data enhancer for each care plan
         const enhanceCarePlanData = clientId && (
           <CarePlanDataEnhancer 
@@ -179,9 +244,12 @@ const ClientCarePlans = () => {
             clientId={clientId} 
           />
         );
-        const requiresApproval = useCarePlanRequiresApproval(carePlan);
-        const statusInfo = useCarePlanStatus(carePlan);
-        const changeRequestInfo = useCarePlanHasChangeRequest(carePlan);
+        const requiresApproval = requiresClientApproval(carePlan);
+        const statusInfo = useClientCarePlanStatus(carePlan);
+        const changeRequestInfo = { 
+          hasRequest: !!(carePlan as any).changes_requested_at,
+          requestDate: (carePlan as any).changes_requested_at 
+        };
         return (
           <>
             {enhanceCarePlanData}
@@ -215,7 +283,7 @@ const ClientCarePlans = () => {
                       <>
                         <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
                           <PenTool className="h-4 w-4 mr-2" />
-                          Care Plan is Approved
+                          Review & Sign
                         </Button>
                         <Button 
                           variant="outline" 
@@ -223,24 +291,29 @@ const ClientCarePlans = () => {
                           className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
                         >
                           <MessageSquare className="h-4 w-4 mr-2" />
-                          {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
+                          {changeRequestInfo.hasRequest ? "Changes Requested" : "Request Changes"}
                         </Button>
                       </>
                     ) : carePlan.status === 'approved' || carePlan.status === 'active' ? (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleOpenChangeRequestDialog(carePlan)}
-                        className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
-                      </Button>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => handleOpenChangeRequestDialog(carePlan)}
+                          className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          {changeRequestInfo.hasRequest ? "Changes Requested" : "Request Changes"}
+                        </Button>
                     ) : null}
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-0">
+                {/* Status Tracker */}
+                <div className="mb-4">
+                  <CarePlanStatusTracker carePlan={carePlan} viewerType="client" />
+                </div>
+
                 {/* Action Required Notice for Approval */}
                 {requiresApproval && <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
                     <div className="flex items-center gap-2 text-orange-800 mb-2">
@@ -248,7 +321,7 @@ const ClientCarePlans = () => {
                       <span className="font-semibold">Your Approval Required</span>
                     </div>
                     <p className="text-sm text-orange-700 mb-3">
-                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections below including goals, medications, and activities, then click "Sign Care Plan" to provide your digital signature and approval.
+                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections below including goals, medications, and activities, then click "Review & Sign" to provide your digital signature and approval.
                     </p>
                     <div className="text-xs text-orange-600 font-medium">
                       ✓ Plan reviewed by healthcare team  •  ⏳ Awaiting your signature
@@ -738,11 +811,12 @@ const ClientCarePlans = () => {
             </Card>
           </>
         );
-        })}
+      })}
       </div>
+    )}
 
       {/* Approval Dialog */}
-      {selectedCarePlan && <ClientCarePlanApprovalDialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen} carePlan={selectedCarePlan} onApprove={handleApproveCarePlan} onReject={handleRejectCarePlan} isLoading={approveCarePlanMutation.isPending || rejectCarePlanMutation.isPending} />}
+      {selectedCarePlan && <ClientCarePlanApprovalDialog open={approvalDialogOpen} onOpenChange={setApprovalDialogOpen} carePlan={selectedCarePlan} onApprove={handleApproveCarePlan} onReject={() => {}} isLoading={approveCarePlanMutation.isPending || rejectCarePlanMutation.isPending} />}
 
       {/* Change Request Dialog */}
       {selectedCarePlan && <ClientChangeRequestDialog 
@@ -750,11 +824,13 @@ const ClientCarePlans = () => {
         onOpenChange={setChangeRequestDialogOpen}
         onSubmitRequest={handleSubmitChangeRequest}
         carePlan={selectedCarePlan}
-        isLoading={requestChangesMutation.isPending}
-        hasExistingRequest={useCarePlanHasChangeRequest(selectedCarePlan).hasRequest}
-        existingRequestDate={selectedCarePlan?.changes_requested_at ? new Date(selectedCarePlan.changes_requested_at).toLocaleDateString() : undefined}
-        existingComments={selectedCarePlan?.change_request_comments}
+        isLoading={rejectCarePlanMutation.isPending}
+        hasExistingRequest={!!((selectedCarePlan as any)?.changes_requested_at)}
+        existingRequestDate={(selectedCarePlan as any)?.changes_requested_at ? new Date((selectedCarePlan as any).changes_requested_at).toLocaleDateString() : undefined}
+        existingComments={(selectedCarePlan as any)?.change_request_comments}
       />}
-    </div>;
+    </div>
+  );
 };
+
 export default ClientCarePlans;
