@@ -298,12 +298,12 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
           
           <div className="flex gap-3 flex-wrap">
             <Tabs value={taskView} onValueChange={(value) => setTaskView(value as TaskView)} className="w-auto">
-              <TabsList className="bg-gray-100">
-                <TabsTrigger value="staff" className="flex items-center gap-1 data-[state=active]:bg-white">
+              <TabsList>
+                <TabsTrigger value="staff" className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Staff</span>
                 </TabsTrigger>
-                <TabsTrigger value="client" className="flex items-center gap-1 data-[state=active]:bg-white">
+                <TabsTrigger value="client" className="flex items-center gap-1">
                   <UserRound className="h-4 w-4" />
                   <span className="hidden sm:inline">Client</span>
                 </TabsTrigger>
