@@ -11,6 +11,7 @@ interface CarerAppointmentDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onStartVisit?: (appointment: any) => void;
   onContinueVisit?: (appointment: any) => void;
+  onViewSummary?: (appointment: any) => void;
 }
 
 export const CarerAppointmentDetailDialog = ({
@@ -18,7 +19,8 @@ export const CarerAppointmentDetailDialog = ({
   open,
   onOpenChange,
   onStartVisit,
-  onContinueVisit
+  onContinueVisit,
+  onViewSummary
 }: CarerAppointmentDetailDialogProps) => {
   if (!appointment) return null;
 
@@ -167,9 +169,13 @@ export const CarerAppointmentDetailDialog = ({
           <div className="flex gap-3">
             {appointment.status === 'completed' && (
               <Button onClick={() => {
+                if (onViewSummary) {
+                  onViewSummary(appointment);
+                } else {
+                  // Fallback to direct navigation
+                  window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=view`;
+                }
                 onOpenChange(false);
-                // Navigate to view summary mode
-                window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=view`;
               }} className="flex-1 bg-green-600 hover:bg-green-700">
                 View Summary
               </Button>

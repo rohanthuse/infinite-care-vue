@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Calendar, Clock, User, MapPin, Phone, Filter, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,16 @@ import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useLeaveStatus } from "@/hooks/useLeaveManagement";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 const CarerSchedule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("week"); // week, day, month
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+  const [showAllAppointments, setShowAllAppointments] = useState(false);
   const { user } = useCarerAuth();
+  const { createCarerPath } = useCarerNavigation();
   
   // Use real booking data instead of mock data
   const { data: allBookings = [], isLoading } = useCarerBookings(user?.id || '');
@@ -51,6 +54,21 @@ const CarerSchedule: React.FC = () => {
     const bookingDate = new Date(booking.start_time);
     return bookingDate >= weekStart && bookingDate <= weekEnd;
   });
+
+  // Get appointments for current period based on view mode
+  const periodAppointments = useMemo(() => {
+    let appointments = [];
+    if (viewMode === 'day') {
+      appointments = weekBookings.filter(booking => 
+        format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+      );
+    } else {
+      appointments = currentViewBookings;
+    }
+    return appointments.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  }, [viewMode, weekBookings, currentViewBookings, currentDate]);
+
+  const visibleAppointments = showAllAppointments ? periodAppointments : periodAppointments.slice(0, 8);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -246,7 +264,7 @@ const CarerSchedule: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {viewMode === 'day' 
@@ -301,6 +319,59 @@ const CarerSchedule: React.FC = () => {
               <div className="text-sm text-gray-600">Total Revenue</div>
             </div>
           </div>
+
+          {/* Appointments List */}
+          {periodAppointments.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-sm text-gray-700">Appointments</h4>
+                {periodAppointments.length > 8 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAllAppointments(!showAllAppointments)}
+                    className="text-xs"
+                  >
+                    {showAllAppointments ? `Show less` : `Show all (${periodAppointments.length})`}
+                  </Button>
+                )}
+              </div>
+              
+              <div className="max-h-80 overflow-y-auto space-y-2">
+                {visibleAppointments.map((appointment) => (
+                  <div 
+                    key={appointment.id} 
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                    onClick={() => {
+                      setSelectedAppointment(appointment);
+                      setShowAppointmentDialog(true);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm">
+                        <div className="font-medium">
+                          {format(new Date(appointment.start_time), 'HH:mm')} - {format(new Date(appointment.end_time), 'HH:mm')}
+                        </div>
+                        <div className="text-gray-600">
+                          {formatAppointmentDate(appointment.start_time)}
+                        </div>
+                      </div>
+                      <div className="text-sm">
+                        <div className="font-medium">{appointment.client_name}</div>
+                        <div className="text-gray-600">{appointment.service_name}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${getStatusColor(appointment.status)} text-xs`}>
+                        {appointment.status === 'assigned' ? 'Scheduled' : appointment.status}
+                      </Badge>
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -506,12 +577,15 @@ const CarerSchedule: React.FC = () => {
         open={showAppointmentDialog}
         onOpenChange={setShowAppointmentDialog}
         onStartVisit={(appointment) => {
-          // Navigate to visit start
-          window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=start`;
+          console.log('Starting visit for:', appointment);
+          // Handle start visit action
         }}
         onContinueVisit={(appointment) => {
-          // Navigate to continue visit
-          window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=continue`;
+          console.log('Continuing visit for:', appointment);
+          // Handle continue visit action  
+        }}
+        onViewSummary={(appointment) => {
+          window.location.href = createCarerPath(`/visit/${appointment.id}?mode=view`);
         }}
       />
     </div>
