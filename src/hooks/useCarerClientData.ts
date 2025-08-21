@@ -13,16 +13,27 @@ export const useCarerClients = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('No authenticated user');
 
-      console.log('[useCarerClients] Fetching clients for carer:', user.id);
+      console.log('[useCarerClients] Fetching clients for auth user:', user.id);
 
-      // Get clients assigned to this carer through bookings
+      // First, get the staff record ID for the authenticated user
+      const { data: staffId, error: staffError } = await supabase
+        .rpc('verify_staff_auth_context');
+
+      if (staffError) {
+        console.error('[useCarerClients] Error getting staff ID:', staffError);
+        throw staffError;
+      }
+
+      console.log('[useCarerClients] Resolved staff ID:', staffId);
+
+      // Get clients assigned to this carer through bookings using staff record ID
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
           client_id,
           clients (*)
         `)
-        .eq('staff_id', user.id);
+        .eq('staff_id', staffId);
 
       if (bookingsError) {
         console.error('[useCarerClients] Bookings error:', bookingsError);
@@ -57,11 +68,20 @@ export const useCarerClientDetail = (clientId: string) => {
 
       console.log('[useCarerClientDetail] Fetching client detail:', clientId);
 
+      // First, get the staff record ID for the authenticated user
+      const { data: staffId, error: staffError } = await supabase
+        .rpc('verify_staff_auth_context');
+
+      if (staffError) {
+        console.error('[useCarerClientDetail] Error getting staff ID:', staffError);
+        throw staffError;
+      }
+
       // Verify carer has access to this client through bookings
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .select('id')
-        .eq('staff_id', user.id)
+        .eq('staff_id', staffId)
         .eq('client_id', clientId)
         .limit(1)
         .single();
@@ -105,11 +125,20 @@ export const useCarerUpdateClient = () => {
 
       console.log('[useCarerUpdateClient] Updating client:', clientId);
 
+      // First, get the staff record ID for the authenticated user
+      const { data: staffId, error: staffError } = await supabase
+        .rpc('verify_staff_auth_context');
+
+      if (staffError) {
+        console.error('[useCarerUpdateClient] Error getting staff ID:', staffError);
+        throw staffError;
+      }
+
       // Verify carer has access to this client
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .select('id')
-        .eq('staff_id', user.id)
+        .eq('staff_id', staffId)
         .eq('client_id', clientId)
         .limit(1)
         .single();
