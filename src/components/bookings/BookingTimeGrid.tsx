@@ -70,6 +70,7 @@ interface BookingTimeGridProps {
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
   onUpdateBooking?: (booking: Booking, carers: Carer[]) => void;
   onEditBooking?: (booking: Booking) => void;
+  onViewBooking?: (booking: Booking) => void;
   isUpdatingBooking?: boolean;
   isCheckingOverlap?: boolean;
 }
@@ -94,6 +95,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   onCreateBooking,
   onUpdateBooking,
   onEditBooking,
+  onViewBooking,
   isUpdatingBooking,
   isCheckingOverlap = false,
 }) => {
@@ -501,6 +503,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               type={entityType}
                               index={index}
                               onEditBooking={handleEditBooking}
+                              onViewBooking={onViewBooking}
                             />
                           );
                         })}
@@ -562,6 +565,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                                     type={entityType}
                                     index={index}
                                     onEditBooking={handleEditBooking}
+                                    onViewBooking={onViewBooking}
                                   />
                                 );
                               })}

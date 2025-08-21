@@ -240,6 +240,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             viewMode="client"
             onCreateBooking={handleContextMenuBooking}
             onUpdateBooking={handleUpdateBooking}
+            onViewBooking={handleViewBooking}
             onEditBooking={handleEditBooking}
             isCheckingOverlap={isCheckingOverlap}
           />
@@ -262,6 +263,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             date={selectedDate}
             bookings={filteredBookings}
             branchId={branchId}
+            onViewBooking={handleViewBooking}
             onCreateBooking={(staffId, timeSlot) => {
               // Create new booking with pre-filled staff and time
               const [hour] = timeSlot.split(':');

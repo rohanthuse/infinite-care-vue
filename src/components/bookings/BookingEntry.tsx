@@ -21,6 +21,7 @@ interface BookingEntryProps {
   };
   index: number;
   onEditBooking?: (booking: Booking) => void;
+  onViewBooking?: (booking: Booking) => void;
 }
 
 export const BookingEntry: React.FC<BookingEntryProps> = ({
@@ -31,7 +32,8 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   displayMode = "horizontal",
   position,
   index,
-  onEditBooking
+  onEditBooking,
+  onViewBooking
 }) => {
   // Determine background color based on status
   const statusColors = {
@@ -142,7 +144,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
         <div className="border-t border-gray-100 pt-2">
           <div className="text-xs text-gray-400 flex items-center gap-1">
             <Info className="h-3 w-3" />
-            Click to edit booking details
+            Click to view • Shift+Click to edit
           </div>
         </div>
       </div>
@@ -152,8 +154,12 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (onEditBooking) {
+    
+    // Check if shift key is pressed for edit mode
+    if (e.shiftKey && onEditBooking) {
       onEditBooking(booking);
+    } else if (onViewBooking) {
+      onViewBooking(booking);
     }
   };
   

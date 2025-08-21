@@ -11,10 +11,13 @@ import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useLeaveStatus } from "@/hooks/useLeaveManagement";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
 
 const CarerSchedule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("week"); // week, day, month
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const { user } = useCarerAuth();
   
   // Use real booking data instead of mock data
@@ -327,14 +330,18 @@ const CarerSchedule: React.FC = () => {
               <CardContent className="space-y-2">
                 {day.bookings.length > 0 ? (
                   day.bookings.map((booking) => (
-                    <div key={booking.id} className="p-2 bg-gray-50 rounded text-xs">
-                      <div className="font-medium">{format(new Date(booking.start_time), 'HH:mm')}</div>
-                      <div className="text-gray-600 truncate">{booking.client_name}</div>
-                      <div className="text-gray-500 truncate">{booking.service_name}</div>
-                      <Badge className={`${getStatusColor(booking.status)} text-xs mt-1`}>
-                        {booking.status === 'assigned' ? 'Scheduled' : booking.status}
-                      </Badge>
-                    </div>
+                  <div key={booking.id} className="p-2 bg-gray-50 rounded text-xs cursor-pointer hover:bg-gray-100"
+                       onClick={() => {
+                         setSelectedAppointment(booking);
+                         setShowAppointmentDialog(true);
+                       }}>
+                    <div className="font-medium">{format(new Date(booking.start_time), 'HH:mm')}</div>
+                    <div className="text-gray-600 truncate">{booking.client_name}</div>
+                    <div className="text-gray-500 truncate">{booking.service_name}</div>
+                    <Badge className={`${getStatusColor(booking.status)} text-xs mt-1`}>
+                      {booking.status === 'assigned' ? 'Scheduled' : booking.status}
+                    </Badge>
+                  </div>
                   ))
                 ) : (
                   <div className="text-xs text-gray-400 py-4 text-center">
@@ -436,7 +443,11 @@ const CarerSchedule: React.FC = () => {
             )
             .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
             .map((booking) => (
-              <Card key={booking.id} className="hover:shadow-md transition-shadow">
+              <Card key={booking.id} className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => {
+                      setSelectedAppointment(booking);
+                      setShowAppointmentDialog(true);
+                    }}>
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -488,6 +499,21 @@ const CarerSchedule: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Appointment Detail Dialog */}
+      <CarerAppointmentDetailDialog
+        appointment={selectedAppointment}
+        open={showAppointmentDialog}
+        onOpenChange={setShowAppointmentDialog}
+        onStartVisit={(appointment) => {
+          // Navigate to visit start
+          window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=start`;
+        }}
+        onContinueVisit={(appointment) => {
+          // Navigate to continue visit
+          window.location.href = `/carer-dashboard/visit/${appointment.id}?mode=continue`;
+        }}
+      />
     </div>
   );
 };

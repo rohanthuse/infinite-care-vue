@@ -16,6 +16,7 @@ interface StaffScheduleCalendarProps {
   bookings: Booking[];
   branchId?: string;
   onCreateBooking?: (staffId: string, timeSlot: string) => void;
+  onViewBooking?: (booking: Booking) => void;
 }
 
 interface StaffStatus {
@@ -38,7 +39,8 @@ export function StaffScheduleCalendar({
   date, 
   bookings, 
   branchId,
-  onCreateBooking 
+  onCreateBooking,
+  onViewBooking
 }: StaffScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -175,8 +177,11 @@ export function StaffScheduleCalendar({
     }
   };
 
-  const handleCellClick = (staffId: string, timeSlot: string) => {
-    if (onCreateBooking) {
+  const handleCellClick = (staffId: string, timeSlot: string, status: StaffStatus) => {
+    // If there's a booking, view it; otherwise create a new one
+    if (status.booking && onViewBooking) {
+      onViewBooking(status.booking);
+    } else if (status.type === 'available' && onCreateBooking) {
       onCreateBooking(staffId, timeSlot);
     }
   };
@@ -190,70 +195,43 @@ export function StaffScheduleCalendar({
         </div>
       );
     }
-
-    if (status.type === 'leave' && status.leaveType) {
-      return (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span className="font-medium">{staffName}</span>
-          </div>
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Leave Type:</span> {status.leaveType}</p>
-            <p><span className="font-medium">Status:</span> Approved</p>
-            <p className="text-muted-foreground">Staff member is on leave</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (status.booking) {
-      const booking = status.booking;
-      const duration = calculateDuration(booking.startTime, booking.endTime);
-      
-      return (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded ${
-              status.type === 'assigned' ? 'bg-blue-500' :
-              status.type === 'in-progress' ? 'bg-orange-500' :
-              'bg-green-500'
-            }`}></div>
-            <span className="font-medium capitalize">{status.type.replace('-', ' ')}</span>
-          </div>
-          
-          <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Client:</span> {booking.clientName}</p>
-            <p><span className="font-medium">Carer:</span> {staffName}</p>
-            <p><span className="font-medium">Time:</span> {booking.startTime} - {booking.endTime} ({duration})</p>
-            <p><span className="font-medium">Date:</span> {format(date, 'MMM d, yyyy')}</p>
-            {booking.status && (
-              <p><span className="font-medium">Status:</span> <span className="capitalize">{booking.status}</span></p>
-            )}
-            {booking.notes && (
-              <p><span className="font-medium">Notes:</span> {booking.notes}</p>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  const calculateDuration = (startTime: string, endTime: string) => {
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    const startInMinutes = startHour * 60 + startMin;
-    const endInMinutes = endHour * 60 + endMin;
-    const durationInMinutes = endInMinutes - startInMinutes;
     
-    if (durationInMinutes >= 60) {
-      const hours = Math.floor(durationInMinutes / 60);
-      const minutes = durationInMinutes % 60;
-      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    if (status.booking) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="font-medium">{staffName}</p>
+            <Badge className={getStatusColor(status).replace('border-', 'border-').replace('bg-', 'bg-').replace('text-', 'text-')}>
+              {status.type}
+            </Badge>
+          </div>
+          <div className="space-y-1 text-sm">
+            <p><span className="font-medium">Client:</span> {status.booking.clientName}</p>
+            <p><span className="font-medium">Time:</span> {status.booking.startTime} - {status.booking.endTime}</p>
+            {status.booking.notes && (
+              <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">Click to view details</p>
+        </div>
+      );
     }
-    return `${durationInMinutes}m`;
+    
+    if (status.type === 'leave') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium">{staffName}</p>
+          <p className="text-sm text-muted-foreground">On {status.leaveType} leave</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="space-y-1">
+        <p className="font-medium">{staffName}</p>
+        <p className="text-sm text-muted-foreground">{status.type}</p>
+      </div>
+    );
   };
 
   return (
@@ -373,7 +351,7 @@ export function StaffScheduleCalendar({
                   <TooltipTrigger asChild>
                     <div
                       className={`p-1 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
-                      onClick={() => handleCellClick(staffMember.id, slot)}
+                      onClick={() => handleCellClick(staffMember.id, slot, status)}
                     >
                       {getStatusLabel(status)}
                     </div>
