@@ -30,6 +30,8 @@ export const useCarerDashboard = () => {
       return data || [];
     },
     enabled: !!carerContext?.staffId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Get upcoming appointments (next 7 days)
@@ -58,6 +60,8 @@ export const useCarerDashboard = () => {
       return data || [];
     },
     enabled: !!carerContext?.staffId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Get carer's tasks
@@ -85,6 +89,8 @@ export const useCarerDashboard = () => {
       return data || [];
     },
     enabled: !!carerContext?.staffId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Get client count for the branch
@@ -103,6 +109,8 @@ export const useCarerDashboard = () => {
       return count || 0;
     },
     enabled: !!carerContext?.branchInfo?.id,
+    staleTime: 10 * 60 * 1000, // 10 minutes - client count changes rarely
+    refetchOnWindowFocus: false,
   });
 
   // Get work hours for current week
@@ -127,6 +135,8 @@ export const useCarerDashboard = () => {
       return Math.round(totalHours * 100) / 100;
     },
     enabled: !!carerContext?.staffId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Transform appointments for display

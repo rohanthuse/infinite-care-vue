@@ -40,7 +40,7 @@ export const useCarerContext = () => {
       const staffProfile = data[0];
       console.log('[useCarerContext] Staff profile loaded:', staffProfile);
 
-      // Get branch info
+      // Get branch info - use maybeSingle to avoid errors
       const { data: branchData, error: branchError } = await supabase
         .from('branches')
         .select(`
@@ -50,11 +50,15 @@ export const useCarerContext = () => {
           organization_id
         `)
         .eq('id', staffProfile.branch_id)
-        .single();
+        .maybeSingle();
 
       if (branchError) {
         console.error('[useCarerContext] Error fetching branch:', branchError);
         throw branchError;
+      }
+
+      if (!branchData) {
+        console.warn('[useCarerContext] No branch found for ID:', staffProfile.branch_id);
       }
 
       return {
@@ -64,7 +68,9 @@ export const useCarerContext = () => {
       };
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes - carer context doesn't change often
+    staleTime: 10 * 60 * 1000, // 10 minutes - carer context doesn't change often
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 2,
   });
 };

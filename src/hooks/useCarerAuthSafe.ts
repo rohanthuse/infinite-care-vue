@@ -38,31 +38,23 @@ export function useCarerAuthSafe() {
 
       if (event === 'SIGNED_IN' && session?.user) {
         try {
-          // Use the enhanced database function that handles auth_user_id properly
-          const { data, error: staffError } = await supabase.rpc(
-            'get_staff_profile_by_auth_user_id',
-            { auth_user_id_param: session.user.id }
-          );
+          // Quick role verification - detailed profile loading handled by useCarerContext
+          const { data, error: staffError } = await supabase
+            .from('staff')
+            .select('id, first_name, auth_user_id')
+            .eq('auth_user_id', session.user.id)
+            .maybeSingle();
 
           if (staffError) {
             console.error('[useCarerAuthSafe] Staff lookup error:', staffError);
-            
-            if (staffError.code === 'PGRST116') {
-              setError('Access denied: This account is not registered as a carer. Please contact your administrator.');
-            } else {
-              setError('Unable to verify carer account. Please try again or contact support.');
-            }
-            
+            setError('Unable to verify carer account. Please try again or contact support.');
             await supabase.auth.signOut();
             return;
           }
 
-          // The function returns an array, get the first record
-          const staffRecord = data && data.length > 0 ? data[0] : null;
-
-          if (staffRecord) {
-            console.log('[useCarerAuthSafe] Carer authenticated:', staffRecord);
-            setCarerProfile(staffRecord);
+          if (data) {
+            console.log('[useCarerAuthSafe] Carer verified:', data.first_name);
+            setCarerProfile(data);
             
             // Only show welcome message and navigate on actual login from login pages
             const currentPath = window.location.pathname;
@@ -81,19 +73,15 @@ export function useCarerAuthSafe() {
                (!lastWelcomeTime || Date.now() - parseInt(lastWelcomeTime) > 30 * 60 * 1000));
             
             if (shouldShowWelcome) {
-              toast.success(`Welcome back, ${staffRecord.first_name}!`);
+              toast.success(`Welcome back, ${data.first_name}!`);
               localStorage.setItem('carerLastWelcome', Date.now().toString());
               localStorage.setItem('carerCurrentSessionWelcome', sessionStart);
             }
             
             // Only navigate if coming from login pages
             if (isFromLoginPage) {
-              if (!staffRecord.first_login_completed) {
-                navigate('/carer-onboarding');
-              } else {
-                const dashboardPath = tenantSlug ? `/${tenantSlug}/carer-dashboard` : '/carer-dashboard';
-                navigate(dashboardPath);
-              }
+              const dashboardPath = tenantSlug ? `/${tenantSlug}/carer-dashboard` : '/carer-dashboard';
+              navigate(dashboardPath);
             }
           } else {
             setError('No carer profile found for this account.');
@@ -173,26 +161,25 @@ export function useCarerAuthSafe() {
         return { success: false, error: userMessage };
       }
 
-      if (data.user) {
-        // Verify this user is a carer using the enhanced function
-        const { data: staffData, error: staffError } = await supabase.rpc(
-          'get_staff_profile_by_auth_user_id',
-          { auth_user_id_param: data.user.id }
-        );
+        if (data.user) {
+          // Quick verification - detailed profile handled by useCarerContext
+          const { data: staffData, error: staffError } = await supabase
+            .from('staff')
+            .select('id, first_name')
+            .eq('auth_user_id', data.user.id)
+            .maybeSingle();
 
-        const staffRecord = staffData && staffData.length > 0 ? staffData[0] : null;
+          if (staffError || !staffData) {
+            await supabase.auth.signOut();
+            const errorMsg = 'Access denied. This account is not registered as a carer.';
+            setError(errorMsg);
+            toast.error('Access denied', { description: errorMsg });
+            return { success: false, error: errorMsg };
+          }
 
-        if (staffError || !staffRecord) {
-          await supabase.auth.signOut();
-          const errorMsg = 'Access denied. This account is not registered as a carer.';
-          setError(errorMsg);
-          toast.error('Access denied', { description: errorMsg });
-          return { success: false, error: errorMsg };
+          console.log('[useCarerAuthSafe] Carer sign in successful:', staffData.first_name);
+          return { success: true, user: data.user, staff: staffData };
         }
-
-        console.log('[useCarerAuthSafe] Carer sign in successful:', staffRecord);
-        return { success: true, user: data.user, staff: staffRecord };
-      }
     } catch (error: any) {
       console.error('[useCarerAuthSafe] Unexpected sign in error:', error);
       const errorMsg = 'An unexpected error occurred. Please try again.';

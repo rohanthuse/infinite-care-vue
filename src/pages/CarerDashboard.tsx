@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
-import { useCarerProfile } from "@/hooks/useCarerProfile";
+import { useCarerContext } from "@/hooks/useCarerContext";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
 const CarerDashboard: React.FC = () => {
@@ -28,7 +28,7 @@ const CarerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, loading, signOut } = useCarerAuthSafe();
-  const { data: carerProfile } = useCarerProfile();
+  const { data: carerContext } = useCarerContext();
   const { getCarerMenuItems, createCarerPath, tenantSlug } = useCarerNavigation();
 
   // Get tenant-aware menu items
@@ -84,7 +84,7 @@ const CarerDashboard: React.FC = () => {
     return null;
   }
 
-  const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : "Carer";
+  const carerName = carerContext?.staffProfile ? `${carerContext.staffProfile.first_name} ${carerContext.staffProfile.last_name}` : "Carer";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

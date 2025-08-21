@@ -55,6 +55,8 @@ export const useCarerTasks = () => {
       }));
     },
     enabled: !!carerContext?.staffId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    refetchOnWindowFocus: false,
   });
 
   const updateTaskMutation = useMutation({

@@ -64,7 +64,7 @@ export const useCarerClientDetail = (clientId: string) => {
         .eq('staff_id', carerContext.staffId)
         .eq('client_id', clientId)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (bookingError && bookingError.code !== 'PGRST116') {
         console.error('[useCarerClientDetail] Booking verification error:', bookingError);
@@ -80,7 +80,7 @@ export const useCarerClientDetail = (clientId: string) => {
         .from('clients')
         .select('*')
         .eq('id', clientId)
-        .single();
+        .maybeSingle();
 
       if (clientError) {
         console.error('[useCarerClientDetail] Client error:', clientError);
@@ -91,6 +91,8 @@ export const useCarerClientDetail = (clientId: string) => {
       return client;
     },
     enabled: !!(clientId && carerContext?.staffId),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -112,7 +114,7 @@ export const useCarerUpdateClient = () => {
         .eq('staff_id', carerContext.staffId)
         .eq('client_id', clientId)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (bookingError && bookingError.code !== 'PGRST116') {
         throw new Error('Access denied: You are not assigned to this client');
@@ -132,7 +134,7 @@ export const useCarerUpdateClient = () => {
         .update(allowedUpdates)
         .eq('id', clientId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('[useCarerUpdateClient] Update error:', error);

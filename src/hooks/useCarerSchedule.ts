@@ -117,5 +117,6 @@ export const useCarerSchedule = (carerId?: string) => {
     queryFn: () => fetchCarerSchedule(effectiveCarerId!),
     enabled: Boolean(effectiveCarerId),
     staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 };
