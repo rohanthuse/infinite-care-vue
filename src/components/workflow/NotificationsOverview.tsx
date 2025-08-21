@@ -42,7 +42,10 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
         navigate(fullPath);
       } else {
         console.log("Navigating without branch context");
-        navigate(`/notifications/${path}`);
+        const fullPath = tenantSlug 
+          ? `/${tenantSlug}/notifications/${path}`
+          : `/notifications/${path}`;
+        navigate(fullPath);
       }
     } catch (error) {
       console.error("Navigation error:", error);

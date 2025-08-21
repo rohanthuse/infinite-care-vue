@@ -66,7 +66,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     // Also skip standalone routes that might conflict with tenant slugs
     const standaloneRoutes = [
       'services', 'settings', 'dashboard', 'agreement', 'hobbies', 'skills',
-      'medical-mental', 'type-of-work', 'body-map-points', 'branch', 'branch-admins'
+      'medical-mental', 'type-of-work', 'body-map-points', 'branch', 'branch-admins', 'notifications'
     ];
     
     if (pathParts.length === 0 || publicRoutes.includes(pathParts[0]) || standaloneRoutes.includes(pathParts[0])) {

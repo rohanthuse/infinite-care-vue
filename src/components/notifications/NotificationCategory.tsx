@@ -201,7 +201,11 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
         : `/branch-dashboard/${branchId}/${branchName}/notifications`;
       navigate(fullPath);
     } else {
-      navigate('/notifications');
+      // Include tenant slug if available for tenant-aware navigation
+      const fullPath = tenantSlug 
+        ? `/${tenantSlug}/notifications`
+        : `/notifications`;
+      navigate(fullPath);
     }
   };
 

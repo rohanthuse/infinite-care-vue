@@ -73,7 +73,15 @@ export function DashboardHeader() {
       const branchName = location.pathname.split('/')[3];
       navigate(`/branch-dashboard/${branchId}/${branchName}/notifications`);
     } else {
-      navigate('/notifications');
+      // Extract tenant slug from current path for tenant-aware navigation
+      const pathParts = location.pathname.split('/').filter(Boolean);
+      const tenantSlug = pathParts[0] && !['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard', 'services', 'settings', 'dashboard', 'agreement', 'hobbies', 'skills', 'medical-mental', 'type-of-work', 'body-map-points', 'branch', 'branch-admins', 'notifications'].includes(pathParts[0]) ? pathParts[0] : null;
+      
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/notifications`);
+      } else {
+        navigate('/notifications');
+      }
     }
   };
 

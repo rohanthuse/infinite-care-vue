@@ -144,7 +144,15 @@ const Notifications = () => {
     if (isInBranchContext && id && branchName) {
       navigate(`/branch-dashboard/${id}/${branchName}/notifications/${categoryId}`);
     } else {
-      navigate(`/notifications/${categoryId}`);
+      // Extract tenant slug from current path for tenant-aware navigation
+      const pathParts = location.pathname.split('/').filter(Boolean);
+      const tenantSlug = pathParts[0] && !['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard', 'services', 'settings', 'dashboard', 'agreement', 'hobbies', 'skills', 'medical-mental', 'type-of-work', 'body-map-points', 'branch', 'branch-admins', 'notifications'].includes(pathParts[0]) ? pathParts[0] : null;
+      
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/notifications/${categoryId}`);
+      } else {
+        navigate(`/notifications/${categoryId}`);
+      }
     }
   };
   
@@ -201,12 +209,12 @@ const Notifications = () => {
             <div className="flex items-center text-sm text-gray-500 mb-6">
               <Home className="h-4 w-4 mr-1" />
               <span className="mr-2">
-                <a 
-                  href="/branches" 
+                <button 
+                  onClick={() => navigate('/branches')}
                   className="hover:text-blue-600 hover:underline"
                 >
                   Branches
-                </a>
+                </button>
               </span>
               <span className="mx-2">&gt;</span>
               <span className="font-medium text-gray-700">{branchName}</span>
