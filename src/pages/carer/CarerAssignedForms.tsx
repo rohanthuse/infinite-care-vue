@@ -38,31 +38,15 @@ const CarerAssignedForms = () => {
     try {
       const { supabase } = await import('@/integrations/supabase/client');
       
-      // First get the staff record ID for the current auth user
-      const { data: staffData, error: staffError } = await supabase
-        .from('staff')
-        .select('id')
-        .eq('auth_user_id', authUserId)
-        .single();
-
-      if (staffError || !staffData) {
-        console.error('Error fetching staff record:', staffError);
-        toast({
-          title: 'Error',
-          description: 'Unable to verify your staff record.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      const staffId = staffData.id;
-
-      // Now fetch the form submission using the staff ID
+      // Query form submissions using auth user ID directly (RLS expects this)
       const { data: submission, error: submissionError } = await supabase
         .from('form_submissions')
-        .select('*')
+        .select(`
+          *,
+          forms!inner(title, description, branch_id)
+        `)
         .eq('form_id', formId)
-        .eq('submitted_by', staffId)
+        .eq('submitted_by', authUserId)
         .maybeSingle();
 
       if (submissionError) {
@@ -76,19 +60,10 @@ const CarerAssignedForms = () => {
       }
 
       if (submission) {
-        // Also fetch form details for the dialog
-        const { data: formData } = await supabase
-          .from('forms')
-          .select('title, description')
-          .eq('id', formId)
-          .single();
-
-        setSelectedSubmission({
-          ...submission,
-          form: formData
-        });
+        setSelectedSubmission(submission);
         setIsDialogOpen(true);
       } else {
+        console.log('No submission found for formId:', formId, 'authUserId:', authUserId);
         toast({
           title: 'No submission found',
           description: 'You haven\'t submitted this form yet.',
@@ -261,7 +236,7 @@ const CarerAssignedForms = () => {
           {selectedSubmission && (
             <FormSubmissionDetail
               submission={selectedSubmission}
-              branchId={carerContext?.branchInfo?.id || ''}
+              branchId={selectedSubmission.forms?.branch_id || carerContext?.branchInfo?.id || ''}
               formId={selectedSubmission.form_id}
             />
           )}
