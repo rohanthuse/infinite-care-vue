@@ -5,6 +5,7 @@ import { useFormElements } from '@/hooks/useFormElements';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useFormAutoSave } from '@/hooks/useFormAutoSave';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -15,9 +16,11 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Send, FileText, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Send, FileText, AlertCircle, Clock, CheckCircle, Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
+import { FileUploadDropzone } from '@/components/agreements/FileUploadDropzone';
+import { SignatureCanvas } from '@/components/ui/signature-canvas';
 import type { FormElement } from '@/types/form-builder';
 import { format } from 'date-fns';
 
@@ -58,6 +61,7 @@ const CarerFillForm = () => {
   const { uiElements: elements, isLoading: isLoadingElements, error: elementsError } = useFormElements(formId || '');
   const { createSubmission, isCreating } = useFormSubmissions(branchId, formId);
   const { validateFormData, validateRequiredFields } = useFormValidation();
+  const { uploadFile, uploading } = useFileUpload();
 
   // Auto-save functionality
   const { autoSave, markAsChanged, hasUnsavedChanges, lastSaveTime } = useFormAutoSave({
@@ -393,6 +397,80 @@ const CarerFillForm = () => {
 
       case 'divider':
         return <hr key={element.id} className="border-border my-6" />;
+
+      case 'file':
+        const fileElement = element as any;
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <FileUploadDropzone
+              category="document"
+              onFilesSelected={async (files) => {
+                if (files.length === 0) return;
+                
+                try {
+                  const uploadedFiles = [];
+                  for (const file of files) {
+                    const result = await uploadFile(file, {
+                      category: 'document',
+                      agreementId: formId
+                    });
+                    uploadedFiles.push({
+                      id: result.id,
+                      name: result.file_name,
+                      url: result.storage_path,
+                      type: result.file_type,
+                      size: result.file_size
+                    });
+                  }
+                  handleInputChange(element.id, uploadedFiles);
+                } catch (error) {
+                  console.error('File upload error:', error);
+                }
+              }}
+              acceptedFileTypes={fileElement.acceptedTypes || ['application/pdf', 'image/*', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']}
+              maxFiles={fileElement.maxFiles || 5}
+              disabled={uploading}
+            />
+            {value && Array.isArray(value) && value.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {value.map((file: any, index: number) => (
+                  <div key={index} className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Upload className="h-3 w-3" />
+                    {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                  </div>
+                ))}
+              </div>
+            )}
+            {validationErrors[element.id] && (
+              <p className="text-sm text-destructive mt-1">{validationErrors[element.id]}</p>
+            )}
+          </div>
+        );
+
+      case 'signature':
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <div className="border border-input rounded-md p-4">
+              <SignatureCanvas
+                onSave={(signature) => handleInputChange(element.id, signature)}
+                width={600}
+                height={200}
+                initialSignature={value}
+              />
+            </div>
+            {validationErrors[element.id] && (
+              <p className="text-sm text-destructive mt-1">{validationErrors[element.id]}</p>
+            )}
+          </div>
+        );
 
       default:
         return (
