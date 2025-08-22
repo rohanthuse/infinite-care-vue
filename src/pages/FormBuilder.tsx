@@ -10,6 +10,7 @@ import { FormBuilderPublish } from '@/components/form-builder/FormBuilderPublish
 import { FormBuilderNavBar } from '@/components/form-builder/FormBuilderNavBar';
 import { FormValidationTab } from '@/components/form-builder/FormValidationTab';
 import { FormAdvancedTab } from '@/components/form-builder/FormAdvancedTab';
+import { FormSubmissionsTab } from '@/components/form-builder/FormSubmissionsTab';
 import { TabNavigation as FormTabNavigation } from '@/components/form-builder/TabNavigation';
 
 import { FormBuilderTab } from '@/components/form-builder/FormBuilderTab';
@@ -627,6 +628,13 @@ const FormBuilder = () => {
           <FormAdvancedTab 
             form={form} 
             onUpdateSettings={handleUpdateSettings}
+          />
+        </TabsContent>
+
+        <TabsContent value="submissions" className="p-4 bg-white rounded-lg border shadow-sm">
+          <FormSubmissionsTab 
+            formId={form.id}
+            branchId={branchId || ''}
           />
         </TabsContent>
         

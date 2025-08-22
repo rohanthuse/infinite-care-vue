@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Eye, Upload, ShieldCheck, Settings } from 'lucide-react';
+import { FileText, Eye, Upload, ShieldCheck, Settings, Inbox } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: string;
@@ -22,7 +22,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       <p className="text-sm text-gray-500 mb-4">{subtitle}</p>
       
       <Tabs value={activeTab} onValueChange={onTabChange} className="mt-2">
-        <TabsList className="grid grid-cols-5 mb-6 w-full lg:w-auto">
+        <TabsList className="grid grid-cols-6 mb-6 w-full lg:w-auto">
           <TabsTrigger value="design" className="flex items-center gap-1">
             <FileText className="h-4 w-4" />
             <span className="hidden md:inline">Design</span>
@@ -38,6 +38,10 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
           <TabsTrigger value="advanced" className="flex items-center gap-1">
             <Settings className="h-4 w-4" />
             <span className="hidden md:inline">Advanced</span>
+          </TabsTrigger>
+          <TabsTrigger value="submissions" className="flex items-center gap-1">
+            <Inbox className="h-4 w-4" />
+            <span className="hidden md:inline">Submissions</span>
           </TabsTrigger>
           <TabsTrigger value="publish" className="flex items-center gap-1">
             <Upload className="h-4 w-4" />
