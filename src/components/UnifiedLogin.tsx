@@ -169,24 +169,12 @@ const UnifiedLogin = () => {
       console.log('User role detected:', userRole);
       console.log('[AUTH DEBUG] User ID:', authData.user.id, 'Email:', authData.user.email);
 
-      // For super admins, prioritize organization dashboard access
+      // For super admins, always redirect to system dashboard for full functionality
       if (userRole === 'super_admin') {
-        // Try to detect organization membership first
-        const orgSlug = await detectUserOrganization(authData.user.id);
-        
-        if (orgSlug) {
-          // Super admin with active organization membership - redirect to organization dashboard
-          console.log('[AUTH DEBUG] Super admin with active organization membership, redirecting to organization dashboard:', orgSlug, 'for user:', authData.user.email);
-          toast.success(`Welcome back to your organization! (${authData.user.email})`);
-          navigate(`/${orgSlug}/dashboard`);
-          return;
-        } else {
-          // Super admin without active organization membership - redirect to system dashboard
-          console.log('Super admin without active organization membership, redirecting to system dashboard');
-          toast.success("Welcome back, System Administrator!");
-          navigate('/system-dashboard');
-          return;
-        }
+        console.log('[AUTH DEBUG] Super admin detected, redirecting to system dashboard for user:', authData.user.email);
+        toast.success("Welcome back, System Administrator!");
+        navigate('/system-dashboard');
+        return;
       }
 
       // For non-super admin users, detect organization membership
