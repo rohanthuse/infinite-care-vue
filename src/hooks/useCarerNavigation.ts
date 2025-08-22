@@ -12,8 +12,8 @@ export const useCarerNavigation = () => {
     return `/carer-dashboard${path}`;
   };
 
-  const navigateToCarerPage = (path: string) => {
-    navigate(createCarerPath(path));
+  const navigateToCarerPage = (path: string, state?: any) => {
+    navigate(createCarerPath(path), state ? { state } : undefined);
   };
 
   const getCarerMenuItems = () => [

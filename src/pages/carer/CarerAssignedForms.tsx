@@ -128,7 +128,9 @@ const CarerAssignedForms = () => {
                       <Button 
                         className="w-full" 
                         size="sm"
-                        onClick={() => navigateToCarerPage(`/forms/${form.id}`)}
+                        onClick={() => navigateToCarerPage(`/forms/${form.id}`, { 
+                          formData: form 
+                        })}
                       >
                         Fill Out Form
                       </Button>

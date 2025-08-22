@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useFormElements } from '@/hooks/useFormElements';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Send } from 'lucide-react';
+import { ArrowLeft, Save, Send, FileText, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 import type { FormElement } from '@/types/form-builder';
@@ -21,11 +21,15 @@ import type { FormElement } from '@/types/form-builder';
 const CarerFillForm = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { navigateToCarerPage } = useCarerNavigation();
   
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isDraft, setIsDraft] = useState(false);
+
+  // Get form data from navigation state if available
+  const passedFormData = location.state?.formData;
 
   // Get the form details
   const { data: currentForm, isLoading: isLoadingForm } = useQuery({
@@ -47,8 +51,13 @@ const CarerFillForm = () => {
 
   const branchId = currentForm?.branch_id || '';
 
-  const { uiElements: elements, isLoading: isLoadingElements } = useFormElements(formId || '');
+  const { uiElements: elements, isLoading: isLoadingElements, error: elementsError } = useFormElements(formId || '');
   const { createSubmission, isCreating } = useFormSubmissions(branchId, formId);
+
+  console.log('CarerFillForm - Form ID:', formId);
+  console.log('CarerFillForm - Current Form:', currentForm);
+  console.log('CarerFillForm - Elements:', elements);
+  console.log('CarerFillForm - Passed Form Data:', passedFormData);
 
   const handleInputChange = (elementId: string, value: any) => {
     setFormData(prev => ({
@@ -298,7 +307,7 @@ const CarerFillForm = () => {
     );
   }
 
-  if (!currentForm) {
+  if (!currentForm && !passedFormData) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -309,6 +318,89 @@ const CarerFillForm = () => {
             Back to Forms
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // Use passed form data if available, otherwise use fetched form data
+  const displayForm = currentForm || passedFormData;
+
+  // Show error state if no form elements are found
+  if (!isLoadingElements && elements.length === 0 && !elementsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigateToCarerPage('/forms')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Forms
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{displayForm?.title}</CardTitle>
+            {displayForm?.description && (
+              <CardDescription>{displayForm?.description}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Form Elements Not Found</h3>
+              <p className="text-muted-foreground mb-4">
+                This form doesn't have any form elements configured yet. Please contact your administrator.
+              </p>
+              <Button onClick={() => navigateToCarerPage('/forms')} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Forms
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if there was an error loading elements
+  if (elementsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigateToCarerPage('/forms')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Forms
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{displayForm?.title}</CardTitle>
+            {displayForm?.description && (
+              <CardDescription>{displayForm?.description}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Error Loading Form</h3>
+              <p className="text-muted-foreground mb-4">
+                There was an error loading the form elements. Please try again later.
+              </p>
+              <Button onClick={() => navigateToCarerPage('/forms')} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Forms
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -328,9 +420,9 @@ const CarerFillForm = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>{currentForm.title}</CardTitle>
-          {currentForm.description && (
-            <CardDescription>{currentForm.description}</CardDescription>
+          <CardTitle>{displayForm?.title}</CardTitle>
+          {displayForm?.description && (
+            <CardDescription>{displayForm?.description}</CardDescription>
           )}
         </CardHeader>
         <CardContent>
