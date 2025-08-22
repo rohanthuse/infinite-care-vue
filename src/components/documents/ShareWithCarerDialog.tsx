@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -10,18 +8,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { useBranchStaff } from '@/hooks/useBranchStaff';
 import { toast } from 'sonner';
-import { User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
-interface Staff {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
 
 interface ShareWithCarerDialogProps {
   open: boolean;
@@ -50,29 +43,14 @@ export function ShareWithCarerDialog({
   const [isSharing, setIsSharing] = useState(false);
 
   // Fetch branch staff
-  const { data: staff = [], isLoading } = useQuery({
-    queryKey: ['branch-staff', branchId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('staff')
-        .select('id, first_name, last_name, email')
-        .eq('branch_id', branchId)
-        .eq('status', 'active')
-        .order('first_name');
+  const { data: staff = [], isLoading } = useBranchStaff(branchId);
 
-      if (error) throw error;
-      return data as Staff[];
-    },
-    enabled: open && Boolean(branchId),
-  });
-
-  const handleStaffSelection = (staffId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStaffIds(prev => [...prev, staffId]);
-    } else {
-      setSelectedStaffIds(prev => prev.filter(id => id !== staffId));
-    }
-  };
+  // Convert staff data to MultiSelect options
+  const staffOptions: MultiSelectOption[] = staff.map(member => ({
+    value: member.id,
+    label: `${member.first_name} ${member.last_name}`,
+    description: member.email || undefined,
+  }));
 
   const handleShare = async () => {
     if (!document || selectedStaffIds.length === 0) {
@@ -132,32 +110,16 @@ export function ShareWithCarerDialog({
           {/* Staff Selection */}
           <div>
             <Label className="text-sm font-medium">Select Carers</Label>
-            <div className="mt-2 max-h-48 overflow-y-auto border rounded-md p-3 space-y-2">
-              {isLoading ? (
-                <div className="text-sm text-muted-foreground">Loading carers...</div>
-              ) : staff.length === 0 ? (
-                <div className="text-sm text-muted-foreground">No carers found</div>
-              ) : (
-                staff.map((member) => (
-                  <div key={member.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={member.id}
-                      checked={selectedStaffIds.includes(member.id)}
-                      onCheckedChange={(checked) => 
-                        handleStaffSelection(member.id, checked as boolean)
-                      }
-                    />
-                    <Label 
-                      htmlFor={member.id} 
-                      className="flex items-center space-x-2 text-sm cursor-pointer flex-1"
-                    >
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{member.first_name} {member.last_name}</span>
-                      <span className="text-xs text-muted-foreground">({member.email})</span>
-                    </Label>
-                  </div>
-                ))
-              )}
+            <div className="mt-2">
+              <MultiSelect
+                options={staffOptions}
+                selected={selectedStaffIds}
+                onSelectionChange={setSelectedStaffIds}
+                placeholder={isLoading ? "Loading carers..." : "Select carers to share with..."}
+                searchPlaceholder="Search carers..."
+                emptyText="No carers found"
+                disabled={isLoading}
+              />
             </div>
             {selectedStaffIds.length > 0 && (
               <div className="mt-2 text-xs text-muted-foreground">
