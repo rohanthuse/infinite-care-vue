@@ -59,7 +59,8 @@ export const FormSubmissionsTab: React.FC<FormSubmissionsTabProps> = ({
   const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = searchQuery === '' || 
       submission.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      submission.submitted_by.toLowerCase().includes(searchQuery.toLowerCase());
+      submission.submitted_by.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (submission.submitter_name && submission.submitter_name.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
     const matchesSubmitterType = submitterTypeFilter === 'all' || submission.submitted_by_type === submitterTypeFilter;
@@ -264,7 +265,7 @@ export const FormSubmissionsTab: React.FC<FormSubmissionsTabProps> = ({
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        User: {submission.submitted_by}
+                        User: {submission.submitter_name || `Unknown (${submission.submitted_by.slice(-8)})`}
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />

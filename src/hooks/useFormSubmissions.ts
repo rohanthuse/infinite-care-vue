@@ -9,6 +9,7 @@ export interface FormSubmission {
   branch_id: string;
   submitted_by: string;
   submitted_by_type: 'client' | 'staff' | 'carer';
+  submitter_name?: string;
   submission_data: Record<string, any>;
   status: 'draft' | 'completed' | 'under_review' | 'approved' | 'rejected';
   submitted_at: string;
@@ -30,7 +31,11 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
     queryFn: async () => {
       let query = supabase
         .from('form_submissions')
-        .select('*')
+        .select(`
+          *,
+          staff:staff(first_name, last_name, auth_user_id),
+          client:clients(first_name, last_name, auth_user_id)
+        `)
         .eq('branch_id', branchId)
         .order('submitted_at', { ascending: false });
 
@@ -41,7 +46,35 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as FormSubmission[];
+
+      // Map the data to include submitter names
+      const mappedData = data?.map((submission: any) => {
+        let submitter_name = 'Unknown user';
+        
+        // Check if submitted_by matches a staff member's auth_user_id
+        if (submission.staff && submission.staff.some((s: any) => s.auth_user_id === submission.submitted_by)) {
+          const staff = submission.staff.find((s: any) => s.auth_user_id === submission.submitted_by);
+          submitter_name = `${staff.first_name} ${staff.last_name}`.trim();
+        }
+        // Check if submitted_by matches a client's auth_user_id
+        else if (submission.client && submission.client.some((c: any) => c.auth_user_id === submission.submitted_by)) {
+          const client = submission.client.find((c: any) => c.auth_user_id === submission.submitted_by);
+          submitter_name = `${client.first_name} ${client.last_name}`.trim();
+        }
+        // If no match found but we have a name, use just the first few chars of ID
+        else if (!submitter_name || submitter_name === 'Unknown user') {
+          submitter_name = `Unknown user (${submission.submitted_by.slice(-8)})`;
+        }
+
+        return {
+          ...submission,
+          submitter_name,
+          staff: undefined, // Remove the joined data
+          client: undefined, // Remove the joined data
+        };
+      }) || [];
+
+      return mappedData as FormSubmission[];
     },
   });
 
