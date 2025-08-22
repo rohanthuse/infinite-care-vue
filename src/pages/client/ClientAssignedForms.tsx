@@ -9,10 +9,10 @@ import { format } from 'date-fns';
 
 const ClientAssignedForms = () => {
   const { data: authData } = useSimpleClientAuth();
-  const clientId = authData?.client?.id;
+  const authUserId = authData?.user?.id;
   
   const { data: assignedForms, isLoading, error } = useMyAssignedForms(
-    clientId || '', 
+    authUserId || '', 
     'client'
   );
 

@@ -19,6 +19,36 @@ import { useFormElements } from '@/hooks/useFormElements';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper function to persist form assignees to database
+const persistFormAssignees = async (formId: string, assignees: any[], assignedBy: string) => {
+  try {
+    const assigneeRecords = assignees.map(assignee => ({
+      form_id: formId,
+      assignee_id: assignee.id,
+      assignee_type: assignee.type === 'client' ? 'client' : 'staff', // Map 'carer' to 'staff'
+      assignee_name: assignee.name,
+      assigned_by: assignedBy,
+    }));
+
+    console.log('Inserting assignee records:', assigneeRecords);
+
+    const { error } = await supabase
+      .from('form_assignees')
+      .insert(assigneeRecords);
+
+    if (error) {
+      console.error('Error inserting form assignees:', error);
+      throw error;
+    }
+
+    console.log('Form assignees persisted successfully');
+  } catch (error) {
+    console.error('Failed to persist form assignees:', error);
+    throw error;
+  }
+};
 
 const FormBuilder = () => {
   const { id: branchId, branchName, formId } = useParams<{ id: string; branchName: string; formId?: string }>();
@@ -306,6 +336,7 @@ const FormBuilder = () => {
 
   const handlePublishForm = async (requiresReview: boolean, assignees: any[]) => {
     const userId = user?.id || 'temp-user-id';
+    console.log('Publishing form with assignees:', assignees);
 
     try {
       if (formId) {
@@ -325,7 +356,8 @@ const FormBuilder = () => {
         });
       } else {
         // Create and publish new form
-        createForm({
+        console.log('Creating new form with:', form.title, form.description);
+        const createdForm = await createFormAsync({
           title: form.title,
           description: form.description,
           created_by: userId,
@@ -336,12 +368,30 @@ const FormBuilder = () => {
 
         if (form.elements.length > 0) {
           saveElements({
-            formId: form.id,
+            formId: createdForm.id,
             elements: form.elements
           });
         }
+
+        // Persist assignees for the new form
+        if (assignees.length > 0) {
+          await persistFormAssignees(createdForm.id, assignees, userId);
+        }
+
+        // Update local form state with the created form data
+        setForm(prev => ({
+          ...prev,
+          id: createdForm.id,
+          title: createdForm.title,
+          description: createdForm.description || ''
+        }));
       }
       
+      // Persist assignees to the database
+      if (assignees.length > 0) {
+        await persistFormAssignees(form.id, assignees, userId);
+      }
+
       setForm(prev => ({
         ...prev,
         published: true,
@@ -351,6 +401,11 @@ const FormBuilder = () => {
       }));
       
       setIsFormDirty(false);
+      
+      toast({
+        title: 'Form Published',
+        description: `Form published successfully with ${assignees.length} assignees`,
+      });
       
       const fullPath = tenantSlug 
         ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}`

@@ -25,8 +25,9 @@ const fetchMyAssignedForms = async (userId: string, userType: 'client' | 'carer'
 
   console.log('Fetching assigned forms for:', { userId, userType });
 
-  // For carers/staff, we need to get the staff database ID from auth_user_id
   let assigneeId = userId;
+  
+  // For carers/staff, we need to get the staff database ID from auth_user_id
   if (userType === 'carer' || userType === 'staff') {
     const { data: staffData, error: staffError } = await supabase
       .from('staff')
@@ -46,6 +47,26 @@ const fetchMyAssignedForms = async (userId: string, userType: 'client' | 'carer'
 
     assigneeId = staffData.id;
     console.log('Found staff database ID:', assigneeId);
+  } else if (userType === 'client') {
+    // For clients, we need to get the client database ID from auth_user_id
+    const { data: clientData, error: clientError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .single();
+
+    if (clientError) {
+      console.error('Error fetching client record:', clientError);
+      throw clientError;
+    }
+
+    if (!clientData) {
+      console.log('No client record found for auth user:', userId);
+      return [];
+    }
+
+    assigneeId = clientData.id;
+    console.log('Found client database ID:', assigneeId);
   }
 
   // Query form_assignees to get forms assigned to this user
