@@ -24,9 +24,58 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // NO automatic session checking on mount - require explicit login
+  // Check for existing Supabase session on mount
   useEffect(() => {
-    setIsLoading(false);
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session?.user) {
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('[SystemAuth] Found existing session for:', session.user.email);
+
+        // Verify user has super_admin role
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id);
+
+        if (roleError) {
+          console.error('[SystemAuth] Failed to fetch user roles:', roleError);
+          setIsLoading(false);
+          return;
+        }
+
+        const roles = roleData.map(r => r.role);
+        const isSystemAdmin = roles.includes('super_admin') || roles.includes('app_admin');
+
+        if (!isSystemAdmin) {
+          console.log('[SystemAuth] User lacks system admin permissions');
+          setIsLoading(false);
+          return;
+        }
+
+        // Set authenticated user state
+        const systemUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.email || '',
+          roles: roles
+        };
+
+        console.log('[SystemAuth] Existing session validated for system admin:', systemUser.email);
+        setUser(systemUser);
+      } catch (err) {
+        console.error('[SystemAuth] Session check error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkExistingSession();
   }, []);
 
   const signIn = async (email: string, password: string) => {
