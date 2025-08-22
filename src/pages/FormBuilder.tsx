@@ -166,11 +166,17 @@ const FormBuilder = () => {
 
   // Load existing form if editing - split into focused effects
   useEffect(() => {
-    if (formId && forms.length > 0 && !isLoadingElements) {
+    if (formId && forms.length > 0 && !isLoadingElements && !isFormDirty && !isUpdating) {
       const existingForm = forms.find(f => f.id === formId);
       if (existingForm) {
         const convertedForm = convertDatabaseFormToForm(existingForm, uiElements);
-        setForm(convertedForm);
+        // Only update if the database version is newer than our local version
+        const dbUpdatedAt = new Date(existingForm.updated_at).getTime();
+        const localUpdatedAt = new Date(form.updatedAt).getTime();
+        
+        if (dbUpdatedAt > localUpdatedAt || form.title === 'Untitled Form') {
+          setForm(convertedForm);
+        }
         setIsLoadingForm(false);
       } else {
         setIsLoadingForm(false);
@@ -178,7 +184,7 @@ const FormBuilder = () => {
     } else if (!formId) {
       setIsLoadingForm(false);
     }
-  }, [formId, forms, uiElements, isLoadingElements, convertDatabaseFormToForm]);
+  }, [formId, forms, uiElements, isLoadingElements, convertDatabaseFormToForm, isFormDirty, isUpdating, form.updatedAt, form.title]);
 
   // Handle form not found separately to avoid dependency issues
   useEffect(() => {
@@ -278,6 +284,7 @@ const FormBuilder = () => {
     try {
       if (formId) {
         // Update existing form
+        const now = new Date().toISOString();
         updateForm({
           formId: form.id,
           updates: {
@@ -285,7 +292,8 @@ const FormBuilder = () => {
             description: descriptionToSave,
             published: form.published,
             requires_review: form.requiresReview,
-            settings: form.settings
+            settings: form.settings,
+            updated_at: now
           }
         });
 
@@ -333,11 +341,12 @@ const FormBuilder = () => {
       }
       
       // Update form state with saved values to ensure UI reflects saved data
+      const now = new Date().toISOString();
       setForm(prev => ({
         ...prev,
         title: titleToSave,
         description: descriptionToSave,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       }));
       
       setIsFormDirty(false);
