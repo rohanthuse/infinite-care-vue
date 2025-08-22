@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSimpleClientAuth } from '@/hooks/useSimpleClientAuth';
 import { useMyAssignedForms } from '@/hooks/useMyAssignedForms';
 import { useClientNavigation } from '@/hooks/useClientNavigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { FormSubmissionDetail } from '@/components/form-builder/FormSubmissionDetail';
 
 const ClientAssignedForms = () => {
   const { data: authData } = useSimpleClientAuth();
@@ -17,6 +20,45 @@ const ClientAssignedForms = () => {
     authUserId || '', 
     'client'
   );
+
+  // State for submission details dialog
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoadingSubmission, setIsLoadingSubmission] = useState(false);
+
+  // Function to fetch and view submission details
+  const viewSubmission = async (formId) => {
+    if (!authUserId) return;
+    
+    setIsLoadingSubmission(true);
+    try {
+      const { data: submission, error } = await supabase
+        .from('form_submissions')
+        .select(`
+          *,
+          forms (
+            id,
+            title,
+            description
+          )
+        `)
+        .eq('form_id', formId)
+        .eq('submitted_by', authUserId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching submission:', error);
+        return;
+      }
+
+      setSelectedSubmission(submission);
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching submission:', error);
+    } finally {
+      setIsLoadingSubmission(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -128,12 +170,24 @@ const ClientAssignedForms = () => {
                         Fill Out Form
                       </Button>
                     ) : form.submission_status === 'completed' ? (
-                      <Button variant="outline" className="w-full" size="sm">
-                        View Submission
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        size="sm"
+                        onClick={() => viewSubmission(form.id)}
+                        disabled={isLoadingSubmission}
+                      >
+                        {isLoadingSubmission ? 'Loading...' : 'View Submission'}
                       </Button>
                     ) : (
-                      <Button variant="secondary" className="w-full" size="sm">
-                        View Status
+                      <Button 
+                        variant="secondary" 
+                        className="w-full" 
+                        size="sm"
+                        onClick={() => viewSubmission(form.id)}
+                        disabled={isLoadingSubmission}
+                      >
+                        {isLoadingSubmission ? 'Loading...' : 'View Status'}
                       </Button>
                     )}
                   </div>
@@ -143,6 +197,24 @@ const ClientAssignedForms = () => {
           ))}
         </div>
       )}
+
+      {/* Submission Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedSubmission?.forms?.title || 'Form Submission'}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedSubmission && (
+            <FormSubmissionDetail
+              submission={selectedSubmission}
+              branchId={selectedSubmission.branch_id}
+              formId={selectedSubmission.form_id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
