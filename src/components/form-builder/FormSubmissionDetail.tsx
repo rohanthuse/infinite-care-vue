@@ -29,6 +29,7 @@ interface FormSubmissionDetailProps {
   submission: FormSubmission;
   branchId: string;
   formId?: string;
+  allowManageReviews?: boolean;
 }
 
 const getStatusColor = (status: string) => {
@@ -63,7 +64,8 @@ const getSubmitterTypeColor = (type: string) => {
 export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({ 
   submission, 
   branchId,
-  formId 
+  formId,
+  allowManageReviews = true
 }) => {
   const { toast } = useToast();
   const { updateSubmission, isUpdating } = useFormSubmissions(branchId);
@@ -300,8 +302,10 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
   // Get current form details
   const currentForm = forms?.find(f => f.id === (formId || submission.form_id));
   
-  // Determine if the review section should be visible - only for admins
-  const shouldShowReviewSection = userRoles?.isSuperAdmin || userRoles?.isBranchAdmin;
+  // Determine if the review section should be visible
+  const shouldShowReviewSection = allowManageReviews ? 
+    (userRoles?.isSuperAdmin || userRoles?.isBranchAdmin) : 
+    true; // Always show for view-only mode
   
   // Determine if the review controls should be disabled
   const isReviewDisabled = !userRoles?.isSuperAdmin && !userRoles?.isBranchAdmin && ['approved', 'rejected'].includes(submission.status);
@@ -449,101 +453,148 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5" />
-              Review & Status Management
+              {allowManageReviews ? 'Review & Status Management' : 'Review Status'}
             </CardTitle>
             <CardDescription>
-              {currentForm?.requires_review 
-                ? "This form requires review. Update the submission status and add review notes."
-                : "Update the submission status and add review notes."
-              }
+              {allowManageReviews ? (
+                currentForm?.requires_review 
+                  ? "This form requires review. Update the submission status and add review notes."
+                  : "Update the submission status and add review notes."
+              ) : (
+                "Current review status and notes for this submission."
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {isReviewDisabled && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  This submission has been {submission.status} and cannot be modified by non-admin users.
-                </p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Status
-                </label>
-                <Select 
-                  value={newStatus} 
-                  onValueChange={handleStatusChange}
-                  disabled={isReviewDisabled}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="under_review">Under Review</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="draft">Draft</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {currentForm?.requires_review && (
-                <div className="flex items-center">
-                  <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
-                    Review Required
-                  </Badge>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Review Notes
-              </label>
-              <Textarea
-                placeholder="Add notes about this submission..."
-                value={reviewNotes}
-                onChange={(e) => handleNotesChange(e.target.value)}
-                rows={4}
-                className="resize-none"
-                disabled={isReviewDisabled}
-              />
-            </div>
-
-            {hasChanges && !isReviewDisabled && (
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  You have unsaved changes
-                </p>
-                <Button 
-                  onClick={handleSaveChanges}
-                  disabled={isUpdating}
-                  size="sm"
-                >
-                  {isUpdating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Changes
-                    </>
+            {allowManageReviews ? (
+              <>
+                {isReviewDisabled && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      This submission has been {submission.status} and cannot be modified by non-admin users.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Status
+                    </label>
+                    <Select 
+                      value={newStatus} 
+                      onValueChange={handleStatusChange}
+                      disabled={isReviewDisabled}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="under_review">Under Review</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                        <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="draft">Draft</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {currentForm?.requires_review && (
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                        Review Required
+                      </Badge>
+                    </div>
                   )}
-                </Button>
-              </div>
-            )}
+                </div>
 
-            {submission.review_notes && !hasChanges && (
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-1">Current Review Notes:</p>
-                <p className="text-sm text-muted-foreground">
-                  {submission.review_notes}
-                </p>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Review Notes
+                  </label>
+                  <Textarea
+                    placeholder="Add notes about this submission..."
+                    value={reviewNotes}
+                    onChange={(e) => handleNotesChange(e.target.value)}
+                    rows={4}
+                    className="resize-none"
+                    disabled={isReviewDisabled}
+                  />
+                </div>
+
+                {hasChanges && !isReviewDisabled && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      You have unsaved changes
+                    </p>
+                    <Button 
+                      onClick={handleSaveChanges}
+                      disabled={isUpdating}
+                      size="sm"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {submission.review_notes && !hasChanges && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-medium mb-1">Current Review Notes:</p>
+                    <p className="text-sm text-muted-foreground">
+                      {submission.review_notes}
+                    </p>
+                  </div>
+                )}
+              </>
+            ) : (
+              // Read-only view for clients/carers
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium mb-2">Current Status</p>
+                    <Badge className={getStatusColor(submission.status)}>
+                      {submission.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  
+                  {currentForm?.requires_review && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Review Requirement</p>
+                      <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                        Review Required
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+
+                {submission.review_notes && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">Review Notes</p>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        {submission.review_notes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {!submission.review_notes && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground italic">
+                      No review notes available yet.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

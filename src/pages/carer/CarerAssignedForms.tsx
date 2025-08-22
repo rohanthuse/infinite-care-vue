@@ -238,6 +238,7 @@ const CarerAssignedForms = () => {
               submission={selectedSubmission}
               branchId={selectedSubmission.forms?.branch_id || carerContext?.branchInfo?.id || ''}
               formId={selectedSubmission.form_id}
+              allowManageReviews={false}
             />
           )}
         </DialogContent>

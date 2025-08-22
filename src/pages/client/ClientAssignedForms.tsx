@@ -229,6 +229,7 @@ const ClientAssignedForms = () => {
               submission={selectedSubmission}
               branchId={selectedSubmission.branch_id}
               formId={selectedSubmission.form_id}
+              allowManageReviews={false}
             />
           )}
         </DialogContent>
