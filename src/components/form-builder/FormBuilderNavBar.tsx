@@ -54,12 +54,28 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
     }
   };
 
+  // Check if there are local changes compared to the original form
+  const hasLocalChanges = title !== form.title || description !== (form.description || '');
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    // Immediately notify parent of changes to enable Save button
+    onFormChange(newTitle, description);
   };
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDescription(e.target.value);
+    const newDescription = e.target.value;
+    setDescription(newDescription);
+    // Immediately notify parent of changes to enable Save button
+    onFormChange(title, newDescription);
+  };
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleDescriptionBlur();
+    }
   };
 
   const handleTitleBlur = () => {
@@ -115,8 +131,8 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
         <div>
           <Button 
             onClick={handleSave} 
-            disabled={!isFormDirty || isSaving}
-            variant={isFormDirty ? "default" : "outline"}
+            disabled={(!isFormDirty && !hasLocalChanges) || isSaving}
+            variant={(isFormDirty || hasLocalChanges) ? "default" : "outline"}
           >
             {isSaving ? (
               <>
@@ -155,6 +171,7 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
             value={description}
             onChange={handleDescriptionChange}
             onBlur={handleDescriptionBlur}
+            onKeyDown={handleDescriptionKeyDown}
             className="text-sm text-gray-600 mt-2"
             placeholder="Enter form description..."
             rows={2}
