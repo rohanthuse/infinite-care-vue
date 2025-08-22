@@ -72,8 +72,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
       const matchesAssignee = assigneeFilter === 'all' ||
                              (assigneeFilter === 'unassigned' && formAssigneesList.length === 0) ||
                              (assigneeFilter === 'clients' && formAssigneesList.some(a => a.assignee_type === 'client')) ||
-                             (assigneeFilter === 'staff' && formAssigneesList.some(a => a.assignee_type === 'staff')) ||
-                             (assigneeFilter === 'carers' && formAssigneesList.some(a => a.assignee_type === 'carer')) ||
+                             (assigneeFilter === 'staff' && formAssigneesList.some(a => a.assignee_type === 'staff' || a.assignee_type === 'carer')) ||
                              (assigneeFilter === 'branches' && formAssigneesList.some(a => a.assignee_type === 'branch'));
       
       return matchesSearch && matchesStatus && matchesAssignee;
@@ -444,7 +443,6 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                 <SelectItem value="all">All Assignees</SelectItem>
                 <SelectItem value="clients">Clients</SelectItem>
                 <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="carers">Carers</SelectItem>
                 <SelectItem value="branches">Branches</SelectItem>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
               </SelectContent>

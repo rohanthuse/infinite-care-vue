@@ -12,7 +12,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useBranchStaffAndClients } from '@/hooks/useBranchStaffAndClients';
-import { useBranchCarers } from '@/data/hooks/useBranchCarers';
 import { useBranchNavigation } from '@/hooks/useBranchNavigation';
 import { useBranchAdmins } from '@/hooks/useBranchAdmins';
 
@@ -43,7 +42,7 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
   const defaultPermissions: FormPermissions = {
     viewAccess: ['admin', 'branch-manager'],
     editAccess: ['admin'],
-    submitAccess: ['client', 'staff', 'carer'],
+    submitAccess: ['client', 'staff'],
     manageAccess: ['admin'],
   };
   
@@ -55,7 +54,6 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
   
   // Fetch real data from hooks
   const { staff, clients, isLoading: isLoadingStaffAndClients } = useBranchStaffAndClients(branchId);
-  const { data: carers = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
   const { data: branches = [], isLoading: isLoadingBranches } = useBranchNavigation();
   const { data: branchAdmins = [], isLoading: isLoadingAdmins } = useBranchAdmins(branchId);
 
@@ -80,15 +78,6 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     }));
   }, [staff]);
 
-  const realCarers = useMemo(() => {
-    return carers.map(carer => ({
-      id: carer.id,
-      name: `${carer.first_name} ${carer.last_name}`.trim(),
-      type: 'carer' as const,
-      experience: carer.experience || 'Experience not specified',
-      avatar: `${carer.first_name?.charAt(0) || ''}${carer.last_name?.charAt(0) || ''}`.toUpperCase()
-    }));
-  }, [carers]);
 
   const realBranches = useMemo(() => {
     return branches.map(branch => ({
@@ -115,7 +104,6 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     { id: 'admin', name: 'Administrator', description: 'Full system access' },
     { id: 'branch-manager', name: 'Branch Manager', description: 'Manages branch operations' },
     { id: 'staff', name: 'Staff', description: 'Medical and support staff' },
-    { id: 'carer', name: 'Carer', description: 'Provides care services' },
     { id: 'client', name: 'Client', description: 'Receives services' }
   ];
 
@@ -134,11 +122,6 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     );
   }, [realStaff, searchValue]);
   
-  const filteredCarers = useMemo(() => {
-    return realCarers.filter(carer => 
-      carer.name.toLowerCase().includes(searchValue.toLowerCase())
-    );
-  }, [realCarers, searchValue]);
   
   const filteredBranches = useMemo(() => {
     return realBranches.filter(branch => 
@@ -170,7 +153,7 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     const assignees = Object.entries(selectedAssignees)
       .filter(([_, isSelected]) => isSelected)
       .map(([id, _]) => {
-        const allEntities = [...realClients, ...realStaff, ...realCarers, ...realBranches, ...realBranchAdmins];
+        const allEntities = [...realClients, ...realStaff, ...realBranches, ...realBranchAdmins];
         const entity = allEntities.find(entity => entity.id === id);
         if (!entity) return null;
         
@@ -405,10 +388,9 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
             </div>
             
             <Tabs value={selectedTab} onValueChange={handleTabChange}>
-              <TabsList className="grid grid-cols-5">
+              <TabsList className="grid grid-cols-4">
                 <TabsTrigger value="clients">Clients</TabsTrigger>
                 <TabsTrigger value="staff">Staff</TabsTrigger>
-                <TabsTrigger value="carers">Carers</TabsTrigger>
                 <TabsTrigger value="branches">Branches</TabsTrigger>
                 <TabsTrigger value="admins">Admins</TabsTrigger>
               </TabsList>
@@ -468,32 +450,6 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
                   )}
                 </TabsContent>
                 
-                <TabsContent value="carers" className="space-y-2 py-2">
-                  {isLoadingCarers ? (
-                    <div className="text-center py-8 text-gray-500">Loading carers...</div>
-                  ) : filteredCarers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No carers found</div>
-                  ) : (
-                    filteredCarers.map(carer => (
-                      <div key={carer.id} className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded">
-                        <Checkbox 
-                          id={`carer-${carer.id}`} 
-                          checked={!!selectedAssignees[carer.id]} 
-                          onCheckedChange={(checked) => handleSelectAssignee(carer.id, !!checked)}
-                        />
-                        <div className="flex items-center flex-1 gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-green-100 text-green-600">{carer.avatar}</AvatarFallback>
-                          </Avatar>
-                          <Label htmlFor={`carer-${carer.id}`} className="flex-1 cursor-pointer">
-                            <div className="font-medium">{carer.name}</div>
-                            <div className="text-xs text-gray-500">Experience: {carer.experience}</div>
-                          </Label>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
                 
                 <TabsContent value="branches" className="space-y-2 py-2">
                   {isLoadingBranches ? (
