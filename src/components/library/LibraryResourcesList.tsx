@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLibraryResources, LibraryResource } from "@/hooks/useLibraryResources";
 import { useLibraryAnalytics } from "@/hooks/useLibraryAnalytics";
 import { LibraryResourcePreviewDialog } from "./LibraryResourcePreviewDialog";
+import { toast } from "sonner";
 
 interface LibraryResourcesListProps {
   branchId: string;
@@ -182,6 +183,47 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
   const handleDeleteResource = async (resourceId: string) => {
     if (window.confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
       deleteResource(resourceId);
+    }
+  };
+
+  const handleShareResource = async (resource: LibraryResource) => {
+    try {
+      let shareUrl = '';
+      let shareTitle = resource.title;
+      let shareText = resource.description || `Check out this resource: ${resource.title}`;
+
+      // Get shareable URL
+      if (resource.url) {
+        shareUrl = resource.url;
+      } else if (resource.file_path) {
+        // Generate a signed URL for the file
+        const fileUrl = await getFileUrl(resource.file_path);
+        if (fileUrl) {
+          shareUrl = fileUrl;
+        }
+      }
+
+      if (!shareUrl) {
+        toast.error('Unable to generate share link for this resource');
+        return;
+      }
+
+      // Try to use Web Share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success('Resource shared successfully');
+      } else {
+        // Fallback to copying to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Resource link copied to clipboard');
+      }
+    } catch (error) {
+      console.error('Failed to share resource:', error);
+      toast.error('Failed to share resource');
     }
   };
 
@@ -506,6 +548,12 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
           const originalResource = resources.find(r => r.id === resource.id);
           if (originalResource) {
             handleDownloadResource(originalResource);
+          }
+        }}
+        onShare={(resource) => {
+          const originalResource = resources.find(r => r.id === resource.id);
+          if (originalResource) {
+            handleShareResource(originalResource);
           }
         }}
         onDelete={canDelete ? (resource) => {
