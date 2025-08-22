@@ -19,6 +19,8 @@ const Documents = () => {
   const {
     documents,
     isLoading: documentsLoading,
+    uploadDocument,
+    isUploading,
     deleteDocument,
     downloadDocument,
     viewDocument
@@ -66,11 +68,13 @@ const Documents = () => {
   };
 
   const handleUploadDocument = async (uploadData: any) => {
-    console.log("Uploading document:", uploadData);
-    // Handle document upload here
-    setIsUploadDialogOpen(false);
-    // Refresh documents list
-    queryClient.invalidateQueries({ queryKey: ['unified-documents', id] });
+    try {
+      await uploadDocument(uploadData);
+      setIsUploadDialogOpen(false);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      // Error is already handled by the uploadDocument function with toast notifications
+    }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
