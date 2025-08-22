@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { FileText, Search, Download, Eye, Clock, Filter } from "lucide-react";
+import { FileText, Search, Download, Eye, Clock, Filter, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,126 +13,24 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { useCarerSharedDocuments } from "@/hooks/useAdminSharedDocuments";
+import { useCarerSharedDocuments, useSharedDocumentActions } from "@/hooks/useAdminSharedDocuments";
+import { useMyAssignedForms } from "@/hooks/useMyAssignedForms";
+import { useCarerDocuments } from "@/hooks/useCarerDocuments";
+import { useCarerTraining } from "@/hooks/useCarerTraining";
 import { AdminSharedDocuments } from "@/components/documents/AdminSharedDocuments";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
-// Mock documents data
-const mockDocuments = {
-  forms: [
-    {
-      id: "1",
-      name: "Daily Care Log",
-      type: "PDF",
-      category: "Care Records",
-      updated: "23 Apr 2025"
-    },
-    {
-      id: "2",
-      name: "Medication Administration Record",
-      type: "PDF",
-      category: "Medication",
-      updated: "20 Apr 2025"
-    },
-    {
-      id: "3",
-      name: "Client Assessment Form",
-      type: "DOCX",
-      category: "Assessment",
-      updated: "15 Apr 2025"
-    },
-    {
-      id: "4",
-      name: "Incident Report Form",
-      type: "PDF",
-      category: "Reporting",
-      updated: "10 Apr 2025"
-    }
-  ],
-  policies: [
-    {
-      id: "1",
-      name: "Medication Administration Policy",
-      type: "PDF",
-      category: "Clinical",
-      updated: "01 Mar 2025"
-    },
-    {
-      id: "2",
-      name: "Infection Control Guidelines",
-      type: "PDF",
-      category: "Health & Safety",
-      updated: "15 Feb 2025"
-    },
-    {
-      id: "3",
-      name: "Emergency Response Procedure",
-      type: "PDF",
-      category: "Emergency",
-      updated: "25 Jan 2025"
-    },
-    {
-      id: "4",
-      name: "Client Confidentiality Policy",
-      type: "PDF",
-      category: "Data Protection",
-      updated: "10 Jan 2025"
-    },
-    {
-      id: "5",
-      name: "Manual Handling Guide",
-      type: "PDF",
-      category: "Health & Safety",
-      updated: "05 Jan 2025"
-    }
-  ],
-  training: [
-    {
-      id: "1",
-      name: "Medication Administration Training",
-      type: "PDF",
-      category: "Clinical Skills",
-      updated: "15 Apr 2025",
-      completed: true,
-      dueDate: "15 Oct 2025"
-    },
-    {
-      id: "2",
-      name: "First Aid Refresher",
-      type: "PDF",
-      category: "Emergency Response",
-      updated: "10 Mar 2025",
-      completed: true,
-      dueDate: "10 Mar 2026"
-    },
-    {
-      id: "3",
-      name: "Infection Control",
-      type: "PDF",
-      category: "Health & Safety",
-      updated: "25 Feb 2025",
-      completed: false,
-      dueDate: "25 May 2025"
-    },
-    {
-      id: "4",
-      name: "Safeguarding Vulnerable Adults",
-      type: "PDF",
-      category: "Compliance",
-      updated: "15 Jan 2025",
-      completed: false,
-      dueDate: "15 May 2025"
-    }
-  ]
-};
 
 const CarerDocuments: React.FC = () => {
   const [carerId, setCarerId] = useState<string>('');
+  const [userId, setUserId] = useState<string>('');
   
   useEffect(() => {
     const fetchCarerId = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setUserId(user.id);
         const { data: staffData } = await supabase
           .from('staff')
           .select('id')
@@ -148,7 +46,49 @@ const CarerDocuments: React.FC = () => {
     fetchCarerId();
   }, []);
 
+  // Fetch data using hooks
   const { data: sharedDocuments = [], isLoading: isLoadingShared } = useCarerSharedDocuments(carerId);
+  const { data: assignedForms = [], isLoading: isLoadingForms } = useMyAssignedForms(userId, 'carer');
+  const { data: carerDocuments = [], isLoading: isLoadingDocuments } = useCarerDocuments(carerId);
+  const { trainingRecords = [], isLoading: isLoadingTraining } = useCarerTraining();
+  const { viewDocument, downloadDocument } = useSharedDocumentActions();
+
+  // Filter documents by category for different tabs
+  const policyDocuments = carerDocuments.filter(doc => 
+    doc.source_type === 'document' && 
+    (doc.document_type?.toLowerCase().includes('policy') || 
+     doc.document_type?.toLowerCase().includes('procedure') ||
+     doc.document_type?.toLowerCase().includes('guideline'))
+  );
+
+  const trainingDocuments = carerDocuments.filter(doc => 
+    doc.source_type === 'training_certification'
+  );
+
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'dd MMM yyyy');
+    } catch {
+      return 'N/A';
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap = {
+      'completed': { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' },
+      'in-progress': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
+      'not-started': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Not Started' },
+      'expired': { bg: 'bg-red-100', text: 'text-red-700', label: 'Expired' },
+    };
+    
+    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap['not-started'];
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs ${statusInfo.bg} ${statusInfo.text}`}>
+        {statusInfo.label}
+      </span>
+    );
+  };
 
   return (
     <div>
@@ -176,45 +116,54 @@ const CarerDocuments: React.FC = () => {
         <TabsContent value="forms" className="mt-0">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle>Forms & Templates</CardTitle>
+              <CardTitle>Assigned Forms</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockDocuments.forms.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-500" />
-                          {doc.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>{doc.type}</TableCell>
-                      <TableCell>{doc.category}</TableCell>
-                      <TableCell>{doc.updated}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {isLoadingForms ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Loading forms...</span>
+                </div>
+              ) : assignedForms.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No forms have been assigned to you.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Form Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Assigned Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {assignedForms.map((form) => (
+                      <TableRow key={form.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-gray-500" />
+                            {form.title}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(form.submission_status || 'not-started')}
+                        </TableCell>
+                        <TableCell>{formatDate(form.assigned_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" disabled>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -225,42 +174,65 @@ const CarerDocuments: React.FC = () => {
               <CardTitle>Policies & Procedures</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockDocuments.policies.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-500" />
-                          {doc.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>{doc.type}</TableCell>
-                      <TableCell>{doc.category}</TableCell>
-                      <TableCell>{doc.updated}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {isLoadingDocuments ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Loading policies...</span>
+                </div>
+              ) : policyDocuments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No policy documents available.</p>
+                  <p className="text-sm mt-2">Policy documents will appear here when uploaded by admin.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {policyDocuments.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-gray-500" />
+                            {doc.file_name || doc.document_type}
+                          </div>
+                        </TableCell>
+                        <TableCell>{doc.document_type}</TableCell>
+                        <TableCell>{doc.document_type}</TableCell>
+                        <TableCell>{formatDate(doc.created_at)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => doc.file_path && viewDocument(doc.file_path)}
+                              disabled={!doc.file_path}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => doc.file_path && downloadDocument(doc.file_path, doc.file_name || 'document')}
+                              disabled={!doc.file_path}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -268,60 +240,69 @@ const CarerDocuments: React.FC = () => {
         <TabsContent value="training" className="mt-0">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle>Training Documents</CardTitle>
+              <CardTitle>Training Records & Certificates</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Last Updated</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockDocuments.training.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-500" />
-                          {doc.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>{doc.category}</TableCell>
-                      <TableCell>{doc.updated}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Clock className="h-3.5 w-3.5 mr-1 text-gray-500" />
-                          {doc.dueDate}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          doc.completed 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-amber-100 text-amber-700"
-                        }`}>
-                          {doc.completed ? "Completed" : "Pending"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              {isLoadingTraining ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <span className="ml-2">Loading training records...</span>
+                </div>
+              ) : trainingRecords.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No training records found.</p>
+                  <p className="text-sm mt-2">Training records will appear here when assigned by admin.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Course Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Completion Date</TableHead>
+                      <TableHead>Expiry Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {trainingRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-gray-500" />
+                            {record.training_course.title}
+                          </div>
+                        </TableCell>
+                        <TableCell className="capitalize">{record.training_course.category}</TableCell>
+                        <TableCell>
+                          {record.completion_date ? formatDate(record.completion_date) : 'Not completed'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center">
+                            <Clock className="h-3.5 w-3.5 mr-1 text-gray-500" />
+                            {record.expiry_date ? formatDate(record.expiry_date) : 'No expiry'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(record.status)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" disabled>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" disabled>
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
