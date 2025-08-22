@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSimpleClientAuth } from '@/hooks/useSimpleClientAuth';
 import { useMyAssignedForms } from '@/hooks/useMyAssignedForms';
+import { useClientNavigation } from '@/hooks/useClientNavigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { format } from 'date-fns';
 const ClientAssignedForms = () => {
   const { data: authData } = useSimpleClientAuth();
   const authUserId = authData?.user?.id;
+  const { navigateToClientPage } = useClientNavigation();
   
   const { data: assignedForms, isLoading, error } = useMyAssignedForms(
     authUserId || '', 
@@ -118,7 +120,11 @@ const ClientAssignedForms = () => {
 
                   <div className="pt-2">
                     {form.submission_status === 'not_submitted' ? (
-                      <Button className="w-full" size="sm">
+                      <Button 
+                        className="w-full" 
+                        size="sm"
+                        onClick={() => navigateToClientPage(`/forms/${form.id}`, { formData: form })}
+                      >
                         Fill Out Form
                       </Button>
                     ) : form.submission_status === 'completed' ? (

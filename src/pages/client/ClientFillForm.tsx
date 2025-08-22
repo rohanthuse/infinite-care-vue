@@ -1,0 +1,587 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useSimpleClientAuth } from '@/hooks/useSimpleClientAuth';
+import { useFormElements } from '@/hooks/useFormElements';
+import { useFormSubmissions } from '@/hooks/useFormSubmissions';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import { useFormAutoSave } from '@/hooks/useFormAutoSave';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Save, Send, FileText, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useClientNavigation } from '@/hooks/useClientNavigation';
+import type { FormElement } from '@/types/form-builder';
+import { format } from 'date-fns';
+
+const ClientFillForm = () => {
+  const { formId } = useParams<{ formId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { data: authData } = useSimpleClientAuth();
+  const user = authData?.user;
+  const { navigateToClientPage } = useClientNavigation();
+  
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [existingSubmission, setExistingSubmission] = useState<any>(null);
+
+  // Get form data from navigation state if available
+  const passedFormData = location.state?.formData;
+
+  // Get the form details
+  const { data: currentForm, isLoading: isLoadingForm } = useQuery({
+    queryKey: ['form-details', formId],
+    queryFn: async () => {
+      if (!formId) return null;
+      
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('id', formId)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!formId
+  });
+
+  const branchId = currentForm?.branch_id || '';
+
+  const { uiElements: elements, isLoading: isLoadingElements, error: elementsError } = useFormElements(formId || '');
+  const { createSubmission, isCreating } = useFormSubmissions(branchId, formId);
+  const { validateFormData, validateRequiredFields } = useFormValidation();
+
+  // Auto-save functionality
+  const { autoSave, markAsChanged, hasUnsavedChanges, lastSaveTime } = useFormAutoSave({
+    onSave: async (data, isDraft) => {
+      if (!user?.id || !formId || !branchId) return;
+      
+      await new Promise((resolve, reject) => {
+        createSubmission({
+          form_id: formId,
+          submitted_by: user.id,
+          submitted_by_type: 'client',
+          submission_data: data,
+          status: 'draft'
+        });
+        // Note: This is a simplified approach - in real implementation, 
+        // you'd want to properly handle the promise resolution
+        setTimeout(resolve, 1000);
+      });
+    },
+    enabled: true
+  });
+
+  // Load existing submission data
+  useEffect(() => {
+    const loadExistingSubmission = async () => {
+      if (!user?.id || !formId || !branchId) return;
+
+      const { data } = await supabase
+        .from('form_submissions')
+        .select('*')
+        .eq('form_id', formId)
+        .eq('submitted_by', user.id)
+        .single();
+
+      if (data) {
+        setExistingSubmission(data);
+        setFormData((data.submission_data as Record<string, any>) || {});
+      }
+    };
+
+    loadExistingSubmission();
+  }, [user?.id, formId, branchId]);
+
+  // Auto-save trigger
+  useEffect(() => {
+    if (hasUnsavedChanges && Object.keys(formData).length > 0) {
+      const timer = setTimeout(() => {
+        autoSave(formData);
+      }, 30000); // 30 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [formData, hasUnsavedChanges, autoSave]);
+
+  console.log('ClientFillForm - Form ID:', formId);
+  console.log('ClientFillForm - Current Form:', currentForm);
+  console.log('ClientFillForm - Elements:', elements);
+  console.log('ClientFillForm - Passed Form Data:', passedFormData);
+
+  const handleInputChange = (elementId: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [elementId]: value
+    }));
+    markAsChanged();
+    
+    // Clear validation error for this field
+    if (validationErrors[elementId]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[elementId];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleSubmit = async (status: 'draft' | 'completed') => {
+    if (!user?.id || !formId || !branchId) {
+      toast({
+        title: "Error",
+        description: "Missing required information to submit form",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate form data for completed submissions
+    if (status === 'completed') {
+      const validation = validateFormData(elements, formData);
+      
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors);
+        const missingFields = validateRequiredFields(elements, formData);
+        
+        if (missingFields.length > 0) {
+          toast({
+            title: "Validation Error",
+            description: `Please fill in the following required fields: ${missingFields.join(', ')}`,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        toast({
+          title: "Validation Error",
+          description: "Please correct the errors in the form before submitting",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setValidationErrors({});
+    }
+
+    try {
+      createSubmission({
+        form_id: formId,
+        submitted_by: user.id,
+        submitted_by_type: 'client',
+        submission_data: formData,
+        status
+      });
+
+      // Don't navigate immediately, let the mutation handle success
+      if (status === 'completed') {
+        setTimeout(() => navigateToClientPage('/forms'), 1000);
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
+  const handleSaveDraft = () => handleSubmit('draft');
+
+  const renderFormElement = (element: FormElement) => {
+    const value = formData[element.id] || '';
+
+    switch (element.type) {
+      case 'text':
+      case 'email':
+      case 'tel':
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label htmlFor={element.id}>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Input
+              id={element.id}
+              type={element.type}
+              value={value}
+              onChange={(e) => handleInputChange(element.id, e.target.value)}
+              placeholder={(element as any).placeholder}
+              required={element.required}
+              className={validationErrors[element.id] ? 'border-destructive' : ''}
+            />
+            {validationErrors[element.id] && (
+              <p className="text-sm text-destructive mt-1">{validationErrors[element.id]}</p>
+            )}
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label htmlFor={element.id}>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Textarea
+              id={element.id}
+              value={value}
+              onChange={(e) => handleInputChange(element.id, e.target.value)}
+              placeholder={(element as any).placeholder}
+              rows={(element as any).rows || 3}
+              required={element.required}
+              className={validationErrors[element.id] ? 'border-destructive' : ''}
+            />
+            {validationErrors[element.id] && (
+              <p className="text-sm text-destructive mt-1">{validationErrors[element.id]}</p>
+            )}
+          </div>
+        );
+
+      case 'number':
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label htmlFor={element.id}>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Input
+              id={element.id}
+              type="number"
+              value={value}
+              onChange={(e) => handleInputChange(element.id, Number(e.target.value))}
+              placeholder={(element as any).placeholder}
+              min={(element as any).min}
+              max={(element as any).max}
+              step={(element as any).step}
+              required={element.required}
+            />
+          </div>
+        );
+
+      case 'date':
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label htmlFor={element.id}>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Input
+              id={element.id}
+              type="date"
+              value={value}
+              onChange={(e) => handleInputChange(element.id, e.target.value)}
+              min={(element as any).min}
+              max={(element as any).max}
+              required={element.required}
+            />
+          </div>
+        );
+
+      case 'time':
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label htmlFor={element.id}>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Input
+              id={element.id}
+              type="time"
+              value={value}
+              onChange={(e) => handleInputChange(element.id, e.target.value)}
+              required={element.required}
+            />
+          </div>
+        );
+
+      case 'checkbox':
+        const checkboxElement = element as any;
+        return (
+          <div key={element.id} className="space-y-3">
+            <Label>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <div className="space-y-2">
+              {checkboxElement.options?.map((option: any) => (
+                <div key={option.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${element.id}-${option.id}`}
+                    checked={(value || []).includes(option.value)}
+                    onCheckedChange={(checked) => {
+                      const currentValues = value || [];
+                      if (checked) {
+                        handleInputChange(element.id, [...currentValues, option.value]);
+                      } else {
+                        handleInputChange(element.id, currentValues.filter((v: string) => v !== option.value));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`${element.id}-${option.id}`}>{option.label}</Label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'radio':
+        const radioElement = element as any;
+        return (
+          <div key={element.id} className="space-y-3">
+            <Label>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <RadioGroup
+              value={value}
+              onValueChange={(value) => handleInputChange(element.id, value)}
+            >
+              {radioElement.options?.map((option: any) => (
+                <div key={option.id} className="flex items-center space-x-2">
+                  <RadioGroupItem value={option.value} id={`${element.id}-${option.id}`} />
+                  <Label htmlFor={`${element.id}-${option.id}`}>{option.label}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+        );
+
+      case 'select':
+        const selectElement = element as any;
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label htmlFor={element.id}>
+              {element.label}
+              {element.required && <span className="text-destructive ml-1">*</span>}
+            </Label>
+            <Select value={value} onValueChange={(value) => handleInputChange(element.id, value)}>
+              <SelectTrigger>
+                <SelectValue placeholder={selectElement.placeholder || "Select an option"} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectElement.options?.map((option: any) => (
+                  <SelectItem key={option.id} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+
+      case 'heading':
+        const headingElement = element as any;
+        const HeadingTag = headingElement.headingLevel || 'h3';
+        return (
+          <HeadingTag key={element.id} className="text-lg font-semibold mt-6 mb-2">
+            {headingElement.text || element.label}
+          </HeadingTag>
+        );
+
+      case 'paragraph':
+        const paragraphElement = element as any;
+        return (
+          <p key={element.id} className="text-muted-foreground mb-4">
+            {paragraphElement.text || element.label}
+          </p>
+        );
+
+      case 'divider':
+        return <hr key={element.id} className="border-border my-6" />;
+
+      default:
+        return (
+          <div key={element.id} className="space-y-2">
+            <Label>{element.label} (Unsupported element type: {element.type})</Label>
+          </div>
+        );
+    }
+  };
+
+  if (isLoadingElements || isLoadingForm) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!currentForm && !passedFormData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <h3 className="text-lg font-semibold mb-2">Form Not Found</h3>
+          <p className="text-muted-foreground mb-4">The requested form could not be found.</p>
+          <Button onClick={() => navigateToClientPage('/forms')} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Forms
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Use passed form data if available, otherwise use fetched form data
+  const displayForm = currentForm || passedFormData;
+
+  // Show error state if no form elements are found
+  if (!isLoadingElements && elements.length === 0 && !elementsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigateToClientPage('/forms')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Forms
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{displayForm?.title}</CardTitle>
+            {displayForm?.description && (
+              <CardDescription>{displayForm?.description}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Form Elements Not Found</h3>
+              <p className="text-muted-foreground mb-4">
+                This form doesn't have any form elements configured yet. Please contact your administrator.
+              </p>
+              <Button onClick={() => navigateToClientPage('/forms')} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Forms
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if there was an error loading elements
+  if (elementsError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigateToClientPage('/forms')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Forms
+          </Button>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{displayForm?.title}</CardTitle>
+            {displayForm?.description && (
+              <CardDescription>{displayForm?.description}</CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Error Loading Form</h3>
+              <p className="text-muted-foreground mb-4">
+                There was an error loading the form elements. Please try again later.
+              </p>
+              <Button onClick={() => navigateToClientPage('/forms')} variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Forms
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigateToClientPage('/forms')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Forms
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{displayForm?.title}</h1>
+            {displayForm?.description && (
+              <p className="text-muted-foreground">{displayForm?.description}</p>
+            )}
+          </div>
+        </div>
+        
+        {/* Status indicator */}
+        <div className="flex items-center gap-2">
+          {hasUnsavedChanges && (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              Unsaved changes
+            </div>
+          )}
+          {lastSaveTime && (
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <CheckCircle className="h-4 w-4" />
+              Last saved: {format(lastSaveTime, 'HH:mm:ss')}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Form */}
+      <Card>
+        <CardContent className="p-6">
+          <form className="space-y-6">
+            {elements
+              .sort((a, b) => a.order - b.order)
+              .map(renderFormElement)}
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Actions */}
+      <div className="flex items-center justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleSaveDraft}
+          disabled={isCreating}
+        >
+          <Save className="h-4 w-4 mr-2" />
+          Save Draft
+        </Button>
+        
+        <Button
+          type="button"
+          onClick={() => handleSubmit('completed')}
+          disabled={isCreating}
+        >
+          <Send className="h-4 w-4 mr-2" />
+          Submit Form
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default ClientFillForm;
