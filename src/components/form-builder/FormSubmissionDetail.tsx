@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFormSubmissions, FormSubmission } from '@/hooks/useFormSubmissions';
+import { useFormElements } from '@/hooks/useFormElements';
+import { useFileUpload } from '@/hooks/useFileUpload';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { 
@@ -15,12 +17,16 @@ import {
   CheckCircle, 
   XCircle, 
   Clock,
-  Save
+  Save,
+  Download,
+  Eye,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface FormSubmissionDetailProps {
   submission: FormSubmission;
   branchId: string;
+  formId?: string;
 }
 
 const getStatusColor = (status: string) => {
@@ -54,10 +60,13 @@ const getSubmitterTypeColor = (type: string) => {
 
 export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({ 
   submission, 
-  branchId 
+  branchId,
+  formId 
 }) => {
   const { toast } = useToast();
   const { updateSubmission, isUpdating } = useFormSubmissions(branchId);
+  const { uiElements: formElements, isLoading: elementsLoading } = useFormElements(formId || submission.form_id);
+  const { getFileUrl } = useFileUpload();
   
   const [newStatus, setNewStatus] = useState<'completed' | 'draft' | 'under_review' | 'approved' | 'rejected'>(submission.status);
   const [reviewNotes, setReviewNotes] = useState(submission.review_notes || '');
@@ -106,9 +115,39 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
     }
   };
 
-  const renderFieldValue = (key: string, value: any) => {
+  const renderFieldValue = (key: string, value: any, elementType?: string) => {
     if (value === null || value === undefined || value === '') {
       return <span className="text-muted-foreground italic">No response</span>;
+    }
+
+    // Handle signature fields (base64 image data)
+    if (elementType === 'signature' || (typeof value === 'string' && value.startsWith('data:image/'))) {
+      return (
+        <div className="space-y-2">
+          <div className="border rounded-lg p-2 bg-gray-50 max-w-md">
+            <img 
+              src={value} 
+              alt="Signature" 
+              className="max-w-full h-auto rounded"
+              style={{ maxHeight: '200px' }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">Digital signature</p>
+        </div>
+      );
+    }
+
+    // Handle file uploads
+    if (elementType === 'file' || (typeof value === 'object' && value && (value.id || value.file_name || value.storage_path))) {
+      if (Array.isArray(value)) {
+        return (
+          <div className="space-y-2">
+            {value.map((file, index) => renderSingleFile(file, index))}
+          </div>
+        );
+      } else {
+        return renderSingleFile(value, 0);
+      }
     }
 
     if (typeof value === 'boolean') {
@@ -120,6 +159,15 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
     }
 
     if (Array.isArray(value)) {
+      // Check if it's an array of files
+      if (value.length > 0 && typeof value[0] === 'object' && (value[0].id || value[0].file_name)) {
+        return (
+          <div className="space-y-2">
+            {value.map((file, index) => renderSingleFile(file, index))}
+          </div>
+        );
+      }
+      
       return (
         <div className="flex flex-wrap gap-1">
           {value.map((item, index) => (
@@ -150,6 +198,99 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
 
     return <span>{String(value)}</span>;
   };
+
+  const renderSingleFile = (file: any, index: number) => {
+    if (!file) return null;
+
+    const fileName = file.file_name || file.name || `File ${index + 1}`;
+    const fileUrl = file.storage_path ? getFileUrl(file.storage_path) : file.url;
+    const isImage = fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/);
+
+    return (
+      <div key={index} className="border rounded-lg p-3 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {isImage ? (
+              <ImageIcon className="h-4 w-4 text-blue-500" />
+            ) : (
+              <FileText className="h-4 w-4 text-gray-500" />
+            )}
+            <span className="text-sm font-medium">{fileName}</span>
+          </div>
+          
+          {fileUrl && (
+            <div className="flex gap-1">
+              {isImage && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => window.open(fileUrl, '_blank')}
+                >
+                  <Eye className="h-3 w-3" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = fileUrl;
+                  link.download = fileName;
+                  link.click();
+                }}
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {isImage && fileUrl && (
+          <div className="mt-2">
+            <img 
+              src={fileUrl} 
+              alt={fileName}
+              className="max-w-full h-auto rounded max-h-32 object-cover"
+            />
+          </div>
+        )}
+        
+        {file.file_size && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Size: {(file.file_size / 1024).toFixed(1)} KB
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // Create a map of form element IDs to their labels and types
+  const elementMap = formElements?.reduce((acc, element) => {
+    acc[element.id] = {
+      label: element.label,
+      type: element.type,
+      order: element.order
+    };
+    return acc;
+  }, {} as Record<string, { label: string; type: string; order: number }>) || {};
+
+  // Sort submission data by form element order, then alphabetically for unmapped fields
+  const sortedSubmissionEntries = Object.entries(submission.submission_data).sort(([keyA], [keyB]) => {
+    const elementA = elementMap[keyA];
+    const elementB = elementMap[keyB];
+    
+    // If both have form elements, sort by order
+    if (elementA && elementB) {
+      return elementA.order - elementB.order;
+    }
+    
+    // Form elements come first
+    if (elementA && !elementB) return -1;
+    if (!elementA && elementB) return 1;
+    
+    // Alphabetical for unmapped fields
+    return keyA.localeCompare(keyB);
+  });
 
   return (
     <div className="space-y-6">
@@ -228,24 +369,41 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {Object.keys(submission.submission_data).length === 0 ? (
+          {elementsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+              <span className="ml-2 text-muted-foreground">Loading form structure...</span>
+            </div>
+          ) : Object.keys(submission.submission_data).length === 0 ? (
             <p className="text-muted-foreground italic text-center py-8">
               No form data submitted
             </p>
           ) : (
             <div className="space-y-4">
-              {Object.entries(submission.submission_data).map(([key, value]) => (
-                <div key={key} className="border-b pb-3 last:border-b-0">
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                    </p>
-                    <div className="pl-2">
-                      {renderFieldValue(key, value)}
+              {sortedSubmissionEntries.map(([key, value]) => {
+                const element = elementMap[key];
+                const displayLabel = element?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                
+                return (
+                  <div key={key} className="border-b pb-3 last:border-b-0">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {displayLabel}
+                        </p>
+                        {element?.type && (
+                          <Badge variant="outline" className="text-xs">
+                            {element.type}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="pl-2">
+                        {renderFieldValue(key, value, element?.type)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

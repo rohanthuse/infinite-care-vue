@@ -304,6 +304,7 @@ export const FormSubmissionsTab: React.FC<FormSubmissionsTabProps> = ({
                         <FormSubmissionDetail 
                           submission={submission}
                           branchId={branchId}
+                          formId={formId}
                         />
                       </DialogContent>
                     </Dialog>
