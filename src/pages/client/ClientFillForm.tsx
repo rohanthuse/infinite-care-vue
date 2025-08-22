@@ -416,8 +416,7 @@ const ClientFillForm = () => {
                   const uploadedFiles = [];
                   for (const file of files) {
                     const result = await uploadFile(file, {
-                      category: 'document',
-                      agreementId: formId
+                      category: 'attachment'
                     });
                     uploadedFiles.push({
                       id: result.id,
