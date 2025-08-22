@@ -45,8 +45,8 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
     },
   });
 
-  // Create submission mutation
-  const createSubmissionMutation = useMutation({
+  // Create or update submission mutation
+  const upsertSubmissionMutation = useMutation({
     mutationFn: async (submissionData: {
       form_id: string;
       submitted_by: string;
@@ -54,28 +54,61 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
       submission_data: Record<string, any>;
       status?: 'draft' | 'completed' | 'under_review' | 'approved' | 'rejected';
     }) => {
-      const { data, error } = await supabase
+      // First check if a submission already exists
+      const { data: existingSubmission } = await supabase
         .from('form_submissions')
-        .insert([{
-          form_id: submissionData.form_id,
-          branch_id: branchId,
-          submitted_by: submissionData.submitted_by,
-          submitted_by_type: submissionData.submitted_by_type,
-          submission_data: submissionData.submission_data,
-          status: submissionData.status || 'completed',
-        }])
-        .select()
+        .select('id, status')
+        .eq('form_id', submissionData.form_id)
+        .eq('submitted_by', submissionData.submitted_by)
         .single();
 
-      if (error) throw error;
-      return data;
+      if (existingSubmission) {
+        // Update existing submission
+        const { data, error } = await supabase
+          .from('form_submissions')
+          .update({
+            submission_data: submissionData.submission_data,
+            status: submissionData.status || existingSubmission.status,
+            submitted_at: submissionData.status === 'completed' ? new Date().toISOString() : undefined
+          })
+          .eq('id', existingSubmission.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { data, isUpdate: true };
+      } else {
+        // Create new submission
+        const { data, error } = await supabase
+          .from('form_submissions')
+          .insert([{
+            form_id: submissionData.form_id,
+            branch_id: branchId,
+            submitted_by: submissionData.submitted_by,
+            submitted_by_type: submissionData.submitted_by_type,
+            submission_data: submissionData.submission_data,
+            status: submissionData.status || 'completed',
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return { data, isUpdate: false };
+      }
     },
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['form-submissions', branchId] });
-      toast({
-        title: "Success",
-        description: "Form submitted successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ['my-assigned-forms'] });
+      
+      const isDraft = variables.status === 'draft';
+      const isUpdate = result.isUpdate;
+      
+      if (!isDraft) {
+        toast({
+          title: "Success",
+          description: isUpdate ? "Form updated and submitted successfully" : "Form submitted successfully",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -119,9 +152,9 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
     submissions,
     isLoading,
     error,
-    createSubmission: createSubmissionMutation.mutate,
+    createSubmission: upsertSubmissionMutation.mutate,
     updateSubmission: updateSubmissionMutation.mutate,
-    isCreating: createSubmissionMutation.isPending,
+    isCreating: upsertSubmissionMutation.isPending,
     isUpdating: updateSubmissionMutation.isPending,
   };
 };
