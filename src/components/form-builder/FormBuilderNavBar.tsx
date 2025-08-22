@@ -111,11 +111,15 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
     }, 50);
   };
 
-  // Update local state when form prop changes
+  // Update local state when form prop changes, but only when not actively editing
   React.useEffect(() => {
-    setTitle(form.title);
-    setDescription(form.description || '');
-  }, [form.title, form.description]);
+    if (!isTitleEditing) {
+      setTitle(form.title);
+    }
+    if (!isDescriptionEditing) {
+      setDescription(form.description || '');
+    }
+  }, [form.title, form.description, isTitleEditing, isDescriptionEditing]);
 
   return (
     <div className="flex flex-col space-y-4 bg-white p-4 rounded-lg shadow-sm border">
