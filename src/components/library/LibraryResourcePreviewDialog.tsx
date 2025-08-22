@@ -56,6 +56,7 @@ interface LibraryResourcePreviewDialogProps {
   onDownload?: (resource: LibraryResource) => void;
   onShare?: (resource: LibraryResource) => void;
   onDelete?: (resource: LibraryResource) => void;
+  canDelete?: boolean;
 }
 
 const categories = [
@@ -75,7 +76,8 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
   resource,
   onDownload,
   onShare,
-  onDelete
+  onDelete,
+  canDelete = true
 }) => {
   if (!resource) return null;
 
@@ -416,10 +418,12 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
             <Share2 className="h-4 w-4 mr-2" />
             Share
           </Button>
-          <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
+          {canDelete && onDelete && (
+            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          )}
           <Button onClick={handleDownload}>
             <Download className="h-4 w-4 mr-2" />
             Download

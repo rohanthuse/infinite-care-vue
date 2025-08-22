@@ -35,11 +35,13 @@ import { LibraryResourcePreviewDialog } from "./LibraryResourcePreviewDialog";
 interface LibraryResourcesListProps {
   branchId: string;
   onAddNew?: () => void;
+  canDelete?: boolean;
 }
 
 export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
   branchId,
   onAddNew,
+  canDelete = true,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -473,13 +475,15 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                                   Download
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteResource(resource.id)}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
+                              {canDelete && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteResource(resource.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -504,9 +508,10 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
             handleDownloadResource(originalResource);
           }
         }}
-        onDelete={(resource) => {
+        onDelete={canDelete ? (resource) => {
           handleDeleteResource(resource.id);
-        }}
+        } : undefined}
+        canDelete={canDelete}
       />
     </div>
   );

@@ -33,7 +33,7 @@ const ClientLibrary = () => {
       </div>
       
       <div className="p-4 md:p-6 max-w-full">
-        <LibraryResourcesList branchId={branchId} />
+        <LibraryResourcesList branchId={branchId} canDelete={false} />
       </div>
     </div>
   );
