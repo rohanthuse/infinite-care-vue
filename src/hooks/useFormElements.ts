@@ -82,7 +82,6 @@ export const useFormElements = (formId: string) => {
       // Then insert the new elements
       if (elements.length > 0) {
         const dbElements = elements.map((element, index) => ({
-          id: element.id, // Preserve element ID to maintain link with submissions
           form_id: formId,
           element_type: element.type,
           label: element.label,
