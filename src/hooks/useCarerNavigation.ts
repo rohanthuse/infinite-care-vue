@@ -53,6 +53,11 @@ export const useCarerNavigation = () => {
       icon: "FileText" 
     },
     { 
+      name: "Library", 
+      path: createCarerPath("/library"), 
+      icon: "BookOpen" 
+    },
+    { 
       name: "Tasks", 
       path: createCarerPath("/tasks"), 
       icon: "ClipboardList" 

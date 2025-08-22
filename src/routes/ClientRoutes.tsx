@@ -15,6 +15,7 @@ import ClientHealthMonitoring from "@/pages/client/ClientHealthMonitoring";
 import ClientAssignedForms from "@/pages/client/ClientAssignedForms";
 import ClientEventsLogs from "@/pages/client/ClientEventsLogs";
 import ClientFillForm from "@/pages/client/ClientFillForm";
+import ClientLibrary from "@/pages/client/ClientLibrary";
 import { Suspense } from "react";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
@@ -72,6 +73,7 @@ const ClientRoutes = () => [
       <Route path="care-plans" element={<ClientCarePlans />} />
       <Route path="forms" element={<ClientAssignedForms />} />
       <Route path="forms/:formId" element={<ClientFillForm />} />
+      <Route path="library" element={<ClientLibrary />} />
       <Route path="events-logs" element={<ClientEventsLogs />} />
       <Route path="reviews" element={<ClientReviews />} />
       <Route path="payments" element={<ClientPayments />} />
