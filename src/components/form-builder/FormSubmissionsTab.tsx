@@ -252,7 +252,7 @@ export const FormSubmissionsTab: React.FC<FormSubmissionsTabProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
                       <p className="font-medium truncate">
-                        Submission #{submission.id.slice(-8)}
+                        {submission.submitter_name || 'Submission'}
                       </p>
                       <Badge className={getStatusColor(submission.status)}>
                         {submission.status.replace('_', ' ')}
