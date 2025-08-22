@@ -7,6 +7,7 @@ import { Search, FileText, Calendar, Download, Upload, Eye, Filter, AlertCircle,
 import { format } from "date-fns";
 import { useClientDocuments, useUploadClientDocument, useUpdateClientDocument, useDeleteClientDocument, useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
 import { useClientSharedDocuments } from "@/hooks/useAdminSharedDocuments";
+import { useClientAuth } from "@/hooks/useClientAuth";
 import { AdminSharedDocuments } from "@/components/documents/AdminSharedDocuments";
 import { UploadDocumentDialog } from "@/components/clients/dialogs/UploadDocumentDialog";
 import { EditDocumentDialog } from "@/components/clients/dialogs/EditDocumentDialog";
@@ -21,13 +22,13 @@ const ClientDocuments = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
 
-  // Get authenticated client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    return clientId || '';
-  };
-
-  const clientId = getClientId();
+  // Get authenticated client information
+  const { 
+    isAuthenticated, 
+    clientId, 
+    isLoading: clientAuthLoading, 
+    error: clientAuthError 
+  } = useClientAuth();
   const { data: documents = [], isLoading, error } = useClientDocuments(clientId);
   const { data: sharedDocuments = [], isLoading: isLoadingShared } = useClientSharedDocuments(clientId);
   const uploadDocumentMutation = useUploadClientDocument();
@@ -232,13 +233,27 @@ const ClientDocuments = () => {
     </div>
   );
 
-  if (!clientId) {
+  if (clientAuthLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !clientId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Authentication Required</h3>
-          <p className="text-gray-500">Please log in to view your documents.</p>
+          <p className="text-gray-500">Please log in as a client to view your documents.</p>
+          {clientAuthError && (
+            <p className="text-red-500 text-sm mt-2">Error: {clientAuthError.message}</p>
+          )}
         </div>
       </div>
     );
