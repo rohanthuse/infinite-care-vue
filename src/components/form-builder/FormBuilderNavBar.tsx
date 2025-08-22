@@ -32,6 +32,7 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
   const [description, setDescription] = useState<string>(form.description || '');
   const [isTitleEditing, setIsTitleEditing] = useState<boolean>(false);
   const [isDescriptionEditing, setIsDescriptionEditing] = useState<boolean>(false);
+  const [isSavingLocal, setIsSavingLocal] = useState<boolean>(false);
 
   const handleBack = () => {
     const source = searchParams.get('source');
@@ -91,35 +92,34 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
   const handleSave = () => {
     console.log('FormBuilderNavBar - handleSave called with:', { title, description });
     
-    // Force blur any active editing fields and synchronize state immediately
-    if (isTitleEditing || isDescriptionEditing) {
-      flushSync(() => {
-        setIsTitleEditing(false);
-        setIsDescriptionEditing(false);
-      });
-      
-      // Ensure parent state is updated immediately
-      flushSync(() => {
-        onFormChange(title, description);
-      });
-    }
+    setIsSavingLocal(true);
     
-    // Add a small delay to ensure state updates are processed
+    // First propagate changes to parent
+    onFormChange(title, description);
+    
+    // Then end edit mode
+    flushSync(() => {
+      setIsTitleEditing(false);
+      setIsDescriptionEditing(false);
+    });
+    
+    // Add a small delay to ensure state updates are processed, then call save
     setTimeout(() => {
       console.log('FormBuilderNavBar - Calling onSave with:', { title, description });
       onSave(title, description);
+      setIsSavingLocal(false);
     }, 50);
   };
 
-  // Update local state when form prop changes, but only when not actively editing
+  // Update local state when form prop changes, but only when not actively editing or saving
   React.useEffect(() => {
-    if (!isTitleEditing) {
+    if (!isTitleEditing && !isSavingLocal) {
       setTitle(form.title);
     }
-    if (!isDescriptionEditing) {
+    if (!isDescriptionEditing && !isSavingLocal) {
       setDescription(form.description || '');
     }
-  }, [form.title, form.description, isTitleEditing, isDescriptionEditing]);
+  }, [form.title, form.description, isTitleEditing, isDescriptionEditing, isSavingLocal]);
 
   return (
     <div className="flex flex-col space-y-4 bg-white p-4 rounded-lg shadow-sm border">
@@ -166,7 +166,7 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
             className="text-xl font-bold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded" 
             onClick={() => setIsTitleEditing(true)}
           >
-            {title}
+            {title || 'Click to add title...'}
           </h1>
         )}
         

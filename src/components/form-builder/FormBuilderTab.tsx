@@ -91,7 +91,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
     
     const newFormData = {
       title: 'Untitled Form',
-      description: 'New form description',
+      description: '',
       created_by: userId,
       published: false,
       requires_review: false,
