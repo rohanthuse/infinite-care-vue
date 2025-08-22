@@ -17,16 +17,20 @@ const UnifiedLogin = () => {
 
   const detectUserOrganization = async (userId: string) => {
     try {
-      // First check organization_members (for admins)
-      const { data: membership } = await supabase
+      console.log('[detectUserOrganization] Checking organization for user:', userId);
+      
+      // First check organization_members (for regular org members and system users)
+      const { data: membership, error: membershipError } = await supabase
         .from('organization_members')
         .select('organization_id, organizations(slug)')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .single();
+        .maybeSingle();
+
+      console.log('[detectUserOrganization] Organization membership result:', { membership, membershipError });
 
       if (membership?.organizations?.slug) {
-        console.log('Found organization membership:', membership.organizations.slug);
+        console.log('[detectUserOrganization] Found organization via membership:', membership.organizations.slug);
         return membership.organizations.slug;
       }
 
@@ -36,67 +40,91 @@ const UnifiedLogin = () => {
         .select('id, branch_id, status')
         .eq('auth_user_id', userId)
         .eq('status', 'Active')
-        .single();
+        .maybeSingle();
 
       if (staffError && staffError.code !== 'PGRST116') {
-        console.error('Error querying staff table:', staffError);
+        console.error('[detectUserOrganization] Error querying staff table:', staffError);
       }
       
-      console.log('Staff query result:', { staffMember, staffError });
+      console.log('[detectUserOrganization] Staff query result:', { staffMember, staffError });
 
       if (staffMember?.branch_id) {
         const { data: staffBranch } = await supabase
           .from('branches')
           .select('organization_id')
           .eq('id', staffMember.branch_id)
-          .single();
+          .maybeSingle();
 
         if (staffBranch?.organization_id) {
           const { data: staffOrg } = await supabase
             .from('organizations')
             .select('slug')
             .eq('id', staffBranch.organization_id)
-            .single();
+            .maybeSingle();
 
           if (staffOrg?.slug) {
-            console.log('Found staff organization:', staffOrg.slug);
+            console.log('[detectUserOrganization] Found staff organization:', staffOrg.slug);
             return staffOrg.slug;
           }
         }
       }
 
-      // Finally check clients table (for clients)
-      const { data: clientMember } = await supabase
+      // Check clients table (for clients)
+      const { data: clientMember, error: clientError } = await supabase
         .from('clients')
         .select('id, branch_id')
         .eq('auth_user_id', userId)
-        .single();
+        .maybeSingle();
+
+      if (clientError && clientError.code !== 'PGRST116') {
+        console.error('[detectUserOrganization] Error querying clients table:', clientError);
+      }
 
       if (clientMember?.branch_id) {
         const { data: clientBranch } = await supabase
           .from('branches')
           .select('organization_id')
           .eq('id', clientMember.branch_id)
-          .single();
+          .maybeSingle();
 
         if (clientBranch?.organization_id) {
           const { data: clientOrg } = await supabase
             .from('organizations')
             .select('slug')
             .eq('id', clientBranch.organization_id)
-            .single();
+            .maybeSingle();
 
           if (clientOrg?.slug) {
-            console.log('Found client organization:', clientOrg.slug);
+            console.log('[detectUserOrganization] Found client organization:', clientOrg.slug);
             return clientOrg.slug;
           }
         }
       }
 
-      console.log('No organization found for user:', userId);
+      // Final fallback: check system_user_organizations via system_users table
+      const { data: systemUser, error: systemUserError } = await supabase
+        .from('system_users')
+        .select(`
+          system_user_organizations(
+            organization_id,
+            organizations(slug)
+          )
+        `)
+        .eq('auth_user_id', userId)
+        .maybeSingle();
+
+      console.log('[detectUserOrganization] System user result:', { systemUser, systemUserError });
+
+      if (systemUser?.system_user_organizations?.[0]?.organizations?.slug) {
+        const orgSlug = systemUser.system_user_organizations[0].organizations.slug;
+        console.log('[detectUserOrganization] Found organization via system user:', orgSlug);
+        return orgSlug;
+      }
+
+      console.log('[detectUserOrganization] No organization found for user:', userId);
       return null;
     } catch (error) {
-      console.error('Error detecting organization:', error);
+      console.error('[detectUserOrganization] Error detecting organization:', error);
       return null;
     }
   };
