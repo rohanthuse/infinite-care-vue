@@ -313,7 +313,7 @@ const CarerDocuments: React.FC = () => {
         <AdminSharedDocuments
           documents={sharedDocuments}
           isLoading={isLoadingShared}
-          title="Documents Shared with Me"
+          title="Documents Shared by Admin"
           emptyMessage="No documents have been shared with you by the admin."
         />
       </div>
