@@ -24,7 +24,28 @@ import { supabase } from '@/integrations/supabase/client';
 // Helper function to persist form assignees to database
 const persistFormAssignees = async (formId: string, assignees: any[], assignedBy: string) => {
   try {
-    const assigneeRecords = assignees.map(assignee => ({
+    // Filter to only include client and staff types (exclude 'branch_admin' etc.)
+    const validAssignees = assignees.filter(assignee => 
+      assignee.type === 'client' || assignee.type === 'carer' || assignee.type === 'staff'
+    );
+
+    if (validAssignees.length === 0) {
+      console.log('No valid assignees to persist');
+      return;
+    }
+
+    // Delete existing assignees for this form to ensure idempotency
+    const { error: deleteError } = await supabase
+      .from('form_assignees')
+      .delete()
+      .eq('form_id', formId);
+
+    if (deleteError) {
+      console.error('Error deleting existing form assignees:', deleteError);
+      throw deleteError;
+    }
+
+    const assigneeRecords = validAssignees.map(assignee => ({
       form_id: formId,
       assignee_id: assignee.id,
       assignee_type: assignee.type === 'client' ? 'client' : 'staff', // Map 'carer' to 'staff'
@@ -43,7 +64,7 @@ const persistFormAssignees = async (formId: string, assignees: any[], assignedBy
       throw error;
     }
 
-    console.log('Form assignees persisted successfully');
+    console.log(`Form assignees persisted successfully: ${assigneeRecords.length} records`);
   } catch (error) {
     console.error('Failed to persist form assignees:', error);
     throw error;
@@ -339,6 +360,8 @@ const FormBuilder = () => {
     console.log('Publishing form with assignees:', assignees);
 
     try {
+      let formIdToUse = form.id;
+      
       if (formId) {
         // Update existing form to published
         updateForm({
@@ -354,6 +377,8 @@ const FormBuilder = () => {
           formId: form.id,
           elements: form.elements
         });
+        
+        formIdToUse = form.id;
       } else {
         // Create and publish new form
         console.log('Creating new form with:', form.title, form.description);
@@ -373,11 +398,6 @@ const FormBuilder = () => {
           });
         }
 
-        // Persist assignees for the new form
-        if (assignees.length > 0) {
-          await persistFormAssignees(createdForm.id, assignees, userId);
-        }
-
         // Update local form state with the created form data
         setForm(prev => ({
           ...prev,
@@ -385,11 +405,13 @@ const FormBuilder = () => {
           title: createdForm.title,
           description: createdForm.description || ''
         }));
+        
+        formIdToUse = createdForm.id;
       }
       
-      // Persist assignees to the database
+      // Persist assignees to the database (for both new and existing forms)
       if (assignees.length > 0) {
-        await persistFormAssignees(form.id, assignees, userId);
+        await persistFormAssignees(formIdToUse, assignees, userId);
       }
 
       setForm(prev => ({
