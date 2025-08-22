@@ -24,13 +24,13 @@ const ClientAssignedForms = () => {
   // State for submission details dialog
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoadingSubmission, setIsLoadingSubmission] = useState(false);
+  const [loadingByFormId, setLoadingByFormId] = useState({});
 
   // Function to fetch and view submission details
   const viewSubmission = async (formId) => {
     if (!authUserId) return;
     
-    setIsLoadingSubmission(true);
+    setLoadingByFormId(prev => ({ ...prev, [formId]: true }));
     try {
       const { data: submission, error } = await supabase
         .from('form_submissions')
@@ -44,19 +44,29 @@ const ClientAssignedForms = () => {
         `)
         .eq('form_id', formId)
         .eq('submitted_by', authUserId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching submission:', error);
         return;
       }
 
-      setSelectedSubmission(submission);
-      setIsDialogOpen(true);
+      if (submission) {
+        setSelectedSubmission(submission);
+        setIsDialogOpen(true);
+      }
     } catch (error) {
       console.error('Error fetching submission:', error);
     } finally {
-      setIsLoadingSubmission(false);
+      setLoadingByFormId(prev => ({ ...prev, [formId]: false }));
+    }
+  };
+
+  // Handle dialog close
+  const handleDialogClose = (open) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setSelectedSubmission(null);
     }
   };
 
@@ -175,9 +185,9 @@ const ClientAssignedForms = () => {
                         className="w-full" 
                         size="sm"
                         onClick={() => viewSubmission(form.id)}
-                        disabled={isLoadingSubmission}
+                        disabled={loadingByFormId[form.id]}
                       >
-                        {isLoadingSubmission ? 'Loading...' : 'View Submission'}
+                        {loadingByFormId[form.id] ? 'Loading...' : 'View Submission'}
                       </Button>
                     ) : (
                       <Button 
@@ -185,9 +195,9 @@ const ClientAssignedForms = () => {
                         className="w-full" 
                         size="sm"
                         onClick={() => viewSubmission(form.id)}
-                        disabled={isLoadingSubmission}
+                        disabled={loadingByFormId[form.id]}
                       >
-                        {isLoadingSubmission ? 'Loading...' : 'View Status'}
+                        {loadingByFormId[form.id] ? 'Loading...' : 'View Status'}
                       </Button>
                     )}
                   </div>
@@ -199,7 +209,7 @@ const ClientAssignedForms = () => {
       )}
 
       {/* Submission Details Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
