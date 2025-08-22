@@ -5,7 +5,7 @@ import ClientHeader from "@/components/ClientHeader";
 import { 
   Home, Calendar, FileText, 
   CreditCard, User, File, MessageCircle, Star,
-  HelpCircle, BarChart, Activity, AlertTriangle
+  HelpCircle, BarChart, Activity, AlertTriangle, BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -27,6 +27,7 @@ const ClientDashboard = () => {
     { label: "Appointments", icon: Calendar, path: `/${tenantSlug}/client-dashboard/appointments` },
     { label: "Care Plans", icon: FileText, path: `/${tenantSlug}/client-dashboard/care-plans` },
     { label: "My Forms", icon: FileText, path: `/${tenantSlug}/client-dashboard/forms` },
+    { label: "Library", icon: BookOpen, path: `/${tenantSlug}/client-dashboard/library` },
     { label: "Events & Logs", icon: AlertTriangle, path: `/${tenantSlug}/client-dashboard/events-logs` },
     { label: "Reviews", icon: Star, path: `/${tenantSlug}/client-dashboard/reviews` },
     { label: "Payments", icon: CreditCard, path: `/${tenantSlug}/client-dashboard/payments` },
@@ -50,6 +51,8 @@ const ClientDashboard = () => {
       setPageTitle("Care Plans");
     } else if (path.includes("/forms")) {
       setPageTitle("My Forms");
+    } else if (path.includes("/library")) {
+      setPageTitle("Library");
     } else if (path.includes("/events-logs")) {
       setPageTitle("Events & Logs");
     } else if (path.includes("/reviews")) {
