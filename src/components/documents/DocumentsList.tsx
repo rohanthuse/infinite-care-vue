@@ -29,6 +29,7 @@ export const DocumentsList: React.FC<DocumentsListProps> = ({ branchId }) => {
       onDownloadDocument={downloadDocument}
       onDeleteDocument={handleDeleteDocument}
       isLoading={isLoading}
+      branchId={branchId}
     />
   );
 };

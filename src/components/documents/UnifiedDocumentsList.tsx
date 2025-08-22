@@ -16,7 +16,8 @@ import {
   MoreHorizontal,
   AlertCircle,
   CheckCircle,
-  Database
+  Database,
+  Share
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnifiedDocument } from "@/hooks/useUnifiedDocuments";
+import { ShareWithCarerDialog } from "./ShareWithCarerDialog";
 
 interface UnifiedDocumentsListProps {
   documents: UnifiedDocument[];
@@ -35,6 +37,8 @@ interface UnifiedDocumentsListProps {
   onEditDocument?: (document: UnifiedDocument) => void;
   onDeleteDocument: (documentId: string) => void;
   isLoading?: boolean;
+  branchId: string;
+  onDocumentShared?: () => void;
 }
 
 export function UnifiedDocumentsList({ 
@@ -43,13 +47,17 @@ export function UnifiedDocumentsList({
   onDownloadDocument, 
   onEditDocument,
   onDeleteDocument,
-  isLoading = false 
+  isLoading = false,
+  branchId,
+  onDocumentShared
 }: UnifiedDocumentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [documentToShare, setDocumentToShare] = useState<UnifiedDocument | null>(null);
 
   // Get unique values for filters, filtering out empty/null/undefined values
   const { categories, entities, sources } = useMemo(() => {
@@ -158,6 +166,15 @@ export function UnifiedDocumentsList({
            doc.file_path !== 'null' && 
            doc.file_path !== 'undefined' &&
            doc.has_file !== false;
+  };
+
+  const handleShareWithCarer = (doc: UnifiedDocument) => {
+    setDocumentToShare(doc);
+    setShareDialogOpen(true);
+  };
+
+  const handleShareSuccess = () => {
+    onDocumentShared?.();
   };
 
   if (isLoading) {
@@ -383,6 +400,13 @@ export function UnifiedDocumentsList({
                                   File not available
                                 </DropdownMenuItem>
                               )}
+                              {/* Share with Carer action for client documents */}
+                              {doc.source_table === 'client_documents' && (
+                                <DropdownMenuItem onClick={() => handleShareWithCarer(doc)}>
+                                  <Share className="mr-2 h-4 w-4" />
+                                  Share with Carer
+                                </DropdownMenuItem>
+                              )}
                               {onEditDocument && doc.source_table === 'documents' && (
                                 <DropdownMenuItem onClick={() => onEditDocument(doc)}>
                                   <Edit className="mr-2 h-4 w-4" />
@@ -410,6 +434,23 @@ export function UnifiedDocumentsList({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Share with Carer Dialog */}
+      <ShareWithCarerDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        document={documentToShare ? {
+          id: documentToShare.id,
+          name: documentToShare.name,
+          file_path: documentToShare.file_path!,
+          type: documentToShare.type,
+          category: documentToShare.category,
+          client_id: documentToShare.related_entity === 'Client' ? 
+            documentToShare.client_name ? documentToShare.id : undefined : undefined
+        } : null}
+        branchId={branchId}
+        onSuccess={handleShareSuccess}
+      />
     </div>
   );
 }

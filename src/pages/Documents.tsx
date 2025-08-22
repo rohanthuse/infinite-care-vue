@@ -119,6 +119,7 @@ const Documents = () => {
               onDeleteDocument={handleDeleteDocument}
               onDownloadDocument={downloadDocument}
               onViewDocument={viewDocument}
+              branchId={id || ""}
             />
           </TabsContent>
           

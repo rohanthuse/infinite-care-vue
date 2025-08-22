@@ -72,10 +72,18 @@ export const useCarerSharedDocuments = (carerId: string) => {
 
 // Shared hook for document actions
 export const useSharedDocumentActions = () => {
+  // Determine bucket based on file path prefix
+  const getBucketName = (filePath: string) => {
+    if (filePath.startsWith('client-documents/')) return 'client-documents';
+    if (filePath.startsWith('agreement-files/')) return 'agreement-files';
+    return 'documents'; // default
+  };
+
   const viewDocument = async (filePath: string) => {
     try {
+      const bucket = getBucketName(filePath);
       const { data } = supabase.storage
-        .from('documents')
+        .from(bucket)
         .getPublicUrl(filePath);
       
       if (data?.publicUrl) {
@@ -88,8 +96,9 @@ export const useSharedDocumentActions = () => {
 
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
+      const bucket = getBucketName(filePath);
       const { data, error } = await supabase.storage
-        .from('documents')
+        .from(bucket)
         .download(filePath);
 
       if (error) throw error;
