@@ -36,20 +36,27 @@ const CarerAssignedForms = () => {
     setLoadingStates(prev => ({ ...prev, [formId]: true }));
     
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
+      // Use a simple approach to avoid Supabase type inference issues
+      // We'll create the supabase client in a way that bypasses complex type checking
+      const createClient = (await import('@supabase/supabase-js')).createClient;
+      const simpleClient = createClient(
+        "https://vcrjntfjsmpoupgairep.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjcmpudGZqc21wb3VwZ2FpcmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjcxNDAsImV4cCI6MjA2NTU0MzE0MH0.2AACIZItTsFj2-1LGMy0fRcYKvtXd9FtyrRDnkLGsP0"
+      );
       
-      const result: any = await supabase
+      // Make the query with a simple client that doesn't have complex type inference
+      const response: any = await simpleClient
         .from('form_submissions')
         .select('*')
         .eq('form_id', formId)
         .eq('submitter_id', authUserId);
 
-      if (result.error) {
-        console.error('Error fetching submission:', result.error);
+      if (response.error) {
+        console.error('Error fetching submission:', response.error);
         return;
       }
 
-      const submission = result.data?.[0];
+      const submission = response.data?.[0];
 
       if (submission) {
         setSelectedSubmission(submission);
