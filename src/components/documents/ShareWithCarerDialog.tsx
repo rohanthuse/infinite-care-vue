@@ -26,6 +26,8 @@ interface ShareWithCarerDialogProps {
     type: string;
     category: string;
     client_id?: string;
+    uploaded_by?: string;
+    uploaded_by_name?: string;
   } | null;
   branchId: string;
   onSuccess: () => void;
@@ -60,7 +62,7 @@ export function ShareWithCarerDialog({
 
     setIsSharing(true);
     try {
-      // Create document records for each selected staff member
+      // Create document records for each selected staff member using Promise.allSettled for proper error handling
       const sharePromises = selectedStaffIds.map(staffId => 
         supabase
           .from('documents')
@@ -75,19 +77,29 @@ export function ShareWithCarerDialog({
             branch_id: branchId,
             status: 'active',
             access_level: 'staff',
-            uploaded_by_name: 'Admin (Shared)',
+            uploaded_by: document.uploaded_by,
+            uploaded_by_name: document.uploaded_by_name || 'Admin (Shared)',
           })
       );
 
-      await Promise.all(sharePromises);
-      
-      toast.success(`Document shared with ${selectedStaffIds.length} carer(s)`);
-      onSuccess();
-      onOpenChange(false);
-      
-      // Reset form
-      setSelectedStaffIds([]);
-      setNote('');
+      const results = await Promise.allSettled(sharePromises);
+      const successful = results.filter(result => result.status === 'fulfilled' && !result.value.error);
+      const failed = results.filter(result => result.status === 'rejected' || (result.status === 'fulfilled' && result.value.error));
+
+      if (successful.length > 0) {
+        toast.success(`Document shared with ${successful.length} carer(s)`);
+        onSuccess();
+        onOpenChange(false);
+        
+        // Reset form
+        setSelectedStaffIds([]);
+        setNote('');
+      }
+
+      if (failed.length > 0) {
+        console.error('Some shares failed:', failed);
+        toast.error(`Failed to share with ${failed.length} carer(s). Please try again.`);
+      }
     } catch (error) {
       console.error('Error sharing document:', error);
       toast.error('Failed to share document');

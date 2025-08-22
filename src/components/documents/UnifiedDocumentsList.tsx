@@ -401,7 +401,7 @@ export function UnifiedDocumentsList({
                                 </DropdownMenuItem>
                               )}
                               {/* Share with Carer action for client documents */}
-                              {doc.source_table === 'client_documents' && (
+                              {(doc.source_table === 'client_documents' || doc.source_table === 'documents') && (
                                 <DropdownMenuItem onClick={() => handleShareWithCarer(doc)}>
                                   <Share className="mr-2 h-4 w-4" />
                                   Share with Carer
