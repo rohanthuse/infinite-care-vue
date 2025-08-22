@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 
 const CarerAssignedForms = () => {
   const { user } = useAuth();
+  const { navigateToCarerPage } = useCarerNavigation();
   const authUserId = user?.id;
   
   const { data: assignedForms, isLoading, error } = useMyAssignedForms(
@@ -123,15 +125,35 @@ const CarerAssignedForms = () => {
 
                   <div className="pt-2">
                     {form.submission_status === 'not_submitted' ? (
-                      <Button className="w-full" size="sm">
+                      <Button 
+                        className="w-full" 
+                        size="sm"
+                        onClick={() => navigateToCarerPage(`/forms/${form.id}`)}
+                      >
                         Fill Out Form
                       </Button>
                     ) : form.submission_status === 'completed' ? (
-                      <Button variant="outline" className="w-full" size="sm">
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Navigate to view submission page
+                          console.log('View submission for form:', form.id);
+                        }}
+                      >
                         View Submission
                       </Button>
                     ) : (
-                      <Button variant="secondary" className="w-full" size="sm">
+                      <Button 
+                        variant="secondary" 
+                        className="w-full" 
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Navigate to view status page  
+                          console.log('View status for form:', form.id);
+                        }}
+                      >
                         View Status
                       </Button>
                     )}

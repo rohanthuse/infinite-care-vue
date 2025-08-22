@@ -17,6 +17,7 @@ import CarerAttendance from "@/pages/carer/CarerAttendance";
 import CarerDocuments from "@/pages/carer/CarerDocuments";
 import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
 import CarerAssignedForms from "@/pages/carer/CarerAssignedForms";
+import CarerFillForm from "@/pages/carer/CarerFillForm";
 
 const RequireCarerAuth = () => {
   const { isAuthenticated, loading } = useCarerAuthSafe();
@@ -51,6 +52,7 @@ const CarerRoutes = () => [
       <Route path="appointments" element={<CarerAppointments />} />
       <Route path="careplans" element={<CarerCarePlans />} />
       <Route path="forms" element={<CarerAssignedForms />} />
+      <Route path="forms/:formId" element={<CarerFillForm />} />
       <Route path="tasks" element={<CarerTasks />} />
       <Route path="news2" element={<CarerNews2 />} />
       <Route path="reports" element={<CarerReports />} />
