@@ -300,8 +300,8 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
   // Get current form details
   const currentForm = forms?.find(f => f.id === (formId || submission.form_id));
   
-  // Determine if the review section should be visible
-  const shouldShowReviewSection = (userRoles?.isSuperAdmin || userRoles?.isBranchAdmin) || currentForm?.requires_review;
+  // Determine if the review section should be visible - only for admins
+  const shouldShowReviewSection = userRoles?.isSuperAdmin || userRoles?.isBranchAdmin;
   
   // Determine if the review controls should be disabled
   const isReviewDisabled = !userRoles?.isSuperAdmin && !userRoles?.isBranchAdmin && ['approved', 'rejected'].includes(submission.status);

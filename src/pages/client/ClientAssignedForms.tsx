@@ -10,11 +10,13 @@ import { FileText, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-reac
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { FormSubmissionDetail } from '@/components/form-builder/FormSubmissionDetail';
+import { useToast } from '@/hooks/use-toast';
 
 const ClientAssignedForms = () => {
   const { data: authData } = useSimpleClientAuth();
   const authUserId = authData?.user?.id;
   const { navigateToClientPage } = useClientNavigation();
+  const { toast } = useToast();
   
   const { data: assignedForms, isLoading, error } = useMyAssignedForms(
     authUserId || '', 
@@ -54,6 +56,12 @@ const ClientAssignedForms = () => {
       if (submission) {
         setSelectedSubmission(submission);
         setIsDialogOpen(true);
+      } else {
+        toast({
+          title: 'No submission found',
+          description: 'You haven\'t submitted this form yet.',
+          variant: 'default',
+        });
       }
     } catch (error) {
       console.error('Error fetching submission:', error);
