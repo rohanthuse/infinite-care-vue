@@ -403,6 +403,21 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
                 const element = elementMap[key];
                 const displayLabel = element?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
                 
+                // Check if key looks like a UUID and element is a simple input type
+                const isUuidKey = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+                const isSimpleInput = element?.type && ['text', 'textarea', 'number', 'email', 'url'].includes(element.type);
+                
+                // For simple inputs with UUID keys, just show the value without label
+                if (isUuidKey && isSimpleInput) {
+                  return (
+                    <div key={key} className="border-b pb-3 last:border-b-0">
+                      <div className="pl-0">
+                        {renderFieldValue(key, value, element?.type)}
+                      </div>
+                    </div>
+                  );
+                }
+                
                 return (
                   <div key={key} className="border-b pb-3 last:border-b-0">
                     <div className="flex flex-col gap-2">
