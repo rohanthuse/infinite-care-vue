@@ -36,30 +36,57 @@ const CarerAssignedForms = () => {
     setLoadingStates(prev => ({ ...prev, [formId]: true }));
     
     try {
-      // Use a simple approach to avoid Supabase type inference issues
-      // We'll create the supabase client in a way that bypasses complex type checking
-      const createClient = (await import('@supabase/supabase-js')).createClient;
-      const simpleClient = createClient(
-        "https://vcrjntfjsmpoupgairep.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjcmpudGZqc21wb3VwZ2FpcmVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk5NjcxNDAsImV4cCI6MjA2NTU0MzE0MH0.2AACIZItTsFj2-1LGMy0fRcYKvtXd9FtyrRDnkLGsP0"
-      );
+      const { supabase } = await import('@/integrations/supabase/client');
       
-      // Make the query with a simple client that doesn't have complex type inference
-      const response: any = await simpleClient
-        .from('form_submissions')
-        .select('*')
-        .eq('form_id', formId)
-        .eq('submitter_id', authUserId);
+      // First get the staff record ID for the current auth user
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('id')
+        .eq('auth_user_id', authUserId)
+        .single();
 
-      if (response.error) {
-        console.error('Error fetching submission:', response.error);
+      if (staffError || !staffData) {
+        console.error('Error fetching staff record:', staffError);
+        toast({
+          title: 'Error',
+          description: 'Unable to verify your staff record.',
+          variant: 'destructive',
+        });
         return;
       }
 
-      const submission = response.data?.[0];
+      const staffId = staffData.id;
+
+      // Now fetch the form submission using the staff ID
+      const { data: submission, error: submissionError } = await supabase
+        .from('form_submissions')
+        .select('*')
+        .eq('form_id', formId)
+        .eq('submitted_by', staffId)
+        .maybeSingle();
+
+      if (submissionError) {
+        console.error('Error fetching submission:', submissionError);
+        toast({
+          title: 'Error',
+          description: 'Unable to fetch form submission.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       if (submission) {
-        setSelectedSubmission(submission);
+        // Also fetch form details for the dialog
+        const { data: formData } = await supabase
+          .from('forms')
+          .select('title, description')
+          .eq('id', formId)
+          .single();
+
+        setSelectedSubmission({
+          ...submission,
+          form: formData
+        });
         setIsDialogOpen(true);
       } else {
         toast({
@@ -70,6 +97,11 @@ const CarerAssignedForms = () => {
       }
     } catch (error) {
       console.error('Error fetching submission:', error);
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
     } finally {
       setLoadingStates(prev => ({ ...prev, [formId]: false }));
     }
@@ -230,6 +262,7 @@ const CarerAssignedForms = () => {
             <FormSubmissionDetail
               submission={selectedSubmission}
               branchId={carerContext?.branchInfo?.id || ''}
+              formId={selectedSubmission.form_id}
             />
           )}
         </DialogContent>
