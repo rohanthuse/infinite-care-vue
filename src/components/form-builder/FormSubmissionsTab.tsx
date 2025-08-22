@@ -298,7 +298,7 @@ export const FormSubmissionsTab: React.FC<FormSubmissionsTabProps> = ({
                       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>
-                            Submission #{submission.id.slice(-8)} Details
+                            Submission Details — {submission.submitter_name || `#${submission.id.slice(-8)}`}
                           </DialogTitle>
                         </DialogHeader>
                         <FormSubmissionDetail 
