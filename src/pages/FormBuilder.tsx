@@ -96,7 +96,18 @@ const FormBuilder = () => {
     isSaving: isSavingElements 
   } = useFormElements(formId || '');
 
-  const [activeTab, setActiveTab] = useState<string>('design');
+  // Get initial tab from URL params or localStorage
+  const getInitialTab = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabFromUrl = urlParams.get('tab');
+    if (tabFromUrl && ['design', 'validation', 'preview', 'advanced', 'submissions', 'publish'].includes(tabFromUrl)) {
+      return tabFromUrl;
+    }
+    // Fallback to localStorage for the last opened tab
+    return localStorage.getItem(`form-builder-last-tab-${formId}`) || 'design';
+  };
+  
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab());
   const [isFormDirty, setIsFormDirty] = useState<boolean>(false);
   const [isLoadingForm, setIsLoadingForm] = useState<boolean>(!!formId);
 
@@ -248,6 +259,16 @@ const FormBuilder = () => {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    
+    // Update URL without page refresh
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', value);
+    window.history.replaceState({}, '', url.toString());
+    
+    // Store last opened tab in localStorage
+    if (formId) {
+      localStorage.setItem(`form-builder-last-tab-${formId}`, value);
+    }
   };
 
   const handleFormChange = (title: string, description: string) => {

@@ -123,6 +123,13 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
     navigate(fullPath);
   };
 
+  const handleViewSubmissions = (formId: string) => {
+    const fullPath = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?tab=submissions&source=forms`
+      : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/form-builder/${formId}?tab=submissions&source=forms`;
+    navigate(fullPath);
+  };
+
   const handleDuplicateForm = (formId: string) => {
     // For now, we'll use a placeholder user ID. In a real implementation, this would come from auth context
     duplicateForm({ formId, userId: 'current-user-id' });
@@ -246,11 +253,23 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
-                        {submissionCount}
-                      </Badge>
-                    </TableCell>
+                     <TableCell>
+                       <div className="flex items-center gap-2">
+                         <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                           {submissionCount}
+                         </Badge>
+                         {submissionCount > 0 && (
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="h-6 px-2 text-xs"
+                             onClick={() => handleViewSubmissions(form.id)}
+                           >
+                             View
+                           </Button>
+                         )}
+                       </div>
+                     </TableCell>
                     <TableCell>
                       {form.requires_review ? (
                         <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
@@ -274,14 +293,20 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleViewForm(form.id)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditForm(form.id)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleViewForm(form.id)}>
+                             <Eye className="mr-2 h-4 w-4" />
+                             View
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleEditForm(form.id)}>
+                             <Edit className="mr-2 h-4 w-4" />
+                             Edit
+                           </DropdownMenuItem>
+                           {submissionCount > 0 && (
+                             <DropdownMenuItem onClick={() => handleViewSubmissions(form.id)}>
+                               <FileText className="mr-2 h-4 w-4" />
+                               View Submissions ({submissionCount})
+                             </DropdownMenuItem>
+                           )}
                           <DropdownMenuItem 
                             onClick={() => handleDuplicateForm(form.id)}
                             disabled={isDuplicating}
@@ -345,10 +370,22 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                       <div className="text-gray-500">Assignees:</div>
                       <div className="font-medium">{getAssigneeCount(form.id)}</div>
                     </div>
-                    <div className="flex justify-between">
-                      <div className="text-gray-500">Submissions:</div>
-                      <div className="font-medium">{submissionCount}</div>
-                    </div>
+                     <div className="flex justify-between">
+                       <div className="text-gray-500">Submissions:</div>
+                       <div className="flex items-center gap-2">
+                         <span className="font-medium">{submissionCount}</span>
+                         {submissionCount > 0 && (
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="h-5 px-1 text-xs"
+                             onClick={() => handleViewSubmissions(form.id)}
+                           >
+                             View
+                           </Button>
+                         )}
+                       </div>
+                     </div>
                     <div className="flex justify-between">
                       <div className="text-gray-500">Review Required:</div>
                       <div className="font-medium">{form.requires_review ? 'Yes' : 'No'}</div>
