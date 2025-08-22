@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, FileText, Calendar, Download, Upload, Eye, Filter, AlertCircle, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useClientDocuments, useUploadClientDocument, useUpdateClientDocument, useDeleteClientDocument, useViewClientDocument, useDownloadClientDocument } from "@/hooks/useClientDocuments";
+import { useClientSharedDocuments } from "@/hooks/useAdminSharedDocuments";
+import { AdminSharedDocuments } from "@/components/documents/AdminSharedDocuments";
 import { UploadDocumentDialog } from "@/components/clients/dialogs/UploadDocumentDialog";
 import { EditDocumentDialog } from "@/components/clients/dialogs/EditDocumentDialog";
 import { DeleteDocumentDialog } from "@/components/clients/dialogs/DeleteDocumentDialog";
@@ -27,6 +29,7 @@ const ClientDocuments = () => {
 
   const clientId = getClientId();
   const { data: documents = [], isLoading, error } = useClientDocuments(clientId);
+  const { data: sharedDocuments = [], isLoading: isLoadingShared } = useClientSharedDocuments(clientId);
   const uploadDocumentMutation = useUploadClientDocument();
   const updateDocumentMutation = useUpdateClientDocument();
   const deleteDocumentMutation = useDeleteClientDocument();
@@ -358,6 +361,14 @@ const ClientDocuments = () => {
         onOpenChange={setIsDeleteDialogOpen}
         onConfirm={handleConfirmDelete}
         document={selectedDocument}
+      />
+
+      {/* Admin Shared Documents */}
+      <AdminSharedDocuments
+        documents={sharedDocuments}
+        isLoading={isLoadingShared}
+        title="Documents Shared by Admin"
+        emptyMessage="No documents have been shared with you by your care team."
       />
     </div>
   );

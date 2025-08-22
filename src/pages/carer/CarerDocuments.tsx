@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FileText, Search, Download, Eye, Clock, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,9 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { useCarerSharedDocuments } from "@/hooks/useAdminSharedDocuments";
+import { AdminSharedDocuments } from "@/components/documents/AdminSharedDocuments";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock documents data
 const mockDocuments = {
@@ -124,6 +127,29 @@ const mockDocuments = {
 };
 
 const CarerDocuments: React.FC = () => {
+  const [carerId, setCarerId] = useState<string>('');
+  
+  useEffect(() => {
+    const fetchCarerId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .single();
+        
+        if (staffData) {
+          setCarerId(staffData.id);
+        }
+      }
+    };
+    
+    fetchCarerId();
+  }, []);
+
+  const { data: sharedDocuments = [], isLoading: isLoadingShared } = useCarerSharedDocuments(carerId);
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Documents</h1>
@@ -300,6 +326,16 @@ const CarerDocuments: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Admin Shared Documents */}
+      <div className="mt-6">
+        <AdminSharedDocuments
+          documents={sharedDocuments}
+          isLoading={isLoadingShared}
+          title="Documents Shared with Me"
+          emptyMessage="No documents have been shared with you by the admin."
+        />
+      </div>
     </div>
   );
 };
