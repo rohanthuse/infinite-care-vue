@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from "react";
-import { format } from "date-fns";
+import { format, isAfter } from "date-fns";
 import { 
   FileText, 
   Download, 
@@ -16,7 +16,9 @@ import {
   Star,
   TrendingUp,
   MoreHorizontal,
-  Link
+  Link,
+  AlertTriangle,
+  BarChart3
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLibraryResources, LibraryResource } from "@/hooks/useLibraryResources";
+import { useLibraryAnalytics } from "@/hooks/useLibraryAnalytics";
+import { LibraryResourcePreviewDialog } from "./LibraryResourcePreviewDialog";
 
 interface LibraryResourcesListProps {
   branchId: string;
@@ -41,6 +45,8 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [resourceTypeFilter, setResourceTypeFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
+  const [previewResource, setPreviewResource] = useState<LibraryResource | null>(null);
+  const [showExpired, setShowExpired] = useState(false);
 
   const { 
     resources, 
@@ -52,9 +58,18 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
     getFileUrl
   } = useLibraryResources(branchId);
 
+  const { data: analytics } = useLibraryAnalytics(branchId);
+
   // Get unique resource types
   const resourceTypes = useMemo(() => {
     return Array.from(new Set(resources.map(r => r.resource_type))).sort();
+  }, [resources]);
+
+  // Get expired resources
+  const expiredResources = useMemo(() => {
+    return resources.filter(resource => 
+      resource.expires_at && isAfter(new Date(), new Date(resource.expires_at))
+    );
   }, [resources]);
 
   // Filter resources
@@ -80,11 +95,18 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         matchesTab = !!resource.file_path;
       } else if (activeTab === "links") {
         matchesTab = !!resource.url;
+      } else if (activeTab === "expired") {
+        matchesTab = resource.expires_at && isAfter(new Date(), new Date(resource.expires_at));
+      }
+      
+      // Expired resource filtering
+      if (!showExpired && resource.expires_at && isAfter(new Date(), new Date(resource.expires_at))) {
+        return false;
       }
       
       return matchesSearch && matchesCategory && matchesType && matchesTab;
     });
-  }, [resources, searchQuery, categoryFilter, resourceTypeFilter, activeTab]);
+  }, [resources, searchQuery, categoryFilter, resourceTypeFilter, activeTab, showExpired]);
 
   const getResourceIcon = (resourceType: string) => {
     switch (resourceType.toLowerCase()) {
@@ -121,6 +143,34 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
     }
   };
 
+  const handlePreviewResource = (resource: LibraryResource) => {
+    setPreviewResource(resource);
+  };
+
+  // Convert LibraryResource to dialog format
+  const convertResourceForDialog = (resource: LibraryResource) => {
+    return {
+      id: resource.id,
+      title: resource.title,
+      description: resource.description,
+      category: resource.category,
+      resourceType: resource.resource_type,
+      uploadedBy: resource.uploaded_by_name || 'Unknown',
+      uploadDate: new Date(resource.created_at),
+      expiryDate: resource.expires_at ? new Date(resource.expires_at) : undefined,
+      isPrivate: resource.is_private,
+      accessRoles: resource.access_roles || [],
+      fileSize: resource.file_size ? (typeof resource.file_size === 'string' ? parseInt(resource.file_size, 10) : resource.file_size) : undefined,
+      url: resource.url,
+      rating: resource.rating,
+      author: resource.author,
+      version: resource.version,
+      tags: resource.tags,
+      views: resource.views_count,
+      downloads: resource.downloads_count,
+    };
+  };
+
   const handleDownloadResource = (resource: LibraryResource) => {
     if (resource.file_path) {
       downloadResource(resource.id, resource.file_path, resource.title);
@@ -143,6 +193,56 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Analytics Summary */}
+      {analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Resources</p>
+                  <p className="text-2xl font-bold">{analytics.totalResources}</p>
+                </div>
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Views</p>
+                  <p className="text-2xl font-bold">{analytics.totalViews}</p>
+                </div>
+                <Eye className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Downloads</p>
+                  <p className="text-2xl font-bold">{analytics.totalDownloads}</p>
+                </div>
+                <Download className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Expired Resources</p>
+                  <p className="text-2xl font-bold text-destructive">{expiredResources.length}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Header and Search */}
       <Card>
         <CardHeader className="pb-4">
@@ -209,6 +309,20 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    View
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowExpired(!showExpired)}>
+                    {showExpired ? 'Hide' : 'Show'} Expired Resources
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               {onAddNew && (
                 <Button onClick={onAddNew} size="sm">
                   Add Resource
@@ -221,12 +335,15 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
 
       {/* Tabs and Resources List */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="all">All ({resources.length})</TabsTrigger>
           <TabsTrigger value="recent">Recent</TabsTrigger>
           <TabsTrigger value="popular">Popular</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="links">Links</TabsTrigger>
+          <TabsTrigger value="expired" className="text-destructive">
+            Expired ({expiredResources.length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
@@ -269,6 +386,9 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                                 <p className="font-medium truncate">{resource.title}</p>
                                 {resource.is_private && (
                                   <Badge variant="outline" className="text-xs">Private</Badge>
+                                )}
+                                {resource.expires_at && isAfter(new Date(), new Date(resource.expires_at)) && (
+                                  <Badge variant="destructive" className="text-xs">Expired</Badge>
                                 )}
                                 {resource.url && (
                                   <ExternalLink className="h-3 w-3 text-blue-500" />
@@ -339,9 +459,13 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewResource(resource)}>
+                              <DropdownMenuItem onClick={() => handlePreviewResource(resource)}>
                                 <Eye className="mr-2 h-4 w-4" />
-                                View
+                                Preview
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewResource(resource)}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                Open
                               </DropdownMenuItem>
                               {resource.file_path && (
                                 <DropdownMenuItem onClick={() => handleDownloadResource(resource)}>
@@ -368,6 +492,22 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Preview Dialog */}
+      <LibraryResourcePreviewDialog
+        isOpen={!!previewResource}
+        onClose={() => setPreviewResource(null)}
+        resource={previewResource ? convertResourceForDialog(previewResource) : null}
+        onDownload={(resource) => {
+          const originalResource = resources.find(r => r.id === resource.id);
+          if (originalResource) {
+            handleDownloadResource(originalResource);
+          }
+        }}
+        onDelete={(resource) => {
+          handleDeleteResource(resource.id);
+        }}
+      />
     </div>
   );
 };
