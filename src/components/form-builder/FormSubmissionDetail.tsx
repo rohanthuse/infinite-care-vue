@@ -120,7 +120,8 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
     }
   };
 
-  const renderFieldValue = (key: string, value: any, elementType?: string) => {
+  const renderFieldValue = (key: string, value: any, element?: { label: string; type: string; order: number; options: any[] }) => {
+    const elementType = element?.type;
     if (value === null || value === undefined || value === '') {
       return <span className="text-muted-foreground italic">No response</span>;
     }
@@ -173,13 +174,28 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
         );
       }
       
+      // Handle checkbox or multi-select values by mapping to option labels
       return (
         <div className="flex flex-wrap gap-1">
-          {value.map((item, index) => (
-            <Badge key={index} variant="outline">
-              {String(item)}
-            </Badge>
-          ))}
+          {value.map((item, index) => {
+            let displayValue = String(item);
+            
+            // Try to map the value to an option label
+            if (element?.options) {
+              const option = element.options.find((opt: any) => 
+                opt.value === item || opt.id === item || opt === item
+              );
+              if (option) {
+                displayValue = typeof option === 'string' ? option : option.label || option.value || String(item);
+              }
+            }
+            
+            return (
+              <Badge key={index} variant="outline">
+                {displayValue}
+              </Badge>
+            );
+          })}
         </div>
       );
     }
@@ -190,6 +206,17 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
           {JSON.stringify(value, null, 2)}
         </pre>
       );
+    }
+
+    // Handle single-choice values (radio, select) by mapping to option labels
+    if (typeof value === 'string' && element?.options && ['select', 'radio'].includes(elementType)) {
+      const option = element.options.find((opt: any) => 
+        opt.value === value || opt.id === value || opt === value
+      );
+      if (option) {
+        const displayValue = typeof option === 'string' ? option : option.label || option.value || value;
+        return <Badge variant="outline">{displayValue}</Badge>;
+      }
     }
 
     // For long text, show in a text area style
@@ -269,15 +296,16 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
     );
   };
 
-  // Create a map of form element IDs to their labels and types
+  // Create a map of form element IDs to their labels, types, and options
   const elementMap = formElements?.reduce((acc, element) => {
     acc[element.id] = {
       label: element.label,
       type: element.type,
-      order: element.order
+      order: element.order,
+      options: (element as any).options || []
     };
     return acc;
-  }, {} as Record<string, { label: string; type: string; order: number }>) || {};
+  }, {} as Record<string, { label: string; type: string; order: number; options: any[] }>) || {};
 
   // Sort submission data by form element order, then alphabetically for unmapped fields
   const sortedSubmissionEntries = Object.entries(submission.submission_data).sort(([keyA], [keyB]) => {
@@ -401,7 +429,9 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
             <div className="space-y-4">
               {sortedSubmissionEntries.map(([key, value]) => {
                 const element = elementMap[key];
-                const displayLabel = element?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                const displayLabel = element?.label || 
+                  (key.length === 36 && key.includes('-') ? 'Legacy Field' : // UUID format
+                   key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()));
                 
                 return (
                   <div key={key} className="border-b pb-3 last:border-b-0">
@@ -417,7 +447,7 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
                         )}
                       </div>
                       <div className="pl-2">
-                        {renderFieldValue(key, value, element?.type)}
+                        {renderFieldValue(key, value, element)}
                       </div>
                     </div>
                   </div>
