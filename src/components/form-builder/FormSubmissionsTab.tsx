@@ -265,7 +265,7 @@ export const FormSubmissionsTab: React.FC<FormSubmissionsTabProps> = ({
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        User: {submission.submitter_name || `Unknown (${submission.submitted_by.slice(-8)})`}
+                        User: {submission.submitter_name || `#${submission.id.slice(-8)}`}
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />

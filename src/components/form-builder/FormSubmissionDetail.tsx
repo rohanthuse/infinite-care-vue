@@ -177,7 +177,7 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
               <User className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Submitted by</p>
-                <p className="font-medium">{submission.submitter_name || `Unknown user (${submission.submitted_by.slice(-8)})`}</p>
+                <p className="font-medium">{submission.submitter_name || `#${submission.id.slice(-8)}`}</p>
               </div>
             </div>
             

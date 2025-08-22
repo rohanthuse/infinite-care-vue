@@ -29,48 +29,74 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
   } = useQuery({
     queryKey: ['form-submissions', branchId, formId],
     queryFn: async () => {
-      let query = supabase
+      // Fetch form submissions
+      let submissionsQuery = supabase
         .from('form_submissions')
-        .select(`
-          *,
-          staff:staff(first_name, last_name, auth_user_id),
-          client:clients(first_name, last_name, auth_user_id)
-        `)
+        .select('*')
         .eq('branch_id', branchId)
         .order('submitted_at', { ascending: false });
 
       if (formId) {
-        query = query.eq('form_id', formId);
+        submissionsQuery = submissionsQuery.eq('form_id', formId);
       }
 
-      const { data, error } = await query;
+      // Fetch staff and clients for the branch in parallel
+      const [submissionsRes, staffRes, clientsRes] = await Promise.all([
+        submissionsQuery,
+        supabase
+          .from('staff')
+          .select('id, auth_user_id, first_name, last_name')
+          .eq('branch_id', branchId),
+        supabase
+          .from('clients')
+          .select('id, auth_user_id, first_name, last_name')
+          .eq('branch_id', branchId)
+      ]);
 
-      if (error) throw error;
+      if (submissionsRes.error) throw submissionsRes.error;
 
-      // Map the data to include submitter names
-      const mappedData = data?.map((submission: any) => {
-        let submitter_name = 'Unknown user';
+      // Build lookup maps
+      const staffByAuth = new Map();
+      const staffById = new Map();
+      const clientsByAuth = new Map();
+      const clientsById = new Map();
+
+      if (staffRes.data) {
+        staffRes.data.forEach((staff: any) => {
+          const name = `${staff.first_name || ''} ${staff.last_name || ''}`.trim();
+          if (staff.auth_user_id) staffByAuth.set(staff.auth_user_id, name);
+          staffById.set(staff.id, name);
+        });
+      }
+
+      if (clientsRes.data) {
+        clientsRes.data.forEach((client: any) => {
+          const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
+          if (client.auth_user_id) clientsByAuth.set(client.auth_user_id, name);
+          clientsById.set(client.id, name);
+        });
+      }
+
+      // Map submissions to include submitter names
+      const mappedData = submissionsRes.data?.map((submission: any) => {
+        let submitter_name = '';
         
-        // Check if submitted_by matches a staff member's auth_user_id
-        if (submission.staff && submission.staff.some((s: any) => s.auth_user_id === submission.submitted_by)) {
-          const staff = submission.staff.find((s: any) => s.auth_user_id === submission.submitted_by);
-          submitter_name = `${staff.first_name} ${staff.last_name}`.trim();
-        }
-        // Check if submitted_by matches a client's auth_user_id
-        else if (submission.client && submission.client.some((c: any) => c.auth_user_id === submission.submitted_by)) {
-          const client = submission.client.find((c: any) => c.auth_user_id === submission.submitted_by);
-          submitter_name = `${client.first_name} ${client.last_name}`.trim();
-        }
-        // If no match found but we have a name, use just the first few chars of ID
-        else if (!submitter_name || submitter_name === 'Unknown user') {
-          submitter_name = `Unknown user (${submission.submitted_by.slice(-8)})`;
+        // Try to resolve name based on submitted_by_type
+        if (submission.submitted_by_type === 'client') {
+          submitter_name = clientsByAuth.get(submission.submitted_by) || 
+                           clientsById.get(submission.submitted_by) || 
+                           staffByAuth.get(submission.submitted_by) || 
+                           staffById.get(submission.submitted_by) || '';
+        } else if (submission.submitted_by_type === 'staff' || submission.submitted_by_type === 'carer') {
+          submitter_name = staffByAuth.get(submission.submitted_by) || 
+                           staffById.get(submission.submitted_by) || 
+                           clientsByAuth.get(submission.submitted_by) || 
+                           clientsById.get(submission.submitted_by) || '';
         }
 
         return {
           ...submission,
-          submitter_name,
-          staff: undefined, // Remove the joined data
-          client: undefined, // Remove the joined data
+          submitter_name: submitter_name || undefined,
         };
       }) || [];
 
