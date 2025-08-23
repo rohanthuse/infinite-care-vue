@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { differenceInBusinessDays, addDays } from "date-fns";
 
 export interface LeaveRequest {
   id: string;
@@ -114,11 +115,22 @@ export const useCreateLeaveRequest = () => {
 
   return useMutation({
     mutationFn: async (request: CreateLeaveRequest) => {
+      // Calculate business days between start and end dates
+      const startDate = new Date(request.start_date);
+      const endDate = new Date(request.end_date);
+      const totalDays = differenceInBusinessDays(addDays(endDate, 1), startDate);
+
+      // Validate business days
+      if (totalDays <= 0) {
+        throw new Error('Leave request must be for at least 1 business day');
+      }
+
       const { data, error } = await supabase
         .from('staff_leave_requests')
         .insert([{
           ...request,
-          total_days: 0 // Will be calculated by trigger
+          total_days: totalDays,
+          status: 'pending'
         }])
         .select()
         .single();
@@ -130,9 +142,10 @@ export const useCreateLeaveRequest = () => {
       toast.success('Leave request submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating leave request:', error);
-      toast.error('Failed to submit leave request');
+      const errorMessage = error?.message || 'Failed to submit leave request';
+      toast.error(errorMessage);
     }
   });
 };

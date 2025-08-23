@@ -11,9 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInBusinessDays, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useCreateLeaveRequest } from "@/hooks/useLeaveManagement";
+import { toast } from "sonner";
 
 const leaveRequestSchema = z.object({
   leave_type: z.enum(['annual', 'sick', 'personal', 'maternity', 'paternity', 'emergency']),
@@ -53,6 +54,14 @@ const LeaveRequestForm: React.FC<LeaveRequestFormProps> = ({
   });
 
   const onSubmit = async (data: LeaveRequestFormData) => {
+    // Calculate business days
+    const businessDays = differenceInBusinessDays(addDays(data.end_date, 1), data.start_date);
+    
+    if (businessDays <= 0) {
+      toast.error("Leave request must be for at least 1 business day");
+      return;
+    }
+
     try {
       await createLeaveRequest.mutateAsync({
         staff_id: staffId,

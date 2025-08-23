@@ -49,6 +49,12 @@ export function LeaveRequestForm({ branchId }: LeaveRequestFormProps) {
       toast.error("End date must be after start date");
       return;
     }
+
+    // Validate business days
+    if (businessDays <= 0) {
+      toast.error("Leave request must be for at least 1 business day");
+      return;
+    }
     
     if (!userRole?.staffId) {
       toast.error("Unable to identify staff member");
