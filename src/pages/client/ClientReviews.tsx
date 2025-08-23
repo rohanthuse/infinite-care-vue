@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Star, Calendar, User, AlertCircle, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useClientReviews, useUpdateReview } from "@/hooks/useClientReviews";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { format } from "date-fns";
 
 const ClientReviews = () => {
@@ -12,18 +13,11 @@ const ClientReviews = () => {
   const [editRating, setEditRating] = useState(0);
   const [editComment, setEditComment] = useState("");
 
-  // Get authenticated client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    if (!clientId) {
-      console.error("No authenticated client ID found");
-      return null;
-    }
-    return clientId;
-  };
+  // Get authenticated client data from Supabase
+  const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
+  const clientId = authData?.client?.id;
 
-  const clientId = getClientId();
-  const { data: reviews, isLoading, error } = useClientReviews(clientId || '');
+  const { data: reviews, isLoading: reviewsLoading, error: reviewsError } = useClientReviews(clientId || '');
   const updateReviewMutation = useUpdateReview();
 
   const handleEditStart = (review: any) => {
@@ -71,7 +65,20 @@ const ClientReviews = () => {
     ));
   };
 
-  if (!clientId) {
+  // Show loading state while checking authentication or loading reviews
+  if (authLoading || reviewsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your reviews...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authentication error or not logged in as client
+  if (authError || !clientId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -83,18 +90,7 @@ const ClientReviews = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your reviews...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (reviewsError) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
