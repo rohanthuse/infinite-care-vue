@@ -1,13 +1,14 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { AlertTriangle, Clock, Plus, User, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useClientEvents, useCreateClientEvent } from "@/hooks/useClientEvents";
+import { useEventsLogs, useCreateEventLog } from "@/data/hooks/useEventsLogs";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
+import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 
 interface EventsLogsTabProps {
   clientId: string;
@@ -25,17 +26,39 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const { data: events = [], isLoading } = useClientEvents(clientId);
-  const createEventMutation = useCreateClientEvent();
+  
+  // Use events logs with client filter instead of client events
+  const { data: events = [], isLoading } = useEventsLogs(undefined, { 
+    searchQuery: clientId // Filter by client ID 
+  });
+  const createEventMutation = useCreateEventLog();
+  const { carerProfile } = useCarerAuthSafe();
+
+  // Filter events to only show ones for this client
+  const clientEvents = events.filter(event => event.client_id === clientId);
+
+  // Auto-open event details from sessionStorage
+  useEffect(() => {
+    const openEventId = sessionStorage.getItem('openEventId');
+    const openEventClientId = sessionStorage.getItem('openEventClientId');
+    
+    if (openEventId && openEventClientId === clientId && clientEvents.length > 0) {
+      const eventToOpen = clientEvents.find(event => event.id === openEventId);
+      if (eventToOpen) {
+        setSelectedEvent(eventToOpen);
+        setIsDetailsOpen(true);
+        
+        // Clear the sessionStorage keys
+        sessionStorage.removeItem('openEventId');
+        sessionStorage.removeItem('openEventClientId');
+      }
+    }
+  }, [clientEvents, clientId]);
 
   const handleAddEvent = async (eventData: any) => {
     await createEventMutation.mutateAsync({
+      ...eventData,
       client_id: clientId,
-      event_type: eventData.event_type,
-      title: eventData.title,
-      description: eventData.description,
-      severity: eventData.severity,
-      reporter: eventData.reporter,
       status: eventData.status || 'open',
     });
     setIsAddDialogOpen(false);
@@ -93,7 +116,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          {events.length === 0 ? (
+          {clientEvents.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No events logged for this client</p>
@@ -104,7 +127,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {events.map((event) => (
+              {clientEvents.map((event) => (
                 <div key={event.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
@@ -117,6 +140,12 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                         <Badge variant="outline" className="text-xs">
                           {event.event_type}
                         </Badge>
+                        {(event.follow_up_assigned_to === carerProfile?.id || 
+                          event.investigation_assigned_to === carerProfile?.id) && (
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+                            Assigned to you
+                          </Badge>
+                        )}
                       </div>
                       {event.description && (
                         <p className="text-sm text-gray-600 line-clamp-2">{event.description}</p>

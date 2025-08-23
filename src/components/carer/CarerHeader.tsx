@@ -72,7 +72,7 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
   };
 
   const handleViewAllNotifications = () => {
-    navigate(createCarerPath('/notifications'));
+    navigate(createCarerPath('/messages'));
   };
 
   const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : "Carer";

@@ -106,6 +106,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           sessionStorage.setItem('openThreadId', notification.data.thread_id);
         }
       }
+      
+      // Handle task notifications with deep-linking to events
+      if (notification.type === 'task' && notification.data?.event_id && notification.data?.client_id) {
+        // Store event details in sessionStorage for auto-opening
+        sessionStorage.setItem('openEventId', notification.data.event_id);
+        sessionStorage.setItem('openEventClientId', notification.data.client_id);
+        
+        // Navigate to client events page (assuming carer has access)
+        navigate(`/client/${notification.data.client_id}/events`);
+      }
     } catch (error) {
       console.error('Error handling notification click:', error);
     }
