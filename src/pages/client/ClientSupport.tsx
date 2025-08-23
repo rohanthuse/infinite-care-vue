@@ -13,6 +13,7 @@ import { Mail, Phone, HelpCircle } from "lucide-react";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { useBranchAdmins } from "@/hooks/useBranchAdmins";
 import { useUnifiedCreateThread } from "@/hooks/useUnifiedMessaging";
+import { useClientNavigation } from "@/hooks/useClientNavigation";
 const formSchema = z.object({
   subject: z.string({
     required_error: "Please select a subject"
@@ -26,6 +27,7 @@ type FormValues = z.infer<typeof formSchema>;
 const ClientSupport = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { navigateToClientPage } = useClientNavigation();
   
   // Get authenticated client data
   const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
@@ -77,7 +79,7 @@ const ClientSupport = () => {
       const recipientTypes = branchAdmins.map(() => 'branch_admin');
 
       // Create message thread
-      await createThread.mutateAsync({
+      const result = await createThread.mutateAsync({
         recipientIds,
         recipientNames,
         recipientTypes,
@@ -91,7 +93,16 @@ const ClientSupport = () => {
 
       toast({
         title: "Message sent successfully",
-        description: "Your support request has been sent to the admin team. You can view the conversation in your Messages tab."
+        description: "Your support request has been sent to the admin team.",
+        action: (
+          <Button
+            size="sm"
+            onClick={() => navigateToClientPage('/messages')}
+            className="ml-2"
+          >
+            Open Messages
+          </Button>
+        )
       });
       
       form.reset();

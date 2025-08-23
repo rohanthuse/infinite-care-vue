@@ -163,6 +163,11 @@ export const MessageList = ({
                         Group
                       </Badge>
                     )}
+                    {thread.threadType === 'support' && (
+                      <Badge variant="secondary" className="text-xs px-1.5 py-0 bg-green-100 text-green-700">
+                        Support
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     {thread.unreadCount > 0 && (
