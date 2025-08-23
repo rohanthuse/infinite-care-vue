@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import { useCreateReview, useCheckExistingReview } from "@/hooks/useClientReviews";
-import { supabase } from "@/integrations/supabase/client";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
 interface SubmitReviewDialogProps {
   open: boolean;
@@ -25,51 +25,20 @@ interface SubmitReviewDialogProps {
 export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitReviewDialogProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  const [clientBranchId, setClientBranchId] = useState<string | null>(null);
+  
+  // Get authenticated client data from Supabase
+  const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
+  const clientId = authData?.client?.id;
+  const branchId = authData?.client?.branch_id;
   
   const createReviewMutation = useCreateReview();
   
-  // Get client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    return clientId || '';
-  };
-
-  const clientId = getClientId();
-  
-  // Check if review already exists for this booking - only call when appointment exists
+  // Check if review already exists for this booking - only call when appointment exists and client is authenticated
   const { data: existingReview } = useCheckExistingReview(
-    clientId, 
+    clientId || '', 
     appointment?.id || '', // This is the booking ID
-    { enabled: Boolean(appointment?.id) }
+    { enabled: Boolean(appointment?.id && clientId) }
   );
-
-  // Fetch client's branch_id when dialog opens
-  useEffect(() => {
-    const fetchClientBranchId = async () => {
-      if (!clientId) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('branch_id')
-          .eq('id', clientId)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching client branch:', error);
-        } else {
-          setClientBranchId(data?.branch_id || null);
-        }
-      } catch (error) {
-        console.error('Error fetching client branch:', error);
-      }
-    };
-
-    if (open && clientId) {
-      fetchClientBranchId();
-    }
-  }, [open, clientId]);
 
   useEffect(() => {
     if (existingReview) {
@@ -79,7 +48,13 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
   }, [existingReview]);
 
   const handleSubmit = async () => {
-    if (rating === 0 || !appointment) {
+    if (rating === 0 || !appointment || !clientId || !branchId) {
+      console.error('Missing required data for review submission:', {
+        rating,
+        appointment: !!appointment,
+        clientId: !!clientId,
+        branchId: !!branchId
+      });
       return;
     }
 
@@ -100,7 +75,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
         rating: rating,
         comment: comment.trim() || null,
         service_type: appointment.type,
-        branch_id: clientBranchId || undefined, // Include branch_id in review creation
+        branch_id: branchId, // Use authenticated branch_id
       });
 
       // Reset form and close dialog
@@ -119,6 +94,44 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
       onOpenChange(false);
     }
   };
+
+  // Show loading state while authenticating
+  if (authLoading) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-sm text-gray-500">Authenticating...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Show authentication error
+  if (authError || !clientId) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Authentication Required</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-500">Please log in to submit a review.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Don't render dialog content if no appointment is selected
   if (!appointment) {
