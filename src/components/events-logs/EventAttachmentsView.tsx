@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Download, Image, FileIcon, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface EventAttachmentsViewProps {
   attachments?: any[];
@@ -27,11 +29,23 @@ export function EventAttachmentsView({ attachments }: EventAttachmentsViewProps)
 
   const handleDownload = async (attachment: any) => {
     try {
-      // This would integrate with your file storage system
-      console.log('Downloading file:', attachment);
-      // Implementation would depend on your storage setup (Supabase Storage, etc.)
+      const { data } = await supabase.storage
+        .from('documents')
+        .download(attachment.file_path || attachment.path);
+      
+      if (data) {
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = attachment.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     } catch (error) {
       console.error('Error downloading file:', error);
+      toast.error('Failed to download file');
     }
   };
 

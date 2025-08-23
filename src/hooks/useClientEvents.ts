@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { generateBodyMapImages } from "@/lib/bodyMapImageGenerator";
 
 export interface ClientEvent {
@@ -191,18 +191,11 @@ export const useCreateClientEvent = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-events", data.client_id] });
       
-      toast({
-        title: "Event created",
-        description: "The event has been successfully recorded.",
-      });
+      toast.success("Event created successfully");
     },
     onError: (error) => {
       console.error("Error creating client event:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create event. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to create event. Please try again.");
     },
   });
 };
@@ -229,18 +222,11 @@ export const useUpdateClientEventStatus = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["client-events"] });
       
-      toast({
-        title: "Status updated",
-        description: `Event status updated to ${data.status}`,
-      });
+      toast.success(`Event status updated to ${data.status}`);
     },
     onError: (error) => {
       console.error("Error updating client event status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update event status",
-        variant: "destructive",
-      });
+      toast.error("Failed to update event status");
     },
   });
 };

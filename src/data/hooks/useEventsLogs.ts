@@ -180,13 +180,57 @@ export const useCreateEventLog = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (eventData: CreateEventLogData) => {
+    mutationFn: async (eventData: CreateEventLogData & { attachments?: File[] }) => {
       console.log('Creating event log:', eventData);
       
-      // First, create the event record to get the ID
+      // Handle file attachments first
+      let attachmentUrls: string[] = [];
+      
+      if (eventData.attachments && eventData.attachments.length > 0) {
+        try {
+          for (const file of eventData.attachments) {
+            const filePath = `${eventData.client_id}/${Date.now()}-${file.name}`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('documents')
+              .upload(filePath, file);
+            
+            if (uploadError) throw uploadError;
+            
+            attachmentUrls.push(uploadData.path);
+            
+            // Insert metadata into documents table
+            await supabase
+              .from('documents')
+              .insert({
+                name: file.name,
+                type: 'attachment',
+                category: 'event_attachment',
+                file_path: uploadData.path,
+                file_size: file.size.toString(),
+                file_type: file.type,
+                storage_bucket: 'documents',
+                client_id: eventData.client_id,
+                branch_id: eventData.branch_id,
+                uploaded_by_name: 'System'
+              });
+          }
+        } catch (error) {
+          console.error('Error uploading attachments:', error);
+          throw new Error('Failed to upload attachments');
+        }
+      }
+      
+      // Create the event record
+      const eventRecord = {
+        ...eventData,
+        attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined
+      };
+      delete eventRecord.attachments; // Remove File objects from the database insert
+      
       const { data, error } = await supabase
         .from('client_events_logs')
-        .insert(eventData)
+        .insert(eventRecord)
         .select()
         .single();
       
@@ -213,15 +257,45 @@ export const useCreateEventLog = () => {
             
             if (updateError) {
               console.error('Error updating event with image URLs:', updateError);
-              // Don't fail the whole operation, just log the error
             } else {
-              // Return updated data
-              return { ...data, ...updateData };
+              Object.assign(data, updateData);
             }
           }
         } catch (imageError) {
           console.error('Error generating body map images:', imageError);
-          // Don't fail the whole operation, just log the error
+        }
+      }
+      
+      // Create notifications for high severity events
+      if (data.severity === 'high' || data.severity === 'critical') {
+        try {
+          const { data: branchAdmins } = await supabase
+            .from('admin_branches')
+            .select('admin_id')
+            .eq('branch_id', eventData.branch_id);
+
+          // Create notifications for all branch admins
+          for (const admin of branchAdmins || []) {
+            await supabase
+              .from('notifications')
+              .insert({
+                user_id: admin.admin_id,
+                branch_id: eventData.branch_id,
+                type: 'event_log',
+                category: 'warning',
+                priority: data.severity === 'critical' ? 'urgent' : 'high',
+                title: `${data.severity.toUpperCase()} Event: ${data.title}`,
+                message: `A ${data.severity} severity event has been recorded.`,
+                data: {
+                  event_id: data.id,
+                  client_id: data.client_id,
+                  event_type: data.event_type,
+                  severity: data.severity
+                }
+              });
+          }
+        } catch (notificationError) {
+          console.error('Error creating notification:', notificationError);
         }
       }
       
@@ -248,6 +322,13 @@ export const useUpdateEventLogStatus = () => {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       console.log('Updating event log status:', id, status);
       
+      // Get the current event data first
+      const { data: currentEvent } = await supabase
+        .from('client_events_logs')
+        .select('*, clients(branch_id)')
+        .eq('id', id)
+        .single();
+      
       const { data, error } = await supabase
         .from('client_events_logs')
         .update({ status, updated_at: new Date().toISOString() })
@@ -258,6 +339,43 @@ export const useUpdateEventLogStatus = () => {
       if (error) {
         console.error('Error updating event log status:', error);
         throw error;
+      }
+      
+      // Create notification for status changes to resolved/closed
+      if (currentEvent && (status === 'resolved' || status === 'closed') && currentEvent.status !== status) {
+        try {
+          const branchId = currentEvent.clients?.branch_id;
+          if (branchId) {
+            const { data: branchAdmins } = await supabase
+              .from('admin_branches')
+              .select('admin_id')
+              .eq('branch_id', branchId);
+
+            // Create notifications for all branch admins
+            for (const admin of branchAdmins || []) {
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: admin.admin_id,
+                  branch_id: branchId,
+                  type: 'event_log',
+                  category: 'info',
+                  priority: 'medium',
+                  title: `Event ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+                  message: `Event "${currentEvent.title}" has been marked as ${status}.`,
+                  data: {
+                    event_id: data.id,
+                    client_id: data.client_id,
+                    event_type: data.event_type,
+                    new_status: status,
+                    old_status: currentEvent.status
+                  }
+                });
+            }
+          }
+        } catch (notificationError) {
+          console.error('Error creating status notification:', notificationError);
+        }
       }
       
       console.log('Updated event log status:', data);
