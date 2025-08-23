@@ -6610,6 +6610,12 @@ export type Database = {
         Args: { request_id_param: string }
         Returns: string
       }
+      current_user_branch_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          branch_id: string
+        }[]
+      }
       delete_admin_completely: {
         Args: { admin_user_id: string }
         Returns: Json
