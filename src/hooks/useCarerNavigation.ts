@@ -86,6 +86,11 @@ export const useCarerNavigation = () => {
       name: "Clients", 
       path: createCarerPath("/clients"), 
       icon: "Users" 
+    },
+    { 
+      name: "Leave", 
+      path: createCarerPath("/leave"), 
+      icon: "Calendar" 
     }
   ];
 
