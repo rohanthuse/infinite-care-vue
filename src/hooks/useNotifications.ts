@@ -40,9 +40,17 @@ export const useNotifications = (branchId?: string) => {
     queryKey: ['notifications', branchId],
     queryFn: async () => {
       try {
+        // Get current user first
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.warn('No authenticated user for notifications');
+          return [];
+        }
+
         let query = supabase
           .from('notifications')
           .select('*')
+          .eq('user_id', user.id) // Filter by current user
           .order('created_at', { ascending: false })
           .limit(50);
 
