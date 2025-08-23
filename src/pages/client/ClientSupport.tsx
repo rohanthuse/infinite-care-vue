@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,6 +15,9 @@ import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { useBranchAdmins } from "@/hooks/useBranchAdmins";
 import { useUnifiedCreateThread } from "@/hooks/useUnifiedMessaging";
 import { useClientNavigation } from "@/hooks/useClientNavigation";
+import { ClientMessageList } from "@/components/client/ClientMessageList";
+import { ClientMessageView } from "@/components/client/ClientMessageView";
+import { ClientMessageComposer } from "@/components/client/ClientMessageComposer";
 const formSchema = z.object({
   subject: z.string({
     required_error: "Please select a subject"
@@ -26,6 +30,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 const ClientSupport = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("send-message");
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [showComposer, setShowComposer] = useState(false);
+  const [isReplyMode, setIsReplyMode] = useState(false);
   const { toast } = useToast();
   const { navigateToClientPage } = useClientNavigation();
   
@@ -106,6 +114,9 @@ const ClientSupport = () => {
       });
       
       form.reset();
+      
+      // Switch to responses tab to show the new conversation
+      setActiveTab("responses");
     } catch (error) {
       console.error('Failed to send support message:', error);
       toast({
@@ -117,7 +128,29 @@ const ClientSupport = () => {
       setIsSubmitting(false);
     }
   };
-  return <div className="space-y-6">
+
+  // Message handling functions
+  const handleMessageSelect = (messageId: string) => {
+    setSelectedMessageId(messageId);
+    setShowComposer(false);
+    setIsReplyMode(false);
+  };
+
+  const handleReply = () => {
+    setIsReplyMode(true);
+    setShowComposer(true);
+  };
+
+  const handleSendMessage = () => {
+    setShowComposer(false);
+    setIsReplyMode(false);
+    // Refresh by clearing and resetting selected message
+    const currentMessage = selectedMessageId;
+    setSelectedMessageId(null);
+    setTimeout(() => setSelectedMessageId(currentMessage), 100);
+  };
+  return (
+    <div className="space-y-6">
       {/* Contact Information Card */}
       <Card className="border border-gray-200">
         <CardHeader>
@@ -180,85 +213,166 @@ const ClientSupport = () => {
         </CardContent>
       </Card>
 
-      {/* Contact Form Card */}
+      {/* Support Messages Tabs */}
       <Card className="border border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">Send Us a Message</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField control={form.control} name="subject" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Subject</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a subject for your inquiry" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="general">General Inquiry</SelectItem>
-                        <SelectItem value="billing">Billing Question</SelectItem>
-                        <SelectItem value="service">Service Feedback</SelectItem>
-                        <SelectItem value="technical">Technical Support</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>} />
-              
-              <FormField control={form.control} name="priority" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="low">Low - General Question</SelectItem>
-                        <SelectItem value="normal">Normal - Need Help</SelectItem>
-                        <SelectItem value="high">High - Urgent Issue</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Please select the appropriate priority for your inquiry.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>} />
-              
-              <FormField control={form.control} name="message" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Your Message</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Please describe your question or issue in detail..." className="min-h-32" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>} />
-              
-              <div className="flex justify-end">
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting || authLoading || adminsLoading || !clientId || !branchId || branchAdmins.length === 0}
-                >
-                  {isSubmitting ? "Sending..." : 
-                   authLoading ? "Loading..." :
-                   adminsLoading ? "Loading contacts..." :
-                   !clientId ? "Authentication required" :
-                   branchAdmins.length === 0 ? "No admins available" :
-                   "Send Message"}
-                </Button>
+        <CardContent className="p-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="border-b border-gray-200 px-6 pt-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="send-message">Send Message</TabsTrigger>
+                <TabsTrigger value="responses">My Support Requests</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="send-message" className="p-6 space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Send Us a Message</h3>
+                <p className="text-gray-600 mb-6">
+                  Submit a support request and we'll get back to you as soon as possible.
+                </p>
               </div>
-            </form>
-          </Form>
+
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a subject for your inquiry" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="general">General Inquiry</SelectItem>
+                            <SelectItem value="billing">Billing Question</SelectItem>
+                            <SelectItem value="service">Service Feedback</SelectItem>
+                            <SelectItem value="technical">Technical Support</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low - General Question</SelectItem>
+                            <SelectItem value="normal">Normal - Need Help</SelectItem>
+                            <SelectItem value="high">High - Urgent Issue</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Please select the appropriate priority for your inquiry.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Your Message</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Please describe your question or issue in detail..."
+                            className="min-h-32"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || authLoading || adminsLoading || !clientId || !branchId || branchAdmins.length === 0}
+                    >
+                      {isSubmitting ? "Sending..." : 
+                       authLoading ? "Loading..." :
+                       adminsLoading ? "Loading contacts..." :
+                       !clientId ? "Authentication required" :
+                       branchAdmins.length === 0 ? "No admins available" :
+                       "Send Message"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </TabsContent>
+
+            <TabsContent value="responses" className="p-0">
+              <div className="h-[600px] flex">
+                {/* Message List */}
+                <div className="w-1/2 border-r border-gray-200">
+                  <div className="p-4 border-b border-gray-200">
+                    <h3 className="font-semibold">Support Conversations</h3>
+                    <p className="text-sm text-gray-600">View and respond to your support requests</p>
+                  </div>
+                  <ClientMessageList
+                    selectedContactId={null}
+                    selectedMessageId={selectedMessageId}
+                    onMessageSelect={handleMessageSelect}
+                    onComposeClick={() => setActiveTab("send-message")}
+                    searchTerm="Support -"
+                  />
+                </div>
+
+                {/* Message View or Composer */}
+                <div className="w-1/2">
+                  {showComposer ? (
+                    <ClientMessageComposer
+                      selectedContactId={null}
+                      selectedThreadId={isReplyMode ? selectedMessageId : null}
+                      onClose={() => setShowComposer(false)}
+                      onSend={handleSendMessage}
+                    />
+                  ) : selectedMessageId ? (
+                    <ClientMessageView
+                      messageId={selectedMessageId}
+                      onReply={handleReply}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full bg-gray-50">
+                      <div className="text-gray-400 text-lg mb-2">No conversation selected</div>
+                      <p className="text-sm text-gray-500 max-w-md text-center">
+                        Select a support conversation from the list to view messages and responses.
+                      </p>
+                      <Button
+                        onClick={() => setActiveTab("send-message")}
+                        className="mt-4"
+                        variant="outline"
+                      >
+                        Send New Support Message
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
-      
+
       {/* FAQ Section */}
       <Card className="border border-gray-200">
         <CardHeader>
@@ -301,6 +415,7 @@ const ClientSupport = () => {
           </div>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
 export default ClientSupport;
