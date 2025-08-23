@@ -2,8 +2,9 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, Calendar, Clock, Heart, Info, TrendingUp, Thermometer, Wind, Droplets } from "lucide-react";
+import { Activity, Calendar, Clock, Heart, Info, TrendingUp, Thermometer, Wind, Droplets, HelpCircle } from "lucide-react";
 import { useClientNews2Data, useClientNews2History } from "@/hooks/useClientNews2Data";
+import { useClientNavigation } from "@/hooks/useClientNavigation";
 import { format } from "date-fns";
 import { ClientNews2History } from "./ClientNews2History";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -11,6 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export const ClientNews2Dashboard = () => {
   const { data: news2Data, isLoading, error } = useClientNews2Data();
   const { data: observations } = useClientNews2History();
+  const { navigateToClientPage } = useClientNavigation();
 
   if (isLoading) {
     return (
@@ -28,16 +30,40 @@ export const ClientNews2Dashboard = () => {
     );
   }
 
+  const handleRequestMonitoring = () => {
+    navigateToClientPage('/support', {
+      defaultMessage: 'I would like to request health monitoring (NEWS2) to be set up for my account. Please help me get enrolled in the health monitoring system.',
+      subject: 'Health Monitoring Request'
+    });
+  };
+
   if (error || !news2Data) {
     return (
-      <div className="text-center py-12">
-        <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No Health Monitoring Data</h3>
+      <div className="text-center py-12 max-w-md mx-auto">
+        <Activity className="h-16 w-16 text-blue-500 mx-auto mb-6" />
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">Health Monitoring Not Available</h3>
         <p className="text-gray-600 mb-4">
-          You don't currently have any NEWS2 health monitoring records.
+          You're not currently enrolled in NEWS2 health monitoring. This service tracks your vital signs and helps your care team monitor your wellbeing.
         </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h4 className="font-medium text-blue-800 mb-2">What is NEWS2 Health Monitoring?</h4>
+          <ul className="text-sm text-blue-700 text-left space-y-1">
+            <li>• Regular tracking of vital signs like heart rate and blood pressure</li>
+            <li>• Early detection of health changes</li>
+            <li>• Better coordination with your care team</li>
+            <li>• Personalized health insights and trends</li>
+          </ul>
+        </div>
+        <Button 
+          onClick={handleRequestMonitoring}
+          className="mb-4"
+          size="lg"
+        >
+          <HelpCircle className="h-4 w-4 mr-2" />
+          Request Health Monitoring
+        </Button>
         <p className="text-sm text-gray-500">
-          Contact your care team if you believe this is an error.
+          Or contact your care team directly if you believe this is an error.
         </p>
       </div>
     );
