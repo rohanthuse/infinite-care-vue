@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertTriangle, Search, Filter, Calendar, MapPin, User, Eye, Trash2, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Search, Filter, Calendar, MapPin, User, Eye, Trash2, RotateCcw, Download, FileText } from 'lucide-react';
 import { useEventsLogs, useUpdateEventLogStatus, useDeleteEventLog } from '@/data/hooks/useEventsLogs';
 import { EventDetailsDialog } from './EventDetailsDialog';
 import { EventLog } from '@/data/hooks/useEventsLogs';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
+import { exportEventsToCSV, exportEventsListToPDF } from '@/lib/exportEvents';
 
 interface EventLogsListProps {
   branchId: string;
@@ -110,9 +111,31 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters & Search
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters & Search
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportEventsToCSV(events)}
+                disabled={events.length === 0}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportEventsListToPDF(events)}
+                disabled={events.length === 0}
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                Export PDF
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">

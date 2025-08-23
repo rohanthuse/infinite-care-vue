@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Calendar, Clock, MapPin, User } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, MapPin, User, FileText } from 'lucide-react';
 import { EventLog } from '@/data/hooks/useEventsLogs';
 import { BodyMapViewer } from './BodyMapViewer';
 import { EventStaffDetailsView } from './EventStaffDetailsView';
@@ -15,6 +15,7 @@ import { EventActionsView } from './EventActionsView';
 import { EventRiskAssessmentView } from './EventRiskAssessmentView';
 import { EventComplianceView } from './EventComplianceView';
 import { EventAttachmentsView } from './EventAttachmentsView';
+import { exportEventToPDF } from '@/lib/exportEvents';
 
 interface EventDetailsDialogProps {
   event: EventLog | null;
@@ -231,9 +232,18 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
         </div>
 
         <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => exportEventToPDF(event)}
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              Export PDF
+            </Button>
+          </div>
           {onEdit && (
             <Button onClick={() => onEdit(event)}>
               Edit Event

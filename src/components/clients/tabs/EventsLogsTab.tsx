@@ -5,7 +5,8 @@ import { AlertTriangle, Clock, Plus, User, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useClientEvents } from "@/hooks/useClientEvents";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useClientEvents, useUpdateClientEventStatus } from "@/hooks/useClientEvents";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
 
 interface EventsLogsTabProps {
@@ -22,7 +23,8 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   onAddEvent 
 }) => {
   const { data: events = [], isLoading } = useClientEvents(clientId);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const updateStatusMutation = useUpdateClientEventStatus();
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const getSeverityColor = (severity: string) => {
@@ -48,6 +50,14 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   const handleViewDetails = (event: any) => {
     setSelectedEvent(event);
     setIsDetailsOpen(true);
+  };
+
+  const handleStatusChange = async (eventId: string, newStatus: string) => {
+    try {
+      await updateStatusMutation.mutateAsync({ id: eventId, status: newStatus });
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
   };
 
   if (isLoading) {
@@ -124,15 +134,31 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                         )}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewDetails(event)}
-                      className="ml-4"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewDetails(event)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                      
+                      <Select
+                        value={event.status}
+                        onValueChange={(value) => handleStatusChange(event.id, value)}
+                      >
+                        <SelectTrigger className="w-28 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
+                          <SelectItem value="resolved">Resolved</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               ))}
