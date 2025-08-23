@@ -1,12 +1,6 @@
 import { format } from 'date-fns';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export interface ExportableEvent {
   id: string;
@@ -96,7 +90,7 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
     ['Recorded By', event.recorded_by_staff_name || '']
   ];
 
-  pdf.autoTable({
+  autoTable(pdf, {
     head: [['Field', 'Value']],
     body: eventData,
     startY: 40,
@@ -107,7 +101,7 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
 
   // Description section
   if (event.description) {
-    const finalY = (pdf as any).lastAutoTable.finalY || 40;
+    const finalY = (pdf as any).lastAutoTable?.finalY || 40;
     pdf.setFontSize(14);
     pdf.text('Description:', 20, finalY + 20);
     
@@ -142,7 +136,7 @@ export const exportEventsListToPDF = (events: ExportableEvent[], filename: strin
     format(new Date(event.created_at), 'MM/dd/yy')
   ]);
 
-  pdf.autoTable({
+  autoTable(pdf, {
     head: [['Title', 'Client', 'Type', 'Severity', 'Status', 'Event Date', 'Recorded']],
     body: tableData,
     startY: 50,
