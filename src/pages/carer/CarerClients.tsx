@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCarerClients } from "@/hooks/useCarerClientData";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { format, parseISO } from "date-fns";
 
 const CarerClients: React.FC = () => {
   const { data: clients, isLoading, error } = useCarerClients();
+  const { navigateToCarerPage } = useCarerNavigation();
 
   if (isLoading) {
     return (
@@ -96,7 +98,14 @@ const CarerClients: React.FC = () => {
                 
                 <div className="flex gap-2 mt-4">
                   <Button size="sm" className="w-full">View Care Plan</Button>
-                  <Button size="sm" variant="outline" className="w-full">Client Details</Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigateToCarerPage(`/clients/${client.id}`)}
+                  >
+                    Client Details
+                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -13,6 +13,7 @@ import CarerReports from "@/pages/carer/CarerReports";
 import CarerPayments from "@/pages/carer/CarerPayments";
 import CarerTraining from "@/pages/carer/CarerTraining";
 import CarerClients from "@/pages/carer/CarerClients";
+import CarerClientDetail from "@/pages/carer/CarerClientDetail";
 import CarerAttendance from "@/pages/carer/CarerAttendance";
 import CarerDocuments from "@/pages/carer/CarerDocuments";
 import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
@@ -62,6 +63,7 @@ const CarerRoutes = () => [
       <Route path="payments" element={<CarerPayments />} />
       <Route path="training" element={<CarerTraining />} />
       <Route path="clients" element={<CarerClients />} />
+      <Route path="clients/:clientId" element={<CarerClientDetail />} />
       <Route path="attendance" element={<CarerAttendance />} />
       <Route path="documents" element={<CarerDocuments />} />
       <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
