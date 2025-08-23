@@ -113,8 +113,19 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         sessionStorage.setItem('openEventId', notification.data.event_id);
         sessionStorage.setItem('openEventClientId', notification.data.client_id);
         
-        // Navigate to client events page (assuming carer has access)
-        navigate(`/client/${notification.data.client_id}/events`);
+        // Check if we're in carer context and navigate accordingly
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/carer-dashboard/')) {
+          const tenantMatch = currentPath.match(/\/([^/]+)\/carer-dashboard/);
+          if (tenantMatch) {
+            navigate(`/${tenantMatch[1]}/carer-dashboard/clients/${notification.data.client_id}`);
+          } else {
+            navigate(`/carer-dashboard/clients/${notification.data.client_id}`);
+          }
+        } else {
+          // Default fallback for branch dashboard or other contexts
+          navigate(`/client/${notification.data.client_id}/events`);
+        }
       }
     } catch (error) {
       console.error('Error handling notification click:', error);
@@ -165,9 +176,18 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           <DropdownMenuSeparator />
           
           {recentNotifications.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">
-              No notifications yet
-            </div>
+            <>
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No notifications yet
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-center justify-center text-blue-600 hover:text-blue-700"
+                onClick={onViewAll}
+              >
+                View all notifications
+              </DropdownMenuItem>
+            </>
           ) : (
             <>
               {recentNotifications.map((notification) => (
