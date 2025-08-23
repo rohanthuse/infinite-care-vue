@@ -9,7 +9,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { format } from "date-fns";
 
 export default function CarerLeave() {
-  const { data: userRole } = useUserRole();
+  const { data: userRole, isLoading: isLoadingRole } = useUserRole();
   const { data: leaveRequests, isLoading } = useLeaveRequests(userRole?.branchId);
 
   // Filter leave requests for the current carer
@@ -48,6 +48,19 @@ export default function CarerLeave() {
         return type;
     }
   };
+
+  if (isLoadingRole) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading leave management...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!userRole?.branchId) {
     return (

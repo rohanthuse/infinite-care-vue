@@ -85,11 +85,11 @@ export const useUserRole = () => {
           };
         }
       } else if (role === 'carer') {
-        // For carers, get staff record
+        // For carers, get staff record by auth_user_id
         const { data: staffData } = await supabase
           .from('staff')
           .select('id, first_name, last_name, branch_id')
-          .eq('id', user.id)
+          .eq('auth_user_id', user.id)
           .single();
           
         if (staffData) {
