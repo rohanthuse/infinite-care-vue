@@ -148,7 +148,7 @@ export const useEventsLogs = (branchId?: string, filters?: {
       }
 
       if (filters?.assignedToMe) {
-        query = query.or(`follow_up_assigned_to.eq.${filters.assignedToMe},recorded_by_staff_id.eq.${filters.assignedToMe}`);
+        query = query.or(`follow_up_assigned_to.eq.${filters.assignedToMe},recorded_by_staff_id.eq.${filters.assignedToMe},investigation_assigned_to.eq.${filters.assignedToMe}`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -296,6 +296,45 @@ export const useCreateEventLog = () => {
           }
         } catch (notificationError) {
           console.error('Error creating notification:', notificationError);
+        }
+      }
+
+      // Create notifications for assigned staff
+      const assignedStaffIds = [];
+      if (eventData.follow_up_assigned_to) assignedStaffIds.push(eventData.follow_up_assigned_to);
+      if (eventData.investigation_assigned_to) assignedStaffIds.push(eventData.investigation_assigned_to);
+
+      for (const staffId of assignedStaffIds) {
+        try {
+          // Get staff auth_user_id
+          const { data: staff } = await supabase
+            .from('staff')
+            .select('auth_user_id, first_name, last_name')
+            .eq('id', staffId)
+            .single();
+
+          if (staff?.auth_user_id) {
+            const assignmentType = staffId === eventData.follow_up_assigned_to ? 'Follow-up' : 'Investigation';
+            await supabase
+              .from('notifications')
+              .insert({
+                user_id: staff.auth_user_id,
+                branch_id: eventData.branch_id,
+                type: 'task',
+                category: 'info',
+                priority: 'medium',
+                title: `${assignmentType} Assignment: ${data.title}`,
+                message: `You have been assigned to handle the ${assignmentType.toLowerCase()} for this event.`,
+                data: {
+                  event_id: data.id,
+                  client_id: data.client_id,
+                  event_type: data.event_type,
+                  assignment_type: assignmentType.toLowerCase()
+                }
+              });
+          }
+        } catch (notificationError) {
+          console.error('Error creating staff assignment notification:', notificationError);
         }
       }
       

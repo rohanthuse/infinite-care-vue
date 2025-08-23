@@ -270,6 +270,13 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                               {event.category}
                             </Badge>
                           )}
+                          {(event.follow_up_assigned_to === userRole?.staffId || 
+                            event.investigation_assigned_to === userRole?.staffId || 
+                            event.recorded_by_staff_id === userRole?.staffId) && (
+                            <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                              Assigned
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
