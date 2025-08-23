@@ -10,6 +10,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Phone, HelpCircle } from "lucide-react";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
+import { useBranchAdmins } from "@/hooks/useBranchAdmins";
+import { useUnifiedCreateThread } from "@/hooks/useUnifiedMessaging";
 const formSchema = z.object({
   subject: z.string({
     required_error: "Please select a subject"
@@ -22,9 +25,19 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 const ClientSupport = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
+  // Get authenticated client data
+  const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
+  const clientId = authData?.client?.id;
+  const branchId = authData?.client?.branch_id;
+  
+  // Get branch admins for the client's branch
+  const { data: branchAdmins = [], isLoading: adminsLoading } = useBranchAdmins(branchId || '');
+  
+  // Hook to create message threads
+  const createThread = useUnifiedCreateThread();
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -33,19 +46,65 @@ const ClientSupport = () => {
       priority: "normal"
     }
   });
-  const onSubmit = (data: FormValues) => {
+
+  const onSubmit = async (data: FormValues) => {
+    if (!clientId || !branchId || branchAdmins.length === 0) {
+      toast({
+        title: "Error",
+        description: "Unable to send message. Please try refreshing the page.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // In a real application, this would send data to your backend
-    setTimeout(() => {
-      console.log("Form data submitted:", data);
+    try {
+      // Map subject values to readable titles
+      const subjectMapping: Record<string, string> = {
+        general: "General Inquiry",
+        billing: "Billing Question", 
+        service: "Service Feedback",
+        technical: "Technical Support",
+        other: "Other"
+      };
+
+      const subject = `Support - ${subjectMapping[data.subject] || data.subject}`;
+      
+      // Prepare recipient data (all branch admins)
+      const recipientIds = branchAdmins.map(admin => admin.id);
+      const recipientNames = branchAdmins.map(admin => `${admin.first_name} ${admin.last_name}`);
+      const recipientTypes = branchAdmins.map(() => 'branch_admin');
+
+      // Create message thread
+      await createThread.mutateAsync({
+        recipientIds,
+        recipientNames,
+        recipientTypes,
+        subject,
+        initialMessage: data.message,
+        threadType: 'support',
+        messageType: 'support',
+        priority: data.priority || 'normal',
+        actionRequired: data.priority === 'high'
+      });
+
       toast({
         title: "Message sent successfully",
-        description: "Thank you for your inquiry. Our team will respond within 24 hours."
+        description: "Your support request has been sent to the admin team. You can view the conversation in your Messages tab."
       });
+      
       form.reset();
+    } catch (error) {
+      console.error('Failed to send support message:', error);
+      toast({
+        title: "Failed to send message",
+        description: "There was an error sending your message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
   return <div className="space-y-6">
       {/* Contact Information Card */}
@@ -172,8 +231,16 @@ const ClientSupport = () => {
                   </FormItem>} />
               
               <div className="flex justify-end">
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Sending..." : "Send Message"}
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || authLoading || adminsLoading || !clientId || !branchId || branchAdmins.length === 0}
+                >
+                  {isSubmitting ? "Sending..." : 
+                   authLoading ? "Loading..." :
+                   adminsLoading ? "Loading contacts..." :
+                   !clientId ? "Authentication required" :
+                   branchAdmins.length === 0 ? "No admins available" :
+                   "Send Message"}
                 </Button>
               </div>
             </form>
