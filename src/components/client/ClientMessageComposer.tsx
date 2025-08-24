@@ -253,19 +253,30 @@ export const ClientMessageComposer = ({
                   <SelectTrigger>
                     <SelectValue placeholder="Select a care coordinator" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {careTeam.map((contact) => (
-                      <SelectItem key={contact.id} value={contact.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{contact.name}</span>
-                          <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                            Care Coordinator
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="bg-white z-50">
+                    {careTeam.length > 0 ? (
+                      careTeam.map((contact) => (
+                        <SelectItem key={contact.id} value={contact.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{contact.name}</span>
+                            <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+                              Care Coordinator
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-gray-500">
+                        No care coordinators found for your branch
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
+                {careTeam.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No care coordinators available. Please contact support if you need assistance.
+                  </p>
+                )}
               </div>
               
               <div>

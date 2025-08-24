@@ -72,17 +72,21 @@ export const useClientCareTeam = () => {
         return [];
       }
 
-      // Get current client's branch using the authenticated user's email
+      // Get current authenticated user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.email) {
-        console.log('[useClientCareTeam] No authenticated user email');
+      if (!user) {
+        console.log('[useClientCareTeam] No authenticated user');
         return [];
       }
 
-      console.log('[useClientCareTeam] Looking up client with email:', user.email);
+      console.log('[useClientCareTeam] Looking up client with auth_user_id:', user.id);
 
-      // Get client record to find branch using authenticated user's email - filter by organization
-      const { data: client, error: clientError } = await supabase
+      // Get client record using auth_user_id (most reliable) - filter by organization
+      let client;
+      let clientError;
+      
+      // First try auth_user_id
+      const { data: clientByAuth, error: authError } = await supabase
         .from('clients')
         .select(`
           id, 
@@ -90,24 +94,53 @@ export const useClientCareTeam = () => {
           first_name, 
           last_name, 
           email,
+          auth_user_id,
           branches!inner (
             id,
             organization_id
           )
         `)
-        .eq('email', user.email)
+        .eq('auth_user_id', user.id)
         .eq('branches.organization_id', organization.id)
-        .single();
+        .maybeSingle();
 
-      if (clientError || !client?.branch_id) {
-        console.error('[useClientCareTeam] Client lookup error:', clientError);
+      if (clientByAuth) {
+        client = clientByAuth;
+        console.log('[useClientCareTeam] Found client by auth_user_id:', client);
+      } else {
+        // Fallback to email if auth_user_id lookup fails
+        console.log('[useClientCareTeam] Auth lookup failed, trying email fallback:', user.email);
+        const { data: clientByEmail, error: emailError } = await supabase
+          .from('clients')
+          .select(`
+            id, 
+            branch_id, 
+            first_name, 
+            last_name, 
+            email,
+            auth_user_id,
+            branches!inner (
+              id,
+              organization_id
+            )
+          `)
+          .eq('email', user.email)
+          .eq('branches.organization_id', organization.id)
+          .maybeSingle();
+        
+        client = clientByEmail;
+        clientError = emailError;
+        console.log('[useClientCareTeam] Email lookup result:', { client, clientError });
+      }
+
+      if (!client?.branch_id) {
+        console.error('[useClientCareTeam] Client lookup failed - no client found or no branch_id');
         return [];
       }
 
-      console.log('[useClientCareTeam] Found client:', client);
+      console.log('[useClientCareTeam] Using client:', client);
 
-      // Get only admins for this branch
-      // Get admin branches first, then profiles separately to avoid RLS issues
+      // Get branch admins first
       const { data: adminBranches, error: adminError } = await supabase
         .from('admin_branches')
         .select('admin_id')
@@ -115,13 +148,13 @@ export const useClientCareTeam = () => {
 
       if (adminError) {
         console.error('[useClientCareTeam] Admin lookup error:', adminError);
-        return [];
       }
 
       const contacts: ClientContact[] = [];
 
-      // Get admin profiles separately if we have admin IDs
+      // Get branch admin profiles if we have admin IDs
       if (adminBranches && adminBranches.length > 0) {
+        console.log('[useClientCareTeam] Found branch admins:', adminBranches.length);
         const adminIds = adminBranches.map(ab => ab.admin_id);
         
         const { data: profiles, error: profileError } = await supabase
@@ -131,7 +164,6 @@ export const useClientCareTeam = () => {
 
         if (profileError) {
           console.error('[useClientCareTeam] Profile lookup error:', profileError);
-          // Continue with default admin data if profiles fail
         }
 
         adminBranches.forEach(admin => {
@@ -153,7 +185,57 @@ export const useClientCareTeam = () => {
         });
       }
 
-      console.log('[useClientCareTeam] Found contacts:', contacts);
+      // If no branch admins found, try organization-level fallback
+      if (contacts.length === 0) {
+        console.log('[useClientCareTeam] No branch admins found, trying organization fallback');
+        
+        // Get all branches for this organization
+        const { data: orgBranches } = await supabase
+          .from('branches')
+          .select('id')
+          .eq('organization_id', organization.id);
+
+        if (orgBranches && orgBranches.length > 0) {
+          const branchIds = orgBranches.map(b => b.id);
+          
+          // Get all admin_branches for these branches
+          const { data: orgAdminBranches } = await supabase
+            .from('admin_branches')
+            .select('admin_id')
+            .in('branch_id', branchIds);
+
+          if (orgAdminBranches && orgAdminBranches.length > 0) {
+            // Deduplicate admin IDs
+            const uniqueAdminIds = [...new Set(orgAdminBranches.map(ab => ab.admin_id))];
+            console.log('[useClientCareTeam] Found organization admins:', uniqueAdminIds.length);
+            
+            const { data: orgProfiles } = await supabase
+              .from('profiles')
+              .select('id, first_name, last_name, email')
+              .in('id', uniqueAdminIds);
+
+            uniqueAdminIds.forEach(adminId => {
+              const profile = orgProfiles?.find(p => p.id === adminId);
+              contacts.push({
+                id: adminId,
+                name: profile 
+                  ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin'
+                  : 'Admin',
+                avatar: profile 
+                  ? `${profile.first_name?.charAt(0) || 'A'}${profile.last_name?.charAt(0) || 'D'}`
+                  : 'AD',
+                type: 'admin' as const,
+                status: 'online' as const,
+                unread: 0,
+                email: profile?.email || 'admin@system.com',
+                role: 'admin'
+              });
+            });
+          }
+        }
+      }
+
+      console.log('[useClientCareTeam] Final contacts found:', contacts.length);
       return contacts;
     },
     enabled: !!currentUser && !!organization,
