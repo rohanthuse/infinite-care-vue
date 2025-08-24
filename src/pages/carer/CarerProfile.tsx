@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 const CarerProfile: React.FC = () => {
   const { toast } = useToast();
   const { data: carerProfile, isLoading: loading, error } = useCarerProfile();
+  const { user } = useCarerAuthSafe();
   const updateCarerMutation = useUpdateCarer();
   
   // State for edit mode
@@ -746,11 +747,11 @@ const CarerProfile: React.FC = () => {
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex justify-between">
                         <span>Last login:</span>
-                        <span>{carerProfile.invitation_accepted_at ? displayDate(carerProfile.invitation_accepted_at) : "Not available"}</span>
+                        <span>{user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : "Not available"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Profile completed:</span>
-                        <span>{carerProfile.first_login_completed ? "Yes" : "No"}</span>
+                        <span>{carerProfile.profile_completed ? "Yes" : "No"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Account status:</span>
