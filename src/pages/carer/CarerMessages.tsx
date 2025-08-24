@@ -9,12 +9,14 @@ import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import CarerMessageComposer from "@/components/carer/CarerMessageComposer";
 
 const CarerMessages = () => {
   const { toast } = useToast();
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [messageContent, setMessageContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showComposer, setShowComposer] = useState(false);
   
   const { data: threads, isLoading: threadsLoading } = useUnifiedMessageThreads();
   const { data: messages, isLoading: messagesLoading } = useUnifiedThreadMessages(selectedThreadId || '');
@@ -85,9 +87,15 @@ const CarerMessages = () => {
           <MessageCircle className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-bold text-card-foreground">Messages</h1>
         </div>
-        <Badge variant="secondary" className="px-3 py-1">
-          {filteredThreads.reduce((total, thread) => total + thread.unreadCount, 0)} unread
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setShowComposer(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            New Message
+          </Button>
+          <Badge variant="secondary" className="px-3 py-1">
+            {filteredThreads.reduce((total, thread) => total + thread.unreadCount, 0)} unread
+          </Badge>
+        </div>
       </div>
 
       {/* Search */}
@@ -256,6 +264,12 @@ const CarerMessages = () => {
           )}
         </Card>
       </div>
+
+      {/* Message Composer Modal */}
+      <CarerMessageComposer 
+        open={showComposer} 
+        onOpenChange={setShowComposer} 
+      />
     </div>
   );
 };
