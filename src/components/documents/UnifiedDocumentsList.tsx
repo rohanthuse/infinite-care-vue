@@ -161,11 +161,21 @@ export function UnifiedDocumentsList({
   };
 
   const canDownloadOrView = (doc: UnifiedDocument) => {
-    return doc.file_path && 
-           doc.file_path !== '<nil>' && 
-           doc.file_path !== 'null' && 
-           doc.file_path !== 'undefined' &&
-           doc.has_file !== false;
+    // Must have a valid file path
+    if (!doc.file_path || 
+        doc.file_path === '<nil>' || 
+        doc.file_path === 'null' || 
+        doc.file_path === 'undefined') {
+      return false;
+    }
+    
+    // If we explicitly checked and file doesn't exist, don't allow
+    if (doc.has_file === false) {
+      return false;
+    }
+    
+    // Otherwise allow - either file exists or we couldn't verify (better to try)
+    return true;
   };
 
   const handleShareWithCarer = (doc: UnifiedDocument) => {

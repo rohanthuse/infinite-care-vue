@@ -57,7 +57,7 @@ export const useUnifiedDocuments = (branchId: string) => {
         throw error;
       }
 
-      // Check file existence for each document
+      // Check file existence for each document with proper folder handling
       const documentsWithFileStatus = await Promise.all(
         data?.map(async (doc: any) => {
           if (doc.file_path) {
@@ -65,21 +65,34 @@ export const useUnifiedDocuments = (branchId: string) => {
                           doc.source_table === 'agreement_files' ? 'agreement-files' : 'documents';
             
             try {
+              // Split path to get folder and filename
+              const pathParts = doc.file_path.split('/');
+              const filename = pathParts.pop();
+              const folder = pathParts.length > 0 ? pathParts.join('/') : '';
+              
+              // List files in the specific folder
               const { data: fileData, error: fileError } = await supabase.storage
                 .from(bucket)
-                .list('', {
-                  search: doc.file_path.split('/').pop()
+                .list(folder, {
+                  limit: 100,
+                  search: filename
                 });
+              
+              // Check if the specific file exists in the folder
+              const fileExists = !fileError && fileData && 
+                fileData.some(file => file.name === filename);
               
               return {
                 ...doc,
-                has_file: !fileError && fileData && fileData.length > 0
+                has_file: fileExists
               };
             } catch (err) {
               console.error('[useUnifiedDocuments] Error checking file existence:', err);
-              return { ...doc, has_file: false };
+              // If file path exists, assume file is available (fallback for backward compatibility)
+              return { ...doc, has_file: true };
             }
           }
+          // No file path means no file
           return { ...doc, has_file: false };
         }) || []
       );
