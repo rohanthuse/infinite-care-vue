@@ -201,8 +201,10 @@ export const useClientCareTeam = () => {
           )
         `)
         .eq('client_id', client.id)
-        .eq('staff.status', 'Active')
-        .not('staff_id', 'is', null);
+        .in('staff.status', ['Active', 'active'])
+        .not('staff_id', 'is', null)
+        .order('staff.last_name', { ascending: true })
+        .order('staff.first_name', { ascending: true });
 
       if (clientBookings && clientBookings.length > 0) {
         console.log('[useClientCareTeam] Found carers via bookings:', clientBookings.length);
@@ -236,8 +238,9 @@ export const useClientCareTeam = () => {
           .from('staff')
           .select('id, first_name, last_name, email, auth_user_id, status')
           .eq('branch_id', client.branch_id)
-          .eq('status', 'Active')
-          .limit(5); // Limit to prevent too many options
+          .in('status', ['Active', 'active'])
+          .order('last_name', { ascending: true })
+          .order('first_name', { ascending: true });
 
         if (branchStaff && branchStaff.length > 0) {
           console.log('[useClientCareTeam] Found branch carers:', branchStaff.length);
@@ -315,10 +318,20 @@ export const useClientCareTeam = () => {
       });
 
       const finalContacts = Array.from(uniqueContacts.values());
+      
+      // Sort contacts: coordinators first, then carers, both sorted alphabetically by name
+      finalContacts.sort((a, b) => {
+        if (a.type !== b.type) {
+          return a.type === 'admin' ? -1 : 1; // Admins first
+        }
+        return a.name.localeCompare(b.name); // Then alphabetically
+      });
+      
       console.log('[useClientCareTeam] Final contacts found:', {
         total: finalContacts.length,
         coordinators: finalContacts.filter(c => c.type === 'admin').length,
-        carers: finalContacts.filter(c => c.type === 'carer').length
+        carers: finalContacts.filter(c => c.type === 'carer').length,
+        carerNames: finalContacts.filter(c => c.type === 'carer').map(c => c.name)
       });
       
       return finalContacts;
