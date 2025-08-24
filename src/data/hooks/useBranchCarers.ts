@@ -81,6 +81,7 @@ export interface UpdateCarerData extends Partial<CreateCarerData> {
   status?: string;
   profile_completed?: boolean;
   first_login_completed?: boolean;
+  photo_url?: string | null;
 }
 
 export async function fetchBranchCarers(branchId?: string) {

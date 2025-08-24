@@ -5,11 +5,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Phone, Mail, Edit, Save, X, User, Shield, Clock, CheckCircle } from "lucide-react";
+import { Calendar, MapPin, Phone, Mail, Edit, Save, X, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useCarerProfile } from "@/data/hooks/useCarerProfile";
-import { useUpdateCarer } from "@/data/hooks/useUpdateCarer";
+import { useCarerProfile, useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { CarerPhotoUpload } from "@/components/CarerPhotoUpload";
 
@@ -26,7 +24,7 @@ const displayDate = (dateString: string | undefined): string => {
 const CarerProfile: React.FC = () => {
   const { toast } = useToast();
   const { data: carerProfile, isLoading, isError } = useCarerProfile();
-  const { mutate: updateCarer, isUpdating } = useUpdateCarer();
+  const updateCarerMutation = useUpdateCarer();
   const { user } = useCarerAuthSafe();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -36,7 +34,6 @@ const CarerProfile: React.FC = () => {
     email: carerProfile?.email || '',
     phone: carerProfile?.phone || '',
     address: carerProfile?.address || '',
-    bio: carerProfile?.bio || '',
   });
 
   useEffect(() => {
@@ -47,7 +44,6 @@ const CarerProfile: React.FC = () => {
         email: carerProfile.email || '',
         phone: carerProfile.phone || '',
         address: carerProfile.address || '',
-        bio: carerProfile.bio || '',
       });
     }
   }, [carerProfile]);
@@ -76,10 +72,9 @@ const CarerProfile: React.FC = () => {
       email: profileData.email,
       phone: profileData.phone,
       address: profileData.address,
-      bio: profileData.bio,
     };
 
-    updateCarer({ id: carerProfile?.id, ...payload }, {
+    updateCarerMutation.mutate({ id: carerProfile?.id, ...payload }, {
       onSuccess: () => {
         toast({
           title: "Success",
@@ -123,7 +118,12 @@ const CarerProfile: React.FC = () => {
             <TabsContent value="personal" className="space-y-2">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="col-span-1">
-                  <CarerPhotoUpload carerId={carerProfile?.id} />
+                  <CarerPhotoUpload 
+                    carerId={carerProfile?.id}
+                    currentPhotoUrl={carerProfile?.photo_url}
+                    carerName={`${carerProfile?.first_name ?? ''} ${carerProfile?.last_name ?? ''}`.trim()}
+                    isEditing={isEditing}
+                  />
                 </div>
                 <div className="col-span-1">
                   <div className="flex justify-end">
@@ -141,14 +141,13 @@ const CarerProfile: React.FC = () => {
                               email: carerProfile?.email || '',
                               phone: carerProfile?.phone || '',
                               address: carerProfile?.address || '',
-                              bio: carerProfile?.bio || '',
                             });
                           }}
                         >
                           <X className="mr-2 h-4 w-4" />
                           Cancel
                         </Button>
-                        <Button onClick={handleSaveProfile} disabled={isUpdating}>
+                        <Button onClick={handleSaveProfile} disabled={updateCarerMutation.isPending}>
                           <Save className="mr-2 h-4 w-4" />
                           Save
                         </Button>
@@ -220,37 +219,10 @@ const CarerProfile: React.FC = () => {
                   disabled={!isEditing}
                 />
               </div>
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  name="bio"
-                  value={profileData.bio}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                />
-              </div>
             </TabsContent>
             <TabsContent value="security">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-4 w-4 text-gray-500" />
-                  <span>Two-Factor Authentication:</span>
-                  <Badge variant="outline">
-                    {/* Assuming 2FA status is stored in carerProfile */}
-                    {carerProfile?.twoFactorAuthEnabled ? 'Enabled' : 'Disabled'}
-                  </Badge>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span>Last Password Change:</span>
-                  <span>{displayDate(carerProfile?.lastPasswordChange)}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Profile Verified:</span>
-                  <span>{carerProfile?.profileVerified ? 'Yes' : 'No'}</span>
-                </div>
+              <div className="space-y-4 p-4 text-center text-muted-foreground">
+                <p>Security settings are managed through your account settings.</p>
               </div>
             </TabsContent>
           </Tabs>
