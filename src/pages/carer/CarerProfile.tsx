@@ -16,6 +16,7 @@ import { CarerDocuments } from "@/components/carer/CarerDocuments";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useUpdateCarer } from "@/data/hooks/useBranchCarers";
+import { useStaffPhotoUpload } from "@/hooks/useStaffPhotoUpload";
 import { supabase } from "@/integrations/supabase/client";
 
 const CarerProfile: React.FC = () => {
@@ -23,6 +24,7 @@ const CarerProfile: React.FC = () => {
   const { data: carerProfile, isLoading: loading, error } = useCarerProfile();
   const { user } = useCarerAuthSafe();
   const updateCarerMutation = useUpdateCarer();
+  const { uploadPhoto, deletePhoto, uploading } = useStaffPhotoUpload();
   
   // State for edit mode
   const [editMode, setEditMode] = useState({
@@ -113,6 +115,77 @@ const CarerProfile: React.FC = () => {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update profile",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle photo upload
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !carerProfile) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const photoUrl = await uploadPhoto(file, carerProfile.id);
+      if (photoUrl) {
+        await updateCarerMutation.mutateAsync({
+          id: carerProfile.id,
+          photo_url: photoUrl
+        });
+        toast({
+          title: "Photo updated",
+          description: "Your profile photo has been updated successfully.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Photo upload failed",
+        description: error.message || "Failed to upload photo",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle photo removal
+  const handlePhotoRemove = async () => {
+    if (!carerProfile || !carerProfile.photo_url) return;
+
+    try {
+      const deleted = await deletePhoto(carerProfile.photo_url);
+      if (deleted) {
+        await updateCarerMutation.mutateAsync({
+          id: carerProfile.id,
+          photo_url: null
+        });
+        toast({
+          title: "Photo removed",
+          description: "Your profile photo has been removed successfully.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Photo removal failed",
+        description: error.message || "Failed to remove photo",
         variant: "destructive"
       });
     }
@@ -232,15 +305,56 @@ const CarerProfile: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="col-span-1">
           <CardHeader className="flex flex-col items-center">
-            <Avatar className="w-24 h-24 mb-4">
-              <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl font-bold">
-                {`${carerProfile.first_name?.charAt(0) || ''}${carerProfile.last_name?.charAt(0) || ''}`.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <h2 className="text-xl font-semibold">
+            <div className="relative mb-4">
+              <Avatar className="w-24 h-24 ring-4 ring-purple-500">
+                <AvatarImage 
+                  src={carerProfile.photo_url || undefined} 
+                  alt={`${carerProfile.first_name} ${carerProfile.last_name}`} 
+                />
+                <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl font-bold">
+                  {`${carerProfile.first_name?.charAt(0) || ''}${carerProfile.last_name?.charAt(0) || ''}`.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            
+            <div className="flex flex-col gap-2 mb-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                id="photo-upload"
+              />
+              <label htmlFor="photo-upload">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="cursor-pointer"
+                  disabled={uploading || updateCarerMutation.isPending}
+                  asChild
+                >
+                  <span>
+                    {uploading ? "Uploading..." : "Change Photo"}
+                  </span>
+                </Button>
+              </label>
+              {carerProfile.photo_url && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handlePhotoRemove}
+                  disabled={uploading || updateCarerMutation.isPending}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Remove Photo
+                </Button>
+              )}
+            </div>
+            
+            <h2 className="text-xl font-semibold text-center">
               {carerProfile.first_name} {carerProfile.last_name}
             </h2>
-            <p className="text-gray-500">{carerProfile.specialization || "Care Specialist"}</p>
+            <p className="text-gray-500 text-center">{carerProfile.specialization || "Care Specialist"}</p>
             {getStatusBadge(carerProfile.status)}
           </CardHeader>
           <CardContent className="space-y-4">

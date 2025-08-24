@@ -29,6 +29,7 @@ export interface CarerProfile {
   bank_account_number?: string;
   bank_sort_code?: string;
   invitation_accepted_at?: string;
+  photo_url?: string;
 }
 
 /**
