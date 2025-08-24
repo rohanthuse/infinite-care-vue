@@ -235,7 +235,7 @@ export const ClientMessageComposer = ({
       {/* Header - Fixed */}
       <div className="flex-shrink-0 p-4 border-b border-gray-200 flex items-center justify-between">
         <h2 className="text-lg font-semibold">
-          {isReply ? "Reply to Care Coordinator" : "Message Care Coordinator"}
+          {isReply ? "Reply to Message" : "Send Message"}
         </h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -251,7 +251,7 @@ export const ClientMessageComposer = ({
                 <label className="block text-sm font-medium mb-2">To:</label>
                 <Select value={recipientId} onValueChange={setRecipientId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a care coordinator" />
+                    <SelectValue placeholder="Select care coordinator or carer" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
                     {careTeam.length > 0 ? (
@@ -259,22 +259,26 @@ export const ClientMessageComposer = ({
                         <SelectItem key={contact.id} value={contact.id}>
                           <div className="flex items-center gap-2">
                             <span>{contact.name}</span>
-                            <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                              Care Coordinator
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              contact.type === 'admin' 
+                                ? 'bg-purple-100 text-purple-700' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {contact.type === 'admin' ? 'Care Coordinator' : 'Carer'}
                             </span>
                           </div>
                         </SelectItem>
                       ))
                     ) : (
                       <div className="p-2 text-sm text-gray-500">
-                        No care coordinators found for your branch
+                        No care team members found for your branch
                       </div>
                     )}
                   </SelectContent>
                 </Select>
                 {careTeam.length === 0 && (
                   <p className="text-xs text-gray-500 mt-1">
-                    No care coordinators available. Please contact support if you need assistance.
+                    No care team members available. Please contact support if you need assistance.
                   </p>
                 )}
               </div>
@@ -333,7 +337,9 @@ export const ClientMessageComposer = ({
           
           <div className="p-3 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-700">
-              <strong>Note:</strong> Your message will be sent to your care coordinator who will coordinate with your care team as needed. For urgent matters, please call your care provider directly.
+              <strong>Note:</strong> Your message will be sent to {selectedRecipient ? 
+                (selectedRecipient.type === 'admin' ? 'your care coordinator' : 'your carer') : 
+                'your selected care team member'}. For urgent matters, please call your care provider directly.
             </p>
           </div>
         </div>

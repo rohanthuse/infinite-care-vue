@@ -59,7 +59,7 @@ const parseAttachments = (attachments: any): any[] => {
   }
 };
 
-// Get client's care administrators (only admins assigned to their branch)
+// Get client's care team (both care coordinators and carers)
 export const useClientCareTeam = () => {
   const { data: currentUser } = useUserRole();
   const { organization } = useTenant();
@@ -140,7 +140,9 @@ export const useClientCareTeam = () => {
 
       console.log('[useClientCareTeam] Using client:', client);
 
-      // Get branch admins first
+      const contacts: ClientContact[] = [];
+
+      // 1. Get branch admins first (care coordinators)
       const { data: adminBranches, error: adminError } = await supabase
         .from('admin_branches')
         .select('admin_id')
@@ -149,8 +151,6 @@ export const useClientCareTeam = () => {
       if (adminError) {
         console.error('[useClientCareTeam] Admin lookup error:', adminError);
       }
-
-      const contacts: ClientContact[] = [];
 
       // Get branch admin profiles if we have admin IDs
       if (adminBranches && adminBranches.length > 0) {
@@ -171,22 +171,93 @@ export const useClientCareTeam = () => {
           contacts.push({
             id: admin.admin_id,
             name: profile 
-              ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin'
-              : 'Admin',
+              ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Care Coordinator'
+              : 'Care Coordinator',
             avatar: profile 
-              ? `${profile.first_name?.charAt(0) || 'A'}${profile.last_name?.charAt(0) || 'D'}`
-              : 'AD',
+              ? `${profile.first_name?.charAt(0) || 'C'}${profile.last_name?.charAt(0) || 'C'}`
+              : 'CC',
             type: 'admin' as const,
             status: 'online' as const,
             unread: 0,
-            email: profile?.email || 'admin@system.com',
+            email: profile?.email || 'coordinator@system.com',
             role: 'admin'
           });
         });
       }
 
-      // If no branch admins found, try organization-level fallback
-      if (contacts.length === 0) {
+      // 2. Get carers assigned to this client via bookings
+      console.log('[useClientCareTeam] Looking for assigned carers via bookings');
+      const { data: clientBookings } = await supabase
+        .from('bookings')
+        .select(`
+          staff_id,
+          staff!inner (
+            id,
+            first_name,
+            last_name,
+            email,
+            auth_user_id,
+            status
+          )
+        `)
+        .eq('client_id', client.id)
+        .eq('staff.status', 'Active')
+        .not('staff_id', 'is', null);
+
+      if (clientBookings && clientBookings.length > 0) {
+        console.log('[useClientCareTeam] Found carers via bookings:', clientBookings.length);
+        
+        // Deduplicate staff by ID
+        const uniqueStaff = new Map();
+        clientBookings.forEach(booking => {
+          if (booking.staff && booking.staff_id) {
+            uniqueStaff.set(booking.staff_id, booking.staff);
+          }
+        });
+
+        uniqueStaff.forEach((staff) => {
+          contacts.push({
+            id: staff.auth_user_id || staff.id, // Use auth_user_id if available for messaging
+            name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Carer',
+            avatar: `${staff.first_name?.charAt(0) || 'C'}${staff.last_name?.charAt(0) || 'A'}`,
+            type: 'carer' as const,
+            status: 'online' as const,
+            unread: 0,
+            email: staff.email,
+            role: 'carer'
+          });
+        });
+      }
+
+      // 3. Get additional branch carers if no assigned carers found
+      if (!contacts.some(c => c.type === 'carer')) {
+        console.log('[useClientCareTeam] No assigned carers found, getting branch carers');
+        const { data: branchStaff } = await supabase
+          .from('staff')
+          .select('id, first_name, last_name, email, auth_user_id, status')
+          .eq('branch_id', client.branch_id)
+          .eq('status', 'Active')
+          .limit(5); // Limit to prevent too many options
+
+        if (branchStaff && branchStaff.length > 0) {
+          console.log('[useClientCareTeam] Found branch carers:', branchStaff.length);
+          branchStaff.forEach(staff => {
+            contacts.push({
+              id: staff.auth_user_id || staff.id,
+              name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Carer',
+              avatar: `${staff.first_name?.charAt(0) || 'C'}${staff.last_name?.charAt(0) || 'A'}`,
+              type: 'carer' as const,
+              status: 'online' as const,
+              unread: 0,
+              email: staff.email,
+              role: 'carer'
+            });
+          });
+        }
+      }
+
+      // 4. If no branch admins found, try organization-level fallback
+      if (!contacts.some(c => c.type === 'admin')) {
         console.log('[useClientCareTeam] No branch admins found, trying organization fallback');
         
         // Get all branches for this organization
@@ -219,15 +290,15 @@ export const useClientCareTeam = () => {
               contacts.push({
                 id: adminId,
                 name: profile 
-                  ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Admin'
-                  : 'Admin',
+                  ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Care Coordinator'
+                  : 'Care Coordinator',
                 avatar: profile 
-                  ? `${profile.first_name?.charAt(0) || 'A'}${profile.last_name?.charAt(0) || 'D'}`
-                  : 'AD',
+                  ? `${profile.first_name?.charAt(0) || 'C'}${profile.last_name?.charAt(0) || 'C'}`
+                  : 'CC',
                 type: 'admin' as const,
                 status: 'online' as const,
                 unread: 0,
-                email: profile?.email || 'admin@system.com',
+                email: profile?.email || 'coordinator@system.com',
                 role: 'admin'
               });
             });
@@ -235,8 +306,22 @@ export const useClientCareTeam = () => {
         }
       }
 
-      console.log('[useClientCareTeam] Final contacts found:', contacts.length);
-      return contacts;
+      // Deduplicate contacts by ID
+      const uniqueContacts = new Map();
+      contacts.forEach(contact => {
+        if (!uniqueContacts.has(contact.id)) {
+          uniqueContacts.set(contact.id, contact);
+        }
+      });
+
+      const finalContacts = Array.from(uniqueContacts.values());
+      console.log('[useClientCareTeam] Final contacts found:', {
+        total: finalContacts.length,
+        coordinators: finalContacts.filter(c => c.type === 'admin').length,
+        carers: finalContacts.filter(c => c.type === 'carer').length
+      });
+      
+      return finalContacts;
     },
     enabled: !!currentUser && !!organization,
     staleTime: 300000, // 5 minutes
