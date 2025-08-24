@@ -293,6 +293,7 @@ const ClientProfile = () => {
   }
 
   const displayName = profileData.preferred_name || profileData.first_name || "Client";
+  const fullName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim() || "Client";
   const avatarInitials = profile?.avatar_initials || `${profileData.first_name?.charAt(0) || 'C'}${profileData.last_name?.charAt(0) || 'L'}`;
 
   return (
@@ -302,15 +303,31 @@ const ClientProfile = () => {
           <div className="w-full md:w-64 flex flex-col items-center text-center">
             <Avatar className="h-24 w-24">
               {photoPreview || profile?.profile_photo_url ? (
-                <AvatarImage src={photoPreview || profile?.profile_photo_url} alt={displayName} />
+                <AvatarImage src={photoPreview || profile?.profile_photo_url} alt={fullName} />
               ) : (
                 <AvatarFallback className="bg-blue-100 text-blue-800 text-3xl">
                   {avatarInitials}
                 </AvatarFallback>
               )}
             </Avatar>
-            <h3 className="font-bold mt-4">{displayName}</h3>
-            <p className="text-gray-500 text-sm">Client</p>
+            <h3 className="font-bold mt-4 text-lg">{fullName}</h3>
+            <div className="text-gray-600 text-sm space-y-1 mt-2">
+              {profileData.email && (
+                <p className="flex items-center justify-center gap-1">
+                  <span>📧</span> {profileData.email}
+                </p>
+              )}
+              {profileData.phone && (
+                <p className="flex items-center justify-center gap-1">
+                  <span>📞</span> {profileData.phone}
+                </p>
+              )}
+              {profileData.address && (
+                <p className="flex items-center justify-center gap-1">
+                  <span>📍</span> {profileData.address}
+                </p>
+              )}
+            </div>
             <div className="mt-4 w-full">
               <input 
                 type="file" 
