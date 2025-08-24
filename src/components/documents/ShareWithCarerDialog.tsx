@@ -62,6 +62,24 @@ export function ShareWithCarerDialog({
 
     setIsSharing(true);
     try {
+      // Get current user info for RLS compliance
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        toast.error('Authentication required to share documents');
+        setIsSharing(false);
+        return;
+      }
+
+      // Determine storage bucket based on file path
+      let storageBucket = 'documents';
+      if (document.file_path) {
+        if (document.file_path.startsWith('client-documents/')) {
+          storageBucket = 'client-documents';
+        } else if (document.file_path.startsWith('agreement-files/')) {
+          storageBucket = 'agreement-files';
+        }
+      }
+
       // Create document records for each selected staff member using Promise.allSettled for proper error handling
       const sharePromises = selectedStaffIds.map(staffId => 
         supabase
@@ -77,8 +95,14 @@ export function ShareWithCarerDialog({
             branch_id: branchId,
             status: 'active',
             access_level: 'staff',
-            uploaded_by: document.uploaded_by,
-            uploaded_by_name: document.uploaded_by_name || 'Admin (Shared)',
+            storage_bucket: storageBucket,
+            uploaded_by: user.id, // Use current user's ID for RLS compliance
+            uploaded_by_name: user.email || 'Admin (Shared)',
+            metadata: {
+              original_document_id: document.id,
+              original_uploader: document.uploaded_by,
+              shared_at: new Date().toISOString()
+            }
           })
       );
 
@@ -98,11 +122,28 @@ export function ShareWithCarerDialog({
 
       if (failed.length > 0) {
         console.error('Some shares failed:', failed);
-        toast.error(`Failed to share with ${failed.length} carer(s). Please try again.`);
+        
+        // Extract specific error messages for better user feedback
+        const errorMessages = failed.map(result => {
+          if (result.status === 'rejected') {
+            return result.reason?.message || 'Unknown error';
+          } else if (result.status === 'fulfilled' && result.value.error) {
+            return result.value.error.message || 'Database error';
+          }
+          return 'Unknown error';
+        });
+        
+        const uniqueErrors = [...new Set(errorMessages)];
+        const errorText = uniqueErrors.length === 1 
+          ? uniqueErrors[0] 
+          : `Multiple errors occurred (${uniqueErrors.length} different issues)`;
+        
+        toast.error(`Failed to share with ${failed.length} carer(s): ${errorText}`);
       }
     } catch (error) {
       console.error('Error sharing document:', error);
-      toast.error('Failed to share document');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to share document: ${errorMessage}`);
     } finally {
       setIsSharing(false);
     }
