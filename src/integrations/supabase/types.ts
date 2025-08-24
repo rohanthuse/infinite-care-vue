@@ -4797,6 +4797,7 @@ export type Database = {
           national_insurance_number: string | null
           organization_id: string | null
           phone: string | null
+          photo_url: string | null
           profile_completed: boolean | null
           qualifications: string[] | null
           salary_amount: number | null
@@ -4839,6 +4840,7 @@ export type Database = {
           national_insurance_number?: string | null
           organization_id?: string | null
           phone?: string | null
+          photo_url?: string | null
           profile_completed?: boolean | null
           qualifications?: string[] | null
           salary_amount?: number | null
@@ -4881,6 +4883,7 @@ export type Database = {
           national_insurance_number?: string | null
           organization_id?: string | null
           phone?: string | null
+          photo_url?: string | null
           profile_completed?: boolean | null
           qualifications?: string[] | null
           salary_amount?: number | null
@@ -6852,6 +6855,7 @@ export type Database = {
           last_name: string
           national_insurance_number: string
           phone: string
+          photo_url: string
           profile_completed: boolean
           qualifications: string[]
           specialization: string
