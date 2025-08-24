@@ -41,7 +41,7 @@ export function useCarerAuthSafe() {
           // Quick role verification - detailed profile loading handled by useCarerContext
           const { data, error: staffError } = await supabase
             .from('staff')
-            .select('id, first_name, auth_user_id')
+            .select('id, first_name, auth_user_id, branch_id, organization_id')
             .eq('auth_user_id', session.user.id)
             .maybeSingle();
 
@@ -54,7 +54,12 @@ export function useCarerAuthSafe() {
 
           if (data) {
             console.log('[useCarerAuthSafe] Carer verified:', data.first_name);
-            setCarerProfile(data);
+            const profile = { 
+              ...data, 
+              branchId: data.branch_id, 
+              organizationId: data.organization_id 
+            };
+            setCarerProfile(profile);
             
             // Only show welcome message and navigate on actual login from login pages
             const currentPath = window.location.pathname;
@@ -165,7 +170,7 @@ export function useCarerAuthSafe() {
           // Quick verification - detailed profile handled by useCarerContext
           const { data: staffData, error: staffError } = await supabase
             .from('staff')
-            .select('id, first_name')
+            .select('id, first_name, branch_id, organization_id')
             .eq('auth_user_id', data.user.id)
             .maybeSingle();
 
