@@ -78,6 +78,7 @@ const ClientMessages = () => {
             onMessageSelect={handleMessageSelect}
             onComposeClick={handleComposeClick}
             searchTerm={searchTerm}
+            isComposing={showComposer}
           />
         </div>
         

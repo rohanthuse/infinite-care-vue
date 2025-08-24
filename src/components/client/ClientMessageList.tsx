@@ -14,6 +14,7 @@ interface ClientMessageListProps {
   onMessageSelect: (messageId: string) => void;
   onComposeClick: () => void;
   searchTerm: string;
+  isComposing?: boolean;
 }
 
 export const ClientMessageList = ({ 
@@ -21,7 +22,8 @@ export const ClientMessageList = ({
   selectedMessageId,
   onMessageSelect,
   onComposeClick,
-  searchTerm
+  searchTerm,
+  isComposing = false
 }: ClientMessageListProps) => {
   const { data: threads = [], isLoading, error } = useClientMessageThreads();
   
@@ -38,12 +40,12 @@ export const ClientMessageList = ({
     return matchesContact && matchesSearch;
   });
 
-  // Auto-select first thread if none selected
+  // Auto-select first thread if none selected (only when not composing)
   useEffect(() => {
-    if (!selectedMessageId && filteredThreads.length > 0) {
+    if (!selectedMessageId && filteredThreads.length > 0 && !isComposing) {
       onMessageSelect(filteredThreads[0].id);
     }
-  }, [filteredThreads, selectedMessageId, onMessageSelect]);
+  }, [filteredThreads, selectedMessageId, onMessageSelect, isComposing]);
   
   const formatMessageDate = (date: Date) => {
     const now = new Date();
