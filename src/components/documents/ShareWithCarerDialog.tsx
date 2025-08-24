@@ -91,7 +91,7 @@ export function ShareWithCarerDialog({
             description: note || `Document shared from client uploads`,
             file_path: document.file_path,
             staff_id: staffId,
-            client_id: document.client_id,
+            client_id: document.client_id || null,
             branch_id: branchId,
             status: 'active',
             access_level: 'staff',

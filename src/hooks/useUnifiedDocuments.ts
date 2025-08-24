@@ -13,7 +13,9 @@ export interface UnifiedDocument {
   file_size?: string;
   file_type?: string;
   uploaded_by_name?: string;
+  client_id?: string;
   client_name?: string;
+  staff_id?: string;
   staff_name?: string;
   tags?: string[];
   status: string;

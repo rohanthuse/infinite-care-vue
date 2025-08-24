@@ -455,8 +455,9 @@ export function UnifiedDocumentsList({
           file_path: documentToShare.file_path!,
           type: documentToShare.type,
           category: documentToShare.category,
-          client_id: documentToShare.related_entity === 'Client' ? 
-            documentToShare.client_name ? documentToShare.id : undefined : undefined
+          client_id: documentToShare.client_id,
+          uploaded_by: documentToShare.uploaded_by_name,
+          uploaded_by_name: documentToShare.uploaded_by_name
         } : null}
         branchId={branchId}
         onSuccess={handleShareSuccess}
