@@ -42,7 +42,6 @@ export interface CarerDB {
   invitation_sent_at?: string;
   invitation_accepted_at?: string;
   first_login_completed?: boolean;
-  photo_url?: string; // Added photo_url field
 }
 
 export interface CreateCarerData {
