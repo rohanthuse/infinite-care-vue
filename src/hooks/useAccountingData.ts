@@ -660,6 +660,37 @@ export const useDeleteTravelRecord = () => {
   });
 };
 
+export const useDeleteServiceRate = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { error } = await supabase
+        .from('service_rates')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting service rate:', error);
+        throw error;
+      }
+      
+      return { id, branchId };
+    },
+    onSuccess: (data) => {
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['service-rates', data.branchId] });
+      
+      toast.success('Service rate deleted successfully');
+    },
+    onError: (error: any) => {
+      console.error('Failed to delete service rate:', error);
+      const errorMessage = error?.message || 'Failed to delete service rate. Please try again.';
+      toast.error(errorMessage);
+    },
+  });
+};
+
 // Hook to get staff list for dropdowns - FIXED STATUS FILTER
 export function useStaffList(branchId?: string) {
   return useQuery({

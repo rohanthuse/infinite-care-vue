@@ -7,7 +7,7 @@ import {
   Check, Info, AlertTriangle, Clock, RefreshCw, PoundSterling
 } from "lucide-react";
 import RatesTable from "./RatesTable";
-import { ServiceRate, useServiceRates, useCreateServiceRate, useStaffList } from "@/hooks/useAccountingData";
+import { ServiceRate, useServiceRates, useCreateServiceRate, useDeleteServiceRate, useStaffList } from "@/hooks/useAccountingData";
 import { cn, formatCurrency } from "@/lib/utils";
 import AddRateDialog from "./AddRateDialog";
 import EditRateDialog from "./EditRateDialog";
@@ -44,6 +44,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   const { data: rates = [], isLoading, error, refetch } = useServiceRates(branchId);
   const { data: staffList = [] } = useStaffList(branchId);
   const createServiceRate = useCreateServiceRate();
+  const deleteServiceRate = useDeleteServiceRate();
   const { data: currentUser } = useUserRole();
   
   const [filteredRates, setFilteredRates] = useState<ServiceRate[]>([]);
@@ -157,17 +158,20 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDeleteRate = () => {
-    if (rateToDelete) {
-      // TODO: Implement delete mutation
-      const rateToRemove = rates.find(rate => rate.id === rateToDelete);
-      
-      toast.success("Rate deleted successfully", {
-        description: rateToRemove ? `${rateToRemove.service_name} - ${formatCurrency(rateToRemove.amount)}` : "",
-      });
-      
-      setRateToDelete(null);
-      setIsDeleteDialogOpen(false);
+  const confirmDeleteRate = async () => {
+    if (rateToDelete && branchId) {
+      try {
+        await deleteServiceRate.mutateAsync({ id: rateToDelete, branchId });
+        
+        // Remove the item from local state immediately for better UX
+        setFilteredRates(prev => prev.filter(r => r.id !== rateToDelete));
+        
+        setRateToDelete(null);
+        setIsDeleteDialogOpen(false);
+      } catch (error) {
+        console.error('Error deleting service rate:', error);
+        // Error toast is handled by the hook
+      }
     }
   };
 
