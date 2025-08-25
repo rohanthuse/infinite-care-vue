@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { format, subMonths, addMonths } from 'date-fns';
 import { CalendarIcon, FilePlus, Loader2 } from 'lucide-react';
@@ -25,6 +26,14 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useExpenseTypeOptions } from '@/hooks/useParameterOptions';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Payment {
   id: string;
@@ -49,20 +58,32 @@ const CarerPayments: React.FC = () => {
     notes: "",
     receipt: null as File | null,
   });
+  
   const { data: carerProfile } = useCarerProfile();
-  const { data: carerPayments, isLoading, error } = useCarerPayments(
-    carerProfile?.id,
-    date?.from,
-    date?.to
-  );
+  const { data: carerPayments, isLoading, error } = useCarerPayments();
   const { submitExpense, isSubmitting } = useCarerExpenseManagement();
   const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
 
   useEffect(() => {
-    if (carerPayments) {
-      setPayments(carerPayments);
+    if (carerPayments?.paymentHistory) {
+      // Filter payments based on date range and convert to Payment interface
+      const filteredPayments = carerPayments.paymentHistory
+        .filter(payment => {
+          if (!date?.from || !date?.to) return true;
+          const paymentDate = new Date(payment.date);
+          return paymentDate >= date.from && paymentDate <= date.to;
+        })
+        .map(payment => ({
+          id: payment.id,
+          date: payment.date.toISOString(),
+          description: `${payment.type === 'salary' ? 'Salary' : payment.type === 'overtime' ? 'Overtime' : 'Expense Reimbursement'} - ${payment.period}`,
+          amount: payment.amount,
+          status: payment.status,
+        }));
+      
+      setPayments(filteredPayments);
     }
-  }, [carerPayments]);
+  }, [carerPayments, date]);
 
   const handleSubmitExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,6 +98,11 @@ const CarerPayments: React.FC = () => {
       return;
     }
 
+    if (!carerProfile?.branch_id) {
+      toast.error("Unable to determine branch information");
+      return;
+    }
+
     try {
       console.log('Submitting expense form:', expenseForm);
       await submitExpense.mutateAsync({
@@ -86,6 +112,7 @@ const CarerPayments: React.FC = () => {
         expense_date: expenseForm.date,
         notes: expenseForm.notes || undefined,
         receipt_file: expenseForm.receipt || undefined,
+        branch_id: carerProfile.branch_id,
       });
       
       // Reset form and close dialog on success
@@ -98,9 +125,10 @@ const CarerPayments: React.FC = () => {
         receipt: null,
       });
       setAddExpenseDialogOpen(false);
+      toast.success("Expense claim submitted successfully");
     } catch (error) {
-      // Error is already handled by the mutation's onError
       console.error('Form submission error:', error);
+      toast.error("Failed to submit expense claim");
     }
   };
 
@@ -199,11 +227,17 @@ const CarerPayments: React.FC = () => {
       </Button>
 
       {/* Add Expense Claim Dialog */}
-      {addExpenseDialogOpen && (
-        <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50">
-          <div className="relative p-8 bg-white rounded-lg max-w-md mx-auto mt-20">
-            <h2 className="text-2xl font-bold mb-5">Submit Expense Claim</h2>
-            <form onSubmit={handleSubmitExpense} className="space-y-4">
+      <Dialog open={addExpenseDialogOpen} onOpenChange={setAddExpenseDialogOpen}>
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Submit Expense Claim</DialogTitle>
+            <DialogDescription>
+              Fill in the details below to submit your expense claim.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmitExpense} className="flex flex-col flex-1">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <div>
                 <Label htmlFor="description">Description</Label>
                 <Input
@@ -219,7 +253,7 @@ const CarerPayments: React.FC = () => {
                 <Label htmlFor="category">Category</Label>
                 <Select 
                   onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}
-                  defaultValue={expenseForm.category}
+                  value={expenseForm.category}
                   disabled={expenseTypesLoading}
                 >
                   <SelectTrigger>
@@ -281,30 +315,30 @@ const CarerPayments: React.FC = () => {
                   </p>
                 )}
               </div>
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setAddExpenseDialogOpen(false)}
-                  className="mr-2"
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit Claim"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+            
+            <DialogFooter className="mt-4 flex-shrink-0">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setAddExpenseDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Claim"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
