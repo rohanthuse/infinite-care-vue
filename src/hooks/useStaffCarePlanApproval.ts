@@ -177,6 +177,7 @@ export const useStaffApproveCarePlan = () => {
     mutationFn: staffApproveCarePlan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       toast.success('Care plan approved successfully! The client will be notified.');
     },
@@ -205,6 +206,7 @@ export const useStaffRejectCarePlan = () => {
     mutationFn: staffRejectCarePlan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       toast.success('Care plan rejected. The client will be notified of the requested changes.');
     },

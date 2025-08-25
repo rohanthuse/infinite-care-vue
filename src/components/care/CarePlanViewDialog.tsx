@@ -8,12 +8,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Edit, FileText, Calendar, User, Target, Activity, Pill, Heart, Utensils, ShieldCheck, Clock, 
          Phone, MapPin, AlertTriangle, Briefcase, FileX, Settings, Info, 
          UserCheck, Stethoscope, Home, UtensilsCrossed, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
+import { useStaffApproveCarePlan, useStaffRejectCarePlan } from '@/hooks/useStaffCarePlanApproval';
+import { useToast } from '@/hooks/use-toast';
 
 interface CarePlanViewDialogProps {
   carePlanId: string;
@@ -26,7 +30,15 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
   const { id: branchId, branchName } = useParams();
   const { tenantSlug } = useTenant();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject'>('approve');
+  const [approvalComments, setApprovalComments] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
   const { data: carePlan, isLoading } = useCarePlanData(carePlanId);
+  const { toast } = useToast();
+  
+  const approveMutation = useStaffApproveCarePlan();
+  const rejectMutation = useStaffRejectCarePlan();
   
   // Type assertion to access extended properties
   const carePlanWithDetails = carePlan as CarePlanWithDetails;
@@ -54,6 +66,42 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
   const handleExport = () => {
     // Export functionality - to be implemented
     console.log('Export care plan:', carePlanId);
+  };
+
+  const handleApprovalAction = (action: 'approve' | 'reject') => {
+    setApprovalAction(action);
+    setShowApprovalDialog(true);
+    setApprovalComments('');
+    setRejectionReason('');
+  };
+
+  const handleConfirmApproval = async () => {
+    try {
+      if (approvalAction === 'approve') {
+        await approveMutation.mutateAsync({
+          carePlanId,
+          comments: approvalComments
+        });
+        toast({
+          title: "Care plan approved",
+          description: "The care plan has been approved and sent to the client for review.",
+        });
+      } else {
+        await rejectMutation.mutateAsync({
+          carePlanId,
+          comments: approvalComments,
+          reason: rejectionReason
+        });
+        toast({
+          title: "Care plan rejected",
+          description: "The care plan has been rejected and returned for changes.",
+        });
+      }
+      setShowApprovalDialog(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error processing approval:', error);
+    }
   };
 
   if (isLoading) {
@@ -104,6 +152,30 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                 <FileText className="h-4 w-4 mr-2" />
                 Export
               </Button>
+              
+              {carePlan.status === 'pending_approval' && (
+                <>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => handleApprovalAction('approve')}
+                    disabled={approveMutation.isPending}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => handleApprovalAction('reject')}
+                    disabled={rejectMutation.isPending}
+                  >
+                    <FileX className="h-4 w-4 mr-2" />
+                    Request Changes
+                  </Button>
+                </>
+              )}
+              
               <Button 
                 variant={isEditMode ? "destructive" : "default"} 
                 size="sm" 
@@ -892,6 +964,69 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Approval Confirmation Dialog */}
+      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {approvalAction === 'approve' ? 'Approve Care Plan' : 'Request Changes'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {approvalAction === 'approve' 
+                ? 'Are you sure you want to approve this care plan? It will be sent to the client for their review.'
+                : 'Please provide feedback for the required changes.'
+              }
+            </p>
+            
+            {approvalAction === 'reject' && (
+              <div className="space-y-2">
+                <label htmlFor="rejectionReason" className="text-sm font-medium">
+                  Reason for Changes <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  id="rejectionReason"
+                  placeholder="Enter reason for requesting changes"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label htmlFor="approvalComments" className="text-sm font-medium">
+                Comments {approvalAction === 'reject' ? '(optional)' : ''}
+              </label>
+              <Textarea
+                id="approvalComments"
+                placeholder={`Enter ${approvalAction === 'approve' ? 'approval' : 'additional'} comments...`}
+                value={approvalComments}
+                onChange={(e) => setApprovalComments(e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmApproval}
+              disabled={
+                (approvalAction === 'reject' && !rejectionReason.trim()) ||
+                approveMutation.isPending || 
+                rejectMutation.isPending
+              }
+              variant={approvalAction === 'approve' ? 'default' : 'destructive'}
+            >
+              {(approveMutation.isPending || rejectMutation.isPending) ? 'Processing...' : 
+               approvalAction === 'approve' ? 'Approve Plan' : 'Request Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
