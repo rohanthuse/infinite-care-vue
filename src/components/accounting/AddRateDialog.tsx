@@ -54,7 +54,7 @@ type RateFormData = z.infer<typeof rateSchema>;
 interface AddRateDialogProps {
   open: boolean;
   onClose: () => void;
-  onAddRate: (rate: ServiceRate) => void;
+  onAddRate: (rate: Partial<ServiceRate>) => void;
   initialRate?: ServiceRate;
   branchId?: string;
 }
@@ -174,9 +174,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         return;
       }
 
-      const newRate: ServiceRate = {
-        id: initialRate?.id || crypto.randomUUID(),
-        branch_id: branchId,
+      const newRate: Partial<ServiceRate> = {
         service_id: undefined,
         service_name: data.service_name,
         service_code: data.service_code,
@@ -191,9 +189,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         is_default: data.is_default,
         status: data.status,
         description: data.description || undefined,
-        created_by: currentUser.id,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        // Branch ID and created_by will be set by RateManagementTab
       };
 
       onAddRate(newRate);

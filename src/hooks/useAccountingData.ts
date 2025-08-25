@@ -527,8 +527,12 @@ export function useCreateServiceRate() {
       queryClient.invalidateQueries({ queryKey: ['service-rates'] });
       toast.success('Service rate created successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating service rate:', error);
+      // Log the actual error message for debugging
+      if (error?.message) {
+        console.error('Supabase error message:', error.message);
+      }
       toast.error('Failed to create service rate');
     },
   });
