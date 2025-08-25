@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus } from "lucide-react";
+import { CreditCard, Download, CheckCircle, AlertCircle, Calendar, Plus, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
@@ -11,6 +11,7 @@ import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { format } from "date-fns";
 import { AddPaymentDialog } from "@/components/clients/dialogs/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
 const ClientPayments = () => {
   const [activeTab, setActiveTab] = useState("invoices");
@@ -18,18 +19,14 @@ const ClientPayments = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Get authenticated client ID from localStorage
-  const getClientId = () => {
-    const clientId = localStorage.getItem("clientId");
-    if (!clientId) {
-      console.error("No authenticated client ID found");
-      return null;
-    }
-    return clientId;
-  };
+  // Get authenticated client data from Supabase
+  const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
+  
+  const clientId = authData?.client?.id;
+  const clientName = `${authData?.client?.first_name || ''} ${authData?.client?.last_name || ''}`.trim();
+  const clientEmail = authData?.user?.email;
 
-  const clientId = getClientId();
-  const { data: invoices, isLoading, error } = useEnhancedClientBilling(clientId || '');
+  const { data: invoices, isLoading: billingLoading, error: billingError } = useEnhancedClientBilling(clientId || '');
 
   // Calculate totals for summary
   const pendingInvoices = invoices?.filter(inv => inv.status === 'pending' || inv.status === 'sent') || [];
@@ -69,9 +66,9 @@ const ClientPayments = () => {
     try {
       generateInvoicePDF({
         invoice,
-        clientName: localStorage.getItem("clientName") || "Client",
-        clientAddress: localStorage.getItem("clientAddress") || "",
-        clientEmail: localStorage.getItem("clientEmail") || "",
+        clientName: clientName || "Client",
+        clientAddress: "", // Address not available in current auth data
+        clientEmail: clientEmail || "",
         companyInfo: {
           name: "Care Service Provider",
           address: "123 Care Street, City, Country",
@@ -104,7 +101,20 @@ const ClientPayments = () => {
     return Math.max(0, total - paid);
   };
 
-  if (!clientId) {
+  // Handle loading states
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle auth errors
+  if (authError || !clientId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -116,18 +126,18 @@ const ClientPayments = () => {
     );
   }
 
-  if (isLoading) {
+  if (billingLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading your billing information...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  if (billingError) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -310,21 +320,21 @@ const ClientPayments = () => {
               
               <Separator className="my-6" />
               
-              <div className="mt-8">
-                <h3 className="text-lg font-medium mb-4">Billing Information</h3>
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{localStorage.getItem("clientName") || "Client Name"}</p>
-                      <p className="text-gray-600">{localStorage.getItem("clientAddress") || "Address not available"}</p>
-                      <p className="text-gray-600">{localStorage.getItem("clientEmail") || "Email not available"}</p>
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium mb-4">Billing Information</h3>
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{clientName || "Client Name"}</p>
+                        <p className="text-gray-600">Address not available</p>
+                        <p className="text-gray-600">{clientEmail || "Email not available"}</p>
+                      </div>
+                      <Button variant="outline" size="sm" disabled>
+                        Edit
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm" disabled>
-                      Edit
-                    </Button>
                   </div>
                 </div>
-              </div>
             </div>
           </TabsContent>
         </Tabs>
