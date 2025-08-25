@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Edit, Download, FileCheck, AlertCircle, Clock, XCircle, User, Calendar, Clock as ClockIcon, PoundSterling } from "lucide-react";
 import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
+import { exportPayrollPayslip } from "@/utils/payslipPdfGenerator";
 
 // Define payroll-related types locally since we're using database types
 interface PayrollRecord {
@@ -75,6 +77,24 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
   onEdit,
   payrollRecord,
 }) => {
+  const { toast } = useToast();
+
+  const handleExportPayslip = () => {
+    try {
+      exportPayrollPayslip(payrollRecord);
+      toast({
+        title: "Success",
+        description: "Payslip exported successfully",
+      });
+    } catch (error) {
+      console.error('Failed to export payslip:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export payslip",
+        variant: "destructive",
+      });
+    }
+  };
   // Function to render status badge
   const renderStatusBadge = (status: string) => {
     let colorClass = "";
@@ -286,7 +306,7 @@ const ViewPayrollDialog: React.FC<ViewPayrollDialogProps> = ({
               Close
             </Button>
             <div className="space-x-2">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleExportPayslip}>
                 <Download className="h-4 w-4" />
                 Export Payslip
               </Button>
