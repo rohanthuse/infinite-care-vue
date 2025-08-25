@@ -62,33 +62,52 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
     const clientId = await ensureClientAuthLink(user);
     console.log(`[approveCarePlan] Client auth link confirmed for client ${clientId}`);
 
-    const clientIp = await fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => data.ip)
-      .catch(() => null);
+    // Preflight check: Verify care plan exists and is in correct status
+    const { data: carePlanCheck, error: checkError } = await supabase
+      .from('client_care_plans')
+      .select('id, status, client_id')
+      .eq('id', carePlanId)
+      .eq('client_id', clientId)
+      .single();
+
+    if (checkError) {
+      console.error('[approveCarePlan] Error checking care plan:', checkError);
+      throw new Error('Care plan not found or access denied');
+    }
+
+    if (carePlanCheck.status !== 'pending_client_approval') {
+      console.error(`[approveCarePlan] Invalid status: ${carePlanCheck.status}`);
+      throw new Error(`Care plan cannot be approved. Current status: ${carePlanCheck.status}`);
+    }
 
     // Update care plan with client acknowledgment and activate it
-    const { error } = await supabase
+    const { data: updateData, error: updateError } = await supabase
       .from('client_care_plans')
       .update({
         status: 'active',
         client_acknowledged_at: new Date().toISOString(),
         client_signature_data: signatureData,
-        client_acknowledgment_ip: clientIp,
         acknowledgment_method: 'digital_signature',
         client_comments: comments,
         updated_at: new Date().toISOString(),
       })
       .eq('id', carePlanId)
-      .eq('status', 'pending_client_approval'); // Only allow approval from pending_client_approval status
+      .eq('status', 'pending_client_approval')
+      .eq('client_id', clientId)
+      .select();
 
-    if (error) {
-      console.error('[approveCarePlan] Error updating care plan:', error);
-      throw error;
+    if (updateError) {
+      console.error('[approveCarePlan] Error updating care plan:', updateError);
+      throw new Error(`Database error: ${updateError.message}`);
+    }
+
+    if (!updateData || updateData.length === 0) {
+      console.error('[approveCarePlan] No rows updated - care plan may have been processed already');
+      throw new Error('Care plan has already been processed or is no longer available for approval');
     }
 
     // Create status history entry
-    await supabase
+    const { error: historyError } = await supabase
       .from('care_plan_status_history')
       .insert({
         care_plan_id: carePlanId,
@@ -98,6 +117,11 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
         changed_by_type: 'client',
         client_comments: comments
       });
+
+    if (historyError) {
+      console.warn('[approveCarePlan] Failed to create history entry:', historyError);
+      // Don't fail the operation for history issues
+    }
 
     console.log(`[approveCarePlan] Successfully approved care plan ${carePlanId}`);
     return { success: true };
@@ -178,8 +202,18 @@ export const useApproveCarePlan = () => {
         errorMessage = 'Client profile not found. Please contact support.';
       } else if (error.message?.includes('authentication link')) {
         errorMessage = 'Unable to verify client identity. Please contact support.';
+      } else if (error.message?.includes('Care plan not found')) {
+        errorMessage = 'Care plan not found or you do not have permission to access it.';
+      } else if (error.message?.includes('already been processed')) {
+        errorMessage = 'This care plan has already been approved or is no longer available.';
+      } else if (error.message?.includes('Current status:')) {
+        errorMessage = error.message;
+      } else if (error.message?.includes('Database error:')) {
+        errorMessage = 'There was a database error. Please try again or contact support.';
       } else if (error.code === '23503') {
         errorMessage = 'Unable to approve: Care plan not found or already processed.';
+      } else if (error.code === 'PGRST116') {
+        errorMessage = 'No matching care plan found. It may have been processed already.';
       }
       
       toast.error(errorMessage);

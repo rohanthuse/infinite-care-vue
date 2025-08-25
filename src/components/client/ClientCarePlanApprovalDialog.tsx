@@ -69,9 +69,15 @@ export function ClientCarePlanApprovalDialog({
       setComments('');
       setHasReadPlan(false);
       setSignatureData('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving care plan:', error);
-      toast.error('Failed to approve care plan. Please try again.');
+      // Let the hook's onError handle the specific error message
+      // This provides a fallback in case the hook doesn't catch it
+      if (error?.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to approve care plan. Please try again.');
+      }
     }
   };
 
@@ -87,9 +93,14 @@ export function ClientCarePlanApprovalDialog({
       setCurrentStep(0);
       setComments('');
       setHasReadPlan(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting care plan:', error);
-      toast.error('Failed to request changes. Please try again.');
+      // Let the hook's onError handle the specific error message
+      if (error?.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to request changes. Please try again.');
+      }
     }
   };
 
