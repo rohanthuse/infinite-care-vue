@@ -145,7 +145,12 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
 
   const handleClientClick = (clientId: string) => {
     if (branchId && branchName) {
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${clientId}`);
+      // Get tenant context for proper navigation
+      const tenantSlug = window.location.pathname.split('/')[1];
+      const basePath = tenantSlug && tenantSlug !== 'branch-dashboard' ? `/${tenantSlug}` : '';
+      const clientPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/clients/${clientId}`;
+      console.log('[AdminCarePlanManagement] Navigating to tenant-aware client path:', clientPath);
+      navigate(clientPath);
     }
   };
 

@@ -508,7 +508,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
             return;
           }
           
-          const clientEditPath = `/branch-dashboard/${branchId}/${branchName}/clients/${data.client_id}/edit`;
+          const basePath = tenantSlug ? `/${tenantSlug}` : '';
+          const clientEditPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/clients/${data.client_id}/edit`;
+          console.log('[CareTab] Navigating to tenant-aware edit path:', clientEditPath);
           navigate(clientEditPath);
         });
     } else if (plan.status === 'Draft') {
