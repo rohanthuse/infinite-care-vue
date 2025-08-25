@@ -2,18 +2,21 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { TravelRecord } from "@/hooks/useAccountingData";
+import { TravelRecord, useApproveTravelRecord, useRejectTravelRecord } from "@/hooks/useAccountingData";
 import { format } from "date-fns";
 import { Edit, Download, ArrowRight, MapPin, Clock, Car, FileText, User, Users } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { ReportExporter } from "@/utils/reportExporter";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface ViewTravelRecordDialogProps {
   open: boolean;
   onClose: () => void;
   onEdit: () => void;
   travelRecord: TravelRecord;
+  branchId?: string;
+  canApprove?: boolean;
 }
 
 const vehicleTypeLabels: Record<string, string> = {
@@ -36,8 +39,40 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
   onClose,
   onEdit,
   travelRecord,
+  branchId,
+  canApprove = true
 }) => {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
+  const approveTravelRecord = useApproveTravelRecord();
+  const rejectTravelRecord = useRejectTravelRecord();
+
+  const handleApprove = async () => {
+    if (!branchId) {
+      toast.error('Branch ID not available');
+      return;
+    }
+    
+    try {
+      await approveTravelRecord.mutateAsync({ id: travelRecord.id, branchId });
+      onClose();
+    } catch (error) {
+      console.error('Failed to approve travel record:', error);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!branchId) {
+      toast.error('Branch ID not available');
+      return;
+    }
+    
+    try {
+      await rejectTravelRecord.mutateAsync({ id: travelRecord.id, branchId });
+      onClose();
+    } catch (error) {
+      console.error('Failed to reject travel record:', error);
+    }
+  };
 
   const handleExportTravel = () => {
     try {
@@ -69,13 +104,13 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
         fileName: `Travel_Record_${format(new Date(travelRecord.travel_date), 'yyyy-MM-dd')}.pdf`
       });
 
-      toast({
+      uiToast({
         title: "Export Successful",
         description: "Travel record has been exported to PDF.",
       });
     } catch (error) {
       console.error("Export error:", error);
-      toast({
+      uiToast({
         title: "Export Failed",
         description: "Failed to export travel record. Please try again.",
         variant: "destructive",
@@ -260,6 +295,24 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
               Close
             </Button>
             <div className="space-x-2">
+              {canApprove && travelRecord.status === 'pending' && (
+                <>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleReject}
+                    disabled={rejectTravelRecord.isPending}
+                  >
+                    {rejectTravelRecord.isPending ? 'Rejecting...' : 'Reject'}
+                  </Button>
+                  <Button 
+                    onClick={handleApprove}
+                    disabled={approveTravelRecord.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {approveTravelRecord.isPending ? 'Approving...' : 'Approve'}
+                  </Button>
+                </>
+              )}
               <Button variant="outline" className="gap-2" onClick={handleExportTravel}>
                 <Download className="h-4 w-4" />
                 Export

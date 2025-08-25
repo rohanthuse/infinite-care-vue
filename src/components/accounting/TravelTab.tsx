@@ -330,6 +330,8 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
             setAddDialogOpen(true);
           }}
           travelRecord={currentRecord}
+          branchId={branchId}
+          canApprove={true}
         />
       )}
       

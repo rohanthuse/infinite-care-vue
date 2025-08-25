@@ -386,6 +386,8 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
             setCurrentExpense(undefined);
           }}
           expense={currentExpense}
+          branchId={branchId}
+          canApprove={true}
         />
       )}
       

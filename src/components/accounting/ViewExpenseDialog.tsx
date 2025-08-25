@@ -8,15 +8,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ExpenseRecord } from "@/hooks/useAccountingData";
+import { ExpenseRecord, useApproveExpense, useRejectExpense } from "@/hooks/useAccountingData";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Edit, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 interface ViewExpenseDialogProps {
   open: boolean;
   onClose: () => void;
   expense: ExpenseRecord;
+  branchId?: string;
+  canApprove?: boolean;
 }
 
 const categoryLabels = {
@@ -51,7 +54,39 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
   open,
   onClose,
   expense,
+  branchId,
+  canApprove = true
 }) => {
+  const approveExpense = useApproveExpense();
+  const rejectExpense = useRejectExpense();
+
+  const handleApprove = async () => {
+    if (!branchId) {
+      toast.error('Branch ID not available');
+      return;
+    }
+    
+    try {
+      await approveExpense.mutateAsync({ id: expense.id, branchId });
+      onClose();
+    } catch (error) {
+      console.error('Failed to approve expense:', error);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!branchId) {
+      toast.error('Branch ID not available');
+      return;
+    }
+    
+    try {
+      await rejectExpense.mutateAsync({ id: expense.id, branchId });
+      onClose();
+    } catch (error) {
+      console.error('Failed to reject expense:', error);
+    }
+  };
   const renderStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -142,6 +177,25 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
           <Button type="button" variant="outline" onClick={onClose}>
             Close
           </Button>
+          
+          {canApprove && expense.status === 'pending' && (
+            <>
+              <Button 
+                variant="destructive" 
+                onClick={handleReject}
+                disabled={rejectExpense.isPending}
+              >
+                {rejectExpense.isPending ? 'Rejecting...' : 'Reject'}
+              </Button>
+              <Button 
+                onClick={handleApprove}
+                disabled={approveExpense.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {approveExpense.isPending ? 'Approving...' : 'Approve'}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

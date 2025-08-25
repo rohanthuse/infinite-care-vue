@@ -819,3 +819,190 @@ export function useClientsList(branchId?: string) {
     enabled: !!branchId,
   });
 }
+
+// Approval mutations for Extra Time, Expenses, and Travel Records
+export function useApproveExtraTime() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { data, error } = await supabase
+        .from('extra_time_records')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Extra time record approved successfully');
+    },
+    onError: (error) => {
+      console.error('Error approving extra time:', error);
+      toast.error('Failed to approve extra time record');
+    },
+  });
+}
+
+export function useRejectExtraTime() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { data, error } = await supabase
+        .from('extra_time_records')
+        .update({ 
+          status: 'rejected',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['extra-time-records'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Extra time record rejected');
+    },
+    onError: (error) => {
+      console.error('Error rejecting extra time:', error);
+      toast.error('Failed to reject extra time record');
+    },
+  });
+}
+
+export function useApproveExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Expense approved successfully');
+    },
+    onError: (error) => {
+      console.error('Error approving expense:', error);
+      toast.error('Failed to approve expense');
+    },
+  });
+}
+
+export function useRejectExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .update({ 
+          status: 'rejected',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Expense rejected');
+    },
+    onError: (error) => {
+      console.error('Error rejecting expense:', error);
+      toast.error('Failed to reject expense');
+    },
+  });
+}
+
+export function useApproveTravelRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { data, error } = await supabase
+        .from('travel_records')
+        .update({ 
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['travel-records'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Travel record approved successfully');
+    },
+    onError: (error) => {
+      console.error('Error approving travel record:', error);
+      toast.error('Failed to approve travel record');
+    },
+  });
+}
+
+export function useRejectTravelRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      const { data, error } = await supabase
+        .from('travel_records')
+        .update({ 
+          status: 'rejected',
+          approved_at: new Date().toISOString(),
+          approved_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['travel-records'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-payments'] });
+      toast.success('Travel record rejected');
+    },
+    onError: (error) => {
+      console.error('Error rejecting travel record:', error);
+      toast.error('Failed to reject travel record');
+    },
+  });
+}

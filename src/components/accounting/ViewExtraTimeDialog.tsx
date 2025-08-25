@@ -1,24 +1,65 @@
 
 import React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from "lucide-react";
-import { ExtraTimeRecord } from "@/hooks/useAccountingData";
+import { format } from "date-fns";
+import { ExtraTimeRecord, useApproveExtraTime, useRejectExtraTime } from "@/hooks/useAccountingData";
+import { toast } from "sonner";
 
 interface ViewExtraTimeDialogProps {
   open: boolean;
   onClose: () => void;
   onEdit: () => void;
   record: ExtraTimeRecord;
+  branchId?: string;
+  canApprove?: boolean;
 }
 
-const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
-  open,
-  onClose,
-  onEdit,
+const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({ 
+  open, 
+  onClose, 
+  onEdit, 
   record,
+  branchId,
+  canApprove = true
 }) => {
+  const approveExtraTime = useApproveExtraTime();
+  const rejectExtraTime = useRejectExtraTime();
+
+  const handleApprove = async () => {
+    if (!branchId) {
+      toast.error('Branch ID not available');
+      return;
+    }
+    
+    try {
+      await approveExtraTime.mutateAsync({ id: record.id, branchId });
+      onClose();
+    } catch (error) {
+      console.error('Failed to approve extra time:', error);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!branchId) {
+      toast.error('Branch ID not available');
+      return;
+    }
+    
+    try {
+      await rejectExtraTime.mutateAsync({ id: record.id, branchId });
+      onClose();
+    } catch (error) {
+      console.error('Failed to reject extra time:', error);
+    }
+  };
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
       pending: { variant: "secondary" as const, label: "Pending" },
@@ -194,6 +235,26 @@ const ViewExtraTimeDialog: React.FC<ViewExtraTimeDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
+          
+          {canApprove && record.status === 'pending' && (
+            <>
+              <Button 
+                variant="destructive" 
+                onClick={handleReject}
+                disabled={rejectExtraTime.isPending}
+              >
+                {rejectExtraTime.isPending ? 'Rejecting...' : 'Reject'}
+              </Button>
+              <Button 
+                onClick={handleApprove}
+                disabled={approveExtraTime.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {approveExtraTime.isPending ? 'Approving...' : 'Approve'}
+              </Button>
+            </>
+          )}
+          
           <Button onClick={onEdit}>
             Edit Record
           </Button>

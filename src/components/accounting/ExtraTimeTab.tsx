@@ -407,6 +407,8 @@ const ExtraTimeTab: React.FC<ExtraTimeTabProps> = ({ branchId, branchName }) => 
             setAddDialogOpen(true);
           }}
           record={currentRecord}
+          branchId={branchId}
+          canApprove={true}
         />
       )}
       

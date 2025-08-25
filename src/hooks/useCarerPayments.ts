@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { usePayrollRecords, useExpenses, useExtraTimeRecords } from '@/hooks/useAccountingData';
+import { usePayrollRecords, useExpenses, useExtraTimeRecords, useTravelRecords } from '@/hooks/useAccountingData';
 import { useCarerProfile } from '@/hooks/useCarerProfile';
 import { format, startOfYear, endOfYear } from 'date-fns';
 
@@ -21,7 +21,7 @@ export interface PaymentHistoryItem {
   amount: number;
   date: Date;
   status: string;
-  type: 'salary' | 'overtime' | 'expense_reimbursement';
+  type: 'salary' | 'overtime' | 'expense_reimbursement' | 'travel_reimbursement';
   reference?: string;
 }
 
@@ -38,6 +38,9 @@ export function useCarerPayments() {
   
   // Get extra time records
   const { data: extraTimeRecords, isLoading: extraTimeLoading, error: extraTimeError } = useExtraTimeRecords(branchId);
+  
+  // Get travel records
+  const { data: travelRecords, isLoading: travelLoading, error: travelError } = useTravelRecords(branchId);
 
   return useQuery({
     queryKey: ['carer-payments', staffId, branchId],
@@ -58,6 +61,11 @@ export function useCarerPayments() {
       ) || [];
       
       const carerExtraTime = extraTimeRecords?.filter(record => 
+        record.staff_id === staffId && record.status === 'approved'
+      ) || [];
+      
+      // Get only APPROVED travel records for reimbursement calculations
+      const approvedCarerTravel = travelRecords?.filter(record => 
         record.staff_id === staffId && record.status === 'approved'
       ) || [];
 
@@ -92,6 +100,16 @@ export function useCarerPayments() {
           date: new Date(record.work_date),
           status: record.invoiced ? 'paid' : 'pending',
           type: 'overtime' as const,
+        })),
+        
+        // Travel reimbursements
+        ...approvedCarerTravel.map(record => ({
+          id: record.id,
+          period: format(new Date(record.travel_date), 'MMM yyyy'),
+          amount: record.total_cost,
+          date: new Date(record.travel_date),
+          status: record.reimbursed_at ? 'paid' : 'pending',
+          type: 'travel_reimbursement' as const,
         })),
       ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
@@ -133,6 +151,7 @@ export function useCarerPayments() {
         carerExpenses: allCarerExpenses, // Keep backward compatibility
         carerPayroll,
         carerExtraTime,
+        approvedCarerTravel,
       };
     },
     enabled: !!staffId && !!branchId && !!payrollRecords,
