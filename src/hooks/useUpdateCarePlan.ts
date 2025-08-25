@@ -41,6 +41,8 @@ export const useUpdateCarePlanAssignment = () => {
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
+      queryClient.invalidateQueries({ queryKey: ['care-plans'] });
       
       toast.success('Care plan assignment updated successfully');
     },

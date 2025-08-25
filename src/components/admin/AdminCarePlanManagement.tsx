@@ -28,6 +28,7 @@ import {
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { AdminChangeRequestViewDialog } from './AdminChangeRequestViewDialog';
+import { AssignCarePlanDialog } from './AssignCarePlanDialog';
 
 interface CarePlan {
   id: string;
@@ -113,6 +114,8 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [changeRequestDialogOpen, setChangeRequestDialogOpen] = useState(false);
   const [selectedCarePlan, setSelectedCarePlan] = useState<CarePlan | null>(null);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [carePlanToAssign, setCarePlanToAssign] = useState<CarePlan | null>(null);
   const navigate = useNavigate();
 
   // Filter care plans based on search and status
@@ -153,6 +156,11 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
 
   const handleEditFromChangeRequest = (carePlanId: string) => {
     onEdit(carePlanId);
+  };
+
+  const handleAssignCarer = (plan: CarePlan) => {
+    setCarePlanToAssign(plan);
+    setAssignDialogOpen(true);
   };
 
   const renderCarePlanRow = (plan: CarePlan) => {
@@ -204,11 +212,18 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
         </TableCell>
         
         <TableCell>
-          <div className="text-sm">
-            {plan.staff 
-              ? `${plan.staff.first_name} ${plan.staff.last_name}` 
-              : plan.provider_name || 'Unassigned'
-            }
+          <div className="flex items-center gap-2">
+            <div className="text-sm">
+              {plan.staff 
+                ? `${plan.staff.first_name} ${plan.staff.last_name}` 
+                : plan.provider_name || 'Unassigned'
+              }
+            </div>
+            {!plan.staff && !plan.provider_name && (
+              <Badge variant="outline" className="text-amber-600 border-amber-300">
+                Unassigned
+              </Badge>
+            )}
           </div>
         </TableCell>
         
@@ -235,6 +250,13 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
                 <DropdownMenuItem onClick={() => handleViewChangeRequest(plan)}>
                   <MessageSquare className="h-4 w-4 mr-2 text-amber-600" />
                   View Change Request
+                </DropdownMenuItem>
+              )}
+
+              {(plan.status === 'approved' || plan.status === 'active') && (
+                <DropdownMenuItem onClick={() => handleAssignCarer(plan)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Assign to Carer
                 </DropdownMenuItem>
               )}
               
@@ -361,6 +383,14 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
         onOpenChange={setChangeRequestDialogOpen}
         carePlan={selectedCarePlan}
         onEditCarePlan={handleEditFromChangeRequest}
+      />
+
+      {/* Assign Care Plan Dialog */}
+      <AssignCarePlanDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        carePlan={carePlanToAssign}
+        branchId={branchId}
       />
     </div>
   );

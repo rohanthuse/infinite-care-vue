@@ -74,7 +74,7 @@ export interface CarePlanWithDetails extends CarePlanData {
   documents?: any[];
 }
 
-const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
+const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetails> => {
   console.log(`[fetchCarePlanData] Input care plan ID: ${carePlanId}`);
   
   // Check if the input is a valid UUID format or a display ID (CP-XXX)
@@ -91,6 +91,9 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
         last_name,
         avatar_initials
       ),
+      goals:client_care_plan_goals(*),
+      activities:client_activities(*),
+      medications:client_medications(*),
       staff:staff!staff_id(
         id,
         first_name,
@@ -123,11 +126,63 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanData> => {
     throw error;
   }
 
-  // Transform the data to handle potential null staff relations and type casting
-  const transformedData: CarePlanData = {
+  // Extract data from auto_save_data if available
+  const autoSaveData = typeof data.auto_save_data === 'object' && data.auto_save_data !== null ? data.auto_save_data as Record<string, any> : {};
+  
+  // Extract goals from auto_save_data if not available from joined table
+  const goalsFromAutoSave = Array.isArray(autoSaveData.goals) ? autoSaveData.goals.map((goal: any, index: number) => ({
+    id: `goal-${index}`,
+    description: goal.description || goal.goal_description || '',
+    status: goal.status || 'active',
+    progress: goal.progress || 0,
+    notes: goal.notes || goal.additional_notes || ''
+  })) : [];
+
+  // Extract medications from auto_save_data if not available from joined table
+  const medicationsFromAutoSave = Array.isArray(autoSaveData.medications) ? autoSaveData.medications.map((med: any, index: number) => ({
+    id: `med-${index}`,
+    name: med.medication_name || med.name || '',
+    dosage: med.dosage || '',
+    frequency: med.frequency || '',
+    start_date: med.start_date || '',
+    end_date: med.end_date || '',
+    status: med.status || 'active'
+  })) : [];
+
+  // Extract activities from auto_save_data if not available from joined table
+  const activitiesFromAutoSave = Array.isArray(autoSaveData.activities) ? autoSaveData.activities.map((activity: any, index: number) => ({
+    id: `activity-${index}`,
+    name: activity.activity_name || activity.name || '',
+    description: activity.description || '',
+    frequency: activity.frequency || '',
+    status: activity.status || 'active'
+  })) : [];
+
+  // Transform the data to handle potential null staff relations and extract data from auto_save_data
+  const transformedData: CarePlanWithDetails = {
     ...data,
     staff: data.staff || null,
-    client_acknowledgment_ip: data.client_acknowledgment_ip as string | null
+    client_acknowledgment_ip: data.client_acknowledgment_ip as string | null,
+    // Use auto_save_data if joined tables are empty
+    goals: data.goals?.length > 0 ? data.goals : goalsFromAutoSave,
+    medications: data.medications?.length > 0 ? data.medications : medicationsFromAutoSave,
+    activities: data.activities?.length > 0 ? data.activities : activitiesFromAutoSave,
+    // Add additional extracted data from auto_save_data
+    care_plan_type: autoSaveData.care_plan_type || data.care_plan_type,
+    review_date: autoSaveData.review_date || data.review_date,
+    goals_progress: autoSaveData.goals_progress || data.goals_progress,
+    notes: autoSaveData.notes || data.notes,
+    // Extract additional care plan details
+    personal_info: autoSaveData.personal_info || {},
+    medical_info: autoSaveData.medical_info || {},
+    personal_care: autoSaveData.personal_care || {},
+    dietary_requirements: autoSaveData.dietary_requirements || {},
+    // Also extract other detailed sections as in fetchClientCarePlansWithDetails
+    risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
+    service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
+    service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],
+    equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
+    documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : []
   };
 
   return transformedData;
@@ -294,24 +349,27 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
 };
 
 const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWithDetails[]> => {
-  console.log(`[fetchCarerAssignedCarePlans] Input carer ID: ${carerId}`);
+  console.log(`[fetchCarerAssignedCarePlans] Input carer ID (auth user ID): ${carerId}`);
 
-  // First get the carer's branch_id
+  // First get the carer's staff record and branch_id
   const { data: carerData, error: carerError } = await supabase
     .from('staff')
-    .select('branch_id')
+    .select('id, branch_id')
     .eq('auth_user_id', carerId)
     .single();
 
   if (carerError) {
-    console.error('Error fetching carer branch:', carerError);
+    console.error('Error fetching carer staff record:', carerError);
     throw carerError;
   }
 
+  const staffId = carerData?.id;
   const branchId = carerData?.branch_id;
 
+  console.log(`[fetchCarerAssignedCarePlans] Staff ID: ${staffId}, Branch ID: ${branchId}`);
+
   // Fetch care plans assigned directly to the carer OR in their branch (fallback)
-  // First get directly assigned care plans
+  // First get directly assigned care plans (using staff.id, not auth_user_id)
   const directQuery = supabase
     .from('client_care_plans')
     .select(`
@@ -332,7 +390,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
         last_name
       )
     `)
-    .eq('staff_id', carerId)
+    .eq('staff_id', staffId)  // Use staff.id, not auth_user_id
     .in('status', ['active', 'pending_approval', 'approved']);
 
   // Then get branch-level care plans where staff_id is null
@@ -373,14 +431,66 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
     ...(branchResult.data || [])
   ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-  // Transform the data to handle potential null staff relations and type casting
-  const transformedData: CarePlanWithDetails[] = combinedData.map(item => ({
-    ...item,
-    staff: item.staff || null,
-    client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
-    // Add a flag to indicate if this is directly assigned or branch-level
-    isDirectlyAssigned: item.staff_id === carerId
-  }));
+  // Transform the data similar to fetchClientCarePlansWithDetails
+  const transformedData: CarePlanWithDetails[] = combinedData.map(item => {
+    const autoSaveData = typeof item.auto_save_data === 'object' && item.auto_save_data !== null ? item.auto_save_data as Record<string, any> : {};
+    
+    // Extract goals from auto_save_data if not available from joined table
+    const goalsFromAutoSave = Array.isArray(autoSaveData.goals) ? autoSaveData.goals.map((goal: any, index: number) => ({
+      id: `goal-${index}`,
+      description: goal.description || goal.goal_description || '',
+      status: goal.status || 'active',
+      progress: goal.progress || 0,
+      notes: goal.notes || goal.additional_notes || ''
+    })) : [];
+
+    // Extract medications from auto_save_data if not available from joined table
+    const medicationsFromAutoSave = Array.isArray(autoSaveData.medications) ? autoSaveData.medications.map((med: any, index: number) => ({
+      id: `med-${index}`,
+      name: med.medication_name || med.name || '',
+      dosage: med.dosage || '',
+      frequency: med.frequency || '',
+      start_date: med.start_date || '',
+      end_date: med.end_date || '',
+      status: med.status || 'active'
+    })) : [];
+
+    // Extract activities from auto_save_data if not available from joined table
+    const activitiesFromAutoSave = Array.isArray(autoSaveData.activities) ? autoSaveData.activities.map((activity: any, index: number) => ({
+      id: `activity-${index}`,
+      name: activity.activity_name || activity.name || '',
+      description: activity.description || '',
+      frequency: activity.frequency || '',
+      status: activity.status || 'active'
+    })) : [];
+
+    return {
+      ...item,
+      staff: item.staff || null,
+      client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
+      // Use auto_save_data if joined tables are empty
+      goals: item.goals?.length > 0 ? item.goals : goalsFromAutoSave,
+      medications: item.medications?.length > 0 ? item.medications : medicationsFromAutoSave,
+      activities: item.activities?.length > 0 ? item.activities : activitiesFromAutoSave,
+      // Add additional extracted data from auto_save_data
+      care_plan_type: autoSaveData.care_plan_type || item.care_plan_type,
+      review_date: autoSaveData.review_date || item.review_date,
+      goals_progress: autoSaveData.goals_progress || item.goals_progress,
+      notes: autoSaveData.notes || item.notes,
+      // Extract additional care plan details
+      personal_info: autoSaveData.personal_info || {},
+      medical_info: autoSaveData.medical_info || {},
+      personal_care: autoSaveData.personal_care || {},
+      dietary_requirements: autoSaveData.dietary_requirements || {},
+      risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
+      service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
+      service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],
+      equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
+      documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : [],
+      // Add a flag to indicate if this is directly assigned or branch-level
+      isDirectlyAssigned: item.staff_id === staffId
+    };
+  });
 
   return transformedData;
 };
