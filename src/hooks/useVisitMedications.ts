@@ -118,37 +118,62 @@ export const useVisitMedications = (visitRecordId?: string) => {
   // Add common medications for a visit
   const addCommonMedications = useMutation({
     mutationFn: async ({ visitRecordId, clientId }: { visitRecordId: string; clientId: string }) => {
-      // In a real app, you'd fetch from care plans or medication schedules
-      const commonMedications = [
-        {
-          visit_record_id: visitRecordId,
-          medication_name: 'Morning vitamins',
-          dosage: '1 tablet',
-          prescribed_time: '08:00',
-          administration_method: 'oral',
-          is_administered: false,
-        },
-        {
-          visit_record_id: visitRecordId,
-          medication_name: 'Blood pressure medication',
-          dosage: '5mg',
-          prescribed_time: '12:00',
-          administration_method: 'oral',
-          is_administered: false,
-        },
-      ];
+      // Fetch active medications from client's care plan
+      const { data: clientMedications, error: medicationsError } = await supabase
+        .from('client_medications')
+        .select(`
+          id,
+          name,
+          dosage,
+          frequency,
+          care_plan_id,
+          client_care_plans!inner (
+            client_id,
+            status
+          )
+        `)
+        .eq('client_care_plans.client_id', clientId)
+        .eq('client_care_plans.status', 'active')
+        .eq('status', 'active');
+
+      if (medicationsError) {
+        console.error('Error fetching client medications:', medicationsError);
+        throw medicationsError;
+      }
+
+      if (!clientMedications || clientMedications.length === 0) {
+        console.log('No active medications found for client, skipping medication loading');
+        return [];
+      }
+
+      // Convert client medications to visit medications
+      const visitMedications = clientMedications.map(med => ({
+        visit_record_id: visitRecordId,
+        medication_id: med.id,
+        medication_name: med.name,
+        dosage: med.dosage,
+        prescribed_time: med.frequency.includes('morning') ? '08:00' : 
+                        med.frequency.includes('noon') || med.frequency.includes('lunch') ? '12:00' :
+                        med.frequency.includes('evening') || med.frequency.includes('night') ? '18:00' : '08:00',
+        administration_method: 'oral', // Default method since not in client_medications table
+        is_administered: false,
+      }));
 
       const { data, error } = await supabase
         .from('visit_medications')
-        .insert(commonMedications)
+        .insert(visitMedications)
         .select();
 
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecordId] });
-      toast.success('Medications schedule loaded');
+      if (data && data.length > 0) {
+        toast.success(`${data.length} active medications loaded for this visit`);
+      } else {
+        toast.info('No active medications found for this client');
+      }
     },
     onError: (error) => {
       console.error('Error adding medications:', error);
