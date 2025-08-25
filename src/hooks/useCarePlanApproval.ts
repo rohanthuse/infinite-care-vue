@@ -183,7 +183,7 @@ export const useCarePlanStatus = (carePlan: any) => {
     case 'pending_approval':
       return { 
         status: 'pending_approval', 
-        label: 'Pending Staff Approval', 
+        label: 'Under Staff Review', 
         variant: 'secondary' as const 
       };
     case 'pending_client_approval':

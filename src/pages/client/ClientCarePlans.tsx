@@ -215,7 +215,7 @@ const ClientCarePlans = () => {
                       <>
                         <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
                           <PenTool className="h-4 w-4 mr-2" />
-                          Care Plan is Approved
+                          Sign & Approve Care Plan
                         </Button>
                         <Button 
                           variant="outline" 
@@ -248,7 +248,7 @@ const ClientCarePlans = () => {
                       <span className="font-semibold">Your Approval Required</span>
                     </div>
                     <p className="text-sm text-orange-700 mb-3">
-                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections below including goals, medications, and activities, then click "Sign Care Plan" to provide your digital signature and approval.
+                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections below including goals, medications, and activities, then click "Sign & Approve Care Plan" to provide your digital signature and approval.
                     </p>
                     <div className="text-xs text-orange-600 font-medium">
                       ✓ Plan reviewed by healthcare team  •  ⏳ Awaiting your signature
