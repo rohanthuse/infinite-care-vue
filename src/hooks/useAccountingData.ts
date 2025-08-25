@@ -257,10 +257,36 @@ export function usePayrollRecords(branchId?: string) {
         throw error;
       }
 
-      // Transform the data to include staff info by ID lookup if needed
+      // Get unique staff IDs from payroll records
+      const staffIds = [...new Set((data || []).map(record => record.staff_id).filter(Boolean))];
+      
+      let staffMap = new Map();
+      
+      // Fetch staff data if we have staff IDs
+      if (staffIds.length > 0) {
+        try {
+          const { data: staffData, error: staffError } = await supabase
+            .from('staff')
+            .select('id, first_name, last_name, email')
+            .in('id', staffIds);
+          
+          if (staffError) {
+            console.error('Error fetching staff data:', staffError);
+          } else {
+            // Create a map for quick lookup
+            staffData?.forEach(staff => {
+              staffMap.set(staff.id, staff);
+            });
+          }
+        } catch (staffFetchError) {
+          console.error('Failed to fetch staff data:', staffFetchError);
+        }
+      }
+
+      // Transform the data to include staff info
       const transformedData = (data || []).map(record => ({
         ...record,
-        staff: null // We'll populate this separately if needed
+        staff: staffMap.get(record.staff_id) || null
       }));
 
       return transformedData as PayrollRecord[];
