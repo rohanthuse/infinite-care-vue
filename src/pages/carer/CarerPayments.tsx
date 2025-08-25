@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, subMonths, addMonths } from 'date-fns';
 import { CalendarIcon, FilePlus, Loader2 } from 'lucide-react';
@@ -75,7 +74,7 @@ const CarerPayments: React.FC = () => {
         })
         .map(payment => ({
           id: payment.id,
-          date: payment.date.toISOString(),
+          date: payment.date,
           description: `${payment.type === 'salary' ? 'Salary' : payment.type === 'overtime' ? 'Overtime' : 'Expense Reimbursement'} - ${payment.period}`,
           amount: payment.amount,
           status: payment.status,
@@ -112,7 +111,6 @@ const CarerPayments: React.FC = () => {
         expense_date: expenseForm.date,
         notes: expenseForm.notes || undefined,
         receipt_file: expenseForm.receipt || undefined,
-        branch_id: carerProfile.branch_id,
       });
       
       // Reset form and close dialog on success
