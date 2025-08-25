@@ -36,6 +36,7 @@ export function useCarerExpenseManagement() {
       const expense = {
         branch_id: carerProfile.branch_id,
         staff_id: carerProfile.id,
+        client_id: null,
         description: expenseData.description,
         amount: expenseData.amount,
         category: expenseData.category,
@@ -45,8 +46,10 @@ export function useCarerExpenseManagement() {
         receipt_url,
         notes: expenseData.notes,
         created_by: carerProfile.id,
+        // organization_id will be automatically set by the database trigger
       };
 
+      console.log('Submitting expense:', expense);
       return createExpenseMutation.mutateAsync(expense);
     },
     onSuccess: () => {
@@ -55,6 +58,7 @@ export function useCarerExpenseManagement() {
       toast.success('Expense claim submitted successfully');
     },
     onError: (error: Error) => {
+      console.error('Expense submission error:', error);
       toast.error('Failed to submit expense claim', {
         description: error.message
       });

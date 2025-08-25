@@ -1,29 +1,46 @@
+import React, { useState, useEffect } from 'react';
+import { format, subMonths, addMonths } from 'date-fns';
+import { CalendarIcon, FilePlus, Loader2 } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
+import { useCarerProfile } from '@/hooks/useCarerProfile';
+import { useCarerPayments } from '@/hooks/useCarerPayments';
+import { useCarerExpenseManagement } from '@/hooks/useCarerExpenseManagement';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { useExpenseTypeOptions } from '@/hooks/useParameterOptions';
 
-import React, { useState } from "react";
-import { Search, Filter, Calendar, Download, ChevronDown, Wallet, Clock, CreditCard, Plus, FileText, Loader2, Eye, Edit } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format, addDays, subMonths } from "date-fns";
-import { useCarerPayments } from "@/hooks/useCarerPayments";
-import { useCarerExpenseManagement } from "@/hooks/useCarerExpenseManagement";
-import { useCarerExpenseEdit } from "@/hooks/useCarerExpenseEdit";
-import { useCarerProfile } from "@/hooks/useCarerProfile";
-import { formatCurrency } from "@/utils/currencyFormatter";
-import { toast } from "sonner";
-import ViewExpenseDialog from "@/components/accounting/ViewExpenseDialog";
-import EditExpenseDialog from "@/components/carer/EditExpenseDialog";
+interface Payment {
+  id: string;
+  date: string;
+  description: string;
+  amount: number;
+  status: string;
+}
 
 const CarerPayments: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("payments");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [showAddExpense, setShowAddExpense] = useState(false);
-  const [showViewExpense, setShowViewExpense] = useState(false);
-  const [showEditExpense, setShowEditExpense] = useState(false);
-  const [selectedExpense, setSelectedExpense] = useState<any>(null);
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: subMonths(new Date(), 1),
+    to: new Date(),
+  });
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [addExpenseDialogOpen, setAddExpenseDialogOpen] = useState(false);
   const [expenseForm, setExpenseForm] = useState({
     description: "",
     category: "",
@@ -32,82 +49,22 @@ const CarerPayments: React.FC = () => {
     notes: "",
     receipt: null as File | null,
   });
-
   const { data: carerProfile } = useCarerProfile();
-  const { data: paymentData, isLoading, error } = useCarerPayments();
+  const { data: carerPayments, isLoading, error } = useCarerPayments(
+    carerProfile?.id,
+    date?.from,
+    date?.to
+  );
   const { submitExpense, isSubmitting } = useCarerExpenseManagement();
-  const { updateExpense, isUpdating } = useCarerExpenseEdit();
+  const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">My Payments</h1>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin mr-2" />
-          <span>Loading payment data...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">My Payments</h1>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-red-500 mb-2">Error loading payment data</p>
-            <p className="text-sm text-gray-500">{error.message}</p>
-            <Button 
-              onClick={() => window.location.reload()} 
-              className="mt-4"
-              variant="outline"
-            >
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // No data state
-  if (!paymentData) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">My Payments</h1>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <p className="text-gray-500">No payment data available</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Safely destructure with fallbacks
-  const { 
-    summary, 
-    paymentHistory = [], 
-    allCarerExpenses = [] 
-  } = paymentData;
-
-  // Filter payment history based on period
-  const filteredPayments = paymentHistory.filter(payment => {
-    if (periodFilter === "last3Months") {
-      const threeMonthsAgo = subMonths(new Date(), 3);
-      return payment.date >= threeMonthsAgo;
+  useEffect(() => {
+    if (carerPayments) {
+      setPayments(carerPayments);
     }
-    if (periodFilter === "thisYear") {
-      const currentYear = new Date().getFullYear();
-      return payment.date.getFullYear() === currentYear;
-    }
-    return true;
-  });
+  }, [carerPayments]);
 
-  const handleExpenseSubmit = async (e: React.FormEvent) => {
+  const handleSubmitExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!expenseForm.description || !expenseForm.category || !expenseForm.amount) {
@@ -115,7 +72,13 @@ const CarerPayments: React.FC = () => {
       return;
     }
 
+    if (parseFloat(expenseForm.amount) <= 0) {
+      toast.error("Amount must be greater than 0");
+      return;
+    }
+
     try {
+      console.log('Submitting expense form:', expenseForm);
       await submitExpense.mutateAsync({
         description: expenseForm.description,
         amount: parseFloat(expenseForm.amount),
@@ -124,8 +87,8 @@ const CarerPayments: React.FC = () => {
         notes: expenseForm.notes || undefined,
         receipt_file: expenseForm.receipt || undefined,
       });
-
-      // Reset form and close dialog
+      
+      // Reset form and close dialog on success
       setExpenseForm({
         description: "",
         category: "",
@@ -134,9 +97,10 @@ const CarerPayments: React.FC = () => {
         notes: "",
         receipt: null,
       });
-      setShowAddExpense(false);
+      setAddExpenseDialogOpen(false);
     } catch (error) {
-      // Error handling is done in the hook
+      // Error is already handled by the mutation's onError
+      console.error('Form submission error:', error);
     }
   };
 
@@ -147,441 +111,199 @@ const CarerPayments: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'paid':
-      case 'completed':
-      case 'approved':
-        return 'bg-green-100 text-green-700';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'cancelled':
-      case 'rejected':
-        return 'bg-red-100 text-red-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'salary':
-        return 'Salary';
-      case 'overtime':
-        return 'Overtime';
-      case 'expense_reimbursement':
-        return 'Expense Reimbursement';
-      default:
-        return 'Payment';
-    }
-  };
-
-  const handleViewExpense = (expense: any) => {
-    setSelectedExpense(expense);
-    setShowViewExpense(true);
-  };
-
-  const handleEditExpense = (expense: any) => {
-    setSelectedExpense(expense);
-    setShowEditExpense(true);
-  };
-
-  const handleViewExpenseEdit = () => {
-    setShowViewExpense(false);
-    setShowEditExpense(true);
-  };
-
-  const handleUpdateExpense = async (expenseData: any) => {
-    await updateExpense.mutateAsync(expenseData);
-  };
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">My Payments</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Current Month</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary?.currentMonth || 0)}</div>
-            <p className="text-sm text-gray-500">
-              {summary?.lastPayment ? `Payment for ${summary.lastPayment.period}` : 'No payments this month'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Year to Date</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary?.yearToDate || 0)}</div>
-            <p className="text-sm text-gray-500">Total earnings in {new Date().getFullYear()}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-md font-medium">Total Reimbursements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary?.totalReimbursements || 0)}</div>
-            <p className="text-sm text-gray-500">All approved expense claims</p>
-          </CardContent>
-        </Card>
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-5">Your Payments</h1>
+
+      {/* Date Range Picker */}
+      <div className="mb-5">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              id="date"
+              variant={"outline"}
+              className={cn(
+                "w-[300px] justify-start text-left font-normal",
+                !date?.from && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date?.from ? (
+                date.to ? (
+                  `${format(date.from, "MMM dd, yyyy")} - ${format(date.to, "MMM dd, yyyy")}`
+                ) : (
+                  format(date.from, "MMM dd, yyyy")
+                )
+              ) : (
+                <span>Pick a date</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={setDate}
+              numberOfMonths={2}
+              pagedNavigation
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-      
-      <div className="bg-white border border-gray-200 rounded-lg mb-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="payments">
-              Payments History
-            </TabsTrigger>
-            <TabsTrigger value="expenses">
-              Expense Claims
-            </TabsTrigger>
-            <TabsTrigger value="documents">
-              Payment Documents
-            </TabsTrigger>
-          </TabsList>
-          
-          <div className="p-6">
-            <TabsContent value="payments" className="mt-0">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <h2 className="text-lg font-semibold">Payment History</h2>
-                <div className="flex gap-2">
-                  <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filter by period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="last3Months">Last 3 Months</SelectItem>
-                      <SelectItem value="thisYear">This Year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    <span>Export</span>
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Period</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Type</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Amount</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Date</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Status</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPayments.map((payment) => (
-                      <tr key={payment.id} className="border-t border-gray-200">
-                        <td className="py-4 px-4 text-sm">{payment.period}</td>
-                        <td className="py-4 px-4 text-sm">{getTypeLabel(payment.type)}</td>
-                        <td className="py-4 px-4 text-sm font-medium">{formatCurrency(payment.amount)}</td>
-                        <td className="py-4 px-4 text-sm">{format(payment.date, "dd MMM yyyy")}</td>
-                        <td className="py-4 px-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(payment.status)}`}>
-                            {payment.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                            <Download className="h-3.5 w-3.5" />
-                            <span>Payslip</span>
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredPayments.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-gray-500">
-                          No payment records found for the selected period
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="expenses" className="mt-0">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <h2 className="text-lg font-semibold">Expense Claims</h2>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Filter className="h-4 w-4" />
-                    <span>Filter</span>
-                  </Button>
-                  
-                  <Button onClick={() => setShowAddExpense(true)} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Add Expense</span>
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Description</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Category</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Amount</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Date</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Status</th>
-                      <th className="py-3 px-4 text-left text-sm font-medium text-gray-500">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allCarerExpenses.map((expense) => (
-                      <tr key={expense.id} className="border-t border-gray-200">
-                        <td className="py-4 px-4 text-sm">{expense.description}</td>
-                        <td className="py-4 px-4 text-sm">{expense.category}</td>
-                        <td className="py-4 px-4 text-sm font-medium">{formatCurrency(expense.amount)}</td>
-                        <td className="py-4 px-4 text-sm">{format(new Date(expense.expense_date), "dd MMM yyyy")}</td>
-                        <td className="py-4 px-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(expense.status)}`}>
-                            {expense.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleViewExpense(expense)}
-                              className="flex items-center gap-2"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              <span>View</span>
-                            </Button>
-                            {expense.status === 'pending' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleEditExpense(expense)}
-                                className="flex items-center gap-2"
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                                <span>Edit</span>
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {allCarerExpenses.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-gray-500">
-                          No expense claims found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="documents" className="mt-0">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                <h2 className="text-lg font-semibold">Payment Documents</h2>
-                <div className="relative w-full sm:w-[250px]">
-                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                  <Input 
-                    className="pl-8"
-                    placeholder="Search documents" 
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-blue-100 text-blue-600 flex items-center justify-center">
-                          <Wallet className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Annual Income Statement</h3>
-                          <p className="text-sm text-gray-500">Tax year {new Date().getFullYear()}</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="flex items-center gap-2">
-                        <Download className="h-4 w-4" />
-                        <span>Download</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-blue-100 text-blue-600 flex items-center justify-center">
-                          <CreditCard className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Bank Details Confirmation</h3>
-                          <p className="text-sm text-gray-500">Payment information</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="flex items-center gap-2">
-                        <Download className="h-4 w-4" />
-                        <span>Download</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
-      
-      <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
-        <DialogContent className="sm:max-w-md flex flex-col max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Submit Expense Claim</DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleExpenseSubmit} className="flex flex-col flex-1">
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description *</label>
-                <Input 
+
+      {/* Payments Table */}
+      {isLoading ? (
+        <div className="flex items-center justify-center">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Loading payments...
+        </div>
+      ) : error ? (
+        <div className="text-red-500">Error: {error.message}</div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableCaption>A list of your recent payments.</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {payments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-medium">{format(new Date(payment.date), "MMM dd, yyyy")}</TableCell>
+                  <TableCell>{payment.description}</TableCell>
+                  <TableCell>£{payment.amount.toFixed(2)}</TableCell>
+                  <TableCell>{payment.status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={3}>Total</TableCell>
+                <TableCell>£{payments.reduce((acc, payment) => acc + payment.amount, 0).toFixed(2)}</TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+      )}
+
+      {/* Add Expense Claim Button */}
+      <Button onClick={() => setAddExpenseDialogOpen(true)} className="mt-5">
+        <FilePlus className="mr-2 h-4 w-4" />
+        Submit Expense Claim
+      </Button>
+
+      {/* Add Expense Claim Dialog */}
+      {addExpenseDialogOpen && (
+        <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50">
+          <div className="relative p-8 bg-white rounded-lg max-w-md mx-auto mt-20">
+            <h2 className="text-2xl font-bold mb-5">Submit Expense Claim</h2>
+            <form onSubmit={handleSubmitExpense} className="space-y-4">
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Input
+                  type="text"
+                  id="description"
                   placeholder="Brief description of expense"
                   value={expenseForm.description}
                   onChange={(e) => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
                   required
                 />
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Category *</label>
-                <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select 
+                  onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}
+                  defaultValue={expenseForm.category}
+                  disabled={expenseTypesLoading}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue placeholder={expenseTypesLoading ? "Loading categories..." : "Select category"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="travel">Travel</SelectItem>
-                    <SelectItem value="training">Training</SelectItem>
-                    <SelectItem value="uniform">Uniform</SelectItem>
-                    <SelectItem value="communication">Communication</SelectItem>
-                    <SelectItem value="supplies">Supplies</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {expenseTypeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Amount (£) *</label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
+                <div>
+                  <Label htmlFor="amount">Amount (£)</Label>
+                  <Input
+                    type="number"
+                    id="amount"
                     placeholder="0.00"
+                    step="0.01"
                     value={expenseForm.amount}
                     onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))}
                     required
                   />
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Date *</label>
-                  <Input 
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
                     type="date"
+                    id="date"
                     value={expenseForm.date}
                     onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
                     required
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Notes</label>
-                <Input 
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
                   placeholder="Additional notes (optional)"
                   value={expenseForm.notes}
                   onChange={(e) => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
                 />
               </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Upload Receipt</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="receipt-upload"
-                  />
-                  <label htmlFor="receipt-upload" className="cursor-pointer">
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <span>Select File</span>
-                    </Button>
-                  </label>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {expenseForm.receipt ? expenseForm.receipt.name : 'PDF, JPG or PNG up to 5MB'}
+              <div>
+                <Label htmlFor="receipt">Upload Receipt</Label>
+                <Input
+                  type="file"
+                  id="receipt"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                />
+                {expenseForm.receipt && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Selected file: {expenseForm.receipt.name}
                   </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2 pt-4 border-t bg-background">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowAddExpense(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit Claim'
                 )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-      
-      {/* View Expense Dialog */}
-      {selectedExpense && (
-        <ViewExpenseDialog
-          open={showViewExpense}
-          onClose={() => setShowViewExpense(false)}
-          expense={selectedExpense}
-        />
-      )}
-      
-      {/* Edit Expense Dialog */}
-      {selectedExpense && (
-        <EditExpenseDialog
-          open={showEditExpense}
-          onClose={() => setShowEditExpense(false)}
-          expense={selectedExpense}
-          onUpdate={handleUpdateExpense}
-          isUpdating={isUpdating}
-        />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setAddExpenseDialogOpen(false)}
+                  className="mr-2"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Claim"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
