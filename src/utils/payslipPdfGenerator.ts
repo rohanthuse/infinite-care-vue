@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface PayrollRecord {
   id: string;
@@ -92,7 +92,7 @@ export const exportPayrollPayslip = (record: PayrollRecord): void => {
     ['GROSS PAY', '', '', formatCurrency(record.gross_pay)]
   ];
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [['Description', 'Hours', 'Rate', 'Amount']],
     body: earningsData,
     startY: 90,
@@ -121,10 +121,10 @@ export const exportPayrollPayslip = (record: PayrollRecord): void => {
     ['TOTAL DEDUCTIONS', formatCurrency(totalDeductions)]
   ];
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [['Deduction', 'Amount']],
     body: deductionsData,
-    startY: (doc as any).lastAutoTable.finalY + 15,
+    startY: (doc as any).lastAutoTable?.finalY + 15,
     theme: 'grid',
     headStyles: { fillColor: [231, 76, 60] },
     styles: { fontSize: 9 },
@@ -140,7 +140,7 @@ export const exportPayrollPayslip = (record: PayrollRecord): void => {
   });
 
   // Summary section
-  const summaryY = (doc as any).lastAutoTable.finalY + 20;
+  const summaryY = (doc as any).lastAutoTable?.finalY + 20;
   doc.setFontSize(12);
   doc.text('PAYMENT SUMMARY', 20, summaryY);
   
