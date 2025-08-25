@@ -451,94 +451,96 @@ const CarerPayments: React.FC = () => {
       </div>
       
       <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md flex flex-col max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Submit Expense Claim</DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleExpenseSubmit} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description *</label>
-              <Input 
-                placeholder="Brief description of expense"
-                value={expenseForm.description}
-                onChange={(e) => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Category *</label>
-              <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="travel">Travel</SelectItem>
-                  <SelectItem value="training">Training</SelectItem>
-                  <SelectItem value="uniform">Uniform</SelectItem>
-                  <SelectItem value="communication">Communication</SelectItem>
-                  <SelectItem value="supplies">Supplies</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleExpenseSubmit} className="flex flex-col flex-1">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Amount (£) *</label>
+                <label className="text-sm font-medium">Description *</label>
                 <Input 
-                  type="number" 
-                  step="0.01" 
-                  placeholder="0.00"
-                  value={expenseForm.amount}
-                  onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))}
+                  placeholder="Brief description of expense"
+                  value={expenseForm.description}
+                  onChange={(e) => setExpenseForm(prev => ({ ...prev, description: e.target.value }))}
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium">Date *</label>
-                <Input 
-                  type="date"
-                  value={expenseForm.date}
-                  onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
-                  required
-                />
+                <label className="text-sm font-medium">Category *</label>
+                <Select value={expenseForm.category} onValueChange={(value) => setExpenseForm(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="travel">Travel</SelectItem>
+                    <SelectItem value="training">Training</SelectItem>
+                    <SelectItem value="uniform">Uniform</SelectItem>
+                    <SelectItem value="communication">Communication</SelectItem>
+                    <SelectItem value="supplies">Supplies</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Amount (£) *</label>
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="0.00"
+                    value={expenseForm.amount}
+                    onChange={(e) => setExpenseForm(prev => ({ ...prev, amount: e.target.value }))}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date *</label>
+                  <Input 
+                    type="date"
+                    value={expenseForm.date}
+                    onChange={(e) => setExpenseForm(prev => ({ ...prev, date: e.target.value }))}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Notes</label>
-              <Input 
-                placeholder="Additional notes (optional)"
-                value={expenseForm.notes}
-                onChange={(e) => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Upload Receipt</label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="receipt-upload"
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notes</label>
+                <Input 
+                  placeholder="Additional notes (optional)"
+                  value={expenseForm.notes}
+                  onChange={(e) => setExpenseForm(prev => ({ ...prev, notes: e.target.value }))}
                 />
-                <label htmlFor="receipt-upload" className="cursor-pointer">
-                  <Button type="button" variant="outline" size="sm" asChild>
-                    <span>Select File</span>
-                  </Button>
-                </label>
-                <p className="text-xs text-gray-500 mt-2">
-                  {expenseForm.receipt ? expenseForm.receipt.name : 'PDF, JPG or PNG up to 5MB'}
-                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Upload Receipt</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="receipt-upload"
+                  />
+                  <label htmlFor="receipt-upload" className="cursor-pointer">
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <span>Select File</span>
+                    </Button>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {expenseForm.receipt ? expenseForm.receipt.name : 'PDF, JPG or PNG up to 5MB'}
+                  </p>
+                </div>
               </div>
             </div>
             
-            <div className="pt-4 flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4 border-t bg-background">
               <Button 
                 type="button" 
                 variant="outline" 
