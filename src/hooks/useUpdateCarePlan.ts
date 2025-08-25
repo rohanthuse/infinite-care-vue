@@ -36,13 +36,47 @@ export const useUpdateCarePlanAssignment = () => {
 
   return useMutation({
     mutationFn: updateCarePlanAssignment,
-    onSuccess: () => {
+    onSuccess: async (updatedCarePlan) => {
       // Invalidate relevant queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plans'] });
+      
+      // Create notification for newly assigned staff
+      try {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('first_name, last_name, branch_id')
+          .eq('id', updatedCarePlan.client_id)
+          .single();
+
+        if (clientData && updatedCarePlan.staff_id) {
+          const notification = {
+            user_id: updatedCarePlan.staff_id,
+            branch_id: clientData.branch_id,
+            type: 'care_plan',
+            category: 'info',
+            priority: 'medium',
+            title: 'Care Plan Reassigned',
+            message: `You have been assigned to ${updatedCarePlan.display_id || 'care plan'} for ${clientData.first_name} ${clientData.last_name}`,
+            data: {
+              care_plan_id: updatedCarePlan.id,
+              action: updatedCarePlan.status === 'active' ? 'activation' : 'status_change',
+              care_plan_title: updatedCarePlan.title || 'Care Plan',
+              care_plan_display_id: updatedCarePlan.display_id,
+              client_name: `${clientData.first_name} ${clientData.last_name}`
+            }
+          };
+
+          await supabase.from('notifications').insert([notification]);
+          console.log('[useUpdateCarePlan] Staff notification created for reassignment');
+        }
+      } catch (notificationError) {
+        console.error('[useUpdateCarePlan] Error creating staff notification:', notificationError);
+        // Don't fail the operation for notification errors
+      }
       
       toast.success('Care plan assignment updated successfully');
     },
