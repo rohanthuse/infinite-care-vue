@@ -219,10 +219,17 @@ export const useCarePlanCreation = () => {
             .eq('id', data.client_id)
             .single();
 
-          if (clientData) {
+          // Get staff auth_user_id for notification
+          const { data: staffData } = await supabase
+            .from('staff')
+            .select('auth_user_id')
+            .eq('id', updatedCarePlan.staff_id)
+            .single();
+
+          if (clientData && staffData?.auth_user_id) {
             const isActive = data.status === 'active';
             const notification = {
-              user_id: updatedCarePlan.staff_id,
+              user_id: staffData.auth_user_id,
               branch_id: clientData.branch_id,
               type: 'care_plan',
               category: 'info',
@@ -239,6 +246,9 @@ export const useCarePlanCreation = () => {
             };
 
             await supabase.from('notifications').insert([notification]);
+            console.log('[useCarePlanCreation] Staff notification created successfully');
+          } else {
+            console.warn('[useCarePlanCreation] Staff has no auth_user_id, cannot send notification');
           }
         } catch (notificationError) {
           console.error('[useCarePlanCreation] Error creating staff notification:', notificationError);

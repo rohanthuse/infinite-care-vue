@@ -123,6 +123,53 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
       // Don't fail the operation for history issues
     }
 
+    // Create notification for assigned staff when client approves
+    const approvedCarePlan = updateData[0];
+    if (approvedCarePlan.staff_id) {
+      try {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('first_name, last_name, branch_id')
+          .eq('id', clientId)
+          .single();
+
+        // Get staff auth_user_id for notification
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('auth_user_id')
+          .eq('id', approvedCarePlan.staff_id)
+          .single();
+
+        if (clientData && staffData?.auth_user_id) {
+          const notification = {
+            user_id: staffData.auth_user_id,
+            branch_id: clientData.branch_id,
+            type: 'care_plan',
+            category: 'success',
+            priority: 'high',
+            title: 'Care Plan Approved by Client',
+            message: `${clientData.first_name} ${clientData.last_name} has approved their care plan ${approvedCarePlan.display_id}`,
+            data: {
+              care_plan_id: carePlanId,
+              action: 'client_approval',
+              care_plan_title: approvedCarePlan.title || 'Care Plan',
+              care_plan_display_id: approvedCarePlan.display_id,
+              client_name: `${clientData.first_name} ${clientData.last_name}`,
+              client_comments: comments
+            }
+          };
+
+          await supabase.from('notifications').insert([notification]);
+          console.log('[approveCarePlan] Staff notification created for client approval');
+        } else {
+          console.warn('[approveCarePlan] Staff has no auth_user_id, cannot send notification');
+        }
+      } catch (notificationError) {
+        console.error('[approveCarePlan] Error creating staff notification:', notificationError);
+        // Don't fail the operation for notification errors
+      }
+    }
+
     console.log(`[approveCarePlan] Successfully approved care plan ${carePlanId}`);
     return { success: true };
   } catch (error) {
