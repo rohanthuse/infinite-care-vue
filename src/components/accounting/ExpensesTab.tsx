@@ -196,7 +196,7 @@ const ExpensesTab: React.FC<ExpensesTabProps> = ({ branchId, branchName }) => {
       
       const expenseToCreate = {
         branch_id: branchId,
-        staff_id: null,
+        staff_id: expenseData.staff_id || null,
         client_id: null,
         description: expenseData.description || '',
         amount: Number(expenseData.amount || 0),

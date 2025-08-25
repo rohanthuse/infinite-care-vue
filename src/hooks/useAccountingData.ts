@@ -197,11 +197,60 @@ export function useExpenses(branchId?: string) {
         throw error;
       }
 
-      // Transform the data to include staff and client info by ID lookup if needed
+      // Get unique staff IDs and client IDs from expense records
+      const staffIds = [...new Set((data || []).map(record => record.staff_id).filter(Boolean))];
+      const clientIds = [...new Set((data || []).map(record => record.client_id).filter(Boolean))];
+      
+      let staffMap = new Map();
+      let clientMap = new Map();
+      
+      // Fetch staff data if we have staff IDs
+      if (staffIds.length > 0) {
+        try {
+          const { data: staffData, error: staffError } = await supabase
+            .from('staff')
+            .select('id, first_name, last_name')
+            .in('id', staffIds);
+          
+          if (staffError) {
+            console.error('Error fetching staff data:', staffError);
+          } else {
+            // Create a map for quick lookup
+            staffData?.forEach(staff => {
+              staffMap.set(staff.id, staff);
+            });
+          }
+        } catch (staffFetchError) {
+          console.error('Failed to fetch staff data:', staffFetchError);
+        }
+      }
+
+      // Fetch client data if we have client IDs
+      if (clientIds.length > 0) {
+        try {
+          const { data: clientData, error: clientError } = await supabase
+            .from('clients')
+            .select('id, first_name, last_name')
+            .in('id', clientIds);
+          
+          if (clientError) {
+            console.error('Error fetching client data:', clientError);
+          } else {
+            // Create a map for quick lookup
+            clientData?.forEach(client => {
+              clientMap.set(client.id, client);
+            });
+          }
+        } catch (clientFetchError) {
+          console.error('Failed to fetch client data:', clientFetchError);
+        }
+      }
+
+      // Transform the data to include staff and client info
       const transformedData = (data || []).map(expense => ({
         ...expense,
-        staff: null, // We'll populate this separately if needed
-        client: null // We'll populate this separately if needed
+        staff: staffMap.get(expense.staff_id) || null,
+        client: clientMap.get(expense.client_id) || null
       }));
 
       return transformedData as ExpenseRecord[];

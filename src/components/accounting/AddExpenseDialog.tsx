@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ExpenseRecord } from "@/hooks/useAccountingData";
 import { useExpenseTypeOptions } from "@/hooks/useParameterOptions";
+import { useBranchStaff } from "@/hooks/useBranchStaff";
 
 interface AddExpenseDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ const createFormSchema = (availableCategories: string[]) => z.object({
   description: z.string().min(5, "Description must be at least 5 characters"),
   amount: z.coerce.number().positive("Amount must be positive"),
   expense_date: z.date(),
+  staff_id: z.string().min(1, "Please select a staff member"),
   category: z.string().refine(
     (value) => availableCategories.includes(value),
     "Please select a valid category"
@@ -77,9 +79,11 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
   onClose,
   onSave,
   initialData,
-  isEditing = false
+  isEditing = false,
+  branchId
 }) => {
   const { data: expenseTypeOptions = [], isLoading: expenseTypesLoading } = useExpenseTypeOptions();
+  const { data: branchStaff = [], isLoading: staffLoading } = useBranchStaff(branchId || "");
   
   const availableCategories = expenseTypeOptions.map(option => option.value);
   const formSchema = createFormSchema(availableCategories);
@@ -90,6 +94,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
       description: initialData.description,
       amount: initialData.amount,
       expense_date: new Date(initialData.expense_date),
+      staff_id: initialData.staff_id || "",
       category: initialData.category as any,
       payment_method: initialData.payment_method as any,
       receipt_url: initialData.receipt_url || "",
@@ -98,6 +103,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
       description: "",
       amount: 0,
       expense_date: new Date(),
+      staff_id: "",
       category: availableCategories[0] || "office_supplies",
       payment_method: "credit_card",
       receipt_url: "",
@@ -110,6 +116,7 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
       description: data.description,
       amount: data.amount,
       expense_date: format(data.expense_date, "yyyy-MM-dd"),
+      staff_id: data.staff_id,
       category: data.category,
       payment_method: data.payment_method,
       receipt_url: data.receipt_url || null,
@@ -200,6 +207,35 @@ const AddExpenseDialog: React.FC<AddExpenseDialogProps> = ({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="staff_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Staff/Carer</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={staffLoading}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={staffLoading ? "Loading staff..." : "Select staff member"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {branchStaff.map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>
+                          {staff.first_name} {staff.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
