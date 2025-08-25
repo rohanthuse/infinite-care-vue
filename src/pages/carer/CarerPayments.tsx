@@ -74,7 +74,7 @@ const CarerPayments: React.FC = () => {
         })
         .map(payment => ({
           id: payment.id,
-          date: payment.date,
+          date: payment.date instanceof Date ? payment.date.toISOString() : payment.date,
           description: `${payment.type === 'salary' ? 'Salary' : payment.type === 'overtime' ? 'Overtime' : 'Expense Reimbursement'} - ${payment.period}`,
           amount: payment.amount,
           status: payment.status,
