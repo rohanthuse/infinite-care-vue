@@ -272,6 +272,10 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
                 </DropdownMenuItem>
               )}
               
+              <DropdownMenuItem onClick={() => onStatusChange(plan.id)}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Change Status
+              </DropdownMenuItem>
               
               {plan.status === 'draft' && (
                 <DropdownMenuItem 

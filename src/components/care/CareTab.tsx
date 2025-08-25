@@ -537,11 +537,17 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
 
   const openStatusChangeDialog = (id: string) => {
-    const plan = mockCarePlans.find(plan => plan.id === id);
+    const plan = carePlans.find(plan => plan._databaseId === id || plan.id === id);
     if (plan) {
-      setSelectedPlan(id);
+      setSelectedPlan(plan._databaseId || id);
       setSelectedStatus(plan.status);
       setStatusDialogOpen(true);
+    } else {
+      toast({
+        title: "Care Plan Not Found",
+        description: "Could not find the care plan to change status.",
+        variant: "destructive",
+      });
     }
   };
 
