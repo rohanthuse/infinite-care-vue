@@ -202,46 +202,67 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                         {medication.client_care_plans?.title || 'View Plan'}
                       </Button>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleActionClick("Record", medication.id)}>
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Record Administration
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleActionClick("View", medication.id, medication)}>
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            View Care Plan
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleActionClick("ViewBookings", medication.id)}>
-                            <CalendarDays className="h-4 w-4 mr-2" />
-                            View Appointments
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleActionClick("History", medication.id)}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            View History
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          {medication.status === "active" ? (
-                            <DropdownMenuItem onClick={() => handleActionClick("Discontinue", medication.id)} className="text-red-600">
-                              Discontinue
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleActionClick("Reactivate", medication.id)} className="text-green-600">
-                              Reactivate
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                     <TableCell className="text-right">
+                       <div className="flex items-center gap-2 justify-end">
+                         {/* Check if this medication is already in today's visits */}
+                         {(() => {
+                           const today = new Date().toISOString().split('T')[0];
+                           const todayRecord = marRecords.find(record => 
+                             record.medication_id === medication.id &&
+                             format(new Date(record.administered_at), 'yyyy-MM-dd') === today
+                           );
+                           
+                           if (todayRecord) {
+                             return (
+                               <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                                 <CheckCircle className="h-3 w-3 mr-1" />
+                                 In today's visit
+                               </Badge>
+                             );
+                           }
+                           return null;
+                         })()}
+                         
+                         <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                             <Button variant="ghost" size="icon" className="h-8 w-8">
+                               <MoreHorizontal className="h-4 w-4" />
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end">
+                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                             <DropdownMenuSeparator />
+                             <DropdownMenuItem onClick={() => handleActionClick("Record", medication.id)}>
+                               <CheckCircle className="h-4 w-4 mr-2" />
+                               Record Administration
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleActionClick("View", medication.id, medication)}>
+                               <ExternalLink className="h-4 w-4 mr-2" />
+                               View Care Plan
+                             </DropdownMenuItem>
+                             <DropdownMenuSeparator />
+                             <DropdownMenuItem onClick={() => handleActionClick("ViewBookings", medication.id)}>
+                               <CalendarDays className="h-4 w-4 mr-2" />
+                               View Appointments
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleActionClick("History", medication.id)}>
+                               <FileText className="h-4 w-4 mr-2" />
+                               View History
+                             </DropdownMenuItem>
+                             <DropdownMenuSeparator />
+                             {medication.status === "active" ? (
+                               <DropdownMenuItem onClick={() => handleActionClick("Discontinue", medication.id)} className="text-red-600">
+                                 Discontinue
+                               </DropdownMenuItem>
+                             ) : (
+                               <DropdownMenuItem onClick={() => handleActionClick("Reactivate", medication.id)} className="text-green-600">
+                                 Reactivate
+                               </DropdownMenuItem>
+                             )}
+                           </DropdownMenuContent>
+                         </DropdownMenu>
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

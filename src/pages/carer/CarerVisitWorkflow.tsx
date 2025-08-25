@@ -1192,12 +1192,23 @@ const CarerVisitWorkflow = () => {
           {/* Medication Tab */}
           <TabsContent value="medication" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Pill className="w-5 h-5" />
-                  Medication Administration
-                </CardTitle>
-              </CardHeader>
+               <CardHeader>
+                 <CardTitle className="flex items-center gap-2">
+                   <Pill className="w-5 h-5" />
+                   Medication Administration
+                 </CardTitle>
+                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+                   <div className="flex items-start gap-2">
+                     <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                       <Pill className="h-3 w-3 text-blue-600" />
+                     </div>
+                     <div className="text-sm text-blue-700">
+                       <p className="font-medium">Medications from Care Plan</p>
+                       <p className="mt-0.5">These medications were added to the client's care plan by staff. Record administrations here to create MAR entries.</p>
+                     </div>
+                   </div>
+                 </div>
+               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {medicationsLoading ? (

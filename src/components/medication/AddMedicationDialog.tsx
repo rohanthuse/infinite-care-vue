@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, Clock, Plus, X, Loader2 } from "lucide-react";
+import { CalendarIcon, Clock, Plus, X, Loader2, Pill } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import {
@@ -260,6 +260,20 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Add New Medication</DialogTitle>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Pill className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-900">Medication Workflow</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Medications added here will automatically appear in the carer's visit workflow when they visit this client. 
+                  Carers can then record administrations, which creates MAR (Medication Administration Record) entries.
+                </p>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
         <Form {...form}>
