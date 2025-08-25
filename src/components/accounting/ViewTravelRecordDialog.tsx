@@ -6,6 +6,8 @@ import { TravelRecord } from "@/hooks/useAccountingData";
 import { format } from "date-fns";
 import { Edit, Download, ArrowRight, MapPin, Clock, Car, FileText, User, Users } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { ReportExporter } from "@/utils/reportExporter";
+import { useToast } from "@/hooks/use-toast";
 
 interface ViewTravelRecordDialogProps {
   open: boolean;
@@ -35,6 +37,51 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
   onEdit,
   travelRecord,
 }) => {
+  const { toast } = useToast();
+
+  const handleExportTravel = () => {
+    try {
+      const exportData = [{
+        "Date": format(new Date(travelRecord.travel_date), "dd/MM/yyyy"),
+        "From": travelRecord.start_location,
+        "To": travelRecord.end_location,
+        "Distance (miles)": travelRecord.distance_miles.toFixed(1),
+        "Duration": formatDuration(travelRecord.travel_time_minutes),
+        "Vehicle Type": vehicleTypeLabels[travelRecord.vehicle_type] || travelRecord.vehicle_type,
+        "Mileage Rate": `£${travelRecord.mileage_rate.toFixed(2)}`,
+        "Total Cost": formatCurrency(travelRecord.total_cost),
+        "Purpose": travelRecord.purpose,
+        "Staff": travelRecord.staff ? `${travelRecord.staff.first_name} ${travelRecord.staff.last_name}` : "-",
+        "Client": travelRecord.client ? `${travelRecord.client.first_name} ${travelRecord.client.last_name}` : "-",
+        "Status": travelStatusLabels[travelRecord.status],
+        "Notes": travelRecord.notes || "-"
+      }];
+
+      const columns = [
+        "Date", "From", "To", "Distance (miles)", "Duration", "Vehicle Type", 
+        "Mileage Rate", "Total Cost", "Purpose", "Staff", "Client", "Status", "Notes"
+      ];
+
+      ReportExporter.exportToPDF({
+        title: "Travel Record Details",
+        data: exportData,
+        columns,
+        fileName: `Travel_Record_${format(new Date(travelRecord.travel_date), 'yyyy-MM-dd')}.pdf`
+      });
+
+      toast({
+        title: "Export Successful",
+        description: "Travel record has been exported to PDF.",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export travel record. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   // Function to render status badge
   const renderStatusBadge = (status: string) => {
     let colorClass = "";
@@ -213,7 +260,7 @@ const ViewTravelRecordDialog: React.FC<ViewTravelRecordDialogProps> = ({
               Close
             </Button>
             <div className="space-x-2">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleExportTravel}>
                 <Download className="h-4 w-4" />
                 Export
               </Button>
