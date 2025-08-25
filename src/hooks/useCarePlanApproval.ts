@@ -18,6 +18,36 @@ interface RequestChangesData {
   comments: string;
 }
 
+// Helper function to ensure client auth link
+const ensureClientAuthLink = async (user: any) => {
+  // Check if client exists and has auth_user_id linked
+  const { data: clientCheck } = await supabase
+    .from('clients')
+    .select('id, auth_user_id, email')
+    .eq('email', user.email)
+    .single();
+
+  if (!clientCheck) {
+    throw new Error('Client profile not found. Please contact support.');
+  }
+
+  // If auth_user_id is not linked, update it
+  if (!clientCheck.auth_user_id || clientCheck.auth_user_id !== user.id) {
+    console.log('Linking client auth user ID:', user.id);
+    const { error: linkError } = await supabase
+      .from('clients')
+      .update({ auth_user_id: user.id })
+      .eq('id', clientCheck.id);
+
+    if (linkError) {
+      console.error('Failed to link client auth:', linkError);
+      throw new Error('Failed to establish client authentication link');
+    }
+  }
+
+  return clientCheck.id;
+};
+
 // Approve care plan
 const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveCarePlanData) => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -25,32 +55,56 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
     throw new Error('User not authenticated');
   }
 
-  const clientIp = await fetch('https://api.ipify.org?format=json')
-    .then(res => res.json())
-    .then(data => data.ip)
-    .catch(() => null);
+  console.log(`[approveCarePlan] Starting approval process for care plan ${carePlanId} by user ${user.id}`);
 
-  // Update care plan with client acknowledgment and activate it
-  const { error } = await supabase
-    .from('client_care_plans')
-    .update({
-      status: 'active',
-      client_acknowledged_at: new Date().toISOString(),
-      client_signature_data: signatureData,
-      client_acknowledgment_ip: clientIp,
-      acknowledgment_method: 'digital_signature',
-      client_comments: comments,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', carePlanId)
-    .eq('status', 'pending_client_approval'); // Only allow approval from pending_client_approval status
+  try {
+    // Ensure client auth link is established
+    const clientId = await ensureClientAuthLink(user);
+    console.log(`[approveCarePlan] Client auth link confirmed for client ${clientId}`);
 
-  if (error) {
-    console.error('Error approving care plan:', error);
+    const clientIp = await fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => data.ip)
+      .catch(() => null);
+
+    // Update care plan with client acknowledgment and activate it
+    const { error } = await supabase
+      .from('client_care_plans')
+      .update({
+        status: 'active',
+        client_acknowledged_at: new Date().toISOString(),
+        client_signature_data: signatureData,
+        client_acknowledgment_ip: clientIp,
+        acknowledgment_method: 'digital_signature',
+        client_comments: comments,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', carePlanId)
+      .eq('status', 'pending_client_approval'); // Only allow approval from pending_client_approval status
+
+    if (error) {
+      console.error('[approveCarePlan] Error updating care plan:', error);
+      throw error;
+    }
+
+    // Create status history entry
+    await supabase
+      .from('care_plan_status_history')
+      .insert({
+        care_plan_id: carePlanId,
+        previous_status: 'pending_client_approval',
+        new_status: 'active',
+        changed_by: user.id,
+        changed_by_type: 'client',
+        client_comments: comments
+      });
+
+    console.log(`[approveCarePlan] Successfully approved care plan ${carePlanId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('[approveCarePlan] Failed:', error);
     throw error;
   }
-
-  return { success: true };
 };
 
 // Reject care plan (request changes)
@@ -60,22 +114,47 @@ const rejectCarePlan = async ({ carePlanId, comments }: RejectCarePlanData) => {
     throw new Error('User not authenticated');
   }
 
-  // Update care plan status to rejected with comments
-  const { error } = await supabase
-    .from('client_care_plans')
-    .update({
-      status: 'rejected',
-      client_comments: comments,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', carePlanId);
+  console.log(`[rejectCarePlan] Starting rejection process for care plan ${carePlanId} by user ${user.id}`);
 
-  if (error) {
-    console.error('Error rejecting care plan:', error);
+  try {
+    // Ensure client auth link is established
+    const clientId = await ensureClientAuthLink(user);
+    console.log(`[rejectCarePlan] Client auth link confirmed for client ${clientId}`);
+
+    // Update care plan status to rejected with comments
+    const { error } = await supabase
+      .from('client_care_plans')
+      .update({
+        status: 'rejected',
+        client_comments: comments,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', carePlanId);
+
+    if (error) {
+      console.error('[rejectCarePlan] Error updating care plan:', error);
+      throw error;
+    }
+
+    // Create status history entry
+    await supabase
+      .from('care_plan_status_history')
+      .insert({
+        care_plan_id: carePlanId,
+        previous_status: 'pending_client_approval',
+        new_status: 'rejected',
+        changed_by: user.id,
+        changed_by_type: 'client',
+        client_comments: comments,
+        reason: 'Client requested changes'
+      });
+
+    console.log(`[rejectCarePlan] Successfully rejected care plan ${carePlanId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('[rejectCarePlan] Failed:', error);
     throw error;
   }
-
-  return { success: true };
 };
 
 export const useApproveCarePlan = () => {
@@ -88,9 +167,22 @@ export const useApproveCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       toast.success('Care plan approved and activated successfully! Your care team has been notified.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to approve care plan:', error);
-      toast.error('Failed to approve care plan. Please try again.');
+      
+      let errorMessage = 'Failed to approve care plan. Please try again.';
+      
+      if (error.message?.includes('not authenticated')) {
+        errorMessage = 'You must be logged in to approve care plans.';
+      } else if (error.message?.includes('Client profile not found')) {
+        errorMessage = 'Client profile not found. Please contact support.';
+      } else if (error.message?.includes('authentication link')) {
+        errorMessage = 'Unable to verify client identity. Please contact support.';
+      } else if (error.code === '23503') {
+        errorMessage = 'Unable to approve: Care plan not found or already processed.';
+      }
+      
+      toast.error(errorMessage);
     },
   });
 };
@@ -105,9 +197,20 @@ export const useRejectCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       toast.success('Change request submitted successfully! Your care team will review your comments.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to request changes:', error);
-      toast.error('Failed to submit change request. Please try again.');
+      
+      let errorMessage = 'Failed to submit change request. Please try again.';
+      
+      if (error.message?.includes('not authenticated')) {
+        errorMessage = 'You must be logged in to request changes to care plans.';
+      } else if (error.message?.includes('Client profile not found')) {
+        errorMessage = 'Client profile not found. Please contact support.';
+      } else if (error.message?.includes('authentication link')) {
+        errorMessage = 'Unable to verify client identity. Please contact support.';
+      }
+      
+      toast.error(errorMessage);
     },
   });
 };
@@ -119,23 +222,48 @@ const requestChanges = async ({ carePlanId, comments }: RequestChangesData) => {
     throw new Error('User not authenticated');
   }
 
-  // Update care plan with change request
-  const { error } = await supabase
-    .from('client_care_plans')
-    .update({
-      changes_requested_at: new Date().toISOString(),
-      changes_requested_by: user.id,
-      change_request_comments: comments,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', carePlanId);
+  console.log(`[requestChanges] Starting change request for care plan ${carePlanId} by user ${user.id}`);
 
-  if (error) {
-    console.error('Error requesting changes:', error);
+  try {
+    // Ensure client auth link is established
+    const clientId = await ensureClientAuthLink(user);
+    console.log(`[requestChanges] Client auth link confirmed for client ${clientId}`);
+
+    // Update care plan with change request
+    const { error } = await supabase
+      .from('client_care_plans')
+      .update({
+        changes_requested_at: new Date().toISOString(),
+        changes_requested_by: user.id,
+        change_request_comments: comments,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', carePlanId);
+
+    if (error) {
+      console.error('[requestChanges] Error updating care plan:', error);
+      throw error;
+    }
+
+    // Create status history entry
+    await supabase
+      .from('care_plan_status_history')
+      .insert({
+        care_plan_id: carePlanId,
+        previous_status: 'active',
+        new_status: 'active',
+        changed_by: user.id,
+        changed_by_type: 'client',
+        client_comments: comments,
+        reason: 'Client requested changes to active plan'
+      });
+
+    console.log(`[requestChanges] Successfully submitted change request for care plan ${carePlanId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('[requestChanges] Failed:', error);
     throw error;
   }
-
-  return { success: true };
 };
 
 export const useRequestChanges = () => {
@@ -148,9 +276,20 @@ export const useRequestChanges = () => {
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       toast.success('Change request submitted successfully! Your care team has been notified and will contact you soon.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to request changes:', error);
-      toast.error('Failed to submit change request. Please try again.');
+      
+      let errorMessage = 'Failed to submit change request. Please try again.';
+      
+      if (error.message?.includes('not authenticated')) {
+        errorMessage = 'You must be logged in to request changes.';
+      } else if (error.message?.includes('Client profile not found')) {
+        errorMessage = 'Client profile not found. Please contact support.';
+      } else if (error.message?.includes('authentication link')) {
+        errorMessage = 'Unable to verify client identity. Please contact support.';
+      }
+      
+      toast.error(errorMessage);
     },
   });
 };
