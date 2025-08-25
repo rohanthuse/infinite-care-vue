@@ -74,6 +74,7 @@ export const useNotifications = (branchId?: string) => {
     },
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchInterval: 30000, // Poll every 30 seconds as fallback for real-time
   });
 
   // Get notification statistics with error handling

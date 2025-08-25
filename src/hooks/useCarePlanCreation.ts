@@ -147,18 +147,23 @@ export const useCarePlanCreation = () => {
           console.error('[useCarePlanCreation] Error creating approval record:', approvalError);
           // Don't fail the entire operation for this
         }
+      }
 
-        // Create notification for client
-        try {
-          const { data: clientData } = await supabase
-            .from('clients')
-            .select('first_name, last_name, branch_id, auth_user_id')
-            .eq('id', data.client_id)
-            .single();
+      // Create notifications for client (for all relevant statuses)
+      try {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('first_name, last_name, branch_id, auth_user_id')
+          .eq('id', data.client_id)
+          .single();
 
-          if (clientData && clientData.auth_user_id) {
-            // Create notification for the client
-            const notification = {
+        console.log('[useCarePlanCreation] Client data for notification:', clientData);
+
+        if (clientData && clientData.auth_user_id) {
+          let notification = null;
+          
+          if (data.status === 'pending_client_approval') {
+            notification = {
               user_id: clientData.auth_user_id,
               branch_id: clientData.branch_id,
               type: 'care_plan',
@@ -174,13 +179,35 @@ export const useCarePlanCreation = () => {
                 client_name: `${clientData.first_name} ${clientData.last_name}`
               }
             };
+          } else if (data.status === 'active' || data.status === 'approved') {
+            notification = {
+              user_id: clientData.auth_user_id,
+              branch_id: clientData.branch_id,
+              type: 'care_plan',
+              category: 'success',
+              priority: 'medium',
+              title: 'New Care Plan Available',
+              message: `Your care plan ${updatedCarePlan.display_id || 'CP-XXX'} is now active and available`,
+              data: {
+                care_plan_id: data.care_plan_id,
+                action: 'activation',
+                care_plan_title: updatedCarePlan.title || 'Care Plan',
+                care_plan_display_id: updatedCarePlan.display_id,
+                client_name: `${clientData.first_name} ${clientData.last_name}`
+              }
+            };
+          }
 
+          if (notification) {
+            console.log('[useCarePlanCreation] Creating client notification:', notification);
             await supabase.from('notifications').insert([notification]);
           }
-        } catch (notificationError) {
-          console.error('[useCarePlanCreation] Error creating notifications:', notificationError);
-          // Don't fail the operation for notification errors
+        } else {
+          console.warn('[useCarePlanCreation] Client has no auth_user_id, cannot send notification');
         }
+      } catch (notificationError) {
+        console.error('[useCarePlanCreation] Error creating client notifications:', notificationError);
+        // Don't fail the operation for notification errors
       }
 
       // Create notification for assigned staff (if any)
