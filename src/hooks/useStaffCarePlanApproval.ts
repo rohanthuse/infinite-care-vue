@@ -55,6 +55,55 @@ const staffApproveCarePlan = async ({ carePlanId, comments }: StaffApproveCarePl
     throw updateError;
   }
 
+  // Create notification for client now that care plan is ready for their review
+  try {
+    const { data: carePlanData } = await supabase
+      .from('client_care_plans')
+      .select(`
+        id,
+        title,
+        display_id,
+        client_id,
+        clients!inner(
+          first_name,
+          last_name,
+          branch_id,
+          auth_user_id
+        )
+      `)
+      .eq('id', carePlanId)
+      .single();
+
+    console.log('[staffApproveCarePlan] Care plan data for notification:', carePlanData);
+
+    if (carePlanData?.clients?.auth_user_id) {
+      const notification = {
+        user_id: carePlanData.clients.auth_user_id,
+        branch_id: carePlanData.clients.branch_id,
+        type: 'care_plan',
+        category: 'info',
+        priority: 'high',
+        title: 'Care Plan Ready for Your Review',
+        message: `Your care plan ${carePlanData.display_id || 'CP-XXX'} has been approved by staff and is ready for your review`,
+        data: {
+          care_plan_id: carePlanId,
+          action: 'pending_client_approval',
+          care_plan_title: carePlanData.title || 'Care Plan',
+          care_plan_display_id: carePlanData.display_id,
+          client_name: `${carePlanData.clients.first_name} ${carePlanData.clients.last_name}`
+        }
+      };
+
+      console.log('[staffApproveCarePlan] Creating client notification:', notification);
+      await supabase.from('notifications').insert([notification]);
+    } else {
+      console.warn('[staffApproveCarePlan] Client has no auth_user_id, cannot send notification');
+    }
+  } catch (notificationError) {
+    console.error('[staffApproveCarePlan] Error creating client notification:', notificationError);
+    // Don't fail the operation for notification errors
+  }
+
   // Create approval record
   const { error: approvalError } = await supabase
     .from('client_care_plan_approvals')
