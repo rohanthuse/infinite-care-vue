@@ -7,7 +7,10 @@ import { format, startOfYear, endOfYear } from 'date-fns';
 export interface CarerPaymentSummary {
   currentMonth: number;
   yearToDate: number;
+  totalEarnings: number;
   totalReimbursements: number;
+  totalExpenseReimbursements: number;
+  totalTravelReimbursements: number;
   lastPayment: {
     amount: number;
     period: string;
@@ -25,7 +28,7 @@ export interface PaymentHistoryItem {
   reference?: string;
 }
 
-export function useCarerPayments() {
+export function useCarerPayments(dateRange?: { from: Date; to: Date }) {
   const { data: carerProfile } = useCarerProfile();
   const branchId = carerProfile?.branch_id;
   const staffId = carerProfile?.id;
@@ -43,7 +46,7 @@ export function useCarerPayments() {
   const { data: travelRecords, isLoading: travelLoading, error: travelError } = useTravelRecords(branchId);
 
   return useQuery({
-    queryKey: ['carer-payments', staffId, branchId],
+    queryKey: ['carer-payments', staffId, branchId, dateRange],
     queryFn: () => {
       if (!staffId || !payrollRecords) return null;
 
@@ -55,17 +58,28 @@ export function useCarerPayments() {
         expense.staff_id === staffId
       ) || [];
       
+      // Get ALL travel records for the table
+      const allCarerTravel = travelRecords?.filter(record => 
+        record.staff_id === staffId
+      ) || [];
+      
+      // Get ALL extra time records for the table
+      const allCarerExtraTime = extraTimeRecords?.filter(record => 
+        record.staff_id === staffId
+      ) || [];
+      
       // Get only APPROVED expenses for reimbursement calculations
       const approvedCarerExpenses = expenseRecords?.filter(expense => 
         expense.staff_id === staffId && expense.status === 'approved'
       ) || [];
       
-      const carerExtraTime = extraTimeRecords?.filter(record => 
-        record.staff_id === staffId && record.status === 'approved'
-      ) || [];
-      
       // Get only APPROVED travel records for reimbursement calculations
       const approvedCarerTravel = travelRecords?.filter(record => 
+        record.staff_id === staffId && record.status === 'approved'
+      ) || [];
+
+      // Get approved extra time for earnings calculations
+      const approvedCarerExtraTime = extraTimeRecords?.filter(record => 
         record.staff_id === staffId && record.status === 'approved'
       ) || [];
 
@@ -92,8 +106,8 @@ export function useCarerPayments() {
           type: 'expense_reimbursement' as const,
         })),
         
-        // Extra time payments
-        ...carerExtraTime.map(record => ({
+        // Extra time payments (approved only)
+        ...approvedCarerExtraTime.map(record => ({
           id: record.id,
           period: format(new Date(record.work_date), 'MMM yyyy'),
           amount: record.total_cost,
@@ -128,14 +142,26 @@ export function useCarerPayments() {
         payment.date >= yearStart && payment.date <= yearEnd
       );
 
-      const reimbursements = paymentHistory.filter(payment => 
+      // Separate earnings (salary + overtime) from reimbursements
+      const earnings = paymentHistory.filter(payment => 
+        payment.type === 'salary' || payment.type === 'overtime'
+      );
+      
+      const expenseReimbursements = paymentHistory.filter(payment => 
         payment.type === 'expense_reimbursement'
+      );
+      
+      const travelReimbursements = paymentHistory.filter(payment => 
+        payment.type === 'travel_reimbursement'
       );
 
       const summary: CarerPaymentSummary = {
-        currentMonth: currentMonthPayments.reduce((sum, p) => sum + p.amount, 0),
-        yearToDate: yearToDatePayments.reduce((sum, p) => sum + p.amount, 0),
-        totalReimbursements: reimbursements.reduce((sum, p) => sum + p.amount, 0),
+        currentMonth: currentMonthPayments.filter(p => p.type === 'salary' || p.type === 'overtime').reduce((sum, p) => sum + p.amount, 0),
+        yearToDate: yearToDatePayments.filter(p => p.type === 'salary' || p.type === 'overtime').reduce((sum, p) => sum + p.amount, 0),
+        totalEarnings: earnings.reduce((sum, p) => sum + p.amount, 0),
+        totalReimbursements: expenseReimbursements.reduce((sum, p) => sum + p.amount, 0) + travelReimbursements.reduce((sum, p) => sum + p.amount, 0),
+        totalExpenseReimbursements: expenseReimbursements.reduce((sum, p) => sum + p.amount, 0),
+        totalTravelReimbursements: travelReimbursements.reduce((sum, p) => sum + p.amount, 0),
         lastPayment: paymentHistory.length > 0 ? {
           amount: paymentHistory[0].amount,
           period: paymentHistory[0].period,
@@ -147,11 +173,13 @@ export function useCarerPayments() {
         summary,
         paymentHistory,
         allCarerExpenses, // All expenses for the table (including pending)
+        allCarerTravel, // All travel records for the table
+        allCarerExtraTime, // All extra time records for the table
         approvedCarerExpenses, // Only approved expenses for calculations
         carerExpenses: allCarerExpenses, // Keep backward compatibility
         carerPayroll,
-        carerExtraTime,
         approvedCarerTravel,
+        approvedCarerExtraTime,
       };
     },
     enabled: !!staffId && !!branchId && !!payrollRecords,

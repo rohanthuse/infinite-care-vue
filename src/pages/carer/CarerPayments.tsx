@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, DollarSign, Plus, Receipt, Clock, Car, TrendingUp, Wallet } from 'lucide-react';
+import { CalendarDays, DollarSign, Plus, Receipt, Clock, Car, TrendingUp, Wallet, Eye, Search, Download } from 'lucide-react';
 import { useCarerPayments } from '@/hooks/useCarerPayments';
 import { useCarerProfile } from '@/hooks/useCarerProfile';
 import { useExpenseTypeOptions } from '@/hooks/useParameterOptions';
@@ -48,6 +48,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { AddTravelRecordDialog } from '@/components/carer/AddTravelRecordDialog';
 import { AddExtraTimeDialog } from '@/components/carer/AddExtraTimeDialog';
+import { ViewMyExpenseDialog } from '@/components/carer/ViewMyExpenseDialog';
+import { ViewMyTravelDialog } from '@/components/carer/ViewMyTravelDialog';
+import { ViewMyExtraTimeDialog } from '@/components/carer/ViewMyExtraTimeDialog';
 
 interface Payment {
   id: string;
@@ -80,9 +83,13 @@ const CarerPayments: React.FC = () => {
 
   const [showTravelDialog, setShowTravelDialog] = useState(false);
   const [showExtraTimeDialog, setShowExtraTimeDialog] = useState(false);
+  const [viewExpense, setViewExpense] = useState(null);
+  const [viewTravel, setViewTravel] = useState(null);
+  const [viewExtraTime, setViewExtraTime] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Data hooks
-  const { data: paymentsData, isLoading } = useCarerPayments();
+  const { data: paymentsData, isLoading } = useCarerPayments(dateRange);
   const { data: myExpenses, isLoading: expensesLoading } = useMyExpenses();
   const { data: myTravel, isLoading: travelLoading } = useMyTravel();
   const { data: myExtraTime, isLoading: extraTimeLoading } = useMyExtraTime();
@@ -222,7 +229,7 @@ const CarerPayments: React.FC = () => {
               £{paymentsData?.summary?.totalReimbursements?.toFixed(2) || '0.00'}
             </div>
             <p className="text-xs text-muted-foreground">
-              Total expenses paid
+              Expenses & travel claims paid
             </p>
           </CardContent>
         </Card>
@@ -261,6 +268,21 @@ const CarerPayments: React.FC = () => {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Payment History</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search payments..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 w-64"
+                    />
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -444,6 +466,7 @@ const CarerPayments: React.FC = () => {
                       <TableHead>Category</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -454,6 +477,17 @@ const CarerPayments: React.FC = () => {
                         <TableCell>{expense.category}</TableCell>
                         <TableCell className="text-right font-medium">£{expense.amount.toFixed(2)}</TableCell>
                         <TableCell>{getStatusBadge(expense.status)}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewExpense(expense)}
+                            className="gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -495,6 +529,7 @@ const CarerPayments: React.FC = () => {
                       <TableHead>Distance</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -513,6 +548,17 @@ const CarerPayments: React.FC = () => {
                         <TableCell className="text-right font-medium">£{travel.total_cost.toFixed(2)}</TableCell>
                         <TableCell>
                           {getStatusBadge(travel.reimbursed_at ? 'paid' : travel.status)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewTravel(travel)}
+                            className="gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -555,6 +601,7 @@ const CarerPayments: React.FC = () => {
                       <TableHead>Reason</TableHead>
                       <TableHead className="text-right">Cost</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -573,6 +620,17 @@ const CarerPayments: React.FC = () => {
                         <TableCell className="text-right font-medium">£{extraTime.total_cost.toFixed(2)}</TableCell>
                         <TableCell>
                           {getStatusBadge(extraTime.invoiced ? 'paid' : extraTime.status)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewExtraTime(extraTime)}
+                            className="gap-1"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -598,6 +656,25 @@ const CarerPayments: React.FC = () => {
       <AddExtraTimeDialog
         open={showExtraTimeDialog}
         onOpenChange={setShowExtraTimeDialog}
+      />
+
+      {/* View Dialogs */}
+      <ViewMyExpenseDialog
+        open={!!viewExpense}
+        onClose={() => setViewExpense(null)}
+        expense={viewExpense}
+      />
+
+      <ViewMyTravelDialog
+        open={!!viewTravel}
+        onClose={() => setViewTravel(null)}
+        travel={viewTravel}
+      />
+
+      <ViewMyExtraTimeDialog
+        open={!!viewExtraTime}
+        onClose={() => setViewExtraTime(null)}
+        extraTime={viewExtraTime}
       />
     </div>
   );
