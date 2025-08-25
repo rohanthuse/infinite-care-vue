@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -142,6 +142,67 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
 
   const watchedValues = watch();
   const [calculatedTotals, setCalculatedTotals] = useState({ grossPay: 0, netPay: 0 });
+
+  // Reset form when dialog opens with new data
+  useEffect(() => {
+    if (open) {
+      if (initialData && isEditing) {
+        // Reset form with existing data when editing
+        const formData = {
+          staff_id: initialData.staff_id,
+          pay_period_start: initialData.pay_period_start,
+          pay_period_end: initialData.pay_period_end,
+          regular_hours: initialData.regular_hours,
+          overtime_hours: initialData.overtime_hours,
+          hourly_rate: initialData.hourly_rate,
+          overtime_rate: initialData.overtime_rate || 0,
+          basic_salary: initialData.basic_salary,
+          overtime_pay: initialData.overtime_pay,
+          bonus: initialData.bonus,
+          tax_deduction: initialData.tax_deduction,
+          ni_deduction: initialData.ni_deduction,
+          pension_deduction: initialData.pension_deduction,
+          other_deductions: initialData.other_deductions,
+          payment_status: initialData.payment_status as any,
+          payment_method: initialData.payment_method as any,
+          payment_date: initialData.payment_date || new Date().toISOString().split('T')[0],
+          notes: initialData.notes || "",
+        };
+        reset(formData);
+
+        // Calculate totals for existing data
+        const grossPay = initialData.basic_salary + initialData.overtime_pay + initialData.bonus;
+        const totalDeductions = initialData.tax_deduction + initialData.ni_deduction + 
+                               initialData.pension_deduction + initialData.other_deductions;
+        const netPay = grossPay - totalDeductions;
+        setCalculatedTotals({ grossPay, netPay });
+      } else {
+        // Reset form with default values when adding new record
+        const defaultFormData = {
+          staff_id: "",
+          pay_period_start: new Date().toISOString().split('T')[0],
+          pay_period_end: new Date().toISOString().split('T')[0],
+          regular_hours: 0,
+          overtime_hours: 0,
+          hourly_rate: 0,
+          overtime_rate: 0,
+          basic_salary: 0,
+          overtime_pay: 0,
+          bonus: 0,
+          tax_deduction: 0,
+          ni_deduction: 0,
+          pension_deduction: 0,
+          other_deductions: 0,
+          payment_status: "pending" as const,
+          payment_method: "bank_transfer" as const,
+          payment_date: new Date().toISOString().split('T')[0],
+          notes: "",
+        };
+        reset(defaultFormData);
+        setCalculatedTotals({ grossPay: 0, netPay: 0 });
+      }
+    }
+  }, [open, initialData, isEditing, reset]);
 
   const calculateTotals = () => {
     const basicSalary = Number(watchedValues.basic_salary) || 0;
