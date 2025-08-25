@@ -455,8 +455,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     }
   };
   
-  const handleEditCarePlan = (id: string) => {
-    console.log('[CareTab] Navigating to edit care plan:', id);
+  const handleEditCarePlan = async (id: string) => {
+    console.log('[CareTab] Opening care plan for editing:', id);
     
     // Find the care plan to get client information
     const plan = carePlans.find(p => p.id === id || p._databaseId === id);
@@ -469,53 +469,81 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       return;
     }
 
-    // Check if this care plan has change requests from client
-    const hasChangeRequest = plan._fullPlanData?.changes_requested_at;
-    
-    if (hasChangeRequest) {
-      // For care plans with change requests, open the wizard in edit mode
-      console.log('[CareTab] Opening care plan wizard for editing change request:', plan);
-      
-      // Set the selected client data and open wizard in edit mode
-      setSelectedClientId(plan._fullPlanData.client_id);
-      setSelectedClientName(plan.client_name || 'Client');
-      setSelectedCarePlanId(plan._databaseId || id);
-      setIsEditingChangeRequest(true);
-      setChangeRequestData({
-        comments: plan._fullPlanData.change_request_comments,
-        requestedAt: plan._fullPlanData.changes_requested_at,
-        requestedBy: plan._fullPlanData.changes_requested_by
-      });
-      setIsWizardOpen(true);
-      return;
-    }
-
-    // For other active care plans, navigate to the client edit page
-    if (plan.status !== 'Draft' && branchId && branchName) {
-      // We need to get the actual client ID
-      supabase
+    try {
+      // Get full care plan data including client information
+      const { data: fullPlanData, error } = await supabase
         .from('client_care_plans')
-        .select('client_id')
+        .select(`
+          *,
+          client:clients!inner(*)
+        `)
         .eq('id', plan._databaseId || id)
-        .single()
-        .then(({ data, error }) => {
-          if (error || !data) {
-            toast({
-              title: "Error",
-              description: "Could not find client information for this care plan.",
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          const basePath = tenantSlug ? `/${tenantSlug}` : '';
-          const clientEditPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/clients/${data.client_id}/edit`;
-          console.log('[CareTab] Navigating to tenant-aware edit path:', clientEditPath);
-          navigate(clientEditPath);
+        .single();
+
+      if (error) {
+        console.error('[CareTab] Error fetching care plan data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load care plan data for editing.",
+          variant: "destructive",
         });
-    } else if (plan.status === 'Draft') {
-      // For drafts, use the draft editing functionality
-      handleEditDraft(plan._databaseId || id);
+        return;
+      }
+
+      if (!fullPlanData || !fullPlanData.client) {
+        toast({
+          title: "Error",
+          description: "Could not find client data for this care plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Set up the client selection for the wizard
+      const clientData = fullPlanData.client;
+      const clientName = `${clientData.first_name} ${clientData.last_name}`;
+      
+      console.log('[CareTab] Setting up care plan edit with client:', clientName);
+      
+      setSelectedClientId(fullPlanData.client_id);
+      setSelectedClientName(clientName);
+      setSelectedClientData(clientData);
+      
+      // Set up editing mode based on care plan status
+      const hasChangeRequest = fullPlanData.changes_requested_at;
+      
+      if (hasChangeRequest) {
+        // For care plans with change requests, set change request data
+        setIsEditingChangeRequest(true);
+        setChangeRequestData({
+          comments: fullPlanData.change_request_comments,
+          requestedAt: fullPlanData.changes_requested_at,
+          requestedBy: fullPlanData.changes_requested_by
+        });
+      } else {
+        setIsEditingChangeRequest(false);
+        setChangeRequestData(null);
+      }
+      
+      // Set the care plan ID for editing
+      setSelectedCarePlanId(fullPlanData.id);
+      setEditingDraftId(fullPlanData.id);
+      
+      // Open the wizard
+      setIsWizardOpen(true);
+      
+      toast({
+        title: "Loading Care Plan",
+        description: "Opening care plan for editing...",
+      });
+      
+    } catch (error) {
+      console.error('[CareTab] Unexpected error loading care plan:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading the care plan.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -1096,6 +1124,20 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
           isOpen={isCreateCarePlanWizardOpen}
           onClose={() => setIsCreateCarePlanWizardOpen(false)}
           clientId={selectedClientId}
+        />
+      )}
+
+      {/* General Care Plan Edit Wizard */}
+      {selectedCarePlanId && !isEditingChangeRequest && (
+        <CarePlanCreationWizard
+          isOpen={isWizardOpen}
+          onClose={() => {
+            setIsWizardOpen(false);
+            setSelectedCarePlanId(null);
+            setEditingDraftId(null);
+          }}
+          clientId={selectedClientId || ''}
+          carePlanId={selectedCarePlanId}
         />
       )}
 
