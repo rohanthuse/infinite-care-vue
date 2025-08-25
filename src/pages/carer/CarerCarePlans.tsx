@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
-import { CarerCarePlanDetail } from "@/components/carer/CarerCarePlanDetail";
+import { CarePlanViewDialog } from "@/components/care/CarePlanViewDialog";
 import { useCarerAssignedCarePlans } from "@/hooks/useCarePlanData";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 
 const CarerCarePlans: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
+  const [selectedCarePlanId, setSelectedCarePlanId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   
   const { user, isAuthenticated, loading } = useCarerAuth();
@@ -127,7 +127,7 @@ const CarerCarePlans: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCarePlans.length > 0 ? (
           filteredCarePlans.map((carePlan) => (
-            <Card key={carePlan.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCarePlan(carePlan)}>
+            <Card key={carePlan.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCarePlanId(carePlan.id)}>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
@@ -198,10 +198,11 @@ const CarerCarePlans: React.FC = () => {
       </div>
       
       {/* Detailed Care Plan View */}
-      {selectedCarePlan && (
-        <CarerCarePlanDetail 
-          carePlan={selectedCarePlan}
-          onClose={() => setSelectedCarePlan(null)}
+      {selectedCarePlanId && (
+        <CarePlanViewDialog 
+          carePlanId={selectedCarePlanId}
+          open={Boolean(selectedCarePlanId)}
+          onOpenChange={(open) => !open && setSelectedCarePlanId(null)}
         />
       )}
     </div>
