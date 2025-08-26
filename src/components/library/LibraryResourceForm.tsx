@@ -61,8 +61,6 @@ const resourceTypes = [
 ];
 
 const accessRoles = [
-  { id: "admin", label: "Admin" },
-  { id: "branch-manager", label: "Branch Manager" },
   { id: "staff", label: "Staff" },
   { id: "client", label: "Client" },
 ];
