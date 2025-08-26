@@ -180,10 +180,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <p className="font-medium text-gray-600">PDF Preview</p>
               <p className="text-sm text-gray-500 mt-1">Click download to view the full document</p>
               
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
-                <ArrowDownToLine className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
             </div>
           </div>
         </div>
@@ -204,10 +200,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
                   <Eye className="h-4 w-4 mr-2" />
                   Play Sample
                 </Button>
-                <Button variant="default" onClick={handleDownload}>
-                  <ArrowDownToLine className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
               </div>
             </div>
           </div>
@@ -224,10 +216,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <p className="font-medium text-gray-600">Spreadsheet Preview</p>
               <p className="text-sm text-gray-500 mt-1">Download to use the spreadsheet</p>
               
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
-                <ArrowDownToLine className="h-4 w-4 mr-2" />
-                Download Spreadsheet
-              </Button>
             </div>
           </div>
         </div>
@@ -267,10 +255,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
             <p className="font-medium text-gray-600">{resource.resourceType.toUpperCase()} Resource</p>
             <p className="text-sm text-gray-500 mt-1">Preview not available. Download to view.</p>
             
-            <Button variant="outline" className="mt-4" onClick={handleDownload}>
-              <ArrowDownToLine className="h-4 w-4 mr-2" />
-              Download File
-            </Button>
           </div>
         </div>
       </div>
@@ -414,20 +398,12 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
-          {canDelete && onDelete && (
-            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+          {resource.resourceType === 'link' && resource.url && (
+            <Button>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Visit Resource
             </Button>
           )}
-          <Button onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

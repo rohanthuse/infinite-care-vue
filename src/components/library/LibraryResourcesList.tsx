@@ -544,22 +544,6 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         isOpen={!!previewResource}
         onClose={() => setPreviewResource(null)}
         resource={previewResource ? convertResourceForDialog(previewResource) : null}
-        onDownload={(resource) => {
-          const originalResource = resources.find(r => r.id === resource.id);
-          if (originalResource) {
-            handleDownloadResource(originalResource);
-          }
-        }}
-        onShare={(resource) => {
-          const originalResource = resources.find(r => r.id === resource.id);
-          if (originalResource) {
-            handleShareResource(originalResource);
-          }
-        }}
-        onDelete={canDelete ? (resource) => {
-          handleDeleteResource(resource.id);
-        } : undefined}
-        canDelete={canDelete}
       />
     </div>
   );
