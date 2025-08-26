@@ -5,7 +5,7 @@ import {
   Bell, AlertTriangle, Clock, Calendar, CheckCircle, FileWarning, LucideIcon
 } from "lucide-react";
 import NotificationCard, { NotificationCardProps } from "./NotificationCard";
-import { useDynamicNotificationData } from "@/hooks/useNotifications";
+import { useNotificationCategoryCounts } from "@/hooks/useNotificationCategoryCounts";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -23,8 +23,8 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   const effectiveBranchId = branchId || id;
   const effectiveBranchName = branchName || paramBranchName;
   
-  // Get dynamic notification data with error handling
-  const { data: dynamicData, isLoading, error } = useDynamicNotificationData(effectiveBranchId);
+  // Get notification category counts
+  const { categoryCounts, isLoading, error } = useNotificationCategoryCounts(effectiveBranchId);
   
   const handleNavigate = (path: string) => {
     try {
@@ -56,7 +56,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
   const notificationData: (Omit<NotificationCardProps, "icon"> & { path: string; icon: LucideIcon })[] = [
     {
       title: "Staff Notifications",
-      count: isLoading ? 0 : (dynamicData?.staff || 0),
+      count: isLoading ? 0 : categoryCounts.staff.total,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200",
@@ -66,7 +66,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     },
     {
       title: "System Alerts",
-      count: 3, // Keep static for system-level alerts
+      count: isLoading ? 0 : categoryCounts.system.total,
       color: "text-red-600",
       bgColor: "bg-red-50",
       borderColor: "border-red-200",
@@ -76,7 +76,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     },
     {
       title: "Client Notifications",
-      count: isLoading ? 0 : (dynamicData?.client || 0),
+      count: isLoading ? 0 : categoryCounts.client.total,
       color: "text-green-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-200",
@@ -86,7 +86,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     },
     {
       title: "Medication Alerts",
-      count: isLoading ? 0 : (dynamicData?.medication || 0),
+      count: isLoading ? 0 : categoryCounts.medication.total,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200",
@@ -96,7 +96,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     },
     {
       title: "Rota Errors",
-      count: isLoading ? 0 : (dynamicData?.rota || 0),
+      count: isLoading ? 0 : categoryCounts.rota.total,
       color: "text-amber-600",
       bgColor: "bg-amber-50",
       borderColor: "border-amber-200",
@@ -106,7 +106,7 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
     },
     {
       title: "Document Updates",
-      count: isLoading ? 0 : (dynamicData?.reports || 0),
+      count: isLoading ? 0 : categoryCounts.document.total,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-200",

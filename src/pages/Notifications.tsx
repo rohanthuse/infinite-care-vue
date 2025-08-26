@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import NotificationsOverview from "@/components/workflow/NotificationsOverview";
 import NotificationCategory from "@/components/notifications/NotificationCategory";
 import { useBranchInfo } from "@/hooks/useBranchInfo";
+import { useNotificationCategoryCounts } from "@/hooks/useNotificationCategoryCounts";
 import {
   Card,
   CardContent,
@@ -52,16 +53,18 @@ const Notifications = () => {
   const [view, setView] = useState("grid");
   const { toast } = useToast();
   const { data: branchInfo } = useBranchInfo(id);
+  const { categoryCounts, isLoading: countsLoading } = useNotificationCategoryCounts(id);
   
   const isInBranchContext = location.pathname.includes('/branch-dashboard/');
   
+  // Use dynamic counts from the hook
   const notificationCategories: NotificationCategory[] = [
     {
       id: "staff",
       title: "Staff Notifications",
-      count: 54,
-      notConfirmed: 12,
-      unread: 42,
+      count: countsLoading ? 0 : categoryCounts.staff.total,
+      notConfirmed: 0, // We don't have "confirmed" status in our data model
+      unread: countsLoading ? 0 : categoryCounts.staff.unread,
       icon: Users,
       color: "text-blue-600",
       description: "Updates related to staff scheduling, training, and performance",
@@ -70,9 +73,9 @@ const Notifications = () => {
     {
       id: "client",
       title: "Client Notifications",
-      count: 88,
-      notConfirmed: 23,
-      unread: 65,
+      count: countsLoading ? 0 : categoryCounts.client.total,
+      notConfirmed: 0,
+      unread: countsLoading ? 0 : categoryCounts.client.unread,
       icon: User,
       color: "text-green-600",
       description: "Updates on client appointments, requests, and feedback",
@@ -81,9 +84,9 @@ const Notifications = () => {
     {
       id: "rota",
       title: "Rota Updates",
-      count: 123,
-      notConfirmed: 35,
-      unread: 88,
+      count: countsLoading ? 0 : categoryCounts.rota.total,
+      notConfirmed: 0,
+      unread: countsLoading ? 0 : categoryCounts.rota.unread,
       icon: Calendar,
       color: "text-indigo-600",
       description: "Changes to staff schedules and shift assignments",
@@ -92,34 +95,34 @@ const Notifications = () => {
     {
       id: "medication",
       title: "Medication Alerts",
-      count: 82,
-      notConfirmed: 54,
-      unread: 28,
+      count: countsLoading ? 0 : categoryCounts.medication.total,
+      notConfirmed: 0,
+      unread: countsLoading ? 0 : categoryCounts.medication.unread,
       icon: Pill,
       color: "text-rose-600",
       description: "Medication schedules, updates, and stock alerts",
       priority: "high"
     },
     {
-      id: "reports",
-      title: "Reports",
-      count: 12,
-      notConfirmed: 5,
-      unread: 7,
+      id: "document",
+      title: "Document Updates",
+      count: countsLoading ? 0 : categoryCounts.document.total,
+      notConfirmed: 0,
+      unread: countsLoading ? 0 : categoryCounts.document.unread,
       icon: FileText,
       color: "text-gray-600",
-      description: "Generated reports and analysis ready for review",
+      description: "Recently modified documents and expiry alerts",
       priority: "low"
     },
     {
-      id: "rotaErrors",
-      title: "Rota Errors",
-      count: 9,
-      notConfirmed: 9,
-      unread: 9,
+      id: "system",
+      title: "System Alerts",
+      count: countsLoading ? 0 : categoryCounts.system.total,
+      notConfirmed: 0,
+      unread: countsLoading ? 0 : categoryCounts.system.unread,
       icon: AlertTriangle,
       color: "text-amber-600",
-      description: "Scheduling conflicts and errors that need attention",
+      description: "System notifications and critical alerts",
       priority: "medium"
     }
   ];
