@@ -65,6 +65,10 @@ export const useLibraryResources = (branchId: string) => {
     queryFn: async () => {
       console.log('Fetching library resources for branch:', branchId);
       
+      // Get current user info for debugging
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user?.id);
+
       const { data, error } = await supabase
         .from('library_resources')
         .select('*')
@@ -80,10 +84,20 @@ export const useLibraryResources = (branchId: string) => {
         throw error;
       }
       
-      console.log('Fetched library resources:', data);
+      console.log('Fetched library resources count:', data?.length);
+      console.log('Private resources:', data?.filter(r => r.is_private).length);
+      console.log('Resources with access_roles:', data?.filter(r => r.access_roles?.length > 0).map(r => ({ 
+        id: r.id, 
+        title: r.title, 
+        is_private: r.is_private, 
+        access_roles: r.access_roles 
+      })));
+      
       return data as LibraryResource[];
     },
     enabled: !!branchId,
+    staleTime: 30000, // 30 seconds - prevent too frequent refetches
+    refetchInterval: false, // Disable automatic refetching to prevent disappearing resources
   });
 
   // Fetch categories
