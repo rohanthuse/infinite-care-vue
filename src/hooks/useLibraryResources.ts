@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -365,14 +364,33 @@ export const useLibraryResources = (branchId: string) => {
         if (error.message?.includes('RLS') || error.message?.includes('policy')) {
           throw new Error('Access denied: You do not have permission to download this file.');
         }
-        throw error;
+        if (error.message?.includes('not found')) {
+          throw new Error('File not found. The file may have been moved or deleted.');
+        }
+        throw new Error(`Download failed: ${error.message}`);
+      }
+
+      // Ensure we have a proper filename with extension
+      let downloadFileName = fileName;
+      if (!downloadFileName || downloadFileName === 'undefined') {
+        // Extract filename from file path if original name is not available
+        downloadFileName = filePath.split('/').pop() || 'downloaded-file';
+      }
+      
+      // Ensure file has an extension
+      if (!downloadFileName.includes('.')) {
+        // Try to get extension from file path
+        const pathExtension = filePath.split('.').pop();
+        if (pathExtension && pathExtension !== filePath) {
+          downloadFileName += `.${pathExtension}`;
+        }
       }
 
       // Create download link
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName;
+      a.download = downloadFileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -381,23 +399,28 @@ export const useLibraryResources = (branchId: string) => {
       // Update download count and log access
       const { data: { user } } = await supabase.auth.getUser();
       
-      await supabase.rpc('update_resource_stats', {
-        resource_id: resourceId,
-        stat_type: 'download'
-      });
+      try {
+        await supabase.rpc('update_resource_stats', {
+          resource_id: resourceId,
+          stat_type: 'download'
+        });
 
-      if (user) {
-        await supabase
-          .from('library_resource_access_logs')
-          .insert({
-            resource_id: resourceId,
-            user_id: user.id,
-            branch_id: branchId,
-            access_type: 'download'
-          });
+        if (user) {
+          await supabase
+            .from('library_resource_access_logs')
+            .insert({
+              resource_id: resourceId,
+              user_id: user.id,
+              branch_id: branchId,
+              access_type: 'download'
+            });
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['library-resources', branchId] });
+      } catch (logError) {
+        // Don't throw if logging fails - the download was successful
+        console.warn('Failed to log download:', logError);
       }
-
-      queryClient.invalidateQueries({ queryKey: ['library-resources', branchId] });
       
       toast({
         title: "Success",
@@ -406,10 +429,11 @@ export const useLibraryResources = (branchId: string) => {
     } catch (error) {
       console.error('Error downloading resource:', error);
       toast({
-        title: "Error",
+        title: "Download Failed",
         description: error.message || "Failed to download resource",
         variant: "destructive",
       });
+      throw error;
     }
   };
 
