@@ -547,14 +547,14 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         onOpenDocumentFile={previewResource ? (resource) => {
           // Check if it has a file path first (means file was uploaded)
           if (previewResource.file_path) {
-            // Has a file, open it
-            handleViewResource(previewResource);
+            // Download the file
+            downloadResource(previewResource.id, previewResource.file_path, previewResource.title);
           } else if (previewResource.url) {
             // Only has a link, show message
-            toast("No file uploaded. This resource contains a link, not a file.");
+            toast("No file to download. Use the link shown in the preview above.");
           } else {
             // Neither file nor link
-            toast("No file or link available for this resource.");
+            toast("No file or link available for download.");
           }
         } : undefined}
       />

@@ -362,6 +362,24 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           </div>
         )}
         
+        {/* Link Section - Show whenever resource.url exists */}
+        {resource.url && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">Resource Link:</p>
+            <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md border">
+              <ExternalLink className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              <a 
+                href={resource.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 truncate flex-1 no-underline"
+              >
+                {resource.url.length > 60 ? `${resource.url.substring(0, 57)}...` : resource.url}
+              </a>
+            </div>
+          </div>
+        )}
+        
         {getResourcePreview()}
         
         <DialogFooter className="flex flex-wrap justify-end gap-3 mt-4">
@@ -370,8 +388,8 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           </Button>
           {onOpenDocumentFile && (
             <Button onClick={() => onOpenDocumentFile(resource)}>
-              <FileText className="h-4 w-4 mr-2" />
-              Document File
+              <Download className="h-4 w-4 mr-2" />
+              Download File
             </Button>
           )}
         </DialogFooter>
