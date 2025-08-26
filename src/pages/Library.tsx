@@ -76,7 +76,6 @@ const Library = () => {
               <div className="p-4 md:p-6 max-w-full">
                 <LibraryResourcesList 
                   branchId={id || ""} 
-                  onAddNew={() => handleTabChange("add")}
                 />
               </div>
             </TabsContent>
