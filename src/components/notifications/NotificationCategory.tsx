@@ -1,4 +1,5 @@
 import React from "react";
+import { useMemo } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Clock, CheckCircle, AlertTriangle, 
@@ -16,8 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useTenant } from "@/contexts/TenantContext";
-import { useNotifications, useDynamicNotificationData } from "@/hooks/useNotifications";
 
 interface NotificationCategoryProps {
   categoryId: string;
@@ -179,14 +180,31 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   const effectiveBranchId = branchId || params.id;
   const effectiveBranchName = branchName || params.branchName;
   
-  // Get dynamic data and notifications from hooks
-  const { data: dynamicData, isLoading: dynamicDataLoading } = useDynamicNotificationData(effectiveBranchId);
+  // Get notifications and filter by category type
   const { notifications: allNotifications, isLoading: notificationsLoading, markAsRead } = useNotifications();
   
   const config = categoryConfig[categoryId as keyof typeof categoryConfig];
   
-  // Generate dynamic notifications based on category and data
-  const notifications = generateDynamicNotifications(categoryId, dynamicData, allNotifications || []);
+  // Map category to notification types
+  const CATEGORY_TYPE_MAPPING: Record<string, string[]> = {
+    staff: ['booking', 'leave_request', 'training'],
+    client: ['client_request', 'appointment'],
+    system: ['system_alert', 'error'],
+    medication: ['medication_reminder', 'medication_alert'],
+    rota: ['rota_change', 'schedule_conflict'],
+    document: ['document_update', 'document_expiry'],
+    reports: ['report_ready', 'report_error'],
+  };
+  
+  // Filter notifications by category type
+  const notifications = useMemo(() => {
+    if (!allNotifications) return [];
+    
+    const categoryTypes = CATEGORY_TYPE_MAPPING[categoryId] || [];
+    return allNotifications.filter(notification => 
+      categoryTypes.includes(notification.type)
+    );
+  }, [allNotifications, categoryId]);
   
   if (!config) {
     return (
@@ -323,7 +341,7 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
               <div>
                 <p className="text-sm text-gray-500">Unread</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {notifications.filter(n => !n.read).length}
+                  {notifications.filter(n => !n.read_at).length}
                 </p>
               </div>
               <Eye className="h-8 w-8 text-blue-600" />
@@ -351,7 +369,11 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
               <div>
                 <p className="text-sm text-gray-500">Today</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {notifications.filter(n => n.time.includes('hour')).length}
+                  {notifications.filter(n => {
+                    const createdAt = new Date(n.created_at);
+                    const today = new Date();
+                    return createdAt.toDateString() === today.toDateString();
+                  }).length}
                 </p>
               </div>
               <Clock className="h-8 w-8 text-green-600" />
@@ -366,7 +388,7 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
           <CardTitle>Recent Notifications</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {(dynamicDataLoading || notificationsLoading) ? (
+          {(notificationsLoading) ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-gray-500">Loading notifications...</p>
@@ -376,32 +398,32 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
               {notifications.map((notification) => (
                 <div 
                   key={notification.id}
-                  className={`p-4 hover:bg-gray-50 transition-colors ${
-                    !notification.read ? 'bg-blue-50/50' : ''
-                  }`}
+                    className={`p-4 hover:bg-gray-50 transition-colors ${
+                      !notification.read_at ? 'bg-blue-50/50' : ''
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center space-x-2">
-                        {!notification.read && (
+                        {!notification.read_at && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full" />
                         )}
                         <h4 className="font-medium text-gray-900">
                           {notification.title}
                         </h4>
-                        {getPriorityBadge(notification.priority)}
+                        {getPriorityBadge(notification.priority || 'medium')}
                       </div>
-                      <p className="text-gray-600">{notification.message}</p>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {notification.time}
-                        </span>
-                      </div>
+                        <p className="text-gray-600">{notification.message}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <span className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {new Date(notification.created_at).toLocaleString()}
+                          </span>
+                        </div>
                     </div>
                     
                     <div className="flex items-center space-x-2 ml-4">
-                      {!notification.read && (
+                      {!notification.read_at && (
                         <Button
                           variant="ghost"
                           size="sm"
