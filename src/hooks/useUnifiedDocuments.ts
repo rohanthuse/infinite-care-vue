@@ -37,6 +37,8 @@ export interface UploadDocumentData {
   client_id?: string;
   staff_id?: string;
   expiry_date?: string;
+  shared_with_clients?: string[];
+  shared_with_staff?: string[];
 }
 
 export const useUnifiedDocuments = (branchId: string) => {
@@ -252,8 +254,9 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       console.log('[useUnifiedDocuments] Uploader name determined:', uploaderName);
 
-      // Save document metadata to database
-      const documentData = {
+      // Handle document sharing based on access level
+      const documentsToCreate = [];
+      const baseDocumentData = {
         name: uploadData.name,
         type: uploadData.type,
         category: uploadData.category,
@@ -264,24 +267,58 @@ export const useUnifiedDocuments = (branchId: string) => {
         uploaded_by: user.id,
         uploaded_by_name: uploaderName,
         branch_id: branchId,
-        client_id: uploadData.client_id || null,
-        staff_id: uploadData.staff_id || null,
         tags: uploadData.tags,
         access_level: uploadData.access_level,
         status: 'active',
         expiry_date: uploadData.expiry_date || null
       };
 
-      console.log('[useUnifiedDocuments] Saving document metadata:', {
-        ...documentData,
-        file_size: `${documentData.file_size} bytes`
-      });
+      if (uploadData.access_level === 'restricted') {
+        // For restricted access, validate that recipients are specified
+        const hasSharedClients = uploadData.shared_with_clients && uploadData.shared_with_clients.length > 0;
+        const hasSharedStaff = uploadData.shared_with_staff && uploadData.shared_with_staff.length > 0;
+        
+        if (!hasSharedClients && !hasSharedStaff) {
+          throw new Error('Restricted documents must be shared with at least one client or staff member');
+        }
 
-      const { data: documentRecord, error: dbError } = await supabase
+        // Create documents for each shared client
+        if (hasSharedClients) {
+          uploadData.shared_with_clients.forEach(clientId => {
+            documentsToCreate.push({
+              ...baseDocumentData,
+              client_id: clientId,
+              staff_id: null
+            });
+          });
+        }
+
+        // Create documents for each shared staff
+        if (hasSharedStaff) {
+          uploadData.shared_with_staff.forEach(staffId => {
+            documentsToCreate.push({
+              ...baseDocumentData,
+              client_id: null,
+              staff_id: staffId
+            });
+          });
+        }
+      } else {
+        // For public and branch access, create one document record
+        documentsToCreate.push({
+          ...baseDocumentData,
+          client_id: uploadData.client_id || null,
+          staff_id: uploadData.staff_id || null
+        });
+      }
+
+      console.log('[useUnifiedDocuments] Creating document records:', documentsToCreate.length);
+
+      // Insert all document records
+      const { data: documentRecords, error: dbError } = await supabase
         .from('documents')
-        .insert(documentData)
-        .select()
-        .single();
+        .insert(documentsToCreate)
+        .select();
 
       if (dbError) {
         console.error('[useUnifiedDocuments] Database insert error:', dbError);
@@ -291,13 +328,18 @@ export const useUnifiedDocuments = (branchId: string) => {
         throw new Error(`Failed to save document: ${dbError.message}`);
       }
 
-      console.log('[useUnifiedDocuments] Document metadata saved successfully:', documentRecord);
-      toast.success('Document uploaded successfully');
+      console.log('[useUnifiedDocuments] Document metadata saved successfully:', documentRecords);
+      
+      const successMessage = uploadData.access_level === 'restricted' 
+        ? `Document uploaded and shared with ${documentsToCreate.length} recipient(s)`
+        : 'Document uploaded successfully';
+      
+      toast.success(successMessage);
       
       // Invalidate and refetch documents
       queryClient.invalidateQueries({ queryKey: ['unified-documents', branchId] });
       
-      return documentRecord;
+      return documentRecords[0];
     } catch (error) {
       console.error('[useUnifiedDocuments] Upload error:', {
         error,

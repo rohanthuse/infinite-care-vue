@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { UploadDocumentData } from "@/hooks/useUnifiedDocuments";
 
 const formSchema = z.object({
@@ -92,6 +93,8 @@ export function UnifiedUploadDialog({
   const [isUploading, setIsUploading] = useState(false);
   const [relatedEntity, setRelatedEntity] = useState<string>("none");
   const [relatedEntityId, setRelatedEntityId] = useState<string>("");
+  const [sharedWithClients, setSharedWithClients] = useState<string[]>([]);
+  const [sharedWithStaff, setSharedWithStaff] = useState<string[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -140,6 +143,12 @@ export function UnifiedUploadDialog({
     }
 
     setIsUploading(true);
+    // Validate restricted access level
+    if (data.access_level === 'restricted' && sharedWithClients.length === 0 && sharedWithStaff.length === 0) {
+      form.setError("access_level", { message: "Restricted documents must be shared with at least one client or staff member" });
+      return;
+    }
+
     try {
       const uploadData: UploadDocumentData = {
         name: data.name,
@@ -150,6 +159,8 @@ export function UnifiedUploadDialog({
         tags,
         access_level: data.access_level,
         expiry_date: data.expiry_date,
+        shared_with_clients: sharedWithClients.length > 0 ? sharedWithClients : undefined,
+        shared_with_staff: sharedWithStaff.length > 0 ? sharedWithStaff : undefined,
       };
 
       // Add related entity if selected
@@ -167,6 +178,8 @@ export function UnifiedUploadDialog({
       setTags([]);
       setRelatedEntity("none");
       setRelatedEntityId("");
+      setSharedWithClients([]);
+      setSharedWithStaff([]);
       onOpenChange(false);
     } catch (error) {
       console.error('Upload error:', error);
@@ -299,6 +312,64 @@ export function UnifiedUploadDialog({
                 )}
               />
             </div>
+
+            {/* Access Level Explanation */}
+            {form.watch('access_level') && (
+              <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                {form.watch('access_level') === 'public' && 'Document will be visible to all users in the organization.'}
+                {form.watch('access_level') === 'branch' && 'Document will only be visible to users in this branch.'}
+                {form.watch('access_level') === 'restricted' && 'Document will only be visible to selected clients and staff members.'}
+              </div>
+            )}
+
+            {/* Sharing Options for Restricted Documents */}
+            {form.watch('access_level') === 'restricted' && (
+              <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                <h4 className="font-medium text-blue-900">Share Document With:</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-blue-800">Clients</label>
+                    <MultiSelect
+                      options={clients.map(client => ({
+                        value: client.id,
+                        label: `${client.first_name} ${client.last_name}`,
+                        description: `Client ID: ${client.id.slice(0, 8)}...`
+                      }))}
+                      selected={sharedWithClients}
+                      onSelectionChange={setSharedWithClients}
+                      placeholder="Select clients..."
+                      searchPlaceholder="Search clients..."
+                      emptyText="No clients found."
+                      maxDisplay={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-blue-800">Staff Members</label>
+                    <MultiSelect
+                      options={staff.map(staffMember => ({
+                        value: staffMember.id,
+                        label: `${staffMember.first_name} ${staffMember.last_name}`,
+                        description: `Staff ID: ${staffMember.id.slice(0, 8)}...`
+                      }))}
+                      selected={sharedWithStaff}
+                      onSelectionChange={setSharedWithStaff}
+                      placeholder="Select staff..."
+                      searchPlaceholder="Search staff..."
+                      emptyText="No staff found."
+                      maxDisplay={2}
+                    />
+                  </div>
+                </div>
+
+                {sharedWithClients.length === 0 && sharedWithStaff.length === 0 && (
+                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                    ⚠️ You must select at least one client or staff member for restricted documents.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Related Entity Selection */}
             <div className="grid grid-cols-2 gap-4">
