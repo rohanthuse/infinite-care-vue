@@ -39,6 +39,7 @@ const formSchema = z.object({
   category: z.string().min(1, "Category is required"),
   description: z.string().optional(),
   access_level: z.string().default("branch"),
+  expiry_date: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,6 +101,7 @@ export function UnifiedUploadDialog({
       category: "",
       description: "",
       access_level: "branch",
+      expiry_date: "",
     },
   });
 
@@ -147,6 +149,7 @@ export function UnifiedUploadDialog({
         file: selectedFile,
         tags,
         access_level: data.access_level,
+        expiry_date: data.expiry_date,
       };
 
       // Add related entity if selected

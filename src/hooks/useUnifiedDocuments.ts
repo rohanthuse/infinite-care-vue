@@ -36,6 +36,7 @@ export interface UploadDocumentData {
   access_level: string;
   client_id?: string;
   staff_id?: string;
+  expiry_date?: string;
 }
 
 export const useUnifiedDocuments = (branchId: string) => {
@@ -173,12 +174,12 @@ export const useUnifiedDocuments = (branchId: string) => {
         }
       }
       
-      // 3. Check staff table (regardless of role)
+      // 3. Check staff table (regardless of role) - FIX: use auth_user_id instead of id
       if (!hasAccess) {
         const { data: staffData, error: staffError } = await supabase
           .from('staff')
           .select('branch_id')
-          .eq('id', user.id)
+          .eq('auth_user_id', user.id)
           .eq('branch_id', branchId)
           .single();
         
@@ -267,7 +268,8 @@ export const useUnifiedDocuments = (branchId: string) => {
         staff_id: uploadData.staff_id || null,
         tags: uploadData.tags,
         access_level: uploadData.access_level,
-        status: 'active'
+        status: 'active',
+        expiry_date: uploadData.expiry_date || null
       };
 
       console.log('[useUnifiedDocuments] Saving document metadata:', {

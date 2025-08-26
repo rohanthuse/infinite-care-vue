@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { UnifiedDocumentsList } from "@/components/documents/UnifiedDocumentsList";
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
+import { UnifiedInlineUploadForm } from "@/components/documents/UnifiedInlineUploadForm";
 import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
 import { Upload, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,16 +125,12 @@ const Documents = () => {
           </TabsContent>
           
           <TabsContent value="upload" className="space-y-6">
-            <div className="flex items-center justify-center py-12">
-              <Button 
-                onClick={() => setIsUploadDialogOpen(true)}
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Upload className="h-5 w-5 mr-2" />
-                Upload New Document
-              </Button>
-            </div>
+            <UnifiedInlineUploadForm
+              onSave={handleUploadDocument}
+              isUploading={isUploading}
+              clients={clients || []}
+              staff={staff || []}
+            />
           </TabsContent>
         </Tabs>
       </div>
