@@ -102,8 +102,8 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         matchesTab = resource.expires_at && isAfter(new Date(), new Date(resource.expires_at));
       }
       
-      // Expired resource filtering
-      if (!showExpired && resource.expires_at && isAfter(new Date(), new Date(resource.expires_at))) {
+      // Expired resource filtering - only hide expired items if not on the expired tab
+      if (!showExpired && activeTab !== "expired" && resource.expires_at && isAfter(new Date(), new Date(resource.expires_at))) {
         return false;
       }
       
