@@ -34,10 +34,28 @@ export function DashboardHeader() {
     // Sidebar provider not available, ignore
   }
 
-  // Extract branch ID from URL if we're in a branch context
-  const branchId = location.pathname.includes('/branch-dashboard/') 
-    ? location.pathname.split('/')[2] 
-    : undefined;
+  // Robust path parsing for branch context detection
+  const parseBranchContext = () => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+    const branchDashboardIndex = pathParts.findIndex(part => part === 'branch-dashboard');
+    
+    if (branchDashboardIndex === -1) {
+      return { tenantSlug: null, branchId: null, branchName: null, isBranchContext: false };
+    }
+    
+    const tenantSlug = branchDashboardIndex > 0 ? pathParts[0] : null;
+    const branchId = pathParts[branchDashboardIndex + 1] || null;
+    const branchName = pathParts[branchDashboardIndex + 2] || null;
+    
+    return { 
+      tenantSlug, 
+      branchId, 
+      branchName, 
+      isBranchContext: true 
+    };
+  };
+
+  const { tenantSlug, branchId, branchName, isBranchContext } = parseBranchContext();
 
   // Close mobile menu when resizing to desktop
   useEffect(() => {
@@ -69,19 +87,16 @@ export function DashboardHeader() {
   };
 
   const handleViewAllNotifications = () => {
-    if (branchId) {
-      const branchName = location.pathname.split('/')[3];
-      navigate(`/branch-dashboard/${branchId}/${branchName}/notifications`);
+    if (isBranchContext && branchId && branchName) {
+      // Branch admin context - navigate to branch notifications
+      const targetPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/notifications`
+        : `/branch-dashboard/${branchId}/${branchName}/notifications`;
+      navigate(targetPath);
     } else {
-      // Extract tenant slug from current path for tenant-aware navigation
-      const pathParts = location.pathname.split('/').filter(Boolean);
-      const tenantSlug = pathParts[0] && !['super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 'system-dashboard', 'services', 'settings', 'dashboard', 'agreement', 'hobbies', 'skills', 'medical-mental', 'type-of-work', 'body-map-points', 'branch', 'branch-admins', 'notifications'].includes(pathParts[0]) ? pathParts[0] : null;
-      
-      if (tenantSlug) {
-        navigate(`/${tenantSlug}/notifications`);
-      } else {
-        navigate('/notifications');
-      }
+      // Non-branch context - navigate to general notifications
+      const targetPath = tenantSlug ? `/${tenantSlug}/notifications` : '/notifications';
+      navigate(targetPath);
     }
   };
 
