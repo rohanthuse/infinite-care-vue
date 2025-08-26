@@ -53,10 +53,6 @@ interface LibraryResourcePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   resource: LibraryResource | null;
-  onDownload?: (resource: LibraryResource) => void;
-  onShare?: (resource: LibraryResource) => void;
-  onDelete?: (resource: LibraryResource) => void;
-  canDelete?: boolean;
 }
 
 const categories = [
@@ -73,11 +69,7 @@ const categories = [
 export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialogProps> = ({ 
   isOpen, 
   onClose, 
-  resource,
-  onDownload,
-  onShare,
-  onDelete,
-  canDelete = true
+  resource
 }) => {
   if (!resource) return null;
 
@@ -111,28 +103,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
     );
   };
 
-  // Handle download click
-  const handleDownload = () => {
-    if (onDownload) {
-      onDownload(resource);
-    }
-    onClose();
-  };
-
-  // Handle share click
-  const handleShare = () => {
-    if (onShare) {
-      onShare(resource);
-    }
-  };
-
-  // Handle delete click
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete(resource);
-    }
-    onClose();
-  };
 
   // Get resource preview component based on resource type
   const getResourcePreview = () => {
@@ -180,10 +150,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <p className="font-medium text-gray-600">PDF Preview</p>
               <p className="text-sm text-gray-500 mt-1">Click download to view the full document</p>
               
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
-                <ArrowDownToLine className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
             </div>
           </div>
         </div>
@@ -199,16 +165,10 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <p className="font-medium text-gray-600">Audio Preview</p>
               <p className="text-sm text-gray-500 mt-1">Download to listen to the full audio</p>
               
-              <div className="flex gap-2 mt-4 justify-center">
-                <Button variant="outline">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Play Sample
-                </Button>
-                <Button variant="default" onClick={handleDownload}>
-                  <ArrowDownToLine className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
+              <Button variant="outline" className="mt-4">
+                <Eye className="h-4 w-4 mr-2" />
+                Play Sample
+              </Button>
             </div>
           </div>
         </div>
@@ -224,10 +184,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <p className="font-medium text-gray-600">Spreadsheet Preview</p>
               <p className="text-sm text-gray-500 mt-1">Download to use the spreadsheet</p>
               
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
-                <ArrowDownToLine className="h-4 w-4 mr-2" />
-                Download Spreadsheet
-              </Button>
             </div>
           </div>
         </div>
@@ -267,10 +223,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
             <p className="font-medium text-gray-600">{resource.resourceType.toUpperCase()} Resource</p>
             <p className="text-sm text-gray-500 mt-1">Preview not available. Download to view.</p>
             
-            <Button variant="outline" className="mt-4" onClick={handleDownload}>
-              <ArrowDownToLine className="h-4 w-4 mr-2" />
-              Download File
-            </Button>
           </div>
         </div>
       </div>
@@ -413,20 +365,6 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
         <DialogFooter className="flex flex-wrap justify-end gap-3 mt-4">
           <Button variant="outline" onClick={onClose}>
             Close
-          </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
-          {canDelete && onDelete && (
-            <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-          )}
-          <Button onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
           </Button>
         </DialogFooter>
       </DialogContent>
