@@ -545,12 +545,16 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         onClose={() => setPreviewResource(null)}
         resource={previewResource ? convertResourceForDialog(previewResource) : null}
         onOpenDocumentFile={previewResource ? (resource) => {
-          if (resource.fileSize && resource.fileSize > 0) {
+          // Check if it has a file path first (means file was uploaded)
+          if (previewResource.file_path) {
             // Has a file, open it
             handleViewResource(previewResource);
-          } else {
+          } else if (previewResource.url) {
             // Only has a link, show message
             toast("No file uploaded. This resource contains a link, not a file.");
+          } else {
+            // Neither file nor link
+            toast("No file or link available for this resource.");
           }
         } : undefined}
       />

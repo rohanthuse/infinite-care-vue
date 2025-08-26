@@ -368,7 +368,7 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          {(resource.url || resource.fileSize) && onOpenDocumentFile && (
+          {onOpenDocumentFile && (
             <Button onClick={() => onOpenDocumentFile(resource)}>
               <FileText className="h-4 w-4 mr-2" />
               Document File
