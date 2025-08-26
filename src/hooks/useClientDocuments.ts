@@ -222,7 +222,29 @@ export const useViewClientDocument = () => {
         throw new Error('Could not open new tab. Please check your popup blocker settings.');
       }
 
-      // Create signed URL for private documents
+      try {
+        // First try to download as blob to avoid ERR_BLOCKED_BY_CLIENT
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('client-documents')
+          .download(filePath);
+
+        if (!downloadError && fileData) {
+          // Create blob URL and navigate to it
+          const blobUrl = URL.createObjectURL(fileData);
+          newTab.location.href = blobUrl;
+          
+          // Clean up the blob URL after a delay
+          setTimeout(() => {
+            URL.revokeObjectURL(blobUrl);
+          }, 30000); // 30 seconds
+          
+          return;
+        }
+      } catch (blobError) {
+        console.warn('Blob download failed, falling back to signed URL:', blobError);
+      }
+
+      // Fallback to signed URL if blob download fails
       const { data, error } = await supabase.storage
         .from('client-documents')
         .createSignedUrl(filePath, 3600); // 1 hour expiry
