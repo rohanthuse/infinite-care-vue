@@ -544,6 +544,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         isOpen={!!previewResource}
         onClose={() => setPreviewResource(null)}
         resource={previewResource ? convertResourceForDialog(previewResource) : null}
+        onOpenDocumentFile={previewResource ? () => handleViewResource(previewResource) : undefined}
       />
     </div>
   );

@@ -53,6 +53,7 @@ interface LibraryResourcePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   resource: LibraryResource | null;
+  onOpenDocumentFile?: (resource: LibraryResource) => void;
 }
 
 const categories = [
@@ -69,7 +70,8 @@ const categories = [
 export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialogProps> = ({ 
   isOpen, 
   onClose, 
-  resource
+  resource,
+  onOpenDocumentFile
 }) => {
   if (!resource) return null;
 
@@ -366,6 +368,12 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
+          {(resource.url || resource.fileSize) && onOpenDocumentFile && (
+            <Button onClick={() => onOpenDocumentFile(resource)}>
+              <FileText className="h-4 w-4 mr-2" />
+              Document File
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
