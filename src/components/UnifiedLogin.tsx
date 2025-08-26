@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Mail, Lock, Heart } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle } from "lucide-react";
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
@@ -13,7 +13,105 @@ const UnifiedLogin = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [thirdPartyInfo, setThirdPartyInfo] = useState<any>(null);
+  const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Check for third-party invitation token
+  useEffect(() => {
+    const token = searchParams.get('thirdPartyToken');
+    if (token) {
+      validateThirdPartyToken(token);
+    }
+  }, [searchParams]);
+
+  const validateThirdPartyToken = async (token: string) => {
+    try {
+      const { data: request, error } = await supabase
+        .from('third_party_access_requests')
+        .select(`
+          *,
+          branches:branch_id (name)
+        `)
+        .eq('invite_token', token)
+        .eq('status', 'approved')
+        .single();
+
+      if (error || !request) {
+        toast.error("Invalid or expired invitation token");
+        return;
+      }
+
+      // Validate access window
+      const now = new Date();
+      const accessFrom = new Date(request.access_from);
+      const accessUntil = request.access_until ? new Date(request.access_until) : null;
+
+      if (now < accessFrom) {
+        toast.error("Access period has not started yet");
+        return;
+      }
+
+      if (accessUntil && now > accessUntil) {
+        toast.error("Access period has expired");
+        return;
+      }
+
+      setThirdPartyInfo({
+        token,
+        email: request.email,
+        branchName: request.branches?.name,
+        accessScope: request.request_for,
+        accessUntil: accessUntil?.toLocaleDateString(),
+        firstName: request.first_name,
+        lastName: request.surname,
+        companyName: request.organisation || 'Third-party Organization'
+      });
+
+      // Pre-fill email if provided
+      if (request.email) {
+        setEmail(request.email);
+      }
+    } catch (error) {
+      console.error('Error validating third-party token:', error);
+      toast.error("Unable to validate invitation");
+    }
+  };
+
+  const redeemThirdPartyInvite = async (userId: string, userEmail: string) => {
+    if (!thirdPartyInfo?.token) return null;
+
+    setThirdPartyLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('third-party-redeem-invite', {
+        body: {
+          token: thirdPartyInfo.token,
+          userId,
+          userEmail
+        }
+      });
+
+      if (error) throw error;
+
+      // Store session info in localStorage for third-party workspace
+      localStorage.setItem('thirdPartySession', JSON.stringify({
+        sessionToken: data.sessionToken,
+        thirdPartyUser: data.thirdPartyUser,
+        branchInfo: data.branchInfo,
+        accessScope: data.accessScope,
+        accessExpiresAt: data.accessExpiresAt
+      }));
+
+      return data;
+    } catch (error: any) {
+      console.error('Error redeeming third-party invite:', error);
+      toast.error(error.message || "Failed to activate third-party access");
+      return null;
+    } finally {
+      setThirdPartyLoading(false);
+    }
+  };
 
   const detectUserOrganization = async (userId: string) => {
     try {
@@ -169,6 +267,19 @@ const UnifiedLogin = () => {
       console.log('User role detected:', userRole);
       console.log('[AUTH DEBUG] User ID:', authData.user.id, 'Email:', authData.user.email);
 
+      // Handle third-party access redemption first
+      if (thirdPartyInfo) {
+        const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
+        if (redeemResult) {
+          toast.success("Third-party access activated successfully!");
+          navigate('/third-party/workspace');
+          return;
+        } else {
+          // If redemption failed, continue with normal login flow
+          toast.error("Failed to activate third-party access, continuing with normal login");
+        }
+      }
+
       // Detect organization membership for all users (including super admins)
       const orgSlug = await detectUserOrganization(authData.user.id);
 
@@ -314,9 +425,40 @@ const UnifiedLogin = () => {
             <div className="flex justify-center mb-6">
               <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-16 h-16" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
-            <p className="mt-2 text-sm text-gray-600">Access your healthcare management platform</p>
+            <h2 className="text-3xl font-bold text-gray-900">
+              {thirdPartyInfo ? 'Complete Your Third-Party Access' : 'Sign in to your account'}
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              {thirdPartyInfo 
+                ? 'Sign in to activate your invited access'
+                : 'Access your healthcare management platform'
+              }
+            </p>
           </div>
+
+          {/* Third-Party Invitation Banner */}
+          {thirdPartyInfo && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-blue-900">
+                    You're invited to access {thirdPartyInfo.branchName}
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p><strong>Invited by:</strong> {thirdPartyInfo.branchName}</p>
+                    <p><strong>Access type:</strong> {thirdPartyInfo.accessScope} data (read-only)</p>
+                    {thirdPartyInfo.accessUntil && (
+                      <p><strong>Valid until:</strong> {thirdPartyInfo.accessUntil}</p>
+                    )}
+                    <p className="mt-2 text-xs">
+                      Please sign in with the email address: <strong>{thirdPartyInfo.email}</strong>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -383,15 +525,15 @@ const UnifiedLogin = () => {
               <CustomButton
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={loading}
+                disabled={loading || thirdPartyLoading}
               >
-                {loading ? (
+                {loading || thirdPartyLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Signing in...
+                    {thirdPartyInfo ? 'Activating Access...' : 'Signing in...'}
                   </>
                 ) : (
-                  "Sign In"
+                  thirdPartyInfo ? 'Sign In & Activate Access' : 'Sign In'
                 )}
               </CustomButton>
             </div>

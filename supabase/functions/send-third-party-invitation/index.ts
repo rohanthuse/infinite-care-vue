@@ -44,8 +44,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Request not found');
     }
 
-    // Create invitation link
-    const inviteUrl = `${Deno.env.get("SITE_URL")}/third-party-login?token=${inviteToken}`;
+    // Create invitation link using the main login page with third-party token
+    const inviteUrl = `${Deno.env.get("SITE_URL")}/login?thirdPartyToken=${inviteToken}`;
 
     // Send invitation email
     const emailResponse = await resend.emails.send({

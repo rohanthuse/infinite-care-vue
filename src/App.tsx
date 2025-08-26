@@ -44,6 +44,7 @@ import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
 import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 import DemoRequest from "./pages/DemoRequest";
 import { SharedClientProfile } from "./pages/shared/SharedClientProfile";
+import ThirdPartyWorkspace from "./pages/ThirdPartyWorkspace";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
@@ -115,6 +116,9 @@ const AppContent = () => {
               
               {/* Shared Client Profile Route - Must be before tenant routes */}
               <Route path="/shared/client/:clientId" element={<SharedClientProfile />} />
+              
+              {/* Third-Party Workspace Route */}
+              <Route path="/third-party/workspace" element={<ThirdPartyWorkspace />} />
               
               {/* System Dashboard Routes */}
               <Route path="/system-dashboard" element={
