@@ -62,9 +62,9 @@ const resourceTypes = [
 
 const accessRoles = [
   { id: "admin", label: "Admin" },
-  { id: "carer", label: "Carer" },
   { id: "branch-manager", label: "Branch Manager" },
   { id: "staff", label: "Staff" },
+  { id: "client", label: "Client" },
 ];
 
 export const LibraryResourceForm: React.FC<LibraryResourceFormProps> = ({
