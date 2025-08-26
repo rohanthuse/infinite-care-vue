@@ -1,304 +1,562 @@
-import React, { useState, useMemo, useEffect } from "react";
+
+import React, { useState, useMemo } from "react";
+import { format, isAfter } from "date-fns";
+import { 
+  FileText, 
+  Download, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  Search, 
+  Filter,
+  Tag,
+  User,
+  Calendar,
+  ExternalLink,
+  Star,
+  TrendingUp,
+  MoreHorizontal,
+  Link,
+  AlertTriangle,
+  BarChart3
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
-  FileText, 
-  Video,
-  AudioLines,
-  FileImage,
-  FileSpreadsheet,
-  Link as LinkIcon,
-  BookOpen,
-  Lock,
-  Unlock,
-  Calendar,
-  User,
-  ExternalLink,
-  Loader2
-} from "lucide-react";
-import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLibraryResources, LibraryResource } from "@/hooks/useLibraryResources";
+import { useLibraryAnalytics } from "@/hooks/useLibraryAnalytics";
 import { LibraryResourcePreviewDialog } from "./LibraryResourcePreviewDialog";
-import { useLibraryResources } from "@/hooks/useLibraryResources";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface LibraryResourcesListProps {
   branchId: string;
+  onAddNew?: () => void;
   canDelete?: boolean;
 }
 
-export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({ 
-  branchId, 
-  canDelete = false 
+export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
+  branchId,
+  onAddNew,
+  canDelete = true,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [selectedResource, setSelectedResource] = useState<any>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
+  const [resourceTypeFilter, setResourceTypeFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
+  const [previewResource, setPreviewResource] = useState<LibraryResource | null>(null);
+  const [showExpired, setShowExpired] = useState(false);
 
-  const {
-    resources,
-    categories,
-    isLoading,
-    error,
+  const { 
+    resources, 
+    categories, 
+    isLoading, 
+    deleteResource, 
     viewResource,
     downloadResource,
+    getFileUrl
   } = useLibraryResources(branchId);
 
+  const { data: analytics } = useLibraryAnalytics(branchId);
+
+  // Get unique resource types
+  const resourceTypes = useMemo(() => {
+    return Array.from(new Set(resources.map(r => r.resource_type))).sort();
+  }, [resources]);
+
+  // Get expired resources
+  const expiredResources = useMemo(() => {
+    return resources.filter(resource => 
+      resource.expires_at && isAfter(new Date(), new Date(resource.expires_at))
+    );
+  }, [resources]);
+
+  // Filter resources
   const filteredResources = useMemo(() => {
-    let filtered = [...resources];
+    return resources.filter(resource => {
+      const matchesSearch = resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           resource.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           resource.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           resource.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesCategory = categoryFilter === "all" || resource.category === categoryFilter;
+      const matchesType = resourceTypeFilter === "all" || resource.resource_type === resourceTypeFilter;
+      
+      // Tab filtering
+      let matchesTab = true;
+      if (activeTab === "recent") {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        matchesTab = new Date(resource.created_at) > weekAgo;
+      } else if (activeTab === "popular") {
+        matchesTab = resource.views_count > 0;
+      } else if (activeTab === "files") {
+        matchesTab = !!resource.file_path;
+      } else if (activeTab === "links") {
+        matchesTab = !!resource.url;
+      } else if (activeTab === "expired") {
+        matchesTab = resource.expires_at && isAfter(new Date(), new Date(resource.expires_at));
+      }
+      
+      // Expired resource filtering - only hide expired items if not on the expired tab
+      if (!showExpired && activeTab !== "expired" && resource.expires_at && isAfter(new Date(), new Date(resource.expires_at))) {
+        return false;
+      }
+      
+      return matchesSearch && matchesCategory && matchesType && matchesTab;
+    });
+  }, [resources, searchQuery, categoryFilter, resourceTypeFilter, activeTab, showExpired]);
 
-    if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(resource =>
-        resource.title.toLowerCase().includes(lowerSearchTerm) ||
-        (resource.description && resource.description.toLowerCase().includes(lowerSearchTerm)) ||
-        (resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
-      );
+  const getResourceIcon = (resourceType: string) => {
+    switch (resourceType.toLowerCase()) {
+      case 'document':
+      case 'pdf':
+        return <FileText className="h-4 w-4 text-red-600" />;
+      case 'video':
+        return <FileText className="h-4 w-4 text-purple-600" />;
+      case 'audio':
+        return <FileText className="h-4 w-4 text-green-600" />;
+      case 'presentation':
+        return <FileText className="h-4 w-4 text-orange-600" />;
+      case 'spreadsheet':
+        return <FileText className="h-4 w-4 text-emerald-600" />;
+      case 'image':
+        return <FileText className="h-4 w-4 text-pink-600" />;
+      case 'link':
+        return <Link className="h-4 w-4 text-blue-600" />;
+      default:
+        return <FileText className="h-4 w-4 text-gray-600" />;
     }
+  };
 
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter(resource => resource.category === categoryFilter);
-    }
-
-    if (typeFilter !== "all") {
-      filtered = filtered.filter(resource => resource.resource_type === typeFilter);
-    }
-
-    return filtered;
-  }, [resources, searchTerm, categoryFilter, typeFilter]);
-
-  const handleDownload = async (resource: any) => {
-    if (!resource.file_path) {
-      toast({
-        title: "Download Error",
-        description: "No file available for download",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setDownloadingIds(prev => new Set(prev).add(resource.id));
+  const handleViewResource = async (resource: LibraryResource) => {
+    await viewResource(resource.id);
     
-    try {
-      await downloadResource(resource.id, resource.file_path, resource.title);
-    } catch (error) {
-      // Error is already handled in downloadResource
-      console.error('Download failed:', error);
-    } finally {
-      setDownloadingIds(prev => {
-        const next = new Set(prev);
-        next.delete(resource.id);
-        return next;
-      });
+    if (resource.url) {
+      window.open(resource.url, '_blank');
+    } else if (resource.file_path) {
+      const fileUrl = await getFileUrl(resource.file_path);
+      if (fileUrl) {
+        window.open(fileUrl, '_blank');
+      }
     }
   };
 
-  const handlePreview = (resource: any) => {
-    setSelectedResource(resource);
-    setPreviewOpen(true);
-    viewResource(resource.id);
+  const handlePreviewResource = (resource: LibraryResource) => {
+    setPreviewResource(resource);
   };
 
-  const handleOpenDocumentFile = (resource: any) => {
-    handleDownload(resource);
+  // Convert LibraryResource to dialog format
+  const convertResourceForDialog = (resource: LibraryResource) => {
+    return {
+      id: resource.id,
+      title: resource.title,
+      description: resource.description,
+      category: resource.category,
+      resourceType: resource.resource_type,
+      uploadedBy: resource.uploaded_by_name || 'Unknown',
+      uploadDate: new Date(resource.created_at),
+      expiryDate: resource.expires_at ? new Date(resource.expires_at) : undefined,
+      isPrivate: resource.is_private,
+      accessRoles: resource.access_roles || [],
+      fileSize: resource.file_size ? (typeof resource.file_size === 'string' ? parseInt(resource.file_size, 10) : resource.file_size) : undefined,
+      url: resource.url,
+      rating: resource.rating,
+      author: resource.author,
+      version: resource.version,
+      tags: resource.tags,
+      views: resource.views_count,
+      downloads: resource.downloads_count,
+    };
   };
 
-  const renderResourceCard = (resource: any) => (
-    <div key={resource.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{resource.title}</h3>
-          {resource.description && (
-            <p className="text-gray-600 mt-1">{resource.description.substring(0, 100)}{resource.description.length > 100 ? '...' : ''}</p>
-          )}
-        </div>
-        {/* Resource Type Icon */}
-        {resource.resource_type && (
-          <div className="shrink-0">
-            {resource.resource_type === 'pdf' && <FileText className="h-6 w-6 text-red-600" />}
-            {resource.resource_type === 'video' && <Video className="h-6 w-6 text-blue-600" />}
-            {resource.resource_type === 'audio' && <AudioLines className="h-6 w-6 text-purple-600" />}
-            {resource.resource_type === 'spreadsheet' && <FileSpreadsheet className="h-6 w-6 text-green-600" />}
-            {resource.resource_type === 'image' && <FileImage className="h-6 w-6 text-pink-600" />}
-            {resource.resource_type === 'link' && <LinkIcon className="h-6 w-6 text-cyan-600" />}
-            {resource.resource_type !== 'pdf' && resource.resource_type !== 'video' && resource.resource_type !== 'audio' && resource.resource_type !== 'spreadsheet' && resource.resource_type !== 'image' && resource.resource_type !== 'link' && <BookOpen className="h-6 w-6 text-gray-600" />}
-          </div>
-        )}
+  const handleDownloadResource = (resource: LibraryResource) => {
+    if (resource.file_path) {
+      downloadResource(resource.id, resource.file_path, resource.title);
+    }
+  };
+
+  const handleDeleteResource = async (resourceId: string) => {
+    if (window.confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
+      deleteResource(resourceId);
+    }
+  };
+
+  const handleShareResource = async (resource: LibraryResource) => {
+    try {
+      let shareUrl = '';
+      let shareTitle = resource.title;
+      let shareText = resource.description || `Check out this resource: ${resource.title}`;
+
+      // Get shareable URL
+      if (resource.url) {
+        shareUrl = resource.url;
+      } else if (resource.file_path) {
+        // Generate a signed URL for the file
+        const fileUrl = await getFileUrl(resource.file_path);
+        if (fileUrl) {
+          shareUrl = fileUrl;
+        }
+      }
+
+      if (!shareUrl) {
+        toast.error('Unable to generate share link for this resource');
+        return;
+      }
+
+      // Try to use Web Share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success('Resource shared successfully');
+      } else {
+        // Fallback to copying to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Resource link copied to clipboard');
+      }
+    } catch (error) {
+      console.error('Failed to share resource:', error);
+      toast.error('Failed to share resource');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
-      
-      <div className="flex flex-wrap gap-2 mt-2">
-        {resource.is_private && (
-          <Badge variant="outline" className="text-amber-600 border-amber-200">
-            <Lock className="h-3 w-3 mr-1" />
-            Private
-          </Badge>
-        )}
-        {!resource.is_private && (
-          <Badge variant="outline" className="text-green-600 border-green-200">
-            <Unlock className="h-3 w-3 mr-1" />
-            Public
-          </Badge>
-        )}
-        {resource.expires_at && (
-          <Badge variant={resource.expires_at < new Date().toISOString() ? 'destructive' : 'outline'} className={resource.expires_at < new Date().toISOString() ? '' : 'text-amber-600 border-amber-200'}>
-            <Calendar className="h-3 w-3 mr-1" />
-            {resource.expires_at < new Date().toISOString() ? 'Expired' : 'Expires'}: {format(new Date(resource.expires_at), 'dd MMM yyyy')}
-          </Badge>
-        )}
-      </div>
-      
-      <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          {resource.uploaded_by_name && (
-            <div className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              {resource.uploaded_by_name}
-            </div>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePreview(resource)}
-            className="flex items-center gap-1"
-          >
-            <Eye className="h-4 w-4" />
-            Preview
-          </Button>
-          
-          {resource.resource_type === 'link' && resource.url ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(resource.url, '_blank')}
-              className="flex items-center gap-1"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Visit
-            </Button>
-          ) : resource.file_path ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownload(resource)}
-              disabled={downloadingIds.has(resource.id)}
-              className="flex items-center gap-1"
-            >
-              {downloadingIds.has(resource.id) ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4" />
-                  Download
-                </>
-              )}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center w-full md:w-auto">
-          <Input
-            type="search"
-            placeholder="Search resources..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="md:w-80"
-          />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="pdf">PDF Documents</SelectItem>
-              <SelectItem value="video">Videos</SelectItem>
-              <SelectItem value="audio">Audio Files</SelectItem>
-              <SelectItem value="spreadsheet">Spreadsheets</SelectItem>
-              <SelectItem value="image">Images</SelectItem>
-              <SelectItem value="link">Links</SelectItem>
-              <SelectItem value="document">Documents</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Resources Grid */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-gray-600">Loading resources...</p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="text-center py-12">
-          <p className="text-red-600 mb-2">Failed to load resources</p>
-          <p className="text-sm text-gray-600">{error.message}</p>
-        </div>
-      ) : filteredResources.length === 0 ? (
-        <div className="text-center py-12">
-          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            {searchTerm || categoryFilter !== "all" || typeFilter !== "all" 
-              ? "No resources found" 
-              : "No resources available"
-            }
-          </h3>
-          <p className="text-gray-600">
-            {searchTerm || categoryFilter !== "all" || typeFilter !== "all"
-              ? "Try adjusting your search or filters"
-              : "Resources will appear here when they are added to your branch"
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredResources.map(renderResourceCard)}
+      {/* Analytics Summary */}
+      {analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Resources</p>
+                  <p className="text-2xl font-bold">{analytics.totalResources}</p>
+                </div>
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Views</p>
+                  <p className="text-2xl font-bold">{analytics.totalViews}</p>
+                </div>
+                <Eye className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Downloads</p>
+                  <p className="text-2xl font-bold">{analytics.totalDownloads}</p>
+                </div>
+                <Download className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Expired Resources</p>
+                  <p className="text-2xl font-bold text-destructive">{expiredResources.length}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
+      {/* Header and Search */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle>Library Resources</CardTitle>
+              <CardDescription>
+                Browse and manage educational resources - {resources.length} total resources
+              </CardDescription>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search resources..."
+                  className="pl-9 w-full sm:w-64"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filters
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="p-2 space-y-2">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Category</label>
+                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.description || cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs font-medium text-gray-500">Type</label>
+                      <Select value={resourceTypeFilter} onValueChange={setResourceTypeFilter}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          {resourceTypes.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    View
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowExpired(!showExpired)}>
+                    {showExpired ? 'Hide' : 'Show'} Expired Resources
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {onAddNew && (
+                <Button onClick={onAddNew} size="sm">
+                  Add Resource
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Tabs and Resources List */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="all">All ({resources.length})</TabsTrigger>
+          <TabsTrigger value="recent">Recent</TabsTrigger>
+          <TabsTrigger value="popular">Popular</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="links">Links</TabsTrigger>
+          <TabsTrigger value="expired" className="text-destructive">
+            Expired ({expiredResources.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-6">
+          <Card>
+            <CardContent className="p-0">
+              {filteredResources.length === 0 ? (
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-gray-500 text-lg">No resources found</p>
+                  <p className="text-gray-400 text-sm">Try adjusting your search criteria or add new resources</p>
+                  {onAddNew && (
+                    <Button onClick={onAddNew} className="mt-4">
+                      Add First Resource
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[300px]">Resource</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Author</TableHead>
+                      <TableHead>Stats</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredResources.map((resource) => (
+                      <TableRow key={resource.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-gray-100 rounded-md">
+                              {getResourceIcon(resource.resource_type)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium truncate">{resource.title}</p>
+                                {resource.is_private && (
+                                  <Badge variant="outline" className="text-xs">Private</Badge>
+                                )}
+                                {resource.expires_at && isAfter(new Date(), new Date(resource.expires_at)) && (
+                                  <Badge variant="destructive" className="text-xs">Expired</Badge>
+                                )}
+                                {resource.url && (
+                                  <ExternalLink className="h-3 w-3 text-blue-500" />
+                                )}
+                              </div>
+                              {resource.description && (
+                                <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                                  {resource.description}
+                                </p>
+                              )}
+                              {resource.tags.length > 0 && (
+                                <div className="flex gap-1 mt-1">
+                                  {resource.tags.slice(0, 3).map((tag, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {resource.tags.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{resource.tags.length - 3}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {categories.find(c => c.name === resource.category)?.description || resource.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{resource.resource_type}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm">{resource.author || resource.uploaded_by_name || 'Unknown'}</span>
+                          </div>
+                          {resource.version && (
+                            <p className="text-xs text-gray-500">v{resource.version}</p>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              <span>{resource.views_count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Download className="h-3 w-3" />
+                              <span>{resource.downloads_count}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="h-3 w-3 mr-1" />
+                            {format(new Date(resource.created_at), 'MMM dd, yyyy')}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handlePreviewResource(resource)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Preview
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewResource(resource)}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                Open
+                              </DropdownMenuItem>
+                              {resource.file_path && (
+                                <DropdownMenuItem onClick={() => handleDownloadResource(resource)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Download
+                                </DropdownMenuItem>
+                              )}
+                              {canDelete && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteResource(resource.id)}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
       {/* Preview Dialog */}
       <LibraryResourcePreviewDialog
-        isOpen={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        resource={selectedResource}
-        onOpenDocumentFile={handleOpenDocumentFile}
+        isOpen={!!previewResource}
+        onClose={() => setPreviewResource(null)}
+        resource={previewResource ? convertResourceForDialog(previewResource) : null}
+        onOpenDocumentFile={previewResource ? (resource) => {
+          // Check if it has a file path first (means file was uploaded)
+          if (previewResource.file_path) {
+            // Download the file
+            downloadResource(previewResource.id, previewResource.file_path, previewResource.title);
+          } else if (previewResource.url) {
+            // Only has a link, show message
+            toast("No file to download. Use the link shown in the preview above.");
+          } else {
+            // Neither file nor link
+            toast("No file or link available for download.");
+          }
+        } : undefined}
       />
     </div>
   );
