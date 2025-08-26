@@ -173,9 +173,14 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   const navigate = useNavigate();
   const { toast } = useToast();
   const { tenantSlug } = useTenant();
+  const params = useParams<{ id?: string; branchName?: string }>();
+  
+  // Use fallback values from URL params if props are not provided
+  const effectiveBranchId = branchId || params.id;
+  const effectiveBranchName = branchName || params.branchName;
   
   // Get dynamic data and notifications from hooks
-  const { data: dynamicData, isLoading: dynamicDataLoading } = useDynamicNotificationData(branchId);
+  const { data: dynamicData, isLoading: dynamicDataLoading } = useDynamicNotificationData(effectiveBranchId);
   const { notifications: allNotifications, isLoading: notificationsLoading, markAsRead } = useNotifications();
   
   const config = categoryConfig[categoryId as keyof typeof categoryConfig];
@@ -194,11 +199,13 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   }
 
   const handleBack = () => {
-    if (branchId && branchName) {
+    if (effectiveBranchId && effectiveBranchName) {
+      // Ensure branch name is properly encoded for URL
+      const encodedBranchName = encodeURIComponent(effectiveBranchName);
       // Include tenant slug if available for tenant-aware navigation
       const fullPath = tenantSlug 
-        ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/notifications`
-        : `/branch-dashboard/${branchId}/${branchName}/notifications`;
+        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${encodedBranchName}/notifications`
+        : `/branch-dashboard/${effectiveBranchId}/${encodedBranchName}/notifications`;
       navigate(fullPath);
     } else {
       // Include tenant slug if available for tenant-aware navigation

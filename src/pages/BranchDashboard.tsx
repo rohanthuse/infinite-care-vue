@@ -525,7 +525,11 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             {activeTab === "notifications" && (
               canAccessTab("notifications") ? (
                 categoryId ? (
-                  <NotificationCategory categoryId={categoryId || ""} />
+                  <NotificationCategory 
+                    categoryId={categoryId || ""} 
+                    branchId={id} 
+                    branchName={branchName} 
+                  />
                 ) : (
                   <NotificationsOverview branchId={id} branchName={branchName} />
                 )
