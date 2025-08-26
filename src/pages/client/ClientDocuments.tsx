@@ -21,6 +21,7 @@ const ClientDocuments = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   // Get authenticated client information
   const { 
@@ -115,12 +116,22 @@ const ClientDocuments = () => {
     }
   };
 
-  const handleDownloadDocument = (document) => {
+  const handleDownloadDocument = async (document, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
     if (document.file_path) {
-      downloadDocumentMutation.mutate({ 
-        filePath: document.file_path, 
-        fileName: document.name 
-      });
+      try {
+        setDownloadingId(document.id);
+        await downloadDocumentMutation.mutateAsync({ 
+          filePath: document.file_path, 
+          fileName: document.name 
+        });
+      } catch (error) {
+        console.error('Download failed:', error);
+      } finally {
+        setDownloadingId(null);
+      }
     }
   };
 
@@ -203,8 +214,8 @@ const ClientDocuments = () => {
             variant="outline" 
             size="icon" 
             title="Download Document"
-            onClick={() => handleDownloadDocument(doc)}
-            disabled={downloadDocumentMutation.isPending}
+            onClick={(e) => handleDownloadDocument(doc, e)}
+            disabled={downloadingId === doc.id}
           >
             <Download className="h-4 w-4" />
           </Button>
