@@ -445,13 +445,27 @@ export const useUnifiedDocuments = (branchId: string) => {
       const bucket = filePath.startsWith('client-documents/') ? 'client-documents' :
                     filePath.startsWith('agreement-files/') ? 'agreement-files' : 'documents';
 
-      const { data } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath);
+      // Open a blank tab immediately to avoid popup blockers
+      const newTab = window.open('about:blank', '_blank');
+      
+      if (!newTab) {
+        throw new Error('Could not open new tab. Please check your popup blocker settings.');
+      }
 
-      if (data?.publicUrl) {
-        window.open(data.publicUrl, '_blank');
+      // Create signed URL for private documents
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        newTab.close();
+        throw new Error(`Failed to create document URL: ${error.message}`);
+      }
+
+      if (data?.signedUrl) {
+        newTab.location.href = data.signedUrl;
       } else {
+        newTab.close();
         throw new Error('Could not generate file URL');
       }
     } catch (error) {

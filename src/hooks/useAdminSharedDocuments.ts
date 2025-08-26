@@ -81,16 +81,37 @@ export const useSharedDocumentActions = () => {
 
   const viewDocument = async (filePath: string) => {
     try {
-      const bucket = getBucketName(filePath);
-      const { data } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filePath);
+      console.log('Viewing shared document:', filePath);
       
-      if (data?.publicUrl) {
-        window.open(data.publicUrl, '_blank');
+      const bucket = getBucketName(filePath);
+      
+      // Open a blank tab immediately to avoid popup blockers
+      const newTab = window.open('about:blank', '_blank');
+      
+      if (!newTab) {
+        throw new Error('Could not open new tab. Please check your popup blocker settings.');
+      }
+
+      // Create signed URL for private documents
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        newTab.close();
+        throw new Error(`Failed to create document URL: ${error.message}`);
+      }
+
+      if (data?.signedUrl) {
+        newTab.location.href = data.signedUrl;
+      } else {
+        newTab.close();
+        throw new Error('Could not generate file URL');
       }
     } catch (error) {
       console.error('Error viewing document:', error);
+      // Re-throw to let calling components handle the error display
+      throw error;
     }
   };
 
