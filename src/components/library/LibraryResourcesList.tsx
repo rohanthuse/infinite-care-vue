@@ -37,12 +37,14 @@ interface LibraryResourcesListProps {
   branchId: string;
   onAddNew?: () => void;
   canDelete?: boolean;
+  showEngagementMetrics?: boolean;
 }
 
 export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
   branchId,
   onAddNew,
   canDelete = true,
+  showEngagementMetrics = true,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -61,7 +63,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
     getFileUrl
   } = useLibraryResources(branchId);
 
-  const { data: analytics } = useLibraryAnalytics(branchId);
+  const { data: analytics } = useLibraryAnalytics(branchId, showEngagementMetrics);
 
   // Get unique resource types
   const resourceTypes = useMemo(() => {
@@ -238,7 +240,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
   return (
     <div className="space-y-6">
       {/* Analytics Summary */}
-      {analytics && (
+      {analytics && showEngagementMetrics && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -270,6 +272,34 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                   <p className="text-2xl font-bold">{analytics.totalDownloads}</p>
                 </div>
                 <Download className="h-8 w-8 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Expired Resources</p>
+                  <p className="text-2xl font-bold text-destructive">{expiredResources.length}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
+      {/* Simple summary for non-admin users */}
+      {analytics && !showEngagementMetrics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Resources</p>
+                  <p className="text-2xl font-bold">{analytics.totalResources}</p>
+                </div>
+                <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -412,7 +442,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                       <TableHead>Category</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Author</TableHead>
-                      <TableHead>Stats</TableHead>
+                      {showEngagementMetrics && <TableHead>Stats</TableHead>}
                       <TableHead>Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -477,18 +507,20 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                             <p className="text-xs text-gray-500">v{resource.version}</p>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Eye className="h-3 w-3" />
-                              <span>{resource.views_count}</span>
+                        {showEngagementMetrics && (
+                          <TableCell>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                <span>{resource.views_count}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Download className="h-3 w-3" />
+                                <span>{resource.downloads_count}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Download className="h-3 w-3" />
-                              <span>{resource.downloads_count}</span>
-                            </div>
-                          </div>
-                        </TableCell>
+                          </TableCell>
+                        )}
                         <TableCell>
                           <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="h-3 w-3 mr-1" />
@@ -544,6 +576,7 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         isOpen={!!previewResource}
         onClose={() => setPreviewResource(null)}
         resource={previewResource ? convertResourceForDialog(previewResource) : null}
+        showEngagementMetrics={showEngagementMetrics}
         onOpenDocumentFile={previewResource ? (resource) => {
           // Check if it has a file path first (means file was uploaded)
           if (previewResource.file_path) {

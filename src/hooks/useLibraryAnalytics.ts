@@ -21,7 +21,7 @@ export interface LibraryAnalytics {
   }>;
 }
 
-export const useLibraryAnalytics = (branchId: string) => {
+export const useLibraryAnalytics = (branchId: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: ['library-analytics', branchId],
     queryFn: async (): Promise<LibraryAnalytics> => {
@@ -96,7 +96,7 @@ export const useLibraryAnalytics = (branchId: string) => {
         recentActivity: formattedActivity,
       };
     },
-    enabled: !!branchId,
+    enabled: !!branchId && enabled,
     refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
   });
 };

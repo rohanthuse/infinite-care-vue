@@ -53,6 +53,7 @@ interface LibraryResourcePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
   resource: LibraryResource | null;
+  showEngagementMetrics?: boolean;
   onOpenDocumentFile?: (resource: LibraryResource) => void;
 }
 
@@ -71,6 +72,7 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
   isOpen, 
   onClose, 
   resource,
+  showEngagementMetrics = true,
   onOpenDocumentFile
 }) => {
   if (!resource) return null;
@@ -324,16 +326,20 @@ export const LibraryResourcePreviewDialog: React.FC<LibraryResourcePreviewDialog
               <span className="font-medium">{formatFileSize(resource.fileSize)}</span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <Eye className="h-4 w-4 text-gray-500" />
-            <span>Views: </span>
-            <span className="font-medium">{resource.views}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ArrowDownToLine className="h-4 w-4 text-gray-500" />
-            <span>Downloads: </span>
-            <span className="font-medium">{resource.downloads}</span>
-          </div>
+          {showEngagementMetrics && (
+            <>
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-gray-500" />
+                <span>Views: </span>
+                <span className="font-medium">{resource.views}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ArrowDownToLine className="h-4 w-4 text-gray-500" />
+                <span>Downloads: </span>
+                <span className="font-medium">{resource.downloads}</span>
+              </div>
+            </>
+          )}
         </div>
         
         {resource.isPrivate && (
