@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Clock, User, Tag } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { 
   AlertDialog,
@@ -63,6 +64,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const [client, setClient] = useState(task?.client || "");
   const [category, setCategory] = useState(task?.category || "");
   const [assignee, setAssignee] = useState(task?.assignee || "");
+  const [clientVisible, setClientVisible] = useState(task?.client_visible || false);
+  const [clientCanComplete, setClientCanComplete] = useState(task?.client_can_complete || false);
   
   // Mock data for categories and clients - in a real app, these would come from props or context
   const categories = ["General", "Medical", "Administrative", "Training", "Maintenance"];
@@ -82,6 +85,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       setClient(task.client || "");
       setCategory(task.category || "");
       setAssignee(task.assignee || "");
+      setClientVisible(task.client_visible || false);
+      setClientCanComplete(task.client_can_complete || false);
       
       // Parse the due date string to a Date object
       if (task.dueDate || task.due_date) {
@@ -139,7 +144,9 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       client: client || null,
       category: category || "General",
       assignee: assignee || null,
-      due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null
+      due_date: dueDate ? format(dueDate, "yyyy-MM-dd") : null,
+      client_visible: clientVisible,
+      client_can_complete: clientCanComplete
     };
     
     onSave(updatedTask);
@@ -278,10 +285,52 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+                 </Select>
+               </div>
+             </div>
+             
+             {/* Client Visibility Settings */}
+             {(client && client !== "no-client") && (
+               <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                 <h4 className="font-medium text-blue-900">Client Visibility</h4>
+                 <div className="space-y-3">
+                   <div className="flex items-center justify-between">
+                     <div className="space-y-0.5">
+                       <Label htmlFor="editClientVisible" className="text-sm font-medium">
+                         Visible to Client
+                       </Label>
+                       <p className="text-xs text-gray-600">
+                         Allow the client to see this task in their dashboard
+                       </p>
+                     </div>
+                     <Switch
+                       id="editClientVisible"
+                       checked={clientVisible}
+                       onCheckedChange={setClientVisible}
+                     />
+                   </div>
+                   
+                   {clientVisible && (
+                     <div className="flex items-center justify-between">
+                       <div className="space-y-0.5">
+                         <Label htmlFor="editClientCanComplete" className="text-sm font-medium">
+                           Client Can Mark Complete
+                         </Label>
+                         <p className="text-xs text-gray-600">
+                           Allow the client to mark this task as completed
+                         </p>
+                       </div>
+                       <Switch
+                         id="editClientCanComplete"
+                         checked={clientCanComplete}
+                         onCheckedChange={setClientCanComplete}
+                       />
+                     </div>
+                   )}
+                 </div>
+               </div>
+             )}
+           </div>
         ) : (
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4 text-sm">

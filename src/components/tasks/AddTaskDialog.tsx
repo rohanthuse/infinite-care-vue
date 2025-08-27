@@ -74,8 +74,16 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
   const [tags, setTags] = useState("");
-  const [clientVisible, setClientVisible] = useState(false);
-  const [clientCanComplete, setClientCanComplete] = useState(false);
+  const [clientVisible, setClientVisible] = useState(() => {
+    // Remember last choice from localStorage
+    const saved = localStorage.getItem('addTaskDialog_clientVisible');
+    return saved ? JSON.parse(saved) : false;
+  });
+  const [clientCanComplete, setClientCanComplete] = useState(() => {
+    // Remember last choice from localStorage
+    const saved = localStorage.getItem('addTaskDialog_clientCanComplete');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,7 +263,13 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
             
             <div className="space-y-2">
               <Label htmlFor="client">Client</Label>
-              <Select value={clientId} onValueChange={setClientId}>
+              <Select value={clientId} onValueChange={(value) => {
+                setClientId(value);
+                // Auto-set clientVisible when a client is selected
+                if (value !== "no-client" && !clientVisible) {
+                  setClientVisible(true);
+                }
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
@@ -324,11 +338,14 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                       Allow the client to see this task in their dashboard
                     </p>
                   </div>
-                  <Switch
-                    id="clientVisible"
-                    checked={clientVisible}
-                    onCheckedChange={setClientVisible}
-                  />
+                   <Switch
+                     id="clientVisible"
+                     checked={clientVisible}
+                     onCheckedChange={(checked) => {
+                       setClientVisible(checked);
+                       localStorage.setItem('addTaskDialog_clientVisible', JSON.stringify(checked));
+                     }}
+                   />
                 </div>
                 
                 {clientVisible && (
@@ -341,11 +358,14 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                         Allow the client to mark this task as completed
                       </p>
                     </div>
-                    <Switch
-                      id="clientCanComplete"
-                      checked={clientCanComplete}
-                      onCheckedChange={setClientCanComplete}
-                    />
+                     <Switch
+                       id="clientCanComplete"
+                       checked={clientCanComplete}
+                       onCheckedChange={(checked) => {
+                         setClientCanComplete(checked);
+                         localStorage.setItem('addTaskDialog_clientCanComplete', JSON.stringify(checked));
+                       }}
+                     />
                   </div>
                 )}
               </div>

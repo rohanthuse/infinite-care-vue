@@ -63,9 +63,16 @@ const ClientTasks: React.FC = () => {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Circle className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks assigned</h3>
-            <p className="text-gray-600 text-center">
-              When your care team assigns tasks to you, they will appear here.
-            </p>
+            <div className="text-gray-600 text-center space-y-2 max-w-md">
+              <p>Tasks will appear here when your care team:</p>
+              <ul className="text-sm space-y-1">
+                <li>• Assigns a task to you</li>
+                <li>• Marks the task as "Visible to Client"</li>
+              </ul>
+              <p className="text-xs mt-4 text-gray-500">
+                If you're expecting a task, please contact your care team to ensure it's shared with you.
+              </p>
+            </div>
           </CardContent>
         </Card>
       ) : (

@@ -15,6 +15,8 @@ export interface CarerTask {
   category: string;
   created_at: string;
   completed: boolean;
+  client_visible?: boolean;
+  client_can_complete?: boolean;
   // Relations
   client?: {
     first_name: string;
@@ -123,6 +125,8 @@ export const useCarerTasks = () => {
         client_id: newTask.client_id,
         category: newTask.category || 'General',
         branch_id: carerContext.branchInfo.id,
+        client_visible: newTask.client_visible || false,
+        client_can_complete: newTask.client_can_complete || false,
       };
 
       const { data, error } = await supabase
