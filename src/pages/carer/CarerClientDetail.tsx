@@ -4,11 +4,13 @@ import { ArrowLeft, User, Mail, Phone, MapPin, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCarerClientDetail } from "@/hooks/useCarerClientData";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { format, parseISO } from "date-fns";
 
 const CarerClientDetail: React.FC = () => {
   const { clientId } = useParams<{ clientId: string }>();
   const navigate = useNavigate();
+  const { navigateToCarerPage } = useCarerNavigation();
   const { data: client, isLoading, error } = useCarerClientDetail(clientId!);
 
   if (isLoading) {
@@ -189,13 +191,27 @@ const CarerClientDetail: React.FC = () => {
             <CardTitle className="text-lg">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button className="w-full" size="sm">
+            <Button 
+              className="w-full" 
+              size="sm"
+              onClick={() => navigateToCarerPage("/careplans")}
+            >
               View Care Plan
             </Button>
-            <Button variant="outline" className="w-full" size="sm">
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              size="sm"
+              onClick={() => navigateToCarerPage("/appointments")}
+            >
               View Appointments
             </Button>
-            <Button variant="outline" className="w-full" size="sm">
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              size="sm"
+              onClick={() => navigateToCarerPage("/messages")}
+            >
               Contact Client
             </Button>
           </CardContent>

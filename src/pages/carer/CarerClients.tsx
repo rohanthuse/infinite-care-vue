@@ -97,7 +97,13 @@ const CarerClients: React.FC = () => {
                 </div>
                 
                 <div className="flex gap-2 mt-4">
-                  <Button size="sm" className="w-full">View Care Plan</Button>
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigateToCarerPage("/careplans")}
+                  >
+                    View Care Plan
+                  </Button>
                   <Button 
                     size="sm" 
                     variant="outline" 
