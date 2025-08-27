@@ -89,6 +89,7 @@ export const useTrainingManagement = (branchId: string) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
       toast({
         title: "Training assigned",
         description: `Training assigned to ${data?.length || 0} staff members.`,
