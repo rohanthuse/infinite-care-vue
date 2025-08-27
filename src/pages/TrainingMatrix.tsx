@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
 import { 
-  Search, Plus, Users, CheckCircle2, Clock, XCircle, CircleDashed
+  Search, Plus, Users, CheckCircle2, Clock, XCircle, CircleDashed, UserPlus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import TrainingFilter from "@/components/training/TrainingFilter";
 import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
 import TrainingExport from "@/components/training/TrainingExport";
 import AddTrainingDialog from "@/components/training/AddTrainingDialog";
+import { AssignTrainingDialog } from "@/components/training/AssignTrainingDialog";
 import { useTrainingCourses } from "@/hooks/useTrainingCourses";
 import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
@@ -42,6 +43,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
   const [addTrainingOpen, setAddTrainingOpen] = useState(false);
+  const [assignTrainingOpen, setAssignTrainingOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   
   // Advanced filter state
@@ -59,7 +61,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const { data: trainingCourses = [], isLoading: isLoadingCourses } = useTrainingCourses(branchId);
   const { records: trainingRecords = [], isLoading: isLoadingRecords } = useStaffTrainingRecords(branchId);
   const { staff = [], isLoading: isLoadingStaff } = useBranchStaffAndClients(branchId);
-  const { createCourse, isCreating } = useTrainingManagement(branchId);
+  const { createCourse, assignTraining, isCreating, isAssigning } = useTrainingManagement(branchId);
 
   const isLoading = isLoadingCourses || isLoadingRecords || isLoadingStaff;
 
@@ -243,6 +245,11 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     createCourse(courseData);
     setAddTrainingOpen(false);
   };
+
+  const handleAssignTraining = (courseId: string, staffIds: string[]) => {
+    assignTraining({ staffIds, courseId });
+    setAssignTrainingOpen(false);
+  };
   
   const handleApplyFilters = (filters: {
     categories: TrainingCategory[];
@@ -326,6 +333,17 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
               size="default"
             />
             
+            
+            <Button 
+              variant="outline" 
+              className="gap-2 whitespace-nowrap"
+              onClick={() => setAssignTrainingOpen(true)}
+              disabled={isAssigning}
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">{isAssigning ? 'Assigning...' : 'Assign Training'}</span>
+            </Button>
+            
             <Button 
               variant="default" 
               className="gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700"
@@ -340,6 +358,16 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
               open={addTrainingOpen} 
               onOpenChange={setAddTrainingOpen}
               onAddTraining={handleAddTraining} 
+            />
+            
+            <AssignTrainingDialog
+              open={assignTrainingOpen}
+              onOpenChange={setAssignTrainingOpen}
+              onAssign={handleAssignTraining}
+              isAssigning={isAssigning}
+              trainingCourses={trainingCourses}
+              staff={staff}
+              existingRecords={trainingRecords}
             />
           </div>
         </div>
