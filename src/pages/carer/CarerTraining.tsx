@@ -150,10 +150,10 @@ const CarerTraining: React.FC = () => {
     switch (record.status) {
       case "completed": return 100;
       case "in-progress": 
-        return record.score ? (record.score / record.training_course.max_score) * 100 : 60;
+        return record.score && record.training_course?.max_score ? (record.score / record.training_course.max_score) * 100 : 60;
       case "expired": return 100; // It was completed but expired
       case "not-started": return 0;
-      case "paused": return record.score ? (record.score / record.training_course.max_score) * 100 : 30;
+      case "paused": return record.score && record.training_course?.max_score ? (record.score / record.training_course.max_score) * 100 : 30;
       default: return 0;
     }
   };
@@ -466,7 +466,7 @@ const CarerTraining: React.FC = () => {
               {actionType === 'start' ? 'Start Training' : 'Complete Training'}
             </DialogTitle>
           </DialogHeader>
-          {selectedTraining && (
+          {selectedTraining && selectedTraining.training_course && (
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold">{selectedTraining.training_course.title}</h3>

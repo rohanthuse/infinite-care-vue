@@ -30,7 +30,7 @@ export interface CarerTrainingRecord {
     required_score: number;
     max_score: number;
     is_mandatory: boolean;
-  };
+  } | null;
 }
 
 export interface CarerTrainingStats {
@@ -58,7 +58,7 @@ export const useCarerTraining = () => {
         .from('staff_training_records')
         .select(`
           *,
-          training_course:training_courses(
+          training_course:training_courses!inner(
             id, title, description, category, valid_for_months, 
             required_score, max_score, is_mandatory
           )
@@ -82,8 +82,8 @@ export const useCarerTraining = () => {
     completionPercentage: trainingRecords.length > 0 
       ? Math.round((trainingRecords.filter(r => r.status === 'completed').length / trainingRecords.length) * 100)
       : 0,
-    mandatoryCompleted: trainingRecords.filter(r => r.training_course.is_mandatory && r.status === 'completed').length,
-    mandatoryTotal: trainingRecords.filter(r => r.training_course.is_mandatory).length,
+    mandatoryCompleted: trainingRecords.filter(r => r.training_course?.is_mandatory && r.status === 'completed').length,
+    mandatoryTotal: trainingRecords.filter(r => r.training_course?.is_mandatory).length,
   };
 
   return {
