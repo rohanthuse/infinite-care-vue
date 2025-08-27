@@ -12,7 +12,8 @@ import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, Clock, XCircle, CircleDashed, Download, FileText } from "lucide-react";
 import { format } from "date-fns";
 import { useTrainingFileUpload } from "@/hooks/useTrainingFileUpload";
-import { StaffTrainingRecord } from "@/hooks/useStaffTrainingRecords";
+import { StaffTrainingRecord, EvidenceFile } from "@/hooks/useStaffTrainingRecords";
+import { formatFileSize } from "@/lib/utils";
 
 interface TrainingRecordDetailsDialogProps {
   open: boolean;
@@ -61,9 +62,9 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
     }
   };
 
-  const handleDownloadFile = async (fileName: string) => {
+  const handleDownloadFile = async (file: EvidenceFile) => {
     try {
-      const url = getFileUrl(fileName);
+      const url = getFileUrl(file.storagePath);
       if (url) {
         window.open(url, '_blank');
       }
@@ -72,12 +73,34 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
     }
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  // Helper function to handle both old string format and new object format
+  const normalizeEvidenceFiles = (files: any[]): EvidenceFile[] => {
+    if (!files) return [];
+    
+    return files.map((file, index) => {
+      // If it's already in the new format
+      if (typeof file === 'object' && file.name && file.storagePath) {
+        return file as EvidenceFile;
+      }
+      
+      // If it's the old string format, convert it
+      if (typeof file === 'string') {
+        return {
+          name: file,
+          size: 0,
+          storagePath: file,
+          uploadedAt: new Date().toISOString()
+        } as EvidenceFile;
+      }
+      
+      // Fallback
+      return {
+        name: `File ${index + 1}`,
+        size: 0,
+        storagePath: String(file),
+        uploadedAt: new Date().toISOString()
+      } as EvidenceFile;
+    });
   };
 
   return (
@@ -159,43 +182,46 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
           {/* Uploaded Certificates */}
           <div>
             <label className="text-sm font-medium text-gray-900 mb-3 block">
-              Uploaded Certificates ({record.evidence_files?.length || 0})
+              Uploaded Certificates ({normalizeEvidenceFiles(record.evidence_files || []).length})
             </label>
             
-            {record.evidence_files && record.evidence_files.length > 0 ? (
-              <div className="space-y-2">
-                {record.evidence_files.map((fileName, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-md border"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-gray-500" />
-                      <div>
-                        <div className="font-medium text-sm">{fileName}</div>
-                        <div className="text-xs text-gray-500">
-                          Certificate file
+            {(() => {
+              const evidenceFiles = normalizeEvidenceFiles(record.evidence_files || []);
+              return evidenceFiles.length > 0 ? (
+                <div className="space-y-2">
+                  {evidenceFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-gray-500" />
+                        <div>
+                          <div className="font-medium text-sm">{file.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {file.size > 0 ? formatFileSize(file.size) : 'Certificate file'}
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadFile(file)}
+                        className="gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownloadFile(fileName)}
-                      className="gap-2"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
-                <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">No certificates uploaded yet</p>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
+                  <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">No certificates uploaded yet</p>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </DialogContent>
