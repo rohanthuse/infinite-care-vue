@@ -43,6 +43,7 @@ interface TaskDetailDialogProps {
   onComplete: (taskId: string) => void;
   onSave: (task: any) => void;
   onDelete?: (taskId: string) => void;
+  allowEditCompleted?: boolean;
 }
 
 const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({ 
@@ -51,7 +52,8 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   task, 
   onComplete,
   onSave,
-  onDelete
+  onDelete,
+  allowEditCompleted = true
 }) => {
   const [editMode, setEditMode] = useState(false);
   const [title, setTitle] = useState(task?.title || "");
@@ -344,9 +346,11 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
                   Mark Complete
                 </Button>
               )}
-              <Button variant="outline" onClick={() => setEditMode(true)}>
-                Edit Task
-              </Button>
+              {(allowEditCompleted || !task?.completed) && (
+                <Button variant="outline" onClick={() => setEditMode(true)}>
+                  Edit Task
+                </Button>
+              )}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive">Delete</Button>

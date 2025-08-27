@@ -490,6 +490,7 @@ const CarerTasks: React.FC = () => {
           onComplete={handleCompleteTask}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
+          allowEditCompleted={false}
         />
       )}
       
