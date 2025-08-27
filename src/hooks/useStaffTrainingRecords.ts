@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +17,7 @@ export interface StaffTrainingRecord {
   assigned_by: string | null;
   created_at: string;
   updated_at: string;
+  evidence_files: string[] | null;
   // Relations
   staff: {
     id: string;

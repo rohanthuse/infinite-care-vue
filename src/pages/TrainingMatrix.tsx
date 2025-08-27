@@ -20,6 +20,7 @@ import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
 import TrainingExport from "@/components/training/TrainingExport";
 import AddTrainingDialog from "@/components/training/AddTrainingDialog";
 import { AssignTrainingDialog } from "@/components/training/AssignTrainingDialog";
+import TrainingRecordDetailsDialog from "@/components/training/TrainingRecordDetailsDialog";
 import { useTrainingCourses } from "@/hooks/useTrainingCourses";
 import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
@@ -44,6 +45,12 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const [categoryFilter, setCategoryFilter] = useState<TrainingCategory | 'all'>('all');
   const [addTrainingOpen, setAddTrainingOpen] = useState(false);
   const [assignTrainingOpen, setAssignTrainingOpen] = useState(false);
+  const [trainingDetailsOpen, setTrainingDetailsOpen] = useState(false);
+  const [selectedTrainingRecord, setSelectedTrainingRecord] = useState<{
+    record: any;
+    staffName: string;
+    trainingTitle: string;
+  } | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   
   // Advanced filter state
@@ -220,11 +227,16 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const handleCellClick = (staffId: string, trainingId: string) => {
     const staff = filteredStaff.find(s => s.id === staffId);
     const training = filteredTrainings.find(t => t.id === trainingId);
+    const record = trainingRecords.find(r => r.staff_id === staffId && r.training_course_id === trainingId);
     
-    toast({
-      title: "Training Details",
-      description: `Viewing details for ${training?.title} for ${staff?.name}`,
-    });
+    if (record && staff && training) {
+      setSelectedTrainingRecord({
+        record,
+        staffName: staff.name,
+        trainingTitle: training.title
+      });
+      setTrainingDetailsOpen(true);
+    }
   };
   
   const handleAddTraining = (trainingData: any) => {
@@ -368,6 +380,14 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
               trainingCourses={trainingCourses}
               staff={staff}
               existingRecords={trainingRecords}
+            />
+            
+            <TrainingRecordDetailsDialog
+              open={trainingDetailsOpen}
+              onOpenChange={setTrainingDetailsOpen}
+              record={selectedTrainingRecord?.record || null}
+              staffName={selectedTrainingRecord?.staffName || ''}
+              trainingTitle={selectedTrainingRecord?.trainingTitle || ''}
             />
           </div>
         </div>
