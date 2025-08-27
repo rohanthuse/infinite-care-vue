@@ -86,10 +86,10 @@ const CarerTasks: React.FC = () => {
       
     const searchMatch = 
       searchQuery === "" || 
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (clientName && clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (task.category && task.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (task.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     // Completed/pending filter
     const completedMatch = 

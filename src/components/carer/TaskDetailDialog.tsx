@@ -80,13 +80,13 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
       if (task.dueDate || task.due_date) {
         const dateString = task.dueDate || task.due_date;
         try {
-          if (dateString.includes('-')) {
+          if (typeof dateString === 'string' && dateString.includes('-')) {
             // ISO date format
             const parsedDate = parseISO(dateString);
             if (isValid(parsedDate)) {
               setDueDate(parsedDate);
             }
-          } else if (dateString.includes(',')) {
+          } else if (typeof dateString === 'string' && dateString.includes(',')) {
             // Human-readable format with time
             const dateString2 = dateString.split(',')[0].trim();
             
@@ -149,7 +149,7 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   // Format date for display
   const formatTaskDate = (dueDateString: string) => {
     try {
-      if (dueDateString.includes('-')) {
+      if (typeof dueDateString === 'string' && dueDateString.includes('-')) {
         // Handle ISO date format
         const date = parseISO(dueDateString);
         return format(date, "MMMM d, yyyy");
