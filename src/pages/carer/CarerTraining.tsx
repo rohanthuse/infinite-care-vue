@@ -181,7 +181,12 @@ const CarerTraining: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">My Training</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">My Training</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Showing {trainingRecords?.length || 0} training courses assigned to you
+        </p>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Card className="col-span-1">
@@ -439,9 +444,15 @@ const CarerTraining: React.FC = () => {
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
               <GraduationCap className="h-6 w-6 text-gray-500" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">No training courses found</h3>
-            <p className="text-gray-500 mt-2">
-              {searchQuery ? "Try a different search term" : "No training courses match the current filter"}
+            <h3 className="text-lg font-medium text-gray-900">
+              {searchQuery || activeTab !== 'all' || selectedStatus !== 'all' 
+                ? "No training courses found" 
+                : "No training assigned yet"}
+            </h3>
+            <p className="text-gray-500 mt-2 max-w-md mx-auto">
+              {searchQuery || activeTab !== 'all' || selectedStatus !== 'all' 
+                ? "Try adjusting your search or filters to see more results" 
+                : "Training courses will appear here once they are assigned to you by your administrator. Contact your supervisor if you need access to specific training."}
             </p>
           </div>
         )}
