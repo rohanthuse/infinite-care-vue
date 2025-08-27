@@ -7,7 +7,7 @@ import { Calendar, Clock, User, CheckCircle2, Circle } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ClientTasks: React.FC = () => {
-  const { tasks, isLoading, completeTask, isCompleting } = useClientTasks();
+  const { tasks, isLoading, error, completeTask, isCompleting, clientId, isAuthenticated } = useClientTasks();
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -45,6 +45,32 @@ const ClientTasks: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
+          <p className="text-gray-600 mt-1">
+            Tasks assigned to you by your care team
+          </p>
+        </div>
+        
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Circle className="h-12 w-12 text-red-400 mb-4" />
+            <h3 className="text-lg font-medium text-red-900 mb-2">Unable to load tasks</h3>
+            <div className="text-red-600 text-center space-y-2 max-w-md">
+              <p className="text-sm">{error.message}</p>
+              <p className="text-xs mt-4 text-gray-500">
+                Please try refreshing the page or contact your care team for assistance.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

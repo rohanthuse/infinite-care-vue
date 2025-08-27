@@ -66,14 +66,26 @@ const fetchClientTasks = async (clientId: string): Promise<ClientTask[]> => {
 };
 
 export const useClientTasks = () => {
-  const { clientId } = useClientAuth();
+  const { clientId, isAuthenticated, error: authError } = useClientAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const tasksQuery = useQuery({
     queryKey: ['client-tasks', clientId],
-    queryFn: () => fetchClientTasks(clientId!),
-    enabled: Boolean(clientId),
+    queryFn: () => {
+      if (!clientId) {
+        throw new Error('Client ID not found. Please ensure you are logged in as a client.');
+      }
+      return fetchClientTasks(clientId);
+    },
+    enabled: Boolean(clientId && isAuthenticated),
+    retry: (failureCount, error: any) => {
+      // Don't retry if it's an authentication issue
+      if (error?.message?.includes('Client ID not found')) {
+        return false;
+      }
+      return failureCount < 2;
+    }
   });
 
   const completeTaskMutation = useMutation({
@@ -110,8 +122,10 @@ export const useClientTasks = () => {
   return {
     tasks: tasksQuery.data || [],
     isLoading: tasksQuery.isLoading,
-    error: tasksQuery.error,
+    error: tasksQuery.error || authError,
     completeTask: completeTaskMutation.mutate,
     isCompleting: completeTaskMutation.isPending,
+    clientId,
+    isAuthenticated,
   };
 };

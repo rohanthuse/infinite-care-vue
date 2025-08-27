@@ -68,11 +68,11 @@ export const useUserRole = () => {
       let additionalData: Partial<UserWithRole> = {};
       
       if (role === 'client') {
-        // For clients, get client record by email
+        // For clients, get client record by auth_user_id
         const { data: clientData } = await supabase
           .from('clients')
           .select('id, first_name, last_name, branch_id')
-          .eq('email', user.email)
+          .eq('auth_user_id', user.id)
           .single();
           
         if (clientData) {
