@@ -66,6 +66,11 @@ const TaskDetailDialog: React.FC<TaskDetailDialogProps> = ({
   const categories = ["General", "Medical", "Administrative", "Training", "Maintenance"];
   const clients = ["John Doe", "Jane Smith", "Bob Johnson"];
   
+  // Reset edit mode when dialog opens or task changes
+  useEffect(() => {
+    setEditMode(false);
+  }, [open, task]);
+
   // Initialize form when task changes
   useEffect(() => {
     if (task) {

@@ -208,11 +208,13 @@ const CarerTasks: React.FC = () => {
   const handleCompleteTask = (taskId: string) => {
     completeTask(taskId);
     setDetailDialogOpen(false);
+    setSelectedTask(null);
   };
 
   const handleSaveTask = (updatedTask: any) => {
     updateTask(updatedTask);
     setDetailDialogOpen(false);
+    setSelectedTask(null);
   };
 
   const handleAddTask = (taskData: any) => {
@@ -223,6 +225,7 @@ const CarerTasks: React.FC = () => {
   const handleDeleteTask = (taskId: string) => {
     deleteTask(taskId);
     setDetailDialogOpen(false);
+    setSelectedTask(null);
   };
 
   const handleApplyFilters = (newFilters: any) => {
@@ -477,7 +480,12 @@ const CarerTasks: React.FC = () => {
       {selectedTask && (
         <TaskDetailDialog
           open={detailDialogOpen}
-          onOpenChange={setDetailDialogOpen}
+          onOpenChange={(open) => {
+            setDetailDialogOpen(open);
+            if (!open) {
+              setSelectedTask(null);
+            }
+          }}
           task={selectedTask}
           onComplete={handleCompleteTask}
           onSave={handleSaveTask}
