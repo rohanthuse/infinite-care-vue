@@ -5472,7 +5472,9 @@ export type Database = {
           assignee_id: string | null
           branch_id: string
           category: string | null
+          client_can_complete: boolean | null
           client_id: string | null
+          client_visible: boolean | null
           completion_percentage: number | null
           created_at: string
           created_by: string | null
@@ -5490,7 +5492,9 @@ export type Database = {
           assignee_id?: string | null
           branch_id: string
           category?: string | null
+          client_can_complete?: boolean | null
           client_id?: string | null
+          client_visible?: boolean | null
           completion_percentage?: number | null
           created_at?: string
           created_by?: string | null
@@ -5508,7 +5512,9 @@ export type Database = {
           assignee_id?: string | null
           branch_id?: string
           category?: string | null
+          client_can_complete?: boolean | null
           client_id?: string | null
+          client_visible?: boolean | null
           completion_percentage?: number | null
           created_at?: string
           created_by?: string | null

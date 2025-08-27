@@ -25,6 +25,7 @@ const ClientDashboard = () => {
   const menuItems = [
     { label: "Overview", icon: Home, path: `/${tenantSlug}/client-dashboard` },
     { label: "Appointments", icon: Calendar, path: `/${tenantSlug}/client-dashboard/appointments` },
+    { label: "Tasks", icon: FileText, path: `/${tenantSlug}/client-dashboard/tasks` },
     { label: "Care Plans", icon: FileText, path: `/${tenantSlug}/client-dashboard/care-plans` },
     { label: "My Forms", icon: FileText, path: `/${tenantSlug}/client-dashboard/forms` },
     { label: "Library", icon: BookOpen, path: `/${tenantSlug}/client-dashboard/library` },
@@ -47,6 +48,8 @@ const ClientDashboard = () => {
       setPageTitle("Overview");
     } else if (path.includes("/appointments")) {
       setPageTitle("Appointments");
+    } else if (path.includes("/tasks")) {
+      setPageTitle("My Tasks");
     } else if (path.includes("/care-plans")) {
       setPageTitle("Care Plans");
     } else if (path.includes("/forms")) {

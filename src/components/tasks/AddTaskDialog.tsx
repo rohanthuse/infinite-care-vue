@@ -22,6 +22,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { useTasks } from "@/hooks/useTasks";
@@ -73,6 +74,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [notes, setNotes] = useState("");
   const [tags, setTags] = useState("");
+  const [clientVisible, setClientVisible] = useState(false);
+  const [clientCanComplete, setClientCanComplete] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +93,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       due_date: dueDate ? dueDate.toISOString() : null,
       client_id: clientId === "no-client" ? null : clientId,
       category,
+      client_visible: clientVisible,
+      client_can_complete: clientCanComplete,
     };
     
     if (isCarerContext && carerTasks.addTask) {
@@ -123,6 +128,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     setDueDate(undefined);
     setNotes("");
     setTags("");
+    setClientVisible(false);
+    setClientCanComplete(false);
   };
 
   const categories = [
@@ -302,6 +309,48 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
               rows={2}
             />
           </div>
+          
+          {/* Client Visibility Settings */}
+          {clientId !== "no-client" && (
+            <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-medium text-blue-900">Client Visibility</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="clientVisible" className="text-sm font-medium">
+                      Visible to Client
+                    </Label>
+                    <p className="text-xs text-gray-600">
+                      Allow the client to see this task in their dashboard
+                    </p>
+                  </div>
+                  <Switch
+                    id="clientVisible"
+                    checked={clientVisible}
+                    onCheckedChange={setClientVisible}
+                  />
+                </div>
+                
+                {clientVisible && (
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="clientCanComplete" className="text-sm font-medium">
+                        Client Can Mark Complete
+                      </Label>
+                      <p className="text-xs text-gray-600">
+                        Allow the client to mark this task as completed
+                      </p>
+                    </div>
+                    <Switch
+                      id="clientCanComplete"
+                      checked={clientCanComplete}
+                      onCheckedChange={setClientCanComplete}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           
           <DialogFooter className="mt-6">
             <DialogClose asChild>

@@ -16,6 +16,7 @@ import ClientAssignedForms from "@/pages/client/ClientAssignedForms";
 import ClientEventsLogs from "@/pages/client/ClientEventsLogs";
 import ClientFillForm from "@/pages/client/ClientFillForm";
 import ClientLibrary from "@/pages/client/ClientLibrary";
+import ClientTasks from "@/pages/client/ClientTasks";
 import { Suspense } from "react";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
@@ -70,6 +71,7 @@ const ClientRoutes = () => [
     <Route path="client-dashboard" element={<ClientDashboard />}>
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
+      <Route path="tasks" element={<ClientTasks />} />
       <Route path="care-plans" element={<ClientCarePlans />} />
       <Route path="forms" element={<ClientAssignedForms />} />
       <Route path="forms/:formId" element={<ClientFillForm />} />

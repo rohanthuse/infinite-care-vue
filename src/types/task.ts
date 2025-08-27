@@ -26,6 +26,9 @@ export interface Task {
   assignee_id?: string;
   client_id?: string;
   created_by?: string;
+  // Client visibility fields
+  client_visible?: boolean;
+  client_can_complete?: boolean;
 }
 
 export interface TaskColumn {
