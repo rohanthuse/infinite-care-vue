@@ -132,7 +132,6 @@ export const useClientMessageThreads = () => {
           messages(
             id,
             sender_id,
-            sender_name,
             content,
             created_at,
             has_attachments
@@ -160,7 +159,13 @@ export const useClientMessageThreads = () => {
         lastMessage: thread.messages?.length > 0 ? {
           content: thread.messages[thread.messages.length - 1].content,
           timestamp: new Date(thread.messages[thread.messages.length - 1].created_at),
-          senderName: thread.messages[thread.messages.length - 1].sender_name,
+          senderName: (() => {
+            const lastMessage = thread.messages[thread.messages.length - 1];
+            const participant = thread.message_participants?.find(
+              p => p.user_id === lastMessage.sender_id
+            );
+            return participant?.user_name || 'Unknown';
+          })(),
           hasAttachments: thread.messages[thread.messages.length - 1].has_attachments
         } : undefined,
         unreadCount: 0, // TODO: Calculate actual unread count
@@ -189,22 +194,31 @@ export const useClientThreadMessages = (threadId: string) => {
         throw error;
       }
 
-      return (messagesData || []).map((msg: any) => ({
-        id: msg.id,
-        threadId: msg.thread_id,
-        senderId: msg.sender_id,
-        senderName: msg.sender_name,
-        senderType: msg.sender_type,
-        content: msg.content,
-        timestamp: new Date(msg.created_at),
-        isRead: msg.is_read || false,
-        hasAttachments: msg.has_attachments || false,
-        attachments: msg.attachments,
-        messageType: msg.message_type,
-        priority: msg.priority,
-        actionRequired: msg.action_required,
-        adminEyesOnly: msg.admin_eyes_only
-      }));
+      // Get participant names for this thread
+      const { data: participants } = await supabase
+        .from('message_participants')
+        .select('user_id, user_name')
+        .eq('thread_id', threadId);
+
+      return (messagesData || []).map((msg: any) => {
+        const participant = participants?.find(p => p.user_id === msg.sender_id);
+        return {
+          id: msg.id,
+          threadId: msg.thread_id,
+          senderId: msg.sender_id,
+          senderName: participant?.user_name || 'Unknown',
+          senderType: msg.sender_type,
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+          isRead: msg.is_read || false,
+          hasAttachments: msg.has_attachments || false,
+          attachments: msg.attachments,
+          messageType: msg.message_type,
+          priority: msg.priority,
+          actionRequired: msg.action_required,
+          adminEyesOnly: msg.admin_eyes_only
+        };
+      });
     },
     enabled: !!threadId,
     staleTime: 5000,
@@ -292,7 +306,6 @@ export const useClientCreateThread = () => {
         .insert({
           thread_id: threadData.id,
           sender_id: clientId,
-          sender_name: 'Client', // Will be updated by trigger
           sender_type: 'client',
           content: initialMessage,
           has_attachments: attachments.length > 0,
@@ -336,7 +349,6 @@ export const useClientSendMessage = () => {
         .insert({
           thread_id: threadId,
           sender_id: clientId,
-          sender_name: 'Client', // Will be updated by trigger
           sender_type: 'client',
           content,
           has_attachments: attachments.length > 0,
