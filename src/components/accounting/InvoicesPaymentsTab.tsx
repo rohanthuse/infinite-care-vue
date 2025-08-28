@@ -13,6 +13,8 @@ import { ViewPaymentDialog } from './ViewPaymentDialog';
 import { useClientsList } from '@/hooks/useAccountingData';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
+import { useBranchPayments } from '@/hooks/useBranchPayments';
+import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
 
 interface InvoicesPaymentsTabProps {
@@ -37,6 +39,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   
   // Fetch unpaid invoices for payment recording
   const { data: allInvoices } = useBranchInvoices(branchId);
+  const { data: allPayments } = useBranchPayments(branchId);
   const unpaidInvoices = allInvoices?.filter(invoice => invoice.remaining_amount > 0).map(invoice => ({
     id: invoice.id,
     invoice_number: invoice.invoice_number,
@@ -94,6 +97,29 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const handleViewPayment = (paymentId: string) => {
     setSelectedPaymentForView(paymentId);
     setIsViewPaymentOpen(true);
+  };
+
+  // Handler for generating reports
+  const handleGenerateReport = () => {
+    if (activeSubTab === 'invoices' && allInvoices?.length) {
+      const columns = ['invoice_number', 'client_name', 'total_amount', 'due_date', 'status', 'remaining_amount'];
+      ReportExporter.exportToPDF({
+        title: 'Invoices Report',
+        data: allInvoices,
+        columns,
+        branchName,
+        fileName: `${branchName?.replace(/\s+/g, '_')}_invoices_report.pdf`
+      });
+    } else if (activeSubTab === 'payments' && allPayments?.length) {
+      const columns = ['payment_date', 'client_name', 'invoice_number', 'payment_amount', 'payment_method', 'payment_reference'];
+      ReportExporter.exportToPDF({
+        title: 'Payments Report',
+        data: allPayments,
+        columns,
+        branchName,
+        fileName: `${branchName?.replace(/\s+/g, '_')}_payments_report.pdf`
+      });
+    }
   };
 
   if (!branchId) {
@@ -154,7 +180,12 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               <PoundSterling className="h-4 w-4" />
               Record Payment
             </Button>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={handleGenerateReport}
+              disabled={(activeSubTab === 'invoices' && !allInvoices?.length) || (activeSubTab === 'payments' && !allPayments?.length)}
+            >
               <FileText className="h-4 w-4" />
               Generate Report
             </Button>
