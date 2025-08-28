@@ -24,6 +24,8 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
     email: "",
     phone: "",
     address: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
     experience: "",
     specialization: "",
     availability: "",
@@ -41,6 +43,8 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
         email: carer.email || "",
         phone: carer.phone || "",
         address: carer.address || "",
+        emergency_contact_name: carer.emergency_contact_name || "",
+        emergency_contact_phone: carer.emergency_contact_phone || "",
         experience: carer.experience || "",
         specialization: carer.specialization || "",
         availability: carer.availability || "",
@@ -150,6 +154,36 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
               onChange={(e) => handleInputChange("address", e.target.value)}
               rows={2}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
+              <Input
+                id="emergency_contact_name"
+                type="text"
+                placeholder="Full name of emergency contact person"
+                value={formData.emergency_contact_name}
+                onChange={(e) => handleInputChange("emergency_contact_name", e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Name of person to contact in case of emergency
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
+              <Input
+                id="emergency_contact_phone"
+                type="tel"
+                placeholder="e.g., +44 123 456 7890"
+                pattern="[+]?[\d\s\-\(\)]*"
+                value={formData.emergency_contact_phone}
+                onChange={(e) => handleInputChange("emergency_contact_phone", e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Phone number to reach your emergency contact
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

@@ -96,10 +96,13 @@ export default function CarerOnboarding() {
             <Input
               id="emergency_contact_name"
               type="text"
-              placeholder={carerProfile?.emergency_contact_name || "Emergency contact name"}
+              placeholder="Full name of emergency contact person"
               value={profileData.emergency_contact_name}
               onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Name of person to contact in case of emergency
+            </p>
           </div>
 
           <div>
@@ -107,10 +110,14 @@ export default function CarerOnboarding() {
             <Input
               id="emergency_contact_phone"
               type="tel"
-              placeholder={carerProfile?.emergency_contact_phone || "Emergency contact phone"}
+              placeholder="e.g., +44 123 456 7890"
+              pattern="[+]?[\d\s\-\(\)]*"
               value={profileData.emergency_contact_phone}
               onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Phone number to reach your emergency contact
+            </p>
           </div>
 
           <div>
