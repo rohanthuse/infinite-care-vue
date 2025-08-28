@@ -235,6 +235,7 @@ export const useVisitRecord = (bookingId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit-record'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
       toast.success('Visit completed successfully');
     },
     onError: (error) => {

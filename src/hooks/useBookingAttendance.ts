@@ -82,6 +82,7 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       console.log('[useBookingAttendance] Success, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['today-attendance'] });
       
