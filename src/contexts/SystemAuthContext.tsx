@@ -40,11 +40,10 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
       try {
         console.log('[SystemAuth] Validating session for:', session.user.email);
 
-        // Verify user has super_admin role
+        // Use RPC to get user's highest role
         const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', session.user.id);
+          .rpc('get_user_highest_role', { p_user_id: session.user.id })
+          .single();
 
         if (roleError) {
           console.error('[SystemAuth] Failed to fetch user roles:', roleError);
@@ -55,11 +54,12 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           return;
         }
 
-        const roles = roleData.map(r => r.role);
-        const isSystemAdmin = roles.includes('super_admin') || roles.includes('app_admin');
+        const userRole = roleData.role;
+        // System auth should only validate app_admin, not super_admin
+        const isSystemAdmin = userRole === 'app_admin';
 
         if (!isSystemAdmin) {
-          console.log('[SystemAuth] User lacks system admin permissions');
+          console.log('[SystemAuth] User lacks app_admin permissions for system access');
           if (mounted) {
             setUser(null);
             setIsLoading(false);
@@ -72,7 +72,7 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           id: session.user.id,
           email: session.user.email || '',
           name: session.user.email || '',
-          roles: roles
+          roles: [userRole]
         };
 
         console.log('[SystemAuth] Session validated for system admin:', systemUser.email);
@@ -194,11 +194,10 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
       if (authData.user) {
         console.log('[SystemAuth] Direct Supabase auth successful for:', authData.user.email);
         
-        // Get user roles from database
+        // Use RPC to get user's highest role
         const { data: roleData, error: roleError } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', authData.user.id);
+          .rpc('get_user_highest_role', { p_user_id: authData.user.id })
+          .single();
 
         if (roleError) {
           console.error('[SystemAuth] Failed to fetch user roles:', roleError);
@@ -206,11 +205,12 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           return { error: 'Failed to verify admin permissions' };
         }
 
-        const roles = roleData.map(r => r.role);
-        const isSystemAdmin = roles.includes('super_admin') || roles.includes('app_admin');
+        const userRole = roleData.role;
+        // System auth should only validate app_admin, not super_admin
+        const isSystemAdmin = userRole === 'app_admin';
 
         if (!isSystemAdmin) {
-          console.error('[SystemAuth] User is not a system admin');
+          console.error('[SystemAuth] User is not an app_admin');
           await supabase.auth.signOut();
           setError('Insufficient permissions for system access');
           return { error: 'Insufficient permissions for system access' };
@@ -220,7 +220,7 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           id: authData.user.id,
           email: authData.user.email || '',
           name: authData.user.email || '',
-          roles: roles
+          roles: [userRole]
         };
 
         console.log('[SystemAuth] System admin login successful:', user.email);

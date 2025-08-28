@@ -25,8 +25,8 @@ export const SystemGuard: React.FC<SystemGuardProps> = ({
       }
 
       if (requiredRoles.length > 0 && !requiredRoles.some(role => hasRole(role))) {
-        console.log('[SystemGuard] User lacks required roles, redirecting to dashboard');
-        navigate('/system-dashboard', { replace: true });
+        console.log('[SystemGuard] User lacks required app_admin roles, redirecting to home');
+        navigate('/', { replace: true });
         return;
       }
       

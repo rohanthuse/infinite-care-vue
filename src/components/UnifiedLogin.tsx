@@ -283,7 +283,7 @@ const UnifiedLogin = () => {
       // Detect organization membership for all users (including super admins)
       const orgSlug = await detectUserOrganization(authData.user.id);
 
-      // For super admins with organization, route to TenantDashboard for full functionality
+      // For super admins, always route to their organization dashboard
       if (userRole === 'super_admin') {
         if (orgSlug) {
           console.log('[AUTH DEBUG] Super admin with organization detected, redirecting to tenant dashboard:', authData.user.email, '-> /' + orgSlug + '/dashboard');
@@ -291,11 +291,19 @@ const UnifiedLogin = () => {
           navigate(`/${orgSlug}/dashboard`);
           return;
         } else {
-          console.log('[AUTH DEBUG] Super admin without organization, redirecting to system dashboard for user:', authData.user.email);
-          toast.success("Welcome back, System Administrator!");
-          navigate('/system-dashboard');
+          // Super admins should always have an organization
+          toast.error("No organization found for super admin account. Please contact support.");
+          await supabase.auth.signOut();
           return;
         }
+      }
+
+      // For app_admin (system administrators), route to system dashboard
+      if (userRole === 'app_admin') {
+        console.log('[AUTH DEBUG] App admin detected, redirecting to system dashboard:', authData.user.email);
+        toast.success("Welcome back, System Administrator!");
+        navigate('/system-dashboard');
+        return;
       }
 
       // For non-super admin users, organization is required
