@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useClientAuth } from "@/hooks/useClientAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
 
@@ -111,12 +112,13 @@ export const useClientCareTeam = () => {
 
 export const useClientMessageThreads = () => {
   const { clientId } = useClientAuth();
+  const { data: currentUser } = useUserRole();
   const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['client-message-threads', clientId, organization?.id],
+    queryKey: ['client-message-threads', currentUser?.id, organization?.id],
     queryFn: async (): Promise<MessageThread[]> => {
-      if (!clientId || !organization?.id) {
+      if (!currentUser?.id || !organization?.id) {
         return [];
       }
 
@@ -137,7 +139,7 @@ export const useClientMessageThreads = () => {
             has_attachments
           )
         `)
-        .eq('message_participants.user_id', clientId)
+        .eq('message_participants.user_id', currentUser.id)
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -149,7 +151,7 @@ export const useClientMessageThreads = () => {
         id: thread.id,
         subject: thread.subject,
         participants: thread.message_participants
-          .filter((p: any) => p.user_id !== clientId)
+          .filter((p: any) => p.user_id !== currentUser.id)
           .map((p: any) => ({
             id: p.user_id,
             name: p.user_name,
@@ -172,7 +174,7 @@ export const useClientMessageThreads = () => {
         createdAt: new Date(thread.created_at)
       }));
     },
-    enabled: !!clientId && !!organization?.id,
+    enabled: !!currentUser?.id && !!organization?.id,
     staleTime: 10000,
   });
 };
@@ -227,7 +229,8 @@ export const useClientThreadMessages = (threadId: string) => {
 
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
-  const { clientId } = useClientAuth();
+  const { clientId, clientName } = useClientAuth();
+  const { data: currentUser } = useUserRole();
   const { organization } = useTenant();
   
   return useMutation({
@@ -246,7 +249,7 @@ export const useClientCreateThread = () => {
       initialMessage: string;
       attachments?: any[];
     }) => {
-      if (!clientId || !organization?.id) {
+      if (!currentUser?.id || !organization?.id) {
         throw new Error('Client not authenticated or organization not found');
       }
 
@@ -264,7 +267,7 @@ export const useClientCreateThread = () => {
         .from('message_threads')
         .insert({
           subject,
-          created_by: clientId,
+          created_by: currentUser.id,
           organization_id: organization.id
         })
         .select()
@@ -279,8 +282,8 @@ export const useClientCreateThread = () => {
       const participants = [
         {
           thread_id: threadData.id,
-          user_id: clientId,
-          user_name: 'Client', // Will be updated by trigger
+          user_id: currentUser.id,
+          user_name: clientName || currentUser.fullName || 'Client',
           user_type: 'client'
         },
         {
@@ -305,7 +308,7 @@ export const useClientCreateThread = () => {
         .from('messages')
         .insert({
           thread_id: threadData.id,
-          sender_id: clientId,
+          sender_id: currentUser.id,
           sender_type: 'client',
           content: initialMessage,
           has_attachments: attachments.length > 0,
@@ -328,7 +331,7 @@ export const useClientCreateThread = () => {
 
 export const useClientSendMessage = () => {
   const queryClient = useQueryClient();
-  const { clientId } = useClientAuth();
+  const { data: currentUser } = useUserRole();
   
   return useMutation({
     mutationFn: async ({
@@ -340,7 +343,7 @@ export const useClientSendMessage = () => {
       content: string;
       attachments?: any[];
     }) => {
-      if (!clientId) {
+      if (!currentUser?.id) {
         throw new Error('Client not authenticated');
       }
 
@@ -348,7 +351,7 @@ export const useClientSendMessage = () => {
         .from('messages')
         .insert({
           thread_id: threadId,
-          sender_id: clientId,
+          sender_id: currentUser.id,
           sender_type: 'client',
           content,
           has_attachments: attachments.length > 0,
