@@ -188,7 +188,7 @@ const CarerPayments: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Month</CardTitle>
@@ -236,18 +236,32 @@ const CarerPayments: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Payment</CardTitle>
+            <CardTitle className="text-sm font-medium">Extra Time (This Month)</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              £{filteredPayments.length > 0 ? filteredPayments[0]?.amount?.toFixed(2) || '0.00' : '0.00'}
+              £{paymentsData?.summary?.extraTimeThisMonth?.total?.toFixed(2) || '0.00'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {filteredPayments.length > 0 ? 
-                format(new Date(filteredPayments[0]?.date), 'dd MMM yyyy') : 
-                'No payments yet'
-              }
+              Approved: £{paymentsData?.summary?.extraTimeThisMonth?.approved?.toFixed(2) || '0.00'} | 
+              Pending: £{paymentsData?.summary?.extraTimeThisMonth?.pending?.toFixed(2) || '0.00'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expenses (This Month)</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              £{paymentsData?.summary?.expenseThisMonth?.total?.toFixed(2) || '0.00'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Approved: £{paymentsData?.summary?.expenseThisMonth?.approved?.toFixed(2) || '0.00'} | 
+              Pending: £{paymentsData?.summary?.expenseThisMonth?.pending?.toFixed(2) || '0.00'}
             </p>
           </CardContent>
         </Card>
@@ -637,9 +651,13 @@ const CarerPayments: React.FC = () => {
                   </TableBody>
                 </Table>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No extra time claims submitted yet.
-                </div>
+                 <div className="text-center py-8 text-muted-foreground">
+                   <p>No extra time claims submitted yet.</p>
+                   <p className="text-sm mt-2">
+                     Extra time is additional hours worked beyond your scheduled shifts, 
+                     typically paid at overtime rates once approved.
+                   </p>
+                 </div>
               )}
             </CardContent>
           </Card>

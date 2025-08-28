@@ -11,6 +11,16 @@ export interface CarerPaymentSummary {
   totalReimbursements: number;
   totalExpenseReimbursements: number;
   totalTravelReimbursements: number;
+  extraTimeThisMonth: {
+    approved: number;
+    pending: number;
+    total: number;
+  };
+  expenseThisMonth: {
+    approved: number;
+    pending: number;
+    total: number;
+  };
   lastPayment: {
     amount: number;
     period: string;
@@ -155,6 +165,20 @@ export function useCarerPayments(dateRange?: { from: Date; to: Date }) {
         payment.type === 'travel_reimbursement'
       );
 
+      // Calculate current month extra time and expenses
+      const currentMonthDate = new Date().getMonth();
+      const currentYearDate = new Date().getFullYear();
+      
+      const currentMonthExtraTime = allCarerExtraTime.filter(record => {
+        const recordDate = new Date(record.work_date);
+        return recordDate.getMonth() === currentMonthDate && recordDate.getFullYear() === currentYearDate;
+      });
+      
+      const currentMonthExpenses = allCarerExpenses.filter(expense => {
+        const expenseDate = new Date(expense.expense_date);
+        return expenseDate.getMonth() === currentMonthDate && expenseDate.getFullYear() === currentYearDate;
+      });
+
       const summary: CarerPaymentSummary = {
         currentMonth: currentMonthPayments.filter(p => p.type === 'salary' || p.type === 'overtime').reduce((sum, p) => sum + p.amount, 0),
         yearToDate: yearToDatePayments.filter(p => p.type === 'salary' || p.type === 'overtime').reduce((sum, p) => sum + p.amount, 0),
@@ -162,6 +186,16 @@ export function useCarerPayments(dateRange?: { from: Date; to: Date }) {
         totalReimbursements: expenseReimbursements.reduce((sum, p) => sum + p.amount, 0) + travelReimbursements.reduce((sum, p) => sum + p.amount, 0),
         totalExpenseReimbursements: expenseReimbursements.reduce((sum, p) => sum + p.amount, 0),
         totalTravelReimbursements: travelReimbursements.reduce((sum, p) => sum + p.amount, 0),
+        extraTimeThisMonth: {
+          approved: currentMonthExtraTime.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.total_cost, 0),
+          pending: currentMonthExtraTime.filter(r => r.status === 'pending').reduce((sum, r) => sum + r.total_cost, 0),
+          total: currentMonthExtraTime.reduce((sum, r) => sum + r.total_cost, 0),
+        },
+        expenseThisMonth: {
+          approved: currentMonthExpenses.filter(e => e.status === 'approved').reduce((sum, e) => sum + e.amount, 0),
+          pending: currentMonthExpenses.filter(e => e.status === 'pending').reduce((sum, e) => sum + e.amount, 0),
+          total: currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0),
+        },
         lastPayment: paymentHistory.length > 0 ? {
           amount: paymentHistory[0].amount,
           period: paymentHistory[0].period,

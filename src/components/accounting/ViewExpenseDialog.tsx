@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ExpenseRecord, useApproveExpense, useRejectExpense } from "@/hooks/useAccountingData";
+import { useMarkExpenseAsReimbursed } from "@/hooks/useExpenseReimbursement";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Edit, FileText } from "lucide-react";
+import { Edit, FileText, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface ViewExpenseDialogProps {
@@ -59,6 +60,7 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
 }) => {
   const approveExpense = useApproveExpense();
   const rejectExpense = useRejectExpense();
+  const markAsReimbursed = useMarkExpenseAsReimbursed();
 
   const handleApprove = async () => {
     if (!branchId) {
@@ -85,6 +87,15 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to reject expense:', error);
+    }
+  };
+
+  const handleMarkAsReimbursed = async () => {
+    try {
+      await markAsReimbursed.mutateAsync({ expenseId: expense.id });
+      onClose();
+    } catch (error) {
+      console.error('Failed to mark expense as reimbursed:', error);
     }
   };
   const renderStatusBadge = (status: string) => {
@@ -195,6 +206,17 @@ const ViewExpenseDialog: React.FC<ViewExpenseDialogProps> = ({
                 {approveExpense.isPending ? 'Approving...' : 'Approve'}
               </Button>
             </>
+          )}
+          
+          {canApprove && expense.status === 'approved' && (
+            <Button 
+              onClick={handleMarkAsReimbursed}
+              disabled={markAsReimbursed.isPending}
+              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              {markAsReimbursed.isPending ? 'Processing...' : 'Mark as Reimbursed'}
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>
