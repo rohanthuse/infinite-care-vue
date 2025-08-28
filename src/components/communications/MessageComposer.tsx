@@ -23,6 +23,7 @@ import {
 import { Paperclip } from "lucide-react";
 import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 import { useAdminContacts } from "@/hooks/useAdminMessaging";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MessageComposerProps {
   branchId: string;
@@ -166,7 +167,32 @@ export const MessageComposer = ({
           return;
         }
         
-        const recipientData = recipients.map(recipientId => {
+        // Deduplicate recipients
+        const uniqueRecipients = [...new Set(recipients)];
+        
+        // Batch validate recipients - check if they have valid user_roles
+        const { data: validRecipients } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .in('user_id', uniqueRecipients);
+        
+        const validRecipientIds = new Set(validRecipients?.map(vr => vr.user_id) || []);
+        const invalidCount = uniqueRecipients.length - validRecipientIds.size;
+        
+        // Filter to only valid recipients
+        const finalRecipientIds = uniqueRecipients.filter(id => validRecipientIds.has(id));
+        
+        if (finalRecipientIds.length === 0) {
+          toast.error("No valid recipients selected. Please check recipient accounts and try again.");
+          return;
+        }
+        
+        // Show warning if some recipients were invalid
+        if (invalidCount > 0) {
+          toast.warning(`${invalidCount} recipient(s) skipped due to invalid accounts. Sending to ${finalRecipientIds.length} valid recipient(s).`);
+        }
+        
+        const recipientData = finalRecipientIds.map(recipientId => {
           const contact = availableContacts.find(c => c.id === recipientId);
           return {
             id: recipientId,

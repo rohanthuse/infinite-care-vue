@@ -729,40 +729,21 @@ export const useUnifiedCreateThread = () => {
         }
       ];
 
-      // Add recipients - validate auth user IDs
-      let validRecipients = 0;
+      // Add recipients - they should already be validated by MessageComposer
       for (let i = 0; i < recipientIds.length; i++) {
         const recipientId = recipientIds[i];
         
-        // Validate that this is a valid auth user ID by checking user_roles
-        const { data: userRoleCheck } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('user_id', recipientId)
-          .single();
-        
-        if (!userRoleCheck) {
-          console.warn(`[useUnifiedCreateThread] Invalid recipient ID ${recipientId} (${recipientNames[i]}) - not an auth user, skipping`);
-          toast.error(`Recipient ${recipientNames[i]} could not be added - invalid user account`);
-          continue; // Skip invalid recipients
-        }
-        
         participants.push({
           thread_id: thread.id,
-          user_id: recipientId, // This is now guaranteed to be a valid auth user ID
+          user_id: recipientId, // Should be pre-validated by MessageComposer
           user_type: recipientTypes[i] === 'carer' ? 'carer' : 
                     recipientTypes[i] === 'client' ? 'client' : 'branch_admin',
           user_name: recipientNames[i]
         });
-        validRecipients++;
       }
       
-      if (validRecipients === 0) {
-        throw new Error('No valid recipients found - all recipients were skipped');
-      }
-      
-      if (validRecipients < recipientIds.length) {
-        toast.warning(`${recipientIds.length - validRecipients} recipient(s) were skipped due to invalid accounts`);
+      if (recipientIds.length === 0) {
+        throw new Error('No recipients provided');
       }
 
       const { error: participantsError } = await supabase
