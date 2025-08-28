@@ -113,12 +113,11 @@ export const useClientCareTeam = () => {
 export const useClientMessageThreads = () => {
   const { clientId } = useClientAuth();
   const { data: currentUser } = useUserRole();
-  const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['client-message-threads', currentUser?.id, organization?.id],
+    queryKey: ['client-message-threads', currentUser?.id],
     queryFn: async (): Promise<MessageThread[]> => {
-      if (!currentUser?.id || !organization?.id) {
+      if (!currentUser?.id) {
         return [];
       }
 
@@ -174,7 +173,7 @@ export const useClientMessageThreads = () => {
         createdAt: new Date(thread.created_at)
       }));
     },
-    enabled: !!currentUser?.id && !!organization?.id,
+    enabled: !!currentUser?.id,
     staleTime: 10000,
   });
 };
@@ -229,9 +228,8 @@ export const useClientThreadMessages = (threadId: string) => {
 
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
-  const { clientId, clientName } = useClientAuth();
+  const { clientId, clientName, branchId } = useClientAuth();
   const { data: currentUser } = useUserRole();
-  const { organization } = useTenant();
   
   return useMutation({
     mutationFn: async ({
@@ -249,8 +247,8 @@ export const useClientCreateThread = () => {
       initialMessage: string;
       attachments?: any[];
     }) => {
-      if (!currentUser?.id || !organization?.id) {
-        throw new Error('Client not authenticated or organization not found');
+      if (!currentUser?.id || !branchId) {
+        throw new Error('Client not authenticated or branch not found');
       }
 
       console.log('[useClientCreateThread] Creating thread:', {
@@ -268,7 +266,7 @@ export const useClientCreateThread = () => {
         .insert({
           subject,
           created_by: currentUser.id,
-          organization_id: organization.id
+          branch_id: branchId
         })
         .select()
         .single();
