@@ -128,7 +128,7 @@ export const useAdminContacts = (branchId?: string) => {
       }
 
       // Get clients for these branches - with organization filter
-      // Include ALL active clients, not just those with auth_user_id
+      // Include ALL clients (remove status filter to show all 11 clients)
       const { data: clients, error: clientError } = await supabase
         .from('clients')
         .select(`
@@ -145,14 +145,19 @@ export const useAdminContacts = (branchId?: string) => {
           )
         `)
         .in('branch_id', branchIds)
-        .eq('branches.organization_id', organization.id)
-        .in('status', ['Active', 'active']);
+        .eq('branches.organization_id', organization.id);
 
       if (clientError) {
         console.error('[useAdminContacts] Error fetching clients:', clientError);
       }
 
-      console.log('[useAdminContacts] Clients found:', clients?.length || 0);
+      console.log('[useAdminContacts] Total clients in branches:', clients?.length || 0);
+      console.log('[useAdminContacts] Client details:', clients?.map(c => ({
+        id: c.id, 
+        name: `${c.first_name} ${c.last_name}`, 
+        status: c.status,
+        hasAuth: !!c.auth_user_id
+      })) || []);
       if (clients) {
         for (const client of clients) {
           
@@ -182,7 +187,7 @@ export const useAdminContacts = (branchId?: string) => {
       }
 
       // Get carers for these branches - with organization filter
-      // Include ALL active carers, not just those with auth_user_id
+      // Include ALL carers (remove status filter to show all available carers)
       const { data: carers, error: carerError } = await supabase
         .from('staff')
         .select(`
@@ -199,8 +204,7 @@ export const useAdminContacts = (branchId?: string) => {
           )
         `)
         .in('branch_id', branchIds)
-        .eq('branches.organization_id', organization.id)
-        .in('status', ['Active', 'active']);
+        .eq('branches.organization_id', organization.id);
 
       if (carerError) {
         console.error('[useAdminContacts] Error fetching carers:', carerError);
