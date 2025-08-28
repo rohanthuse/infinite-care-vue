@@ -247,8 +247,8 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-        <Table>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
+        <Table className="min-w-[1100px]">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">
