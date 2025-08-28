@@ -363,7 +363,7 @@ export function StaffScheduleCalendar({
       </Card>
 
       {/* Schedule Grid */}
-      <div className="border rounded-lg overflow-x-auto">
+      <div className="border rounded-lg">
         <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see more time slots</div>
         <div className="min-w-[1600px]">
         {/* Header row with time slots */}

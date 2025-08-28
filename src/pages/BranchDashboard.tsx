@@ -364,7 +364,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         <DashboardHeader />
         
         <div className="flex flex-1 w-full relative">
-          <main className="flex-1 px-4 md:px-8 pt-4 pb-20 md:py-6 transition-all duration-200">
+          <main className="flex-1 min-w-0 px-4 md:px-8 pt-4 pb-20 md:py-6 transition-all duration-200">
             <BranchInfoHeader 
               branchName={displayBranchName} 
               branchId={id || ""}
