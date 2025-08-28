@@ -364,10 +364,11 @@ export function StaffScheduleCalendar({
 
       {/* Schedule Grid */}
       <div className="border rounded-lg overflow-x-auto">
+        <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see more time slots</div>
         <div className="min-w-[1600px]">
         {/* Header row with time slots */}
         <div className="grid grid-cols-[200px_repeat(48,1fr)] bg-muted/50 border-b">
-          <div className="p-3 font-medium border-r">Staff</div>
+          <div className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50">Staff</div>
           {timeSlots.map(slot => (
             <div key={slot} className="p-1 text-xs text-center font-medium border-r last:border-r-0">
               {slot}
@@ -379,7 +380,7 @@ export function StaffScheduleCalendar({
           {staffSchedule.map((staffMember) => (
             <div key={staffMember.id} className="grid grid-cols-[200px_repeat(48,1fr)] border-b last:border-b-0">
               {/* Staff info column */}
-              <div className="p-3 border-r bg-background">
+              <div className="p-3 border-r bg-background sticky left-0 z-10">
                 <div className="font-medium text-sm">{staffMember.name}</div>
                 {staffMember.specialization && (
                   <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>

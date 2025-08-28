@@ -248,6 +248,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-x-auto">
+        <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see all columns</div>
         <Table className="min-w-[1100px]">
           <TableHeader>
             <TableRow>
@@ -257,12 +258,12 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead className="hidden lg:table-cell">Phone</TableHead>
-              <TableHead className="hidden lg:table-cell">Specialization</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Auth Account</TableHead>
+              <TableHead className="whitespace-nowrap">Name</TableHead>
+              <TableHead className="hidden md:table-cell whitespace-nowrap">Email</TableHead>
+              <TableHead className="hidden lg:table-cell whitespace-nowrap">Phone</TableHead>
+              <TableHead className="hidden lg:table-cell whitespace-nowrap">Specialization</TableHead>
+              <TableHead className="whitespace-nowrap">Status</TableHead>
+              <TableHead className="hidden md:table-cell whitespace-nowrap">Auth Account</TableHead>
               <TableHead className="w-[70px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
