@@ -7122,6 +7122,10 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      user_has_access_to_org: {
+        Args: { p_organization_id: string; p_user_id: string }
+        Returns: boolean
+      }
       user_is_admin: {
         Args: { user_id_param: string }
         Returns: boolean

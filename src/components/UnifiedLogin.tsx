@@ -1,492 +1,293 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CustomButton } from "@/components/ui/CustomButton";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle } from "lucide-react";
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Heart } from 'lucide-react';
+import { CustomButton } from '@/components/ui/CustomButton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 const UnifiedLogin = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [searchParams] = useSearchParams();
-  const [thirdPartyInfo, setThirdPartyInfo] = useState<any>(null);
-  const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Check for third-party invitation token
+  // Clear error when user starts typing
   useEffect(() => {
-    const token = searchParams.get('thirdPartyToken');
-    if (token) {
-      validateThirdPartyToken(token);
-    }
-  }, [searchParams]);
+    if (error) setError('');
+  }, [email, password]);
 
-  const validateThirdPartyToken = async (token: string) => {
-    try {
-      const { data: request, error } = await supabase
-        .from('third_party_access_requests')
-        .select(`
-          *,
-          branches:branch_id (name)
-        `)
-        .eq('invite_token', token)
-        .eq('status', 'approved')
-        .single();
-
-      if (error || !request) {
-        toast.error("Invalid or expired invitation token");
-        return;
-      }
-
-      // Validate access window
-      const now = new Date();
-      const accessFrom = new Date(request.access_from);
-      const accessUntil = request.access_until ? new Date(request.access_until) : null;
-
-      if (now < accessFrom) {
-        toast.error("Access period has not started yet");
-        return;
-      }
-
-      if (accessUntil && now > accessUntil) {
-        toast.error("Access period has expired");
-        return;
-      }
-
-      setThirdPartyInfo({
-        token,
-        email: request.email,
-        branchName: request.branches?.name,
-        accessScope: request.request_for,
-        accessUntil: accessUntil?.toLocaleDateString(),
-        firstName: request.first_name,
-        lastName: request.surname,
-        companyName: request.organisation || 'Third-party Organization'
-      });
-
-      // Pre-fill email if provided
-      if (request.email) {
-        setEmail(request.email);
-      }
-    } catch (error) {
-      console.error('Error validating third-party token:', error);
-      toast.error("Unable to validate invitation");
-    }
-  };
-
-  const redeemThirdPartyInvite = async (userId: string, userEmail: string) => {
-    if (!thirdPartyInfo?.token) return null;
-
-    setThirdPartyLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('third-party-redeem-invite', {
-        body: {
-          token: thirdPartyInfo.token,
-          userId,
-          userEmail
-        }
-      });
-
-      if (error) throw error;
-
-      // Store session info in localStorage for third-party workspace
-      localStorage.setItem('thirdPartySession', JSON.stringify({
-        sessionToken: data.sessionToken,
-        thirdPartyUser: data.thirdPartyUser,
-        branchInfo: data.branchInfo,
-        accessScope: data.accessScope,
-        accessExpiresAt: data.accessExpiresAt
-      }));
-
-      return data;
-    } catch (error: any) {
-      console.error('Error redeeming third-party invite:', error);
-      toast.error(error.message || "Failed to activate third-party access");
-      return null;
-    } finally {
-      setThirdPartyLoading(false);
-    }
-  };
-
-  const detectUserOrganization = async (userId: string) => {
-    try {
-      console.log('[detectUserOrganization] Using optimized RPC function for user:', userId);
-      
-      // Check cache first for repeat logins
-      const cacheKey = `org_slug_${userId}`;
-      const cachedSlug = localStorage.getItem(cacheKey);
-      const cacheTime = localStorage.getItem(`${cacheKey}_time`);
-      
-      // Cache for 5 minutes
-      if (cachedSlug && cacheTime && (Date.now() - parseInt(cacheTime)) < 5 * 60 * 1000) {
-        console.log('[detectUserOrganization] Using cached organization:', cachedSlug);
-        return cachedSlug;
-      }
-      
-      // Use the new unified RPC function for fast single-query organization detection
-      const { data: orgSlug, error } = await supabase
-        .rpc('get_user_primary_org_slug', { p_user_id: userId })
-        .single();
-      
-      if (error) {
-        console.error('[detectUserOrganization] RPC error:', error);
-        return null;
-      }
-      
-      if (orgSlug) {
-        // Cache the result for future logins
-        localStorage.setItem(cacheKey, orgSlug);
-        localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
-        console.log('[detectUserOrganization] Found and cached organization:', orgSlug);
-      } else {
-        console.log('[detectUserOrganization] No organization found for user:', userId);
-      }
-      
-      return orgSlug;
-    } catch (error) {
-      console.error('[detectUserOrganization] Error detecting organization:', error);
-      return null;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
+    if (!email.trim() || !password) {
+      setError('Please enter both email and password.');
       return;
     }
 
     setLoading(true);
+    const loginStartTime = performance.now();
 
     try {
-      // Authenticate user
+      console.log('[UnifiedLogin] Starting login process for:', email);
+      
+      // Step 1: Authenticate user
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (authError) {
-        throw authError;
+        console.error('[UnifiedLogin] Auth error:', authError);
+        setError('Invalid email or password. Please try again.');
+        return;
       }
 
       if (!authData.user) {
-        throw new Error("Authentication failed");
-      }
-
-      // PERFORMANCE OPTIMIZATION: Streamlined role detection and organization lookup
-      const startTime = performance.now();
-      
-      // Get user's highest priority role and detect organization in parallel
-      const [roleResult, orgSlug] = await Promise.all([
-        supabase.rpc('get_user_highest_role', { p_user_id: authData.user.id }).single(),
-        detectUserOrganization(authData.user.id)
-      ]);
-
-      if (roleResult.error) {
-        console.error('Role detection error:', roleResult.error);
-        toast.error("Unable to determine your access level. Please contact support.");
+        setError('Login failed. Please try again.');
         return;
       }
 
-      const userRole = roleResult.data.role;
-      const endTime = performance.now();
-      console.log(`[UnifiedLogin] Role and org detection completed in ${(endTime - startTime).toFixed(2)}ms`);
-      console.log('User role detected:', userRole);
-      console.log('[AUTH DEBUG] User ID:', authData.user.id, 'Email:', authData.user.email);
+      const authTime = performance.now();
+      console.log(`[UnifiedLogin] Auth completed in ${authTime - loginStartTime}ms`);
 
-      // Handle third-party access redemption first
-      if (thirdPartyInfo) {
-        const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
-        if (redeemResult) {
-          toast.success("Third-party access activated successfully!");
-          navigate('/third-party/workspace');
-          return;
-        } else {
-          // If redemption failed, continue with normal login flow
-          toast.error("Failed to activate third-party access, continuing with normal login");
-        }
-      }
+      // Step 2: Get user's primary organization slug with timeout
+      console.log('[UnifiedLogin] Getting primary organization...');
+      
+      const { data: orgSlugData, error: orgError } = await Promise.race([
+        supabase.rpc('get_user_primary_org_slug', { p_user_id: authData.user.id }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Organization lookup timeout')), 3000)
+        )
+      ]) as { data: string | null, error: any };
 
-      // Organization detection already completed in parallel above - no additional lookups needed
+      const orgTime = performance.now();
+      console.log(`[UnifiedLogin] Organization lookup completed in ${orgTime - authTime}ms`);
 
-      // For super admins, always route to their organization dashboard
-      if (userRole === 'super_admin') {
-        if (orgSlug) {
-          console.log('[AUTH DEBUG] Super admin with organization detected, redirecting to tenant dashboard:', authData.user.email, '-> /' + orgSlug + '/dashboard');
-          toast.success("Welcome back, Super Administrator!");
-          navigate(`/${orgSlug}/dashboard`);
-          return;
-        } else {
-          // Super admins should always have an organization
-          toast.error("No organization found for super admin account. Please contact support.");
-          await supabase.auth.signOut();
+      if (orgError) {
+        console.error('[UnifiedLogin] Organization lookup error:', orgError);
+        // Fallback: Try manual query if RPC fails
+        const { data: fallbackData } = await supabase
+          .from('organization_members')
+          .select(`
+            organizations!inner(slug)
+          `)
+          .eq('user_id', authData.user.id)
+          .eq('status', 'active')
+          .order('joined_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackData?.organizations?.slug) {
+          console.log('[UnifiedLogin] Using fallback organization:', fallbackData.organizations.slug);
+          navigate(`/${fallbackData.organizations.slug}/dashboard`);
           return;
         }
       }
 
-      // For app_admin (system administrators), route to system dashboard
-      if (userRole === 'app_admin') {
-        console.log('[AUTH DEBUG] App admin detected, redirecting to system dashboard:', authData.user.email);
-        toast.success("Welcome back, System Administrator!");
-        navigate('/system-dashboard');
-        return;
+      // Step 3: Navigate based on organization
+      if (orgSlugData) {
+        console.log('[UnifiedLogin] Redirecting to organization dashboard:', orgSlugData);
+        navigate(`/${orgSlugData}/dashboard`);
+      } else {
+        console.log('[UnifiedLogin] No organization found, redirecting to general dashboard');
+        navigate('/dashboard');
       }
 
-      // For non-super admin users, organization is required
-      if (!orgSlug) {
-        toast.error("No organization access found for your account");
-        await supabase.auth.signOut();
-        return;
-      }
+      const totalTime = performance.now();
+      console.log(`[UnifiedLogin] Total login time: ${totalTime - loginStartTime}ms`);
 
-      // Route to appropriate dashboard based on role
-      let dashboardPath = `/${orgSlug}`;
-      
-      switch (userRole) {
-        case 'branch_admin':
-          dashboardPath += '/dashboard';
-          toast.success("Welcome back, Branch Administrator!");
-          break;
-        case 'carer':
-          dashboardPath += '/carer-dashboard';
-          toast.success("Welcome back!");
-          break;
-        case 'client':
-          dashboardPath += '/client-dashboard';
-          toast.success("Welcome back!");
-          break;
-        default:
-          // Fallback to admin dashboard
-          dashboardPath += '/dashboard';
-          toast.success("Login successful!");
-          break;
-      }
-
-      console.log('Redirecting to:', dashboardPath);
-      navigate(dashboardPath);
+      toast({
+        title: "Login Successful",
+        description: "Welcome back!",
+      });
 
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('[UnifiedLogin] Login error:', error);
       
-      if (error.message?.includes('Invalid login credentials')) {
-        toast.error("Invalid email or password");
-      } else if (error.message?.includes('Email not confirmed')) {
-        toast.error("Please check your email and click the confirmation link");
+      if (error.message === 'Organization lookup timeout') {
+        // Even on timeout, user is authenticated, so redirect to a safe default
+        console.log('[UnifiedLogin] Timeout occurred, redirecting to default dashboard');
+        navigate('/dashboard');
+        toast({
+          title: "Login Successful",
+          description: "Welcome back! Loading your dashboard...",
+        });
       } else {
-        toast.error(error.message || "Login failed. Please try again.");
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      toast.error("Please enter your email address first");
-      return;
-    }
-
-    setResetLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success("Password reset link sent to your email");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to send reset email");
-    } finally {
-      setResetLoading(false);
-    }
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
     <div className="login-page-light min-h-screen flex">
-      {/* Left Column - Gradient Background with Info */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-cyan-600 relative">
-        {/* Wave Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-cyan-500/20">
-          <svg className="absolute bottom-0 left-0 w-full h-32 text-blue-600/10" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M0,60 C240,20 480,100 720,60 C960,20 1200,100 1200,60 L1200,120 L0,120 Z" fill="currentColor"></path>
-          </svg>
-        </div>
-        
-        <div className="relative z-10 flex flex-col justify-center px-12 py-16 text-white">
-          <div className="max-w-md">
-            <div className="flex items-center mb-8">
-              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-8 w-8 mr-3" />
-              <h1 className="text-2xl font-bold">Med-Infinite</h1>
-            </div>
-            
-            <h2 className="text-4xl font-bold mb-6 leading-tight">
-              Welcome to Med-Infinite
-            </h2>
-            
-            <p className="text-xl text-blue-100 mb-8">
-              Your Gateway to Effortless Management
-            </p>
-            
-            <p className="text-blue-100 leading-relaxed">
-              Streamline your healthcare administration with our comprehensive platform designed for modern healthcare organizations.
-            </p>
+      {/* Left section with gradient background */}
+      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-500 text-white p-8 flex-col justify-center relative overflow-hidden">
+        <div className="z-10 max-w-lg">
+          <div className="flex items-center space-x-2 text-2xl font-semibold mb-6">
+            <Heart className="h-7 w-7" />
+            <span>Med-Infinite</span>
           </div>
+          
+          <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+            Welcome Back
+          </h1>
+          
+          <p className="text-xl font-light mb-4">
+            Your Healthcare Management Portal
+          </p>
+          
+          <p className="text-blue-100 mb-8 max-w-md">
+            Access your personalized dashboard to manage your healthcare services, appointments, and connect with your care team.
+          </p>
+        </div>
+
+        {/* Wave pattern background */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="w-full h-full" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,800 C200,783.33 400,766.67 600,750 C800,733.33 1000,716.67 1200,700 L1200,1200 L0,1200 Z" fill="white" />
+            <path d="M0,400 C200,383.33 400,366.67 600,350 C800,333.33 1000,316.67 1200,300 L1200,1200 L0,1200 Z" fill="white" opacity="0.5" />
+            <path d="M0,600 C200,583.33 400,566.67 600,550 C800,533.33 1000,516.67 1200,500 L1200,1200 L0,1200 Z" fill="white" opacity="0.3" />
+          </svg>
         </div>
       </div>
 
-      {/* Right Column - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white">
-        <div className="w-full max-w-md space-y-8">
-          {/* Back to Home Button */}
-          <div className="flex justify-start">
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Home
-            </button>
+      {/* Right section with login form */}
+      <div className="w-full md:w-1/2 bg-white flex items-center justify-center p-6">
+        <div className="max-w-md w-full">
+          <div className="text-center md:text-left mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Med-Infinite</h2>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Sign In</h3>
+            <p className="text-gray-600">Access your healthcare dashboard</p>
           </div>
 
-          {/* Logo and Title */}
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-16 h-16" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              {thirdPartyInfo ? 'Complete Your Third-Party Access' : 'Sign in to your account'}
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              {thirdPartyInfo 
-                ? 'Sign in to activate your invited access'
-                : 'Access your healthcare management platform'
-              }
-            </p>
-          </div>
-
-          {/* Third-Party Invitation Banner */}
-          {thirdPartyInfo && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-blue-900">
-                    You're invited to access {thirdPartyInfo.branchName}
-                  </h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p><strong>Invited by:</strong> {thirdPartyInfo.branchName}</p>
-                    <p><strong>Access type:</strong> {thirdPartyInfo.accessScope} data (read-only)</p>
-                    {thirdPartyInfo.accessUntil && (
-                      <p><strong>Valid until:</strong> {thirdPartyInfo.accessUntil}</p>
-                    )}
-                    <p className="mt-2 text-xs">
-                      Please sign in with the email address: <strong>{thirdPartyInfo.email}</strong>
-                    </p>
-                  </div>
-                </div>
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start">
+              <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-medium mb-1">Sign In Error</p>
+                <p className="text-sm">{error}</p>
               </div>
             </div>
           )}
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </Label>
-              <div className="mt-1 relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
                 <Input
                   id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
+                  placeholder="Enter your email address"
+                  className="pl-10"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
-                  className="pl-10 block w-full"
-                  placeholder="Enter your email"
+                  required
                 />
               </div>
             </div>
-
-            <div>
+            
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </Label>
-                <button
-                  type="button"
-                  onClick={handleForgotPassword}
-                  disabled={resetLoading}
-                  className="text-sm text-blue-600 hover:text-blue-500 disabled:opacity-50"
-                >
-                  {resetLoading ? "Sending..." : "Forgot password?"}
-                </button>
+                <Label htmlFor="password">Password</Label>
+                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                  Forgot password?
+                </a>
               </div>
-              <div className="mt-1 relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
                 <Input
                   id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
+                  placeholder="Enter your password"
+                  className="pl-10 pr-10"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
-                  className="pl-10 pr-10 block w-full"
-                  placeholder="Enter your password"
+                  required
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={togglePasswordVisibility}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  disabled={loading}
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
                 </button>
               </div>
             </div>
-
+            
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={loading}
+              />
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                Remember me
+              </label>
+            </div>
+            
             <div>
               <CustomButton
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={loading || thirdPartyLoading}
-              >
-                {loading || thirdPartyLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    {thirdPartyInfo ? 'Activating Access...' : 'Signing in...'}
-                  </>
-                ) : (
-                  thirdPartyInfo ? 'Sign In & Activate Access' : 'Sign In'
+                className={cn(
+                  "w-full bg-blue-600 hover:bg-blue-700 transition-all",
+                  loading && "opacity-70 cursor-not-allowed"
                 )}
+                disabled={loading || !email.trim() || !password}
+              >
+                {loading ? "Signing in..." : "Sign In"}
               </CustomButton>
             </div>
           </form>
-
-          {/* Support Link */}
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Need help?{" "}
-              <a href="mailto:support@med-infinite.com" className="font-medium text-blue-600 hover:text-blue-500">
+          
+          <div className="mt-8 text-center">
+            <div className="text-sm text-gray-600 mb-4">
+              Need help signing in?{" "}
+              <button 
+                onClick={() => {
+                  toast({
+                    title: "Support Contact",
+                    description: "Please contact your system administrator for assistance.",
+                  });
+                }}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
                 Contact Support
-              </a>
-            </p>
+              </button>
+            </div>
+            <a href="/" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+              Return to homepage
+            </a>
           </div>
         </div>
       </div>
