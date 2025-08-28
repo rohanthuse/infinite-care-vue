@@ -77,12 +77,16 @@ export function useBookingData(branchId?: string) {
           client = getOrCreatePlaceholderClient(bk.client_id);
         if (!carer && bk.staff_id)
           carer = getOrCreatePlaceholderCarer(bk.staff_id);
-        // Parse datetime properly - handle both space and T-separated formats
+        // Parse datetime properly - timezone-aware handling
         const parseDateTime = (dateTimeStr: string) => {
           if (!dateTimeStr) return null;
           try {
-            // Convert space-separated format to ISO format if needed
-            const isoString = dateTimeStr.includes('T') ? dateTimeStr : dateTimeStr.replace(' ', 'T');
+            // Handle both space and T-separated formats, treating as local time
+            let isoString = dateTimeStr.includes('T') ? dateTimeStr : dateTimeStr.replace(' ', 'T');
+            // Remove Z suffix if present to treat as local time
+            if (isoString.endsWith('Z')) {
+              isoString = isoString.slice(0, -1);
+            }
             return new Date(isoString);
           } catch (error) {
             console.warn('[useBookingData] Failed to parse datetime:', dateTimeStr, error);
@@ -101,9 +105,9 @@ export function useBookingData(branchId?: string) {
           carerId: bk.staff_id,
           carerName: carer?.name || "(Unknown Carer)",
           carerInitials: carer?.initials || "??",
-          startTime: startDate ? startDate.toTimeString().slice(0, 5) : "07:00",
-          endTime: endDate ? endDate.toTimeString().slice(0, 5) : "07:30",
-          date: startDate ? startDate.toISOString().slice(0, 10) : "",
+          startTime: startDate ? startDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) : "07:00",
+          endTime: endDate ? endDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) : "07:30",
+          date: startDate ? startDate.toLocaleDateString('en-CA') : "", // YYYY-MM-DD format
           status: bk.status || "assigned",
           notes: bk.notes || "",
         };

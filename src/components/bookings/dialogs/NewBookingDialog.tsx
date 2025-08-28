@@ -126,6 +126,29 @@ export function NewBookingDialog({
     });
   }, [clients, clientSearchQuery]);
 
+  // Helper function to get default days based on prefilled date
+  const getDefaultDaysForDate = (date?: Date) => {
+    if (!date) {
+      // Default: weekdays only
+      return { mon: true, tue: true, wed: true, thu: true, fri: true, sat: false, sun: false };
+    }
+    
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const dayMap = {
+      0: { sun: true }, // Sunday
+      1: { mon: true }, // Monday  
+      2: { tue: true }, // Tuesday
+      3: { wed: true }, // Wednesday
+      4: { thu: true }, // Thursday
+      5: { fri: true }, // Friday
+      6: { sat: true }, // Saturday
+    };
+    
+    // Set all days to false, then enable the specific day
+    const defaultDays = { mon: false, tue: false, wed: false, thu: false, fri: false, sat: false, sun: false };
+    return { ...defaultDays, ...dayMap[dayOfWeek] };
+  };
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -139,13 +162,7 @@ export function NewBookingDialog({
           startTime: prefilledData?.startTime || "09:00",
           endTime: "17:00",
           services: [],
-          mon: true,
-          tue: true,
-          wed: true,
-          thu: true,
-          fri: true,
-          sat: false,
-          sun: false,
+          ...getDefaultDaysForDate(prefilledData?.date),
         },
       ],
     },
