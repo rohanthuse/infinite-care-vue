@@ -1,91 +1,16 @@
-
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useOrganizations } from "@/hooks/useOrganizations";
+import { useOrganizationsWithUsers } from "@/hooks/useOrganizationsWithUsers";
 import { SystemTenantsStats } from "@/components/system/SystemTenantsStats";
 import { Badge } from "@/components/ui/badge";
 import { User, Users } from "lucide-react";
 
-interface OrganizationWithUsers {
-  id: string;
-  name: string;
-  slug: string;
-  subscription_plan: string;
-  subscription_status: string;
-  system_users: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    role: string;
-    is_active: boolean;
-  }[];
-}
-
-const fetchOrganizationsWithUsers = async (): Promise<OrganizationWithUsers[]> => {
-  console.log('[TenantOrganizationsTab] Fetching organizations with users...');
-  const startTime = performance.now();
-
-  // Use a single query to get all organization data with users
-  const { data, error } = await supabase
-    .from('organizations')
-    .select(`
-      id,
-      name,
-      slug,
-      subscription_plan,
-      subscription_status,
-      organization_members!inner(
-        user_id,
-        role,
-        status,
-        auth_users:user_id(
-          id,
-          email
-        )
-      )
-    `)
-    .eq('organization_members.status', 'active')
-    .order('name');
-
-  if (error) {
-    console.error('[TenantOrganizationsTab] Error fetching organizations:', error);
-    throw error;
-  }
-
-  // Transform the data to match our interface
-  const organizations: OrganizationWithUsers[] = (data || []).map(org => ({
-    id: org.id,
-    name: org.name,
-    slug: org.slug,
-    subscription_plan: org.subscription_plan,
-    subscription_status: org.subscription_status,
-    system_users: (org.organization_members || []).map((member: any) => ({
-      id: member.user_id,
-      first_name: member.auth_users?.email?.split('@')[0] || 'User',
-      last_name: '',
-      email: member.auth_users?.email || '',
-      role: member.role,
-      is_active: member.status === 'active',
-    })),
-  }));
-
-  const endTime = performance.now();
-  console.log(`[TenantOrganizationsTab] Data fetched in ${endTime - startTime}ms`);
-  
-  return organizations;
-};
-
 export const TenantOrganizationsTab: React.FC = () => {
-  const { data: organizationsWithUsers, isLoading, error } = useQuery({
-    queryKey: ['tenant-organizations-with-users'],
-    queryFn: fetchOrganizationsWithUsers,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-  });
+  const { data: organizations, isLoading, error } = useOrganizations();
+  const { data: organizationsWithUsers, isLoading: isLoadingUsers } = useOrganizationsWithUsers();
 
   const stats = {
-    totalTenants: organizationsWithUsers?.length ?? 0,
+    totalTenants: organizations?.length ?? 0,
     activeUsers: organizationsWithUsers?.reduce((total, org) => 
       total + org.system_users.filter(user => user.is_active).length, 0) ?? 0,
   };
@@ -96,13 +21,13 @@ export const TenantOrganizationsTab: React.FC = () => {
 
       <div className="bg-card border border-border rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-4">Tenant Organizations</h3>
-        {isLoading && (
+        {(isLoading || isLoadingUsers) && (
           <p className="text-muted-foreground">Loading tenants...</p>
         )}
-        {!isLoading && error && (
+        {!isLoading && !isLoadingUsers && error && (
           <p className="text-destructive">Failed to load tenants.</p>
         )}
-        {!isLoading && !error && (
+        {!isLoading && !isLoadingUsers && !error && (
           <>
             {organizationsWithUsers && organizationsWithUsers.length > 0 ? (
               <div className="space-y-4">

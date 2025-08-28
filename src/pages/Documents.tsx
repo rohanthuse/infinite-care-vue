@@ -17,9 +17,6 @@ const Documents = () => {
   const { id, branchName } = useParams<{ id: string; branchName: string }>();
   const queryClient = useQueryClient();
 
-  // PERFORMANCE OPTIMIZATION: Only load documents when viewing them
-  const shouldLoadDocuments = activeTab === "view" || activeTab === "upload";
-  
   const {
     documents,
     isLoading: documentsLoading,
@@ -28,7 +25,7 @@ const Documents = () => {
     deleteDocument,
     downloadDocument,
     viewDocument
-  } = useUnifiedDocuments(shouldLoadDocuments ? (id || '') : '');
+  } = useUnifiedDocuments(id || '');
 
   // Fetch clients and staff for the upload dialog
   const { data: clients = [] } = useQuery({

@@ -47,80 +47,26 @@ const BranchAdminLogin = () => {
       if (data.user) {
         console.log('[BranchAdminLogin] User authenticated:', data.user.id);
         
-        // Optimize: Fetch branch assignments with organization info in a single query
-        // This prioritizes branch assignment over role checks for faster authentication
-        const branchAssignmentPromise = supabase
-          .from("admin_branches")
-          .select(`
-            branch_id,
-            branches:branch_id (
-              id,
-              name,
-              status,
-              organization_id,
-              organizations:organization_id (
-                id,
-                name,
-                slug
-              )
-            )
-          `)
-          .eq("admin_id", data.user.id);
-
-        // Also check roles in parallel with timeout
-        const roleCheckPromise = supabase
+        // Check if user has branch admin role
+        const { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
-          .in("role", ["branch_admin", "super_admin"]);
+          .eq("role", "branch_admin")
+          .single();
 
-        // Use Promise.allSettled with timeout to avoid hanging
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Query timeout')), 6000)
-        );
-
-        try {
-          const results = await Promise.allSettled([
-            Promise.race([branchAssignmentPromise, timeoutPromise]),
-            Promise.race([roleCheckPromise, timeoutPromise])
-          ]);
-
-          const [branchResult, roleResult] = results;
+        if (roleError || !roleData) {
+          console.error('[BranchAdminLogin] Role check error:', roleError);
           
-          // Process branch assignment result
-          let adminBranchData = null;
-          let organizationSlug = null;
-          
-          if (branchResult.status === 'fulfilled') {
-            const { data: branchData, error: branchError } = branchResult.value as any;
-            if (!branchError && branchData && branchData.length > 0) {
-              adminBranchData = branchData;
-              // Get organization slug from the first branch
-              const firstBranch = branchData[0]?.branches;
-              if (firstBranch?.organizations?.slug) {
-                organizationSlug = firstBranch.organizations.slug;
-                console.log('[BranchAdminLogin] Found organization slug:', organizationSlug);
-              }
-            }
-          }
+          // Check if user is super admin instead
+          const { data: superAdminRole, error: superAdminError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id)
+            .eq("role", "super_admin")
+            .single();
 
-          // Process role result
-          let hasAdminRole = false;
-          let userRole = null;
-          
-          if (roleResult.status === 'fulfilled') {
-            const { data: roleData, error: roleError } = roleResult.value as any;
-            if (!roleError && roleData && roleData.length > 0) {
-              const roles = roleData.map((r: any) => r.role);
-              hasAdminRole = roles.includes('branch_admin') || roles.includes('super_admin');
-              userRole = roles.includes('super_admin') ? 'super_admin' : 
-                        roles.includes('branch_admin') ? 'branch_admin' : null;
-            }
-          }
-
-          // Check if user has admin privileges
-          if (!hasAdminRole) {
-            console.error('[BranchAdminLogin] User does not have admin privileges');
+          if (superAdminError || !superAdminRole) {
             toast({
               variant: "destructive",
               title: "Access Denied",
@@ -129,107 +75,110 @@ const BranchAdminLogin = () => {
             await supabase.auth.signOut();
             return;
           }
-
-          // Handle super admin case
-          if (userRole === 'super_admin' && (!adminBranchData || adminBranchData.length === 0)) {
-            console.log('[BranchAdminLogin] Super admin with no branch assignments');
-            localStorage.setItem("userType", "super_admin");
-            
-            toast({
-              title: "Login Successful",
-              description: "Welcome back, Super Admin!",
-            });
-            
-            navigate('/dashboard', { replace: true });
-            return;
-          }
-
-          // Validate branch assignments
-          if (!adminBranchData || adminBranchData.length === 0) {
-            console.error('[BranchAdminLogin] No branch assignments found');
-            toast({
-              variant: "destructive",
-              title: "Access Error",
-              description: "Unable to find your branch assignment. Please contact support.",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-
-          console.log('[BranchAdminLogin] Branch assignments found:', adminBranchData);
           
-          // Store user type and organization info
-          localStorage.setItem("userType", userRole || "branch_admin");
-          
-          // Set dev tenant with real organization slug in development
-          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
-            if (organizationSlug) {
-              localStorage.setItem('dev-tenant', organizationSlug);
-              console.log('[BranchAdminLogin] Set dev-tenant to:', organizationSlug);
-            } else {
-              // Fallback to default if organization slug not found
-              localStorage.setItem('dev-tenant', 'demo');
-              console.log('[BranchAdminLogin] Fallback: Set dev-tenant to demo');
-            }
-          }
-          
-          // Handle multiple branches
-          if (adminBranchData.length > 1) {
-            const branchesData = adminBranchData.map(item => item.branches).filter(Boolean);
-            localStorage.setItem("availableBranches", JSON.stringify(branchesData));
-            
-            toast({
-              title: "Login Successful",
-              description: "Please select your branch to continue.",
-            });
-            
-            setTimeout(() => {
-              navigate('/branch-selection', { replace: true });
-            }, 500);
-            return;
-          }
-
-          // Single branch assignment - proceed directly
-          const branch = adminBranchData[0].branches;
-          if (!branch) {
-            toast({
-              variant: "destructive",
-              title: "Access Error",
-              description: "Branch information is incomplete. Please contact support.",
-            });
-            await supabase.auth.signOut();
-            return;
-          }
-          
-          localStorage.setItem("currentBranchId", branch.id);
-          localStorage.setItem("currentBranchName", branch.name);
-          
-          // Navigate using organization slug if available
-          const targetPath = organizationSlug 
-            ? `/${organizationSlug}/branch-dashboard/${branch.id}/${encodeURIComponent(branch.name)}`
-            : `/branch-dashboard/${branch.id}/${encodeURIComponent(branch.name)}`;
-          
-          console.log('[BranchAdminLogin] Navigating to:', targetPath);
+          // Super admin can access main dashboard
+          console.log('[BranchAdminLogin] Super admin role confirmed');
+          localStorage.setItem("userType", "super_admin");
           
           toast({
             title: "Login Successful",
-            description: `Welcome back! Redirecting to ${branch.name}...`,
+            description: "Welcome back, Super Admin!",
           });
           
-          setTimeout(() => {
-            navigate(targetPath, { replace: true });
-          }, 500);
+          navigate('/dashboard', { replace: true });
+          return;
+        }
 
-        } catch (queryError) {
-          console.error('[BranchAdminLogin] Query error or timeout:', queryError);
+        console.log('[BranchAdminLogin] Branch admin role confirmed');
+
+        // Fetch the branch admin's assigned branches
+        const { data: adminBranchData, error: branchError } = await supabase
+          .from("admin_branches")
+          .select(`
+            branch_id,
+            branches:branch_id (
+              id,
+              name,
+              status
+            )
+          `)
+          .eq("admin_id", data.user.id);
+
+        if (branchError || !adminBranchData || adminBranchData.length === 0) {
+          console.error('[BranchAdminLogin] Branch assignment error:', branchError);
           toast({
             variant: "destructive",
-            title: "Login Error",
-            description: "Authentication took too long. Please try again.",
+            title: "Access Error",
+            description: "Unable to find your branch assignment. Please contact support.",
           });
           await supabase.auth.signOut();
           return;
         }
+
+        console.log('[BranchAdminLogin] Branch assignments found:', adminBranchData);
+        
+        // Store branch information
+        localStorage.setItem("userType", "branch_admin");
+        
+        // Set dev tenant from the branch's organization if in development
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
+          // For now, we'll use a default tenant in development
+          // TODO: Properly fetch organization slug from branch data
+          localStorage.setItem('dev-tenant', 'demo');
+          console.log('[BranchAdminLogin] Set dev-tenant to demo for development');
+        }
+        
+        // If admin has multiple branches, navigate to branch selection
+        if (adminBranchData.length > 1) {
+          const branchesData = adminBranchData.map(item => item.branches).filter(Boolean);
+          localStorage.setItem("availableBranches", JSON.stringify(branchesData));
+          
+          toast({
+            title: "Login Successful",
+            description: "Please select your branch to continue.",
+          });
+          
+          setTimeout(() => {
+            navigate('/branch-selection', { replace: true });
+          }, 1000);
+          return;
+        }
+
+        // Single branch assignment - proceed directly
+        const branch = adminBranchData[0].branches;
+        if (!branch) {
+          toast({
+            variant: "destructive",
+            title: "Access Error",
+            description: "Branch information is incomplete. Please contact support.",
+          });
+          await supabase.auth.signOut();
+          return;
+        }
+        
+        localStorage.setItem("currentBranchId", branch.id);
+        localStorage.setItem("currentBranchName", branch.name);
+        
+        // Properly encode branch name for URL - handle special characters and spaces
+        const encodedBranchName = encodeURIComponent(branch.name);
+        
+        console.log('[BranchAdminLogin] Navigating to branch dashboard:', {
+          branchId: branch.id,
+          branchName: branch.name,
+          encodedBranchName
+        });
+        
+        toast({
+          title: "Login Successful",
+          description: `Welcome back! Redirecting to ${branch.name}...`,
+        });
+        
+        // Small delay to ensure toast shows before navigation
+        setTimeout(() => {
+          const targetPath = `/branch-dashboard/${branch.id}/${encodedBranchName}`;
+          console.log('[BranchAdminLogin] Target path:', targetPath);
+          navigate(targetPath, { replace: true });
+        }, 1000);
       }
     } catch (error) {
       console.error("Login error:", error);
