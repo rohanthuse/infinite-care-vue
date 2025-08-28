@@ -18,7 +18,7 @@ export const TenantErrorWrapper: React.FC<TenantErrorWrapperProps> = ({ children
 
   // If there's a tenant slug but no organization or error, show tenant not found
   if (tenantSlug && (!organization || error)) {
-    const errorMessage = error?.message || 'Unknown error';
+    const errorMessage = error || 'Unknown error';
     console.error('Tenant error:', errorMessage);
     
     return (

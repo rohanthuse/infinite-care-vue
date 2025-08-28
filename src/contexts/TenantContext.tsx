@@ -10,6 +10,7 @@ export interface Organization {
   slug: string;
   subscription_plan: string;
   subscription_status: string;
+  logo_url?: string;
 }
 
 interface TenantContextType {
@@ -45,7 +46,7 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Step 1: Get organization by slug
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
-        .select('id, name, slug, subscription_plan, subscription_status')
+        .select('id, name, slug, subscription_plan, subscription_status, logo_url')
         .eq('slug', tenantSlug)
         .maybeSingle();
 

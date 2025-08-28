@@ -21,7 +21,7 @@ const TenantLogin = () => {
     organization: organization?.name,
     tenantSlug,
     isLoading,
-    error: error?.message,
+    error: error,
     pathname: window.location.pathname
   });
   
