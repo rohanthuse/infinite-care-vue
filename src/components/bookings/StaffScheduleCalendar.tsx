@@ -50,6 +50,12 @@ export function StaffScheduleCalendar({
     assignedOnly: false,
   });
 
+  // Layout constants for consistent width
+  const LEFT_COL_WIDTH = 200; // Staff info column width
+  const SLOT_WIDTH = 32; // Each 30-minute slot width
+  const TOTAL_SLOTS = 48; // 24 hours * 2 (30-minute slots)
+  const TOTAL_WIDTH = LEFT_COL_WIDTH + (SLOT_WIDTH * TOTAL_SLOTS); // 200 + (32 * 48) = 1736px
+
   // Fetch staff and leave data
   const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
   const { data: leaveRequests = [], isLoading: isLoadingLeave } = useLeaveRequests(branchId);
@@ -365,12 +371,24 @@ export function StaffScheduleCalendar({
       {/* Schedule Grid */}
       <div className="border rounded-lg overflow-x-auto">
         <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see more time slots</div>
-        <div className="min-w-[1600px]">
+        <div style={{ width: TOTAL_WIDTH }}>
         {/* Header row with time slots */}
-        <div className="grid grid-cols-[200px_repeat(48,1fr)] bg-muted/50 border-b">
-          <div className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50">Staff</div>
+        <div 
+          className="bg-muted/50 border-b flex"
+          style={{ width: TOTAL_WIDTH }}
+        >
+          <div 
+            className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50 flex-shrink-0"
+            style={{ width: LEFT_COL_WIDTH }}
+          >
+            Staff
+          </div>
           {timeSlots.map(slot => (
-            <div key={slot} className="p-1 text-xs text-center font-medium border-r last:border-r-0">
+            <div 
+              key={slot} 
+              className="p-1 text-xs text-center font-medium border-r last:border-r-0 flex-shrink-0 flex items-center justify-center"
+              style={{ width: SLOT_WIDTH }}
+            >
               {slot}
             </div>
           ))}
@@ -378,9 +396,16 @@ export function StaffScheduleCalendar({
 
           {/* Staff rows */}
           {staffSchedule.map((staffMember) => (
-            <div key={staffMember.id} className="grid grid-cols-[200px_repeat(48,1fr)] border-b last:border-b-0">
+            <div 
+              key={staffMember.id} 
+              className="border-b last:border-b-0 flex"
+              style={{ width: TOTAL_WIDTH }}
+            >
               {/* Staff info column */}
-              <div className="p-3 border-r bg-background sticky left-0 z-10">
+              <div 
+                className="p-3 border-r bg-background sticky left-0 z-10 flex-shrink-0"
+                style={{ width: LEFT_COL_WIDTH }}
+              >
                 <div className="font-medium text-sm">{staffMember.name}</div>
                 {staffMember.specialization && (
                   <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
@@ -397,7 +422,8 @@ export function StaffScheduleCalendar({
                   <Tooltip key={`${staffMember.id}-${slot}-${status.type}`}>
                     <TooltipTrigger asChild>
                       <div
-                        className={`p-0.5 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
+                        className={`p-0.5 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors flex-shrink-0 ${getStatusColor(status)}`}
+                        style={{ width: SLOT_WIDTH }}
                         onClick={() => handleCellClick(staffMember.id, slot, status)}
                       >
                         {getStatusLabel(status)}
