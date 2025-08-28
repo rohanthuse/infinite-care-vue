@@ -6927,6 +6927,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: string
       }
+      get_user_primary_org_slug: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

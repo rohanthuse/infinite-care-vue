@@ -115,132 +115,39 @@ const UnifiedLogin = () => {
 
   const detectUserOrganization = async (userId: string) => {
     try {
-      console.log('[detectUserOrganization] Checking organization for user:', userId);
+      console.log('[detectUserOrganization] Using optimized RPC function for user:', userId);
       
-      // First check organization_members (for regular org members and system users)
-      const { data: memberships, error: membershipError } = await supabase
-        .from('organization_members')
-        .select('role, organization_id, joined_at, organizations(slug)')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .order('joined_at', { ascending: false }); // Most recent first as tiebreaker
-
-      console.log('[detectUserOrganization] Organization membership result:', { 
-        count: memberships?.length || 0, 
-        membershipError 
-      });
-
-      if (memberships && memberships.length > 0) {
-        // Sort by role priority: owner > admin > member
-        const prioritizedMemberships = memberships
-          .filter(m => m.organizations?.slug) // Ensure organization data exists
-          .sort((a, b) => {
-            const roleOrder = { owner: 1, admin: 2, member: 3 };
-            const aOrder = roleOrder[a.role as keyof typeof roleOrder] || 999;
-            const bOrder = roleOrder[b.role as keyof typeof roleOrder] || 999;
-            return aOrder - bOrder;
-          });
-
-        if (prioritizedMemberships.length > 0) {
-          const primaryMembership = prioritizedMemberships[0];
-          console.log('[detectUserOrganization] Found organization via membership:', {
-            slug: primaryMembership.organizations.slug,
-            role: primaryMembership.role,
-            totalMemberships: memberships.length
-          });
-          return primaryMembership.organizations.slug;
-        }
-      }
-
-      // Then check staff table (for carers) - use separate queries to avoid join issues
-      const { data: staffMember, error: staffError } = await supabase
-        .from('staff')
-        .select('id, branch_id, status')
-        .eq('auth_user_id', userId)
-        .eq('status', 'Active')
-        .maybeSingle();
-
-      if (staffError && staffError.code !== 'PGRST116') {
-        console.error('[detectUserOrganization] Error querying staff table:', staffError);
+      // Check cache first for repeat logins
+      const cacheKey = `org_slug_${userId}`;
+      const cachedSlug = localStorage.getItem(cacheKey);
+      const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+      
+      // Cache for 5 minutes
+      if (cachedSlug && cacheTime && (Date.now() - parseInt(cacheTime)) < 5 * 60 * 1000) {
+        console.log('[detectUserOrganization] Using cached organization:', cachedSlug);
+        return cachedSlug;
       }
       
-      console.log('[detectUserOrganization] Staff query result:', { staffMember, staffError });
-
-      if (staffMember?.branch_id) {
-        const { data: staffBranch } = await supabase
-          .from('branches')
-          .select('organization_id')
-          .eq('id', staffMember.branch_id)
-          .maybeSingle();
-
-        if (staffBranch?.organization_id) {
-          const { data: staffOrg } = await supabase
-            .from('organizations')
-            .select('slug')
-            .eq('id', staffBranch.organization_id)
-            .maybeSingle();
-
-          if (staffOrg?.slug) {
-            console.log('[detectUserOrganization] Found staff organization:', staffOrg.slug);
-            return staffOrg.slug;
-          }
-        }
+      // Use the new unified RPC function for fast single-query organization detection
+      const { data: orgSlug, error } = await supabase
+        .rpc('get_user_primary_org_slug', { p_user_id: userId })
+        .single();
+      
+      if (error) {
+        console.error('[detectUserOrganization] RPC error:', error);
+        return null;
       }
-
-      // Check clients table (for clients)
-      const { data: clientMember, error: clientError } = await supabase
-        .from('clients')
-        .select('id, branch_id')
-        .eq('auth_user_id', userId)
-        .maybeSingle();
-
-      if (clientError && clientError.code !== 'PGRST116') {
-        console.error('[detectUserOrganization] Error querying clients table:', clientError);
+      
+      if (orgSlug) {
+        // Cache the result for future logins
+        localStorage.setItem(cacheKey, orgSlug);
+        localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+        console.log('[detectUserOrganization] Found and cached organization:', orgSlug);
+      } else {
+        console.log('[detectUserOrganization] No organization found for user:', userId);
       }
-
-      if (clientMember?.branch_id) {
-        const { data: clientBranch } = await supabase
-          .from('branches')
-          .select('organization_id')
-          .eq('id', clientMember.branch_id)
-          .maybeSingle();
-
-        if (clientBranch?.organization_id) {
-          const { data: clientOrg } = await supabase
-            .from('organizations')
-            .select('slug')
-            .eq('id', clientBranch.organization_id)
-            .maybeSingle();
-
-          if (clientOrg?.slug) {
-            console.log('[detectUserOrganization] Found client organization:', clientOrg.slug);
-            return clientOrg.slug;
-          }
-        }
-      }
-
-      // Final fallback: check system_user_organizations via system_users table
-      const { data: systemUser, error: systemUserError } = await supabase
-        .from('system_users')
-        .select(`
-          system_user_organizations(
-            organization_id,
-            organizations(slug)
-          )
-        `)
-        .eq('auth_user_id', userId)
-        .maybeSingle();
-
-      console.log('[detectUserOrganization] System user result:', { systemUser, systemUserError });
-
-      if (systemUser?.system_user_organizations?.[0]?.organizations?.slug) {
-        const orgSlug = systemUser.system_user_organizations[0].organizations.slug;
-        console.log('[detectUserOrganization] Found organization via system user:', orgSlug);
-        return orgSlug;
-      }
-
-      console.log('[detectUserOrganization] No organization found for user:', userId);
-      return null;
+      
+      return orgSlug;
     } catch (error) {
       console.error('[detectUserOrganization] Error detecting organization:', error);
       return null;
