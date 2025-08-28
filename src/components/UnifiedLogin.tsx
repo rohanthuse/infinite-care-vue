@@ -118,18 +118,38 @@ const UnifiedLogin = () => {
       console.log('[detectUserOrganization] Checking organization for user:', userId);
       
       // First check organization_members (for regular org members and system users)
-      const { data: membership, error: membershipError } = await supabase
+      const { data: memberships, error: membershipError } = await supabase
         .from('organization_members')
-        .select('organization_id, organizations(slug)')
+        .select('role, organization_id, joined_at, organizations(slug)')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .maybeSingle();
+        .order('joined_at', { ascending: false }); // Most recent first as tiebreaker
 
-      console.log('[detectUserOrganization] Organization membership result:', { membership, membershipError });
+      console.log('[detectUserOrganization] Organization membership result:', { 
+        count: memberships?.length || 0, 
+        membershipError 
+      });
 
-      if (membership?.organizations?.slug) {
-        console.log('[detectUserOrganization] Found organization via membership:', membership.organizations.slug);
-        return membership.organizations.slug;
+      if (memberships && memberships.length > 0) {
+        // Sort by role priority: owner > admin > member
+        const prioritizedMemberships = memberships
+          .filter(m => m.organizations?.slug) // Ensure organization data exists
+          .sort((a, b) => {
+            const roleOrder = { owner: 1, admin: 2, member: 3 };
+            const aOrder = roleOrder[a.role as keyof typeof roleOrder] || 999;
+            const bOrder = roleOrder[b.role as keyof typeof roleOrder] || 999;
+            return aOrder - bOrder;
+          });
+
+        if (prioritizedMemberships.length > 0) {
+          const primaryMembership = prioritizedMemberships[0];
+          console.log('[detectUserOrganization] Found organization via membership:', {
+            slug: primaryMembership.organizations.slug,
+            role: primaryMembership.role,
+            totalMemberships: memberships.length
+          });
+          return primaryMembership.organizations.slug;
+        }
       }
 
       // Then check staff table (for carers) - use separate queries to avoid join issues
