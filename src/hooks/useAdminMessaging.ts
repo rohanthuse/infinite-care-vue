@@ -130,6 +130,7 @@ export const useAdminContacts = () => {
           first_name, 
           last_name, 
           email,
+          auth_user_id,
           branch_id,
           status,
           branches!inner (
@@ -139,7 +140,8 @@ export const useAdminContacts = () => {
         `)
         .in('branch_id', branchIds)
         .eq('branches.organization_id', organization.id)
-        .or('status.is.null,status.not.in.("Former","Closed Enquiries","Inactive")');
+        .eq('status', 'Active')
+        .not('auth_user_id', 'is', null);
 
       if (clientError) {
         console.error('[useAdminContacts] Error fetching clients:', clientError);
@@ -147,37 +149,8 @@ export const useAdminContacts = () => {
 
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
-        // Batch check for clients with valid user_roles - use a different approach
-        const clientEmails = clients.map(c => c.email).filter(Boolean);
-        
-        // First get all user_roles for clients
-        const { data: validClientRoles } = await supabase
-          .from('user_roles')
-          .select('user_id, role')
-          .eq('role', 'client');
-        
-        // Then get profiles for those user IDs
-        const validUserIds = validClientRoles?.map(cr => cr.user_id) || [];
-        const { data: clientProfiles } = await supabase
-          .from('profiles')
-          .select('id, email')
-          .in('id', validUserIds)
-          .in('email', clientEmails);
-        
-        // Create a lookup map for faster access
-        const clientRolesMap = new Map(
-          clientProfiles?.map(cp => [cp.email, cp.id]) || []
-        );
-        
-        // For each client, check if they have a valid auth user ID
         for (const client of clients) {
-          if (!client.email) continue;
-          
-          const authUserId = clientRolesMap.get(client.email);
-          if (!authUserId) {
-            console.warn(`[useAdminContacts] Client ${client.email} has no valid user_roles - skipping`);
-            continue; // Skip clients without proper auth setup
-          }
+          if (!client.email || !client.auth_user_id) continue;
           
           const firstName = client.first_name || '';
           const lastName = client.last_name || '';
@@ -186,7 +159,7 @@ export const useAdminContacts = () => {
                              `Client ${client.id.slice(0, 8)}`;
           
           contacts.push({
-            id: authUserId, // Use auth user ID from user_roles
+            id: client.auth_user_id, // Use auth user ID directly
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'L'}`,
             type: 'client' as const,
@@ -207,6 +180,7 @@ export const useAdminContacts = () => {
           first_name, 
           last_name, 
           email,
+          auth_user_id,
           branch_id,
           status,
           branches!inner (
@@ -216,7 +190,8 @@ export const useAdminContacts = () => {
         `)
         .in('branch_id', branchIds)
         .eq('branches.organization_id', organization.id)
-        .or('status.is.null,status.ilike.active');
+        .eq('status', 'Active')
+        .not('auth_user_id', 'is', null);
 
       if (carerError) {
         console.error('[useAdminContacts] Error fetching carers:', carerError);
@@ -224,36 +199,8 @@ export const useAdminContacts = () => {
 
       console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
-        // Batch check for carers with valid user_roles
-        const carerIds = carers.map(c => c.id).filter(Boolean);
-        const { data: staffAuthData } = await supabase
-          .from('staff')
-          .select('id, auth_user_id')
-          .in('id', carerIds)
-          .not('auth_user_id', 'is', null);
-        
-        // Get valid carer roles from user_roles
-        const authUserIds = staffAuthData?.map(s => s.auth_user_id).filter(Boolean) || [];
-        const { data: validCarerRoles } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'carer')
-          .in('user_id', authUserIds);
-        
-        const validAuthUserIds = new Set(validCarerRoles?.map(cr => cr.user_id) || []);
-        const authUserMap = new Map(
-          staffAuthData?.map(s => [s.id, s.auth_user_id]) || []
-        );
-        
-        // For each carer, check if they have valid auth setup
         for (const carer of carers) {
-          if (!carer.email) continue;
-          
-          const authUserId = authUserMap.get(carer.id);
-          if (!authUserId || !validAuthUserIds.has(authUserId)) {
-            console.warn(`[useAdminContacts] Carer ${carer.email} has no valid auth/role setup - skipping`);
-            continue; // Skip carers without proper auth setup
-          }
+          if (!carer.email || !carer.auth_user_id) continue;
           
           const firstName = carer.first_name || '';
           const lastName = carer.last_name || '';
@@ -262,7 +209,7 @@ export const useAdminContacts = () => {
                              `Carer ${carer.id.slice(0, 8)}`;
           
           contacts.push({
-            id: authUserId, // Use validated auth user ID
+            id: carer.auth_user_id, // Use auth user ID directly
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
             type: 'carer' as const,
