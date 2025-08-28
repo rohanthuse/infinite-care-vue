@@ -32,20 +32,30 @@ export function useCreateMultipleBookings(branchId?: string) {
   return useMutation({
     mutationFn: createMultipleBookings,
     onSuccess: (data) => {
-      console.log("[useCreateMultipleBookings] onSuccess - Invalidating queries for branch:", branchId);
-      console.log("[useCreateMultipleBookings] Created bookings data:", data);
+      console.log("[useCreateMultipleBookings] Successfully created bookings:", data?.length || 0);
+      console.log("[useCreateMultipleBookings] Booking details:", data);
       
-      // Invalidate both the main bookings query and client bookings
+      // Force immediate refetch by invalidating queries
+      console.log("[useCreateMultipleBookings] Invalidating queries for branch:", branchId);
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
       
       // Also invalidate any client-specific booking queries
       data?.forEach((booking: any) => {
         if (booking.client_id) {
+          console.log("[useCreateMultipleBookings] Invalidating client bookings for:", booking.client_id);
           queryClient.invalidateQueries({ queryKey: ["client-bookings", booking.client_id] });
+        }
+        if (booking.staff_id) {
+          console.log("[useCreateMultipleBookings] Invalidating carer bookings for:", booking.staff_id); 
+          queryClient.invalidateQueries({ queryKey: ["carer-bookings", booking.staff_id] });
+          queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", booking.staff_id] });
         }
       });
       
-      console.log("[useCreateMultipleBookings] Query invalidation completed");
+      // Force immediate refetch to ensure staff schedule updates
+      queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
+      
+      console.log("[useCreateMultipleBookings] Query invalidation and refetch completed");
     },
     onError: (error) => {
       console.error("[useCreateMultipleBookings] onError:", error);
