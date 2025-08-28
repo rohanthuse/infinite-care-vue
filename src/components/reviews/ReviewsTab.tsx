@@ -143,8 +143,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Reviews</h2>
           <p className="text-red-600 mb-4">Failed to load reviews: {error.message}</p>
-          <Button onClick={handleRefresh} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button onClick={handleRefresh} variant="outline" className="group active:scale-95 transition-transform">
+            <RefreshCw className="h-4 w-4 mr-2 group-active:-rotate-6 transition-transform" />
             Try Again
           </Button>
         </div>
@@ -163,8 +163,8 @@ const ReviewsTab: React.FC<ReviewsTabProps> = ({ branchId, branchName }) => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="h-9" onClick={handleRefresh} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            <Button variant="outline" size="sm" className="h-9 group active:scale-95 transition-transform" onClick={handleRefresh} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : 'group-active:-rotate-6'} transition-transform`} />
               Refresh
             </Button>
             <Button variant="outline" size="sm" className="h-9" onClick={handleExport} disabled={reviews.length === 0}>
