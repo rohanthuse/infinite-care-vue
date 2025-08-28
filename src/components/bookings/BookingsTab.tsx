@@ -242,6 +242,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             onUpdateBooking={handleUpdateBooking}
             onViewBooking={handleViewBooking}
             onEditBooking={handleEditBooking}
+            onRequestViewTypeChange={setViewType}
             isCheckingOverlap={isCheckingOverlap}
           />
         </TabsContent>

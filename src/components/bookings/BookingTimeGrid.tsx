@@ -71,6 +71,7 @@ interface BookingTimeGridProps {
   onUpdateBooking?: (booking: Booking, carers: Carer[]) => void;
   onEditBooking?: (booking: Booking) => void;
   onViewBooking?: (booking: Booking) => void;
+  onRequestViewTypeChange?: (viewType: "daily" | "weekly" | "monthly") => void;
   isUpdatingBooking?: boolean;
   isCheckingOverlap?: boolean;
 }
@@ -96,6 +97,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   onUpdateBooking,
   onEditBooking,
   onViewBooking,
+  onRequestViewTypeChange,
   isUpdatingBooking,
   isCheckingOverlap = false,
 }) => {
@@ -605,14 +607,22 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           <h3 className="text-lg font-medium text-foreground mb-2">Monthly View</h3>
           <p className="text-muted-foreground mb-4">
             The time grid view is not available for monthly view. 
-            Please use the Calendar tab for monthly booking overview.
+            Switch to Daily or Weekly view to see the detailed schedule.
           </p>
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.reload()}
-          >
-            Switch to Calendar View
-          </Button>
+          <div className="flex gap-2 justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => onRequestViewTypeChange?.("weekly")}
+            >
+              Switch to Weekly
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={() => onRequestViewTypeChange?.("daily")}
+            >
+              Switch to Daily
+            </Button>
+          </div>
         </div>
       </div>
     );
