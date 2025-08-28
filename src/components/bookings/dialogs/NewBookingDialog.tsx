@@ -82,6 +82,7 @@ interface NewBookingDialogProps {
   prefilledData?: {
     date?: Date;
     startTime?: string;
+    endTime?: string;
     clientId?: string;
     carerId?: string;
   };
@@ -160,7 +161,10 @@ export function NewBookingDialog({
       schedules: [
         {
           startTime: prefilledData?.startTime || "09:00",
-          endTime: "17:00",
+          endTime: prefilledData?.endTime || 
+            (prefilledData?.startTime ? 
+              `${String(Math.floor((parseInt(prefilledData.startTime.split(':')[0]) + 1) % 24)).padStart(2, '0')}:${prefilledData.startTime.split(':')[1]}` 
+              : "10:00"),
           services: [],
           ...getDefaultDaysForDate(prefilledData?.date),
         },

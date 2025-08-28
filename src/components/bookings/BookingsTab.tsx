@@ -265,11 +265,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             branchId={branchId}
             onViewBooking={handleViewBooking}
             onCreateBooking={(staffId, timeSlot) => {
-              // Create new booking with pre-filled staff and time
-              const [hour] = timeSlot.split(':');
-              const startTime = `${hour}:00`;
-              
-              handleContextMenuBooking(selectedDate, startTime, undefined, staffId);
+              // Create new booking with pre-filled staff and time (preserve exact 30-minute slot)
+              handleContextMenuBooking(selectedDate, timeSlot, undefined, staffId);
             }}
           />
         </TabsContent>

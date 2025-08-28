@@ -54,12 +54,13 @@ export function StaffScheduleCalendar({
   const { data: staff = [] } = useBranchStaff(branchId || '');
   const { data: leaveRequests = [] } = useLeaveRequests(branchId);
 
-  // Generate 24-hour time slots
+  // Generate 30-minute time slots
   const timeSlots = useMemo(() => {
     const slots = [];
     for (let i = 0; i < 24; i++) {
       const hour = i.toString().padStart(2, '0');
       slots.push(`${hour}:00`);
+      slots.push(`${hour}:30`);
     }
     return slots;
   }, []);
@@ -82,22 +83,36 @@ export function StaffScheduleCalendar({
       );
 
       dayBookings.forEach(booking => {
-        const startHour = booking.startTime.split(':')[0].padStart(2, '0');
-        const endHour = booking.endTime.split(':')[0].padStart(2, '0');
-        const startSlot = `${startHour}:00`;
+        // Get exact start and end times including minutes
+        const [startHour, startMin] = booking.startTime.split(':').map(Number);
+        const [endHour, endMin] = booking.endTime.split(':').map(Number);
         
-        // Determine booking status
-        let statusType: StaffStatus['type'] = 'assigned';
-        if (booking.status === 'departed') statusType = 'in-progress';
-        else if (booking.status === 'done') statusType = 'done';
+        // Calculate which 30-minute slots this booking occupies
+        const startMinutes = startHour * 60 + startMin;
+        const endMinutes = endHour * 60 + endMin;
         
-        schedule[startSlot] = {
-          type: statusType,
-          booking
-        };
+        // Mark all occupied 30-minute slots
+        timeSlots.forEach(slot => {
+          const [slotHour, slotMin] = slot.split(':').map(Number);
+          const slotMinutes = slotHour * 60 + slotMin;
+          const nextSlotMinutes = slotMinutes + 30;
+          
+          // Check if this 30-minute slot overlaps with the booking
+          if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
+            // Determine booking status
+            let statusType: StaffStatus['type'] = 'assigned';
+            if (booking.status === 'departed') statusType = 'in-progress';
+            else if (booking.status === 'done') statusType = 'done';
+            
+            schedule[slot] = {
+              type: statusType,
+              booking
+            };
+          }
+        });
 
-        // Calculate hours (simplified - assume 1 hour blocks)
-        totalHours += 1;
+        // Calculate hours more accurately
+        totalHours += (endMinutes - startMinutes) / 60;
       });
 
       // Add leave periods
@@ -320,10 +335,10 @@ export function StaffScheduleCalendar({
       {/* Schedule Grid */}
       <div className="border rounded-lg overflow-hidden">
         {/* Header row with time slots */}
-        <div className="grid grid-cols-[200px_repeat(24,1fr)] bg-muted/50 border-b">
+        <div className="grid grid-cols-[200px_repeat(48,1fr)] bg-muted/50 border-b">
           <div className="p-3 font-medium border-r">Staff</div>
           {timeSlots.map(slot => (
-            <div key={slot} className="p-2 text-xs text-center font-medium border-r last:border-r-0">
+            <div key={slot} className="p-1 text-xs text-center font-medium border-r last:border-r-0">
               {slot}
             </div>
           ))}
@@ -331,7 +346,7 @@ export function StaffScheduleCalendar({
 
         {/* Staff rows */}
         {staffSchedule.map((staffMember) => (
-          <div key={staffMember.id} className="grid grid-cols-[200px_repeat(24,1fr)] border-b last:border-b-0">
+          <div key={staffMember.id} className="grid grid-cols-[200px_repeat(48,1fr)] border-b last:border-b-0">
             {/* Staff info column */}
             <div className="p-3 border-r bg-background">
               <div className="font-medium text-sm">{staffMember.name}</div>
@@ -350,7 +365,7 @@ export function StaffScheduleCalendar({
                 <Tooltip key={`${staffMember.id}-${slot}-${status.type}`}>
                   <TooltipTrigger asChild>
                     <div
-                      className={`p-1 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
+                      className={`p-0.5 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
                       onClick={() => handleCellClick(staffMember.id, slot, status)}
                     >
                       {getStatusLabel(status)}

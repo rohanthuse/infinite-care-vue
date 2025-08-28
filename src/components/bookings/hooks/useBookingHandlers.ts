@@ -17,6 +17,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const [newBookingData, setNewBookingData] = useState<{
     date: Date;
     startTime: string;
+    endTime?: string;
     clientId?: string;
     carerId?: string;
   } | null>(null);
@@ -93,9 +94,15 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const handleContextMenuBooking = (date: Date, time: string, clientId?: string, carerId?: string) => {
+    // Calculate end time (1 hour after start time)
+    const [hour, minutes] = time.split(':').map(Number);
+    const endHour = (hour + 1) % 24;
+    const endTime = `${String(endHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    
     setNewBookingData({
       date,
       startTime: time,
+      endTime,
       clientId,
       carerId
     });
