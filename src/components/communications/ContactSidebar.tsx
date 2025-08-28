@@ -36,7 +36,7 @@ export const ContactSidebar = ({
   
   // Use different hooks based on user role
   const isAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
-  const { data: adminContacts = [], isLoading: adminContactsLoading, error: adminContactsError } = useAdminContacts();
+  const { data: adminContacts = [], isLoading: adminContactsLoading, error: adminContactsError } = useAdminContacts(branchId);
   const { data: regularContacts = [], isLoading: regularContactsLoading, error: regularContactsError } = useContacts(branchId, contactType);
   
   // Choose the appropriate contacts and loading states

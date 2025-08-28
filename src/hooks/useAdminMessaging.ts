@@ -53,12 +53,12 @@ export interface AdminMessageThread {
 }
 
 // Get contacts available for admin messaging (clients and carers in their branches)
-export const useAdminContacts = () => {
+export const useAdminContacts = (branchId?: string) => {
   const { data: currentUser } = useUserRole();
   const { organization } = useTenant();
   
   return useQuery({
-    queryKey: ['admin-contacts', currentUser?.id, organization?.id],
+    queryKey: ['admin-contacts', currentUser?.id, organization?.id, branchId],
     queryFn: async (): Promise<AdminContact[]> => {
       console.log('[useAdminContacts] Current user:', currentUser, 'Organization:', organization?.id);
       
@@ -74,7 +74,11 @@ export const useAdminContacts = () => {
       // Get branch access for admin - FILTER BY ORGANIZATION
       let branchIds: string[] = [];
       
-      if (currentUser.role === 'super_admin') {
+      if (branchId) {
+        // If specific branchId is provided, use only that branch
+        branchIds = [branchId];
+        console.log('[useAdminContacts] Using specific branch:', branchId);
+      } else if (currentUser.role === 'super_admin') {
         // Super admin can see branches ONLY within their current organization
         const { data: branches, error: branchError } = await supabase
           .from('branches')
@@ -142,7 +146,7 @@ export const useAdminContacts = () => {
         `)
         .in('branch_id', branchIds)
         .eq('branches.organization_id', organization.id)
-        .eq('status', 'Active');
+        .in('status', ['Active', 'active']);
 
       if (clientError) {
         console.error('[useAdminContacts] Error fetching clients:', clientError);
@@ -151,8 +155,6 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
         for (const client of clients) {
-          // Skip clients without email
-          if (!client.email) continue;
           
           const firstName = client.first_name || '';
           const lastName = client.last_name || '';
@@ -198,7 +200,7 @@ export const useAdminContacts = () => {
         `)
         .in('branch_id', branchIds)
         .eq('branches.organization_id', organization.id)
-        .eq('status', 'Active');
+        .in('status', ['Active', 'active']);
 
       if (carerError) {
         console.error('[useAdminContacts] Error fetching carers:', carerError);
@@ -207,8 +209,6 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
         for (const carer of carers) {
-          // Skip carers without email
-          if (!carer.email) continue;
           
           const firstName = carer.first_name || '';
           const lastName = carer.last_name || '';

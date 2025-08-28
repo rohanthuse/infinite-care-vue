@@ -69,7 +69,7 @@ export const MessageComposer = ({
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
 
-  const { data: availableContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts();
+  const { data: availableContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   
@@ -389,39 +389,53 @@ export const MessageComposer = ({
                         <div className="text-gray-500 text-sm p-2">Loading contacts...</div>
                       ) : availableContacts.length > 0 ? (
                         <>
-                          {availableContacts.filter(c => c.type === 'client' && c.canMessage !== false).length > 0 && (
-                            <div>
-                              <Label className="text-sm font-medium">Clients</Label>
-                              <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'client' && c.canMessage !== false).map(contact => (
-                                  <div key={contact.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      checked={selectedContacts.clients.includes(contact.id)}
-                                      onCheckedChange={() => handleContactToggle(contact.id, 'clients')}
-                                    />
-                                    <Label className="text-sm">{contact.name}</Label>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          
-                          {availableContacts.filter(c => c.type === 'carer' && c.canMessage !== false).length > 0 && (
-                            <div>
-                              <Label className="text-sm font-medium">Carers</Label>
-                              <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'carer' && c.canMessage !== false).map(contact => (
-                                  <div key={contact.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      checked={selectedContacts.carers.includes(contact.id)}
-                                      onCheckedChange={() => handleContactToggle(contact.id, 'carers')}
-                                    />
-                                    <Label className="text-sm">{contact.name}</Label>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                           {availableContacts.filter(c => c.type === 'client').length > 0 && (
+                             <div>
+                               <Label className="text-sm font-medium">Clients</Label>
+                               <div className="space-y-1 mt-1">
+                                 {availableContacts.filter(c => c.type === 'client').map(contact => (
+                                   <div key={contact.id} className="flex items-center space-x-2">
+                                     <Checkbox
+                                       checked={selectedContacts.clients.includes(contact.id)}
+                                       onCheckedChange={() => handleContactToggle(contact.id, 'clients')}
+                                     />
+                                     <Label className="text-sm flex items-center gap-2">
+                                       {contact.name}
+                                       {contact.canMessage === false && (
+                                         <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                           Setup Required
+                                         </Badge>
+                                       )}
+                                     </Label>
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
+                           )}
+                           
+                           {availableContacts.filter(c => c.type === 'carer').length > 0 && (
+                             <div>
+                               <Label className="text-sm font-medium">Carers</Label>
+                               <div className="space-y-1 mt-1">
+                                 {availableContacts.filter(c => c.type === 'carer').map(contact => (
+                                   <div key={contact.id} className="flex items-center space-x-2">
+                                     <Checkbox
+                                       checked={selectedContacts.carers.includes(contact.id)}
+                                       onCheckedChange={() => handleContactToggle(contact.id, 'carers')}
+                                     />
+                                     <Label className="text-sm flex items-center gap-2">
+                                       {contact.name}
+                                       {contact.canMessage === false && (
+                                         <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                           Setup Required
+                                         </Badge>
+                                       )}
+                                     </Label>
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
+                           )}
                           
                           {availableContacts.filter(c => c.type === 'branch_admin' || c.type === 'super_admin').length > 0 && (
                             <div>
