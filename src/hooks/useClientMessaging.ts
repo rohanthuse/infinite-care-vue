@@ -124,10 +124,10 @@ export const useClientMessageThreads = () => {
         .from('message_threads')
         .select(`
           *,
-          thread_participants!inner(
-            participant_id,
-            participant_name,
-            participant_type
+          message_participants!inner(
+            user_id,
+            user_name,
+            user_type
           ),
           messages(
             id,
@@ -138,7 +138,7 @@ export const useClientMessageThreads = () => {
             has_attachments
           )
         `)
-        .eq('thread_participants.participant_id', clientId)
+        .eq('message_participants.user_id', clientId)
         .order('updated_at', { ascending: false });
 
       if (error) {
@@ -149,13 +149,13 @@ export const useClientMessageThreads = () => {
       return (threadsData || []).map((thread: any) => ({
         id: thread.id,
         subject: thread.subject,
-        participants: thread.thread_participants
-          .filter((p: any) => p.participant_id !== clientId)
+        participants: thread.message_participants
+          .filter((p: any) => p.user_id !== clientId)
           .map((p: any) => ({
-            id: p.participant_id,
-            name: p.participant_name,
-            avatar: p.participant_name?.split(' ').map((n: string) => n.charAt(0)).join('').substring(0, 2).toUpperCase() || '??',
-            type: p.participant_type
+            id: p.user_id,
+            name: p.user_name,
+            avatar: p.user_name?.split(' ').map((n: string) => n.charAt(0)).join('').substring(0, 2).toUpperCase() || '??',
+            type: p.user_type
           })),
         lastMessage: thread.messages?.length > 0 ? {
           content: thread.messages[thread.messages.length - 1].content,
@@ -214,6 +214,7 @@ export const useClientThreadMessages = (threadId: string) => {
 export const useClientCreateThread = () => {
   const queryClient = useQueryClient();
   const { clientId } = useClientAuth();
+  const { organization } = useTenant();
   
   return useMutation({
     mutationFn: async ({
@@ -231,8 +232,8 @@ export const useClientCreateThread = () => {
       initialMessage: string;
       attachments?: any[];
     }) => {
-      if (!clientId) {
-        throw new Error('Client not authenticated');
+      if (!clientId || !organization?.id) {
+        throw new Error('Client not authenticated or organization not found');
       }
 
       console.log('[useClientCreateThread] Creating thread:', {
@@ -249,8 +250,8 @@ export const useClientCreateThread = () => {
         .from('message_threads')
         .insert({
           subject,
-          message_type: 'general',
-          priority: 'normal'
+          created_by: clientId,
+          organization_id: organization.id
         })
         .select()
         .single();
@@ -264,20 +265,20 @@ export const useClientCreateThread = () => {
       const participants = [
         {
           thread_id: threadData.id,
-          participant_id: clientId,
-          participant_name: 'Client', // Will be updated by trigger
-          participant_type: 'client'
+          user_id: clientId,
+          user_name: 'Client', // Will be updated by trigger
+          user_type: 'client'
         },
         {
           thread_id: threadData.id,
-          participant_id: recipientId,
-          participant_name: recipientName,
-          participant_type: recipientType
+          user_id: recipientId,
+          user_name: recipientName,
+          user_type: recipientType
         }
       ];
 
       const { error: participantsError } = await supabase
-        .from('thread_participants')
+        .from('message_participants')
         .insert(participants);
 
       if (participantsError) {
