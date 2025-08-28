@@ -6,6 +6,7 @@ import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye } from "luci
 import { useAdminThreadMessages } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
+import { useThreadParticipants } from "@/hooks/useThreadParticipants";
 import { MessageAttachmentViewer } from "./MessageAttachmentViewer";
 
 interface MessageViewProps {
@@ -16,6 +17,7 @@ interface MessageViewProps {
 export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const { data: currentUser } = useUserRole();
   const { data: messages = [], isLoading, error } = useAdminThreadMessages(messageId);
+  const { data: threadParticipants = [] } = useThreadParticipants(messageId);
   const markMessagesAsRead = useMarkMessagesAsRead();
 
   // Auto-scroll to bottom when messages load
@@ -90,25 +92,19 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     }
   };
 
-  const getParticipants = () => {
-    if (!messages.length) return [];
-    
-    const participantMap = new Map();
-    messages.forEach(message => {
-      if (!participantMap.has(message.senderId)) {
-        participantMap.set(message.senderId, {
-          id: message.senderId,
-          name: message.senderName,
-          type: message.senderType
-        });
-      }
-    });
-    
-    return Array.from(participantMap.values());
-  };
-
-  const participants = getParticipants();
+  // Use thread participants from the database instead of deriving from messages
+  const participants = threadParticipants;
   const isGroupChat = participants.length > 2;
+  
+  // Get the other participant(s) excluding current user
+  const otherParticipants = participants.filter(p => p.userId !== currentUser?.id);
+  const displayName = isGroupChat 
+    ? `Group Chat (${participants.length})`
+    : otherParticipants[0]?.name || 'Unknown';
+  
+  const getAvatarInitials = (name: string) => {
+    return name.split(' ').map(n => n.charAt(0)).join('').slice(0, 2).toUpperCase();
+  };
 
   if (isLoading) {
     return (
@@ -156,13 +152,13 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback className={isGroupChat ? 'bg-purple-100 text-purple-700' : 'bg-gray-100'}>
-                {isGroupChat ? 'GR' : participants[0]?.name.split(' ').map(n => n.charAt(0)).join('').slice(0, 2) || 'UN'}
+                {isGroupChat ? 'GR' : getAvatarInitials(otherParticipants[0]?.name || 'UN')}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="font-semibold text-gray-900">
-                  {isGroupChat ? `Group Chat (${participants.length})` : participants.find(p => p.id !== currentUser?.id)?.name || 'Unknown'}
+                  {displayName}
                 </h3>
                 {isGroupChat && (
                   <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700">
