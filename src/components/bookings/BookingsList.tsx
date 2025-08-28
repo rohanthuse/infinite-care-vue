@@ -9,6 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Booking } from "./BookingTimeGrid";
 import { format } from "date-fns";
+import { ReportExporter } from "@/utils/reportExporter";
+import { toast } from "sonner";
 
 interface BookingsListProps {
   bookings: Booking[];
@@ -120,6 +122,58 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
+  // Handle export schedule click
+  const handleExportSchedule = () => {
+    if (filteredBookings.length === 0) {
+      toast.error("No bookings to export");
+      return;
+    }
+
+    try {
+      // Format bookings data for export
+      const exportData = filteredBookings.map(booking => {
+        // Calculate duration
+        const startParts = booking.startTime.split(':').map(Number);
+        const endParts = booking.endTime.split(':').map(Number);
+        const startMins = startParts[0] * 60 + startParts[1];
+        const endMins = endParts[0] * 60 + endParts[1];
+        const durationMins = endMins - startMins;
+        const hours = Math.floor(durationMins / 60);
+        const mins = durationMins % 60;
+        const duration = `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
+
+        return {
+          'Booking ID': booking.id,  
+          'Date': formatBookingDate(booking.date),
+          'Start Time': booking.startTime,
+          'End Time': booking.endTime,
+          'Duration': duration,
+          'Client': booking.clientName || '',
+          'Carer': booking.carerName || '',
+          'Status': formatStatus(booking.status),
+          'Notes': booking.notes || ''
+        };
+      });
+
+      const columns = [
+        'Booking ID', 'Date', 'Start Time', 'End Time', 'Duration', 
+        'Client', 'Carer', 'Status', 'Notes'
+      ];
+
+      ReportExporter.exportToCSV({
+        title: 'Bookings Schedule',
+        data: exportData,
+        columns: columns,
+        fileName: `bookings-schedule-${format(new Date(), 'yyyy-MM-dd')}.csv`
+      });
+
+      toast.success(`Successfully exported ${filteredBookings.length} bookings`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error("Failed to export schedule");
+    }
+  };
+
   return (
     <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
       <div className="p-6 border-b border-border">
@@ -130,7 +184,11 @@ export const BookingsList: React.FC<BookingsListProps> = ({
               View and manage all booked appointments
             </p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-md w-full md:w-auto">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700 rounded-md w-full md:w-auto"
+            onClick={handleExportSchedule}
+            disabled={filteredBookings.length === 0}
+          >
             <Calendar className="h-4 w-4 mr-2" />
             Export Schedule
           </Button>
