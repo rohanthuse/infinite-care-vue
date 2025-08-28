@@ -170,35 +170,25 @@ export const MessageComposer = ({
         // Deduplicate recipients
         const uniqueRecipients = [...new Set(recipients)];
         
-        // Filter to only valid recipients for messaging
+        // Filter to only valid recipients for messaging (those with auth accounts)
         const messageableRecipients = uniqueRecipients.filter(id => {
           const contact = availableContacts.find(c => c.id === id);
           return contact?.canMessage !== false;
         });
         
-        // Now check if they have valid user_roles among the messageable contacts
-        const { data: authValidatedRecipients } = await supabase
-          .from('user_roles')
-          .select('user_id')
-          .in('user_id', messageableRecipients);
+        const skippedCount = uniqueRecipients.length - messageableRecipients.length;
         
-        const authValidatedIds = new Set(authValidatedRecipients?.map(vr => vr.user_id) || []);
-        const skippedCount = uniqueRecipients.length - authValidatedIds.size;
-        
-        // Filter to only contacts that can be messaged AND have valid auth
-        const finalValidRecipients = messageableRecipients.filter(id => authValidatedIds.has(id));
-        
-        if (finalValidRecipients.length === 0) {
-          toast.error("No valid recipients selected. Please check recipient accounts and try again.");
+        if (messageableRecipients.length === 0) {
+          toast.error("No valid recipients selected. Recipients must have registered accounts to receive messages.");
           return;
         }
         
-        // Show warning if some recipients were invalid or not messageable
+        // Show warning if some recipients were skipped (no authentication)
         if (skippedCount > 0) {
-          toast.warning(`${skippedCount} recipient(s) skipped (authentication required). Sending to ${finalValidRecipients.length} valid recipient(s).`);
+          toast.warning(`${skippedCount} recipient(s) skipped (account setup required). Sending to ${messageableRecipients.length} valid recipient(s).`);
         }
         
-        const recipientData = finalValidRecipients.map(recipientId => {
+        const recipientData = messageableRecipients.map(recipientId => {
           const contact = availableContacts.find(c => c.id === recipientId);
           return {
             id: recipientId,
