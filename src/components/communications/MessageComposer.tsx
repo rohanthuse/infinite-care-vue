@@ -23,6 +23,7 @@ import {
 import { Paperclip } from "lucide-react";
 import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 import { useAdminContacts } from "@/hooks/useAdminMessaging";
+import { useFileUpload } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MessageComposerProps {
@@ -72,6 +73,7 @@ export const MessageComposer = ({
   const { data: availableContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
+  const { uploadFile, uploading: uploadingFiles } = useFileUpload();
   
   const isReply = !!selectedThreadId;
 
@@ -142,6 +144,32 @@ export const MessageComposer = ({
     }
     
     try {
+      // Upload files if any
+      let attachments: any[] = [];
+      if (files.length > 0) {
+        toast.info(`Uploading ${files.length} file(s)...`);
+        for (const file of files) {
+          try {
+            const uploadedFile = await uploadFile(file, {
+              category: 'attachment'
+            });
+            attachments.push({
+              id: uploadedFile.id,
+              name: uploadedFile.file_name,
+              path: uploadedFile.storage_path,
+              type: uploadedFile.file_type,
+              size: uploadedFile.file_size,
+              bucket: 'agreement-files'
+            });
+          } catch (uploadError) {
+            console.error('File upload error:', uploadError);
+            toast.error(`Failed to upload ${file.name}`);
+            return;
+          }
+        }
+        toast.success('Files uploaded successfully');
+      }
+
       if (isReply && selectedThreadId) {
         // Send reply to existing thread
         await sendMessage.mutateAsync({
@@ -151,6 +179,7 @@ export const MessageComposer = ({
           priority,
           actionRequired,
           adminEyesOnly,
+          attachments,
           notificationMethods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
             .map(([method, _]) => method)
@@ -210,6 +239,7 @@ export const MessageComposer = ({
           priority,
           actionRequired,
           adminEyesOnly,
+          attachments,
           notificationMethods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
             .map(([method, _]) => method)
@@ -218,6 +248,7 @@ export const MessageComposer = ({
       
       // Reset form
       setContent("");
+      setFiles([]);
       if (!isReply) {
         setSubject("");
         setRecipients([]);
@@ -262,7 +293,7 @@ export const MessageComposer = ({
     }
   };
 
-  const isLoading = createThread.isPending || sendMessage.isPending;
+  const isLoading = createThread.isPending || sendMessage.isPending || uploadingFiles;
 
   return (
     <div className="flex flex-col h-full">

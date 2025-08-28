@@ -500,6 +500,7 @@ export const useUnifiedSendMessage = () => {
       priority = 'normal',
       actionRequired = false,
       adminEyesOnly = false,
+      attachments = [],
       notificationMethods = []
     }: { 
       threadId: string; 
@@ -508,6 +509,7 @@ export const useUnifiedSendMessage = () => {
       priority?: string;
       actionRequired?: boolean;
       adminEyesOnly?: boolean;
+      attachments?: any[];
       notificationMethods?: string[];
     }) => {
       if (!currentUser) throw new Error('Not authenticated');
@@ -521,8 +523,8 @@ export const useUnifiedSendMessage = () => {
                       currentUser.role === 'carer' ? 'carer' : 
                       currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
           content,
-          has_attachments: false,
-          attachments: [],
+          has_attachments: attachments.length > 0,
+          attachments: attachments,
           message_type: messageType,
           priority,
           action_required: actionRequired,
@@ -616,6 +618,7 @@ export const useUnifiedCreateThread = () => {
       priority = 'normal',
       actionRequired = false,
       adminEyesOnly = false,
+      attachments = [],
       notificationMethods = []
      }: { 
       recipientIds: string[];
@@ -630,6 +633,7 @@ export const useUnifiedCreateThread = () => {
       priority?: string;
       actionRequired?: boolean;
       adminEyesOnly?: boolean;
+      attachments?: any[];
       notificationMethods?: string[];
     }) => {
       console.log('[useUnifiedCreateThread] Starting thread creation...');
@@ -765,8 +769,8 @@ export const useUnifiedCreateThread = () => {
                       currentUser.role === 'carer' ? 'carer' : 
                       currentUser.role === 'super_admin' ? 'super_admin' : 'branch_admin',
           content: initialMessage,
-          has_attachments: false,
-          attachments: [],
+          has_attachments: attachments.length > 0,
+          attachments: attachments,
           message_type: messageType,
           priority,
           action_required: actionRequired,

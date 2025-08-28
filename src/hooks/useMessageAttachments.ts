@@ -7,7 +7,7 @@ export const useMessageAttachments = () => {
   const [isPreviewing, setIsPreviewing] = useState<string | null>(null);
 
   const downloadAttachment = async (attachment: any) => {
-    if (!attachment?.url && !attachment?.path) {
+    if (!attachment?.path && !attachment?.url) {
       toast.error('Attachment path not found');
       return;
     }
@@ -15,9 +15,9 @@ export const useMessageAttachments = () => {
     setIsDownloading(attachment.name || 'file');
     
     try {
-      // Try to download from storage bucket
+      // Use the correct bucket - agreement-files for all message attachments
       const filePath = attachment.path || attachment.url;
-      const bucket = attachment.bucket || 'message-attachments';
+      const bucket = 'agreement-files';
       
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -49,7 +49,7 @@ export const useMessageAttachments = () => {
   };
 
   const previewAttachment = async (attachment: any) => {
-    if (!attachment?.url && !attachment?.path) {
+    if (!attachment?.path && !attachment?.url) {
       toast.error('Attachment path not found');
       return;
     }
@@ -57,9 +57,9 @@ export const useMessageAttachments = () => {
     setIsPreviewing(attachment.name || 'file');
 
     try {
-      // Try to get public URL for preview
+      // Use the correct bucket - agreement-files for all message attachments
       const filePath = attachment.path || attachment.url;
-      const bucket = attachment.bucket || 'message-attachments';
+      const bucket = 'agreement-files';
       
       const { data } = supabase.storage
         .from(bucket)

@@ -253,10 +253,10 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                     
                     {/* Attachments */}
-                    {message.hasAttachments && attachmentsList.length > 0 && (
+                    {message.hasAttachments && message.attachments && (
                       <div className="mt-2">
                          <MessageAttachmentViewer 
-                           attachments={attachmentsList}
+                           attachments={message.attachments}
                            onPreview={previewAttachment}
                            onDownload={downloadAttachment}
                          />

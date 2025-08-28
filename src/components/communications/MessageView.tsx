@@ -8,6 +8,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
 import { useThreadParticipants } from "@/hooks/useThreadParticipants";
 import { MessageAttachmentViewer } from "./MessageAttachmentViewer";
+import { useMessageAttachments } from "@/hooks/useMessageAttachments";
 
 interface MessageViewProps {
   messageId: string;
@@ -19,6 +20,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const { data: messages = [], isLoading, error } = useAdminThreadMessages(messageId);
   const { data: threadParticipants = [] } = useThreadParticipants(messageId);
   const markMessagesAsRead = useMarkMessagesAsRead();
+  const { downloadAttachment, previewAttachment, isDownloading, isPreviewing } = useMessageAttachments();
 
   // Auto-scroll to bottom when messages load
   useEffect(() => {
@@ -250,20 +252,16 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                      
                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                       
-                      {/* Attachments */}
-                      {message.hasAttachments && message.attachments && (
-                        <div className="mt-2">
-                          <MessageAttachmentViewer 
-                            attachments={message.attachments}
-                            onPreview={(attachment) => {
-                              console.log('Preview attachment:', attachment);
-                            }}
-                            onDownload={(attachment) => {
-                              console.log('Download attachment:', attachment);
-                            }}
-                          />
-                        </div>
-                      )}
+                       {/* Attachments */}
+                       {message.hasAttachments && message.attachments && (
+                         <div className="mt-2">
+                           <MessageAttachmentViewer 
+                             attachments={message.attachments}
+                             onPreview={previewAttachment}
+                             onDownload={downloadAttachment}
+                           />
+                         </div>
+                       )}
                       
                       {isCurrentUser && (
                         <div className="flex items-center justify-end mt-1 space-x-1">
