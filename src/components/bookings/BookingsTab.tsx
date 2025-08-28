@@ -259,7 +259,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <BookingReport bookings={filteredBookings} />
         </TabsContent>
 
-        <TabsContent value="staff-schedule" className="w-full min-w-0 overflow-x-scroll">
+        <TabsContent value="staff-schedule" className="w-full min-w-0">
           <StaffScheduleCalendar
             date={selectedDate}
             bookings={filteredBookings}
