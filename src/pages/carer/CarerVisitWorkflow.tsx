@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
@@ -115,12 +115,6 @@ const CarerVisitWorkflow = () => {
   const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
   
-  // Get assigned tasks from staff/admin for this client
-  const { tasks: carerTasks, completeTask, isLoading: carerTasksLoading } = useCarerTasks();
-  const assignedTasks = carerTasks?.filter(task => 
-    task.client_id === currentAppointment?.client_id
-  ) || [];
-
   // Fetch real appointment data from database
   const { data: appointmentData, isLoading: appointmentLoading } = useQuery({
     queryKey: ['appointment', appointmentId],
@@ -144,7 +138,17 @@ const CarerVisitWorkflow = () => {
     enabled: !!appointmentId,
   });
 
-  const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, (appointment || appointmentData)?.client_id);
+  // Use appointmentData if available, otherwise fall back to location state
+  const currentAppointment = appointmentData || appointment;
+
+  // Get assigned tasks from staff/admin for this client
+  const { tasks: carerTasks, completeTask, isLoading: carerTasksLoading } = useCarerTasks();
+  const assignedTasks = useMemo(() => {
+    if (!carerTasks || !currentAppointment?.client_id) return [];
+    return carerTasks.filter(task => task.client_id === currentAppointment.client_id);
+  }, [carerTasks, currentAppointment?.client_id]);
+
+  const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, currentAppointment?.client_id);
   
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
@@ -174,9 +178,6 @@ const CarerVisitWorkflow = () => {
   const [consciousness, setConsciousness] = useState("A");
   const [temperature, setTemperature] = useState(37.0);
   const [o2Therapy, setO2Therapy] = useState(false);
-  
-  // Use appointmentData if available, otherwise fall back to location state
-  const currentAppointment = appointmentData || appointment;
   
   // Enhanced view-only check: URL param, state, completed status, or existing visit record status
   const isViewOnly = urlViewMode || stateViewOnly || 
