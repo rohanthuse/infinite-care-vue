@@ -10,6 +10,7 @@ import { useVisitTasks } from "@/hooks/useVisitTasks";
 import { useVisitMedications } from "@/hooks/useVisitMedications";
 import { useVisitEvents } from "@/hooks/useVisitEvents";
 import { useVisitVitals } from "@/hooks/useVisitVitals";
+import { useCarerTasks } from "@/hooks/useCarerTasks";
 import {
   Clock,
   MapPin,
@@ -113,6 +114,12 @@ const CarerVisitWorkflow = () => {
   const { tasks, addTask, updateTask, addCommonTasks, isLoading: tasksLoading } = useVisitTasks(visitRecord?.id);
   const { medications, administerMedication, addCommonMedications, isLoading: medicationsLoading } = useVisitMedications(visitRecord?.id);
   const { events, recordIncident, recordAccident, recordObservation, isLoading: eventsLoading } = useVisitEvents(visitRecord?.id);
+  
+  // Get assigned tasks from staff/admin for this client
+  const { tasks: carerTasks, completeTask, isLoading: carerTasksLoading } = useCarerTasks();
+  const assignedTasks = carerTasks?.filter(task => 
+    task.client_id === currentAppointment?.client_id
+  ) || [];
 
   // Fetch real appointment data from database
   const { data: appointmentData, isLoading: appointmentLoading } = useQuery({
@@ -1115,54 +1122,107 @@ const CarerVisitWorkflow = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clipboard className="w-5 h-5" />
-                  Care Tasks
+                  Tasks
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {tasksLoading ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="mt-2 text-gray-500">Loading tasks...</p>
-                    </div>
-                  ) : tasks && tasks.length > 0 ? (
-                    <div className="space-y-3">
-                      {tasks.map((task) => (
-                        <div key={task.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                          <Checkbox
-                            checked={task.is_completed}
-                            onCheckedChange={() => handleTaskToggle(task.id)}
-                            className="flex-shrink-0"
-                            disabled={isViewOnly}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className={`font-medium ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                                {task.task_name}
-                              </p>
-                              {task.priority && getPriorityBadge(task.priority)}
+                <div className="space-y-6">
+                  {/* Visit Care Tasks */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Care Tasks</h3>
+                    {tasksLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-500">Loading care tasks...</p>
+                      </div>
+                    ) : tasks && tasks.length > 0 ? (
+                      <div className="space-y-3">
+                        {tasks.map((task) => (
+                          <div key={task.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                            <Checkbox
+                              checked={task.is_completed}
+                              onCheckedChange={() => handleTaskToggle(task.id)}
+                              className="flex-shrink-0"
+                              disabled={isViewOnly}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className={`font-medium ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                  {task.task_name}
+                                </p>
+                                {task.priority && getPriorityBadge(task.priority)}
+                              </div>
+                              {task.task_description && (
+                                <p className="text-sm text-gray-600 mt-1">{task.task_description}</p>
+                              )}
+                              {task.completed_at && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Completed at {format(new Date(task.completed_at), 'h:mm a')}
+                                </p>
+                              )}
                             </div>
-                            {task.task_description && (
-                              <p className="text-sm text-gray-600 mt-1">{task.task_description}</p>
-                            )}
-                            {task.completed_at && (
-                              <p className="text-xs text-green-600 mt-1">
-                                Completed at {format(new Date(task.completed_at), 'h:mm a')}
-                              </p>
+                            {task.is_completed && (
+                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                             )}
                           </div>
-                          {task.is_completed && (
-                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Clipboard className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No tasks assigned for this visit</p>
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <p>No care tasks assigned for this visit</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Assigned Tasks from Admin/Staff */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Assigned Tasks (Admin/Staff)</h3>
+                    {carerTasksLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="mt-2 text-gray-500">Loading assigned tasks...</p>
+                      </div>
+                    ) : assignedTasks && assignedTasks.length > 0 ? (
+                      <div className="space-y-3">
+                        {assignedTasks.map((task) => (
+                          <div key={task.id} className="flex items-center space-x-3 p-3 border border-blue-200 rounded-lg hover:bg-blue-50">
+                            <Checkbox
+                              checked={task.status === 'done'}
+                              onCheckedChange={() => !isViewOnly && completeTask(task.id)}
+                              className="flex-shrink-0"
+                              disabled={isViewOnly}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className={`font-medium ${task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                  {task.title}
+                                </p>
+                                {task.priority && getPriorityBadge(task.priority)}
+                                <Badge variant="outline" className="text-xs">
+                                  Admin/Staff
+                                </Badge>
+                              </div>
+                              {task.description && (
+                                <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                              )}
+                              {task.dueDate && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                                </p>
+                              )}
+                            </div>
+                            {task.status === 'done' && (
+                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-gray-500">
+                        <p>No tasks assigned by admin/staff for this client</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
               
