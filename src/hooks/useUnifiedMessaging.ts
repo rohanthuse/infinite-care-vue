@@ -102,9 +102,31 @@ export const useAvailableContacts = () => {
             .eq('status', 'active');
 
           if (clients) {
-            clients.forEach(client => {
+            // For each client, find their auth user ID
+            for (const client of clients) {
+              if (!client.email) continue;
+              
+              // Find auth user ID by email - clients should have auth accounts
+              const { data: authUsers } = await supabase
+                .from('user_roles')
+                .select(`
+                  user_id,
+                  profiles!inner (
+                    id,
+                    email
+                  )
+                `)
+                .eq('role', 'client')
+                .eq('profiles.email', client.email);
+              
+              const authUser = authUsers?.[0];
+              if (!authUser) {
+                console.warn(`[useAvailableContacts] Client ${client.email} has no auth user - skipping`);
+                continue; // Skip clients without auth accounts
+              }
+              
               contacts.push({
-                id: client.id,
+                id: authUser.user_id, // Use auth user ID instead of client DB ID
                 name: `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.email?.split('@')[0] || 'Client',
                 avatar: `${client.first_name?.charAt(0) || 'C'}${client.last_name?.charAt(0) || 'L'}`,
                 type: 'client' as const,
@@ -113,7 +135,7 @@ export const useAvailableContacts = () => {
                 email: client.email,
                 role: 'client'
               });
-            });
+            }
           }
 
           // Get carers for these branches
@@ -124,9 +146,24 @@ export const useAvailableContacts = () => {
             .eq('status', 'active');
 
           if (carers) {
-            carers.forEach(carer => {
+            // For each carer, find their auth user ID
+            for (const carer of carers) {
+              if (!carer.email) continue;
+              
+              // Find auth user ID by staff record
+              const { data: staffAuth } = await supabase
+                .from('staff')
+                .select('auth_user_id')
+                .eq('id', carer.id)
+                .single();
+              
+              if (!staffAuth?.auth_user_id) {
+                console.warn(`[useAvailableContacts] Carer ${carer.email} has no auth_user_id - skipping`);
+                continue; // Skip carers without auth accounts
+              }
+              
               contacts.push({
-                id: carer.id,
+                id: staffAuth.auth_user_id, // Use auth user ID instead of staff DB ID
                 name: `${carer.first_name || ''} ${carer.last_name || ''}`.trim() || carer.email?.split('@')[0] || 'Carer',
                 avatar: `${carer.first_name?.charAt(0) || 'C'}${carer.last_name?.charAt(0) || 'R'}`,
                 type: 'carer' as const,
@@ -135,7 +172,7 @@ export const useAvailableContacts = () => {
                 email: carer.email,
                 role: 'carer'
               });
-            });
+            }
           }
         }
       }
@@ -692,38 +729,40 @@ export const useUnifiedCreateThread = () => {
         }
       ];
 
-      // Add recipients - ensure we use auth user IDs for clients
+      // Add recipients - validate auth user IDs
+      let validRecipients = 0;
       for (let i = 0; i < recipientIds.length; i++) {
-        let finalRecipientId = recipientIds[i];
+        const recipientId = recipientIds[i];
         
-        // If this is a client recipient and we were given a client database ID,
-        // we need to convert it to the auth user ID
-        if (recipientTypes[i] === 'client') {
-          // Check if this looks like a client database ID by trying to find the auth user
-          const { data: authUserCheck } = await supabase
-            .from('clients')
-            .select('email')
-            .eq('id', recipientIds[i])
-            .single();
-          
-          if (authUserCheck?.email) {
-            // This is a client database ID, find the corresponding auth user
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            if (authUser) {
-              // For now, we'll use the provided ID but this should be the auth user ID
-              // The migration function will fix any existing mismatches
-              console.log(`[useUnifiedCreateThread] Using client ID ${recipientIds[i]} for ${authUserCheck.email}`);
-            }
-          }
+        // Validate that this is a valid auth user ID by checking user_roles
+        const { data: userRoleCheck } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('user_id', recipientId)
+          .single();
+        
+        if (!userRoleCheck) {
+          console.warn(`[useUnifiedCreateThread] Invalid recipient ID ${recipientId} (${recipientNames[i]}) - not an auth user, skipping`);
+          toast.error(`Recipient ${recipientNames[i]} could not be added - invalid user account`);
+          continue; // Skip invalid recipients
         }
         
         participants.push({
           thread_id: thread.id,
-          user_id: finalRecipientId, // This should be auth user ID for clients
+          user_id: recipientId, // This is now guaranteed to be a valid auth user ID
           user_type: recipientTypes[i] === 'carer' ? 'carer' : 
                     recipientTypes[i] === 'client' ? 'client' : 'branch_admin',
           user_name: recipientNames[i]
         });
+        validRecipients++;
+      }
+      
+      if (validRecipients === 0) {
+        throw new Error('No valid recipients found - all recipients were skipped');
+      }
+      
+      if (validRecipients < recipientIds.length) {
+        toast.warning(`${recipientIds.length - validRecipients} recipient(s) were skipped due to invalid accounts`);
       }
 
       const { error: participantsError } = await supabase

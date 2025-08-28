@@ -147,20 +147,29 @@ export const useAdminContacts = () => {
 
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
-        // For each client, try to find their auth user ID
+        // For each client, find their auth user ID
         for (const client of clients) {
           if (!client.email) continue;
           
-          // Get auth user ID by checking user_roles table
-          const { data: userRole } = await supabase
+          // Find auth user ID by email - clients should have auth accounts
+          const { data: authUsers } = await supabase
             .from('user_roles')
-            .select('user_id')
+            .select(`
+              user_id,
+              profiles!inner (
+                id,
+                email
+              )
+            `)
             .eq('role', 'client')
-            .limit(1);
+            .eq('profiles.email', client.email);
           
-          // For clients with auth accounts, we need to find the right user_id
-          // Since we can't directly query auth.users, we'll use the existing approach 
-          // but ensure the migration function handles the ID mapping
+          const authUser = authUsers?.[0];
+          if (!authUser) {
+            console.warn(`[useAdminContacts] Client ${client.email} has no auth user - skipping`);
+            continue; // Skip clients without auth accounts
+          }
+          
           const firstName = client.first_name || '';
           const lastName = client.last_name || '';
           const displayName = `${firstName} ${lastName}`.trim() || 
@@ -168,7 +177,7 @@ export const useAdminContacts = () => {
                              `Client ${client.id.slice(0, 8)}`;
           
           contacts.push({
-            id: client.id, // Using client DB ID - migration will map to auth user ID
+            id: authUser.user_id, // Use auth user ID instead of client DB ID
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'L'}`,
             type: 'client' as const,
@@ -206,8 +215,22 @@ export const useAdminContacts = () => {
 
       console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
-        carers.forEach(carer => {
-          // Include carers with fallback display logic
+        // For each carer, find their auth user ID
+        for (const carer of carers) {
+          if (!carer.email) continue;
+          
+          // Find auth user ID by staff record
+          const { data: staffAuth } = await supabase
+            .from('staff')
+            .select('auth_user_id')
+            .eq('id', carer.id)
+            .single();
+          
+          if (!staffAuth?.auth_user_id) {
+            console.warn(`[useAdminContacts] Carer ${carer.email} has no auth_user_id - skipping`);
+            continue; // Skip carers without auth accounts
+          }
+          
           const firstName = carer.first_name || '';
           const lastName = carer.last_name || '';
           const displayName = `${firstName} ${lastName}`.trim() || 
@@ -215,7 +238,7 @@ export const useAdminContacts = () => {
                              `Carer ${carer.id.slice(0, 8)}`;
           
           contacts.push({
-            id: carer.id,
+            id: staffAuth.auth_user_id, // Use auth user ID instead of staff DB ID
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
             type: 'carer' as const,
@@ -223,9 +246,9 @@ export const useAdminContacts = () => {
             unread: 0,
             email: carer.email,
             role: 'carer',
-            branchName: undefined // Remove branch name reference for now
+            branchName: undefined
           });
-        });
+        }
       }
 
       // Get admin users for messaging - WITHIN CURRENT ORGANIZATION ONLY
