@@ -20,6 +20,7 @@ export const useUserRole = () => {
   return useQuery({
     queryKey: ['userRole'],
     queryFn: async () => {
+      const startTime = performance.now();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('[useUserRole] No authenticated user found');
@@ -132,6 +133,8 @@ export const useUserRole = () => {
         }
       }
 
+      const endTime = performance.now();
+      console.log(`[useUserRole] Role data fetched in ${(endTime - startTime).toFixed(2)}ms`);
       return {
         id: user.id,
         email: user.email || '',
@@ -141,6 +144,8 @@ export const useUserRole = () => {
     },
     enabled: true,
     retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes - roles don't change frequently
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches on window focus
   });
 };
 

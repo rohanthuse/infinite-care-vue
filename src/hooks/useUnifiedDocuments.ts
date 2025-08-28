@@ -47,10 +47,11 @@ export const useUnifiedDocuments = (branchId: string) => {
 
   console.log('[useUnifiedDocuments] Hook initialized with branchId:', branchId);
 
-  // Fetch unified documents
+  // Fetch unified documents with optimized file checking
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['unified-documents', branchId],
     queryFn: async () => {
+      const startTime = performance.now();
       console.log('[useUnifiedDocuments] Fetching documents for branch:', branchId);
       
       const { data, error } = await supabase.rpc('get_branch_documents', {
@@ -62,50 +63,20 @@ export const useUnifiedDocuments = (branchId: string) => {
         throw error;
       }
 
-      // Check file existence for each document with proper folder handling
-      const documentsWithFileStatus = await Promise.all(
-        data?.map(async (doc: any) => {
-          if (doc.file_path) {
-            const bucket = doc.source_table === 'client_documents' ? 'client-documents' : 
-                          doc.source_table === 'agreement_files' ? 'agreement-files' : 'documents';
-            
-            try {
-              // Split path to get folder and filename
-              const pathParts = doc.file_path.split('/');
-              const filename = pathParts.pop();
-              const folder = pathParts.length > 0 ? pathParts.join('/') : '';
-              
-              // List files in the specific folder
-              const { data: fileData, error: fileError } = await supabase.storage
-                .from(bucket)
-                .list(folder, {
-                  limit: 100,
-                  search: filename
-                });
-              
-              // Check if the specific file exists in the folder
-              const fileExists = !fileError && fileData && 
-                fileData.some(file => file.name === filename);
-              
-              return {
-                ...doc,
-                has_file: fileExists
-              };
-            } catch (err) {
-              console.error('[useUnifiedDocuments] Error checking file existence:', err);
-              // If file path exists, assume file is available (fallback for backward compatibility)
-              return { ...doc, has_file: true };
-            }
-          }
-          // No file path means no file
-          return { ...doc, has_file: false };
-        }) || []
-      );
+      // PERFORMANCE OPTIMIZATION: Set has_file based on file_path existence instead of storage calls
+      // This eliminates the expensive storage.list() calls that were causing 11+ second delays
+      const documentsWithFileStatus = (data || []).map((doc: any) => ({
+        ...doc,
+        has_file: Boolean(doc.file_path) // Simple boolean check instead of storage API calls
+      }));
 
-      console.log('[useUnifiedDocuments] Successfully fetched documents count:', documentsWithFileStatus.length);
+      const endTime = performance.now();
+      console.log(`[useUnifiedDocuments] Documents fetched in ${(endTime - startTime).toFixed(2)}ms, count:`, documentsWithFileStatus.length);
       return documentsWithFileStatus as UnifiedDocument[];
     },
     enabled: !!branchId,
+    staleTime: 5 * 60 * 1000, // 5 minutes - documents don't change frequently
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches on window focus
   });
 
   // Upload document mutation

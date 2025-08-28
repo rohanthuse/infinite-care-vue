@@ -272,18 +272,24 @@ const UnifiedLogin = () => {
         throw new Error("Authentication failed");
       }
 
-      // Get user's highest priority role first
-      const { data: roleData, error: roleError } = await supabase
-        .rpc('get_user_highest_role', { p_user_id: authData.user.id })
-        .single();
+      // PERFORMANCE OPTIMIZATION: Streamlined role detection and organization lookup
+      const startTime = performance.now();
+      
+      // Get user's highest priority role and detect organization in parallel
+      const [roleResult, orgSlug] = await Promise.all([
+        supabase.rpc('get_user_highest_role', { p_user_id: authData.user.id }).single(),
+        detectUserOrganization(authData.user.id)
+      ]);
 
-      if (roleError) {
-        console.error('Role detection error:', roleError);
+      if (roleResult.error) {
+        console.error('Role detection error:', roleResult.error);
         toast.error("Unable to determine your access level. Please contact support.");
         return;
       }
 
-      const userRole = roleData.role;
+      const userRole = roleResult.data.role;
+      const endTime = performance.now();
+      console.log(`[UnifiedLogin] Role and org detection completed in ${(endTime - startTime).toFixed(2)}ms`);
       console.log('User role detected:', userRole);
       console.log('[AUTH DEBUG] User ID:', authData.user.id, 'Email:', authData.user.email);
 
@@ -300,8 +306,7 @@ const UnifiedLogin = () => {
         }
       }
 
-      // Detect organization membership for all users (including super admins)
-      const orgSlug = await detectUserOrganization(authData.user.id);
+      // Organization detection already completed in parallel above - no additional lookups needed
 
       // For super admins, always route to their organization dashboard
       if (userRole === 'super_admin') {

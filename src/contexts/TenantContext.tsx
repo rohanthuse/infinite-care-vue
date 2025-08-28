@@ -105,7 +105,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     setTenantSlug(null);
   }, [window.location.pathname]);
 
-  // Fetch organization data
+  // Fetch organization data with performance optimizations
   const { 
     data: organization, 
     isLoading, 
@@ -114,6 +114,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   } = useQuery({
     queryKey: ['organization', tenantSlug, user?.id],
     queryFn: async () => {
+      const startTime = performance.now();
       if (!tenantSlug) {
         console.log('[TenantProvider] No tenant slug - returning null');
         return null;
@@ -210,10 +211,14 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         }
       }
 
+      const endTime = performance.now();
+      console.log(`[TenantProvider] Organization data fetched in ${(endTime - startTime).toFixed(2)}ms`);
       return orgData as Organization;
     },
     enabled: tenantSlug !== null,
     retry: 1,
+    staleTime: 10 * 60 * 1000, // 10 minutes - organization data is stable
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 
   // Apply organization branding to CSS custom properties
