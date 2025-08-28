@@ -24,18 +24,21 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check for existing Supabase session on mount
+  // Check for existing Supabase session and listen for auth changes
   useEffect(() => {
-    const checkExistingSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error || !session?.user) {
-          setIsLoading(false);
-          return;
-        }
+    let mounted = true;
 
-        console.log('[SystemAuth] Found existing session for:', session.user.email);
+    const validateSystemUser = async (session: any) => {
+      if (!session?.user || !mounted) {
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        console.log('[SystemAuth] Validating session for:', session.user.email);
 
         // Verify user has super_admin role
         const { data: roleData, error: roleError } = await supabase
@@ -45,7 +48,10 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
 
         if (roleError) {
           console.error('[SystemAuth] Failed to fetch user roles:', roleError);
-          setIsLoading(false);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -54,7 +60,10 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
 
         if (!isSystemAdmin) {
           console.log('[SystemAuth] User lacks system admin permissions');
-          setIsLoading(false);
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -66,16 +75,64 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           roles: roles
         };
 
-        console.log('[SystemAuth] Existing session validated for system admin:', systemUser.email);
-        setUser(systemUser);
+        console.log('[SystemAuth] Session validated for system admin:', systemUser.email);
+        if (mounted) {
+          setUser(systemUser);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('[SystemAuth] Session validation error:', err);
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('[SystemAuth] Auth state change:', event, session?.user?.email || 'no user');
+        
+        if (event === 'SIGNED_OUT' || !session) {
+          if (mounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await validateSystemUser(session);
+        }
+      }
+    );
+
+    // Check for existing session
+    const checkExistingSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('[SystemAuth] Error getting session:', error);
+          if (mounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        await validateSystemUser(session);
       } catch (err) {
         console.error('[SystemAuth] Session check error:', err);
-      } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     checkExistingSession();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
