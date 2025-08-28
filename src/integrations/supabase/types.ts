@@ -6717,6 +6717,15 @@ export type Database = {
           uploaded_by_name: string
         }[]
       }
+      get_client_care_team: {
+        Args: { p_org_id: string }
+        Returns: {
+          email: string
+          user_id: string
+          user_name: string
+          user_type: string
+        }[]
+      }
       get_client_reports_data: {
         Args: {
           p_branch_id: string
