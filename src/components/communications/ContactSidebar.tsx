@@ -223,9 +223,14 @@ export const ContactSidebar = ({
                       </div>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 flex items-center mt-0.5">
-                    {getContactTypeBadge(contact.type)}
-                  </div>
+                   <div className="text-xs text-gray-500 flex items-center gap-2 mt-0.5">
+                     {getContactTypeBadge(contact.type)}
+                     {('canMessage' in contact && contact.canMessage === false) && (
+                       <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                         Setup Required
+                       </Badge>
+                     )}
+                   </div>
                 </div>
               </div>
             ))}

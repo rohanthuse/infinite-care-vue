@@ -17,6 +17,7 @@ export interface AdminContact {
   email?: string;
   role?: string;
   branchName?: string;
+  canMessage?: boolean; // Whether this contact can be messaged (has auth_user_id)
 }
 
 export interface AdminMessage {
@@ -123,6 +124,7 @@ export const useAdminContacts = () => {
       }
 
       // Get clients for these branches - with organization filter
+      // Include ALL active clients, not just those with auth_user_id
       const { data: clients, error: clientError } = await supabase
         .from('clients')
         .select(`
@@ -140,8 +142,7 @@ export const useAdminContacts = () => {
         `)
         .in('branch_id', branchIds)
         .eq('branches.organization_id', organization.id)
-        .eq('status', 'Active')
-        .not('auth_user_id', 'is', null);
+        .eq('status', 'Active');
 
       if (clientError) {
         console.error('[useAdminContacts] Error fetching clients:', clientError);
@@ -150,7 +151,8 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Clients found:', clients?.length || 0);
       if (clients) {
         for (const client of clients) {
-          if (!client.email || !client.auth_user_id) continue;
+          // Skip clients without email
+          if (!client.email) continue;
           
           const firstName = client.first_name || '';
           const lastName = client.last_name || '';
@@ -158,21 +160,27 @@ export const useAdminContacts = () => {
                              client.email?.split('@')[0] || 
                              `Client ${client.id.slice(0, 8)}`;
           
+          // Use auth_user_id if available, otherwise use client ID for display only
+          const contactId = client.auth_user_id || client.id;
+          const canMessage = !!client.auth_user_id; // Can only message if they have auth setup
+          
           contacts.push({
-            id: client.auth_user_id, // Use auth user ID directly
+            id: contactId,
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'L'}`,
             type: 'client' as const,
-            status: 'online' as const,
+            status: canMessage ? 'online' as const : 'offline' as const, // Show offline if no auth
             unread: 0,
             email: client.email,
             role: 'client',
-            branchName: undefined
+            branchName: undefined,
+            canMessage // Flag to indicate if messaging is possible
           });
         }
       }
 
       // Get carers for these branches - with organization filter
+      // Include ALL active carers, not just those with auth_user_id
       const { data: carers, error: carerError } = await supabase
         .from('staff')
         .select(`
@@ -190,8 +198,7 @@ export const useAdminContacts = () => {
         `)
         .in('branch_id', branchIds)
         .eq('branches.organization_id', organization.id)
-        .eq('status', 'Active')
-        .not('auth_user_id', 'is', null);
+        .eq('status', 'Active');
 
       if (carerError) {
         console.error('[useAdminContacts] Error fetching carers:', carerError);
@@ -200,7 +207,8 @@ export const useAdminContacts = () => {
       console.log('[useAdminContacts] Carers found:', carers?.length || 0);
       if (carers) {
         for (const carer of carers) {
-          if (!carer.email || !carer.auth_user_id) continue;
+          // Skip carers without email
+          if (!carer.email) continue;
           
           const firstName = carer.first_name || '';
           const lastName = carer.last_name || '';
@@ -208,16 +216,21 @@ export const useAdminContacts = () => {
                              carer.email?.split('@')[0] || 
                              `Carer ${carer.id.slice(0, 8)}`;
           
+          // Use auth_user_id if available, otherwise use staff ID for display only  
+          const contactId = carer.auth_user_id || carer.id;
+          const canMessage = !!carer.auth_user_id; // Can only message if they have auth setup
+          
           contacts.push({
-            id: carer.auth_user_id, // Use auth user ID directly
+            id: contactId,
             name: displayName,
             avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
             type: 'carer' as const,
-            status: 'online' as const,
+            status: canMessage ? 'online' as const : 'offline' as const, // Show offline if no auth
             unread: 0,
             email: carer.email,
             role: 'carer',
-            branchName: undefined
+            branchName: undefined,
+            canMessage // Flag to indicate if messaging is possible
           });
         }
       }
@@ -267,17 +280,18 @@ export const useAdminContacts = () => {
                                  admin.email?.split('@')[0] || 
                                  `Admin ${admin.id.slice(0, 8)}`;
               
-              contacts.push({
-                id: admin.id,
-                name: displayName,
-                avatar: `${firstName.charAt(0) || 'A'}${lastName.charAt(0) || 'D'}`,
-                type: adminRole?.role === 'super_admin' ? 'super_admin' as const : 'branch_admin' as const,
-                status: 'online' as const,
-                unread: 0,
-                email: admin.email,
-                role: adminRole?.role || 'branch_admin',
-                branchName: undefined
-              });
+               contacts.push({
+                 id: admin.id,
+                 name: displayName,
+                 avatar: `${firstName.charAt(0) || 'A'}${lastName.charAt(0) || 'D'}`,
+                 type: adminRole?.role === 'super_admin' ? 'super_admin' as const : 'branch_admin' as const,
+                 status: 'online' as const,
+                 unread: 0,
+                 email: admin.email,
+                 role: adminRole?.role || 'branch_admin',
+                 branchName: undefined,
+                 canMessage: true // Admins can always be messaged
+               });
             });
           }
         }
@@ -320,17 +334,18 @@ export const useAdminContacts = () => {
                                   admin.email?.split('@')[0] || 
                                   `Super Admin ${admin.id.slice(0, 8)}`;
                
-               contacts.push({
-                 id: admin.id,
-                 name: displayName,
-                 avatar: `${firstName.charAt(0) || 'S'}${lastName.charAt(0) || 'A'}`,
-                 type: 'super_admin' as const,
-                 status: 'online' as const,
-                 unread: 0,
-                 email: admin.email,
-                 role: 'super_admin',
-                 branchName: undefined
-               });
+                contacts.push({
+                  id: admin.id,
+                  name: displayName,
+                  avatar: `${firstName.charAt(0) || 'S'}${lastName.charAt(0) || 'A'}`,
+                  type: 'super_admin' as const,
+                  status: 'online' as const,
+                  unread: 0,
+                  email: admin.email,
+                  role: 'super_admin',
+                  branchName: undefined,
+                  canMessage: true // Admins can always be messaged
+                });
              });
            }
         }
@@ -366,17 +381,18 @@ export const useAdminContacts = () => {
                                  admin.email?.split('@')[0] || 
                                  `Branch Admin ${admin.id.slice(0, 8)}`;
               
-              contacts.push({
-                id: admin.id,
-                name: displayName,
-                avatar: `${firstName.charAt(0) || 'B'}${lastName.charAt(0) || 'A'}`,
-                type: 'branch_admin' as const,
-                status: 'online' as const,
-                unread: 0,
-                email: admin.email,
-                role: 'branch_admin',
-                branchName: undefined
-              });
+               contacts.push({
+                 id: admin.id,
+                 name: displayName,
+                 avatar: `${firstName.charAt(0) || 'B'}${lastName.charAt(0) || 'A'}`,
+                 type: 'branch_admin' as const,
+                 status: 'online' as const,
+                 unread: 0,
+                 email: admin.email,
+                 role: 'branch_admin',
+                 branchName: undefined,
+                 canMessage: true // Admins can always be messaged
+               });
             });
           }
         }

@@ -170,29 +170,35 @@ export const MessageComposer = ({
         // Deduplicate recipients
         const uniqueRecipients = [...new Set(recipients)];
         
-        // Batch validate recipients - check if they have valid user_roles
-        const { data: validRecipients } = await supabase
+        // Filter to only valid recipients for messaging
+        const messageableRecipients = uniqueRecipients.filter(id => {
+          const contact = availableContacts.find(c => c.id === id);
+          return contact?.canMessage !== false;
+        });
+        
+        // Now check if they have valid user_roles among the messageable contacts
+        const { data: authValidatedRecipients } = await supabase
           .from('user_roles')
           .select('user_id')
-          .in('user_id', uniqueRecipients);
+          .in('user_id', messageableRecipients);
         
-        const validRecipientIds = new Set(validRecipients?.map(vr => vr.user_id) || []);
-        const invalidCount = uniqueRecipients.length - validRecipientIds.size;
+        const authValidatedIds = new Set(authValidatedRecipients?.map(vr => vr.user_id) || []);
+        const skippedCount = uniqueRecipients.length - authValidatedIds.size;
         
-        // Filter to only valid recipients
-        const finalRecipientIds = uniqueRecipients.filter(id => validRecipientIds.has(id));
+        // Filter to only contacts that can be messaged AND have valid auth
+        const finalValidRecipients = messageableRecipients.filter(id => authValidatedIds.has(id));
         
-        if (finalRecipientIds.length === 0) {
+        if (finalValidRecipients.length === 0) {
           toast.error("No valid recipients selected. Please check recipient accounts and try again.");
           return;
         }
         
-        // Show warning if some recipients were invalid
-        if (invalidCount > 0) {
-          toast.warning(`${invalidCount} recipient(s) skipped due to invalid accounts. Sending to ${finalRecipientIds.length} valid recipient(s).`);
+        // Show warning if some recipients were invalid or not messageable
+        if (skippedCount > 0) {
+          toast.warning(`${skippedCount} recipient(s) skipped (authentication required). Sending to ${finalValidRecipients.length} valid recipient(s).`);
         }
         
-        const recipientData = finalRecipientIds.map(recipientId => {
+        const recipientData = finalValidRecipients.map(recipientId => {
           const contact = availableContacts.find(c => c.id === recipientId);
           return {
             id: recipientId,
@@ -383,11 +389,11 @@ export const MessageComposer = ({
                         <div className="text-gray-500 text-sm p-2">Loading contacts...</div>
                       ) : availableContacts.length > 0 ? (
                         <>
-                          {availableContacts.filter(c => c.type === 'client').length > 0 && (
+                          {availableContacts.filter(c => c.type === 'client' && c.canMessage !== false).length > 0 && (
                             <div>
                               <Label className="text-sm font-medium">Clients</Label>
                               <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'client').map(contact => (
+                                {availableContacts.filter(c => c.type === 'client' && c.canMessage !== false).map(contact => (
                                   <div key={contact.id} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={selectedContacts.clients.includes(contact.id)}
@@ -400,11 +406,11 @@ export const MessageComposer = ({
                             </div>
                           )}
                           
-                          {availableContacts.filter(c => c.type === 'carer').length > 0 && (
+                          {availableContacts.filter(c => c.type === 'carer' && c.canMessage !== false).length > 0 && (
                             <div>
                               <Label className="text-sm font-medium">Carers</Label>
                               <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'carer').map(contact => (
+                                {availableContacts.filter(c => c.type === 'carer' && c.canMessage !== false).map(contact => (
                                   <div key={contact.id} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={selectedContacts.carers.includes(contact.id)}
