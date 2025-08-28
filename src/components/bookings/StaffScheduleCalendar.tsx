@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests } from "@/hooks/useLeaveManagement";
 import { Booking } from "./BookingTimeGrid";
@@ -51,8 +51,14 @@ export function StaffScheduleCalendar({
   });
 
   // Fetch staff and leave data
-  const { data: staff = [] } = useBranchStaff(branchId || '');
-  const { data: leaveRequests = [] } = useLeaveRequests(branchId);
+  const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
+  const { data: leaveRequests = [], isLoading: isLoadingLeave } = useLeaveRequests(branchId);
+  
+  // Safe helper to get initials from a name
+  const getInitials = (fullName?: string): string => {
+    if (!fullName) return '';
+    return fullName.split(' ').map(n => n[0] || '').join('').toUpperCase();
+  };
 
   // Generate 30-minute time slots
   const timeSlots = useMemo(() => {
@@ -178,13 +184,11 @@ export function StaffScheduleCalendar({
   const getStatusLabel = (status: StaffStatus) => {
     switch (status.type) {
       case 'assigned':
-        return status.booking?.clientName.split(' ').map(n => n[0]).join('');
       case 'in-progress':
-        return status.booking?.clientName.split(' ').map(n => n[0]).join('');
       case 'done':
-        return status.booking?.clientName.split(' ').map(n => n[0]).join('');
+        return getInitials(status.booking?.clientName);
       case 'leave':
-        return status.leaveType?.charAt(0).toUpperCase();
+        return status.leaveType?.charAt(0).toUpperCase() || 'L';
       case 'unavailable':
         return 'N/A';
       default:
@@ -249,8 +253,34 @@ export function StaffScheduleCalendar({
     );
   };
 
+  // Loading state
+  if (isLoadingStaff || isLoadingLeave) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Loading schedule...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!branchId || staff.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="text-center space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {!branchId ? 'No branch selected' : 'No staff found for this branch'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <TooltipProvider>
+      <div className="space-y-4">
       {/* Header with search and filters */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -333,7 +363,8 @@ export function StaffScheduleCalendar({
       </Card>
 
       {/* Schedule Grid */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-x-auto">
+        <div className="min-w-[1600px]">
         {/* Header row with time slots */}
         <div className="grid grid-cols-[200px_repeat(48,1fr)] bg-muted/50 border-b">
           <div className="p-3 font-medium border-r">Staff</div>
@@ -344,41 +375,42 @@ export function StaffScheduleCalendar({
           ))}
         </div>
 
-        {/* Staff rows */}
-        {staffSchedule.map((staffMember) => (
-          <div key={staffMember.id} className="grid grid-cols-[200px_repeat(48,1fr)] border-b last:border-b-0">
-            {/* Staff info column */}
-            <div className="p-3 border-r bg-background">
-              <div className="font-medium text-sm">{staffMember.name}</div>
-              {staffMember.specialization && (
-                <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
-              )}
-              <div className="text-xs text-muted-foreground mt-1">
-                {staffMember.totalHours}h / {staffMember.contractedHours}h
+          {/* Staff rows */}
+          {staffSchedule.map((staffMember) => (
+            <div key={staffMember.id} className="grid grid-cols-[200px_repeat(48,1fr)] border-b last:border-b-0">
+              {/* Staff info column */}
+              <div className="p-3 border-r bg-background">
+                <div className="font-medium text-sm">{staffMember.name}</div>
+                {staffMember.specialization && (
+                  <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
+                )}
+                <div className="text-xs text-muted-foreground mt-1">
+                  {staffMember.totalHours}h / {staffMember.contractedHours}h
+                </div>
               </div>
-            </div>
 
-            {/* Time slot cells */}
-            {timeSlots.map(slot => {
-              const status = staffMember.schedule[slot];
-              return (
-                <Tooltip key={`${staffMember.id}-${slot}-${status.type}`}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={`p-0.5 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
-                      onClick={() => handleCellClick(staffMember.id, slot, status)}
-                    >
-                      {getStatusLabel(status)}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
-                    {renderTooltipContent(status, staffMember.name)}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-        ))}
+              {/* Time slot cells */}
+              {timeSlots.map(slot => {
+                const status = staffMember.schedule[slot];
+                return (
+                  <Tooltip key={`${staffMember.id}-${slot}-${status.type}`}>
+                    <TooltipTrigger asChild>
+                      <div
+                        className={`p-0.5 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors ${getStatusColor(status)}`}
+                        onClick={() => handleCellClick(staffMember.id, slot, status)}
+                      >
+                        {getStatusLabel(status)}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
+                      {renderTooltipContent(status, staffMember.name)}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Summary footer */}
@@ -406,6 +438,7 @@ export function StaffScheduleCalendar({
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
