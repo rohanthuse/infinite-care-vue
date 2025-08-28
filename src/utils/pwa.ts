@@ -7,7 +7,8 @@ export const registerSW = () => {
   if (typeof window !== 'undefined' && (
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1' ||
-    window.location.hostname.includes('lovable.dev')
+    window.location.hostname.includes('lovable.dev') ||
+    window.location.hostname.includes('lovable.app')
   )) {
     console.log('[PWA] Skipping service worker registration in development environment');
     return;

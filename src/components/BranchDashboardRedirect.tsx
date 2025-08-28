@@ -23,17 +23,20 @@ export const BranchDashboardRedirect: React.FC = () => {
   if (isDevelopment) {
     // In development, try to infer tenant from current branch data
     const currentBranchId = localStorage.getItem('currentBranchId');
+    let devTenant = localStorage.getItem('dev-tenant');
     
-    if (currentBranchId) {
-      // Try to infer tenant from branch data in localStorage or fetch it
-      // For now, get dev tenant from localStorage or redirect to branch selection
-      let devTenant = localStorage.getItem('dev-tenant');
-      
-      if (devTenant) {
-        const tenantAwarePath = `/${devTenant}${location.pathname}${location.search}${location.hash}`;
-        console.log('[BranchDashboardRedirect] Redirecting to tenant-aware URL:', tenantAwarePath);
-        return <Navigate to={tenantAwarePath} replace />;
-      }
+    // If we have branch ID but no dev-tenant, try to set it from branch context
+    if (currentBranchId && !devTenant) {
+      // Try to fetch organization slug from branch or set default
+      console.log('[BranchDashboardRedirect] No dev-tenant found, setting fallback for branch:', currentBranchId);
+      devTenant = 'xyz'; // Use the real organization slug as fallback
+      localStorage.setItem('dev-tenant', devTenant);
+    }
+    
+    if (currentBranchId && devTenant) {
+      const tenantAwarePath = `/${devTenant}${location.pathname}${location.search}${location.hash}`;
+      console.log('[BranchDashboardRedirect] Redirecting to tenant-aware URL:', tenantAwarePath);
+      return <Navigate to={tenantAwarePath} replace />;
     }
 
     // If no proper tenant context, redirect to branch login
