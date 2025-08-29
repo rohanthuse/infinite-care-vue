@@ -6,7 +6,8 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
-import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState } from "@/utils/authRecovery";
+import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState, withProgressiveTimeout } from "@/utils/authRecovery";
+import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
@@ -19,6 +20,7 @@ const UnifiedLogin = () => {
   const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
   const navigate = useNavigate();
+  const { getRoleWithOptimization, getOrganizationWithOptimization, clearOptimizationCache } = useOptimizedAuth();
 
   // Check for third-party invitation token
   useEffect(() => {
@@ -257,7 +259,7 @@ const UnifiedLogin = () => {
       return;
     }
 
-    // Enhanced pre-login validation
+    // Enhanced pre-login validation with cache clearing
     console.log('[LOGIN] Starting login process with enhanced validation');
     const preLoginState = await validatePreLoginState();
     
@@ -265,6 +267,7 @@ const UnifiedLogin = () => {
       console.warn('[LOGIN] Pre-login issues detected:', preLoginState.issues);
       toast.error("Login state issues detected. Clearing session data...");
       await clearAllAuthData();
+      clearOptimizationCache(); // Clear optimization cache too
       // Wait for cleanup to complete
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
@@ -295,26 +298,19 @@ const UnifiedLogin = () => {
       }
 
       // Get user's highest priority role first with timeout
-      const rolePromise = supabase
-        .rpc('get_user_highest_role', { p_user_id: authData.user.id })
-        .single();
-      
-      const roleTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Role detection timeout')), 10000)
+      const roleResult = await withProgressiveTimeout(
+        Promise.resolve(supabase.rpc('get_user_highest_role', { p_user_id: authData.user.id }).single()),
+        [3000, 6000, 10000],
+        'Role detection'
       );
 
-      const { data: roleData, error: roleError } = await Promise.race([
-        rolePromise,
-        roleTimeoutPromise
-      ]) as any;
-
-      if (roleError) {
-        console.error('Role detection error:', roleError);
+      if (roleResult.error) {
+        console.error('Role detection error:', roleResult.error);
         toast.error("Unable to determine your access level. Please contact support.");
         return;
       }
 
-      const userRole = roleData.role;
+      const userRole = roleResult.data.role;
       console.log('User role detected:', userRole);
       console.log('[AUTH DEBUG] User ID:', authData.user.id, 'Email:', authData.user.email);
 
@@ -331,13 +327,8 @@ const UnifiedLogin = () => {
         }
       }
 
-      // Detect organization membership with timeout
-      const orgPromise = detectUserOrganization(authData.user.id);
-      const orgTimeoutPromise = new Promise((resolve) => 
-        setTimeout(() => resolve(null), 8000)
-      );
-
-      const orgSlug = await Promise.race([orgPromise, orgTimeoutPromise]) as string | null;
+      // Detect organization membership with optimized timeout
+      const orgSlug = await getOrganizationWithOptimization(authData.user.id);
 
       // For super admins, always route to their organization dashboard
       if (userRole === 'super_admin') {
@@ -423,6 +414,7 @@ const UnifiedLogin = () => {
       toast.loading("Clearing session data...");
       await debugAuthState(); // Log current state
       await clearAllAuthData();
+      clearOptimizationCache(); // Clear optimization cache
       setShowRecovery(false);
       toast.success("Session cleared. You can try logging in again.");
     } catch (error) {
@@ -436,6 +428,7 @@ const UnifiedLogin = () => {
       toast.loading("Performing complete reset...");
       await debugAuthState(); // Log current state before reset
       await nuclearReset();
+      clearOptimizationCache(); // Clear optimization cache
       setShowRecovery(false);
       toast.success("Complete reset performed. Page will refresh.");
       // Force refresh after nuclear reset

@@ -5,33 +5,51 @@ import { supabase } from '@/integrations/supabase/client';
  */
 
 /**
- * Scan and clear all Supabase auth keys from storage
+ * Enhanced storage clearing with comprehensive cleanup
  */
 const clearSupabaseAuthKeys = (): void => {
-  console.log('[AuthRecovery] Scanning for Supabase auth keys');
+  console.log('[AuthRecovery] Performing comprehensive storage cleanup');
   
-  // Scan localStorage for all Supabase keys
   const localKeys = [];
   const sessionKeys = [];
   
   try {
-    // Get all localStorage keys
+    // Scan localStorage with enhanced patterns
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth'))) {
+      if (key && (
+        key.startsWith('sb-') || 
+        key.includes('supabase') || 
+        key.includes('auth') ||
+        key.startsWith('vcrjntfjsmpoupgairep') || // Project-specific keys
+        key.includes('session') ||
+        key.includes('token')
+      )) {
         localKeys.push(key);
       }
     }
     
-    // Get all sessionStorage keys  
+    // Scan sessionStorage with enhanced patterns
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && (key.startsWith('sb-') || key.includes('supabase') || key.includes('auth'))) {
+      if (key && (
+        key.startsWith('sb-') || 
+        key.includes('supabase') || 
+        key.includes('auth') ||
+        key.startsWith('vcrjntfjsmpoupgairep') ||
+        key.includes('session') ||
+        key.includes('token')
+      )) {
         sessionKeys.push(key);
       }
     }
     
-    console.log('[AuthRecovery] Found Supabase keys:', { localKeys, sessionKeys });
+    console.log('[AuthRecovery] Found auth keys:', { 
+      localCount: localKeys.length, 
+      sessionCount: sessionKeys.length,
+      localKeys: localKeys.slice(0, 5), // Show first 5 for debugging
+      sessionKeys: sessionKeys.slice(0, 5)
+    });
     
     // Clear all found keys
     localKeys.forEach(key => {
@@ -55,24 +73,98 @@ const clearSupabaseAuthKeys = (): void => {
   }
 };
 
+/**
+ * Clear IndexedDB data used by Supabase
+ */
+const clearIndexedDBAuth = async (): Promise<void> => {
+  try {
+    if (!('indexedDB' in window)) {
+      console.log('[AuthRecovery] IndexedDB not available');
+      return;
+    }
+
+    // Clear Supabase-related IndexedDB
+    const dbName = `supabase-cache-${window.location.hostname}`;
+    
+    return new Promise((resolve) => {
+      const deleteReq = indexedDB.deleteDatabase(dbName);
+      deleteReq.onsuccess = () => {
+        console.log('[AuthRecovery] IndexedDB cleared successfully');
+        resolve();
+      };
+      deleteReq.onerror = () => {
+        console.warn('[AuthRecovery] Failed to clear IndexedDB');
+        resolve(); // Don't fail the whole process
+      };
+      deleteReq.onblocked = () => {
+        console.warn('[AuthRecovery] IndexedDB delete blocked');
+        resolve(); // Don't fail the whole process
+      };
+    });
+  } catch (e) {
+    console.warn('[AuthRecovery] IndexedDB cleanup error:', e);
+  }
+};
+
+/**
+ * Progressive timeout handler for async operations
+ */
+export const withProgressiveTimeout = async <T>(
+  operation: Promise<T>,
+  timeouts: number[] = [5000, 10000, 15000],
+  operationName: string = 'operation'
+): Promise<T> => {
+  let currentTimeoutIndex = 0;
+  
+  const executeWithTimeout = (timeout: number): Promise<T> => {
+    return Promise.race([
+      operation,
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error(`${operationName} timeout after ${timeout}ms`)), timeout)
+      )
+    ]);
+  };
+
+  while (currentTimeoutIndex < timeouts.length) {
+    try {
+      console.log(`[AuthRecovery] Attempting ${operationName} with ${timeouts[currentTimeoutIndex]}ms timeout`);
+      return await executeWithTimeout(timeouts[currentTimeoutIndex]);
+    } catch (error) {
+      currentTimeoutIndex++;
+      if (currentTimeoutIndex >= timeouts.length) {
+        console.error(`[AuthRecovery] ${operationName} failed after all timeout attempts`);
+        throw error;
+      }
+      console.warn(`[AuthRecovery] ${operationName} timeout, retrying with longer timeout`);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Brief pause between retries
+    }
+  }
+  
+  throw new Error(`${operationName} failed after all attempts`);
+};
+
 export const clearAllAuthData = async (): Promise<void> => {
-  console.log('[AuthRecovery] Starting comprehensive auth data cleanup');
+  console.log('[AuthRecovery] Starting enhanced auth data cleanup');
   
   try {
-    // Sign out from Supabase first
-    await supabase.auth.signOut();
+    // Sign out from Supabase with timeout protection
+    await withProgressiveTimeout(
+      supabase.auth.signOut(),
+      [3000, 5000],
+      'Supabase signOut'
+    );
   } catch (e) {
     console.warn('[AuthRecovery] Supabase signOut failed:', e);
   }
 
-  // Clear all Supabase-related keys (dynamic scan)
+  // Clear all Supabase-related keys (enhanced dynamic scan)
   clearSupabaseAuthKeys();
 
   // Clear known custom auth keys
   const customStorageKeys = [
     'userType', 'clientName', 'clientId', 'branchId',
     'system_session_token', 'systemSessionToken', 'system-session-token',
-    'thirdPartySession', 'tenant_context'
+    'thirdPartySession', 'tenant_context', 'orgSlug', 'userRole'
   ];
 
   customStorageKeys.forEach(key => {
@@ -84,26 +176,54 @@ export const clearAllAuthData = async (): Promise<void> => {
     }
   });
 
-  console.log('[AuthRecovery] Auth data cleanup completed');
+  // Clear IndexedDB auth data
+  await clearIndexedDBAuth();
+
+  console.log('[AuthRecovery] Enhanced auth data cleanup completed');
 };
 
 export const nuclearReset = async (): Promise<void> => {
-  console.log('[AuthRecovery] Performing nuclear reset - clearing ALL storage');
+  console.log('[AuthRecovery] Performing enhanced nuclear reset - clearing ALL storage');
   
   try {
-    // Sign out from Supabase
-    await supabase.auth.signOut();
+    // Sign out from Supabase with timeout
+    await withProgressiveTimeout(
+      supabase.auth.signOut(),
+      [3000, 5000],
+      'Supabase signOut'
+    );
   } catch (e) {
     console.warn('[AuthRecovery] Supabase signOut failed during nuclear reset:', e);
   }
 
   try {
-    // Clear ALL localStorage
+    // Clear ALL browser storage
     localStorage.clear();
     sessionStorage.clear();
-    console.log('[AuthRecovery] All storage cleared');
+    
+    // Clear IndexedDB
+    await clearIndexedDBAuth();
+    
+    // Clear service worker cache if available
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames.map(cacheName => {
+            if (cacheName.includes('supabase') || cacheName.includes('auth')) {
+              return caches.delete(cacheName);
+            }
+          })
+        );
+        console.log('[AuthRecovery] Service worker caches cleared');
+      } catch (e) {
+        console.warn('[AuthRecovery] Failed to clear service worker caches:', e);
+      }
+    }
+    
+    console.log('[AuthRecovery] Enhanced nuclear reset completed');
   } catch (e) {
-    console.error('[AuthRecovery] Failed to clear storage during nuclear reset:', e);
+    console.error('[AuthRecovery] Failed to perform complete nuclear reset:', e);
   }
 };
 
