@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarerContext } from "./useCarerContext";
-import { format, startOfWeek, endOfWeek, isToday, isTomorrow } from "date-fns";
+import { format, startOfWeek, endOfWeek, isToday, isTomorrow, differenceInMinutes } from "date-fns";
 
 export const useCarerDashboard = () => {
   const { data: carerContext, isLoading: contextLoading } = useCarerContext();
@@ -18,8 +18,8 @@ export const useCarerDashboard = () => {
         .from('bookings')
         .select(`
           *,
-          clients(first_name, last_name),
-          services(title)
+          clients(first_name, last_name, phone, address),
+          services(title, description)
         `)
         .eq('staff_id', carerContext.staffId)
         .gte('start_time', `${today}T00:00:00`)
@@ -139,6 +139,26 @@ export const useCarerDashboard = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Check if appointment can be started
+  const canStartAppointment = (appointment: any) => {
+    const now = new Date();
+    const startTime = new Date(appointment.start_time);
+    const appointmentDate = format(startTime, 'yyyy-MM-dd');
+    const todayDate = format(now, 'yyyy-MM-dd');
+    
+    const isToday = appointmentDate === todayDate;
+    const minutesDiff = differenceInMinutes(startTime, now);
+    
+    return (
+      (appointment.status === 'assigned' || appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
+      appointment.status !== 'completed' &&
+      (isToday || (minutesDiff <= 240 && minutesDiff >= -240))
+    );
+  };
+
+  // Get ready to start appointments (today's appointments that can be started)
+  const readyToStartAppointments = todayAppointments.filter(canStartAppointment);
+
   // Transform appointments for display
   const formattedAppointments = upcomingAppointments.map(appointment => ({
     id: appointment.id,
@@ -166,6 +186,7 @@ export const useCarerDashboard = () => {
 
   return {
     todayAppointments,
+    readyToStartAppointments,
     upcomingAppointments: formattedAppointments,
     tasks: formattedTasks,
     clientCount,

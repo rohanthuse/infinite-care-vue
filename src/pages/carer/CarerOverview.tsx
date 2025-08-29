@@ -15,6 +15,7 @@ import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { CarePlanStatusWidget } from "@/components/carer/CarePlanStatusWidget";
 import { ActiveVisitBanner } from "@/components/carer/ActiveVisitBanner";
 import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
+import { ReadyToStartSection } from "@/components/carer/ReadyToStartSection";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const CarerOverview: React.FC = () => {
   const { data: carerProfile } = useCarerProfile();
   const {
     todayAppointments,
+    readyToStartAppointments,
     upcomingAppointments,
     tasks,
     clientCount,
@@ -97,6 +99,9 @@ const CarerOverview: React.FC = () => {
 
       {/* Active Visit Banner */}
       <ActiveVisitBanner />
+
+      {/* Ready to Start Section */}
+      <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
