@@ -257,6 +257,13 @@ const UnifiedLogin = () => {
 
     setLoading(true);
 
+    // Add timeout to force loading reset after 15 seconds
+    const timeoutId = setTimeout(() => {
+      console.warn('Login timeout reached, resetting loading state');
+      setLoading(false);
+      toast.error("Login is taking too long. Please try again.");
+    }, 15000);
+
     try {
       // Authenticate user
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -272,10 +279,19 @@ const UnifiedLogin = () => {
         throw new Error("Authentication failed");
       }
 
-      // Get user's highest priority role first
-      const { data: roleData, error: roleError } = await supabase
+      // Get user's highest priority role first with timeout
+      const rolePromise = supabase
         .rpc('get_user_highest_role', { p_user_id: authData.user.id })
         .single();
+      
+      const roleTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Role detection timeout')), 10000)
+      );
+
+      const { data: roleData, error: roleError } = await Promise.race([
+        rolePromise,
+        roleTimeoutPromise
+      ]) as any;
 
       if (roleError) {
         console.error('Role detection error:', roleError);
@@ -300,8 +316,13 @@ const UnifiedLogin = () => {
         }
       }
 
-      // Detect organization membership for all users (including super admins)
-      const orgSlug = await detectUserOrganization(authData.user.id);
+      // Detect organization membership with timeout
+      const orgPromise = detectUserOrganization(authData.user.id);
+      const orgTimeoutPromise = new Promise((resolve) => 
+        setTimeout(() => resolve(null), 8000)
+      );
+
+      const orgSlug = await Promise.race([orgPromise, orgTimeoutPromise]) as string | null;
 
       // For super admins, always route to their organization dashboard
       if (userRole === 'super_admin') {
@@ -366,10 +387,13 @@ const UnifiedLogin = () => {
         toast.error("Invalid email or password");
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error("Please check your email and click the confirmation link");
+      } else if (error.message?.includes('timeout')) {
+        toast.error("Login is taking too long. Please check your connection and try again.");
       } else {
         toast.error(error.message || "Login failed. Please try again.");
       }
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
