@@ -48,12 +48,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
         setSession(session);
         setUser(session?.user ?? null);
         setError(null);
         setLoading(false);
+        
+        // Handle explicit sign out event
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setError(null);
+          // Navigate to home page on sign out
+          setTimeout(() => {
+            if (window.location.pathname !== '/') {
+              window.location.href = '/';
+            }
+          }, 100);
+        }
       }
     });
 
@@ -76,7 +89,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear auth state immediately
+      setUser(null);
+      setSession(null);
+      setError(null);
+      
+      // Clear all localStorage keys that might contain auth data
+      const keysToRemove = [
+        'userType', 'clientName', 'clientId', 'branchId',
+        'system_session_token', 'systemSessionToken', 'system-session-token',
+        'sb-vcrjntfjsmpoupgairep-auth-token'
+      ];
+      
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (e) {
+          console.warn('Failed to clear storage key:', key, e);
+        }
+      });
+
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Supabase signOut error:', error);
+      }
+
+      // Force navigation to home page after logout
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+      
+    } catch (error) {
+      console.error('SignOut error:', error);
+      // Force logout even if Supabase fails
+      setUser(null);
+      setSession(null);
+      // Clear storage manually
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('Failed to clear storage:', e);
+      }
+      // Navigate anyway
+      window.location.href = '/';
+    }
   };
 
   const value = {

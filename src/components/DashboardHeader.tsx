@@ -70,19 +70,36 @@ export function DashboardHeader() {
   
   const handleLogout = async () => {
     try {
-      await signOut();
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
+        title: "Signing out...",
+        description: "Please wait while we log you out.",
       });
-      navigate('/');
+      
+      await signOut();
+      
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out.",
+      });
     } catch (error) {
       console.error('Logout error:', error);
       toast({
-        title: "Logout failed",
-        description: "There was an error logging out. Please try again.",
+        title: "Logout Error", 
+        description: "Forcing logout. Redirecting to home page.",
         variant: "destructive",
       });
+      
+      // Force logout by clearing everything and redirecting
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('Failed to clear storage:', e);
+      }
+      
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     }
   };
 
