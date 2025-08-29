@@ -6,7 +6,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
-import { validateSessionState, clearAllAuthData, debugAuthState } from "@/utils/authRecovery";
+import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState } from "@/utils/authRecovery";
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
@@ -257,13 +257,16 @@ const UnifiedLogin = () => {
       return;
     }
 
-    // Pre-login session validation
-    const { isValid, session } = await validateSessionState();
-    if (isValid && session) {
-      console.warn('[LOGIN] Existing valid session found, clearing before new login');
+    // Enhanced pre-login validation
+    console.log('[LOGIN] Starting login process with enhanced validation');
+    const preLoginState = await validatePreLoginState();
+    
+    if (!preLoginState.canProceed) {
+      console.warn('[LOGIN] Pre-login issues detected:', preLoginState.issues);
+      toast.error("Login state issues detected. Clearing session data...");
       await clearAllAuthData();
-      // Small delay to ensure cleanup completes
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for cleanup to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     setLoading(true);
@@ -425,6 +428,21 @@ const UnifiedLogin = () => {
     } catch (error) {
       console.error('Clear session error:', error);
       toast.error("Failed to clear session data");
+    }
+  };
+
+  const handleNuclearReset = async () => {
+    try {
+      toast.loading("Performing complete reset...");
+      await debugAuthState(); // Log current state before reset
+      await nuclearReset();
+      setShowRecovery(false);
+      toast.success("Complete reset performed. Page will refresh.");
+      // Force refresh after nuclear reset
+      setTimeout(() => window.location.reload(), 1000);
+    } catch (error) {
+      console.error('Nuclear reset error:', error);
+      toast.error("Failed to perform complete reset");
     }
   };
 
@@ -644,6 +662,15 @@ const UnifiedLogin = () => {
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Clear Session & Try Again
+                    </CustomButton>
+                    <CustomButton
+                      type="button"
+                      onClick={handleNuclearReset}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      size="sm"
+                    >
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Complete Reset (Nuclear Option)
                     </CustomButton>
                     <CustomButton
                       type="button"
