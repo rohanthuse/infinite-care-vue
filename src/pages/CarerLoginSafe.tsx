@@ -1,20 +1,25 @@
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail, X, LogOut, ArrowRight } from "lucide-react";
+import { Heart, Lock, AlertCircle, Eye, EyeOff, Mail, X, LogOut, ArrowRight, Clock } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { CarerAuthDebugPanel } from "@/components/carers/CarerAuthDebugPanel";
+import { SessionRecoveryPanel } from "@/components/auth/SessionRecoveryPanel";
 import { diagnoseAuthIssue } from "@/utils/authFixHelper";
+import { validatePreLoginState, verifyLoginSuccess } from "@/utils/authRecovery";
 
 export default function CarerLoginSafe() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [authStatus, setAuthStatus] = useState<'idle' | 'checking' | 'signing-in' | 'verifying' | 'complete'>('idle');
   const navigate = useNavigate();
   
   const { signIn, signOut, loading, isAuthenticated, error, clearError, carerProfile } = useCarerAuthSafe();
@@ -30,9 +35,31 @@ export default function CarerLoginSafe() {
     }
   }, [email, password, clearError]);
 
+  // Auto-show recovery panel after failed attempts
+  useEffect(() => {
+    if (loginAttempts >= 2) {
+      setShowRecovery(true);
+    }
+  }, [loginAttempts]);
+
+  // Show recovery panel if loading takes too long
+  useEffect(() => {
+    if (loading && authStatus === 'signing-in') {
+      const timer = setTimeout(() => {
+        if (loading) {
+          console.log('[CarerLoginSafe] Login taking too long, showing recovery options');
+          setShowRecovery(true);
+        }
+      }, 8000); // Show after 8 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, authStatus]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setAuthStatus('checking');
 
     // Clear any existing dev-tenant to avoid conflicts
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.includes('preview')) {
@@ -40,18 +67,55 @@ export default function CarerLoginSafe() {
     }
     
     if (!email || !password) {
+      setAuthStatus('idle');
       return;
     }
 
-    // Diagnose auth issues before attempting login
-    console.log('[CarerLoginSafe] Running pre-login diagnostics...');
-    const diagnosis = await diagnoseAuthIssue(email);
-    console.log('[CarerLoginSafe] Diagnosis result:', diagnosis);
+    try {
+      // Pre-login validation
+      console.log('[CarerLoginSafe] Running pre-login validation...');
+      const preLoginState = await validatePreLoginState();
+      console.log('[CarerLoginSafe] Pre-login state:', preLoginState);
 
-    const result = await signIn(email, password);
-    
-    if (!result.success) {
-      console.error('[CarerLoginSafe] Login failed:', result.error);
+      if (preLoginState.needsRecovery) {
+        console.log('[CarerLoginSafe] Recovery needed before login');
+        setShowRecovery(true);
+        setAuthStatus('idle');
+        return;
+      }
+
+      setAuthStatus('signing-in');
+
+      // Diagnose auth issues before attempting login
+      const diagnosis = await diagnoseAuthIssue(email);
+      console.log('[CarerLoginSafe] Diagnosis result:', diagnosis);
+
+      const result = await signIn(email, password);
+      
+      if (result.success) {
+        setAuthStatus('verifying');
+        
+        // Verify the login was successful
+        const verification = await verifyLoginSuccess(result.user?.id);
+        console.log('[CarerLoginSafe] Login verification:', verification);
+        
+        if (verification.verified) {
+          setAuthStatus('complete');
+          setLoginAttempts(0); // Reset on success
+        } else {
+          console.error('[CarerLoginSafe] Login verification failed:', verification.issues);
+          setShowRecovery(true);
+          setAuthStatus('idle');
+        }
+      } else {
+        console.error('[CarerLoginSafe] Login failed:', result.error);
+        setLoginAttempts(prev => prev + 1);
+        setAuthStatus('idle');
+      }
+    } catch (error) {
+      console.error('[CarerLoginSafe] Login process error:', error);
+      setLoginAttempts(prev => prev + 1);
+      setAuthStatus('idle');
     }
   };
 
@@ -65,11 +129,14 @@ export default function CarerLoginSafe() {
 
   const handleSignOut = async () => {
     console.log('[CarerLoginSafe] Sign out button clicked');
+    setAuthStatus('checking');
     try {
       await signOut();
       clearError();
       setEmail("");
       setPassword("");
+      setLoginAttempts(0);
+      setShowRecovery(false);
       console.log('[CarerLoginSafe] Sign out completed');
     } catch (error) {
       console.error('[CarerLoginSafe] Sign out error:', error);
@@ -77,7 +144,28 @@ export default function CarerLoginSafe() {
       clearError();
       setEmail("");
       setPassword("");
+      setLoginAttempts(0);
+      setShowRecovery(false);
       window.location.replace('/');
+    } finally {
+      setAuthStatus('idle');
+    }
+  };
+
+  const handleRecoverySuccess = () => {
+    setShowRecovery(false);
+    setLoginAttempts(0);
+    setAuthStatus('idle');
+    clearError();
+  };
+
+  const getAuthStatusMessage = () => {
+    switch (authStatus) {
+      case 'checking': return 'Checking session...';
+      case 'signing-in': return 'Signing in...';
+      case 'verifying': return 'Verifying login...';
+      case 'complete': return 'Login successful!';
+      default: return null;
     }
   };
 
@@ -200,6 +288,36 @@ export default function CarerLoginSafe() {
             <p className="text-gray-600">to continue to your care dashboard</p>
           </div>
 
+          {/* Auth Status Indicator */}
+          {authStatus !== 'idle' && (
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg flex items-center gap-2">
+              <Clock className="h-4 w-4 animate-pulse" />
+              <span>{getAuthStatusMessage()}</span>
+            </div>
+          )}
+
+          {/* Session Recovery Panel */}
+          {showRecovery && (
+            <SessionRecoveryPanel 
+              onRecoverySuccess={handleRecoverySuccess}
+              showAdvanced={loginAttempts >= 3}
+            />
+          )}
+
+          {/* Show recovery button if not already showing and has attempts */}
+          {!showRecovery && loginAttempts > 0 && (
+            <div className="mb-6">
+              <CustomButton
+                onClick={() => setShowRecovery(true)}
+                variant="outline"
+                size="sm"
+                className="w-full border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+              >
+                Having trouble? Try recovery options
+              </CustomButton>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start">
               <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
@@ -292,11 +410,11 @@ export default function CarerLoginSafe() {
                 type="submit"
                 className={cn(
                   "w-full bg-blue-600 hover:bg-blue-700 transition-all",
-                  loading && "opacity-70 cursor-not-allowed"
+                  (loading || authStatus !== 'idle') && "opacity-70 cursor-not-allowed"
                 )}
-                disabled={loading || !email || !password}
+                disabled={loading || authStatus !== 'idle' || !email || !password}
               >
-                {loading ? "Signing in..." : "Sign In"}
+                {loading || authStatus !== 'idle' ? (getAuthStatusMessage() || "Processing...") : "Sign In"}
               </CustomButton>
             </div>
           </form>

@@ -183,45 +183,97 @@ export const clearAllAuthData = async (): Promise<void> => {
 };
 
 export const nuclearReset = async (): Promise<void> => {
-  console.log('[AuthRecovery] Performing enhanced nuclear reset - clearing ALL storage');
+  console.log('[AuthRecovery] Performing ENHANCED nuclear reset - clearing ALL browser data');
   
   try {
-    // Sign out from Supabase with timeout
-    await withProgressiveTimeout(
-      supabase.auth.signOut(),
-      [3000, 5000],
-      'Supabase signOut'
-    );
+    // Multiple Supabase signout attempts
+    for (let i = 0; i < 3; i++) {
+      try {
+        console.log(`[AuthRecovery] Supabase signOut attempt ${i + 1}`);
+        await withProgressiveTimeout(
+          supabase.auth.signOut({ scope: 'global' }),
+          [2000, 4000],
+          'Supabase signOut'
+        );
+        break; // Exit on success
+      } catch (e) {
+        console.warn(`[AuthRecovery] Supabase signOut attempt ${i + 1} failed:`, e);
+        if (i === 2) console.error('[AuthRecovery] All Supabase signOut attempts failed');
+      }
+    }
   } catch (e) {
-    console.warn('[AuthRecovery] Supabase signOut failed during nuclear reset:', e);
+    console.warn('[AuthRecovery] Supabase signOut completely failed:', e);
   }
 
   try {
-    // Clear ALL browser storage
-    localStorage.clear();
-    sessionStorage.clear();
+    // Force clear Supabase client state
+    console.log('[AuthRecovery] Force clearing Supabase client state');
+    const clientSymbol = Object.getOwnPropertySymbols(supabase).find(s => s.description === 'supabase.client');
+    if (clientSymbol) {
+      // @ts-ignore - Force reset internal state
+      supabase[clientSymbol] = null;
+    }
+  } catch (e) {
+    console.warn('[AuthRecovery] Failed to clear Supabase client state:', e);
+  }
+
+  try {
+    // Clear ALL browser storage aggressively
+    console.log('[AuthRecovery] Clearing ALL browser storage');
     
-    // Clear IndexedDB
+    // Clear localStorage completely
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => localStorage.removeItem(key));
+        localStorage.clear();
+      } catch (e) {
+        console.warn('[AuthRecovery] localStorage clear failed:', e);
+      }
+    }
+    
+    // Clear sessionStorage completely
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        const keys = Object.keys(sessionStorage);
+        keys.forEach(key => sessionStorage.removeItem(key));
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('[AuthRecovery] sessionStorage clear failed:', e);
+      }
+    }
+    
+    // Clear IndexedDB aggressively
     await clearIndexedDBAuth();
     
-    // Clear service worker cache if available
+    // Clear ALL service worker caches
     if ('caches' in window) {
       try {
         const cacheNames = await caches.keys();
         await Promise.all(
-          cacheNames.map(cacheName => {
-            if (cacheName.includes('supabase') || cacheName.includes('auth')) {
-              return caches.delete(cacheName);
-            }
-          })
+          cacheNames.map(cacheName => caches.delete(cacheName))
         );
-        console.log('[AuthRecovery] Service worker caches cleared');
+        console.log('[AuthRecovery] ALL service worker caches cleared');
       } catch (e) {
         console.warn('[AuthRecovery] Failed to clear service worker caches:', e);
       }
     }
+
+    // Clear cookies (if possible)
+    if (typeof document !== 'undefined') {
+      try {
+        document.cookie.split(";").forEach(cookie => {
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        });
+        console.log('[AuthRecovery] Cookies cleared');
+      } catch (e) {
+        console.warn('[AuthRecovery] Failed to clear cookies:', e);
+      }
+    }
     
-    console.log('[AuthRecovery] Enhanced nuclear reset completed');
+    console.log('[AuthRecovery] ENHANCED nuclear reset completed successfully');
   } catch (e) {
     console.error('[AuthRecovery] Failed to perform complete nuclear reset:', e);
   }
@@ -310,7 +362,122 @@ export const debugAuthState = async (): Promise<void> => {
   console.log('[AuthRecovery] === END DEBUG ===');
 };
 
-export const validatePreLoginState = async (): Promise<{ canProceed: boolean; issues: string[] }> => {
+/**
+ * Session repair and verification utilities
+ */
+export const repairSession = async (): Promise<{ success: boolean; message: string }> => {
+  console.log('[AuthRecovery] Attempting session repair');
+  
+  try {
+    // First, validate current session
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.log('[AuthRecovery] Session error detected, clearing corrupted data');
+      await clearAllAuthData();
+      return { success: true, message: 'Corrupted session cleared' };
+    }
+    
+    if (!session) {
+      console.log('[AuthRecovery] No session found, checking for orphaned tokens');
+      const orphanedTokens = [];
+      
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sb-')) {
+            orphanedTokens.push(key);
+          }
+        }
+      } catch (e) {
+        console.warn('[AuthRecovery] Failed to scan for orphaned tokens:', e);
+      }
+      
+      if (orphanedTokens.length > 0) {
+        console.log('[AuthRecovery] Found orphaned tokens, clearing them');
+        clearSupabaseAuthKeys();
+        return { success: true, message: 'Orphaned tokens cleared' };
+      }
+      
+      return { success: true, message: 'No session issues found' };
+    }
+    
+    // Session exists, verify it's working
+    try {
+      const { data: user, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.log('[AuthRecovery] Session exists but user fetch failed, clearing session');
+        await clearAllAuthData();
+        return { success: true, message: 'Invalid session cleared' };
+      }
+    } catch (e) {
+      console.log('[AuthRecovery] User verification failed, clearing session');
+      await clearAllAuthData();
+      return { success: true, message: 'Broken session cleared' };
+    }
+    
+    return { success: true, message: 'Session is healthy' };
+  } catch (e) {
+    console.error('[AuthRecovery] Session repair failed:', e);
+    return { success: false, message: 'Session repair failed' };
+  }
+};
+
+export const verifyLoginSuccess = async (expectedUserId?: string): Promise<{ verified: boolean; issues: string[] }> => {
+  console.log('[AuthRecovery] Verifying login success');
+  const issues = [];
+  
+  try {
+    // Check session exists
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      issues.push(`Session error: ${sessionError.message}`);
+      return { verified: false, issues };
+    }
+    
+    if (!session) {
+      issues.push('No session found after login');
+      return { verified: false, issues };
+    }
+    
+    // Check user data
+    const { data: user, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      issues.push(`User fetch error: ${userError.message}`);
+      return { verified: false, issues };
+    }
+    
+    if (!user) {
+      issues.push('No user data found after login');
+      return { verified: false, issues };
+    }
+    
+    // Verify expected user if provided
+    if (expectedUserId && user.user?.id !== expectedUserId) {
+      issues.push('User ID mismatch after login');
+      return { verified: false, issues };
+    }
+    
+    // Check session expiry
+    if (session.expires_at) {
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at <= now) {
+        issues.push('Session is already expired');
+        return { verified: false, issues };
+      }
+    }
+    
+    console.log('[AuthRecovery] Login verification successful');
+    return { verified: true, issues: [] };
+  } catch (e) {
+    console.error('[AuthRecovery] Login verification failed:', e);
+    return { verified: false, issues: ['Login verification failed'] };
+  }
+};
+
+export const validatePreLoginState = async (): Promise<{ canProceed: boolean; issues: string[]; needsRecovery: boolean }> => {
   console.log('[AuthRecovery] Validating pre-login state');
   const issues = [];
   
@@ -320,15 +487,18 @@ export const validatePreLoginState = async (): Promise<{ canProceed: boolean; is
     
     if (error) {
       issues.push(`Session validation error: ${error.message}`);
+      return { canProceed: false, issues, needsRecovery: true };
     }
     
     if (session) {
       // Check if session is expired
       const now = Math.floor(Date.now() / 1000);
       if (session.expires_at && session.expires_at < now) {
-        issues.push('Expired session found');
+        issues.push('Expired session found - needs cleanup');
+        return { canProceed: false, issues, needsRecovery: true };
       } else {
         issues.push('Valid session already exists');
+        return { canProceed: true, issues, needsRecovery: false };
       }
     }
     
@@ -343,19 +513,18 @@ export const validatePreLoginState = async (): Promise<{ canProceed: boolean; is
       }
     } catch (e) {
       issues.push('Unable to scan localStorage');
+      return { canProceed: false, issues, needsRecovery: true };
     }
     
-    if (authKeysFound.length > 0 && !session) {
-      issues.push('Orphaned auth tokens found without valid session');
+    if (authKeysFound.length > 0) {
+      issues.push('Orphaned auth tokens found - needs cleanup');
+      return { canProceed: false, issues, needsRecovery: true };
     }
     
-    return { 
-      canProceed: issues.length === 0 || issues.every(issue => issue === 'Valid session already exists'),
-      issues 
-    };
+    return { canProceed: true, issues: [], needsRecovery: false };
     
   } catch (e) {
     console.error('[AuthRecovery] Pre-login validation failed:', e);
-    return { canProceed: false, issues: ['Pre-login validation failed'] };
+    return { canProceed: false, issues: ['Pre-login validation failed'], needsRecovery: true };
   }
 };
