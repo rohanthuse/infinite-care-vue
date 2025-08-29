@@ -46,32 +46,49 @@ export const useAdminPermissions = (branchId?: string) => {
   return useQuery({
     queryKey: ['adminPermissions', user?.id, branchId],
     queryFn: async () => {
-      if (!user?.id || !branchId) {
-        return null;
+      // Add timeout to prevent infinite loading
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Admin permissions query timed out')), 5000)
+      );
+
+      const queryPromise = async () => {
+        if (!user?.id || !branchId) {
+          return createDefaultPermissions(); // Return default instead of null
+        }
+
+        const { data, error } = await supabase
+          .from('admin_permissions')
+          .select('*')
+          .eq('admin_id', user.id)
+          .eq('branch_id', branchId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('[useAdminPermissions] Error fetching permissions:', error);
+          // Return default permissions instead of throwing
+          console.warn('[useAdminPermissions] Returning default permissions due to error');
+          return createDefaultPermissions();
+        }
+
+        // If no permissions found, return default permissions (all true for fallback)
+        if (!data) {
+          console.warn('[useAdminPermissions] No permissions found, returning default');
+          return createDefaultPermissions();
+        }
+
+        return data as AdminPermissions;
+      };
+
+      try {
+        return await Promise.race([queryPromise(), timeout]);
+      } catch (error: any) {
+        console.error('[useAdminPermissions] Query failed or timed out:', error.message);
+        return createDefaultPermissions(); // Return default permissions on timeout
       }
-
-      const { data, error } = await supabase
-        .from('admin_permissions')
-        .select('*')
-        .eq('admin_id', user.id)
-        .eq('branch_id', branchId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('[useAdminPermissions] Error fetching permissions:', error);
-        throw error;
-      }
-
-      // If no permissions found, return default permissions (all false)
-      if (!data) {
-        console.warn('[useAdminPermissions] No permissions found, returning default');
-        return createDefaultPermissions();
-      }
-
-      return data as AdminPermissions;
     },
     enabled: !!user?.id && !!branchId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
   });
 };
 

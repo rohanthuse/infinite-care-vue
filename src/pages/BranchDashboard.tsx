@@ -58,7 +58,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   
   // Always call all hooks unconditionally at the top level
   const { session, loading: authLoading } = useAuth();
-  const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const {
     id,
     branchName,
@@ -74,7 +74,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const { data: branchAccess, isLoading: accessLoading, error: accessError } = useBranchAdminAccess(id || "");
   
   // Get admin permissions for permission-based content filtering
-  const { data: permissions, isLoading: permissionsLoading } = useAdminPermissions(id);
+  const { data: permissions, isLoading: permissionsLoading, error: permissionsError } = useAdminPermissions(id);
   
   // Add unified documents hook for documents tab
   const {
@@ -117,6 +117,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // State for access control
   const [accessDenied, setAccessDenied] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [showFallbackUI, setShowFallbackUI] = useState(false);
 
   // Handle access control logic with timeout protection
   useEffect(() => {
@@ -131,14 +132,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       accessError: accessError?.message
     });
 
-    // Create a timeout to prevent infinite loading
+    // Create shorter timeout with fallback UI option
     const loadingTimeout = setTimeout(() => {
       if (isInitializing) {
-        console.warn('[BranchDashboard] Loading timeout reached, showing error state');
-        setAccessDenied(true);
+        console.warn('[BranchDashboard] Loading timeout reached, showing fallback UI');
+        setShowFallbackUI(true);
         setIsInitializing(false);
       }
-    }, 15000); // 15-second timeout for total loading
+    }, 10000); // 10-second timeout with fallback
 
     // Wait for all authentication data to be loaded
     if (authLoading || roleLoading) {
@@ -162,8 +163,17 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       return;
     }
 
+    // If user role failed or timed out, show fallback
+    if (roleError || (!userRole && !roleLoading)) {
+      console.warn('[BranchDashboard] User role failed or timed out, showing fallback UI');
+      clearTimeout(loadingTimeout);
+      setShowFallbackUI(true);
+      setIsInitializing(false);
+      return;
+    }
+
     // If no user role yet, keep loading (but with timeout protection)
-    if (!userRole) {
+    if (!userRole && roleLoading) {
       console.log('[BranchDashboard] No user role yet, continuing to load');
       return () => clearTimeout(loadingTimeout);
     }
@@ -216,13 +226,98 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const displayBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
 
-  // Show loading while initializing
-  if (isInitializing || authLoading || roleLoading || (userRole?.role === 'branch_admin' && accessLoading)) {
+  // Event handlers (declared early to avoid scoping issues)
+  const handleNewBooking = () => {
+    setNewBookingDialogOpen(true);
+  };
+
+  const handleNewClient = () => {
+    setAddClientDialogOpen(true);
+  };
+
+  const enhancedHandleTabChange = (value: string) => {
+    // Check permissions for branch admins before allowing tab change
+    if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, value)) {
+      console.warn('[BranchDashboard] Access denied to tab:', value, {
+        userRole: userRole?.role,
+        permissions,
+        tabValue: value,
+        hasPermission: hasTabPermission(permissions || null, value)
+      });
+      return; // Silently prevent navigation to restricted tabs
+    }
+    
+    if (value === "events-logs" && id && branchName) {
+      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
+    } else {
+      handleTabChange(value);
+    }
+  };
+
+  // Show loading while initializing (with timeout protection)
+  if (isInitializing || (authLoading && !showFallbackUI) || (roleLoading && !roleError && !showFallbackUI)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
+          {showFallbackUI && (
+            <div className="mt-6">
+              <button
+                onClick={() => {
+                  setShowFallbackUI(false);
+                  setAccessDenied(false);
+                  setIsInitializing(false);
+                }}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 mr-3"
+              >
+                Continue Anyway
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/90"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Show fallback UI for partial failures
+  if (showFallbackUI && !accessDenied) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background w-full">
+        <DashboardHeader />
+        <div className="flex-1 min-w-0 px-4 md:px-8 pt-4 pb-20 md:py-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
+              <div>
+                <h3 className="text-sm font-medium text-yellow-800">Limited Access Mode</h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Some features may be unavailable due to authentication issues. Basic dashboard access is provided.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <BranchInfoHeader 
+            branchName={displayBranchName} 
+            branchId={id || ""}
+            onNewBooking={handleNewBooking}
+          />
+          
+          {/* Basic dashboard content with fallback permissions */}
+          <DashboardStatsSection
+            branchId={id}
+            onNewClient={handleNewClient}
+            onTabChange={enhancedHandleTabChange}
+          />
+          <DashboardChartsSection branchId={id} />
+          <DashboardActivitySection branchId={id} />
         </div>
       </div>
     );
@@ -253,16 +348,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     );
   }
 
-  // Event handlers
-  const handleNewBooking = () => {
-    setNewBookingDialogOpen(true);
-  };
-
-  const handleNewClient = () => {
-    setAddClientDialogOpen(true);
-  };
-
-  // Quick Add handlers
+  // Additional event handlers
   const handleQuickUploadDocument = () => {
     setIsQuickUploadDialogOpen(true);
   };
@@ -329,25 +415,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const handleEditClient = (client: any) => {
     if (id && branchName) {
       navigate(`/branch-dashboard/${id}/${branchName}/clients/${client.id}/edit`);
-    }
-  };
-
-  const enhancedHandleTabChange = (value: string) => {
-    // Check permissions for branch admins before allowing tab change
-    if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, value)) {
-      console.warn('[BranchDashboard] Access denied to tab:', value, {
-        userRole: userRole?.role,
-        permissions,
-        tabValue: value,
-        hasPermission: hasTabPermission(permissions || null, value)
-      });
-      return; // Silently prevent navigation to restricted tabs
-    }
-    
-    if (value === "events-logs" && id && branchName) {
-      navigate(`/branch-dashboard/${id}/${branchName}/events-logs`);
-    } else {
-      handleTabChange(value);
     }
   };
 
