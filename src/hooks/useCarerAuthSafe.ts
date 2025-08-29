@@ -27,6 +27,7 @@ export function useCarerAuthSafe() {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
   const handleAuthStateChange = async (event: string, session: Session | null) => {
       if (!mounted) return;
@@ -133,22 +134,34 @@ export function useCarerAuthSafe() {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session
+    // Check for existing session with enhanced timeout handling
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       
       console.log('[useCarerAuthSafe] Initial session check:', session?.user?.id);
       
       if (session?.user) {
+        // Clear any existing timeout when we have a session
+        if (timeoutId) clearTimeout(timeoutId);
         handleAuthStateChange('SIGNED_IN', session);
       } else {
         setLoading(false);
       }
     });
 
+    // Set coordinated timeout that doesn't conflict with AuthContext
+    timeoutId = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('[useCarerAuthSafe] Carer auth timed out after 25 seconds');
+        setLoading(false);
+        setError('Authentication is taking longer than expected. Please try recovery options.');
+      }
+    }, 25000); // 25 seconds - longer than AuthContext timeout
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [navigate]);
 

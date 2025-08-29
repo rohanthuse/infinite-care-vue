@@ -73,18 +73,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Then get initial session
     getSession();
 
-    // Set a timeout to ensure we don't stay loading forever
-    const timeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.warn('Auth loading timed out, proceeding without authentication');
-        setLoading(false);
-      }
-    }, 5000);
+    // Set progressive timeouts to handle different auth scenarios
+    let timeoutStage = 1;
+    const progressiveTimeout = () => {
+      const timeouts = [
+        { stage: 1, delay: 8000, message: 'Initial auth check taking longer than expected...' },
+        { stage: 2, delay: 12000, message: 'Still checking session, please wait...' },
+        { stage: 3, delay: 20000, message: 'Auth timeout - proceeding without authentication' }
+      ];
+      
+      const currentTimeout = timeouts.find(t => t.stage === timeoutStage);
+      if (!currentTimeout) return;
+      
+      const timeout = setTimeout(() => {
+        if (mounted && loading) {
+          console.warn(`[AuthContext] ${currentTimeout.message}`);
+          
+          if (timeoutStage < 3) {
+            timeoutStage++;
+            progressiveTimeout();
+          } else {
+            // Final timeout - stop loading
+            console.warn('[AuthContext] Final timeout reached, stopping auth loading');
+            setLoading(false);
+          }
+        }
+      }, currentTimeout.delay);
+      
+      return timeout;
+    };
+    
+    const timeoutId = progressiveTimeout();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      clearTimeout(timeout);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 
