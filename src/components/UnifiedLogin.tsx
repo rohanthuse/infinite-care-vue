@@ -253,69 +253,77 @@ const UnifiedLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[LOGIN DEBUG] Sign in button clicked, starting login process');
     
     if (!email || !password) {
+      console.log('[LOGIN DEBUG] Missing credentials');
       toast.error("Please fill in all fields");
       return;
     }
 
-    // Enhanced pre-login validation with cache clearing
-    console.log('[LOGIN] Starting login process with enhanced validation');
-    const preLoginState = await validatePreLoginState();
-    
-    if (!preLoginState.canProceed) {
-      console.warn('[LOGIN] Pre-login issues detected:', preLoginState.issues);
-      toast.error("Login state issues detected. Clearing session data...");
-      await clearAllAuthData();
-      clearOptimizationCache(); // Clear optimization cache too
-      // Wait for cleanup to complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
+    console.log('[LOGIN DEBUG] Setting loading state to true');
     setLoading(true);
 
     // Add timeout to force loading reset after 15 seconds
     const timeoutId = setTimeout(() => {
-      console.warn('Login timeout reached, resetting loading state');
+      console.warn('[LOGIN DEBUG] Login timeout reached, resetting loading state');
       setLoading(false);
       setShowRecovery(true);
       toast.error("Login is taking too long. Try the recovery options below.");
     }, 15000);
 
     try {
-      // Authenticate user
+      console.log('[LOGIN DEBUG] Starting Supabase authentication');
+      // Authenticate user first
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError) {
+        console.error('[LOGIN DEBUG] Auth error:', authError);
         throw authError;
       }
 
       if (!authData.user) {
+        console.error('[LOGIN DEBUG] No user data returned');
         throw new Error("Authentication failed");
       }
 
-      // Get user's highest priority role first with timeout
-      const roleResult = await withProgressiveTimeout(
-        Promise.resolve(supabase.rpc('get_user_highest_role', { p_user_id: authData.user.id }).single()),
-        [3000, 6000, 10000],
-        'Role detection'
-      );
+      console.log('[LOGIN DEBUG] Authentication successful, user ID:', authData.user.id);
 
-      if (roleResult.error) {
-        console.error('Role detection error:', roleResult.error);
-        toast.error("Unable to determine your access level. Please contact support.");
-        return;
+      // Try optimized role detection first, fallback to direct call
+      let userRole = null;
+      try {
+        console.log('[LOGIN DEBUG] Attempting optimized role detection');
+        const roleData = await getRoleWithOptimization(authData.user.id);
+        userRole = roleData?.role;
+        console.log('[LOGIN DEBUG] Optimized role detection result:', userRole);
+      } catch (optimizedError) {
+        console.warn('[LOGIN DEBUG] Optimized role detection failed, using fallback:', optimizedError);
+        try {
+          const fallbackResult = await supabase.rpc('get_user_highest_role', { p_user_id: authData.user.id }).single();
+          if (fallbackResult.error) {
+            throw fallbackResult.error;
+          }
+          userRole = fallbackResult.data?.role;
+          console.log('[LOGIN DEBUG] Fallback role detection result:', userRole);
+        } catch (fallbackError) {
+          console.error('[LOGIN DEBUG] Both role detection methods failed:', fallbackError);
+          throw new Error("Unable to determine your access level. Please contact support.");
+        }
       }
 
-      const userRole = roleResult.data.role;
-      console.log('User role detected:', userRole);
-      console.log('[AUTH DEBUG] User ID:', authData.user.id, 'Email:', authData.user.email);
+      if (!userRole) {
+        console.error('[LOGIN DEBUG] No role found for user');
+        throw new Error("No access role found for your account");
+      }
+
+      console.log('[LOGIN DEBUG] Final user role:', userRole);
 
       // Handle third-party access redemption first
       if (thirdPartyInfo) {
+        console.log('[LOGIN DEBUG] Processing third-party invitation');
         const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
         if (redeemResult) {
           toast.success("Third-party access activated successfully!");
@@ -327,18 +335,33 @@ const UnifiedLogin = () => {
         }
       }
 
-      // Detect organization membership with optimized timeout
-      const orgSlug = await getOrganizationWithOptimization(authData.user.id);
+      // Try optimized organization detection first, fallback to direct call
+      let orgSlug = null;
+      try {
+        console.log('[LOGIN DEBUG] Attempting optimized organization detection');
+        orgSlug = await getOrganizationWithOptimization(authData.user.id);
+        console.log('[LOGIN DEBUG] Optimized organization detection result:', orgSlug);
+      } catch (optimizedOrgError) {
+        console.warn('[LOGIN DEBUG] Optimized organization detection failed, using fallback:', optimizedOrgError);
+        try {
+          orgSlug = await detectUserOrganization(authData.user.id);
+          console.log('[LOGIN DEBUG] Fallback organization detection result:', orgSlug);
+        } catch (fallbackOrgError) {
+          console.error('[LOGIN DEBUG] Both organization detection methods failed:', fallbackOrgError);
+          // Don't throw here - some users might not need organization detection
+        }
+      }
 
       // For super admins, always route to their organization dashboard
       if (userRole === 'super_admin') {
+        console.log('[LOGIN DEBUG] Super admin detected');
         if (orgSlug) {
-          console.log('[AUTH DEBUG] Super admin with organization detected, redirecting to tenant dashboard:', authData.user.email, '-> /' + orgSlug + '/dashboard');
+          console.log('[LOGIN DEBUG] Super admin with organization, redirecting to:', `/${orgSlug}/dashboard`);
           toast.success("Welcome back, Super Administrator!");
           navigate(`/${orgSlug}/dashboard`);
           return;
         } else {
-          // Super admins should always have an organization
+          console.error('[LOGIN DEBUG] Super admin without organization');
           toast.error("No organization found for super admin account. Please contact support.");
           await supabase.auth.signOut();
           return;
@@ -347,7 +370,7 @@ const UnifiedLogin = () => {
 
       // For app_admin (system administrators), route to system dashboard
       if (userRole === 'app_admin') {
-        console.log('[AUTH DEBUG] App admin detected, redirecting to system dashboard:', authData.user.email);
+        console.log('[LOGIN DEBUG] App admin detected, redirecting to system dashboard');
         toast.success("Welcome back, System Administrator!");
         navigate('/system-dashboard');
         return;
@@ -355,6 +378,7 @@ const UnifiedLogin = () => {
 
       // For non-super admin users, organization is required
       if (!orgSlug) {
+        console.error('[LOGIN DEBUG] No organization found for user role:', userRole);
         toast.error("No organization access found for your account");
         await supabase.auth.signOut();
         return;
@@ -362,6 +386,8 @@ const UnifiedLogin = () => {
 
       // Route to appropriate dashboard based on role
       let dashboardPath = `/${orgSlug}`;
+      
+      console.log('[LOGIN DEBUG] Determining dashboard path for role:', userRole, 'in org:', orgSlug);
       
       switch (userRole) {
         case 'branch_admin':
@@ -383,11 +409,11 @@ const UnifiedLogin = () => {
           break;
       }
 
-      console.log('Redirecting to:', dashboardPath);
+      console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
       navigate(dashboardPath);
 
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('[LOGIN DEBUG] Login error occurred:', error);
       
       if (error.message?.includes('Invalid login credentials')) {
         toast.error("Invalid email or password");
@@ -404,6 +430,7 @@ const UnifiedLogin = () => {
         }
       }
     } finally {
+      console.log('[LOGIN DEBUG] Cleaning up login process');
       clearTimeout(timeoutId);
       setLoading(false);
     }
