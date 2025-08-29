@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { validateSessionState, clearAllAuthData, debugAuthState } from "@/utils/authRecovery";
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ const UnifiedLogin = () => {
   const [searchParams] = useSearchParams();
   const [thirdPartyInfo, setThirdPartyInfo] = useState<any>(null);
   const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
   const navigate = useNavigate();
 
   // Check for third-party invitation token
@@ -255,13 +257,23 @@ const UnifiedLogin = () => {
       return;
     }
 
+    // Pre-login session validation
+    const { isValid, session } = await validateSessionState();
+    if (isValid && session) {
+      console.warn('[LOGIN] Existing valid session found, clearing before new login');
+      await clearAllAuthData();
+      // Small delay to ensure cleanup completes
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
     setLoading(true);
 
     // Add timeout to force loading reset after 15 seconds
     const timeoutId = setTimeout(() => {
       console.warn('Login timeout reached, resetting loading state');
       setLoading(false);
-      toast.error("Login is taking too long. Please try again.");
+      setShowRecovery(true);
+      toast.error("Login is taking too long. Try the recovery options below.");
     }, 15000);
 
     try {
@@ -388,14 +400,37 @@ const UnifiedLogin = () => {
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error("Please check your email and click the confirmation link");
       } else if (error.message?.includes('timeout')) {
-        toast.error("Login is taking too long. Please check your connection and try again.");
+        toast.error("Login is taking too long. Try the recovery options below.");
+        setShowRecovery(true);
       } else {
         toast.error(error.message || "Login failed. Please try again.");
+        // Show recovery options for persistent errors
+        if (error.message?.includes('network') || error.message?.includes('connection')) {
+          setShowRecovery(true);
+        }
       }
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
     }
+  };
+
+  const handleClearSession = async () => {
+    try {
+      toast.loading("Clearing session data...");
+      await debugAuthState(); // Log current state
+      await clearAllAuthData();
+      setShowRecovery(false);
+      toast.success("Session cleared. You can try logging in again.");
+    } catch (error) {
+      console.error('Clear session error:', error);
+      toast.error("Failed to clear session data");
+    }
+  };
+
+  const handleForceRefresh = () => {
+    toast.loading("Refreshing page...");
+    window.location.reload();
   };
 
   const handleForgotPassword = async () => {
@@ -590,6 +625,47 @@ const UnifiedLogin = () => {
               </CustomButton>
             </div>
           </form>
+
+          {/* Recovery Options */}
+          {showRecovery && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-yellow-900 mb-3">
+                    Having trouble logging in? Try these recovery options:
+                  </h3>
+                  <div className="space-y-2">
+                    <CustomButton
+                      type="button"
+                      onClick={handleClearSession}
+                      className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                      size="sm"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Clear Session & Try Again
+                    </CustomButton>
+                    <CustomButton
+                      type="button"
+                      onClick={handleForceRefresh}
+                      variant="outline"
+                      className="w-full border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                      size="sm"
+                    >
+                      Force Refresh Page
+                    </CustomButton>
+                    <button
+                      type="button"
+                      onClick={() => setShowRecovery(false)}
+                      className="w-full text-xs text-yellow-600 hover:text-yellow-700 underline mt-2"
+                    >
+                      Hide recovery options
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Support Link */}
           <div className="text-center">

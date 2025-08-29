@@ -90,16 +90,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      console.log('[AuthContext] Starting coordinated logout process');
+      
       // Clear auth state immediately
       setUser(null);
       setSession(null);
       setError(null);
       
-      // Clear all localStorage keys that might contain auth data
+      // Enhanced storage cleanup - clear ALL possible auth-related keys
       const keysToRemove = [
         'userType', 'clientName', 'clientId', 'branchId',
         'system_session_token', 'systemSessionToken', 'system-session-token',
-        'sb-vcrjntfjsmpoupgairep-auth-token'
+        'sb-vcrjntfjsmpoupgairep-auth-token',
+        'thirdPartySession', 'tenant_context'
       ];
       
       keysToRemove.forEach(key => {
@@ -111,31 +114,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       });
 
-      // Sign out from Supabase
+      // Sign out from Supabase with verification
+      console.log('[AuthContext] Signing out from Supabase');
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Supabase signOut error:', error);
+        // Continue with logout even if Supabase fails
       }
 
-      // Force navigation to home page after logout
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 100);
+      // Verify session is cleared
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.warn('[AuthContext] Session still exists after signOut, forcing clear');
+        // Try again or clear manually
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch (e) {
+          console.warn('Failed to force clear storage:', e);
+        }
+      }
+
+      console.log('[AuthContext] Logout completed successfully');
+      
+      // Use replace instead of href to avoid potential navigation issues
+      window.location.replace('/');
       
     } catch (error) {
-      console.error('SignOut error:', error);
-      // Force logout even if Supabase fails
+      console.error('[AuthContext] SignOut error:', error);
+      
+      // Force logout even if everything fails
       setUser(null);
       setSession(null);
-      // Clear storage manually
+      setError(null);
+      
+      // Nuclear option - clear everything
       try {
         localStorage.clear();
         sessionStorage.clear();
       } catch (e) {
-        console.warn('Failed to clear storage:', e);
+        console.warn('Failed to clear storage in error handler:', e);
       }
-      // Navigate anyway
-      window.location.href = '/';
+      
+      // Force navigation
+      window.location.replace('/');
     }
   };
 

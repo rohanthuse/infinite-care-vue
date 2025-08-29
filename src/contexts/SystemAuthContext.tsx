@@ -55,11 +55,12 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
         }
 
         const userRole = roleData.role;
-        // System auth should only validate app_admin, not super_admin
+        // CRITICAL FIX: SystemAuth should ONLY handle app_admin users
+        // Do not interfere with super_admin, branch_admin, carer, or client authentication
         const isSystemAdmin = userRole === 'app_admin';
 
         if (!isSystemAdmin) {
-          console.log('[SystemAuth] User lacks app_admin permissions for system access');
+          console.log(`[SystemAuth] User role '${userRole}' is not app_admin, ignoring for system auth`);
           if (mounted) {
             setUser(null);
             setIsLoading(false);
@@ -206,14 +207,14 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
         }
 
         const userRole = roleData.role;
-        // System auth should only validate app_admin, not super_admin
+        // CRITICAL FIX: SystemAuth should ONLY handle app_admin users
         const isSystemAdmin = userRole === 'app_admin';
 
         if (!isSystemAdmin) {
-          console.error('[SystemAuth] User is not an app_admin');
-          await supabase.auth.signOut();
-          setError('Insufficient permissions for system access');
-          return { error: 'Insufficient permissions for system access' };
+          console.log(`[SystemAuth] User role '${userRole}' is not app_admin, rejecting system auth`);
+          // Don't sign out other user types - they should use regular AuthContext
+          setError('This account is not a system administrator');
+          return { error: 'This account is not a system administrator' };
         }
 
         const user = {
