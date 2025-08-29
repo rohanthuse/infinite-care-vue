@@ -6928,7 +6928,7 @@ export type Database = {
         Returns: string
       }
       get_user_primary_org_slug: {
-        Args: { p_user_id: string }
+        Args: { user_id_param: string }
         Returns: string
       }
       has_role: {

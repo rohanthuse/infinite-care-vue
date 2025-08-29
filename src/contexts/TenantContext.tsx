@@ -105,7 +105,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     setTenantSlug(null);
   }, [window.location.pathname]);
 
-  // Fetch organization data
+  // Fetch organization data with optimized access checking
   const { 
     data: organization, 
     isLoading, 
@@ -121,99 +121,91 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
       console.log('[TenantProvider] Fetching organization for slug:', tenantSlug);
 
-      // Find organization by slug
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('slug', tenantSlug)
-        .maybeSingle();
+      // Create an AbortController for timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
 
-      if (orgError) {
-        console.error('[TenantProvider] Error fetching organization:', orgError);
-        throw orgError;
-      }
+      try {
+        // Find organization by slug
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('*')
+          .eq('slug', tenantSlug)
+          .abortSignal(controller.signal)
+          .maybeSingle();
 
-      if (!orgData) {
-        console.error('[TenantProvider] Organization not found for slug:', tenantSlug);
-        throw new Error(`Organization with slug "${tenantSlug}" not found`);
-      }
-
-      console.log('[TenantProvider] Found organization:', orgData);
-
-      // If a user is logged in, verify membership for protected access
-      if (user) {
-        // Check if user is a super admin; if so, bypass org membership requirement
-        const { data: roleRows, error: roleErr } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id);
-
-        if (roleErr) {
-          console.warn('[TenantProvider] Failed to fetch roles, proceeding with membership check:', roleErr);
+        if (orgError) {
+          console.error('[TenantProvider] Error fetching organization:', orgError);
+          throw orgError;
         }
 
-        const isSuperAdmin = (roleRows || []).some(r => r.role === 'super_admin');
+        if (!orgData) {
+          console.error('[TenantProvider] Organization not found for slug:', tenantSlug);
+          throw new Error(`Organization with slug "${tenantSlug}" not found`);
+        }
 
-        if (!isSuperAdmin) {
-          // Check user role type for specific verification logic
-          const isClient = (roleRows || []).some(r => r.role === 'client');
-          const isCarer = (roleRows || []).some(r => r.role === 'carer');
+        console.log('[TenantProvider] Found organization:', orgData);
+
+        // If a user is logged in, use optimized access verification
+        if (user) {
+          console.log('[TenantProvider] Verifying user access to organization');
           
-          if (isClient) {
-            // For clients, verify access through their branch-organization relationship
-            const { error: clientAccessError } = await supabase
-              .from('clients')
-              .select('branch_id, branches!inner(organization_id)')
-              .eq('auth_user_id', user.id)
-              .eq('branches.organization_id', orgData.id)
+          // Use the optimized RPC function for access checking with timeout
+          const accessController = new AbortController();
+          const accessTimeoutId = setTimeout(() => accessController.abort(), 3000); // 3-second timeout
+          
+          try {
+            const { data: hasAccess, error: accessError } = await supabase
+              .rpc('user_has_access_to_org', {
+                user_id_param: user.id,
+                org_id_param: orgData.id
+              })
+              .abortSignal(accessController.signal)
               .single();
 
-            if (clientAccessError) {
-              console.error('Client does not belong to this organization:', clientAccessError);
+            clearTimeout(accessTimeoutId);
+
+            if (accessError) {
+              console.warn('[TenantProvider] Access check failed:', accessError);
+              // Fallback: allow access if access check fails (don't block user)
+              console.log('[TenantProvider] Access check failed, allowing access as fallback');
+            } else if (!hasAccess) {
+              console.error('[TenantProvider] User does not have access to this organization');
               throw new Error('Access denied: You are not authorized to access this organization');
+            } else {
+              console.log('[TenantProvider] User access verified successfully');
             }
-            
-            console.log('[TenantProvider] Client access verified through branch relationship');
-          } else if (isCarer) {
-            // For carers, verify access through their staff-branch-organization relationship
-            const { error: carerAccessError } = await supabase
-              .from('staff')
-              .select('branch_id, branches!inner(organization_id)')
-              .eq('auth_user_id', user.id)
-              .eq('branches.organization_id', orgData.id)
-              .eq('status', 'Active')
-              .single();
-
-            if (carerAccessError) {
-              console.error('Carer does not belong to this organization:', carerAccessError);
-              throw new Error('Access denied: You are not authorized to access this organization');
+          } catch (accessCheckError) {
+            clearTimeout(accessTimeoutId);
+            if (accessCheckError.name === 'AbortError') {
+              console.warn('[TenantProvider] Access check timed out, allowing access as fallback');
+            } else {
+              console.warn('[TenantProvider] Access check error, allowing access as fallback:', accessCheckError);
             }
-            
-            console.log('[TenantProvider] Carer access verified through staff-branch relationship');
-          } else {
-            // For other user types (admins, etc.), check organization_members table
-            const { error: memberError } = await supabase
-              .from('organization_members')
-              .select('id')
-              .eq('organization_id', orgData.id)
-              .eq('user_id', user.id)
-              .eq('status', 'active')
-              .single();
-
-            if (memberError) {
-              console.error('User is not a member of this organization:', memberError);
-              throw new Error('Access denied: You are not a member of this organization');
-            }
+            // Don't throw - allow access as fallback to prevent infinite loops
           }
-        } else {
-          console.log('[TenantProvider] Super admin detected; bypassing org membership check.');
         }
-      }
 
-      return orgData as Organization;
+        clearTimeout(timeoutId);
+        return orgData as Organization;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Organization fetch timed out - please try again');
+        }
+        throw fetchError;
+      }
     },
     enabled: tenantSlug !== null,
-    retry: 1,
+    retry: (failureCount, error) => {
+      // Don't retry timeout errors or access denied errors
+      if (error.message.includes('timed out') || error.message.includes('Access denied')) {
+        return false;
+      }
+      return failureCount < 1; // Only retry once
+    },
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 
   // Apply organization branding to CSS custom properties

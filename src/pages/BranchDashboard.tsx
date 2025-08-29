@@ -118,7 +118,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [accessDenied, setAccessDenied] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Handle access control logic
+  // Handle access control logic with timeout protection
   useEffect(() => {
     console.log('[BranchDashboard] Access Control Check:', {
       authLoading,
@@ -131,14 +131,24 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       accessError: accessError?.message
     });
 
+    // Create a timeout to prevent infinite loading
+    const loadingTimeout = setTimeout(() => {
+      if (isInitializing) {
+        console.warn('[BranchDashboard] Loading timeout reached, showing error state');
+        setAccessDenied(true);
+        setIsInitializing(false);
+      }
+    }, 15000); // 15-second timeout for total loading
+
     // Wait for all authentication data to be loaded
     if (authLoading || roleLoading) {
-      return;
+      return () => clearTimeout(loadingTimeout);
     }
 
     // If no session, redirect to login
     if (!session) {
       console.log('[BranchDashboard] No session, redirecting to login');
+      clearTimeout(loadingTimeout);
       navigate('/branch-admin-login', { replace: true });
       return;
     }
@@ -146,20 +156,22 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     // If no branch ID, show error
     if (!id) {
       console.log('[BranchDashboard] No branch ID found');
+      clearTimeout(loadingTimeout);
       setAccessDenied(true);
       setIsInitializing(false);
       return;
     }
 
-    // If no user role yet, keep loading
+    // If no user role yet, keep loading (but with timeout protection)
     if (!userRole) {
       console.log('[BranchDashboard] No user role yet, continuing to load');
-      return;
+      return () => clearTimeout(loadingTimeout);
     }
 
     // Super admins have immediate access
     if (userRole.role === 'super_admin') {
       console.log('[BranchDashboard] Super admin access granted');
+      clearTimeout(loadingTimeout);
       setAccessDenied(false);
       setIsInitializing(false);
       return;
@@ -170,26 +182,36 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       // Still loading access check
       if (accessLoading) {
         console.log('[BranchDashboard] Branch admin access check in progress');
-        return;
+        return () => clearTimeout(loadingTimeout);
       }
 
-      // Access check completed
+      // Access check completed or timed out
       if (branchAccess?.canAccess) {
         console.log('[BranchDashboard] Branch admin access granted');
+        clearTimeout(loadingTimeout);
         setAccessDenied(false);
+        setIsInitializing(false);
+      } else if (accessError?.message?.includes('timed out')) {
+        console.log('[BranchDashboard] Branch access check timed out, denying access');
+        clearTimeout(loadingTimeout);
+        setAccessDenied(true);
         setIsInitializing(false);
       } else {
         console.log('[BranchDashboard] Branch admin access denied');
+        clearTimeout(loadingTimeout);
         setAccessDenied(true);
         setIsInitializing(false);
       }
-      return;
+      return () => clearTimeout(loadingTimeout);
     }
 
     // Other roles don't have access
     console.log('[BranchDashboard] User role does not have access:', userRole.role);
+    clearTimeout(loadingTimeout);
     setAccessDenied(true);
     setIsInitializing(false);
+
+    return () => clearTimeout(loadingTimeout);
   }, [authLoading, roleLoading, accessLoading, session, userRole, branchAccess, id, navigate, accessError]);
 
   const displayBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
