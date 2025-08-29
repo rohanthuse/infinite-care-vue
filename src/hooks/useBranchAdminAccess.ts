@@ -13,16 +13,16 @@ interface BranchAdminAccess {
 }
 
 export const useBranchAdminAccess = (targetBranchId?: string) => {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
 
   return useQuery({
-    queryKey: ['branch-admin-access', session?.user?.id, targetBranchId],
+    queryKey: ['branch-admin-access', user?.id, targetBranchId],
     queryFn: async (): Promise<BranchAdminAccess> => {
-      if (!session?.user?.id) {
+      if (!user?.id) {
         throw new Error('Not authenticated');
       }
 
-      console.log('[useBranchAdminAccess] Checking access for user:', session.user.id, 'target branch:', targetBranchId);
+      console.log('[useBranchAdminAccess] Checking access for user:', user.id, 'target branch:', targetBranchId);
 
       // Create timeout controller for the entire operation
       const controller = new AbortController();
@@ -33,7 +33,7 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
           .abortSignal(controller.signal);
 
         if (roleError) {
@@ -102,7 +102,7 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
               status
             )
           `)
-          .eq('admin_id', session.user.id)
+          .eq('admin_id', user.id)
           .abortSignal(controller.signal);
 
         if (error) {
@@ -175,7 +175,7 @@ export const useBranchAdminAccess = (targetBranchId?: string) => {
         throw accessError;
       }
     },
-    enabled: !!session?.user?.id,
+    enabled: !!user?.id,
     retry: (failureCount, error) => {
       // Don't retry timeout errors, access denied errors, or after first failure
       if (error.message.includes('timed out') || 

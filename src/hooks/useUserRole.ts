@@ -25,6 +25,7 @@ export const useUserRole = () => {
       );
 
       const queryPromise = async (): Promise<UserWithRole | null> => {
+        // Use auth.uid() which is the standard way to get current user in RLS
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           console.error('[useUserRole] No authenticated user found');
