@@ -6,9 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
-import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import Index from "./pages/Index";
@@ -25,7 +23,7 @@ import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/UnifiedAuthProvider";
 import { TenantSetup } from "./pages/TenantSetup";
 import SystemLogin from "./pages/SystemLogin";
 import SystemDashboard from "./pages/SystemDashboard";
@@ -230,13 +228,9 @@ function App() {
         disableTransitionOnChange={false}
       >
         <TooltipProvider>
-          <SystemAuthProvider>
-            <AuthProvider>
-              <Toaster />
-              <Sonner />
-              <AppContent />
-            </AuthProvider>
-          </SystemAuthProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
