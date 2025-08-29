@@ -100,10 +100,31 @@ export function useCarerAuthSafe() {
       }
 
       if (event === 'SIGNED_OUT') {
-        console.log('[useCarerAuthSafe] User signed out');
+        console.log('[useCarerAuthSafe] User signed out event received');
         setCarerProfile(null);
         setError(null);
-      navigate('/');
+        
+        // Clear carer-specific data on auth state change
+        const carerKeys = [
+          'carerLastWelcome', 'carerCurrentSessionWelcome', 'carerProfile',
+          'tenant_context', 'dev-tenant', 'currentTenant'
+        ];
+        
+        carerKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+          } catch (e) {
+            console.warn('[useCarerAuthSafe] Failed to clear key on signout:', key);
+          }
+        });
+        
+        // Only navigate if not already at root
+        if (window.location.pathname !== '/') {
+          setTimeout(() => {
+            window.location.replace('/');
+          }, 100);
+        }
       }
 
       setLoading(false);
@@ -197,21 +218,78 @@ export function useCarerAuthSafe() {
   };
 
   const signOut = async () => {
-    console.log('[useCarerAuthSafe] Signing out');
+    console.log('[useCarerAuthSafe] Starting comprehensive logout');
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Clear carer-specific localStorage immediately
+      console.log('[useCarerAuthSafe] Clearing carer-specific data');
+      const carerKeys = [
+        'carerLastWelcome', 'carerCurrentSessionWelcome', 'carerProfile',
+        'tenant_context', 'dev-tenant', 'currentTenant'
+      ];
       
+      carerKeys.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        } catch (e) {
+          console.warn('[useCarerAuthSafe] Failed to clear key:', key);
+        }
+      });
+
+      // Clear component state immediately
       setCarerProfile(null);
       setError(null);
+      setUser(null);
+      setSession(null);
+
+      // Sign out from Supabase
+      console.log('[useCarerAuthSafe] Signing out from Supabase');
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[useCarerAuthSafe] Supabase signOut error:', error);
+        // Continue with logout even if Supabase fails
+      }
+
+      // Verify session is cleared
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        console.warn('[useCarerAuthSafe] Session still exists, forcing clear');
+        // Nuclear option - clear all storage
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch (e) {
+          console.warn('[useCarerAuthSafe] Failed to clear all storage:', e);
+        }
+      }
+
+      console.log('[useCarerAuthSafe] Logout completed successfully');
       toast.success('Signed out successfully');
-      navigate('/login');
+      
+      // Navigate to root and replace history to prevent back navigation
+      window.location.replace('/');
+      
     } catch (error: any) {
       console.error('[useCarerAuthSafe] Sign out error:', error);
-      setError('Sign out failed. Please try again.');
-      toast.error('Sign out failed', { description: error.message });
+      
+      // Force logout even if everything fails
+      setCarerProfile(null);
+      setError(null);
+      setUser(null);
+      setSession(null);
+      
+      // Clear all storage as fallback
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn('[useCarerAuthSafe] Failed emergency storage clear:', e);
+      }
+      
+      toast.error('Logout completed with warnings');
+      window.location.replace('/');
     } finally {
       setLoading(false);
     }

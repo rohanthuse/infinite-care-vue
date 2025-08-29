@@ -64,10 +64,21 @@ export default function CarerLoginSafe() {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    clearError();
-    setEmail("");
-    setPassword("");
+    console.log('[CarerLoginSafe] Sign out button clicked');
+    try {
+      await signOut();
+      clearError();
+      setEmail("");
+      setPassword("");
+      console.log('[CarerLoginSafe] Sign out completed');
+    } catch (error) {
+      console.error('[CarerLoginSafe] Sign out error:', error);
+      // Force clear form and navigate
+      clearError();
+      setEmail("");
+      setPassword("");
+      window.location.replace('/');
+    }
   };
 
   // If user is already authenticated, show different options

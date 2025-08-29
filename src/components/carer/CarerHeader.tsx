@@ -64,10 +64,14 @@ export const CarerHeader: React.FC<{ onMobileMenuToggle: () => void }> = ({ onMo
   const menuItems = getCarerMenuItems();
 
   const handleLogout = async () => {
+    console.log('[CarerHeader] Logout button clicked');
     try {
       await signOut();
+      console.log('[CarerHeader] Logout completed');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[CarerHeader] Logout error:', error);
+      // Force navigation as fallback
+      window.location.replace('/');
     }
   };
 
