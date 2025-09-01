@@ -200,8 +200,8 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
 
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="overview" className="h-full flex flex-col">
-            <div className="px-6 border-b">
-              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-14">
+            <div className="px-6 border-b relative z-10">
+              <TabsList className="h-auto w-full flex flex-wrap gap-1 p-2 justify-start bg-muted">
                 <TabsTrigger value="overview" className="text-xs">
                   <Info className="h-3 w-3 mr-1" />
                   Overview
