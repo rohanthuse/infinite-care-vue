@@ -14,7 +14,7 @@ import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
-import { ViewCarerProfileDialog } from "./ViewCarerProfileDialog";
+
 import { useBranchCarers, CarerDB, useDeleteCarer, useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import {
   Table,
@@ -71,15 +71,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
-  const [viewingCarer, setViewingCarer] = useState<CarerDB | null>(null);
 
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
   const updateCarerMutation = useUpdateCarer();
 
-  const handleViewDetails = (carer: CarerDB) => {
-    setViewingCarer(carer);
-  };
 
   const filteredCarers = useMemo(() => {
     return carers.filter(carer => {
@@ -311,7 +307,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleViewDetails(carer)}>
+                      <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
@@ -429,13 +425,6 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         onStatusChange={handleBulkStatusChange}
       />
 
-      <ViewCarerProfileDialog
-        carer={viewingCarer}
-        isOpen={!!viewingCarer}
-        onClose={() => setViewingCarer(null)}
-        branchId={branchId}
-        branchName={branchName}
-      />
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
         <AlertDialogContent>
