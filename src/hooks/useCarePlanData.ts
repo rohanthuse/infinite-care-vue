@@ -58,6 +58,7 @@ export interface CarePlanWithDetails extends CarePlanData {
     status: string;
   }>;
   care_plan_type?: string;
+  priority?: string;
   review_date?: string;
   goals_progress?: number;
   notes?: string;
@@ -67,6 +68,7 @@ export interface CarePlanWithDetails extends CarePlanData {
   medical_info?: any;
   personal_care?: any;
   dietary_requirements?: any;
+  about_me?: any;
   risk_assessments?: any[];
   service_actions?: any[];
   service_plans?: any[];
@@ -169,6 +171,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     activities: data.activities?.length > 0 ? data.activities : activitiesFromAutoSave,
     // Add additional extracted data from auto_save_data
     care_plan_type: autoSaveData.care_plan_type || data.care_plan_type,
+    priority: autoSaveData.priority || data.priority,
     review_date: autoSaveData.review_date || data.review_date,
     goals_progress: autoSaveData.goals_progress || data.goals_progress,
     notes: autoSaveData.notes || data.notes,
@@ -176,7 +179,8 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     personal_info: autoSaveData.personal_info || {},
     medical_info: autoSaveData.medical_info || {},
     personal_care: autoSaveData.personal_care || {},
-    dietary_requirements: autoSaveData.dietary_requirements || {},
+    dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
+    about_me: autoSaveData.about_me || {},
     // Also extract other detailed sections as in fetchClientCarePlansWithDetails
     risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
     service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
@@ -329,6 +333,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       activities: item.activities?.length > 0 ? item.activities : activitiesFromAutoSave,
       // Add additional extracted data from auto_save_data
       care_plan_type: autoSaveData.care_plan_type || item.care_plan_type,
+      priority: autoSaveData.priority || item.priority,
       review_date: autoSaveData.review_date || item.review_date,
       goals_progress: autoSaveData.goals_progress || item.goals_progress,
       notes: autoSaveData.notes || item.notes,
@@ -336,7 +341,8 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       personal_info: autoSaveData.personal_info || {},
       medical_info: autoSaveData.medical_info || {},
       personal_care: autoSaveData.personal_care || {},
-      dietary_requirements: autoSaveData.dietary_requirements || {},
+      dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
+      about_me: autoSaveData.about_me || {},
       risk_assessments: riskAssessmentsFromAutoSave,
       service_actions: serviceActionsFromAutoSave,
       service_plans: servicePlansFromAutoSave,
@@ -474,6 +480,7 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
       activities: item.activities?.length > 0 ? item.activities : activitiesFromAutoSave,
       // Add additional extracted data from auto_save_data
       care_plan_type: autoSaveData.care_plan_type || item.care_plan_type,
+      priority: autoSaveData.priority || item.priority,
       review_date: autoSaveData.review_date || item.review_date,
       goals_progress: autoSaveData.goals_progress || item.goals_progress,
       notes: autoSaveData.notes || item.notes,
@@ -481,7 +488,8 @@ const fetchCarerAssignedCarePlans = async (carerId: string): Promise<CarePlanWit
       personal_info: autoSaveData.personal_info || {},
       medical_info: autoSaveData.medical_info || {},
       personal_care: autoSaveData.personal_care || {},
-      dietary_requirements: autoSaveData.dietary_requirements || {},
+      dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
+      about_me: autoSaveData.about_me || {},
       risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
       service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
       service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],

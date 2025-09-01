@@ -136,15 +136,25 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
             <div className="space-y-2">
               <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                 <FileText className="h-6 w-6" />
-                Care Plan - {carePlan.client ? `${carePlan.client.first_name} ${carePlan.client.last_name}` : 'Unknown Client'}
+                {carePlan.title || `Care Plan - ${carePlan.client ? `${carePlan.client.first_name} ${carePlan.client.last_name}` : 'Unknown Client'}`}
               </DialogTitle>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <Badge className={getStatusColor(carePlan.status)}>
                   {carePlan.status?.replace('_', ' ').toUpperCase()}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
                   ID: {carePlan.display_id}
                 </span>
+                {carePlanWithDetails.care_plan_type && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {carePlanWithDetails.care_plan_type}
+                  </Badge>
+                )}
+                {carePlan.priority && (
+                  <Badge variant={carePlan.priority === "high" ? "destructive" : carePlan.priority === "medium" ? "default" : "secondary"}>
+                    {carePlan.priority.toUpperCase()} PRIORITY
+                  </Badge>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -191,7 +201,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
         <div className="flex-1 overflow-hidden">
           <Tabs defaultValue="overview" className="h-full flex flex-col">
             <div className="px-6 border-b">
-              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-12">
+              <TabsList className="grid w-full grid-cols-6 lg:grid-cols-14">
                 <TabsTrigger value="overview" className="text-xs">
                   <Info className="h-3 w-3 mr-1" />
                   Overview
@@ -199,6 +209,10 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                 <TabsTrigger value="client" className="text-xs">
                   <UserCheck className="h-3 w-3 mr-1" />
                   Client
+                </TabsTrigger>
+                <TabsTrigger value="about-me" className="text-xs">
+                  <User className="h-3 w-3 mr-1" />
+                  About Me
                 </TabsTrigger>
                 <TabsTrigger value="medical" className="text-xs">
                   <Stethoscope className="h-3 w-3 mr-1" />
@@ -227,6 +241,10 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                 <TabsTrigger value="services" className="text-xs">
                   <Briefcase className="h-3 w-3 mr-1" />
                   Services
+                </TabsTrigger>
+                <TabsTrigger value="service-actions" className="text-xs">
+                  <Activity className="h-3 w-3 mr-1" />
+                  Actions
                 </TabsTrigger>
                 <TabsTrigger value="equipment" className="text-xs">
                   <Settings className="h-3 w-3 mr-1" />
@@ -302,7 +320,64 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                   </Card>
                 </TabsContent>
 
-                {/* Client Information Tab */}
+                {/* About Me Tab */}
+                <TabsContent value="about-me" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        About Me
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {carePlanWithDetails.about_me && Object.keys(carePlanWithDetails.about_me).length > 0 ? (
+                        <div className="space-y-4">
+                          {carePlanWithDetails.about_me.life_history && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Life History</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.life_history}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.personality_traits && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Personality Traits</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.personality_traits}</p>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Communication Style</label>
+                              <p className="text-sm">{carePlanWithDetails.about_me.communication_style || 'Not specified'}</p>
+                            </div>
+                          </div>
+                          
+                          {carePlanWithDetails.about_me.important_people && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Important People</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.important_people}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.meaningful_activities && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Meaningful Activities</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.meaningful_activities}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No personal information available</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Medical Information Tab */}
                 <TabsContent value="client" className="space-y-4 mt-0">
                   <Card>
                     <CardHeader>
@@ -435,6 +510,22 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                               <label className="text-sm font-medium text-muted-foreground">Communication</label>
                               <p className="text-sm">{carePlanWithDetails.personal_care.communication || 'Not specified'}</p>
                             </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Assistance with Washing</label>
+                              <Badge variant="outline">{carePlanWithDetails.personal_care.assistance_with_washing || 'Not specified'}</Badge>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Assistance with Dressing</label>
+                              <Badge variant="outline">{carePlanWithDetails.personal_care.assistance_with_dressing || 'Not specified'}</Badge>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Assistance with Eating</label>
+                              <Badge variant="outline">{carePlanWithDetails.personal_care.assistance_with_eating || 'Not specified'}</Badge>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Assistance with Toileting</label>
+                              <Badge variant="outline">{carePlanWithDetails.personal_care.assistance_with_toileting || 'Not specified'}</Badge>
+                            </div>
                           </div>
                           
                           {carePlanWithDetails.personal_care.care_needs && (
@@ -448,6 +539,34 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{carePlanWithDetails.personal_care.care_needs}</Badge>
                                 }
                               </div>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.personal_care.hygiene_support && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Hygiene Support</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.personal_care.hygiene_support}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.personal_care.sleep_patterns && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Sleep Patterns</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.personal_care.sleep_patterns}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.personal_care.behavioral_notes && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Behavioral Notes</label>
+                              <p className="text-sm p-3 bg-yellow-50 border border-yellow-200 rounded-md">{carePlanWithDetails.personal_care.behavioral_notes}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.personal_care.comfort_items && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Comfort Items</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.personal_care.comfort_items}</p>
                             </div>
                           )}
                         </div>
@@ -505,6 +624,62 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                             <div>
                               <label className="text-sm font-medium text-muted-foreground mb-2 block">Food Preferences</label>
                               <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.dietary_requirements.food_preferences}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.dietary_requirements.supplements && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Supplements</label>
+                              <div className="flex flex-wrap gap-2">
+                                {Array.isArray(carePlanWithDetails.dietary_requirements.supplements) ? 
+                                  carePlanWithDetails.dietary_requirements.supplements.map((supplement: string, index: number) => (
+                                    <Badge key={index} variant="outline" className="bg-green-50 text-green-700 border-green-200">{supplement}</Badge>
+                                  )) : 
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{carePlanWithDetails.dietary_requirements.supplements}</Badge>
+                                }
+                              </div>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.dietary_requirements.texture_modifications && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Texture Modifications</label>
+                              <div className="flex flex-wrap gap-2">
+                                {Array.isArray(carePlanWithDetails.dietary_requirements.texture_modifications) ? 
+                                  carePlanWithDetails.dietary_requirements.texture_modifications.map((modification: string, index: number) => (
+                                    <Badge key={index} variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">{modification}</Badge>
+                                  )) : 
+                                  <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">{carePlanWithDetails.dietary_requirements.texture_modifications}</Badge>
+                                }
+                              </div>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.dietary_requirements.special_equipment && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Special Equipment</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.dietary_requirements.special_equipment}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.dietary_requirements.feeding_assistance && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Feeding Assistance</label>
+                              <p className="text-sm p-3 bg-blue-50 border border-blue-200 rounded-md">{carePlanWithDetails.dietary_requirements.feeding_assistance}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.dietary_requirements.fluid_restrictions && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Fluid Restrictions</label>
+                              <p className="text-sm p-3 bg-yellow-50 border border-yellow-200 rounded-md">{carePlanWithDetails.dietary_requirements.fluid_restrictions}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.dietary_requirements.weight_monitoring && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Weight Monitoring</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.dietary_requirements.weight_monitoring}</p>
                             </div>
                           )}
                         </div>
@@ -670,7 +845,77 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                   </Card>
                 </TabsContent>
 
-                {/* Services Tab */}
+                {/* Service Actions Tab */}
+                <TabsContent value="service-actions" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Service Actions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {carePlanWithDetails.service_actions && carePlanWithDetails.service_actions.length > 0 ? (
+                        <div className="space-y-4">
+                          {carePlanWithDetails.service_actions.map((action: any, index: number) => (
+                            <Card key={index} className="border-l-4 border-l-indigo-500">
+                              <CardContent className="pt-4">
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between">
+                                    <h4 className="font-medium">{action.service_name || `Service Action ${index + 1}`}</h4>
+                                    <Badge variant="outline">{action.service_category || 'General'}</Badge>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                      <label className="text-muted-foreground">Provider</label>
+                                      <p className="font-medium">{action.provider_name || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                      <label className="text-muted-foreground">Frequency</label>
+                                      <p className="font-medium">{action.frequency || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                      <label className="text-muted-foreground">Duration</label>
+                                      <p className="font-medium">{action.duration || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                      <label className="text-muted-foreground">Status</label>
+                                      <Badge className={action.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                                        {action.status || 'Active'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  
+                                  {action.objectives && (
+                                    <div>
+                                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Objectives</label>
+                                      <p className="text-sm p-3 bg-muted rounded-md">{action.objectives}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {action.schedule_notes && (
+                                    <div>
+                                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Schedule Notes</label>
+                                      <p className="text-sm p-3 bg-muted rounded-md">{action.schedule_notes}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No service actions defined</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Equipment Tab */}
                 <TabsContent value="services" className="space-y-4 mt-0">
                   <Card>
                     <CardHeader>
