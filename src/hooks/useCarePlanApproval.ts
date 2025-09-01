@@ -81,6 +81,7 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
     }
 
     // Update care plan with client acknowledgment and activate it
+    // Database trigger will handle notifications automatically
     const { data: updateData, error: updateError } = await supabase
       .from('client_care_plans')
       .update({
@@ -123,53 +124,6 @@ const approveCarePlan = async ({ carePlanId, signatureData, comments }: ApproveC
       // Don't fail the operation for history issues
     }
 
-    // Create notification for assigned staff when client approves
-    const approvedCarePlan = updateData[0];
-    if (approvedCarePlan.staff_id) {
-      try {
-        const { data: clientData } = await supabase
-          .from('clients')
-          .select('first_name, last_name, branch_id')
-          .eq('id', clientId)
-          .single();
-
-        // Get staff auth_user_id for notification
-        const { data: staffData } = await supabase
-          .from('staff')
-          .select('auth_user_id')
-          .eq('id', approvedCarePlan.staff_id)
-          .single();
-
-        if (clientData && staffData?.auth_user_id) {
-          const notification = {
-            user_id: staffData.auth_user_id,
-            branch_id: clientData.branch_id,
-            type: 'care_plan',
-            category: 'success',
-            priority: 'high',
-            title: 'Care Plan Approved by Client',
-            message: `${clientData.first_name} ${clientData.last_name} has approved their care plan ${approvedCarePlan.display_id}`,
-            data: {
-              care_plan_id: carePlanId,
-              action: 'client_approval',
-              care_plan_title: approvedCarePlan.title || 'Care Plan',
-              care_plan_display_id: approvedCarePlan.display_id,
-              client_name: `${clientData.first_name} ${clientData.last_name}`,
-              client_comments: comments
-            }
-          };
-
-          await supabase.from('notifications').insert([notification]);
-          console.log('[approveCarePlan] Staff notification created for client approval');
-        } else {
-          console.warn('[approveCarePlan] Staff has no auth_user_id, cannot send notification');
-        }
-      } catch (notificationError) {
-        console.error('[approveCarePlan] Error creating staff notification:', notificationError);
-        // Don't fail the operation for notification errors
-      }
-    }
-
     console.log(`[approveCarePlan] Successfully approved care plan ${carePlanId}`);
     return { success: true };
   } catch (error) {
@@ -193,6 +147,7 @@ const rejectCarePlan = async ({ carePlanId, comments }: RejectCarePlanData) => {
     console.log(`[rejectCarePlan] Client auth link confirmed for client ${clientId}`);
 
     // Update care plan status to rejected with comments
+    // Database trigger will handle notifications automatically
     const { error } = await supabase
       .from('client_care_plans')
       .update({
@@ -236,6 +191,7 @@ export const useApproveCarePlan = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Care plan approved and activated successfully! Your care team has been notified.');
     },
     onError: (error: any) => {
@@ -276,6 +232,7 @@ export const useRejectCarePlan = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Change request submitted successfully! Your care team will review your comments.');
     },
     onError: (error: any) => {
@@ -355,6 +312,7 @@ export const useRequestChanges = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Change request submitted successfully! Your care team has been notified and will contact you soon.');
     },
     onError: (error: any) => {
