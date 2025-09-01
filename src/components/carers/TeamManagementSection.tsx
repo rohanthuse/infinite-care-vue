@@ -71,6 +71,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'view' | 'edit'>('edit');
 
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
@@ -307,11 +308,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
+                      <DropdownMenuItem onClick={() => { setDialogMode('view'); setEditingCarer(carer); }}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
+                      <DropdownMenuItem onClick={() => { setDialogMode('edit'); setEditingCarer(carer); }}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details
                       </DropdownMenuItem>
@@ -410,6 +411,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         open={!!editingCarer}
         onOpenChange={(open) => !open && setEditingCarer(null)}
         carer={editingCarer}
+        mode={dialogMode}
       />
 
       <SetCarerPasswordDialog

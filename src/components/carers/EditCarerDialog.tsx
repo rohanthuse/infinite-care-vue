@@ -15,9 +15,11 @@ interface EditCarerDialogProps {
   onOpenChange: (open: boolean) => void;
   carer: CarerDB | null;
   trigger?: React.ReactNode;
+  mode?: 'view' | 'edit';
 }
 
-export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCarerDialogProps) => {
+export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'edit' }: EditCarerDialogProps) => {
+  const isView = mode === 'view';
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -101,7 +103,9 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Carer - {carer.first_name} {carer.last_name}</DialogTitle>
+          <DialogTitle>
+            {isView ? `Staff Details - ${carer.first_name} ${carer.last_name}` : `Edit Carer - ${carer.first_name} ${carer.last_name}`}
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,6 +116,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 id="first_name"
                 value={formData.first_name}
                 onChange={(e) => handleInputChange("first_name", e.target.value)}
+                disabled={isView}
                 required
               />
             </div>
@@ -121,6 +126,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 id="last_name"
                 value={formData.last_name}
                 onChange={(e) => handleInputChange("last_name", e.target.value)}
+                disabled={isView}
                 required
               />
             </div>
@@ -134,6 +140,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
+                disabled={isView}
               />
             </div>
             <div>
@@ -142,6 +149,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 id="phone"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
+                disabled={isView}
               />
             </div>
           </div>
@@ -152,6 +160,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
+              disabled={isView}
               rows={2}
             />
           </div>
@@ -165,6 +174,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 placeholder="Full name of emergency contact person"
                 value={formData.emergency_contact_name}
                 onChange={(e) => handleInputChange("emergency_contact_name", e.target.value)}
+                disabled={isView}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Name of person to contact in case of emergency
@@ -179,6 +189,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 pattern="[+]?[\d\s\-\(\)]*"
                 value={formData.emergency_contact_phone}
                 onChange={(e) => handleInputChange("emergency_contact_phone", e.target.value)}
+                disabled={isView}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Phone number to reach your emergency contact
@@ -192,6 +203,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
               <Select 
                 value={formData.specialization} 
                 onValueChange={(value) => handleInputChange("specialization", value)}
+                disabled={isView}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select specialization" />
@@ -212,6 +224,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
               <Select 
                 value={formData.availability} 
                 onValueChange={(value) => handleInputChange("availability", value)}
+                disabled={isView}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select availability" />
@@ -235,6 +248,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
                 value={formData.experience}
                 onChange={(e) => handleInputChange("experience", e.target.value)}
                 placeholder="e.g., 5 years"
+                disabled={isView}
               />
             </div>
             <div>
@@ -242,6 +256,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
               <Select 
                 value={formData.status} 
                 onValueChange={(value) => handleInputChange("status", value)}
+                disabled={isView}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -263,16 +278,25 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger }: EditCare
               type="date"
               value={formData.date_of_birth}
               onChange={(e) => handleInputChange("date_of_birth", e.target.value)}
+              disabled={isView}
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={updateCarerMutation.isPending}>
-              {updateCarerMutation.isPending ? "Updating..." : "Update Carer"}
-            </Button>
+            {isView ? (
+              <Button type="button" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
+            ) : (
+              <>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateCarerMutation.isPending}>
+                  {updateCarerMutation.isPending ? "Updating..." : "Update Carer"}
+                </Button>
+              </>
+            )}
           </div>
         </form>
       </DialogContent>
