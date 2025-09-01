@@ -78,8 +78,9 @@ export const useUpdateClient = () => {
       
       // Optimistically update the cache with new data
       queryClient.setQueryData(['admin-client-detail', clientId], (old: any) => {
-        if (!old) return old;
-        return { ...old, ...updates };
+        // Always apply updates, even if old data is null/undefined
+        const baseData = old || { id: clientId };
+        return { ...baseData, ...updates };
       });
       
       // Also update the clients list cache if it exists
@@ -105,7 +106,7 @@ export const useUpdateClient = () => {
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
       queryClient.invalidateQueries({ queryKey: ['client-profile', clientId] });
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-client-detail', clientId] });
+      // Don't invalidate admin-client-detail to prevent null refetch due to RLS
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
       queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
