@@ -419,43 +419,91 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
               </div>
 
               {/* Enhanced File Upload Area */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <div 
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
+                  uploadingFiles[index] || isUploading
+                    ? "border-gray-300 bg-gray-50"
+                    : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                )}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!uploadingFiles[index] && !isUploading) {
+                    e.currentTarget.classList.add('border-blue-400', 'bg-blue-50');
+                  }
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                  
+                  if (uploadingFiles[index] || isUploading) return;
+                  
+                  const files = e.dataTransfer.files;
+                  if (files.length > 0) {
+                    const file = files[0];
+                    console.log('[WizardStep13Documents] File dropped:', {
+                      fileName: file.name,
+                      fileSize: file.size,
+                      fileType: file.type,
+                      index
+                    });
+                    handleFileUpload(index, file);
+                  }
+                }}
+                onClick={() => {
+                  if (!uploadingFiles[index] && !isUploading) {
+                    document.getElementById(`file-input-${index}`)?.click();
+                  }
+                }}
+              >
                 <div className="text-center">
                   <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600 mb-2">
-                    {uploadingFiles[index] ? "Uploading file..." : "Drag and drop your file here, or"}
+                    {uploadingFiles[index] ? "Uploading file..." : "Drag and drop your file here, or click to browse"}
                   </p>
-                  <label className="cursor-pointer">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      disabled={uploadingFiles[index] || isUploading}
-                    >
-                      {uploadingFiles[index] ? "Uploading..." : "Browse Files"}
-                    </Button>
-                    <input
-                      type="file"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        console.log('[WizardStep13Documents] File selected:', {
-                          fileName: file?.name,
-                          fileSize: file?.size,
-                          fileType: file?.type,
-                          index
-                        });
-                        if (file) {
-                          handleFileUpload(index, file);
-                        }
-                      }}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.gif,.webp"
-                    />
-                  </label>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Supported formats: PDF, DOC, DOCX, JPG, PNG, GIF, WEBP, TXT (Max 50MB)
-                  </p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    disabled={uploadingFiles[index] || isUploading}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {uploadingFiles[index] ? "Uploading..." : "Browse Files"}
+                  </Button>
+                  <input
+                    id={`file-input-${index}`}
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      console.log('[WizardStep13Documents] File selected:', {
+                        fileName: file?.name,
+                        fileSize: file?.size,
+                        fileType: file?.type,
+                        index
+                      });
+                      if (file) {
+                        handleFileUpload(index, file);
+                      }
+                    }}
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt,.gif,.webp"
+                  />
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Supported formats: PDF, DOC, DOCX, JPG, PNG, GIF, WEBP, TXT (Max 50MB)
+                </p>
+              </div>
                 
                 {form.watch(`documents.${index}.file_path`) && (
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
@@ -477,7 +525,6 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
                     </div>
                   </div>
                 )}
-              </div>
             </div>
           ))}
         </div>
