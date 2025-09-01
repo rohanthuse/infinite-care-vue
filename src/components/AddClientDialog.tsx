@@ -184,7 +184,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               <Input id="address" value={formData.address} onChange={e => handleInputChange("address", e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="pin_code">Pin Code</Label>
+              <Label htmlFor="pin_code">Post Code</Label>
               <Input id="pin_code" value={formData.pin_code} onChange={e => handleInputChange("pin_code", e.target.value)} placeholder="e.g., MK9 1AA" />
             </div>
           </div>
