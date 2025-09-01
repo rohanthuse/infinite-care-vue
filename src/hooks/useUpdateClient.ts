@@ -67,6 +67,34 @@ export const useUpdateClient = () => {
   
   return useMutation({
     mutationFn: updateClient,
+    onMutate: async (variables) => {
+      const { clientId, updates } = variables;
+      
+      // Cancel outgoing refetches for the client detail
+      await queryClient.cancelQueries({ queryKey: ['admin-client-detail', clientId] });
+      
+      // Snapshot the previous value
+      const previousClient = queryClient.getQueryData(['admin-client-detail', clientId]);
+      
+      // Optimistically update the cache with new data
+      queryClient.setQueryData(['admin-client-detail', clientId], (old: any) => {
+        if (!old) return old;
+        return { ...old, ...updates };
+      });
+      
+      // Also update the clients list cache if it exists
+      queryClient.setQueryData(['admin-clients'], (old: any) => {
+        if (!old || !Array.isArray(old)) return old;
+        return old.map((client: any) => 
+          client.id === clientId ? { ...client, ...updates } : client
+        );
+      });
+      
+      console.log('[useUpdateClient] Optimistic update applied for client:', clientId, updates);
+      
+      // Return context with previous data for potential rollback
+      return { previousClient, clientId };
+    },
     onSuccess: (data, variables) => {
       // Use clientId from variables as fallback if data is null
       const clientId = data?.id || variables.clientId;
@@ -82,8 +110,13 @@ export const useUpdateClient = () => {
       queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
     },
-    onError: (error, variables) => {
+    onError: (error, variables, context) => {
       console.error('[useUpdateClient] Error updating client:', variables.clientId, error);
+      
+      // Rollback optimistic update on error
+      if (context?.previousClient && context?.clientId) {
+        queryClient.setQueryData(['admin-client-detail', context.clientId], context.previousClient);
+      }
     },
   });
 };

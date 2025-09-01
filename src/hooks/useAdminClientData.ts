@@ -30,7 +30,7 @@ export const useAdminClientDetail = (clientId: string) => {
         .from('clients')
         .select('*')
         .eq('id', clientId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
