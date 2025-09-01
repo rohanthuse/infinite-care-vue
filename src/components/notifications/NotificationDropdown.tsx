@@ -149,12 +149,17 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           <Button variant="outline" size="icon" className="h-9 w-9 rounded-full relative">
             <Bell className="h-4 w-4" />
             {stats && stats.unread_count > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                {stats.unread_count > 99 ? '99+' : stats.unread_count}
-              </Badge>
+              <>
+                {/* Small dot for mobile devices */}
+                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full md:hidden"></span>
+                {/* Numeric badge for larger screens */}
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs hidden md:flex"
+                >
+                  {stats.unread_count > 99 ? '99+' : stats.unread_count}
+                </Badge>
+              </>
             )}
           </Button>
         </DropdownMenuTrigger>

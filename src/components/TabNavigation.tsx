@@ -31,6 +31,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { useAdminPermissions, hasTabPermission } from "@/hooks/useAdminPermissions";
 import { useUserRole } from "@/hooks/useUserRole";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 
 interface TabItem {
   icon: React.ElementType;
@@ -268,10 +269,7 @@ export const TabNavigation = ({
             </Button>
             
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-full relative">
-                <Bell className="h-4 w-4" />
-                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-              </Button>
+              <NotificationDropdown branchId={id} />
               
               {!hideQuickAdd && (
                 <DropdownMenu>
