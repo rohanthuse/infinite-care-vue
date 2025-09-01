@@ -206,6 +206,7 @@ const ClientAppointments = () => {
         date: app.appointment_date,
         time: app.appointment_time,
         client_id: app.client_id,
+        staff_id: app.staff_id,
         completed_at: app.updated_at
       }))} />
 

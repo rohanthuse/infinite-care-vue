@@ -1,23 +1,31 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Star, Calendar, User, AlertCircle, Edit } from "lucide-react";
+import { Star, Calendar, User, AlertCircle, Edit, MessageSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useClientReviews, useUpdateReview } from "@/hooks/useClientReviews";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
+import { usePendingReviews } from "@/hooks/usePendingReviews";
+import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { format } from "date-fns";
 
 const ClientReviews = () => {
   const [editingReview, setEditingReview] = useState<string | null>(null);
   const [editRating, setEditRating] = useState(0);
   const [editComment, setEditComment] = useState("");
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  
+  const location = useLocation();
 
   // Get authenticated client data from Supabase
   const { data: authData, isLoading: authLoading, error: authError } = useSimpleClientAuth();
   const clientId = authData?.client?.id;
 
   const { data: reviews, isLoading: reviewsLoading, error: reviewsError } = useClientReviews(clientId || '');
+  const { data: pendingReviews, isLoading: pendingLoading } = usePendingReviews(clientId || '');
   const updateReviewMutation = useUpdateReview();
 
   const handleEditStart = (review: any) => {
@@ -49,6 +57,29 @@ const ClientReviews = () => {
     setEditComment("");
   };
 
+  const handleLeaveReview = (appointment: any) => {
+    const appointmentData = {
+      id: appointment.id,
+      type: appointment.type,
+      provider: appointment.provider,
+      date: appointment.date,
+      time: appointment.time,
+      client_id: appointment.client_id,
+      staff_id: appointment.staff_id
+    };
+    setSelectedAppointment(appointmentData);
+    setReviewDialogOpen(true);
+  };
+
+  // Handle navigation from ReviewPrompt
+  useEffect(() => {
+    if (location.state?.appointment) {
+      handleLeaveReview(location.state.appointment);
+      // Clear the state to prevent re-opening on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   const renderStars = (rating: number, editable: boolean = false, onRatingChange?: (rating: number) => void) => {
     return Array(5).fill(0).map((_, i) => (
       <button
@@ -66,7 +97,7 @@ const ClientReviews = () => {
   };
 
   // Show loading state while checking authentication or loading reviews
-  if (authLoading || reviewsLoading) {
+  if (authLoading || reviewsLoading || pendingLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -100,7 +131,9 @@ const ClientReviews = () => {
     );
   }
 
-  if (!reviews || reviews.length === 0) {
+  const hasContent = (reviews && reviews.length > 0) || (pendingReviews && pendingReviews.length > 0);
+  
+  if (!hasContent) {
     return (
       <div className="text-center py-12">
         <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -112,13 +145,57 @@ const ClientReviews = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl border border-gray-200">
-        <h2 className="text-xl font-bold mb-6">Your Reviews & Feedback</h2>
-        <p className="text-gray-600 mb-6">
-          Here are all the reviews you've submitted for your care services. You can edit recent reviews if needed.
-        </p>
+      {/* Pending Feedback Section */}
+      {pendingReviews && pendingReviews.length > 0 && (
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <h2 className="text-xl font-bold mb-6 text-blue-600">Pending Feedback</h2>
+          <p className="text-gray-600 mb-6">
+            You have recent appointments waiting for your review. Share your experience to help us improve our services.
+          </p>
 
-        <div className="space-y-4">
+          <div className="space-y-4">
+            {pendingReviews.map((appointment) => (
+              <Card key={appointment.id} className="border-blue-100">
+                <CardHeader className="pb-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{appointment.type}</CardTitle>
+                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                        <User className="h-4 w-4 mr-1" />
+                        {appointment.provider}
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm"
+                      onClick={() => handleLeaveReview(appointment)}
+                      className="gap-1"
+                    >
+                      <Star className="h-4 w-4" />
+                      Leave Review
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="flex items-center text-sm text-gray-500">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {format(new Date(appointment.date), 'MMM d, yyyy')} at {appointment.time}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Submitted Reviews Section */}
+      {reviews && reviews.length > 0 && (
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <h2 className="text-xl font-bold mb-6">Your Submitted Reviews</h2>
+          <p className="text-gray-600 mb-6">
+            Here are all the reviews you've submitted for your care services. You can edit recent reviews if needed.
+          </p>
+
+          <div className="space-y-4">
           {reviews.map((review) => {
             const isEditing = editingReview === review.id;
             const canEdit = new Date(review.can_edit_until) > new Date();
@@ -215,9 +292,17 @@ const ClientReviews = () => {
                 </CardContent>
               </Card>
             );
-          })}
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Submit Review Dialog */}
+      <SubmitReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        appointment={selectedAppointment}
+      />
     </div>
   );
 };

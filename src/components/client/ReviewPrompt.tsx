@@ -42,11 +42,24 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
 
   const handleReviewAppointment = (appointment: any) => {
     setShowPrompt(false);
-    if (tenantSlug) {
-      navigate(`/${tenantSlug}/client-dashboard/reviews`);
-    } else {
-      navigate('/client-dashboard/reviews');
-    }
+    const targetPath = tenantSlug 
+      ? `/${tenantSlug}/client-dashboard/reviews`
+      : '/client-dashboard/reviews';
+    
+    // Pass appointment data via navigation state
+    navigate(targetPath, { 
+      state: { 
+        appointment: {
+          id: appointment.id,
+          type: appointment.type,
+          provider: appointment.provider,
+          date: appointment.date,
+          time: appointment.time,
+          client_id: appointment.client_id,
+          staff_id: appointment.staff_id
+        }
+      }
+    });
   };
 
   const handleSkipReviews = () => {
