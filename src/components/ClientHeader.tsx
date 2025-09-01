@@ -10,13 +10,19 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
+import { useClientAuth } from "@/hooks/useClientAuth";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { tenantSlug } = useTenant();
-  const clientName = localStorage.getItem("clientName") || "Client";
+  const { clientName: authClientName, user } = useClientAuth();
+  
+  // Get the display name from auth or fallback to email prefix or "Client"
+  const clientName = authClientName || 
+    (user?.email ? user.email.split('@')[0] : "Client");
+    
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   
