@@ -25,13 +25,6 @@ export interface CarePlanData {
     first_name: string;
     last_name: string;
     avatar_initials?: string;
-    date_of_birth?: string;
-    phone?: string;
-    address?: string;
-    email?: string;
-    emergency_contact_name?: string;
-    emergency_contact_phone?: string;
-    emergency_contact_relationship?: string;
   };
   staff?: {
     id: string;
@@ -98,14 +91,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
         id,
         first_name,
         last_name,
-        avatar_initials,
-        date_of_birth,
-        phone,
-        address,
-        email,
-        emergency_contact_name,
-        emergency_contact_phone,
-        emergency_contact_relationship
+        avatar_initials
       ),
       goals:client_care_plan_goals(*),
       activities:client_activities(*),
@@ -145,20 +131,6 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
   // Extract data from auto_save_data if available
   const autoSaveData = typeof data.auto_save_data === 'object' && data.auto_save_data !== null ? data.auto_save_data as Record<string, any> : {};
   
-  // Helper function to normalize personal info combining client data with auto_save_data
-  const normalizePersonalInfo = (clientData: any, autoSavePersonalInfo: any) => {
-    return {
-      date_of_birth: clientData?.date_of_birth || autoSavePersonalInfo?.date_of_birth || autoSavePersonalInfo?.dateOfBirth,
-      phone: clientData?.phone || autoSavePersonalInfo?.phone || autoSavePersonalInfo?.phoneNumber,
-      address: clientData?.address || autoSavePersonalInfo?.address,
-      email: clientData?.email || autoSavePersonalInfo?.email,
-      emergency_contact_name: clientData?.emergency_contact_name || autoSavePersonalInfo?.emergency_contact_name || autoSavePersonalInfo?.emergencyContactName,
-      emergency_contact_phone: clientData?.emergency_contact_phone || autoSavePersonalInfo?.emergency_contact_phone || autoSavePersonalInfo?.emergencyContactPhone,
-      emergency_contact_relationship: clientData?.emergency_contact_relationship || autoSavePersonalInfo?.emergency_contact_relationship || autoSavePersonalInfo?.emergencyContactRelationship,
-      ...autoSavePersonalInfo // Include any additional fields from auto_save_data
-    };
-  };
-  
   // Extract goals from auto_save_data if not available from joined table
   const goalsFromAutoSave = Array.isArray(autoSaveData.goals) ? autoSaveData.goals.map((goal: any, index: number) => ({
     id: `goal-${index}`,
@@ -190,22 +162,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
 
   // Transform the data to handle potential null staff relations and extract data from auto_save_data
   const transformedData: CarePlanWithDetails = {
-    id: data.id,
-    display_id: data.display_id,
-    client_id: data.client_id,
-    title: data.title,
-    provider_name: data.provider_name,
-    staff_id: data.staff_id,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    status: data.status,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    client_acknowledged_at: data.client_acknowledged_at,
-    client_signature_data: data.client_signature_data,
-    acknowledgment_method: data.acknowledgment_method,
-    client_comments: data.client_comments,
-    client: data.client as any,
+    ...data,
     staff: data.staff || null,
     client_acknowledgment_ip: data.client_acknowledgment_ip as string | null,
     // Use auto_save_data if joined tables are empty
@@ -218,8 +175,8 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     review_date: autoSaveData.review_date || data.review_date,
     goals_progress: autoSaveData.goals_progress || data.goals_progress,
     notes: autoSaveData.notes || data.notes,
-    // Extract additional care plan details with normalized personal info
-    personal_info: normalizePersonalInfo(data.client, autoSaveData.personal_info || {}),
+    // Extract additional care plan details
+    personal_info: autoSaveData.personal_info || {},
     medical_info: autoSaveData.medical_info || {},
     personal_care: autoSaveData.personal_care || {},
     dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
