@@ -44,7 +44,7 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <ScrollArea className="max-h-[400px] [&>div>div[style]]:!block">
+      <ScrollArea className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         <SelectPrimitive.Viewport className={cn(
           "p-1",
           position === "popper" &&
