@@ -19,6 +19,7 @@ import { useBranchAdminAccess } from "@/hooks/useBranchAdminAccess";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminPermissions, hasTabPermission } from "@/hooks/useAdminPermissions";
+import { useTenant } from "@/contexts/TenantContext";
 
 // Import refactored sections
 import { DashboardStatsSection } from "@/components/branch-dashboard/DashboardStatsSection";
@@ -59,6 +60,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Always call all hooks unconditionally at the top level
   const { session, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
+  const { tenantSlug } = useTenant();
   const {
     id,
     branchName,
@@ -414,7 +416,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleEditClient = (client: any) => {
     if (id && branchName) {
-      navigate(`/branch-dashboard/${id}/${branchName}/clients/${client.id}/edit`);
+      const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard` : `/branch-dashboard`;
+      navigate(`${basePath}/${id}/${branchName}/clients/${client.id}/edit`);
     }
   };
 

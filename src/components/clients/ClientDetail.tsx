@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTenant } from "@/contexts/TenantContext";
 
 import { ClientTabBar } from "./ClientTabBar";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
@@ -44,6 +45,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   const [sharingDialogOpen, setSharingDialogOpen] = useState(false);
   const navigate = useNavigate();
   const params = useParams();
+  const { tenantSlug } = useTenant();
   
   const branchId = params.id || '';
   const branchName = params.branchName || '';
@@ -60,7 +62,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
     client.name;
 
   const handleEdit = () => {
-    navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${client.id}/edit`);
+    const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard` : `/branch-dashboard`;
+    navigate(`${basePath}/${branchId}/${branchName}/clients/${client.id}/edit`);
   };
 
   const handlePrintClientProfile = () => {
