@@ -33,18 +33,32 @@ interface UpdateClientParams {
 const updateClient = async ({ clientId, updates }: UpdateClientParams) => {
   console.log('[updateClient] Updating client:', clientId, updates);
   
+  // Sanitize updates object
+  const sanitizedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+    if (typeof value === 'string') {
+      const trimmedValue = value.trim();
+      acc[key] = trimmedValue === '' ? null : trimmedValue;
+    } else {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as any);
+  
+  console.log('[updateClient] Sanitized updates:', sanitizedUpdates);
+  
   const { data, error } = await supabase
     .from('clients')
-    .update(updates)
+    .update(sanitizedUpdates)
     .eq('id', clientId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('[updateClient] Error:', error);
     throw error;
   }
 
+  console.log('[updateClient] Success:', data);
   return data;
 };
 
@@ -53,15 +67,23 @@ export const useUpdateClient = () => {
   
   return useMutation({
     mutationFn: updateClient,
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      // Use clientId from variables as fallback if data is null
+      const clientId = data?.id || variables.clientId;
+      
+      console.log('[useUpdateClient] Success - invalidating queries for client:', clientId);
+      
       // Invalidate all relevant queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
-      queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['client-profile', clientId] });
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-client-detail', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-client-detail', clientId] });
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
       queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
+    },
+    onError: (error, variables) => {
+      console.error('[useUpdateClient] Error updating client:', variables.clientId, error);
     },
   });
 };

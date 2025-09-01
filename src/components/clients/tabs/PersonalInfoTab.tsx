@@ -80,7 +80,19 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
   const handleSave = () => {
     if (onSave) {
-      onSave(formData);
+      // Sanitize form data before saving
+      const sanitizedData = Object.entries(formData).reduce((acc, [key, value]) => {
+        // Convert empty strings to null
+        if (typeof value === 'string') {
+          const trimmedValue = value.trim();
+          acc[key] = trimmedValue === '' ? null : trimmedValue;
+        } else {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+      
+      onSave(sanitizedData);
     }
   };
   const formatDate = (dateString: string) => {

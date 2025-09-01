@@ -83,8 +83,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           toast.success("Client information updated successfully");
           setIsEditing(false);
         },
-        onError: (error) => {
-          toast.error("Failed to update client information");
+        onError: (error: any) => {
+          const errorMessage = error?.message || "Unknown error occurred";
+          toast.error(`Failed to update client information: ${errorMessage}`);
           console.error('Error updating client:', error);
         }
       }
