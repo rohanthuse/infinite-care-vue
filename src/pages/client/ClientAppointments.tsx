@@ -9,6 +9,7 @@ import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
 import { useCheckExistingReview } from "@/hooks/useClientReviews";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
+import { usePendingReviews } from "@/hooks/usePendingReviews";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { useClientAuth } from "@/hooks/useClientAuth";
 
@@ -45,6 +46,7 @@ const ClientAppointments = () => {
   console.log('[ClientAppointments] Client ID:', clientId, 'Is Authenticated:', isAuthenticated);
 
   const { data: appointments, isLoading, error } = useClientAppointments(clientId || undefined);
+  const { data: pendingReviewAppointments } = usePendingReviews(clientId || "");
 
   console.log('[ClientAppointments] Appointments data:', appointments);
   console.log('[ClientAppointments] Loading:', isLoading, 'Error:', error);
@@ -199,16 +201,7 @@ const ClientAppointments = () => {
       )}
 
       {/* Review Prompt for completed appointments */}
-      <ReviewPrompt completedAppointments={completedAppointments.map(app => ({
-        id: app.id,
-        type: app.appointment_type,
-        provider: app.provider_name,
-        date: app.appointment_date,
-        time: app.appointment_time,
-        client_id: app.client_id,
-        staff_id: app.staff_id,
-        completed_at: app.updated_at
-      }))} />
+      <ReviewPrompt completedAppointments={pendingReviewAppointments || []} />
 
       {/* Upcoming Appointments */}
       <div className="bg-white p-6 rounded-xl border border-gray-200">
