@@ -10,7 +10,9 @@ import { EditBookingDialog } from "@/components/bookings/dialogs/EditBookingDial
 import { useClientBookings } from "@/hooks/useClientBookings";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useBranchServices } from "@/data/hooks/useBranchServices";
+import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 interface AppointmentsTabProps {
   clientId: string;
@@ -21,13 +23,16 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   
-  const { data: bookings = [], isLoading } = useClientBookings(clientId);
+  const { data: bookings = [], isLoading, refetch } = useClientBookings(clientId);
   const params = useParams();
   const branchId = params.id;
   
   // Get carers and services for the booking dialog
   const { data: carers = [] } = useBranchCarers(branchId);
   const { data: services = [] } = useBranchServices(branchId);
+  
+  // Create booking mutation
+  const createBookingMutation = useCreateBooking(branchId);
 
   const handleScheduleAppointment = () => {
     setIsScheduleDialogOpen(true);
@@ -36,6 +41,52 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const handleEditAppointment = (booking: any) => {
     setSelectedBooking(booking);
     setIsEditDialogOpen(true);
+  };
+
+  const handleCreateBooking = async (bookingData: any, selectedCarers: any[]) => {
+    if (!branchId) {
+      toast.error("Branch ID is required");
+      return;
+    }
+
+    try {
+      // Create a booking for each schedule and each day
+      for (const schedule of bookingData.schedules) {
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        const selectedDays = days.filter(day => schedule[day]);
+        
+        for (const day of selectedDays) {
+          const startTime = new Date(bookingData.fromDate);
+          const endTime = new Date(bookingData.fromDate);
+          
+          // Set the time based on schedule
+          const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
+          const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
+          
+          startTime.setHours(startHour, startMinute, 0, 0);
+          endTime.setHours(endHour, endMinute, 0, 0);
+
+          const bookingInput = {
+            branch_id: branchId,
+            client_id: bookingData.clientId,
+            staff_id: bookingData.carerId, // Individual carer ID passed from dialog
+            start_time: startTime.toISOString(),
+            end_time: endTime.toISOString(),
+            service_id: schedule.services?.[0] || null,
+            status: "assigned",
+            notes: bookingData.notes || null,
+          };
+
+          await createBookingMutation.mutateAsync(bookingInput);
+        }
+      }
+
+      toast.success("Booking created successfully!");
+      refetch(); // Refresh the bookings list
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast.error("Failed to create booking");
+    }
   };
 
   if (isLoading) {
@@ -181,7 +232,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       <NewBookingDialog
         open={isScheduleDialogOpen}
         onOpenChange={setIsScheduleDialogOpen}
-        onCreateBooking={() => {}}
+        onCreateBooking={handleCreateBooking}
         carers={carers}
         services={services}
         branchId={branchId}
