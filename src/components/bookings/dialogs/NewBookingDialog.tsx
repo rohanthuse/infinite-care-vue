@@ -245,72 +245,88 @@ export function NewBookingDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Client</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value 
-                              ? (() => {
-                                  const selectedClient = clients.find(c => c.id === field.value);
-                                  return selectedClient 
-                                    ? `${selectedClient.first_name} ${selectedClient.last_name}`
-                                    : "Unknown Client";
-                                })()
-                              : "Select client..."
-                            }
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[320px] p-0" align="start" sideOffset={4}>
-                          <div className="p-3 border-b">
-                            <Input
-                              placeholder="Search clients..."
-                              value={clientSearchQuery}
-                              onChange={(e) => setClientSearchQuery(e.target.value)}
-                              className="h-8"
-                            />
+                      {preSelectedClientId ? (
+                        // When pre-selected, show as read-only display
+                        <div className="w-full p-2 border rounded-md bg-muted">
+                          {(() => {
+                            const selectedClient = clients.find(c => c.id === field.value);
+                            return selectedClient 
+                              ? `${selectedClient.first_name} ${selectedClient.last_name}`
+                              : "Loading client...";
+                          })()}
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Locked to this client from profile
                           </div>
-                          <div className="max-h-60 overflow-y-auto">
-                            {isLoadingClients ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                Loading clients...
-                              </div>
-                            ) : filteredClients.length === 0 ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                No clients found
-                              </div>
-                            ) : (
-                              <div className="p-1">
-                                {filteredClients.map((client) => (
-                                  <div
-                                    key={client.id}
-                                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                                    onClick={() => {
-                                      field.onChange(client.id);
-                                      setClientSearchQuery("");
-                                    }}
-                                  >
-                                    <div className="flex-1">
-                                      <div className="font-medium">
-                                        {client.first_name} {client.last_name}
-                                      </div>
-                                      <div className="text-xs text-muted-foreground">
-                                        ID: {client.id.slice(0, 8)}... • {client.email}
+                        </div>
+                      ) : (
+                        // Normal client selection when not pre-selected
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value 
+                                ? (() => {
+                                    const selectedClient = clients.find(c => c.id === field.value);
+                                    return selectedClient 
+                                      ? `${selectedClient.first_name} ${selectedClient.last_name}`
+                                      : "Unknown Client";
+                                  })()
+                                : "Select client..."
+                              }
+                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[320px] p-0" align="start" sideOffset={4}>
+                            <div className="p-3 border-b">
+                              <Input
+                                placeholder="Search clients..."
+                                value={clientSearchQuery}
+                                onChange={(e) => setClientSearchQuery(e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="max-h-60 overflow-y-auto">
+                              {isLoadingClients ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                  Loading clients...
+                                </div>
+                              ) : filteredClients.length === 0 ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground">
+                                  No clients found
+                                </div>
+                              ) : (
+                                <div className="p-1">
+                                  {filteredClients.map((client) => (
+                                    <div
+                                      key={client.id}
+                                      className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                      onClick={() => {
+                                        field.onChange(client.id);
+                                        setClientSearchQuery("");
+                                      }}
+                                    >
+                                      <div className="flex-1">
+                                        <div className="font-medium">
+                                          {client.first_name} {client.last_name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                          ID: {client.id.slice(0, 8)}... • {client.email}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}

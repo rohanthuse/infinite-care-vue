@@ -13,6 +13,8 @@ import { useBranchServices } from "@/data/hooks/useBranchServices";
 import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AppointmentsTabProps {
   clientId: string;
@@ -26,13 +28,14 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const { data: bookings = [], isLoading, refetch } = useClientBookings(clientId);
   const params = useParams();
   const branchId = params.id;
+  const queryClient = useQueryClient();
   
   // Get carers and services for the booking dialog
   const { data: carers = [] } = useBranchCarers(branchId);
   const { data: services = [] } = useBranchServices(branchId);
   
-  // Create booking mutation
-  const createBookingMutation = useCreateBooking(branchId);
+  // Create booking mutation - will use client's actual branch_id in handleCreateBooking
+  const createBookingMutation = useCreateBooking();
 
   const handleScheduleAppointment = () => {
     setIsScheduleDialogOpen(true);
@@ -44,45 +47,91 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   };
 
   const handleCreateBooking = async (bookingData: any, selectedCarers: any[]) => {
-    if (!branchId) {
-      toast.error("Branch ID is required");
+    console.log('[handleCreateBooking] Booking data received:', bookingData);
+    console.log('[handleCreateBooking] Client from URL params:', clientId);
+
+    // CRITICAL: Always use the client from the appointments tab (clientId from props)
+    const actualClientId = clientId;
+
+    if (!actualClientId) {
+      toast.error("Client ID is required");
       return;
     }
 
     try {
-      // Create a booking for each schedule and each day
+      // Get client data to use their actual branch_id
+      const clientResponse = await supabase
+        .from('clients')
+        .select('id, first_name, last_name, branch_id')
+        .eq('id', actualClientId)
+        .single();
+
+      if (clientResponse.error) {
+        console.error('[handleCreateBooking] Error fetching client:', clientResponse.error);
+        toast.error("Failed to fetch client data");
+        return;
+      }
+
+      const client = clientResponse.data;
+      console.log('[handleCreateBooking] Using client data:', client);
+
+      // Create bookings for each schedule and each day within the date range
       for (const schedule of bookingData.schedules) {
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
         const selectedDays = days.filter(day => schedule[day]);
         
-        for (const day of selectedDays) {
-          const startTime = new Date(bookingData.fromDate);
-          const endTime = new Date(bookingData.fromDate);
-          
-          // Set the time based on schedule
-          const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
-          const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
-          
-          startTime.setHours(startHour, startMinute, 0, 0);
-          endTime.setHours(endHour, endMinute, 0, 0);
+        if (selectedDays.length === 0) {
+          console.warn('[handleCreateBooking] No days selected for schedule');
+          continue;
+        }
 
-          const bookingInput = {
-            branch_id: branchId,
-            client_id: bookingData.clientId,
-            staff_id: bookingData.carerId, // Individual carer ID passed from dialog
-            start_time: startTime.toISOString(),
-            end_time: endTime.toISOString(),
-            service_id: schedule.services?.[0] || null,
-            status: "assigned",
-            notes: bookingData.notes || null,
-          };
+        // Expand bookings across the full date range
+        const startDate = new Date(bookingData.fromDate);
+        const endDate = new Date(bookingData.untilDate);
+        
+        console.log('[handleCreateBooking] Date range:', { startDate, endDate });
 
-          await createBookingMutation.mutateAsync(bookingInput);
+        for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+          const dayOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][currentDate.getDay()];
+          
+          if (selectedDays.includes(dayOfWeek)) {
+            // Create booking for this day
+            const bookingStartTime = new Date(currentDate);
+            const bookingEndTime = new Date(currentDate);
+            
+            // Set the time based on schedule
+            const [startHour, startMinute] = schedule.startTime.split(':').map(Number);
+            const [endHour, endMinute] = schedule.endTime.split(':').map(Number);
+            
+            bookingStartTime.setHours(startHour, startMinute, 0, 0);
+            bookingEndTime.setHours(endHour, endMinute, 0, 0);
+
+            const bookingInput = {
+              branch_id: client.branch_id, // Use client's actual branch_id
+              client_id: actualClientId,   // Use the correct client_id from props
+              staff_id: bookingData.carerId, // Individual carer ID passed from dialog
+              start_time: bookingStartTime.toISOString(),
+              end_time: bookingEndTime.toISOString(),
+              service_id: schedule.services?.[0] || null,
+              status: "assigned",
+              notes: bookingData.notes || null,
+            };
+
+            console.log('[handleCreateBooking] Creating booking:', bookingInput);
+            await createBookingMutation.mutateAsync(bookingInput);
+          }
         }
       }
 
       toast.success("Booking created successfully!");
-      refetch(); // Refresh the bookings list
+      
+      // Refresh bookings for this client
+      refetch();
+      
+      // Also invalidate branch bookings cache so it shows up in the calendar
+      queryClient.invalidateQueries({ queryKey: ["branch-bookings", client.branch_id] });
+      
+      console.log('[handleCreateBooking] Booking creation completed');
     } catch (error) {
       console.error("Error creating booking:", error);
       toast.error("Failed to create booking");
