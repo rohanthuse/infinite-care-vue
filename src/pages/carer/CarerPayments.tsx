@@ -35,9 +35,10 @@ import {
 } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, DollarSign, Plus, Receipt, Clock, Car, TrendingUp, Wallet, Eye, Search, Download } from 'lucide-react';
+import { CalendarDays, DollarSign, Plus, Receipt, Clock, Car, TrendingUp, Wallet, Eye, Search, Download, FileText } from 'lucide-react';
 import { useCarerPayments } from '@/hooks/useCarerPayments';
 import { useCarerProfile } from '@/hooks/useCarerProfile';
+import { exportPayrollPayslip } from '@/utils/payslipPdfGenerator';
 import { useExpenseTypeOptions } from '@/hooks/useParameterOptions';
 import { useMyExpenses } from '@/hooks/useMyExpenses';
 import { useMyTravel } from '@/hooks/useMyTravel';
@@ -95,12 +96,35 @@ const CarerPayments: React.FC = () => {
   const { data: myExtraTime, isLoading: extraTimeLoading } = useMyExtraTime();
   const { submitExpense, isSubmitting } = useCarerExpenseManagement();
 
+  // Create lookup map for payroll records
+  const payrollLookup = React.useMemo(() => {
+    const lookup = new Map();
+    paymentsData?.carerPayroll?.forEach(record => {
+      lookup.set(record.id, record);
+    });
+    return lookup;
+  }, [paymentsData?.carerPayroll]);
+
   // Filter payments by date range
   const filteredPayments = paymentsData?.paymentHistory?.filter(payment => {
     if (!dateRange.from || !dateRange.to) return true;
     const paymentDate = new Date(payment.date);
     return paymentDate >= dateRange.from && paymentDate <= dateRange.to;
   }) || [];
+
+  // Handle payslip download
+  const handleDownloadPayslip = (payment: any) => {
+    const payrollRecord = payrollLookup.get(payment.id);
+    if (payrollRecord) {
+      exportPayrollPayslip(payrollRecord);
+    } else {
+      toast({
+        title: "Error",
+        description: "Payroll record not found",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Handle expense submission
   const handleSubmitExpense = async (e: React.FormEvent) => {
@@ -319,6 +343,7 @@ const CarerPayments: React.FC = () => {
                       <TableHead>Type</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -332,6 +357,20 @@ const CarerPayments: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(payment.status)}
+                        </TableCell>
+                        <TableCell>
+                          {payment.type === 'salary' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadPayslip(payment)}
+                              className="gap-1"
+                              disabled={!payrollLookup.has(payment.id)}
+                            >
+                              <FileText className="h-4 w-4" />
+                              Payslip
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
