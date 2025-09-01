@@ -26,6 +26,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
+    preferred_name: "",
     email: "",
     phone: "",
     address: "",
@@ -121,6 +122,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       setFormData({
         first_name: "",
         last_name: "",
+        preferred_name: "",
         email: "",
         phone: "",
         address: "",
@@ -165,6 +167,16 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               <Label htmlFor="last_name">Last Name *</Label>
               <Input id="last_name" value={formData.last_name} onChange={e => handleInputChange("last_name", e.target.value)} required />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="preferred_name">Preferred Name</Label>
+            <Input 
+              id="preferred_name" 
+              value={formData.preferred_name} 
+              onChange={e => handleInputChange("preferred_name", e.target.value)}
+              placeholder="How would you like to be addressed?" 
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
