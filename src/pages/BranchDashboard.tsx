@@ -108,6 +108,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any | null>(null);
   const [clientDetailOpen, setClientDetailOpen] = useState<boolean>(false);
+  const [isClientEditModeOpen, setIsClientEditModeOpen] = useState(false);
   const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
   const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
   
@@ -399,6 +400,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const handleCloseClientDetail = () => {
     setClientDetailOpen(false);
     setSelectedClient(null);
+    setIsClientEditModeOpen(false);
   };
 
   const handleAddNote = () => {
@@ -415,10 +417,16 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleEditClient = (client: any) => {
-    if (id && branchName) {
-      const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard` : `/branch-dashboard`;
-      navigate(`${basePath}/${id}/${branchName}/clients/${client.id}/edit`);
-    }
+    const clientForDetails = {
+      ...client,
+      name: `${client.first_name} ${client.last_name}`,
+      location: client.address,
+      avatar: client.avatar_initials,
+      registeredOn: client.registered_on ? format(new Date(client.registered_on), 'dd/MM/yyyy') : 'N/A'
+    };
+    setSelectedClient(clientForDetails);
+    setClientDetailOpen(true);
+    setIsClientEditModeOpen(true);
   };
 
   // Helper function to check if user can access a specific tab content
@@ -669,12 +677,13 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           branchId={id}
         />
         
-        {selectedClient && (
+        {selectedClient && clientDetailOpen && (
           <ClientDetail
             client={selectedClient}
-            onClose={() => setSelectedClient(null)}
+            onClose={handleCloseClientDetail}
             onAddNote={() => setIsAddNoteDialogOpen(true)}
             onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
+            startInEditMode={isClientEditModeOpen}
           />
         )}
 
