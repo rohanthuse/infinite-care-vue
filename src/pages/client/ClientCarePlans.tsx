@@ -447,6 +447,83 @@ const ClientCarePlans = () => {
 
                   <TabsContent value="personal" className="mt-4">
                     <div className="space-y-4">
+                      {/* Basic Details Section */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-medium text-blue-800 mb-3">Basic Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <p className="text-xs text-gray-600">Date of Birth</p>
+                            <p className="text-sm">{carePlan.personal_info?.date_of_birth ? new Date(carePlan.personal_info.date_of_birth).toLocaleDateString() : 'Not available'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Phone</p>
+                            <p className="text-sm">{carePlan.personal_info?.phone || 'Not available'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Email</p>
+                            <p className="text-sm">{carePlan.personal_info?.email || 'Not available'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Address</p>
+                            <p className="text-sm">{carePlan.personal_info?.address || 'Not available'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* About Me Section */}
+                      {carePlan.about_me && Object.keys(carePlan.about_me).some(key => carePlan.about_me[key]) && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <h4 className="font-medium text-green-800 mb-3">About Me</h4>
+                          <div className="space-y-2">
+                            {carePlan.about_me.hobbies && <p className="text-sm"><span className="font-medium text-green-700">Hobbies:</span> {carePlan.about_me.hobbies}</p>}
+                            {carePlan.about_me.personality && <p className="text-sm"><span className="font-medium text-green-700">Personality:</span> {carePlan.about_me.personality}</p>}
+                            {carePlan.about_me.family_info && <p className="text-sm"><span className="font-medium text-green-700">Family:</span> {carePlan.about_me.family_info}</p>}
+                            {carePlan.about_me.social_preferences && <p className="text-sm"><span className="font-medium text-green-700">Social Preferences:</span> {carePlan.about_me.social_preferences}</p>}
+                            {carePlan.about_me.background && <p className="text-sm"><span className="font-medium text-green-700">Background:</span> {carePlan.about_me.background}</p>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Preferences Section */}
+                      {carePlan.personal_info && (carePlan.personal_info.preferred_communication || carePlan.personal_info.cultural_preferences || carePlan.personal_info.language_preferences || carePlan.personal_info.religion || carePlan.personal_info.marital_status) && (
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                          <h4 className="font-medium text-purple-800 mb-3">Preferences & Cultural Information</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {carePlan.personal_info.preferred_communication && (
+                              <div>
+                                <p className="text-xs text-gray-600">Preferred Communication</p>
+                                <p className="text-sm">{carePlan.personal_info.preferred_communication}</p>
+                              </div>
+                            )}
+                            {carePlan.personal_info.cultural_preferences && (
+                              <div>
+                                <p className="text-xs text-gray-600">Cultural Preferences</p>
+                                <p className="text-sm">{carePlan.personal_info.cultural_preferences}</p>
+                              </div>
+                            )}
+                            {carePlan.personal_info.language_preferences && (
+                              <div>
+                                <p className="text-xs text-gray-600">Language Preferences</p>
+                                <p className="text-sm">{carePlan.personal_info.language_preferences}</p>
+                              </div>
+                            )}
+                            {carePlan.personal_info.religion && (
+                              <div>
+                                <p className="text-xs text-gray-600">Religion</p>
+                                <p className="text-sm">{carePlan.personal_info.religion}</p>
+                              </div>
+                            )}
+                            {carePlan.personal_info.marital_status && (
+                              <div>
+                                <p className="text-xs text-gray-600">Marital Status</p>
+                                <p className="text-sm">{carePlan.personal_info.marital_status}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Contact Information */}
                       {carePlan.personal_info && Object.keys(carePlan.personal_info).length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {carePlan.personal_info.emergency_contact_name && <div className="border border-gray-200 rounded-lg p-4">
                               <h5 className="font-medium text-sm mb-2">Emergency Contact</h5>
@@ -465,10 +542,6 @@ const ClientCarePlans = () => {
                               <p className="text-sm">{carePlan.personal_info.gp_name}</p>
                               {carePlan.personal_info.gp_practice && <p className="text-xs text-gray-600">Practice: {carePlan.personal_info.gp_practice}</p>}
                               {carePlan.personal_info.gp_phone && <p className="text-xs text-gray-600">Phone: {carePlan.personal_info.gp_phone}</p>}
-                            </div>}
-                          {carePlan.personal_info.communication_preferences && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Communication Preferences</h5>
-                              <p className="text-sm">{carePlan.personal_info.communication_preferences}</p>
                             </div>}
                         </div> : <p className="text-gray-500 text-sm">No personal information available for this care plan.</p>}
                     </div>
