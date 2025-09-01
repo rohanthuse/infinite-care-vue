@@ -23,14 +23,14 @@ const clientApproveCarePlan = async ({ carePlanId, signatureData, comments }: Cl
 
   console.log(`[clientApproveCarePlan] Approving care plan ${carePlanId} by client ${user.id}`);
 
-  // Update care plan status to active (final approval)
+  // Update care plan status to active (final approval) with client acknowledgment data
   const { error: updateError } = await supabase
     .from('client_care_plans')
     .update({
       status: 'active',
-      client_approved_at: new Date().toISOString(),
-      client_signature: signatureData,
-      client_approval_comments: comments,
+      client_acknowledged_at: new Date().toISOString(),
+      client_signature_data: signatureData,
+      client_comments: comments,
       updated_at: new Date().toISOString(),
     })
     .eq('id', carePlanId)
@@ -41,24 +41,8 @@ const clientApproveCarePlan = async ({ carePlanId, signatureData, comments }: Cl
     throw updateError;
   }
 
-  // Create approval record
-  const { error: approvalError } = await supabase
-    .from('client_care_plan_approvals')
-    .insert({
-      care_plan_id: carePlanId,
-      action: 'approved',
-      performed_by: user.id,
-      performed_at: new Date().toISOString(),
-      comments: comments || 'Care plan approved by client',
-      previous_status: 'pending_client_approval',
-      new_status: 'active'
-    });
-
-  if (approvalError) {
-    console.error('Error creating client approval record:', approvalError);
-    // Don't fail the operation for this
-  }
-
+  // Database triggers will handle all notifications automatically
+  console.log(`[clientApproveCarePlan] Successfully approved care plan ${carePlanId}`);
   return { success: true };
 };
 
@@ -76,7 +60,7 @@ const clientRejectCarePlan = async ({ carePlanId, comments }: ClientRejectCarePl
     .from('client_care_plans')
     .update({
       status: 'rejected',
-      rejection_reason: comments,
+      client_comments: comments,
       updated_at: new Date().toISOString(),
     })
     .eq('id', carePlanId)
@@ -87,24 +71,8 @@ const clientRejectCarePlan = async ({ carePlanId, comments }: ClientRejectCarePl
     throw updateError;
   }
 
-  // Create approval record
-  const { error: approvalError } = await supabase
-    .from('client_care_plan_approvals')
-    .insert({
-      care_plan_id: carePlanId,
-      action: 'rejected',
-      performed_by: user.id,
-      performed_at: new Date().toISOString(),
-      comments: comments,
-      previous_status: 'pending_client_approval',
-      new_status: 'rejected'
-    });
-
-  if (approvalError) {
-    console.error('Error creating client approval record:', approvalError);
-    // Don't fail the operation for this
-  }
-
+  // Database triggers will handle all notifications automatically
+  console.log(`[clientRejectCarePlan] Successfully rejected care plan ${carePlanId}`);
   return { success: true };
 };
 
@@ -129,6 +97,8 @@ export const useClientApproveCarePlan = () => {
         errorMessage = 'You must be logged in to approve care plans.';
       } else if (error.code === '23503') {
         errorMessage = 'Unable to approve: Care plan not found or already processed.';
+      } else if (error.message?.includes('assigned_staff_id')) {
+        errorMessage = 'System error occurred. Please try again or contact support.';
       }
       
       toast.error(errorMessage);
@@ -155,6 +125,8 @@ export const useClientRejectCarePlan = () => {
       
       if (error.message?.includes('not authenticated')) {
         errorMessage = 'You must be logged in to request changes to care plans.';
+      } else if (error.message?.includes('assigned_staff_id')) {
+        errorMessage = 'System error occurred. Please try again or contact support.';
       }
       
       toast.error(errorMessage);
