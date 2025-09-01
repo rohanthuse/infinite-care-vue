@@ -628,7 +628,18 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       {userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role) && (
         <div className="mb-6">
           <AdminCarePlanManagement 
-            carePlans={carePlans?.map((p: any) => p._fullPlanData).filter(Boolean) || []} 
+            carePlans={carePlans?.map((p: any) => p._fullPlanData).filter(Boolean).filter((plan: any) => {
+              // If status filter is set to "Draft", show only draft plans
+              if (statusFilter === "Draft") {
+                return plan.status === 'draft';
+              }
+              // If status filter is not "Draft", exclude draft plans from main display
+              if (statusFilter === "all") {
+                return plan.status !== 'draft';
+              }
+              // For other specific status filters, show only matching status
+              return plan.status === statusFilter.toLowerCase().replace(' ', '_');
+            }) || []} 
             branchId={branchId || ''}
             branchName={branchName || ''}
             onView={handleViewCarePlan}
@@ -829,8 +840,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         </div>
       </div>
 
-      {/* Draft Care Plans Section */}
-      {draftCarePlans.length > 0 && (
+      {/* Draft Care Plans Section - Only show when status filter is not "Draft" */}
+      {draftCarePlans.length > 0 && statusFilter !== "Draft" && (
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
             <FileX className="h-5 w-5 text-orange-600" />
