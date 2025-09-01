@@ -91,7 +91,28 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
         id,
         first_name,
         last_name,
-        avatar_initials
+        avatar_initials,
+        date_of_birth,
+        phone,
+        address,
+        email,
+        additional_information,
+        client_personal_info(
+          emergency_contact_name,
+          emergency_contact_phone,
+          emergency_contact_relationship,
+          preferred_communication,
+          cultural_preferences,
+          language_preferences,
+          religion,
+          marital_status,
+          next_of_kin_name,
+          next_of_kin_phone,
+          next_of_kin_relationship,
+          gp_name,
+          gp_practice,
+          gp_phone
+        )
       ),
       goals:client_care_plan_goals(*),
       activities:client_activities(*),
@@ -127,6 +148,34 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     console.error('Error fetching care plan:', error);
     throw error;
   }
+
+  // Helper function to normalize personal info from multiple sources
+  const normalizePersonalInfo = (autoSaveData: Record<string, any>, clientData: any) => {
+    const personalInfoFromAutoSave = autoSaveData.personal_info || {};
+    const clientPersonalInfo = clientData?.client_personal_info?.[0] || {};
+    
+    return {
+      date_of_birth: personalInfoFromAutoSave.date_of_birth || clientData?.date_of_birth,
+      phone: personalInfoFromAutoSave.phone || clientData?.phone,
+      address: personalInfoFromAutoSave.address || clientData?.address,
+      email: personalInfoFromAutoSave.email || clientData?.email,
+      emergency_contact_name: personalInfoFromAutoSave.emergency_contact_name || clientPersonalInfo.emergency_contact_name,
+      emergency_contact_phone: personalInfoFromAutoSave.emergency_contact_phone || clientPersonalInfo.emergency_contact_phone,
+      emergency_contact_relationship: personalInfoFromAutoSave.emergency_contact_relationship || clientPersonalInfo.emergency_contact_relationship,
+      preferred_communication: personalInfoFromAutoSave.preferred_communication || clientPersonalInfo.preferred_communication,
+      cultural_preferences: personalInfoFromAutoSave.cultural_preferences || clientPersonalInfo.cultural_preferences,
+      language_preferences: personalInfoFromAutoSave.language_preferences || clientPersonalInfo.language_preferences,
+      religion: personalInfoFromAutoSave.religion || clientPersonalInfo.religion,
+      marital_status: personalInfoFromAutoSave.marital_status || clientPersonalInfo.marital_status,
+      next_of_kin_name: personalInfoFromAutoSave.next_of_kin_name || clientPersonalInfo.next_of_kin_name,
+      next_of_kin_phone: personalInfoFromAutoSave.next_of_kin_phone || clientPersonalInfo.next_of_kin_phone,
+      next_of_kin_relationship: personalInfoFromAutoSave.next_of_kin_relationship || clientPersonalInfo.next_of_kin_relationship,
+      gp_name: personalInfoFromAutoSave.gp_name || clientPersonalInfo.gp_name,
+      gp_practice: personalInfoFromAutoSave.gp_practice || clientPersonalInfo.gp_practice,
+      gp_phone: personalInfoFromAutoSave.gp_phone || clientPersonalInfo.gp_phone,
+      ...personalInfoFromAutoSave // Include any other fields from auto_save_data
+    };
+  };
 
   // Extract data from auto_save_data if available
   const autoSaveData = typeof data.auto_save_data === 'object' && data.auto_save_data !== null ? data.auto_save_data as Record<string, any> : {};
@@ -175,8 +224,8 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     review_date: autoSaveData.review_date || data.review_date,
     goals_progress: autoSaveData.goals_progress || data.goals_progress,
     notes: autoSaveData.notes || data.notes,
-    // Extract additional care plan details
-    personal_info: autoSaveData.personal_info || {},
+    // Extract additional care plan details with normalized personal info
+    personal_info: normalizePersonalInfo(autoSaveData, data.client),
     medical_info: autoSaveData.medical_info || {},
     personal_care: autoSaveData.personal_care || {},
     dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
@@ -204,6 +253,33 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
     .from('client_care_plans')
     .select(`
       *,
+      client:clients(
+        id,
+        first_name,
+        last_name,
+        avatar_initials,
+        date_of_birth,
+        phone,
+        address,
+        email,
+        additional_information,
+        client_personal_info(
+          emergency_contact_name,
+          emergency_contact_phone,
+          emergency_contact_relationship,
+          preferred_communication,
+          cultural_preferences,
+          language_preferences,
+          religion,
+          marital_status,
+          next_of_kin_name,
+          next_of_kin_phone,
+          next_of_kin_relationship,
+          gp_name,
+          gp_practice,
+          gp_phone
+        )
+      ),
       goals:client_care_plan_goals(*),
       activities:client_activities(*),
       medications:client_medications(*),
@@ -221,6 +297,34 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
     console.error('Error fetching client care plans with details:', error);
     throw error;
   }
+
+  // Helper function to normalize personal info from multiple sources
+  const normalizePersonalInfoForList = (autoSaveData: Record<string, any>, clientData: any) => {
+    const personalInfoFromAutoSave = autoSaveData.personal_info || {};
+    const clientPersonalInfo = clientData?.client_personal_info?.[0] || {};
+    
+    return {
+      date_of_birth: personalInfoFromAutoSave.date_of_birth || clientData?.date_of_birth,
+      phone: personalInfoFromAutoSave.phone || clientData?.phone,
+      address: personalInfoFromAutoSave.address || clientData?.address,
+      email: personalInfoFromAutoSave.email || clientData?.email,
+      emergency_contact_name: personalInfoFromAutoSave.emergency_contact_name || clientPersonalInfo.emergency_contact_name,
+      emergency_contact_phone: personalInfoFromAutoSave.emergency_contact_phone || clientPersonalInfo.emergency_contact_phone,
+      emergency_contact_relationship: personalInfoFromAutoSave.emergency_contact_relationship || clientPersonalInfo.emergency_contact_relationship,
+      preferred_communication: personalInfoFromAutoSave.preferred_communication || clientPersonalInfo.preferred_communication,
+      cultural_preferences: personalInfoFromAutoSave.cultural_preferences || clientPersonalInfo.cultural_preferences,
+      language_preferences: personalInfoFromAutoSave.language_preferences || clientPersonalInfo.language_preferences,
+      religion: personalInfoFromAutoSave.religion || clientPersonalInfo.religion,
+      marital_status: personalInfoFromAutoSave.marital_status || clientPersonalInfo.marital_status,
+      next_of_kin_name: personalInfoFromAutoSave.next_of_kin_name || clientPersonalInfo.next_of_kin_name,
+      next_of_kin_phone: personalInfoFromAutoSave.next_of_kin_phone || clientPersonalInfo.next_of_kin_phone,
+      next_of_kin_relationship: personalInfoFromAutoSave.next_of_kin_relationship || clientPersonalInfo.next_of_kin_relationship,
+      gp_name: personalInfoFromAutoSave.gp_name || clientPersonalInfo.gp_name,
+      gp_practice: personalInfoFromAutoSave.gp_practice || clientPersonalInfo.gp_practice,
+      gp_phone: personalInfoFromAutoSave.gp_phone || clientPersonalInfo.gp_phone,
+      ...personalInfoFromAutoSave // Include any other fields from auto_save_data
+    };
+  };
 
   // Transform the data to handle potential null staff relations and extract data from auto_save_data
   const transformedData: CarePlanWithDetails[] = (data || []).map(item => {
@@ -337,8 +441,8 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
       review_date: autoSaveData.review_date || item.review_date,
       goals_progress: autoSaveData.goals_progress || item.goals_progress,
       notes: autoSaveData.notes || item.notes,
-      // Extract additional care plan details
-      personal_info: autoSaveData.personal_info || {},
+      // Extract additional care plan details with normalized personal info
+      personal_info: normalizePersonalInfoForList(autoSaveData, item.client),
       medical_info: autoSaveData.medical_info || {},
       personal_care: autoSaveData.personal_care || {},
       dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
