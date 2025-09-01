@@ -23,28 +23,26 @@ const staffApproveCarePlan = async ({ carePlanId, comments }: StaffApproveCarePl
 
   console.log(`[staffApproveCarePlan] Approving care plan ${carePlanId} by user ${user.id}`);
 
-  // Check if user exists in staff table
+  // Check if user exists in staff table  
   const { data: staffData } = await supabase
     .from('staff')
-    .select('id')
-    .eq('id', user.id)
+    .select('id, auth_user_id')
+    .eq('auth_user_id', user.id)
     .single();
 
-  // Update care plan status to pending_client_approval (two-stage approval process)
-  const updateData: any = {
-    status: 'pending_client_approval',
-    approved_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  // Only set approved_by if user is in staff table to avoid foreign key constraint
-  if (staffData) {
-    updateData.approved_by = user.id;
+  if (!staffData) {
+    throw new Error('Staff record not found for authenticated user');
   }
 
+  // Update care plan status to pending_client_approval (two-stage approval process)
   const { error: updateError } = await supabase
     .from('client_care_plans')
-    .update(updateData)
+    .update({
+      status: 'pending_client_approval',
+      approved_by: staffData.id,
+      approved_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', carePlanId);
 
   if (updateError) {
@@ -55,54 +53,7 @@ const staffApproveCarePlan = async ({ carePlanId, comments }: StaffApproveCarePl
     throw updateError;
   }
 
-  // Create notification for client now that care plan is ready for their review
-  try {
-    const { data: carePlanData } = await supabase
-      .from('client_care_plans')
-      .select(`
-        id,
-        title,
-        display_id,
-        client_id,
-        clients!inner(
-          first_name,
-          last_name,
-          branch_id,
-          auth_user_id
-        )
-      `)
-      .eq('id', carePlanId)
-      .single();
-
-    console.log('[staffApproveCarePlan] Care plan data for notification:', carePlanData);
-
-    if (carePlanData?.clients?.auth_user_id) {
-      const notification = {
-        user_id: carePlanData.clients.auth_user_id,
-        branch_id: carePlanData.clients.branch_id,
-        type: 'care_plan',
-        category: 'info',
-        priority: 'high',
-        title: 'Care Plan Ready for Your Review',
-        message: `Your care plan ${carePlanData.display_id || 'CP-XXX'} has been approved by staff and is ready for your review`,
-        data: {
-          care_plan_id: carePlanId,
-          action: 'pending_client_approval',
-          care_plan_title: carePlanData.title || 'Care Plan',
-          care_plan_display_id: carePlanData.display_id,
-          client_name: `${carePlanData.clients.first_name} ${carePlanData.clients.last_name}`
-        }
-      };
-
-      console.log('[staffApproveCarePlan] Creating client notification:', notification);
-      await supabase.from('notifications').insert([notification]);
-    } else {
-      console.warn('[staffApproveCarePlan] Client has no auth_user_id, cannot send notification');
-    }
-  } catch (notificationError) {
-    console.error('[staffApproveCarePlan] Error creating client notification:', notificationError);
-    // Don't fail the operation for notification errors
-  }
+  // Notifications are now handled automatically by database triggers
 
   // Create approval record
   const { error: approvalError } = await supabase
@@ -179,6 +130,7 @@ export const useStaffApproveCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Care plan approved successfully! The client will be notified.');
     },
     onError: (error: any) => {
@@ -192,6 +144,8 @@ export const useStaffApproveCarePlan = () => {
         errorMessage = 'You must be logged in to approve care plans.';
       } else if (error.code === '23503') {
         errorMessage = 'Unable to approve: User not found in staff records.';
+      } else if (error.message?.includes('Staff record not found')) {
+        errorMessage = 'Unable to approve: Staff account not properly configured.';
       }
       
       toast.error(errorMessage);
@@ -208,6 +162,7 @@ export const useStaffRejectCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Care plan rejected. The client will be notified of the requested changes.');
     },
     onError: (error: any) => {

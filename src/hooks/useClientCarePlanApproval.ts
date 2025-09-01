@@ -116,6 +116,7 @@ export const useClientApproveCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Care plan approved successfully! Your care plan is now active.');
     },
     onError: (error: any) => {
@@ -143,6 +144,7 @@ export const useClientRejectCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Change request submitted. Your care team will review and update the plan.');
     },
     onError: (error: any) => {

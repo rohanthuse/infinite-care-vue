@@ -7012,6 +7012,19 @@ export type Database = {
             }
         Returns: Json
       }
+      safe_notify: {
+        Args: {
+          p_branch_id: string
+          p_category: string
+          p_data?: Json
+          p_message: string
+          p_priority: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       safe_setup_client_auth: {
         Args: { p_admin_id: string; p_client_id: string; p_password: string }
         Returns: Json
