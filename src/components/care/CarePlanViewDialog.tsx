@@ -130,8 +130,8 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-4xl h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="space-y-2">
               <DialogTitle className="text-2xl font-bold flex items-center gap-2">
@@ -198,9 +198,9 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <Tabs defaultValue="overview" className="h-full flex flex-col">
-            <div className="px-6 border-b relative z-10">
+            <div className="px-6 border-b flex-shrink-0 sticky top-0 z-20 bg-background">
               <TabsList className="h-auto w-full flex flex-wrap gap-1 p-2 justify-start bg-muted">
                 <TabsTrigger value="overview" className="text-xs">
                   <Info className="h-3 w-3 mr-1" />
@@ -261,7 +261,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
               </TabsList>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="p-6">
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-4 mt-0">
