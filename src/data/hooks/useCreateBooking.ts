@@ -41,8 +41,17 @@ export function useCreateBooking(branchId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createBooking,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+    onSuccess: (data) => {
+      // Always invalidate queries using the created booking's branch_id
+      const bookingBranchId = data.branch_id;
+      queryClient.invalidateQueries({ queryKey: ["branch-bookings", bookingBranchId] });
+      queryClient.invalidateQueries({ queryKey: ["client-bookings", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["carer-bookings", data.staff_id] });
+      
+      // Also invalidate with the provided branchId for backwards compatibility
+      if (branchId && branchId !== bookingBranchId) {
+        queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+      }
     },
   });
 }
