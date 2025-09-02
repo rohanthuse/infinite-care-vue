@@ -127,7 +127,7 @@ export function ClientsManagementSection({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search clients by name, email, or pin code..."
+                  placeholder="Search clients by name, email, or post code..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -166,7 +166,7 @@ export function ClientsManagementSection({
                 <SelectContent>
                   <SelectItem value="name">Name (A-Z)</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="pin_code">Pin Code (Area)</SelectItem>
+                  <SelectItem value="pin_code">Post code (Area)</SelectItem>
                   <SelectItem value="region">Region</SelectItem>
                   <SelectItem value="created_at">Registration Date</SelectItem>
                 </SelectContent>
@@ -230,7 +230,7 @@ export function ClientsManagementSection({
                           onClick={() => handleSort('pin_code')}
                           className="flex items-center gap-2 hover:text-blue-600 transition-colors"
                         >
-                          Pin Code {getSortIcon('pin_code')}
+                          Post code {getSortIcon('pin_code')}
                         </button>
                       </th>
                       <th className="text-left py-3 px-4 font-medium">Status</th>
@@ -362,7 +362,7 @@ export function ClientsManagementSection({
                         </div>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2 text-sm text-gray-600">
-                        <span>Pin Code: 
+                        <span>Post code: 
                           <span className="font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs ml-1">
                             {client.pin_code || 'N/A'}
                           </span>
