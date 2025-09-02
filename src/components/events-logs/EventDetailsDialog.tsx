@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { EventRiskAssessmentView } from './EventRiskAssessmentView';
 import { EventComplianceView } from './EventComplianceView';
 import { EventAttachmentsView } from './EventAttachmentsView';
 import { exportEventToPDF } from '@/lib/exportEvents';
+import { useBranchStaff } from '@/hooks/useBranchStaff';
 
 interface EventDetailsDialogProps {
   event: EventLog | null;
@@ -26,6 +27,24 @@ interface EventDetailsDialogProps {
 
 export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventDetailsDialogProps) {
   if (!event) return null;
+
+  // Fetch staff data for the event's branch
+  const { data: branchStaff = [] } = useBranchStaff(event.branch_id || '');
+  
+  // Create a mapping of staff IDs to names
+  const staffNamesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    branchStaff.forEach(staff => {
+      const fullName = `${staff.first_name} ${staff.last_name}`.trim();
+      map.set(staff.id, fullName);
+    });
+    return map;
+  }, [branchStaff]);
+
+  // Helper function to resolve staff IDs to names
+  const resolveStaffName = (staffId: string): string => {
+    return staffNamesMap.get(staffId) || staffId;
+  };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -178,15 +197,15 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
               <EventFollowUpView
                 actionRequired={event.action_required}
                 followUpDate={event.follow_up_date}
-                followUpAssignedTo={event.follow_up_assigned_to}
+                followUpAssignedTo={event.follow_up_assigned_to ? resolveStaffName(event.follow_up_assigned_to) : undefined}
                 followUpNotes={event.follow_up_notes}
               />
             </TabsContent>
             
             <TabsContent value="staff" className="mt-4">
               <EventStaffDetailsView
-                staffPresent={event.staff_present}
-                staffAware={event.staff_aware}
+                staffPresent={event.staff_present?.map(resolveStaffName)}
+                staffAware={event.staff_aware?.map(resolveStaffName)}
                 otherPeoplePresent={event.other_people_present}
               />
             </TabsContent>
@@ -195,7 +214,7 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
               <EventActionsView
                 immediateActionsTaken={event.immediate_actions_taken}
                 investigationRequired={event.investigation_required}
-                investigationAssignedTo={event.investigation_assigned_to}
+                investigationAssignedTo={event.investigation_assigned_to ? resolveStaffName(event.investigation_assigned_to) : undefined}
                 expectedResolutionDate={event.expected_resolution_date}
                 lessonsLearned={event.lessons_learned}
               />

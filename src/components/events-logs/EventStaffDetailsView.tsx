@@ -33,9 +33,9 @@ export function EventStaffDetailsView({
               Staff Present
             </div>
             <div className="space-y-1">
-              {staffPresent.map((staffId, index) => (
+              {staffPresent.map((staffName, index) => (
                 <Badge key={index} variant="outline" className="mr-1">
-                  {staffId}
+                  {staffName}
                 </Badge>
               ))}
             </div>
@@ -50,9 +50,9 @@ export function EventStaffDetailsView({
               Staff Made Aware
             </div>
             <div className="space-y-1">
-              {staffAware.map((staffId, index) => (
+              {staffAware.map((staffName, index) => (
                 <Badge key={index} variant="secondary" className="mr-1">
-                  {staffId}
+                  {staffName}
                 </Badge>
               ))}
             </div>
