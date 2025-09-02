@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit, FileText, Calendar, User, Target, Activity, Pill, Heart, Utensils, ShieldCheck, Clock, 
          Phone, MapPin, AlertTriangle, Briefcase, FileX, Settings, Info, 
-         UserCheck, Stethoscope, Home, UtensilsCrossed, CheckCircle2 } from 'lucide-react';
+         UserCheck, Stethoscope, Home, UtensilsCrossed, CheckCircle2, Download, UserX } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
@@ -153,6 +153,12 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                 {carePlan.priority && (
                   <Badge variant={carePlan.priority === "high" ? "destructive" : carePlan.priority === "medium" ? "default" : "secondary"}>
                     {carePlan.priority.toUpperCase()} PRIORITY
+                  </Badge>
+                )}
+                {carePlanWithDetails.client_acknowledged_at && (
+                  <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Client Approved
                   </Badge>
                 )}
               </div>
@@ -318,6 +324,88 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                       )}
                     </CardContent>
                   </Card>
+
+                  {/* Client Approval & Signature Section */}
+                  {(carePlanWithDetails.client_acknowledged_at || carePlanWithDetails.client_signature_data) && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          Client Approval & Signature
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {carePlanWithDetails.client_acknowledged_at && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Approved On</label>
+                              <p className="text-sm">
+                                {format(new Date(carePlanWithDetails.client_acknowledged_at), 'PPP p')}
+                              </p>
+                            </div>
+                          )}
+                          {carePlanWithDetails.acknowledgment_method && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Method</label>
+                              <p className="text-sm capitalize">{carePlanWithDetails.acknowledgment_method}</p>
+                            </div>
+                          )}
+                          {carePlanWithDetails.client_acknowledgment_ip && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">IP Address</label>
+                              <p className="text-sm font-mono">{carePlanWithDetails.client_acknowledgment_ip}</p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {carePlanWithDetails.client_comments && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Client Comments</label>
+                            <p className="text-sm mt-1 p-3 bg-muted rounded-md">{carePlanWithDetails.client_comments}</p>
+                          </div>
+                        )}
+
+                        {carePlanWithDetails.client_signature_data && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">Digital Signature</label>
+                            <div className="border rounded-lg p-4 bg-white">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs text-muted-foreground">Client's digital signature</span>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = carePlanWithDetails.client_signature_data;
+                                    link.download = `care-plan-signature-${carePlan.display_id}.png`;
+                                    link.click();
+                                  }}
+                                >
+                                  <Download className="h-3 w-3 mr-1" />
+                                  Download
+                                </Button>
+                              </div>
+                              <div className="flex justify-center">
+                                <img 
+                                  src={carePlanWithDetails.client_signature_data} 
+                                  alt="Client signature"
+                                  className="max-h-24 max-w-full border rounded"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                                  }}
+                                />
+                                <div className="hidden text-center text-muted-foreground text-xs p-4">
+                                  <UserX className="h-8 w-8 mx-auto mb-2" />
+                                  Signature could not be displayed
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
                 </TabsContent>
 
                 {/* About Me Tab */}
