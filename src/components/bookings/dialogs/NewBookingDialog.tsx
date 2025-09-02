@@ -234,6 +234,38 @@ export function NewBookingDialog({
           <DialogDescription>
             Schedule a new booking for a client with a carer.
           </DialogDescription>
+          
+          {/* Prefilled Data Banner */}
+          {prefilledData && (prefilledData.carerId || prefilledData.date || prefilledData.startTime) && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 text-sm font-medium mb-1">
+                <CalendarIcon className="h-4 w-4" />
+                Prefilled from Schedule
+              </div>
+              <div className="space-y-1 text-xs text-blue-600 dark:text-blue-400">
+                {prefilledData.carerId && (
+                  <div>
+                    <span className="font-medium">Carer:</span> {(() => {
+                      const selectedCarer = carers.find(c => c.id === prefilledData.carerId);
+                      return selectedCarer 
+                        ? (selectedCarer.name || `${selectedCarer.first_name} ${selectedCarer.last_name}`)
+                        : "Loading carer...";
+                    })()}
+                  </div>
+                )}
+                {prefilledData.date && (
+                  <div>
+                    <span className="font-medium">Date:</span> {format(prefilledData.date, "PPP")}
+                  </div>
+                )}
+                {prefilledData.startTime && prefilledData.endTime && (
+                  <div>
+                    <span className="font-medium">Time:</span> {prefilledData.startTime} - {prefilledData.endTime}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </DialogHeader>
         <div className="flex-1 overflow-y-auto pr-2">
           <Form {...form}>
@@ -350,7 +382,14 @@ export function NewBookingDialog({
                               )}
                             >
                               {field.value?.length 
-                                ? `${field.value.length} carer${field.value.length !== 1 ? 's' : ''} selected`
+                                ? field.value.length === 1
+                                  ? (() => {
+                                      const selectedCarer = carers.find(c => c.id === field.value[0]);
+                                      return selectedCarer 
+                                        ? (selectedCarer.name || `${selectedCarer.first_name} ${selectedCarer.last_name}`)
+                                        : "Unknown Carer";
+                                    })()
+                                  : `${field.value.length} carers selected`
                                 : "Select carers..."
                               }
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
