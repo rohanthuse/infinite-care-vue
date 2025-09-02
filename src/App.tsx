@@ -22,7 +22,6 @@ import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
-import Dashboard from "./pages/Dashboard";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
 import { TenantSetup } from "./pages/TenantSetup";
@@ -125,9 +124,6 @@ const AppContent = () => {
                   <SystemDashboard />
                 </SystemGuard>
               } />
-              
-              {/* Super Admin Dashboard Route - Direct dashboard access */}
-              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/system-dashboard/tenants" element={
                 <SystemGuard>
                   <SystemTenants />

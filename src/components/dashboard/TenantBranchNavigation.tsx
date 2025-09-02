@@ -34,53 +34,26 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
 
-  // Fetch branches with role-based filtering - super admins see all accessible branches
+  // Fetch branches for this organization with role-based filtering
   const { data: branches, isLoading, error } = useQuery({
-    queryKey: ['organization-branches', organizationId, userRole?.role, userRole?.id],
+    queryKey: ['organization-branches', organizationId, userRole?.role],
     queryFn: async () => {
       console.log('Fetching branches for organization:', organizationId, 'with role:', userRole?.role);
       
       if (userRole?.role === 'super_admin') {
-        // Super admins can see ALL branches they have access to across organizations
-        console.log('Fetching all accessible branches for super admin');
-        
-        // First, get all organizations the super admin has access to
-        const { data: organizationAccess, error: orgError } = await supabase
-          .from('app_admin_organizations')
-          .select('organization_id')
-          .eq('app_admin_id', userRole.id);
-
-        if (orgError) {
-          console.error('Error fetching organization access:', orgError);
-          // Fallback: show branches from current organization only
-          const { data, error } = await supabase
-            .from('branches')
-            .select('*')
-            .eq('organization_id', organizationId)
-            .eq('status', 'Active');
-
-          if (error) throw error;
-          return data || [];
-        }
-
-        // Get all organization IDs the super admin has access to
-        const orgIds = organizationAccess?.map(org => org.organization_id) || [organizationId];
-        console.log('Super admin has access to organizations:', orgIds);
-
-        // Fetch branches from all accessible organizations
+        // Super admins can see all branches in the organization
         const { data, error } = await supabase
           .from('branches')
           .select('*')
-          .in('organization_id', orgIds)
-          .eq('status', 'Active')
-          .order('name');
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active');
 
         if (error) {
-          console.error('Error fetching super admin branches:', error);
+          console.error('Error fetching organization branches:', error);
           throw error;
         }
 
-        console.log('All accessible branches for super admin:', data?.length, 'branches');
+        console.log('Organization branches (super admin):', data);
         return data || [];
       } else if (userRole?.role === 'branch_admin') {
         // Branch admins can only see their assigned branches
@@ -195,15 +168,8 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">
-              {userRole?.role === 'super_admin' ? 'All Accessible Branches' : 'Organization Branches'}
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {userRole?.role === 'super_admin' 
-                ? 'Navigate to any branch across all organizations you manage'
-                : 'Navigate to any branch within your organization'
-              }
-            </p>
+            <h2 className="text-xl font-semibold text-foreground">Organization Branches</h2>
+            <p className="text-muted-foreground text-sm">Navigate to any branch within your organization</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
