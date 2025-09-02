@@ -202,7 +202,7 @@ const CarerClientDetail: React.FC = () => {
               variant="outline" 
               className="w-full" 
               size="sm"
-              onClick={() => navigateToCarerPage("/bookings")}
+              onClick={() => navigateToCarerPage("/appointments")}
             >
               View Appointments
             </Button>

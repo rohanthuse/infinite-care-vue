@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 
@@ -47,11 +46,6 @@ export const useClientNavigation = () => {
       name: "Documents", 
       path: createClientPath("/documents"), 
       icon: "FolderOpen" 
-    },
-    { 
-      name: "Agreements", 
-      path: createClientPath("/agreements"), 
-      icon: "FileSignature" 
     },
     { 
       name: "Messages", 

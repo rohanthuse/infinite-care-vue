@@ -220,7 +220,7 @@ const CarerDashboard: React.FC = () => {
                       <Button 
                         variant="outline" 
                         className="w-full"
-                        onClick={() => navigate('/carer-dashboard/bookings')}
+                        onClick={() => navigate('/carer-dashboard/appointments')}
                       >
                         View All Appointments
                       </Button>
