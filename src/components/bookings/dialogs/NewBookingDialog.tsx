@@ -479,9 +479,9 @@ export function NewBookingDialog({
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP")
+                                format(field.value, "dd-MM-yyyy")
                               ) : (
-                                <span>Pick a date</span>
+                                <span>dd-mm-yyyy</span>
                               )}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
@@ -491,9 +491,21 @@ export function NewBookingDialog({
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
+                            onSelect={(date) => {
+                              field.onChange(date);
+                              // Auto-adjust untilDate if it's earlier than fromDate
+                              const currentUntilDate = form.getValues("untilDate");
+                              if (date && currentUntilDate && date > currentUntilDate) {
+                                form.setValue("untilDate", date);
+                              }
+                            }}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              return date < today;
+                            }}
                             initialFocus
+                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
@@ -519,9 +531,9 @@ export function NewBookingDialog({
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP")
+                                format(field.value, "dd-MM-yyyy")
                               ) : (
-                                <span>Pick a date</span>
+                                <span>dd-mm-yyyy</span>
                               )}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
@@ -532,8 +544,15 @@ export function NewBookingDialog({
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
+                            disabled={(date) => {
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const fromDate = form.getValues("fromDate");
+                              // Disable dates before today or before fromDate
+                              return date < today || (fromDate && date < fromDate);
+                            }}
                             initialFocus
+                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
