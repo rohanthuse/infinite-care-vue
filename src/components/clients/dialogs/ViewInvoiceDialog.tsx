@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { EnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
@@ -23,6 +23,18 @@ interface ViewInvoiceDialogProps {
   onOpenChange: (open: boolean) => void;
   invoice: EnhancedClientBilling | null;
 }
+
+const formatDateSafe = (dateValue: any): string => {
+  if (!dateValue) return "N/A";
+  
+  try {
+    const date = typeof dateValue === 'string' ? parseISO(dateValue) : new Date(dateValue);
+    if (!isValid(date)) return "N/A";
+    return format(date, 'dd/MM/yyyy');
+  } catch {
+    return "N/A";
+  }
+};
 
 export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
   const { data: clientData } = useAdminClientDetail(invoice?.client_id || '');
@@ -140,22 +152,22 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Invoice Date:</span>
-                  <span className="text-foreground">{format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
+                  <span className="text-foreground">{formatDateSafe(invoice.invoice_date)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Due Date:</span>
-                  <span className="text-foreground">{format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
+                  <span className="text-foreground">{formatDateSafe(invoice.due_date)}</span>
                 </div>
                 {invoice.paid_date && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Paid Date:</span>
-                    <span className="text-foreground">{format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
+                    <span className="text-foreground">{formatDateSafe(invoice.paid_date)}</span>
                   </div>
                 )}
                 {invoice.service_provided_date && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Service Date:</span>
-                    <span className="text-foreground">{format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}</span>
+                    <span className="text-foreground">{formatDateSafe(invoice.service_provided_date)}</span>
                   </div>
                 )}
               </div>
@@ -240,9 +252,9 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 <TableBody>
                   {invoice.payment_records.map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell>{format(new Date(payment.payment_date), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell>{formatDateSafe(payment.payment_date)}</TableCell>
                       <TableCell className="capitalize">{payment.payment_method.replace('_', ' ')}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(payment.payment_amount)}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(payment.payment_amount || 0)}</TableCell>
                       <TableCell>{payment.transaction_id || '-'}</TableCell>
                       <TableCell>{payment.payment_reference || '-'}</TableCell>
                     </TableRow>

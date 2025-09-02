@@ -5,17 +5,29 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { UninvoicedBooking } from "@/hooks/useEnhancedClientBilling";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 
 interface UninvoicedServicesAlertProps {
   uninvoicedBookings: UninvoicedBooking[];
   onCreateInvoice: () => void;
 }
 
+const formatDateSafe = (dateValue: any): string => {
+  if (!dateValue) return "N/A";
+  
+  try {
+    const date = typeof dateValue === 'string' ? parseISO(dateValue) : new Date(dateValue);
+    if (!isValid(date)) return "N/A";
+    return format(date, 'MMM dd, yyyy');
+  } catch {
+    return "N/A";
+  }
+};
+
 export function UninvoicedServicesAlert({ uninvoicedBookings, onCreateInvoice }: UninvoicedServicesAlertProps) {
   if (uninvoicedBookings.length === 0) return null;
 
-  const totalUninvoicedAmount = uninvoicedBookings.reduce((sum, booking) => sum + booking.revenue, 0);
+  const totalUninvoicedAmount = uninvoicedBookings.reduce((sum, booking) => sum + (booking.revenue || 0), 0);
 
   return (
     <Alert className="border-orange-200 bg-orange-50">
@@ -37,17 +49,17 @@ export function UninvoicedServicesAlert({ uninvoicedBookings, onCreateInvoice }:
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{booking.service_title}</span>
                         <span className="text-xs text-gray-500">
-                          • {format(new Date(booking.end_time), 'MMM dd, yyyy')}
+                          • {formatDateSafe(booking.end_time)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-1">
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <PoundSterling className="h-3 w-3" />
-                          <span>${booking.revenue.toFixed(2)}</span>
+                          <span>${(booking.revenue || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-600">
                           <Clock className="h-3 w-3" />
-                          <span>{booking.days_since_service} days ago</span>
+                          <span>{booking.days_since_service || 0} days ago</span>
                         </div>
                       </div>
                     </div>
