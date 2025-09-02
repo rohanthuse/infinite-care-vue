@@ -25,6 +25,7 @@ import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifie
 import { useAdminContacts } from "@/hooks/useAdminMessaging";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
+import { CommunicationTypeSelector } from "@/components/messaging/CommunicationTypeSelector";
 
 interface MessageComposerProps {
   branchId: string;
@@ -342,19 +343,11 @@ export const MessageComposer = ({
         <div className="space-y-4">
           <div>
             <Label htmlFor="type" className="block text-sm font-medium mb-1">Type *</Label>
-            <select
-              id="type"
+            <CommunicationTypeSelector
               value={messageType}
-              onChange={(e) => setMessageType(e.target.value)}
-              className="w-full rounded-md border border-gray-300 p-2"
-              required
-            >
-              <option value="">Select Type</option>
-              <option value="incident">Incident Report</option>
-              <option value="shift">Shift Update</option>
-              <option value="general">General Communication</option>
-              <option value="emergency">Emergency</option>
-            </select>
+              onValueChange={setMessageType}
+              placeholder="Select communication type"
+            />
           </div>
 
           {!isReply && (

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useCarerTravelManagement } from '@/hooks/useCarerTravelManagement';
 import { useToast } from '@/hooks/use-toast';
+import { useTravelRateOptions } from '@/hooks/useParameterOptions';
 
 interface AddTravelRecordDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ interface AddTravelRecordDialogProps {
 export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDialogProps) => {
   const { toast } = useToast();
   const { createTravelRecord } = useCarerTravelManagement();
+  const { data: travelRateOptions = [], isLoading: loadingRates } = useTravelRateOptions();
 
   const [formData, setFormData] = useState({
     travel_date: new Date().toISOString().split('T')[0],
@@ -38,7 +40,8 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     vehicle_type: 'personal_car',
     purpose: '',
     notes: '',
-    mileage_rate: '0.45', // Default UK mileage rate
+    travel_rate_type: '', // Selected travel rate type
+    mileage_rate: '0.45', // Will be updated based on selected rate
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +70,7 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
         vehicle_type: 'personal_car',
         purpose: '',
         notes: '',
+        travel_rate_type: '',
         mileage_rate: '0.45',
       });
     } catch (error) {
@@ -80,6 +84,27 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleRateTypeChange = (rateType: string) => {
+    const selectedRate = travelRateOptions.find(rate => rate.value === rateType);
+    if (selectedRate) {
+      // Extract rate from label if it contains rate information
+      // Assuming the label format is like "Standard Rate (£0.45/mile)"
+      const rateMatch = selectedRate.label.match(/£?(\d+\.?\d*)/);
+      const rate = rateMatch ? rateMatch[1] : '0.45';
+      
+      setFormData(prev => ({
+        ...prev,
+        travel_rate_type: rateType,
+        mileage_rate: rate
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        travel_rate_type: rateType
+      }));
+    }
   };
 
   return (
@@ -104,6 +129,28 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="travel_rate_type">Travel Rate Type</Label>
+              <Select
+                value={formData.travel_rate_type}
+                onValueChange={handleRateTypeChange}
+                disabled={loadingRates}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingRates ? "Loading rates..." : "Select travel rate"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {travelRateOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="vehicle_type">Vehicle Type</Label>
               <Select
