@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, AlertCircle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -23,10 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAgreementTypes, useAgreementTemplates, useClients, useStaff, useCreateAgreement } from "@/data/hooks/agreements";
 import { FileUploadDropzone } from "./FileUploadDropzone";
 import { EnhancedSignatureCanvas } from "./EnhancedSignatureCanvas";
 import { useAgreementWorkflow } from "@/hooks/useAgreementWorkflow";
+import { useBranchNavigation } from "@/hooks/useBranchNavigation";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface SignAgreementDialogProps {
@@ -52,16 +55,22 @@ export function SignAgreementDialog({
   const [content, setContent] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [createdAgreementId, setCreatedAgreementId] = useState<string | null>(null);
+  const [selectedBranchId, setSelectedBranchId] = useState(branchId === "global" ? "" : branchId);
+  
+  // Check if we need branch selection (when opened from global page)
+  const isGlobalContext = branchId === "global";
+  const effectiveBranchId = isGlobalContext ? selectedBranchId : branchId;
   
   // Fetch data
+  const { data: branches, isLoading: branchesLoading } = useBranchNavigation();
   const { data: agreementTypes, isLoading: typesLoading } = useAgreementTypes();
   const { data: templates, isLoading: templatesLoading } = useAgreementTemplates({
     searchQuery: "",
     typeFilter: selectedType || "all",
-    branchId
+    branchId: effectiveBranchId
   });
-  const { data: clients, isLoading: clientsLoading } = useClients(branchId);
-  const { data: staff, isLoading: staffLoading } = useStaff(branchId);
+  const { data: clients, isLoading: clientsLoading } = useClients(effectiveBranchId);
+  const { data: staff, isLoading: staffLoading } = useStaff(effectiveBranchId);
   
   const createAgreementMutation = useCreateAgreement();
   const { workflowState, handleFileUpload, setSignature, resetWorkflow } = useAgreementWorkflow();
@@ -69,6 +78,11 @@ export function SignAgreementDialog({
   const handleCreateAgreement = async () => {
     if (!title || !selectedType || !signerName || !signedDate) {
       toast.error("Please fill in all required fields");
+      return false;
+    }
+
+    if (isGlobalContext && !selectedBranchId) {
+      toast.error("Please select a branch");
       return false;
     }
     
@@ -88,8 +102,10 @@ export function SignAgreementDialog({
         digital_signature: null, // Will be updated in final step
         primary_document_id: null,
         signature_file_id: null,
-        branch_id: branchId !== "global" ? branchId : null,
+        branch_id: effectiveBranchId,
       };
+
+      console.log('[SignAgreementDialog] Creating agreement with data:', agreementData);
 
       // Create agreement and get the response
       const newAgreement = await createAgreementMutation.mutateAsync(agreementData);
@@ -100,9 +116,10 @@ export function SignAgreementDialog({
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating agreement:', error);
-      toast.error('Failed to create agreement');
+      const errorMessage = error?.message || 'Failed to create agreement';
+      toast.error(`Failed to create agreement: ${errorMessage}`);
       return false;
     }
   };
@@ -114,26 +131,18 @@ export function SignAgreementDialog({
     }
     
     try {
-      // Update the agreement status to Active and add signature
-      const agreementData = {
-        title,
-        content: content || null,
-        template_id: selectedTemplate || null,
-        type_id: selectedType,
-        status: "Active" as const,
-        signed_by_name: signerName,
-        signed_by_client_id: signingParty === "client" ? selectedClient || null : null,
-        signed_by_staff_id: signingParty === "staff" ? selectedStaff || null : null,
-        signing_party: signingParty,
-        signed_at: signedDate.toISOString(),
-        digital_signature: digitalSignature || null,
-        primary_document_id: null,
-        signature_file_id: null,
-        branch_id: branchId !== "global" ? branchId : null,
-      };
+      // Update the existing agreement with signature and Active status
+      const { error } = await supabase
+        .from('agreements')
+        .update({
+          status: "Active",
+          digital_signature: digitalSignature || null
+        })
+        .eq('id', createdAgreementId);
 
-      // Update the existing agreement by creating a new one with updated data
-      await createAgreementMutation.mutateAsync(agreementData);
+      if (error) {
+        throw new Error(error.message);
+      }
       
       toast.success("Agreement signed successfully!");
       
@@ -142,9 +151,10 @@ export function SignAgreementDialog({
         resetForm();
         onOpenChange(false);
       }, 1000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing agreement:', error);
-      toast.error('Failed to sign agreement');
+      const errorMessage = error?.message || 'Failed to sign agreement';
+      toast.error(`Failed to sign agreement: ${errorMessage}`);
     }
   };
   
@@ -161,6 +171,7 @@ export function SignAgreementDialog({
     setContent("");
     setCurrentStep(1);
     setCreatedAgreementId(null);
+    setSelectedBranchId(branchId === "global" ? "" : branchId);
     resetWorkflow();
   };
 
@@ -181,9 +192,10 @@ export function SignAgreementDialog({
     }
   }, [signingParty, selectedClient, selectedStaff, clients, staff]);
 
-  const isLoading = typesLoading || templatesLoading || clientsLoading || staffLoading;
+  const isLoading = typesLoading || templatesLoading || clientsLoading || staffLoading || branchesLoading;
 
-  const canProceedToStep2 = title && selectedType && signerName && signedDate;
+  const canProceedToStep2 = title && selectedType && signerName && signedDate && 
+    (isGlobalContext ? selectedBranchId : true);
   const canComplete = canProceedToStep2;
 
   return (
@@ -212,6 +224,35 @@ export function SignAgreementDialog({
             </TabsList>
 
             <TabsContent value="step1" className="space-y-4 py-4">
+              {isGlobalContext && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Please select a branch to create this agreement for.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isGlobalContext && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Branch <span className="text-red-500">*</span>
+                  </label>
+                  <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a branch" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {branches?.map((branch) => (
+                        <SelectItem key={branch.id} value={branch.id}>
+                          {branch.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label htmlFor="title" className="text-sm font-medium">
                   Agreement Title <span className="text-red-500">*</span>
