@@ -10,7 +10,7 @@ export const useClients = (branchId?: string) => {
   return useQuery({
     queryKey: ['clients', branchId],
     queryFn: async () => {
-      let query = supabase.from('clients').select('id, first_name, last_name');
+      let query = supabase.from('clients').select('id, first_name, last_name, auth_user_id');
       if (branchId && branchId !== 'global') {
         query = query.eq('branch_id', branchId);
       }
@@ -25,7 +25,7 @@ export const useStaff = (branchId?: string) => {
   return useQuery({
     queryKey: ['staff', branchId],
     queryFn: async () => {
-      let query = supabase.from('staff').select('id, first_name, last_name');
+      let query = supabase.from('staff').select('id, first_name, last_name, auth_user_id');
       if (branchId && branchId !== 'global') {
         query = query.eq('branch_id', branchId);
       }

@@ -87,6 +87,22 @@ export function SignAgreementDialog({
     }
     
     try {
+      // Map selected client/staff IDs to their auth_user_ids
+      let clientAuthUserId = null;
+      let staffAuthUserId = null;
+      
+      if (signingParty === "client" && selectedClient && clients) {
+        const client = clients.find(c => c.id === selectedClient);
+        clientAuthUserId = client?.auth_user_id || null;
+        console.log('[SignAgreementDialog] Client mapping:', { selectedClient, clientAuthUserId });
+      }
+      
+      if (signingParty === "staff" && selectedStaff && staff) {
+        const staffMember = staff.find(s => s.id === selectedStaff);
+        staffAuthUserId = staffMember?.auth_user_id || null;
+        console.log('[SignAgreementDialog] Staff mapping:', { selectedStaff, staffAuthUserId });
+      }
+      
       // Create the agreement with Pending status initially
       const agreementData = {
         title,
@@ -95,8 +111,8 @@ export function SignAgreementDialog({
         type_id: selectedType,
         status: "Pending" as const,
         signed_by_name: signerName,
-        signed_by_client_id: signingParty === "client" ? selectedClient || null : null,
-        signed_by_staff_id: signingParty === "staff" ? selectedStaff || null : null,
+        signed_by_client_id: clientAuthUserId,
+        signed_by_staff_id: staffAuthUserId,
         signing_party: signingParty,
         signed_at: signedDate.toISOString(),
         digital_signature: null, // Will be updated in final step
