@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { format } from "date-fns";
+import { format, parseISO, isValid } from "date-fns";
 import { 
   CreditCard, Clock, Plus, PoundSterling, AlertTriangle, 
   Eye, Edit, Send, Check, X, FileText, Download 
@@ -35,6 +35,19 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<EnhancedClientBilling | null>(null);
+
+  // Safe date formatter to handle invalid dates
+  const formatDateSafe = (dateInput: string | Date | null | undefined, formatString: string = 'dd/MM/yyyy'): string => {
+    if (!dateInput) return 'N/A';
+    try {
+      const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
+      if (!isValid(date)) return 'N/A';
+      return format(date, formatString);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'N/A';
+    }
+  };
 
   const { data: billingItems = [], isLoading } = useEnhancedClientBilling(clientId);
   const { data: uninvoicedBookings = [] } = useUninvoicedBookings(branchId);
@@ -106,9 +119,9 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
       .filter(item => item.status !== 'paid' && item.status !== 'cancelled')
       .reduce((sum, item) => {
         const subtotal = item.line_items?.reduce((lineSum, lineItem) => 
-          lineSum + (lineItem.quantity * lineItem.unit_price), 0) || item.amount;
+          lineSum + ((lineItem.quantity || 0) * (lineItem.unit_price || 0)), 0) || (item.amount || 0);
         const discounts = item.line_items?.reduce((discSum, lineItem) => 
-          discSum + lineItem.discount_amount, 0) || 0;
+          discSum + (lineItem.discount_amount || 0), 0) || 0;
         const taxAmount = subtotal * ((item.tax_amount || 0) / 100);
         return sum + (subtotal - discounts + taxAmount);
       }, 0);
@@ -119,9 +132,9 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
       .filter(item => item.status === 'paid')
       .reduce((sum, item) => {
         const subtotal = item.line_items?.reduce((lineSum, lineItem) => 
-          lineSum + (lineItem.quantity * lineItem.unit_price), 0) || item.amount;
+          lineSum + ((lineItem.quantity || 0) * (lineItem.unit_price || 0)), 0) || (item.amount || 0);
         const discounts = item.line_items?.reduce((discSum, lineItem) => 
-          discSum + lineItem.discount_amount, 0) || 0;
+          discSum + (lineItem.discount_amount || 0), 0) || 0;
         const taxAmount = subtotal * ((item.tax_amount || 0) / 100);
         return sum + (subtotal - discounts + taxAmount);
       }, 0);
@@ -219,9 +232,9 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                 <div className="space-y-4">
                   {billingItems.map((invoice) => {
                     const subtotal = invoice.line_items?.reduce((sum, item) => 
-                      sum + (item.quantity * item.unit_price), 0) || invoice.amount;
+                      sum + ((item.quantity || 0) * (item.unit_price || 0)), 0) || (invoice.amount || 0);
                     const discounts = invoice.line_items?.reduce((sum, item) => 
-                      sum + item.discount_amount, 0) || 0;
+                      sum + (item.discount_amount || 0), 0) || 0;
                     const taxAmount = subtotal * ((invoice.tax_amount || 0) / 100);
                     const total = subtotal - discounts + taxAmount;
 
@@ -253,21 +266,21 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                               </div>
                               <div className="flex items-center gap-1">
                                 <Clock className="h-4 w-4" />
-                                <span>Due: {format(new Date(invoice.due_date), 'dd/MM/yyyy')}</span>
+                                <span>Due: {formatDateSafe(invoice.due_date)}</span>
                               </div>
                               {invoice.service_provided_date && (
                                 <div className="text-xs">
-                                  Service: {format(new Date(invoice.service_provided_date), 'dd/MM/yyyy')}
+                                  Service: {formatDateSafe(invoice.service_provided_date)}
                                 </div>
                               )}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>Created: {format(new Date(invoice.invoice_date), 'dd/MM/yyyy')}</span>
+                              <span>Created: {formatDateSafe(invoice.invoice_date)}</span>
                               {invoice.sent_date && (
-                                <span>• Sent: {format(new Date(invoice.sent_date), 'dd/MM/yyyy')}</span>
+                                <span>• Sent: {formatDateSafe(invoice.sent_date)}</span>
                               )}
                               {invoice.paid_date && (
-                                <span>• Paid: {format(new Date(invoice.paid_date), 'dd/MM/yyyy')}</span>
+                                <span>• Paid: {formatDateSafe(invoice.paid_date)}</span>
                               )}
                             </div>
                           </div>
@@ -319,10 +332,10 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                         <div>
                           <p className="font-medium">Payment for Invoice #{invoice.invoice_number}</p>
                           <p className="text-sm text-gray-600">
-                            {formatCurrency(payment.payment_amount)} via {payment.payment_method}
+                            {formatCurrency(payment.payment_amount || 0)} via {payment.payment_method}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {format(new Date(payment.payment_date), 'dd/MM/yyyy')}
+                            {formatDateSafe(payment.payment_date)}
                             {payment.transaction_id && ` • Ref: ${payment.transaction_id}`}
                           </p>
                         </div>
