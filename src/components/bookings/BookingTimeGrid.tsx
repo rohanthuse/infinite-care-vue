@@ -210,9 +210,17 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   const isBookingOnDate = (booking: Booking, checkDate: Date) => {
     if (!booking.date) return false;
     try {
-      const bookingDate = new Date(booking.date);
+      // Use parseISO for consistent local date parsing
+      const bookingDate = parseISO(booking.date);
       if (isNaN(bookingDate.getTime())) return false;
-      return isSameDay(bookingDate, checkDate);
+      const result = isSameDay(bookingDate, checkDate);
+      
+      // Dev-only logging for verification
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[isBookingOnDate] ${booking.date} vs ${format(checkDate, 'yyyy-MM-dd')} => ${result}`);
+      }
+      
+      return result;
     } catch (error) {
       console.error("Error parsing booking date:", booking.date, error);
       return false;
