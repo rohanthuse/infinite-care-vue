@@ -64,7 +64,9 @@ const RoutingErrorFallback = () => (
 
 // Inner app component that uses auth context
 const AppContent = () => {
-  const { loading, error } = useAuth();
+  const { loading, error, user } = useAuth();
+
+  console.log('[App] Auth state:', { loading, error: !!error, user: !!user, pathname: window.location.pathname });
 
   // Show loading screen only for protected routes, not public routes
   const isPublicRoute = [
@@ -83,7 +85,10 @@ const AppContent = () => {
   window.location.pathname.includes('/login') ||
   window.location.pathname.startsWith('/shared/client/');
 
+  console.log('[App] Route check:', { isPublicRoute, shouldShowLoading: loading && !isPublicRoute });
+
   if (loading && !isPublicRoute) {
+    console.log('[App] Showing loading screen for protected route');
     return <LoadingScreen />;
   }
 

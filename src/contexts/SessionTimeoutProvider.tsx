@@ -141,6 +141,7 @@ export const SessionTimeoutProvider: React.FC<SessionTimeoutProviderProps> = ({
 
   // Only track activity for authenticated users
   useEffect(() => {
+    console.log('[SessionTimeout] User state changed:', { user: !!user });
     if (!user) {
       setIsActive(false);
       if (warningToastId) {
@@ -152,8 +153,9 @@ export const SessionTimeoutProvider: React.FC<SessionTimeoutProviderProps> = ({
     }
   }, [user, warningToastId]);
 
-  // Don't render timeout tracking for unauthenticated users
+  // Don't render timeout tracking for unauthenticated users - but don't interfere with initial login flow
   if (!user) {
+    console.log('[SessionTimeout] No user, rendering children without timeout tracking');
     return <>{children}</>;
   }
 

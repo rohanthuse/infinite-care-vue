@@ -1,5 +1,6 @@
 
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
@@ -7,8 +8,50 @@ import Testimonials from "@/components/Testimonials";
 import CallToAction from "@/components/CallToAction";
 import Footer from "@/components/Footer";
 import { DevTenantSwitcher } from "@/components/system/DevTenantSwitcher";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
+
+  // Redirect authenticated users to their appropriate dashboard
+  useEffect(() => {
+    console.log('[Index] Auth state check:', { user: !!user, authLoading, roleLoading, userRole });
+    
+    if (authLoading || roleLoading) {
+      console.log('[Index] Still loading, waiting...');
+      return;
+    }
+
+    if (user && userRole) {
+      console.log('[Index] User authenticated, redirecting based on role:', userRole.role);
+      
+      // Redirect based on user role
+      switch (userRole.role) {
+        case 'super_admin':
+          console.log('[Index] Redirecting super admin to system dashboard');
+          navigate('/system-dashboard', { replace: true });
+          break;
+        case 'branch_admin':
+        case 'carer':
+        case 'client':
+          // For tenant users, we'll need to determine their organization
+          // For now, redirect to login to let them choose their organization
+          console.log('[Index] Redirecting tenant user to login');
+          navigate('/login', { replace: true });
+          break;
+        default:
+          console.log('[Index] Unknown role, staying on landing page');
+      }
+    } else if (user && !userRole) {
+      console.log('[Index] User authenticated but no role found');
+    } else {
+      console.log('[Index] User not authenticated, showing landing page');
+    }
+  }, [user, userRole, authLoading, roleLoading, navigate]);
+
   useEffect(() => {
     // Intersection Observer for animations
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {
