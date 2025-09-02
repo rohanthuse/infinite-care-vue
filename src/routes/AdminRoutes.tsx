@@ -87,8 +87,9 @@ const BranchAdminRedirector = () => {
 
 const RequireAdminAuth = () => {
   const { session, loading } = useAuth();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -96,7 +97,8 @@ const RequireAdminAuth = () => {
     );
   }
 
-  if (!session) {
+  if (!session || !userRole || !['super_admin', 'branch_admin'].includes(userRole.role)) {
+    console.log('[RequireAdminAuth] Access denied, redirecting to home');
     return <Navigate to="/" replace />;
   }
 

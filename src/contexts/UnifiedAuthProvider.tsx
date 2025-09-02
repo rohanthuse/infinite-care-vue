@@ -76,10 +76,10 @@ export const UnifiedAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
           setUser(session?.user ?? null);
           setError(null);
           
-          // Only set loading to false after initial session check
-          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-            setLoading(false);
-          }
+      // Set loading to false for relevant auth events
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+        setLoading(false);
+      }
         }
       }
     );

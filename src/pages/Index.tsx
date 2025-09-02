@@ -1,5 +1,9 @@
 
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/UnifiedAuthProvider";
+import { useUserRole } from "@/hooks/useUserRole";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Features from "@/components/Features";
@@ -9,6 +13,47 @@ import Footer from "@/components/Footer";
 import { DevTenantSwitcher } from "@/components/system/DevTenantSwitcher";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
+
+  // Handle authenticated user redirects
+  useEffect(() => {
+    if (authLoading || roleLoading) return;
+
+    if (user && userRole) {
+      console.log('[Index] Authenticated user detected:', userRole.role);
+      
+      // Redirect authenticated users to appropriate dashboard
+      if (userRole.role === 'super_admin') {
+        console.log('[Index] Redirecting super admin to dashboard');
+        navigate('/dashboard', { replace: true });
+      } else if (userRole.role === 'branch_admin') {
+        console.log('[Index] Redirecting branch admin to dashboard');
+        navigate('/dashboard', { replace: true });
+      } else if (userRole.role === 'carer') {
+        console.log('[Index] Redirecting carer to carer dashboard');
+        // Get tenant slug if available
+        const tenantSlug = localStorage.getItem('dev-tenant') || 'demo';
+        navigate(`/${tenantSlug}/carer-dashboard`, { replace: true });
+      } else if (userRole.role === 'client') {
+        console.log('[Index] Redirecting client to client dashboard');
+        // Get tenant slug if available
+        const tenantSlug = localStorage.getItem('dev-tenant') || 'demo';
+        navigate(`/${tenantSlug}/client-dashboard`, { replace: true });
+      }
+    }
+  }, [user, userRole, authLoading, roleLoading, navigate]);
+
+  // Show loading screen while checking authentication
+  if (authLoading || (user && roleLoading)) {
+    return <LoadingScreen />;
+  }
+
+  // Only show landing page for unauthenticated users
+  if (user && userRole) {
+    return <LoadingScreen />; // This should not be reached due to redirect above
+  }
   useEffect(() => {
     // Intersection Observer for animations
     const handleIntersection = (entries: IntersectionObserverEntry[]) => {

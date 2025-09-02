@@ -139,21 +139,29 @@ export const SessionTimeoutProvider: React.FC<SessionTimeoutProviderProps> = ({
     });
   }, [resetTimer, warningToastId]);
 
-  // Only track activity for authenticated users
+  // Only track activity for authenticated users, but don't interfere with initial auth
   useEffect(() => {
+    // Don't interfere with initial authentication or login process
+    const currentPath = window.location.pathname;
+    const isAuthPage = currentPath === '/' || currentPath.includes('/login') || currentPath === '/dashboard';
+    
     if (!user) {
       setIsActive(false);
       if (warningToastId) {
         toast.dismiss(warningToastId);
         setWarningToastId(null);
       }
-    } else {
+    } else if (!isAuthPage || currentPath === '/dashboard') {
+      // Only start tracking for authenticated users who are past the auth flow
       setIsActive(true);
     }
   }, [user, warningToastId]);
 
-  // Don't render timeout tracking for unauthenticated users
-  if (!user) {
+  // Don't render timeout tracking for unauthenticated users or during auth flow
+  const currentPath = window.location.pathname;
+  const isAuthFlow = currentPath === '/' || currentPath.includes('/login');
+  
+  if (!user || (isAuthFlow && currentPath !== '/dashboard')) {
     return <>{children}</>;
   }
 
