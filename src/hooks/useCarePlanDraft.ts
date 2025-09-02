@@ -127,7 +127,6 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         .from('client_care_plans')
         .select('id, auto_save_data, last_step_completed, completion_percentage, status')
         .eq('client_id', clientId)
-        .eq('status', 'draft')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -155,7 +154,6 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         .from('client_care_plans')
         .select('auto_save_data, last_step_completed, completion_percentage, status')
         .eq('id', effectiveCarePlanId)
-        .eq('status', 'draft')
         .maybeSingle();
 
       if (error || !data) return null;
@@ -182,7 +180,6 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
       const draftPayload: any = {
         client_id: clientId,
         title: formData.title || `Draft Care Plan for Client`,
-        status: 'draft',
         auto_save_data: formData,
         last_step_completed: currentStep,
         completion_percentage: completionPercentage,
@@ -191,6 +188,11 @@ export function useCarePlanDraft(clientId: string, carePlanId?: string) {
         care_plan_type: formData.care_plan_type || 'standard',
         provider_name: formData.provider_name || 'Not Assigned',
       };
+
+      // Only set status to 'draft' for new care plans, preserve existing status for updates
+      if (!effectiveCarePlanId) {
+        draftPayload.status = 'draft';
+      }
 
       // Use existing draft ID if available, otherwise create new
       const targetCarePlanId = effectiveCarePlanId;
