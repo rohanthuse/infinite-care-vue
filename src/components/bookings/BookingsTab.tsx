@@ -269,6 +269,15 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
               // Create new booking with pre-filled staff and time (preserve exact 30-minute slot)
               handleContextMenuBooking(selectedDate, timeSlot, undefined, staffId);
             }}
+            onDateChange={setSelectedDate}
+            clients={clients}
+            carers={carers}
+            selectedClient={selectedClientId}
+            selectedCarer={selectedCarerId}
+            selectedStatus={statusFilter}
+            onClientChange={setSelectedClientId}
+            onCarerChange={setSelectedCarerId}
+            onStatusChange={setStatusFilter}
           />
         </TabsContent>
       </Tabs>

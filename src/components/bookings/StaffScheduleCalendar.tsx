@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { format, isToday, startOfDay, addHours, isSameHour } from "date-fns";
-import { Search, Filter, Users, Clock, MapPin, PoundSterling } from "lucide-react";
+import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests } from "@/hooks/useLeaveManagement";
-import { Booking } from "./BookingTimeGrid";
+import { DateNavigation } from "./DateNavigation";
+import { BookingFilters } from "./BookingFilters";
+import { Booking, Client, Carer } from "./BookingTimeGrid";
 
 interface StaffScheduleCalendarProps {
   date: Date;
@@ -17,6 +19,15 @@ interface StaffScheduleCalendarProps {
   branchId?: string;
   onCreateBooking?: (staffId: string, timeSlot: string) => void;
   onViewBooking?: (booking: Booking) => void;
+  onDateChange?: (date: Date) => void;
+  clients?: Client[];
+  carers?: Carer[];
+  selectedClient?: string;
+  selectedCarer?: string;
+  selectedStatus?: string;
+  onClientChange?: (clientId: string) => void;
+  onCarerChange?: (carerId: string) => void;
+  onStatusChange?: (status: string) => void;
 }
 
 interface StaffStatus {
@@ -40,7 +51,16 @@ export function StaffScheduleCalendar({
   bookings, 
   branchId,
   onCreateBooking,
-  onViewBooking
+  onViewBooking,
+  onDateChange,
+  clients = [],
+  carers = [],
+  selectedClient,
+  selectedCarer,
+  selectedStatus,
+  onClientChange,
+  onCarerChange,
+  onStatusChange
 }: StaffScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -49,6 +69,32 @@ export function StaffScheduleCalendar({
     travelTime: true,
     assignedOnly: false,
   });
+
+  // Export functionality
+  const handleExport = () => {
+    const csvData = staffSchedule.map(staff => ({
+      name: staff.name,
+      specialization: staff.specialization || '',
+      totalHours: staff.totalHours,
+      contractedHours: staff.contractedHours,
+      utilization: ((staff.totalHours / staff.contractedHours) * 100).toFixed(1) + '%'
+    }));
+
+    const csvContent = [
+      ['Name', 'Specialization', 'Scheduled Hours', 'Contracted Hours', 'Utilization'],
+      ...csvData.map(row => [row.name, row.specialization, row.totalHours, row.contractedHours, row.utilization])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `staff-schedule-${format(date, 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   // Layout constants for consistent width
   const LEFT_COL_WIDTH = 200; // Staff info column width
@@ -155,19 +201,38 @@ export function StaffScheduleCalendar({
         specialization: member.specialization,
         schedule,
         totalHours,
-        contractedHours: 8 // Default - could be fetched from staff data
+        contractedHours: 8 // TODO: Get from staff profile when available
       };
     });
 
+    // Apply filters
+    let filteredData = scheduleData;
+
     // Filter based on search term
     if (searchTerm) {
-      return scheduleData.filter(staff => 
+      filteredData = filteredData.filter(staff => 
         staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (staff.specialization && staff.specialization.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
-    return scheduleData;
+    // Apply functional filters
+    if (!filters.showRuns) {
+      // Hide staff with no bookings (runs)
+      filteredData = filteredData.filter(staff => staff.totalHours > 0);
+    }
+
+    if (filters.maxHours) {
+      // Show only staff who haven't exceeded contracted hours
+      filteredData = filteredData.filter(staff => staff.totalHours <= staff.contractedHours);
+    }
+
+    if (filters.assignedOnly) {
+      // Show only staff with assignments
+      filteredData = filteredData.filter(staff => staff.totalHours > 0);
+    }
+
+    return filteredData;
   }, [staff, bookings, date, leaveRequests, timeSlots, searchTerm]);
 
   const getStatusColor = (status: StaffStatus) => {
@@ -287,58 +352,91 @@ export function StaffScheduleCalendar({
   return (
     <TooltipProvider>
       <div className="space-y-4">
-      {/* Header with search and filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search staff..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="showRuns" 
-                checked={filters.showRuns}
-                onCheckedChange={(checked) => 
-                  setFilters(prev => ({ ...prev, showRuns: checked as boolean }))
-                }
-              />
-              <label htmlFor="showRuns" className="text-sm">Show Runs</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="maxHours" 
-                checked={filters.maxHours}
-                onCheckedChange={(checked) => 
-                  setFilters(prev => ({ ...prev, maxHours: checked as boolean }))
-                }
-              />
-              <label htmlFor="maxHours" className="text-sm">Max Hours</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="travelTime" 
-                checked={filters.travelTime}
-                onCheckedChange={(checked) => 
-                  setFilters(prev => ({ ...prev, travelTime: checked as boolean }))
-                }
-              />
-              <label htmlFor="travelTime" className="text-sm">Travel Time</label>
-            </div>
-          </div>
-        </div>
+        {/* Date Navigation */}
+        {onDateChange && (
+          <DateNavigation
+            currentDate={date}
+            onDateChange={onDateChange}
+            viewType="daily"
+            onViewTypeChange={() => {}} // Not used in staff schedule
+          />
+        )}
 
-        <div className="text-sm text-muted-foreground">
-          {format(date, 'EEEE, MMMM d, yyyy')}
+        {/* Booking Filters */}
+        <BookingFilters
+          statusFilter={selectedStatus || "all"}
+          onStatusFilterChange={onStatusChange || (() => {})}
+          selectedClientId={selectedClient || "all-clients"}
+          onClientChange={onClientChange || (() => {})}
+          selectedCarerId={selectedCarer || "all-carers"}
+          onCarerChange={onCarerChange || (() => {})}
+          clients={clients || []}
+          carers={carers || []}
+        />
+
+        {/* Header with search and filters */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search staff..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="showRuns" 
+                  checked={filters.showRuns}
+                  onCheckedChange={(checked) => 
+                    setFilters(prev => ({ ...prev, showRuns: checked as boolean }))
+                  }
+                />
+                <label htmlFor="showRuns" className="text-sm">Show All Staff</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="maxHours" 
+                  checked={filters.maxHours}
+                  onCheckedChange={(checked) => 
+                    setFilters(prev => ({ ...prev, maxHours: checked as boolean }))
+                  }
+                />
+                <label htmlFor="maxHours" className="text-sm">Within Max Hours</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="assignedOnly" 
+                  checked={filters.assignedOnly}
+                  onCheckedChange={(checked) => 
+                    setFilters(prev => ({ ...prev, assignedOnly: checked as boolean }))
+                  }
+                />
+                <label htmlFor="assignedOnly" className="text-sm">Assigned Only</label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              {format(date, 'EEEE, MMMM d, yyyy')}
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Status Legend */}
       <Card>
@@ -412,6 +510,9 @@ export function StaffScheduleCalendar({
                 )}
                 <div className="text-xs text-muted-foreground mt-1">
                   {staffMember.totalHours}h / {staffMember.contractedHours}h
+                  <span className={`ml-1 ${staffMember.totalHours > staffMember.contractedHours ? 'text-amber-600' : ''}`}>
+                    ({((staffMember.totalHours / staffMember.contractedHours) * 100).toFixed(0)}%)
+                  </span>
                 </div>
               </div>
 
