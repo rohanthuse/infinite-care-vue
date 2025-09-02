@@ -41,6 +41,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   // Get initial values from URL parameters
   const dateParam = searchParams.get('date');
   const clientParam = searchParams.get('client');
+  const focusBookingId = searchParams.get('focusBookingId');
   
   // Parse date parameter or default to today
   const initialDate = useMemo(() => {
@@ -61,6 +62,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [activeView, setActiveView] = useState<string>("calendar");
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
+  const [highlightedBookingId, setHighlightedBookingId] = useState<string | null>(null);
 
   // Update URL parameters when filters change
   useEffect(() => {
@@ -85,7 +87,35 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   const { inspectCache } = useBookingDebug(branchId, bookings);
-  
+
+  // Handle booking highlighting when focusBookingId is provided
+  useEffect(() => {
+    if (focusBookingId && bookings.length > 0) {
+      const targetBooking = bookings.find(b => b.id === focusBookingId);
+      if (targetBooking) {
+        // Set the date to match the booking's date
+        const bookingDate = new Date(targetBooking.startTime + ' ' + targetBooking.date);
+        if (bookingDate.toDateString() !== selectedDate.toDateString()) {
+          setSelectedDate(bookingDate);
+        }
+        
+        // Set highlighting
+        setHighlightedBookingId(focusBookingId);
+        
+        // Remove focus parameter from URL and clear highlight after 3 seconds
+        setTimeout(() => {
+          setHighlightedBookingId(null);
+          const params = new URLSearchParams(window.location.search);
+          params.delete('focusBookingId');
+          const newUrl = params.toString() ? 
+            `${window.location.pathname}?${params.toString()}` : 
+            window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        }, 3000);
+      }
+    }
+  }, [focusBookingId, bookings, selectedDate]);
+
   const {
     newBookingDialogOpen,
     setNewBookingDialogOpen,
@@ -244,6 +274,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             onEditBooking={handleEditBooking}
             onRequestViewTypeChange={setViewType}
             isCheckingOverlap={isCheckingOverlap}
+            highlightedBookingId={highlightedBookingId}
           />
         </TabsContent>
         

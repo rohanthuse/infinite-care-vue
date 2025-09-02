@@ -74,6 +74,7 @@ interface BookingTimeGridProps {
   onRequestViewTypeChange?: (viewType: "daily" | "weekly" | "monthly") => void;
   isUpdatingBooking?: boolean;
   isCheckingOverlap?: boolean;
+  highlightedBookingId?: string | null;
 }
 
 interface PendingBookingMove {
@@ -100,6 +101,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   onRequestViewTypeChange,
   isUpdatingBooking,
   isCheckingOverlap = false,
+  highlightedBookingId = null,
 }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -514,6 +516,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               index={index}
                               onEditBooking={handleEditBooking}
                               onViewBooking={onViewBooking}
+                              isHighlighted={booking.id === highlightedBookingId}
                             />
                           );
                         })}
@@ -576,6 +579,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                                     index={index}
                                     onEditBooking={handleEditBooking}
                                     onViewBooking={onViewBooking}
+                                    isHighlighted={booking.id === highlightedBookingId}
                                   />
                                 );
                               })}

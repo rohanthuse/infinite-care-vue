@@ -15,6 +15,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 
 interface AppointmentsTabProps {
   clientId: string;
@@ -28,7 +29,9 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const { data: bookings = [], isLoading, refetch } = useClientBookings(clientId);
   const params = useParams();
   const branchId = params.id;
+  const branchName = params.branchName;
   const queryClient = useQueryClient();
+  const { navigateToBookings } = useBookingNavigation();
   
   // Get carers and services for the booking dialog
   const { data: carers = [] } = useBranchCarers(branchId);
@@ -75,6 +78,9 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       const client = clientResponse.data;
       console.log('[handleCreateBooking] Using client data:', client);
 
+      // Track created bookings for navigation
+      let firstCreatedBooking = null;
+      
       // Create bookings for each schedule and each day within the date range
       for (const schedule of bookingData.schedules) {
         const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -118,7 +124,12 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
             };
 
             console.log('[handleCreateBooking] Creating booking:', bookingInput);
-            await createBookingMutation.mutateAsync(bookingInput);
+            const createdBooking = await createBookingMutation.mutateAsync(bookingInput);
+            
+            // Store the first created booking for navigation
+            if (!firstCreatedBooking) {
+              firstCreatedBooking = createdBooking;
+            }
           }
         }
       }
@@ -130,6 +141,24 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       
       // Also invalidate branch bookings cache so it shows up in the calendar
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", client.branch_id] });
+      
+      // Navigate to bookings tab with the first created booking highlighted
+      if (firstCreatedBooking && branchId && branchName) {
+        const bookingDate = new Date(firstCreatedBooking.start_time);
+        navigateToBookings({
+          branchId,
+          branchName: decodeURIComponent(branchName),
+          date: bookingDate,
+          clientId: actualClientId
+        });
+        
+        // Add focus parameter to highlight the booking
+        setTimeout(() => {
+          const params = new URLSearchParams(window.location.search);
+          params.set('focusBookingId', firstCreatedBooking.id);
+          window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+        }, 100);
+      }
       
       console.log('[handleCreateBooking] Booking creation completed');
     } catch (error) {

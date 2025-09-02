@@ -22,6 +22,7 @@ interface BookingEntryProps {
   index: number;
   onEditBooking?: (booking: Booking) => void;
   onViewBooking?: (booking: Booking) => void;
+  isHighlighted?: boolean;
 }
 
 export const BookingEntry: React.FC<BookingEntryProps> = ({
@@ -33,7 +34,8 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   position,
   index,
   onEditBooking,
-  onViewBooking
+  onViewBooking,
+  isHighlighted = false
 }) => {
   // Determine background color based on status
   const statusColors = {
@@ -47,6 +49,10 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   };
   
   const backgroundColor = statusColors[booking.status];
+  
+  // Apply highlight styles if this booking is highlighted
+  const highlightClasses = isHighlighted ? 
+    "ring-4 ring-amber-400 ring-opacity-75 shadow-lg animate-pulse" : "";
   
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -174,7 +180,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 ref={provided.innerRef}
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
-                className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-move text-xs z-10 ${snapshot.isDragging ? 'opacity-70 shadow-lg' : ''}`}
+                className={`absolute rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-move text-xs z-10 ${snapshot.isDragging ? 'opacity-70 shadow-lg' : ''} ${highlightClasses}`}
                 style={{ 
                   top: `${position.top}px`,
                   height: `${position.height}px`,
@@ -219,7 +225,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <div 
-            className={`absolute top-1.5 bottom-1.5 rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-pointer text-xs z-10`}
+            className={`absolute top-1.5 bottom-1.5 rounded shadow-sm border ${backgroundColor} hover:shadow-md transition-shadow cursor-pointer text-xs z-10 ${highlightClasses}`}
             style={{ 
               left: `${startPos}%`,
               width: `${width}%`,
