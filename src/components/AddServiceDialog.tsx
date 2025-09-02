@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { X, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface AddServiceDialogProps {
   isOpen: boolean;
@@ -44,11 +45,22 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
   const [doubleHanded, setDoubleHanded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { mutate: addService, isPending } = useMutation({
-    mutationFn: async (newService: { title: string; category: string; description: string; double_handed: boolean; }) => {
+    mutationFn: async (newService: { 
+      title: string; 
+      category: string; 
+      description: string; 
+      double_handed: boolean;
+      organization_id?: string;
+    }) => {
+      console.log('[AddServiceDialog] Creating service with data:', newService);
       const { error } = await supabase.from('services').insert([newService]);
-      if (error) throw error;
+      if (error) {
+        console.error('[AddServiceDialog] Error creating service:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -56,6 +68,7 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
         description: `${title} has been added successfully`,
       });
       queryClient.invalidateQueries({ queryKey: ['services'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-services'] });
       // Reset form and close dialog
       setTitle("");
       setCategory("");
@@ -64,6 +77,7 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
       onClose();
     },
     onError: (error) => {
+      console.error('[AddServiceDialog] Service creation failed:', error);
       toast({
         title: "Failed to add service",
         description: error.message,
@@ -83,8 +97,26 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
       });
       return;
     }
+
+    if (!organization?.id) {
+      toast({
+        title: "Organization required",
+        description: "Unable to determine organization context.",
+        variant: "destructive",
+      });
+      return;
+    }
     
-    addService({ title, category, description, double_handed: doubleHanded });
+    const serviceData = {
+      title,
+      category,
+      description,
+      double_handed: doubleHanded,
+      organization_id: organization.id
+    };
+
+    console.log('[AddServiceDialog] Submitting service data:', serviceData);
+    addService(serviceData);
   };
 
   return (
