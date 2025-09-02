@@ -66,11 +66,11 @@ export const useCarerAssignments = () => {
         return [];
       }
 
-      // Get recent events from the branch (last 30 days)
+      // Get recent events assigned to this carer (last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('client_events_logs')
         .select(`
           *,
@@ -80,9 +80,15 @@ export const useCarerAssignments = () => {
           )
         `)
         .eq('branch_id', userRole.branchId)
-        .gte('created_at', thirtyDaysAgo.toISOString())
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      // Filter by assignments - events where this carer is assigned for follow-up, investigation, or is the recorder
+      const staffId = userRole.staffId || userRole.id;
+      query = query.or(`follow_up_assigned_to.eq.${staffId},recorded_by_staff_id.eq.${staffId},investigation_assigned_to.eq.${staffId}`);
+
+      const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(5);
 
       if (error) {
         console.error('Error fetching carer assignments:', error);

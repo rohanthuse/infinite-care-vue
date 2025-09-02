@@ -9,6 +9,7 @@ import {
   Home,
   Users,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,11 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
       name: "My Tasks", 
       path: getCarerMenuItems().find(item => item.name === "Tasks")?.path || "/carer-dashboard/tasks", 
       icon: ClipboardList 
+    },
+    { 
+      name: "My Assignments", 
+      path: getCarerMenuItems().find(item => item.name === "My Assignments")?.path || "/carer-dashboard/my-tasks", 
+      icon: AlertTriangle 
     },
     { 
       name: "Attendance", 

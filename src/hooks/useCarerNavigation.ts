@@ -68,6 +68,11 @@ export const useCarerNavigation = () => {
       icon: "ClipboardList" 
     },
     { 
+      name: "My Assignments", 
+      path: createCarerPath("/my-tasks"), 
+      icon: "AlertTriangle" 
+    },
+    { 
       name: "Messages", 
       path: createCarerPath("/messages"), 
       icon: "MessageCircle" 
