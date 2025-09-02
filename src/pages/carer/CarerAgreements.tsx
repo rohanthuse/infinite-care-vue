@@ -6,16 +6,44 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Download, Eye, FileText, Calendar, User } from 'lucide-react';
 import { useStaffAgreements } from '@/data/hooks/useStaffAgreements';
+import { ViewAgreementDialog } from '@/components/agreements/ViewAgreementDialog';
+import { generatePDF } from '@/utils/pdfGenerator';
+import { Agreement } from '@/types/agreements';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 const CarerAgreements = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   const { data: agreements, isLoading } = useStaffAgreements({
     searchQuery,
     statusFilter: statusFilter === 'all' ? undefined : statusFilter as "Active" | "Pending" | "Expired" | "Terminated"
   });
+
+  const handleViewAgreement = (agreement: Agreement) => {
+    setSelectedAgreement(agreement);
+    setDialogOpen(true);
+  };
+
+  const handleDownloadAgreement = (agreement: Agreement) => {
+    try {
+      const pdfData = {
+        id: agreement.id,
+        title: agreement.title,
+        date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : format(new Date(agreement.created_at), 'dd MMM yyyy'),
+        status: agreement.status,
+        signedBy: agreement.signed_by_name || 'N/A'
+      };
+      generatePDF(pdfData);
+      toast.success('Agreement downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download agreement');
+      console.error('Download error:', error);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -115,11 +143,11 @@ const CarerAgreements = () => {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleViewAgreement(agreement)}>
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadAgreement(agreement)}>
                       <Download className="h-4 w-4 mr-1" />
                       Download
                     </Button>
@@ -143,6 +171,13 @@ const CarerAgreements = () => {
           </Card>
         )}
       </div>
+
+      <ViewAgreementDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        agreement={selectedAgreement}
+        onDownload={handleDownloadAgreement}
+      />
     </div>
   );
 };
