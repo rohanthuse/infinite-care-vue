@@ -38,6 +38,11 @@ export const useClientNavigation = () => {
       icon: "FileText" 
     },
     { 
+      name: "My Agreements", 
+      path: createClientPath("/agreements"), 
+      icon: "FileCheck" 
+    },
+    { 
       name: "Library", 
       path: createClientPath("/library"), 
       icon: "BookOpen" 

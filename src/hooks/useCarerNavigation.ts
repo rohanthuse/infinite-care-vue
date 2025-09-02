@@ -43,6 +43,11 @@ export const useCarerNavigation = () => {
       icon: "FileText" 
     },
     { 
+      name: "My Agreements", 
+      path: createCarerPath("/agreements"), 
+      icon: "FileCheck" 
+    },
+    { 
       name: "Documents", 
       path: createCarerPath("/documents"), 
       icon: "FileText" 
