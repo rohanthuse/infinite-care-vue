@@ -11,6 +11,7 @@ import { generatePDF } from '@/utils/pdfGenerator';
 import { Agreement } from '@/types/agreements';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientAgreements = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,8 +29,29 @@ const ClientAgreements = () => {
     setDialogOpen(true);
   };
 
-  const handleDownloadAgreement = (agreement: Agreement) => {
+  const handleDownloadAgreement = async (agreement: Agreement) => {
     try {
+      // First, try to download the actual stored file if it exists
+      if (agreement.primary_document_id) {
+        const { data: fileData, error: fileError } = await supabase.storage
+          .from('documents')
+          .download(agreement.primary_document_id);
+        
+        if (!fileError && fileData) {
+          const url = URL.createObjectURL(fileData);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${agreement.title}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast.success('Agreement downloaded successfully');
+          return;
+        }
+      }
+      
+      // Fallback to generating PDF
       const pdfData = {
         id: agreement.id,
         title: agreement.title,
@@ -38,10 +60,10 @@ const ClientAgreements = () => {
         signedBy: agreement.signed_by_name || 'N/A'
       };
       generatePDF(pdfData);
-      toast.success('Agreement downloaded successfully');
+      toast.success('Agreement generated and downloaded successfully');
     } catch (error) {
+      console.error('Failed to download agreement:', error);
       toast.error('Failed to download agreement');
-      console.error('Download error:', error);
     }
   };
 
@@ -172,12 +194,12 @@ const ClientAgreements = () => {
         )}
       </div>
 
-      <ViewAgreementDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        agreement={selectedAgreement}
-        onDownload={handleDownloadAgreement}
-      />
+        <ViewAgreementDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          agreement={selectedAgreement}
+          onDownload={handleDownloadAgreement}
+        />
     </div>
   );
 };

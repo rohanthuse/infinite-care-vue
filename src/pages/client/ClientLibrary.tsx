@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { LibraryResourcesList } from "@/components/library/LibraryResourcesList";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
+import { AgreementShortcutCard } from "@/components/agreements/AgreementShortcutCard";
 
 const ClientLibrary = () => {
   const { data: authData } = useSimpleClientAuth();
@@ -26,14 +27,22 @@ const ClientLibrary = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-2xl font-bold">Library Resources</h2>
-        <p className="text-gray-500 mt-1">Browse and access educational and reference materials</p>
+    <div className="space-y-6">
+      {/* Quick Access Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <AgreementShortcutCard />
       </div>
-      
-      <div className="p-4 md:p-6 max-w-full">
-        <LibraryResourcesList branchId={branchId} canDelete={false} showEngagementMetrics={false} />
+
+      {/* Main Library Section */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-2xl font-bold">Library Resources</h2>
+          <p className="text-gray-500 mt-1">Browse and access educational and reference materials</p>
+        </div>
+        
+        <div className="p-4 md:p-6 max-w-full">
+          <LibraryResourcesList branchId={branchId} canDelete={false} showEngagementMetrics={false} />
+        </div>
       </div>
     </div>
   );
