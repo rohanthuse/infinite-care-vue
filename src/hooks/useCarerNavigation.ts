@@ -34,7 +34,7 @@ export const useCarerNavigation = () => {
     },
     { 
       name: "Appointments", 
-      path: createCarerPath("/appointments"), 
+      path: createCarerPath("/bookings"), 
       icon: "CalendarDays" 
     },
     { 

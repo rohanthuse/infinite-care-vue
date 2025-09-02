@@ -19,6 +19,7 @@ const CarerRoutes = () => [
     <Route path="carer-dashboard" element={<CarerDashboard />}>
       <Route index element={<CarerOverview />} />
       <Route path="bookings" element={<CarerMyBookings />} />
+      <Route path="appointments" element={<CarerMyBookings />} />
       <Route path="clients" element={<CarerClients />} />
       <Route path="schedule" element={<CarerSchedule />} />
       <Route path="agreements" element={<CarerAgreements />} />

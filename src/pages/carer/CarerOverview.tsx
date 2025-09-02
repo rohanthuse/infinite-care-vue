@@ -227,7 +227,7 @@ const CarerOverview: React.FC = () => {
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => navigate(createCarerPath('/appointments'))}
+                  onClick={() => navigate(createCarerPath('/bookings'))}
                 >
                   View All Appointments
                 </Button>
