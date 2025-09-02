@@ -5,7 +5,7 @@ import ClientHeader from "@/components/ClientHeader";
 import { 
   Home, Calendar, FileText, 
   CreditCard, User, File, MessageCircle, Star,
-  HelpCircle, BarChart, Activity, AlertTriangle, BookOpen
+  HelpCircle, BarChart, Activity, AlertTriangle, BookOpen, FileSignature
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
@@ -33,6 +33,7 @@ const ClientDashboard = () => {
     { label: "Reviews", icon: Star, path: `/${tenantSlug}/client-dashboard/reviews` },
     { label: "Payments", icon: CreditCard, path: `/${tenantSlug}/client-dashboard/payments` },
     { label: "Documents", icon: File, path: `/${tenantSlug}/client-dashboard/documents` },
+    { label: "Agreements", icon: FileSignature, path: `/${tenantSlug}/client-dashboard/agreements` },
     { label: "Service Reports", icon: BarChart, path: `/${tenantSlug}/client-dashboard/service-reports` },
     { label: "Health Monitoring", icon: Activity, path: `/${tenantSlug}/client-dashboard/health-monitoring` },
     { label: "Messages", icon: MessageCircle, path: `/${tenantSlug}/client-dashboard/messages` },
@@ -64,6 +65,8 @@ const ClientDashboard = () => {
       setPageTitle("Payments");
     } else if (path.includes("/documents")) {
       setPageTitle("Documents");
+    } else if (path.includes("/agreements")) {
+      setPageTitle("My Agreements");
     } else if (path.includes("/service-reports")) {
       setPageTitle("Service Reports");
     } else if (path.includes("/health-monitoring")) {

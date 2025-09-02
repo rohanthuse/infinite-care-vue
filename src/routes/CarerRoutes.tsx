@@ -1,77 +1,33 @@
 
-import { Route, Navigate, Outlet } from "react-router-dom";
-import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { Route } from "react-router-dom";
 import CarerDashboard from "@/pages/CarerDashboard";
 import CarerOverview from "@/pages/carer/CarerOverview";
-import CarerProfile from "@/pages/carer/CarerProfile";
-import CarerSchedule from "@/pages/carer/CarerSchedule";
-import CarerAppointments from "@/pages/carer/CarerAppointments";
-import CarerCarePlans from "@/pages/carer/CarerCarePlans";
-import CarerTasks from "@/pages/carer/CarerTasks";
-import CarerNews2 from "@/pages/carer/CarerNews2";
-import CarerReports from "@/pages/carer/CarerReports";
-import CarerPayments from "@/pages/carer/CarerPayments";
-import CarerTraining from "@/pages/carer/CarerTraining";
+import CarerMyBookings from "@/pages/carer/CarerMyBookings";
 import CarerClients from "@/pages/carer/CarerClients";
-import CarerClientDetail from "@/pages/carer/CarerClientDetail";
-import CarerAttendance from "@/pages/carer/CarerAttendance";
-import CarerDocuments from "@/pages/carer/CarerDocuments";
-import CarerVisitWorkflow from "@/pages/carer/CarerVisitWorkflow";
-import CarerAssignedForms from "@/pages/carer/CarerAssignedForms";
-import CarerFillForm from "@/pages/carer/CarerFillForm";
-import CarerLibrary from "@/pages/carer/CarerLibrary";
-import CarerLeave from "@/pages/carer/CarerLeave";
-import CarerNotifications from "@/pages/carer/CarerNotifications";
+import CarerSchedule from "@/pages/carer/CarerSchedule";
 import CarerMessages from "@/pages/carer/CarerMessages";
+import CarerProfile from "@/pages/carer/CarerProfile";
+import CarerTraining from "@/pages/carer/CarerTraining";
+import CarerDocuments from "@/pages/carer/CarerDocuments";
+import CarerReports from "@/pages/carer/CarerReports";
+import CarerPayroll from "@/pages/carer/CarerPayroll";
+import CarerAgreements from "@/pages/carer/CarerAgreements";
+import { RequireCarerAuth } from "@/components/auth/RequireCarerAuth";
 
-const RequireCarerAuth = () => {
-  const { isAuthenticated, loading } = useCarerAuthSafe();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    // Get tenant slug from current path for redirection
-    const tenantSlug = window.location.pathname.split('/')[1];
-    return <Navigate to={`/${tenantSlug}/carer-login`} replace />;
-  }
-
-  return <Outlet />;
-};
-
-/**
- * CarerRoutes component containing all routes related to the carer dashboard
- * Returns an array of Route elements for consistent usage in App.tsx
- */
 const CarerRoutes = () => [
   <Route key="carer-auth" element={<RequireCarerAuth />}>
     <Route path="carer-dashboard" element={<CarerDashboard />}>
       <Route index element={<CarerOverview />} />
-      <Route path="profile" element={<CarerProfile />} />
-      <Route path="schedule" element={<CarerSchedule />} />
-      <Route path="appointments" element={<CarerAppointments />} />
-      <Route path="careplans" element={<CarerCarePlans />} />
-      <Route path="forms" element={<CarerAssignedForms />} />
-      <Route path="forms/:formId" element={<CarerFillForm />} />
-      <Route path="library" element={<CarerLibrary />} />
-      <Route path="tasks" element={<CarerTasks />} />
-      <Route path="news2" element={<CarerNews2 />} />
-      <Route path="reports" element={<CarerReports />} />
-      <Route path="payments" element={<CarerPayments />} />
-      <Route path="training" element={<CarerTraining />} />
+      <Route path="bookings" element={<CarerMyBookings />} />
       <Route path="clients" element={<CarerClients />} />
-      <Route path="clients/:clientId" element={<CarerClientDetail />} />
-      <Route path="attendance" element={<CarerAttendance />} />
-      <Route path="documents" element={<CarerDocuments />} />
-      <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
+      <Route path="schedule" element={<CarerSchedule />} />
+      <Route path="agreements" element={<CarerAgreements />} />
       <Route path="messages" element={<CarerMessages />} />
-      <Route path="notifications" element={<CarerNotifications />} />
-      <Route path="leave" element={<CarerLeave />} />
+      <Route path="training" element={<CarerTraining />} />
+      <Route path="documents" element={<CarerDocuments />} />
+      <Route path="reports" element={<CarerReports />} />
+      <Route path="payroll" element={<CarerPayroll />} />
+      <Route path="profile" element={<CarerProfile />} />
     </Route>
   </Route>
 ];

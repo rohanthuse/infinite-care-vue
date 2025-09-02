@@ -16,6 +16,7 @@ import {
   GraduationCap,
   Users,
   LogOut,
+  FileSignature,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,8 +32,15 @@ const CarerDashboard: React.FC = () => {
   const { data: carerContext } = useCarerContext();
   const { getCarerMenuItems, createCarerPath, tenantSlug } = useCarerNavigation();
 
-  // Get tenant-aware menu items
-  const menuItems = getCarerMenuItems().map(item => ({
+  // Get tenant-aware menu items with agreements added
+  const menuItems = [
+    ...getCarerMenuItems(),
+    { 
+      name: "Agreements", 
+      path: createCarerPath("/agreements"), 
+      icon: "FileSignature"
+    }
+  ].map(item => ({
     ...item,
     icon: {
       "Home": Home,
@@ -45,7 +53,8 @@ const CarerDashboard: React.FC = () => {
       "FileBarChart": FileBarChart,
       "Wallet": Wallet,
       "GraduationCap": GraduationCap,
-      "Users": Users
+      "Users": Users,
+      "FileSignature": FileSignature
     }[item.icon] || Home
   }));
 

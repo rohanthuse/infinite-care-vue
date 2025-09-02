@@ -17,6 +17,7 @@ import ClientEventsLogs from "@/pages/client/ClientEventsLogs";
 import ClientFillForm from "@/pages/client/ClientFillForm";
 import ClientLibrary from "@/pages/client/ClientLibrary";
 import ClientTasks from "@/pages/client/ClientTasks";
+import ClientAgreements from "@/pages/client/ClientAgreements";
 import { Suspense } from "react";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 
@@ -80,6 +81,7 @@ const ClientRoutes = () => [
       <Route path="reviews" element={<ClientReviews />} />
       <Route path="payments" element={<ClientPayments />} />
       <Route path="documents" element={<ClientDocuments />} />
+      <Route path="agreements" element={<ClientAgreements />} />
       <Route path="service-reports" element={<ClientServiceReports />} />
       <Route path="health-monitoring" element={<ClientHealthMonitoring />} />
       <Route path="messages" element={<ClientMessages />} />
