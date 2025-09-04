@@ -77,7 +77,7 @@ export const CarePlanDetail: React.FC<CarePlanDetailProps> = ({
   const handleEdit = () => {
     if (branchId && branchName && carePlan.patientId) {
       const encodedBranchName = encodeURIComponent(branchName);
-      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}/clients/${carePlan.patientId}/edit`);
+      navigate(`/branch-dashboard/${branchId}/${encodedBranchName}?tab=care&editCarePlan=${carePlan.id}&clientId=${carePlan.patientId}`);
     } else {
       console.error('Missing navigation parameters:', { branchId, branchName, patientId: carePlan.patientId });
       toast.error("Unable to navigate to edit page. Missing required parameters.");
