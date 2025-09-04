@@ -1,8 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
-import { format, addDays, subDays, startOfWeek, endOfWeek, isValid, addMonths, subMonths } from "date-fns";
+import { format, addDays, subDays, startOfWeek, endOfWeek, isValid, addMonths, subMonths, parse } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface DateNavigationProps {
   currentDate: Date;
@@ -19,6 +23,48 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
 }) => {
   // Ensure we have a valid date
   const validDate = isValid(currentDate) ? currentDate : new Date();
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+
+  // Parse flexible date input
+  const parseFlexibleDate = (input: string): Date | null => {
+    if (!input.trim()) return null;
+    
+    // Try various date formats
+    const formats = [
+      'yyyy-MM-dd',
+      'dd/MM/yyyy',
+      'MM/dd/yyyy',
+      'dd-MM-yyyy',
+      'dd MMM yyyy',
+      'MMM dd yyyy',
+      'dd/MM/yy',
+      'MM/dd/yy'
+    ];
+    
+    for (const formatStr of formats) {
+      try {
+        const parsed = parse(input, formatStr, new Date());
+        if (isValid(parsed)) {
+          return parsed;
+        }
+      } catch (error) {
+        // Continue to next format
+      }
+    }
+    
+    // Try native Date parsing as fallback
+    try {
+      const nativeDate = new Date(input);
+      if (isValid(nativeDate)) {
+        return nativeDate;
+      }
+    } catch (error) {
+      // Ignore
+    }
+    
+    return null;
+  };
 
   const handlePreviousDate = () => {
     if (viewType === "daily") {
@@ -64,6 +110,31 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    const parsed = parseFlexibleDate(value);
+    if (parsed) {
+      onDateChange(parsed);
+    }
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      onDateChange(date);
+      setIsOpen(false);
+      setInputValue("");
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      setInputValue(format(validDate, "yyyy-MM-dd"));
+    }
+  };
+
   return (
     <div className="flex items-center space-x-2">
       <Button 
@@ -75,12 +146,37 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
         <ChevronLeft className="h-4 w-4" />
       </Button>
       
-      <div className="flex items-center space-x-1">
-        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">
-          {getDateDisplay()}
-        </span>
-      </div>
+      <Popover open={isOpen} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "h-8 justify-start text-left font-normal hover:bg-accent hover:text-accent-foreground",
+              "text-sm font-medium"
+            )}
+          >
+            <CalendarIcon className="h-4 w-4 mr-1 text-muted-foreground" />
+            {getDateDisplay()}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <div className="p-3 space-y-3">
+            <Input
+              placeholder="Enter date (e.g., 2024-01-15, 15/01/2024)"
+              value={inputValue}
+              onChange={handleInputChange}
+              className="text-sm"
+            />
+            <Calendar
+              mode="single"
+              selected={validDate}
+              onSelect={handleCalendarSelect}
+              initialFocus
+              className={cn("p-0 pointer-events-auto")}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
       
       <Button 
         variant="outline" 
