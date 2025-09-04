@@ -510,7 +510,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               canAccessTab("task-matrix") ? (
                 <TaskMatrix branchId={id || "main"} branchName={displayBranchName} />
               ) : (
-                <AccessDeniedTab tabName="Task Matrix" />
+                <AccessDeniedTab tabName="Action Plan" />
               )
             )}
             
