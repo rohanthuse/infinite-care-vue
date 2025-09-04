@@ -51,7 +51,7 @@ const wizardSteps = [
   { id: 1, name: "Basic Information", description: "Care plan title and basic details" },
   { id: 2, name: "Personal Information", description: "Client personal details" },
   { id: 3, name: "About Me", description: "Client preferences and background" },
-  { id: 4, name: "Medical Information", description: "Health conditions and medications" },
+  { id: 4, name: "Medical and Mental", description: "Health conditions and medications" },
   { id: 5, name: "Goals", description: "Care goals and objectives" },
   { id: 6, name: "Activities", description: "Daily activities and routines" },
   { id: 7, name: "Personal Care", description: "Personal care requirements" },
