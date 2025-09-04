@@ -236,7 +236,7 @@ export function EditOrganizationMemberPermissionsDialog({
                   <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-green-50 to-green-100/30">
                     <h3 className="font-semibold text-gray-800 flex items-center text-base">Advanced Features</h3>
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                      {renderPermissionSwitch('reviews', 'Reviews')}
+                      {renderPermissionSwitch('reviews', 'Feedbacks')}
                       {renderPermissionSwitch('medication', 'Medication')}
                       {renderPermissionSwitch('workflow', 'Workflow')}
                       {renderPermissionSwitch('key_parameters', 'Core Settings')}

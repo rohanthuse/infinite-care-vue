@@ -61,7 +61,7 @@ const primaryTabs: TabItem[] = [
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
   { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
   { icon: PoundSterling, label: "Finance", value: "finance", description: "Financial management" },
-  { icon: Star, label: "Reviews", value: "reviews", description: "Client feedback" },
+  { icon: Star, label: "Feedbacks", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
 ];
 

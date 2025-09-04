@@ -416,14 +416,14 @@ export const AddAdminForm: React.FC<AddAdminFormProps> = ({
                   </div>
                 </div>
 
-                {/* Reviews & Third Party Section */}
+                {/* Feedbacks & Third Party Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                    <h3 className="font-semibold border-b pb-2">Reviews</h3>
+                    <h3 className="font-semibold border-b pb-2">Feedbacks</h3>
                     <div className="flex items-center justify-between p-3 rounded-lg border">
                       <div>
-                        <Label htmlFor="reviews" className="font-medium">Reviews</Label>
-                        <p className="text-sm text-muted-foreground">Manage client reviews</p>
+                        <Label htmlFor="reviews" className="font-medium">Feedbacks</Label>
+                        <p className="text-sm text-muted-foreground">Manage client feedbacks</p>
                       </div>
                       <Switch
                         id="reviews"

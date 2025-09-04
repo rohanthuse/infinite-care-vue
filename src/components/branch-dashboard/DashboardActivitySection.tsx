@@ -128,7 +128,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base md:text-lg font-semibold">Recent Reviews</CardTitle>
+            <CardTitle className="text-base md:text-lg font-semibold">Recent Feedbacks</CardTitle>
             <CardDescription>Latest client feedback</CardDescription>
           </CardHeader>
           <CardContent>
@@ -136,7 +136,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
               {isLoadingBranchStats ? (
                 Array.from({ length: 3 }).map((_, i) => <ReviewItemSkeleton key={i} />)
               ) : branchStatsError ? (
-                <p className="text-destructive text-center py-4">Error loading reviews.</p>
+                <p className="text-destructive text-center py-4">Error loading feedbacks.</p>
               ) : branchStats?.latestReviews && branchStats.latestReviews.length > 0 ? (
                 branchStats.latestReviews.map((review) => {
                   const clientName = review.client ? `${review.client.first_name} ${review.client.last_name.charAt(0)}.` : 'Anonymous';
@@ -155,7 +155,7 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
                   )
                 })
               ) : (
-                <p className="text-muted-foreground text-center py-4">No reviews yet.</p>
+                <p className="text-muted-foreground text-center py-4">No feedbacks yet.</p>
               )}
             </div>
           </CardContent>

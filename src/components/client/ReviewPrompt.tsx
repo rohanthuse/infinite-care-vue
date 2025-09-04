@@ -138,13 +138,13 @@ export function ReviewPrompt({ completedAppointments }: ReviewPromptProps) {
                     size="sm" 
                     onClick={() => handleReviewAppointment(appointment)}
                   >
-                    Review
+                    Feedback
                   </Button>
                 </div>
               ))}
               {pendingReviews.length > 3 && (
                 <p className="text-sm text-gray-500">
-                  +{pendingReviews.length - 3} more appointment{pendingReviews.length - 3 > 1 ? 's' : ''} awaiting review
+                  +{pendingReviews.length - 3} more appointment{pendingReviews.length - 3 > 1 ? 's' : ''} awaiting feedback
                 </p>
               )}
             </div>

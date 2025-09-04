@@ -555,7 +555,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               canAccessTab("reviews") ? (
                 <ReviewsTab branchId={id} />
               ) : (
-                <AccessDeniedTab tabName="Reviews" />
+                <AccessDeniedTab tabName="Feedbacks" />
               )
             )}
             

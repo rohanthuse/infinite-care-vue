@@ -83,7 +83,7 @@ export const CarerPerformanceTab: React.FC<CarerPerformanceTabProps> = ({ carerI
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Based on {performanceData.totalReviews} reviews
+              Based on {performanceData.totalReviews} feedbacks
             </p>
           </CardContent>
         </Card>
@@ -145,7 +145,7 @@ export const CarerPerformanceTab: React.FC<CarerPerformanceTabProps> = ({ carerI
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Client Reviews</span>
+              <span className="text-sm text-gray-600">Client Feedbacks</span>
               <span className="font-semibold">{performanceData.totalReviews}</span>
             </div>
           </CardContent>

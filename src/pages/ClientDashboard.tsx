@@ -31,7 +31,7 @@ const ClientDashboard = () => {
     { label: "My Agreements", icon: FileText, path: `/${tenantSlug}/client-dashboard/agreements` },
     { label: "Library", icon: BookOpen, path: `/${tenantSlug}/client-dashboard/library` },
     { label: "Events & Logs", icon: AlertTriangle, path: `/${tenantSlug}/client-dashboard/events-logs` },
-    { label: "Reviews", icon: Star, path: `/${tenantSlug}/client-dashboard/reviews` },
+    { label: "Feedbacks", icon: Star, path: `/${tenantSlug}/client-dashboard/reviews` },
     { label: "Payments", icon: CreditCard, path: `/${tenantSlug}/client-dashboard/payments` },
     { label: "Documents", icon: File, path: `/${tenantSlug}/client-dashboard/documents` },
     { label: "Service Reports", icon: BarChart, path: `/${tenantSlug}/client-dashboard/service-reports` },
@@ -62,7 +62,7 @@ const ClientDashboard = () => {
     } else if (path.includes("/events-logs")) {
       setPageTitle("Events & Logs");
     } else if (path.includes("/reviews")) {
-      setPageTitle("Reviews");
+      setPageTitle("Feedbacks");
     } else if (path.includes("/payments")) {
       setPageTitle("Payments");
     } else if (path.includes("/documents")) {

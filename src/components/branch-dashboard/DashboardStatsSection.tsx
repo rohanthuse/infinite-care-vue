@@ -36,7 +36,7 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
     onTabChange("clients");
   };
 
-  const handlePendingReviewsClick = () => {
+  const handlePendingFeedbacksClick = () => {
     onTabChange("reviews");
   };
 
@@ -129,13 +129,13 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           onClick={handleTodaysBookingsClick}
         />
         <DashboardStat 
-          title="Pending Reviews" 
+          title="Pending Feedbacks" 
           value={dashboardStats?.pendingReviewsCount?.toString() ?? "0"} 
           change={dashboardStats?.pendingReviewsChange ?? "0%"} 
           icon={<FileText className="h-5 w-5 text-amber-600" />} 
           positive={dashboardStats?.pendingReviewsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
-          onClick={handlePendingReviewsClick}
+          onClick={handlePendingFeedbacksClick}
         />
         <DashboardStat 
           title="Monthly Revenue" 
