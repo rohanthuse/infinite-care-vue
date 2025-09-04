@@ -52,16 +52,17 @@ const wizardSteps = [
   { id: 2, name: "Personal Information", description: "Client personal details" },
   { id: 3, name: "About Me", description: "Client preferences and background" },
   { id: 4, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 5, name: "Goals", description: "Care goals and objectives" },
-  { id: 6, name: "Activities", description: "Daily activities and routines" },
-  { id: 7, name: "Personal Care", description: "Personal care requirements" },
-  { id: 8, name: "Dietary", description: "Dietary needs and restrictions" },
-  { id: 9, name: "Risk Assessments", description: "Safety and risk evaluations" },
-  { id: 10, name: "Equipment", description: "Required equipment and aids" },
-  { id: 11, name: "Service Plans", description: "Service delivery plans" },
-  { id: 12, name: "Service Actions", description: "Specific service actions" },
-  { id: 13, name: "Documents", description: "Supporting documents" },
-  { id: 14, name: "Review", description: "Review and finalize care plan" },
+  { id: 5, name: "Admin Medication", description: "Medication administration details" },
+  { id: 6, name: "Goals", description: "Care goals and objectives" },
+  { id: 7, name: "Activities", description: "Daily activities and routines" },
+  { id: 8, name: "Personal Care", description: "Personal care requirements" },
+  { id: 9, name: "Dietary", description: "Dietary needs and restrictions" },
+  { id: 10, name: "Risk Assessments", description: "Safety and risk evaluations" },
+  { id: 11, name: "Equipment", description: "Required equipment and aids" },
+  { id: 12, name: "Service Plans", description: "Service delivery plans" },
+  { id: 13, name: "Service Actions", description: "Specific service actions" },
+  { id: 14, name: "Documents", description: "Supporting documents" },
+  { id: 15, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
@@ -89,7 +90,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 14;
+  const totalSteps = 15;
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
@@ -214,9 +215,14 @@ export function CarePlanCreationWizard({
           }
         });
 
-        // Set current step from saved data
+        // Set current step from saved data with backward compatibility for Admin Medication insertion
         if (draftData.last_step_completed) {
-          setCurrentStep(draftData.last_step_completed);
+          // If draft was saved before Admin Medication step was added, adjust step numbers
+          let adjustedStep = draftData.last_step_completed;
+          if (adjustedStep >= 5) {
+            adjustedStep += 1; // Shift forward to account for new step 5
+          }
+          setCurrentStep(adjustedStep);
         }
         
         console.log('Draft data loaded successfully');
@@ -254,18 +260,19 @@ export function CarePlanCreationWizard({
       if (formData.personal_info && Object.keys(formData.personal_info).length > 0) completedSteps.push(2);
       if (formData.about_me && Object.keys(formData.about_me).length > 0) completedSteps.push(3);
       if (formData.medical_info && Object.keys(formData.medical_info).length > 0) completedSteps.push(4);
-      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(5);
-      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(6);
-      if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(7);
-      if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(8);
-      if (Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) completedSteps.push(9);
-      if (Array.isArray(formData.equipment) && formData.equipment.length > 0) completedSteps.push(10);
-      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(11);
-      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(12);
-      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(13);
+      if (formData.medical_info && typeof formData.medical_info === 'object' && 'admin_medication' in formData.medical_info && formData.medical_info.admin_medication && Object.keys(formData.medical_info.admin_medication).length > 0) completedSteps.push(5);
+      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(6);
+      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(7);
+      if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(8);
+      if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(9);
+      if (Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) completedSteps.push(10);
+      if (Array.isArray(formData.equipment) && formData.equipment.length > 0) completedSteps.push(11);
+      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(12);
+      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(13);
+      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(14);
       
-      // Step 14 (Review) is considered completed when ready to finalize
-      if (completedSteps.length >= 3) completedSteps.push(14);
+      // Step 15 (Review) is considered completed when ready to finalize
+      if (completedSteps.length >= 3) completedSteps.push(15);
 
       return completedSteps;
     } catch (error) {

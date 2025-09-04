@@ -6,6 +6,7 @@ import { WizardStep1BasicInfo } from "./steps/WizardStep1BasicInfo";
 import { WizardStep2PersonalInfo } from "./steps/WizardStep2PersonalInfo";
 import { WizardStep3AboutMe } from "./steps/WizardStep3AboutMe";
 import { WizardStep4MedicalInfo } from "./steps/WizardStep4MedicalInfo";
+import { WizardStep5AdminMedication } from "./steps/WizardStep5AdminMedication";
 import { WizardStep5Goals } from "./steps/WizardStep5Goals";
 import { WizardStep6Activities } from "./steps/WizardStep6Activities";
 import { WizardStep7PersonalCare } from "./steps/WizardStep7PersonalCare";
@@ -41,24 +42,26 @@ export function CarePlanWizardSteps({ currentStep, form, clientId }: CarePlanWiz
       case 4:
         return <WizardStep4MedicalInfo form={form} />;
       case 5:
-        return <WizardStep5Goals form={form} />;
+        return <WizardStep5AdminMedication form={form} />;
       case 6:
-        return <WizardStep6Activities form={form} />;
+        return <WizardStep5Goals form={form} />;
       case 7:
-        return <WizardStep7PersonalCare form={form} />;
+        return <WizardStep6Activities form={form} />;
       case 8:
-        return <WizardStep8Dietary form={form} />;
+        return <WizardStep7PersonalCare form={form} />;
       case 9:
-        return <WizardStep9RiskAssessments form={form} />;
+        return <WizardStep8Dietary form={form} />;
       case 10:
-        return <WizardStep10Equipment form={form} />;
+        return <WizardStep9RiskAssessments form={form} />;
       case 11:
-        return <WizardStep11ServicePlans form={form} />;
+        return <WizardStep10Equipment form={form} />;
       case 12:
-        return <WizardStep12ServiceActions form={form} />;
+        return <WizardStep11ServicePlans form={form} />;
       case 13:
-        return <WizardStep13Documents form={form} clientId={clientId} />;
+        return <WizardStep12ServiceActions form={form} />;
       case 14:
+        return <WizardStep13Documents form={form} clientId={clientId} />;
+      case 15:
         return <WizardStep14Review form={form} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
