@@ -20,10 +20,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface WizardStep4MedicalInfoProps {
   form: UseFormReturn<any>;
 }
+
+const PHYSICAL_HEALTH_CONDITIONS = [
+  "Cancer", "Arthritis", "Heart Condition", "Diabetes", "Chronic Pain", 
+  "Chronic Respiratory", "Addiction", "Other Medical Conditions", 
+  "Blood Pressure", "Thyroid", "Multiple Sclerosis", "Parkinson's", 
+  "Bilateral Periventricular Leukomalacia", "Quadriplegic", "Cerebral Palsy", 
+  "Non", "Epilepsy"
+];
+
+const MENTAL_HEALTH_CONDITIONS = [
+  "Dementia", "Insomnia", "Alzheimer's Disease", "Hoarding Disorder", 
+  "Self-harm", "Phobia", "Panic Disorder", "Stress Disorder", "Schizophrenia", 
+  "Obsessive Compulsive Disorder", "Autism", "Other Mental Conditions", 
+  "Chronic Neurological", "Depression", "Non"
+];
 
 export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
   const addMedicalCondition = () => {
@@ -330,6 +348,93 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
               </FormItem>
             )}
           />
+
+          {/* Physical and Mental Health Conditions Checkboxes */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Physical Health Conditions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Medical Physical Health Conditions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="medical_info.physical_health_conditions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid gap-2 max-h-64 overflow-y-auto">
+                        {PHYSICAL_HEALTH_CONDITIONS.map((condition) => (
+                          <div key={condition} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`physical-${condition}`}
+                              checked={field.value?.includes(condition) || false}
+                              onCheckedChange={(checked) => {
+                                const currentValue = field.value || [];
+                                if (checked) {
+                                  field.onChange([...currentValue, condition]);
+                                } else {
+                                  field.onChange(currentValue.filter((item: string) => item !== condition));
+                                }
+                              }}
+                            />
+                            <Label 
+                              htmlFor={`physical-${condition}`} 
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {condition}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Mental Health Conditions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Mental Health Conditions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="medical_info.mental_health_conditions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="grid gap-2 max-h-64 overflow-y-auto">
+                        {MENTAL_HEALTH_CONDITIONS.map((condition) => (
+                          <div key={condition} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`mental-${condition}`}
+                              checked={field.value?.includes(condition) || false}
+                              onCheckedChange={(checked) => {
+                                const currentValue = field.value || [];
+                                if (checked) {
+                                  field.onChange([...currentValue, condition]);
+                                } else {
+                                  field.onChange(currentValue.filter((item: string) => item !== condition));
+                                }
+                              }}
+                            />
+                            <Label 
+                              htmlFor={`mental-${condition}`} 
+                              className="text-sm font-normal cursor-pointer"
+                            >
+                              {condition}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </Form>
     </div>

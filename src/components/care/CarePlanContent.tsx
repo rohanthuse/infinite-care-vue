@@ -5,6 +5,7 @@ import { CarePlanSidebar } from "./CarePlanSidebar";
 import { CarePlanTabBar } from "./CarePlanTabBar";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { AboutMeTab } from "./tabs/AboutMeTab";
+import { MedicalMentalTab } from "./tabs/MedicalMentalTab";
 import { GoalsTab } from "./tabs/GoalsTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { DietaryTab } from "./tabs/DietaryTab";
@@ -171,6 +172,29 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
                   updated_at: new Date().toISOString(),
                 }}
                 onEditAboutMe={onEditAboutMe}
+              />
+            </TabsContent>
+
+            <TabsContent value="medicalmental">
+              <MedicalMentalTab 
+                medicalInfo={medicalInfo || {
+                  id: "",
+                  client_id: carePlan.patientId,
+                  allergies: [],
+                  current_medications: [],
+                  medical_conditions: [],
+                  medical_history: "",
+                  mobility_status: "",
+                  cognitive_status: "",
+                  communication_needs: "",
+                  sensory_impairments: [],
+                  mental_health_status: "",
+                  physical_health_conditions: [],
+                  mental_health_conditions: [],
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }}
+                onEditMedicalInfo={onEditMedicalInfo}
               />
             </TabsContent>
             

@@ -14,6 +14,8 @@ export interface ClientMedicalInfo {
   communication_needs?: string;
   sensory_impairments?: string[];
   mental_health_status?: string;
+  physical_health_conditions?: string[];
+  mental_health_conditions?: string[];
   created_at: string;
   updated_at: string;
 }

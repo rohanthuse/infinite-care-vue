@@ -1845,8 +1845,10 @@ export type Database = {
           id: string
           medical_conditions: string[] | null
           medical_history: string | null
+          mental_health_conditions: string[] | null
           mental_health_status: string | null
           mobility_status: string | null
+          physical_health_conditions: string[] | null
           sensory_impairments: string[] | null
           updated_at: string
         }
@@ -1860,8 +1862,10 @@ export type Database = {
           id?: string
           medical_conditions?: string[] | null
           medical_history?: string | null
+          mental_health_conditions?: string[] | null
           mental_health_status?: string | null
           mobility_status?: string | null
+          physical_health_conditions?: string[] | null
           sensory_impairments?: string[] | null
           updated_at?: string
         }
@@ -1875,8 +1879,10 @@ export type Database = {
           id?: string
           medical_conditions?: string[] | null
           medical_history?: string | null
+          mental_health_conditions?: string[] | null
           mental_health_status?: string | null
           mobility_status?: string | null
+          physical_health_conditions?: string[] | null
           sensory_impairments?: string[] | null
           updated_at?: string
         }
