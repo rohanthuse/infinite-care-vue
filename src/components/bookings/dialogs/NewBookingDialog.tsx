@@ -29,6 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { EnhancedDatePicker } from "@/components/ui/enhanced-date-picker";
 import {
   Select,
   SelectContent,
@@ -63,13 +64,22 @@ const formSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID required" }),
   carerIds: z.array(z.string()).min(1, { message: "At least one carer required" }),
   fromDate: z.date({
-    required_error: "A date is required.",
+    required_error: "From date is required.",
   }),
   untilDate: z.date({
-    required_error: "A date is required.",
+    required_error: "Until date is required.",
   }),
   schedules: z.array(scheduleSchema).min(1, { message: "At least one schedule is required" }),
   notes: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Ensure untilDate is not before fromDate
+  if (data.fromDate && data.untilDate && data.untilDate < data.fromDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Until date must be on or after the from date",
+      path: ["untilDate"],
+    });
+  }
 });
 
 interface NewBookingDialogProps {
@@ -507,35 +517,21 @@ export function NewBookingDialog({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>From Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <EnhancedDatePicker
+                          value={field.value}
+                          onChange={(date) => {
+                            field.onChange(date);
+                            // Auto-adjust untilDate if it's before the new fromDate
+                            const currentUntilDate = form.getValues("untilDate");
+                            if (date && currentUntilDate && currentUntilDate < date) {
+                              form.setValue("untilDate", date);
+                            }
+                          }}
+                          placeholder="Enter or pick from date (dd/mm/yyyy)"
+                          disabled={(date) => date < new Date()}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -547,35 +543,17 @@ export function NewBookingDialog({
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Until Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <EnhancedDatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Enter or pick until date (dd/mm/yyyy)"
+                          disabled={(date) => {
+                            const fromDate = form.getValues("fromDate");
+                            return date < new Date() || (fromDate && date < fromDate);
+                          }}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
