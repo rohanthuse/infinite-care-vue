@@ -23,16 +23,21 @@ export const AdminMedicationTab: React.FC<AdminMedicationTabProps> = ({
     medication_use_other: "",
     allergies: "",
     allergies_other: "",
+    has_medicines_box: "",
+    access_to_medicines: "",
+    use_dosette_box: "",
     
     // Assistance Required
     assistance_needed: "",
     assistance_other: "",
+    help_inhalers: "",
     
     // Storage & Administration
     storage_location: "",
     storage_other: "",
-    administration_method: "",
+    administration_methods: [],
     administration_other: "",
+    prescribed_by: "",
     
     // Pharmacy & GP Details
     pharmacy_name: "",
@@ -55,7 +60,7 @@ export const AdminMedicationTab: React.FC<AdminMedicationTabProps> = ({
     additional_notes: ""
   });
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | any[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -134,6 +139,60 @@ export const AdminMedicationTab: React.FC<AdminMedicationTabProps> = ({
               />
             )}
           </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Does the service user have a medicines box?</Label>
+            <RadioGroup
+              value={formData.has_medicines_box}
+              onValueChange={(value) => handleInputChange("has_medicines_box", value)}
+              className="flex flex-wrap gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="yes" id="box-yes" />
+                <Label htmlFor="box-yes">Yes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no" id="box-no" />
+                <Label htmlFor="box-no">No</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Does the service user have access to their own medicines?</Label>
+            <RadioGroup
+              value={formData.access_to_medicines}
+              onValueChange={(value) => handleInputChange("access_to_medicines", value)}
+              className="flex flex-wrap gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="yes" id="access-yes" />
+                <Label htmlFor="access-yes">Yes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no" id="access-no" />
+                <Label htmlFor="access-no">No</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Does the service user use a dosette box?</Label>
+            <RadioGroup
+              value={formData.use_dosette_box}
+              onValueChange={(value) => handleInputChange("use_dosette_box", value)}
+              className="flex flex-wrap gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="yes" id="dosette-yes" />
+                <Label htmlFor="dosette-yes">Yes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no" id="dosette-no" />
+                <Label htmlFor="dosette-no">No</Label>
+              </div>
+            </RadioGroup>
+          </div>
         </CardContent>
       </Card>
 
@@ -174,6 +233,24 @@ export const AdminMedicationTab: React.FC<AdminMedicationTabProps> = ({
                 onChange={(e) => handleInputChange("assistance_other", e.target.value)}
               />
             )}
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">Does the service user need help with inhalers?</Label>
+            <RadioGroup
+              value={formData.help_inhalers}
+              onValueChange={(value) => handleInputChange("help_inhalers", value)}
+              className="flex flex-wrap gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="yes" id="inhaler-help-yes" />
+                <Label htmlFor="inhaler-help-yes">Yes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no" id="inhaler-help-no" />
+                <Label htmlFor="inhaler-help-no">No</Label>
+              </div>
+            </RadioGroup>
           </div>
         </CardContent>
       </Card>
@@ -218,40 +295,52 @@ export const AdminMedicationTab: React.FC<AdminMedicationTabProps> = ({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Method of administration</Label>
-            <RadioGroup
-              value={formData.administration_method}
-              onValueChange={(value) => handleInputChange("administration_method", value)}
-              className="space-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="oral" id="admin-oral" />
-                <Label htmlFor="admin-oral">Oral (tablets/liquid)</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="topical" id="admin-topical" />
-                <Label htmlFor="admin-topical">Topical (creams/patches)</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="injection" id="admin-injection" />
-                <Label htmlFor="admin-injection">Injection</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="inhaler" id="admin-inhaler" />
-                <Label htmlFor="admin-inhaler">Inhaler</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="others" id="admin-others" />
-                <Label htmlFor="admin-others">Others</Label>
-              </div>
-            </RadioGroup>
-            {formData.administration_method === "others" && (
+            <Label className="text-sm font-medium">Administration & Handling methods</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                "Oral",
+                "Topical", 
+                "Injection",
+                "Eye Drops",
+                "Ear Drops",
+                "Suppository",
+                "Inhaler",
+                "Other"
+              ].map((method) => (
+                <div key={method} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`admin-${method.toLowerCase().replace(' ', '-')}`}
+                    checked={formData.administration_methods?.includes(method) || false}
+                    onCheckedChange={(checked) => {
+                      const current = formData.administration_methods || [];
+                      if (checked) {
+                        handleInputChange("administration_methods", [...current, method]);
+                      } else {
+                        handleInputChange("administration_methods", current.filter(m => m !== method));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`admin-${method.toLowerCase().replace(' ', '-')}`}>{method}</Label>
+                </div>
+              ))}
+            </div>
+            {formData.administration_methods?.includes("Other") && (
               <Input
-                placeholder="Please specify administration method..."
+                placeholder="Please specify other administration method..."
                 value={formData.administration_other}
                 onChange={(e) => handleInputChange("administration_other", e.target.value)}
               />
             )}
+          </div>
+
+          <div className="space-y-3">
+            <Label htmlFor="prescribed-by" className="text-sm font-medium">Prescribed by</Label>
+            <Input
+              id="prescribed-by"
+              placeholder="Enter prescribing doctor or healthcare provider"
+              value={formData.prescribed_by}
+              onChange={(e) => handleInputChange("prescribed_by", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>

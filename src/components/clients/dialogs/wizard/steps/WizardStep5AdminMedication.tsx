@@ -99,7 +99,7 @@ export function WizardStep5AdminMedication({ form }: WizardStep5AdminMedicationP
                 name="medical_info.admin_medication.uses_medication"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Does the client use medication?</FormLabel>
+                    <FormLabel>Does the service user use medication?</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -113,6 +113,94 @@ export function WizardStep5AdminMedication({ form }: WizardStep5AdminMedicationP
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="no" id="uses_med_no" />
                           <Label htmlFor="uses_med_no">No</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="others" id="uses_med_others" />
+                          <Label htmlFor="uses_med_others">Others</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Has Medicines Box */}
+              <FormField
+                control={form.control}
+                name="medical_info.admin_medication.has_medicines_box"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Does the service user have a medicines box?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="box_yes" />
+                          <Label htmlFor="box_yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="box_no" />
+                          <Label htmlFor="box_no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Access to Medicines */}
+              <FormField
+                control={form.control}
+                name="medical_info.admin_medication.access_to_medicines"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Does the service user have access to their own medicines?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="access_yes" />
+                          <Label htmlFor="access_yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="access_no" />
+                          <Label htmlFor="access_no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Use Dosette Box */}
+              <FormField
+                control={form.control}
+                name="medical_info.admin_medication.use_dosette_box"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Does the service user use a dosette box?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="dosette_yes" />
+                          <Label htmlFor="dosette_yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="dosette_no" />
+                          <Label htmlFor="dosette_no">No</Label>
                         </div>
                       </RadioGroup>
                     </FormControl>
@@ -253,62 +341,156 @@ export function WizardStep5AdminMedication({ form }: WizardStep5AdminMedicationP
                 name="medical_info.admin_medication.assistance_level"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Level of assistance required</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select assistance level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="independent">Independent</SelectItem>
-                        <SelectItem value="prompting">Prompting only</SelectItem>
-                        <SelectItem value="supervision">Supervision required</SelectItem>
-                        <SelectItem value="full_assistance">Full assistance</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>What assistance is required?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="full_administration" id="assist_full" />
+                          <Label htmlFor="assist_full">Full administration by carer</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="prompting_supervision" id="assist_prompt" />
+                          <Label htmlFor="assist_prompt">Prompting and supervision</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="independent" id="assist_independent" />
+                          <Label htmlFor="assist_independent">Service user is independent</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="others" id="assist_others" />
+                          <Label htmlFor="assist_others">Others</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Storage and Administration */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="medical_info.admin_medication.storage_location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Medication Storage Location</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe where medications are stored"
-                          className="min-h-[80px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="medical_info.admin_medication.administration_notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Administration Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Special instructions for medication administration"
-                          className="min-h-[80px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Help with Inhalers */}
+              <FormField
+                control={form.control}
+                name="medical_info.admin_medication.help_inhalers"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Does the service user need help with inhalers?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="inhaler_help_yes" />
+                          <Label htmlFor="inhaler_help_yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="inhaler_help_no" />
+                          <Label htmlFor="inhaler_help_no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Administration & Handling Methods */}
+              <div className="space-y-3">
+                <FormLabel>Administration & Handling methods</FormLabel>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {[
+                    "Oral",
+                    "Topical", 
+                    "Injection",
+                    "Eye Drops",
+                    "Ear Drops", 
+                    "Suppository",
+                    "Inhaler",
+                    "Other"
+                  ].map((method) => (
+                    <FormField
+                      key={method}
+                      control={form.control}
+                      name="medical_info.admin_medication.administration_methods"
+                      render={({ field }) => {
+                        const currentMethods = field.value || [];
+                        return (
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`admin_method_${method.toLowerCase().replace(' ', '_')}`}
+                              checked={currentMethods.includes(method)}
+                              onChange={(e) => {
+                                const updatedMethods = e.target.checked 
+                                  ? [...currentMethods, method]
+                                  : currentMethods.filter((m: string) => m !== method);
+                                field.onChange(updatedMethods);
+                              }}
+                            />
+                            <Label htmlFor={`admin_method_${method.toLowerCase().replace(' ', '_')}`}>{method}</Label>
+                          </div>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
+
+              {/* Prescribed By */}
+              <FormField
+                control={form.control}
+                name="medical_info.admin_medication.prescribed_by"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prescribed by</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter prescribing doctor or healthcare provider" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Repeat Prescription Frequency */}
+              <FormField
+                control={form.control}
+                name="medical_info.admin_medication.repeat_frequency"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>How often are repeat prescriptions required?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-wrap gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="weekly" id="repeat_weekly" />
+                          <Label htmlFor="repeat_weekly">Weekly</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="fortnightly" id="repeat_fortnightly" />
+                          <Label htmlFor="repeat_fortnightly">Fortnightly</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="monthly" id="repeat_monthly" />
+                          <Label htmlFor="repeat_monthly">Monthly</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="others" id="repeat_others" />
+                          <Label htmlFor="repeat_others">Others</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Special Requirements */}
               <FormField
@@ -333,171 +515,118 @@ export function WizardStep5AdminMedication({ form }: WizardStep5AdminMedicationP
         </TabsContent>
 
         <TabsContent value="protocols" className="space-y-6">
-          <div className="space-y-6">
-            {/* PRN Protocols */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <FormLabel className="text-base font-medium">PRN (As Needed) Protocols</FormLabel>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Medications to be given only when specific conditions are met
-                  </p>
+          <Form {...form}>
+            <div className="space-y-6">
+              {/* PRN Protocols */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <FormLabel className="text-base font-medium">PRN (As Needed) Protocols</FormLabel>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Medications to be given only when specific conditions are met
+                    </p>
+                  </div>
+                  <Button type="button" onClick={addPrnProtocol} size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add PRN Protocol
+                  </Button>
                 </div>
-                <Button type="button" onClick={addPrnProtocol} size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add PRN Protocol
-                </Button>
-              </div>
-              
-              {prnProtocols.map((_, index) => (
-                <Card key={index}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">PRN Protocol #{index + 1}</CardTitle>
-                      <Button
-                        type="button"
-                        onClick={() => removePrnProtocol(index)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`medical_info.admin_medication.prn_protocols.${index}.medication`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Medication Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Enter medication name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`medical_info.admin_medication.prn_protocols.${index}.condition`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>When to Give</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Pain level 5+, Anxiety attack" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`medical_info.admin_medication.prn_protocols.${index}.max_dose`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Maximum Dose</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., 2 tablets, 5ml" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name={`medical_info.admin_medication.prn_protocols.${index}.frequency`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Maximum Frequency</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Every 4 hours, Once daily" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name={`medical_info.admin_medication.prn_protocols.${index}.notes`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Additional Notes</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Special instructions, precautions, or monitoring requirements"
-                              className="min-h-[60px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Repeat Prescription Frequency */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Repeat Prescription Schedule
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="medical_info.admin_medication.repeat_frequency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>How often are repeat prescriptions needed?</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="fortnightly">Fortnightly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                          <SelectItem value="6_weeks">Every 6 weeks</SelectItem>
-                          <SelectItem value="8_weeks">Every 8 weeks</SelectItem>
-                          <SelectItem value="12_weeks">Every 12 weeks</SelectItem>
-                          <SelectItem value="as_needed">As needed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="medical_info.admin_medication.prescription_notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Prescription Collection Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Who collects prescriptions, special arrangements, etc."
-                          className="min-h-[80px]"
-                          {...field}
+                
+                {prnProtocols.map((_, index) => (
+                  <Card key={index}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm">PRN Protocol #{index + 1}</CardTitle>
+                        <Button
+                          type="button"
+                          onClick={() => removePrnProtocol(index)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`medical_info.admin_medication.prn_protocols.${index}.medication`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Medication Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter medication name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          </div>
+                        <FormField
+                          control={form.control}
+                          name={`medical_info.admin_medication.prn_protocols.${index}.condition`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>When to Give</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Pain level 5+, Anxiety attack" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`medical_info.admin_medication.prn_protocols.${index}.max_dose`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Maximum Dose</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., 2 tablets, 5ml" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`medical_info.admin_medication.prn_protocols.${index}.frequency`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Maximum Frequency</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Every 4 hours, Once daily" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name={`medical_info.admin_medication.prn_protocols.${index}.notes`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Additional Notes</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Special instructions, precautions, or monitoring requirements"
+                                className="min-h-[60px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </Form>
         </TabsContent>
 
         <TabsContent value="attachments" className="space-y-6">
