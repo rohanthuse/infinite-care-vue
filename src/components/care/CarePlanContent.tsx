@@ -19,6 +19,7 @@ import { AssessmentsTab } from "./tabs/AssessmentsTab";
 import { EquipmentTab } from "./tabs/EquipmentTab";
 import { RiskAssessmentsTab } from "./tabs/RiskAssessmentsTab";
 import { CarePlanFormsTab } from "./forms/CarePlanFormsTab";
+import { AdminMedicationTab } from "./tabs/AdminMedicationTab";
 import {
   ClientProfile,
   ClientPersonalInfo,
@@ -195,6 +196,12 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
                   updated_at: new Date().toISOString(),
                 }}
                 onEditMedicalInfo={onEditMedicalInfo}
+              />
+            </TabsContent>
+
+            <TabsContent value="adminmedication">
+              <AdminMedicationTab 
+                clientId={carePlan.patientId}
               />
             </TabsContent>
             
