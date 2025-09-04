@@ -36,6 +36,7 @@ interface EditBookingDialogProps {
   carers: Carer[];
   onUpdateBooking: (booking: Booking, carers: Carer[]) => void;
   isCheckingOverlap?: boolean;
+  branchId?: string;
 }
 
 export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({

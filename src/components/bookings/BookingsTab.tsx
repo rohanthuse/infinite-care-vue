@@ -283,6 +283,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             bookings={filteredBookings} 
             onEditBooking={handleEditBooking}
             onViewBooking={handleViewBooking}
+            branchId={branchId}
           />
         </TabsContent>
         
@@ -332,6 +333,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         carers={carers}
         onUpdateBooking={handleUpdateBooking}
         isCheckingOverlap={isCheckingOverlap}
+        branchId={branchId}
       />
 
       <BookingOverlapAlert
@@ -366,6 +368,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         booking={viewingBooking}
         services={services}
         onEdit={handleEditFromView}
+        branchId={branchId}
       />
     </div>
   );

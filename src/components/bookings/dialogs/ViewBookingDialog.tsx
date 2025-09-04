@@ -1,6 +1,6 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
-import { Eye, Clock, User, Calendar, FileText } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,6 +12,19 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -19,6 +32,7 @@ interface ViewBookingDialogProps {
   booking: any;
   services: Array<{ id: string; title: string }>;
   onEdit?: () => void;
+  branchId?: string;
 }
 
 export function ViewBookingDialog({
@@ -27,7 +41,10 @@ export function ViewBookingDialog({
   booking,
   services,
   onEdit,
+  branchId,
 }: ViewBookingDialogProps) {
+  const deleteBooking = useDeleteBooking(branchId);
+  const { data: userRole } = useUserRole();
   if (!booking) return null;
 
   const service = services.find((s) => s.id === booking.service_id);
@@ -35,6 +52,27 @@ export function ViewBookingDialog({
   // Construct proper Date objects from booking date and time strings
   const startTime = new Date(`${booking.date}T${booking.startTime}:00`);
   const endTime = new Date(`${booking.date}T${booking.endTime}:00`);
+  
+  // Check if user can delete bookings (admins only)
+  const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
+  
+  // Determine if the appointment has already started
+  const hasStarted = booking && new Date(`${booking.date}T${booking.startTime}`) <= new Date();
+
+  const handleDelete = async () => {
+    if (!booking) return;
+    
+    try {
+      await deleteBooking.mutateAsync({
+        bookingId: booking.id,
+        clientId: booking.clientId,
+        staffId: booking.carerId,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+    }
+  };
   
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -191,14 +229,52 @@ export function ViewBookingDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-          {onEdit && (
-            <Button type="button" onClick={onEdit}>
-              Edit Appointment
-            </Button>
-          )}
+          <div className="flex justify-between w-full">
+            <div className="flex gap-2">
+              {canDelete && !hasStarted && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      disabled={deleteBooking.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Booking
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this booking? This action cannot be undone.
+                        The booking will be permanently removed from the system.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Close
+              </Button>
+              {onEdit && (
+                <Button type="button" onClick={onEdit}>
+                  Edit Appointment
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -39,6 +39,19 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
+import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
@@ -65,7 +78,9 @@ export function EditBookingDialog({
   branchId,
 }: EditBookingDialogProps) {
   const updateBooking = useUpdateBooking(branchId);
-  
+  const deleteBooking = useDeleteBooking(branchId);
+  const { data: userRole } = useUserRole();
+
   const form = useForm<EditBookingFormData>({
     resolver: zodResolver(editBookingSchema),
     defaultValues: {
@@ -75,6 +90,24 @@ export function EditBookingDialog({
       notes: "",
     },
   });
+
+  // Check if user can delete bookings (admins only)
+  const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
+
+  const handleDelete = async () => {
+    if (!booking) return;
+    
+    try {
+      await deleteBooking.mutateAsync({
+        bookingId: booking.id,
+        clientId: booking.clientId,
+        staffId: booking.carerId,
+      });
+      onOpenChange(false);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+    }
+  };
 
   // Update form when booking changes
   useEffect(() => {
@@ -215,17 +248,61 @@ export function EditBookingDialog({
                 )}
               />
 
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={updateBooking.isPending}>
-                  {updateBooking.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </DialogFooter>
             </form>
           </Form>
         )}
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <div className="flex justify-between w-full">
+            <div className="flex gap-2">
+              {canDelete && !hasStarted && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      disabled={deleteBooking.isPending}
+                    >
+                      Delete Booking
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this booking? This action cannot be undone.
+                        The booking will be permanently removed from the system.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              {!hasStarted && (
+                <Button 
+                  type="submit" 
+                  disabled={updateBooking.isPending}
+                  onClick={form.handleSubmit(onSubmit)}
+                >
+                  {updateBooking.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

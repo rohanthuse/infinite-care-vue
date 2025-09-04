@@ -4,29 +4,56 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User
+  ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2, MoreHorizontal
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Booking } from "./BookingTimeGrid";
 import { format } from "date-fns";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
+import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
+import { useUserRole } from "@/hooks/useUserRole";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BookingsListProps {
   bookings: Booking[];
   onEditBooking?: (booking: Booking) => void;
   onViewBooking?: (booking: Booking) => void;
+  branchId?: string;
 }
 
 export const BookingsList: React.FC<BookingsListProps> = ({ 
   bookings, 
   onEditBooking,
-  onViewBooking 
+  onViewBooking,
+  branchId
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteBookingId, setDeleteBookingId] = useState<string | null>(null);
   const itemsPerPage = 10;
+  
+  const deleteBooking = useDeleteBooking(branchId);
+  const { data: userRole } = useUserRole();
+  
+  // Check if user can delete bookings (admins only)
+  const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
 
   // Compute actual filter counts
   const statusCounts = bookings.reduce<Record<string, number>>((acc, booking) => {
@@ -88,6 +115,29 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     } else if (onEditBooking) {
       // Fallback to edit if view handler not provided
       onEditBooking(booking);
+    }
+  };
+
+  // Handle delete booking click
+  const handleDeleteClick = (booking: Booking) => {
+    setDeleteBookingId(booking.id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteBookingId) return;
+    
+    const booking = bookings.find(b => b.id === deleteBookingId);
+    if (!booking) return;
+    
+    try {
+      await deleteBooking.mutateAsync({
+        bookingId: booking.id,
+        clientId: booking.clientId,
+        staffId: booking.carerId,
+      });
+      setDeleteBookingId(null);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
     }
   };
 
@@ -316,6 +366,29 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        {canDelete && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                title="More actions"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteClick(booking)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Booking
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -361,6 +434,28 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           </div>
         </div>
       )}
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteBookingId} onOpenChange={() => setDeleteBookingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this booking? This action cannot be undone.
+              The booking will be permanently removed from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
