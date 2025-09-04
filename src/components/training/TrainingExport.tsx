@@ -61,7 +61,7 @@ const TrainingExport: React.FC<TrainingExportProps> = ({ matrixData }) => {
       setOpen(false);
       toast({
         title: "Export Successful",
-        description: "Training matrix exported to CSV",
+        description: "Training Program exported to CSV",
       });
     } catch (error) {
       console.error("Export error:", error);

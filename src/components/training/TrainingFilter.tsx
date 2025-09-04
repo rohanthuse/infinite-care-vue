@@ -75,7 +75,7 @@ const TrainingFilter: React.FC<TrainingFilterProps> = ({ onApplyFilters }) => {
         <SheetHeader>
           <SheetTitle>Filter Trainings</SheetTitle>
           <SheetDescription>
-            Apply filters to narrow down the training matrix view
+            Apply filters to narrow down the training program view
           </SheetDescription>
         </SheetHeader>
         

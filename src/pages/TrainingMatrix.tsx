@@ -295,7 +295,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Training Matrix</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Training Program</h1>
         <p className="text-gray-500 mt-2">Track and manage staff training requirements and completion status</p>
       </div>
       

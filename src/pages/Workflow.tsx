@@ -121,7 +121,7 @@ const Workflow = () => {
                   <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
                     <BookText className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-800 text-lg">Training Matrix</h3>
+                  <h3 className="font-semibold text-gray-800 text-lg">Training Program</h3>
                   <p className="text-sm text-gray-500 mt-1">Staff development</p>
                 </CardContent>
               </Card>

@@ -518,7 +518,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               canAccessTab("training-matrix") ? (
                 <TrainingMatrix branchId={id || "main"} branchName={displayBranchName} />
               ) : (
-                <AccessDeniedTab tabName="Training Matrix" />
+                <AccessDeniedTab tabName="Training Program" />
               )
             )}
             
