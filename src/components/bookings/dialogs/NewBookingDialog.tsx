@@ -518,19 +518,18 @@ export function NewBookingDialog({
                     <FormItem className="flex flex-col">
                       <FormLabel>From Date</FormLabel>
                       <FormControl>
-                        <EnhancedDatePicker
-                          value={field.value}
-                          onChange={(date) => {
-                            field.onChange(date);
-                            // Auto-adjust untilDate if it's before the new fromDate
-                            const currentUntilDate = form.getValues("untilDate");
-                            if (date && currentUntilDate && currentUntilDate < date) {
-                              form.setValue("untilDate", date);
-                            }
-                          }}
-                          placeholder="Enter or pick from date (dd/mm/yyyy)"
-                          disabled={(date) => date < new Date()}
-                        />
+                         <EnhancedDatePicker
+                           value={field.value}
+                           onChange={(date) => {
+                             field.onChange(date);
+                             // Auto-adjust untilDate if it's before the new fromDate
+                             const currentUntilDate = form.getValues("untilDate");
+                             if (date && currentUntilDate && currentUntilDate < date) {
+                               form.setValue("untilDate", date);
+                             }
+                           }}
+                           placeholder="Enter or pick from date (dd/mm/yyyy)"
+                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -544,15 +543,15 @@ export function NewBookingDialog({
                     <FormItem className="flex flex-col">
                       <FormLabel>Until Date</FormLabel>
                       <FormControl>
-                        <EnhancedDatePicker
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Enter or pick until date (dd/mm/yyyy)"
-                          disabled={(date) => {
-                            const fromDate = form.getValues("fromDate");
-                            return date < new Date() || (fromDate && date < fromDate);
-                          }}
-                        />
+                         <EnhancedDatePicker
+                           value={field.value}
+                           onChange={field.onChange}
+                           placeholder="Enter or pick until date (dd/mm/yyyy)"
+                           disabled={(date) => {
+                             const fromDate = form.getValues("fromDate");
+                             return fromDate && date < fromDate;
+                           }}
+                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
