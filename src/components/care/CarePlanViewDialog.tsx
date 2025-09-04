@@ -59,7 +59,8 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
     onOpenChange(false);
     if (branchId && branchName && carePlan?.client?.id) {
       const basePath = tenantSlug ? `/${tenantSlug}` : '';
-      const careTabPath = `${basePath}/branch-dashboard/${branchId}/${branchName}?tab=care&editCarePlan=${carePlanId}&clientId=${carePlan.client.id}`;
+      const encodedBranchName = encodeURIComponent(branchName);
+      const careTabPath = `${basePath}/branch-dashboard/${branchId}/${encodedBranchName}/care-plan?editCarePlan=${carePlanId}&clientId=${carePlan.client.id}`;
       navigate(careTabPath);
     }
   };

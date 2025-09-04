@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTenant } from '@/contexts/TenantContext';
 import { AdminCarePlanManagement } from '@/components/admin/AdminCarePlanManagement';
@@ -276,6 +276,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const navigate = useNavigate();
   const { data: userRole } = useUserRole();
   const { tenantSlug } = useTenant();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // Use the hook to fetch care plans - MUST be at the top
   const { data: carePlans = [], isLoading, error } = useCarePlans(branchId);
@@ -314,6 +315,89 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter, assignedToFilter, dateRangeStart, dateRangeEnd]);
+
+  // Handle URL parameters to auto-open edit wizard  
+  useEffect(() => {
+    const editCarePlanId = searchParams.get('editCarePlan');
+    const clientId = searchParams.get('clientId');
+    
+    if (editCarePlanId && clientId && carePlans.length > 0) {
+      console.log('[CareTab] Auto-opening edit wizard for care plan:', editCarePlanId, 'client:', clientId);
+      
+      // Find the care plan to edit
+      const planToEdit = carePlans.find(p => p._databaseId === editCarePlanId || p.id === editCarePlanId);
+      
+      if (planToEdit) {
+        // Execute the edit logic inline to avoid dependency issues
+        const executeEdit = async () => {
+          try {
+            // Get full care plan data including client information
+            const { data: fullPlanData, error } = await supabase
+              .from('client_care_plans')
+              .select(`
+                *,
+                client:clients!inner(*)
+              `)
+              .eq('id', planToEdit._databaseId || editCarePlanId)
+              .single();
+
+            if (error || !fullPlanData || !fullPlanData.client) {
+              console.error('[CareTab] Error fetching care plan data for auto-edit:', error);
+              return;
+            }
+
+            // Set up the client selection for the wizard
+            const clientData = fullPlanData.client;
+            const clientName = `${clientData.first_name} ${clientData.last_name}`;
+            
+            console.log('[CareTab] Auto-setting up care plan edit with client:', clientName);
+            
+            setSelectedClientId(fullPlanData.client_id);
+            setSelectedClientName(clientName);
+            setSelectedClientData(clientData);
+            
+            // Set up editing mode based on care plan status
+            const hasChangeRequest = fullPlanData.changes_requested_at;
+            
+            if (hasChangeRequest) {
+              setIsEditingChangeRequest(true);
+              setChangeRequestData({
+                comments: fullPlanData.change_request_comments,
+                requestedAt: fullPlanData.changes_requested_at,
+                requestedBy: fullPlanData.changes_requested_by
+              });
+            } else {
+              setIsEditingChangeRequest(false);
+              setChangeRequestData(null);
+            }
+            
+            // Set the care plan ID for editing
+            setSelectedCarePlanId(fullPlanData.id);
+            setEditingDraftId(fullPlanData.id);
+            
+            // Open the wizard
+            setIsWizardOpen(true);
+            
+            toast({
+              title: "Loading Care Plan",
+              description: "Opening care plan for editing...",
+            });
+            
+          } catch (error) {
+            console.error('[CareTab] Unexpected error in auto-edit:', error);
+          }
+        };
+
+        executeEdit();
+        
+        // Clear the URL parameters
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('editCarePlan'); 
+        newSearchParams.delete('clientId');
+        setSearchParams(newSearchParams, { replace: true });
+      }
+    }
+  }, [searchParams, carePlans, setSearchParams, toast]); // Removed problematic dependencies
   
   // NOW we can do conditional rendering after all hooks are declared
   if (isLoading) {
