@@ -1,12 +1,14 @@
 
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { Plus, FileText, Calendar, User } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClientSelector } from "@/components/care/ClientSelector";
 import { CarePlanCreationWizard } from "../dialogs/CarePlanCreationWizard";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Client {
   id: string;
@@ -27,10 +29,48 @@ export const CareTab: React.FC = () => {
   const { id: branchId, branchName } = useParams();
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedClientName, setSelectedClientName] = useState<string>("");
   const [selectedClientData, setSelectedClientData] = useState<Client | undefined>(undefined);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [editingCarePlanId, setEditingCarePlanId] = useState<string | null>(null);
+
+  // Fetch client data when needed for URL parameters
+  const { data: urlClient } = useQuery({
+    queryKey: ['client', searchParams.get('clientId')],
+    queryFn: async () => {
+      const clientId = searchParams.get('clientId');
+      if (!clientId) return null;
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('id', clientId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!searchParams.get('clientId')
+  });
+
+  // Handle URL parameters for editing care plans
+  useEffect(() => {
+    const editCarePlanId = searchParams.get('editCarePlan');
+    const clientId = searchParams.get('clientId');
+    
+    if (editCarePlanId && clientId && urlClient) {
+      setSelectedClientId(clientId);
+      setSelectedClientName(`${urlClient.first_name} ${urlClient.last_name}`);
+      setSelectedClientData(urlClient);
+      setEditingCarePlanId(editCarePlanId);
+      setIsWizardOpen(true);
+      
+      // Clean up URL parameters
+      setSearchParams({});
+    }
+  }, [searchParams, urlClient, setSearchParams]);
 
   const handleClientSelect = (clientId: string, clientName: string, clientData: Client) => {
     console.log('Client selected:', { clientId, clientName, clientData });
@@ -41,8 +81,14 @@ export const CareTab: React.FC = () => {
 
   const handleOpenWizard = () => {
     if (selectedClientId && selectedClientName) {
+      setEditingCarePlanId(null); // Clear editing mode for new care plan
       setIsWizardOpen(true);
     }
+  };
+
+  const handleCloseWizard = () => {
+    setIsWizardOpen(false);
+    setEditingCarePlanId(null);
   };
 
   const handleViewExistingPlans = () => {
@@ -134,8 +180,9 @@ export const CareTab: React.FC = () => {
       {selectedClientId && selectedClientName && (
         <CarePlanCreationWizard
           isOpen={isWizardOpen}
-          onClose={() => setIsWizardOpen(false)}
+          onClose={handleCloseWizard}
           clientId={selectedClientId}
+          carePlanId={editingCarePlanId || undefined}
         />
       )}
     </div>

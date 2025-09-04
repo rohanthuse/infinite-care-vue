@@ -55,11 +55,12 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
   };
 
   const handleEditToggle = () => {
-    // Navigate to edit mode using tenant-aware URLs
+    // Close the dialog and navigate to care tab to open edit wizard
+    onOpenChange(false);
     if (branchId && branchName && carePlan?.client?.id) {
       const basePath = tenantSlug ? `/${tenantSlug}` : '';
-      const editPath = `${basePath}/branch-dashboard/${branchId}/${branchName}/clients/${carePlan.client.id}/edit?tab=care-plans&careplan=${carePlanId}`;
-      navigate(editPath);
+      const careTabPath = `${basePath}/branch-dashboard/${branchId}/${branchName}?tab=care&editCarePlan=${carePlanId}&clientId=${carePlan.client.id}`;
+      navigate(careTabPath);
     }
   };
 
