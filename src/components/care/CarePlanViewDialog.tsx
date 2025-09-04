@@ -456,6 +456,78 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                               <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.meaningful_activities}</p>
                             </div>
                           )}
+                          
+                          {carePlanWithDetails.about_me.what_is_most_important_to_me && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">What is most important to me</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.what_is_most_important_to_me}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.how_to_communicate_with_me && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">How to communicate with me</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.how_to_communicate_with_me}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.please_do && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Please do</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.please_do}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.please_dont && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Please don't</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.please_dont}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.my_wellness && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">My wellness</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.my_wellness}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.how_and_when_to_support_me && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">How and when to support me</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.how_and_when_to_support_me}</p>
+                            </div>
+                          )}
+                          
+                          {carePlanWithDetails.about_me.also_worth_knowing_about_me && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">Also worth knowing about me</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{carePlanWithDetails.about_me.also_worth_knowing_about_me}</p>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {carePlanWithDetails.about_me.date && (
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Date</label>
+                                <p className="text-sm">{carePlanWithDetails.about_me.date}</p>
+                              </div>
+                            )}
+                            
+                            {carePlanWithDetails.about_me.time && (
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Time</label>
+                                <p className="text-sm">{carePlanWithDetails.about_me.time}</p>
+                              </div>
+                            )}
+                            
+                            {carePlanWithDetails.about_me.supported_to_write_this_by && (
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Supported by</label>
+                                <p className="text-sm">{carePlanWithDetails.about_me.supported_to_write_this_by}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div className="text-center py-8">

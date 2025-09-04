@@ -116,6 +116,185 @@ export function WizardStep3AboutMe({ form }: WizardStep3AboutMeProps) {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="about_me.what_is_most_important_to_me"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>What is most important to me</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="What matters most to the client..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="about_me.how_to_communicate_with_me"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>How to communicate with me</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Best ways to communicate with the client..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="about_me.please_do"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Please do</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Things the client would like caregivers to do..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="about_me.please_dont"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Please don't</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Things the client would prefer caregivers not to do..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="about_me.my_wellness"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>My wellness</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Information about the client's wellness and wellbeing..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="about_me.how_and_when_to_support_me"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>How and when to support me</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Specific support needs and timing..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="about_me.also_worth_knowing_about_me"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Also worth knowing about me</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Additional important information about the client..."
+                    className="min-h-[80px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="about_me.date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="date"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="about_me.time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="time"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="about_me.supported_to_write_this_by"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Supported to write this by</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Name of person who helped write this..."
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </Form>
     </div>
