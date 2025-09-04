@@ -310,7 +310,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                     {renderPermissionSwitch('reviews', 'Reviews')}
                     {renderPermissionSwitch('medication', 'Medication')}
                     {renderPermissionSwitch('workflow', 'Workflow')}
-                    {renderPermissionSwitch('key_parameters', 'Key Parameters')}
+                    {renderPermissionSwitch('key_parameters', 'Core Settings')}
                     {renderPermissionSwitch('care_plan', 'Care Plan')}
                     {renderPermissionSwitch('under_review_care_plan', 'Under Review Care Plan')}
                     {renderPermissionSwitch('agreements', 'Agreements')}

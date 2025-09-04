@@ -137,7 +137,7 @@ export function DashboardNavbar() {
   };
 
   const handleNavClick = (label: string, path: string) => {
-    if (label === "Key Parameters") {
+    if (label === "Core Settings") {
       setIsSubmenuOpen(!isSubmenuOpen);
     } else {
       setActiveItem(label);
@@ -148,13 +148,13 @@ export function DashboardNavbar() {
 
   const handleSubNavClick = (label: string, path: string) => {
     setActiveSubItem(label);
-    setActiveItem("Key Parameters");
+    setActiveItem("Core Settings");
     navigate(getTenantAwarePath(path));
   };
 
   const mainNavItems = [
     { label: "Home", icon: Home, path: "/dashboard" },
-    { label: "Key Parameters", icon: ListChecks, path: "#", hasSubmenu: true },
+    { label: "Core Settings", icon: ListChecks, path: "#", hasSubmenu: true },
     { label: "Settings", icon: Settings, path: "/settings" },
     { label: "Agreement", icon: FileText, path: "/agreement" }
   ];
@@ -190,7 +190,7 @@ export function DashboardNavbar() {
     } else {
       const submenuItem = keyParametersSubItems.find(item => item.path === normalizedPath);
       if (submenuItem) {
-        setActiveItem("Key Parameters");
+        setActiveItem("Core Settings");
         setActiveSubItem(submenuItem.label);
         setIsSubmenuOpen(true);
       }
@@ -211,7 +211,7 @@ export function DashboardNavbar() {
                 active={activeItem === item.label}
                 onClick={() => handleNavClick(item.label, item.path)}
                 hasSubmenu={item.hasSubmenu}
-                isSubmenuOpen={isSubmenuOpen && item.label === "Key Parameters"}
+                isSubmenuOpen={isSubmenuOpen && item.label === "Core Settings"}
               />
             ))}
           </div>

@@ -64,7 +64,7 @@ const KeyParameters = () => {
                 <ChevronRight className="h-4 w-4" />
               </BreadcrumbSeparator>
               <BreadcrumbItem>
-                <BreadcrumbLink>Key Parameters</BreadcrumbLink>
+                <BreadcrumbLink>Core Settings</BreadcrumbLink>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

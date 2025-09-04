@@ -247,7 +247,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
                 <ListChecks className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Key Parameters</h1>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Core Settings</h1>
                 <p className="text-muted-foreground text-sm md:text-base">Manage system parameters and configurations</p>
               </div>
             </div>

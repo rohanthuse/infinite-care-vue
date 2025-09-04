@@ -494,7 +494,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               canAccessTab("key-parameters") ? (
                 <KeyParametersContent branchId={id} branchName={branchName} />
               ) : (
-                <AccessDeniedTab tabName="Key Parameters" />
+                <AccessDeniedTab tabName="Core Settings" />
               )
             )}
             

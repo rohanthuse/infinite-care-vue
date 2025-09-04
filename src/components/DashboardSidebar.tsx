@@ -40,7 +40,7 @@ export function DashboardSidebar() {
       </div>
       <div className="py-2">
         <SidebarItem icon={Home} label="Home" active />
-        <SidebarItem icon={FileText} label="Key Parameters" hasSubmenu />
+        <SidebarItem icon={FileText} label="Core Settings" hasSubmenu />
         <SidebarItem icon={Settings} label="Settings" />
         <SidebarItem icon={FileText} label="Agreement" />
       </div>

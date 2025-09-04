@@ -23,7 +23,7 @@ type MenuItem = {
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/branch-dashboard" },
   { icon: Workflow, label: "Workflow", path: "/branch-workflow", expandable: true },
-  { icon: ListChecks, label: "Key Parameters", path: "/branch-parameters", expandable: true },
+  { icon: ListChecks, label: "Core Settings", path: "/branch-parameters", expandable: true },
   { icon: Users, label: "Staff", path: "/branch-staff", expandable: true },
   { icon: Users, label: "Client", path: "/branch-client", expandable: true },
   { icon: Calendar, label: "Bookings", path: "/branch-bookings" },
