@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateCarePlanDialog } from "../dialogs/CreateCarePlanDialog";
 import { DeleteCarePlanDialog } from "../dialogs/DeleteCarePlanDialog";
+import { getStatusBadgeClass } from "@/utils/statusHelpers";
 import { useClientCarePlans } from "@/hooks/useClientData";
 import { useDeleteCarePlan } from "@/hooks/useDeleteCarePlan";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -92,13 +93,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      case 'on-hold': return 'bg-yellow-100 text-yellow-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+    return getStatusBadgeClass(status);
   };
 
   const getProviderDisplay = (plan: any) => {

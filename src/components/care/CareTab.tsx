@@ -52,6 +52,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { getCarePlanStatusOptions } from "@/utils/statusHelpers";
+import { useCarePlanStatusChange } from "@/hooks/useCarePlanStatusChange";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -160,14 +162,7 @@ const mockCarePlans = [
   }
 ];
 
-const statusOptions = [
-  { value: "Active", label: "Active", color: "text-green-600 bg-green-50 border-green-200" },
-  { value: "Under Review", label: "Under Review", color: "text-amber-600 bg-amber-50 border-amber-200" },
-  { value: "Archived", label: "Archived", color: "text-gray-600 bg-gray-50 border-gray-200" },
-  { value: "On Hold", label: "On Hold", color: "text-blue-600 bg-blue-50 border-blue-200" },
-  { value: "Completed", label: "Completed", color: "text-purple-600 bg-purple-50 border-purple-200" },
-  { value: "Draft", label: "Draft", color: "text-orange-600 bg-orange-50 border-orange-200" }
-];
+const statusOptions = getCarePlanStatusOptions().filter(option => option.value !== "all");
 
 const assignedToOptions = [
   { value: "Dr. Sarah Johnson", label: "Dr. Sarah Johnson" },
@@ -283,6 +278,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [statusReason, setStatusReason] = useState<string>("");
+  const { changeStatus, isChanging } = useCarePlanStatusChange();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
@@ -668,14 +665,16 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const handleStatusChange = () => {
     if (!selectedPlan || !selectedStatus) return;
 
-    toast({
-      title: "Status Updated",
-      description: `Care plan ${selectedPlan} status changed to ${selectedStatus}`,
-      variant: "default",
+    changeStatus({
+      carePlanId: selectedPlan,
+      newStatus: selectedStatus,
+      reason: statusReason || undefined
     });
 
     setStatusDialogOpen(false);
     setSelectedPlan(null);
+    setSelectedStatus("");
+    setStatusReason("");
   };
 
   const handleFilterApply = () => {
@@ -1170,11 +1169,11 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       </div>
 
       <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Change Care Plan Status</DialogTitle>
             <DialogDescription>
-              Update the status for this care plan.
+              Update the status of the selected care plan. This change will be recorded in the plan's history.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -1200,13 +1199,32 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <label htmlFor="reason" className="text-right text-sm font-medium pt-2">
+                Reason
+              </label>
+              <div className="col-span-3">
+                <textarea
+                  id="reason"
+                  placeholder="Optional reason for status change..."
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md text-sm resize-none"
+                  rows={3}
+                />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" disabled={isChanging}>Cancel</Button>
             </DialogClose>
-            <Button onClick={handleStatusChange} type="button">
-              Save Changes
+            <Button 
+              onClick={handleStatusChange} 
+              type="button"
+              disabled={!selectedStatus || isChanging}
+            >
+              {isChanging ? "Updating..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

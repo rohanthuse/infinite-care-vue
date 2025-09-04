@@ -9,19 +9,21 @@ export const CLIENT_STATUSES = {
 } as const;
 
 export const CARE_PLAN_STATUSES = {
-  ACTIVE: "Active",
-  IN_PROGRESS: "In Progress", 
-  COMPLETED: "Completed",
+  DRAFT: "Draft",
   UNDER_REVIEW: "Under Review",
+  ACTIVE: "Active",
+  ON_HOLD: "On Hold",
+  COMPLETED: "Completed",
   ARCHIVED: "Archived"
 } as const;
 
 // Map care plan statuses to client status equivalents where applicable
 export const CARE_PLAN_TO_CLIENT_STATUS_MAP = {
-  [CARE_PLAN_STATUSES.ACTIVE]: CLIENT_STATUSES.ACTIVE,
-  [CARE_PLAN_STATUSES.IN_PROGRESS]: CLIENT_STATUSES.ACTIVELY_ASSESSING,
-  [CARE_PLAN_STATUSES.COMPLETED]: CLIENT_STATUSES.ACTIVE,
+  [CARE_PLAN_STATUSES.DRAFT]: CLIENT_STATUSES.NEW_ENQUIRIES,
   [CARE_PLAN_STATUSES.UNDER_REVIEW]: CLIENT_STATUSES.ACTIVELY_ASSESSING,
+  [CARE_PLAN_STATUSES.ACTIVE]: CLIENT_STATUSES.ACTIVE,
+  [CARE_PLAN_STATUSES.ON_HOLD]: CLIENT_STATUSES.ACTIVELY_ASSESSING,
+  [CARE_PLAN_STATUSES.COMPLETED]: CLIENT_STATUSES.ACTIVE,
   [CARE_PLAN_STATUSES.ARCHIVED]: CLIENT_STATUSES.FORMER
 } as const;
 
@@ -40,14 +42,16 @@ export const getStatusBadgeClass = (status: string) => {
       return "text-red-600 bg-red-50 border-red-200";
     
     // Care plan statuses
-    case CARE_PLAN_STATUSES.ACTIVE:
-      return "text-green-600 bg-green-50 border-green-200";
-    case CARE_PLAN_STATUSES.IN_PROGRESS:
-      return "text-blue-600 bg-blue-50 border-blue-200";
-    case CARE_PLAN_STATUSES.COMPLETED:
-      return "text-purple-600 bg-purple-50 border-purple-200";
+    case CARE_PLAN_STATUSES.DRAFT:
+      return "text-slate-600 bg-slate-50 border-slate-200";
     case CARE_PLAN_STATUSES.UNDER_REVIEW:
       return "text-amber-600 bg-amber-50 border-amber-200";
+    case CARE_PLAN_STATUSES.ACTIVE:
+      return "text-green-600 bg-green-50 border-green-200";
+    case CARE_PLAN_STATUSES.ON_HOLD:
+      return "text-orange-600 bg-orange-50 border-orange-200";
+    case CARE_PLAN_STATUSES.COMPLETED:
+      return "text-purple-600 bg-purple-50 border-purple-200";
     case CARE_PLAN_STATUSES.ARCHIVED:
       return "text-gray-600 bg-gray-50 border-gray-200";
     
@@ -75,9 +79,11 @@ export const getStatusBadgeClass = (status: string) => {
       return "text-gray-600 bg-gray-50 border-gray-200";
     case "former":
       return "text-red-600 bg-red-50 border-red-200";
-    case "in progress":
-    case "in_progress":
-      return "text-blue-600 bg-blue-50 border-blue-200";
+    case "draft":
+      return "text-slate-600 bg-slate-50 border-slate-200";
+    case "on hold":
+    case "on_hold":
+      return "text-orange-600 bg-orange-50 border-orange-200";
     case "completed":
       return "text-purple-600 bg-purple-50 border-purple-200";
     case "under review":
@@ -107,6 +113,10 @@ export const getRiskLevelClass = (level: string) => {
 export const calculateProgressPercentage = (status: string, notes: string) => {
   if (status === "Completed" || status === "completed") return 100;
   if (status === "Active" || status === "active") return 60;
+  if (status === "Draft" || status === "draft") return 10;
+  if (status === "Under Review" || status === "under_review" || status === "under review") return 25;
+  if (status === "On Hold" || status === "on_hold" || status === "on hold") return 40;
+  if (status === "Archived" || status === "archived") return 100;
   if (status === "In Progress" || status === "in_progress" || status === "in progress") {
     const match = notes.match(/Currently at (\d+)/);
     if (match && match[1]) {
@@ -142,9 +152,10 @@ export const getClientStatusOptions = () => [
 // Get all available care plan statuses for filters/dropdowns
 export const getCarePlanStatusOptions = () => [
   { value: "all", label: "All Statuses" },
-  { value: CARE_PLAN_STATUSES.ACTIVE, label: CARE_PLAN_STATUSES.ACTIVE },
-  { value: CARE_PLAN_STATUSES.IN_PROGRESS, label: CARE_PLAN_STATUSES.IN_PROGRESS },
-  { value: CARE_PLAN_STATUSES.COMPLETED, label: CARE_PLAN_STATUSES.COMPLETED },
+  { value: CARE_PLAN_STATUSES.DRAFT, label: CARE_PLAN_STATUSES.DRAFT },
   { value: CARE_PLAN_STATUSES.UNDER_REVIEW, label: CARE_PLAN_STATUSES.UNDER_REVIEW },
+  { value: CARE_PLAN_STATUSES.ACTIVE, label: CARE_PLAN_STATUSES.ACTIVE },
+  { value: CARE_PLAN_STATUSES.ON_HOLD, label: CARE_PLAN_STATUSES.ON_HOLD },
+  { value: CARE_PLAN_STATUSES.COMPLETED, label: CARE_PLAN_STATUSES.COMPLETED },
   { value: CARE_PLAN_STATUSES.ARCHIVED, label: CARE_PLAN_STATUSES.ARCHIVED }
 ];
