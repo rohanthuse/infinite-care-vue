@@ -95,6 +95,10 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
     }
   };
 
+  const closeCategory = (category: string) => {
+    setOpenCategories(prev => prev.filter(cat => cat !== category));
+  };
+
   const serviceBandCategories = form.watch("medical_info.service_band.categories") || [];
   const addMedicalCondition = () => {
     const current = form.getValues("medical_info.medical_conditions") || [];
@@ -541,7 +545,21 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                           <AccordionTrigger className="text-left">
                             {category} Details
                           </AccordionTrigger>
-                          <AccordionContent className="space-y-4">
+                          <AccordionContent className="space-y-4 bg-background z-10 relative p-4 border rounded-lg">
+                            {/* Close Button */}
+                            <div className="sticky top-0 z-20 bg-background pb-3 border-b mb-4">
+                              <Button
+                                type="button"
+                                onClick={() => closeCategory(category)}
+                                size="sm"
+                                variant="outline"
+                                className="ml-auto flex items-center gap-2"
+                              >
+                                <X className="h-4 w-4" />
+                                Close details
+                              </Button>
+                            </div>
+                            
                             <div className="grid gap-4">
                               {/* Risk of Wandering */}
                               <FormField
