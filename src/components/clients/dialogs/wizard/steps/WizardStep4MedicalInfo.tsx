@@ -72,6 +72,7 @@ const toKey = (label: string): string => {
 
 export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
   const [activeSubTab, setActiveSubTab] = useState("medical");
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
 
   // Service Band helper functions
   const toggleServiceBandCategory = (category: string, checked: boolean) => {
@@ -79,16 +80,18 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
     const currentDetails = form.getValues("medical_info.service_band.details") || {};
     
     if (checked) {
-      // Add category
+      // Add category and auto-open its accordion
       form.setValue("medical_info.service_band.categories", [...currentCategories, category]);
+      setOpenCategories(prev => [...prev, category]);
     } else {
-      // Remove category and its details
+      // Remove category, close its accordion, and clear its details
       const newCategories = currentCategories.filter((cat: string) => cat !== category);
       const newDetails = { ...currentDetails };
       delete newDetails[toKey(category)];
       
       form.setValue("medical_info.service_band.categories", newCategories);
       form.setValue("medical_info.service_band.details", newDetails);
+      setOpenCategories(prev => prev.filter(cat => cat !== category));
     }
   };
 
@@ -530,7 +533,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
               {serviceBandCategories.length > 0 && (
                 <div className="space-y-4">
                   <FormLabel className="text-lg font-semibold">Category Details</FormLabel>
-                  <Accordion type="multiple" className="w-full">
+                  <Accordion type="multiple" value={openCategories} onValueChange={setOpenCategories} className="w-full">
                     {serviceBandCategories.map((category: string) => {
                       const categoryKey = toKey(category);
                       return (
@@ -546,7 +549,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                 name={`medical_info.service_band.details.${categoryKey}.risk_of_wandering`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Risk of Wandering?</FormLabel>
+                                    <FormLabel>Is there a risk of wandering?</FormLabel>
                                     <FormControl>
                                       <RadioGroup
                                         value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -574,9 +577,9 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                 name={`medical_info.service_band.details.${categoryKey}.instructions`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Any specific instructions or remarks</FormLabel>
+                                    <FormLabel>Any specific instructions or remarks:</FormLabel>
                                     <FormControl>
-                                      <Input placeholder="Enter instructions..." {...field} />
+                                      <Textarea placeholder="Enter instructions..." className="min-h-[80px]" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -589,7 +592,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                 name={`medical_info.service_band.details.${categoryKey}.tracking_device`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Tracking Device?</FormLabel>
+                                    <FormLabel>Is there any Tracking device in place?</FormLabel>
                                     <FormControl>
                                       <RadioGroup
                                         value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -617,7 +620,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                 name={`medical_info.service_band.details.${categoryKey}.risk_of_challenging_behaviour`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Risk of Challenging Behaviour?</FormLabel>
+                                    <FormLabel>Is there a risk of challenging behaviour?</FormLabel>
                                     <FormControl>
                                       <RadioGroup
                                         value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -645,7 +648,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                 name={`medical_info.service_band.details.${categoryKey}.herbert_protocol`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Herbert Protocol?</FormLabel>
+                                    <FormLabel>Is there the Herbert Protocol running in the area?</FormLabel>
                                     <FormControl>
                                       <RadioGroup
                                         value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -673,7 +676,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                 name={`medical_info.service_band.details.${categoryKey}.power_of_attorney`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Power of Attorney?</FormLabel>
+                                    <FormLabel>Is there a power of attorney in place?</FormLabel>
                                     <FormControl>
                                       <RadioGroup
                                         value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -703,7 +706,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                   <FormItem>
                                     <FormLabel>How can we make a difference in the Client life?</FormLabel>
                                     <FormControl>
-                                      <Input placeholder="Enter message..." {...field} />
+                                      <Textarea placeholder="Enter message..." className="min-h-[80px]" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -719,7 +722,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                   name={`medical_info.service_band.details.${categoryKey}.other_professionals.nursing_team`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Nursing Team</FormLabel>
+                                      <FormLabel>Is there a medical or nursing team involved?</FormLabel>
                                       <FormControl>
                                         <RadioGroup
                                           value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -746,7 +749,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                   name={`medical_info.service_band.details.${categoryKey}.other_professionals.mental_health_team`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Mental Health Team</FormLabel>
+                                      <FormLabel>Is there a mental health team involved?</FormLabel>
                                       <FormControl>
                                         <RadioGroup
                                           value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
@@ -773,7 +776,7 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                   name={`medical_info.service_band.details.${categoryKey}.other_professionals.charity_involved`}
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel>Charity Involved</FormLabel>
+                                      <FormLabel>Is there a charity involved?</FormLabel>
                                       <FormControl>
                                         <RadioGroup
                                           value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
