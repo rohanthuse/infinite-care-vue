@@ -8,7 +8,7 @@ export interface CreateBookingInput {
   staff_id: string;
   start_time: string; // ISO string
   end_time: string;   // ISO string
-  service_id?: string;
+  service_id: string; // Required service ID
   revenue?: number;
   status?: string; // <-- ADDED
   notes?: string;
@@ -24,7 +24,7 @@ export async function createBooking(input: CreateBookingInput) {
         staff_id: input.staff_id,
         start_time: input.start_time,
         end_time: input.end_time,
-        service_id: input.service_id || null,
+        service_id: input.service_id,
         revenue: input.revenue || null,
         status: input.status || "assigned", // <-- ADDED
         notes: input.notes || null,

@@ -50,7 +50,7 @@ import { BankHolidayNotification } from "@/components/scheduling/BankHolidayNoti
 const scheduleSchema = z.object({
   startTime: z.string().min(5, { message: "Start time required" }),
   endTime: z.string().min(5, { message: "End time required" }),
-  services: z.array(z.string()).optional(),
+  services: z.array(z.string()).min(1, { message: "Service is required" }),
   mon: z.boolean().optional(),
   tue: z.boolean().optional(),
   wed: z.boolean().optional(),

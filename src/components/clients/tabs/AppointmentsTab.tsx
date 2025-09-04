@@ -112,13 +112,19 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
             bookingStartTime.setHours(startHour, startMinute, 0, 0);
             bookingEndTime.setHours(endHour, endMinute, 0, 0);
 
+            // Skip if no service is selected (should be prevented by validation)
+            if (!schedule.services?.[0]) {
+              console.warn('[handleCreateBooking] No service selected for schedule, skipping');
+              continue;
+            }
+
             const bookingInput = {
               branch_id: client.branch_id, // Use client's actual branch_id
               client_id: actualClientId,   // Use the correct client_id from props
               staff_id: bookingData.carerId, // Individual carer ID passed from dialog
               start_time: bookingStartTime.toISOString(),
               end_time: bookingEndTime.toISOString(),
-              service_id: schedule.services?.[0] || null,
+              service_id: schedule.services[0], // Required service ID
               status: "assigned",
               notes: bookingData.notes || null,
             };
