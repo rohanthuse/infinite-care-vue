@@ -4,6 +4,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,8 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
         at_risk_dehydration: false,
         check_fridge_expiry: false,
         do_you_cook: false,
+        help_with_cooking: false,
+        preparation_instructions: '',
         avoid_medical_reasons: false,
         avoid_religious_reasons: false,
         nutritional_needs: '',
@@ -159,18 +162,6 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="dietary.check_fridge_expiry"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <FormLabel className="text-base">Check fridge & expiry dates?</FormLabel>
-                  <FormControl>
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
           </div>
 
           {/* Cooking & Meal Preparation Section */}
@@ -179,31 +170,122 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
             
             <FormField
               control={form.control}
-              name="dietary.do_you_cook"
+              name="dietary.check_fridge_expiry"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <FormLabel className="text-base">Do you cook?</FormLabel>
+                <FormItem className="space-y-3 rounded-lg border p-4">
+                  <FormLabel className="text-base">Do you want us to check the food conditions/expiry dates in the fridge?</FormLabel>
                   <FormControl>
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="check_fridge_yes" />
+                        <label htmlFor="check_fridge_yes">Yes</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="check_fridge_no" />
+                        <label htmlFor="check_fridge_no">No</label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          {/* Extra Information Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Extra Information</h3>
-            
+            <FormField
+              control={form.control}
+              name="dietary.do_you_cook"
+              render={({ field }) => (
+                <FormItem className="space-y-3 rounded-lg border p-4">
+                  <FormLabel className="text-base">Do you cook?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="do_cook_yes" />
+                        <label htmlFor="do_cook_yes">Yes</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="do_cook_no" />
+                        <label htmlFor="do_cook_no">No</label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.help_with_cooking"
+              render={({ field }) => (
+                <FormItem className="space-y-3 rounded-lg border p-4">
+                  <FormLabel className="text-base">Do you want us to help you with cooking?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="help_cooking_yes" />
+                        <label htmlFor="help_cooking_yes">Yes</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="help_cooking_no" />
+                        <label htmlFor="help_cooking_no">No</label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dietary.preparation_instructions"
+              render={({ field }) => (
+                <FormItem className="rounded-lg border p-4">
+                  <FormLabel className="text-base">Please give us clear instructions if you want us to help you with the food preparation</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Provide detailed instructions for food preparation..." 
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="dietary.avoid_medical_reasons"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <FormLabel className="text-base">Avoid foods due to medical reasons?</FormLabel>
+                <FormItem className="space-y-3 rounded-lg border p-4">
+                  <FormLabel className="text-base">Are there any foods or ingredients that should be avoided for medical reasons?</FormLabel>
                   <FormControl>
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="avoid_medical_yes" />
+                        <label htmlFor="avoid_medical_yes">Yes</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="avoid_medical_no" />
+                        <label htmlFor="avoid_medical_no">No</label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -212,15 +294,29 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
               control={form.control}
               name="dietary.avoid_religious_reasons"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <FormLabel className="text-base">Avoid foods due to religious reasons?</FormLabel>
+                <FormItem className="space-y-3 rounded-lg border p-4">
+                  <FormLabel className="text-base">Are there any foods or ingredients that should be avoided for religious reasons?</FormLabel>
                   <FormControl>
-                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="avoid_religious_yes" />
+                        <label htmlFor="avoid_religious_yes">Yes</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="avoid_religious_no" />
+                        <label htmlFor="avoid_religious_no">No</label>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
           </div>
+
 
           {/* Additional details - Collapsible */}
           <Collapsible>

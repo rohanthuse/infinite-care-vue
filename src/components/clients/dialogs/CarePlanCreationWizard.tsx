@@ -40,6 +40,8 @@ const carePlanSchema = z.object({
     // Cooking & Meal Preparation section
     do_you_cook: z.boolean().optional().default(false),
     cooking_items: z.array(z.string()).optional().default([]),
+    help_with_cooking: z.boolean().optional().default(false),
+    preparation_instructions: z.string().optional().default(""),
     
     // Extra Information section
     avoid_medical_reasons: z.boolean().optional().default(false),
