@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -71,6 +72,9 @@ export function WizardStep8Dietary({ form }: WizardStep8DietaryProps) {
   const foodAllergies = form.watch("dietary.food_allergies") || [];
   const foodPreferences = form.watch("dietary.food_preferences") || [];
   const supplements = form.watch("dietary.supplements") || [];
+  const hasAllergies = form.watch("dietary.has_allergies");
+  const atRiskMalnutrition = form.watch("dietary.at_risk_malnutrition");
+  const needsCookingHelp = form.watch("dietary.needs_cooking_help");
 
   return (
     <div className="space-y-6">
@@ -83,6 +87,117 @@ export function WizardStep8Dietary({ form }: WizardStep8DietaryProps) {
 
       <Form {...form}>
         <div className="space-y-8">
+          {/* Allergy Question */}
+          <FormField
+            control={form.control}
+            name="dietary.has_allergies"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel className="text-base font-medium">Are you allergic to any food?</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // Clear allergies if "No" is selected
+                      if (value === "no") {
+                        form.setValue("dietary.food_allergies", []);
+                      }
+                    }}
+                    value={field.value}
+                    className="flex flex-col space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="allergies-yes" />
+                      <FormLabel htmlFor="allergies-yes" className="font-normal">Yes</FormLabel>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="allergies-no" />
+                      <FormLabel htmlFor="allergies-no" className="font-normal">No</FormLabel>
+                    </div>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Malnutrition Risk Question */}
+          <FormField
+            control={form.control}
+            name="dietary.at_risk_malnutrition"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel className="text-base font-medium">Are you at risk of malnutrition or dehydration?</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="flex flex-col space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="malnutrition-yes" />
+                      <FormLabel htmlFor="malnutrition-yes" className="font-normal">Yes</FormLabel>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="malnutrition-no" />
+                      <FormLabel htmlFor="malnutrition-no" className="font-normal">No</FormLabel>
+                    </div>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Cooking Help Question */}
+          <FormField
+            control={form.control}
+            name="dietary.needs_cooking_help"
+            render={({ field }) => (
+              <FormItem className="space-y-3">
+                <FormLabel className="text-base font-medium">Do you need help with cooking or meal preparation?</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="flex flex-col space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="cooking-yes" />
+                      <FormLabel htmlFor="cooking-yes" className="font-normal">Yes</FormLabel>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="cooking-no" />
+                      <FormLabel htmlFor="cooking-no" className="font-normal">No</FormLabel>
+                    </div>
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Food Preparation Instructions */}
+          {needsCookingHelp === "yes" && (
+            <FormField
+              control={form.control}
+              name="dietary.food_prep_instructions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Food Preparation Instructions</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Describe specific help needed with cooking or meal preparation..."
+                      className="min-h-[100px]"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           {/* Dietary Restrictions */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -118,40 +233,42 @@ export function WizardStep8Dietary({ form }: WizardStep8DietaryProps) {
             ))}
           </div>
 
-          {/* Food Allergies */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <FormLabel className="text-base font-medium">Food Allergies</FormLabel>
-              <Button type="button" onClick={addFoodAllergy} size="sm" variant="outline">
-                <Plus className="h-4 w-4 mr-1" />
-                Add Allergy
-              </Button>
-            </div>
-            {foodAllergies.map((_, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <FormField
-                  control={form.control}
-                  name={`dietary.food_allergies.${index}`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input placeholder="e.g., Nuts, Dairy, Shellfish" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  onClick={() => removeFoodAllergy(index)}
-                  size="sm"
-                  variant="outline"
-                >
-                  <X className="h-4 w-4" />
+          {/* Food Allergies - Only show if has_allergies is "yes" */}
+          {hasAllergies === "yes" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel className="text-base font-medium">Food Allergies</FormLabel>
+                <Button type="button" onClick={addFoodAllergy} size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Allergy
                 </Button>
               </div>
-            ))}
-          </div>
+              {foodAllergies.map((_, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`dietary.food_allergies.${index}`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input placeholder="e.g., Nuts, Dairy, Shellfish" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => removeFoodAllergy(index)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Food Preferences */}
           <div className="space-y-4">
