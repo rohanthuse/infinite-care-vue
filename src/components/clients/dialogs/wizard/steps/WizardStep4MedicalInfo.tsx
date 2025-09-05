@@ -561,41 +561,144 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                             </div>
                             
                             <div className="grid gap-4">
-                              {/* Risk of Wandering */}
-                              <FormField
-                                control={form.control}
-                                name={`medical_info.service_band.details.${categoryKey}.risk_of_wandering`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Is there a risk of wandering?</FormLabel>
-                                    <FormControl>
-                                      <RadioGroup
-                                        value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
-                                        onValueChange={(value) => field.onChange(value === "yes")}
-                                        className="flex gap-6"
-                                      >
-                                        <div className="flex items-center space-x-2">
-                                          <RadioGroupItem value="yes" id={`${categoryKey}-wandering-yes`} />
-                                          <Label htmlFor={`${categoryKey}-wandering-yes`}>Yes</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                          <RadioGroupItem value="no" id={`${categoryKey}-wandering-no`} />
-                                          <Label htmlFor={`${categoryKey}-wandering-no`}>No</Label>
-                                        </div>
-                                      </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
+                              {/* Sensory Impairment Specific Fields */}
+                              {category === "Sensory Impairment" && (
+                                <>
+                                  {/* Type of Impairment */}
+                                  <FormField
+                                    control={form.control}
+                                    name={`medical_info.service_band.details.${categoryKey}.impairment_type`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Type of impairment</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select impairment type" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            <SelectItem value="sight">Sight</SelectItem>
+                                            <SelectItem value="hearing">Hearing</SelectItem>
+                                            <SelectItem value="dual">Dual</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
 
-                              {/* Instructions */}
+                                  {/* When was sensory loss acquired */}
+                                  <FormField
+                                    control={form.control}
+                                    name={`medical_info.service_band.details.${categoryKey}.sensory_loss_acquired`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>When was sensory loss acquired</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select when acquired" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            <SelectItem value="at_birth">At birth</SelectItem>
+                                            <SelectItem value="later">Later</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  {/* Consequences on social life */}
+                                  <FormField
+                                    control={form.control}
+                                    name={`medical_info.service_band.details.${categoryKey}.social_consequences`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Consequences on social life</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                          <FormControl>
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Select consequences" />
+                                            </SelectTrigger>
+                                          </FormControl>
+                                          <SelectContent>
+                                            <SelectItem value="no_restrictions">No restrictions</SelectItem>
+                                            <SelectItem value="social_isolation">Social Isolation</SelectItem>
+                                            <SelectItem value="other">Other</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+
+                                  {/* Other consequences text field - only show if "Other" is selected */}
+                                  {form.watch(`medical_info.service_band.details.${categoryKey}.social_consequences`) === "other" && (
+                                    <FormField
+                                      control={form.control}
+                                      name={`medical_info.service_band.details.${categoryKey}.other_consequences`}
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Please specify other consequences</FormLabel>
+                                          <FormControl>
+                                            <Textarea placeholder="Enter other consequences..." className="min-h-[80px]" {...field} />
+                                          </FormControl>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                  )}
+                                </>
+                              )}
+
+                              {/* Standard fields for non-Sensory Impairment categories */}
+                              {category !== "Sensory Impairment" && (
+                                <>
+                                  {/* Risk of Wandering */}
+                                  <FormField
+                                    control={form.control}
+                                    name={`medical_info.service_band.details.${categoryKey}.risk_of_wandering`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Is there a risk of wandering?</FormLabel>
+                                        <FormControl>
+                                          <RadioGroup
+                                            value={field.value === true ? "yes" : field.value === false ? "no" : undefined}
+                                            onValueChange={(value) => field.onChange(value === "yes")}
+                                            className="flex gap-6"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="yes" id={`${categoryKey}-wandering-yes`} />
+                                              <Label htmlFor={`${categoryKey}-wandering-yes`}>Yes</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="no" id={`${categoryKey}-wandering-no`} />
+                                              <Label htmlFor={`${categoryKey}-wandering-no`}>No</Label>
+                                            </div>
+                                          </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </>
+                              )}
+
+                              {/* Instructions - with different label for Sensory Impairment */}
                               <FormField
                                 control={form.control}
                                 name={`medical_info.service_band.details.${categoryKey}.instructions`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>Any specific instructions or remarks:</FormLabel>
+                                    <FormLabel>
+                                      {category === "Sensory Impairment" 
+                                        ? "Give specific instructions:" 
+                                        : "Any specific instructions or remarks:"
+                                      }
+                                    </FormLabel>
                                     <FormControl>
                                       <Textarea placeholder="Enter instructions..." className="min-h-[80px]" {...field} />
                                     </FormControl>
