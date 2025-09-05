@@ -22,3 +22,28 @@ export const EQUIPMENT_OPTIONS = [
   { label: "Grab Rails", value: "grab_rails", description: "Safety support rails" },
   { label: "Other", value: "other", description: "Other equipment not listed" },
 ];
+
+export const ENVIRONMENT_CHECKS = [
+  { label: "Are there adequate space for safe mobility?", key: "adequate_space" },
+  { label: "Are there any stairs/steps?", key: "stairs_steps" },
+  { label: "Are there any loose rugs/mats?", key: "loose_rugs" },
+  { label: "Are there appropriate lighting?", key: "appropriate_lighting" },
+  { label: "Are there any trailing leads?", key: "trailing_leads" },
+  { label: "Are there any slippery surfaces?", key: "slippery_surfaces" },
+  { label: "Are there any pets?", key: "pets" },
+  { label: "Are there any clutter/obstacles?", key: "clutter_obstacles" },
+  { label: "Are there any narrow doorways?", key: "narrow_doorways" },
+  { label: "Are there any low furniture?", key: "low_furniture" },
+  { label: "Are there other environmental hazards?", key: "other_hazards" },
+];
+
+export const HOME_REPAIR_OPTIONS = [
+  { label: "Grab Rail", value: "grab_rail" },
+  { label: "Handrail", value: "handrail" },
+  { label: "Ramp", value: "ramp" },
+  { label: "Stair Rail", value: "stair_rail" },
+  { label: "Door Widening", value: "door_widening" },
+  { label: "Flooring", value: "flooring" },
+  { label: "Lighting", value: "lighting" },
+  { label: "Other", value: "other" },
+];
