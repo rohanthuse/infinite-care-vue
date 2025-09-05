@@ -26,6 +26,19 @@ export interface ClientPersonalCare {
   assist_getting_out_of_bed?: boolean;
   panic_button_in_bed?: boolean;
   assist_turn_to_sleep_position?: boolean;
+  // Washing, Showering, Bathing section
+  washing_showering_bathing_assistance_level?: string;
+  washing_showering_bathing_notes?: string;
+  wash_hands_face_independently?: boolean;
+  wash_body_independently?: boolean;
+  get_in_out_bath_shower_independently?: boolean;
+  dry_self_independently?: boolean;
+  prefer_bath_or_shower?: string;
+  bathing_frequency?: string;
+  specific_washing_requirements?: string;
+  skin_condition_considerations?: string;
+  mobility_aids_for_bathing?: string;
+  bathroom_safety_concerns?: string;
   created_at: string;
   updated_at: string;
 }

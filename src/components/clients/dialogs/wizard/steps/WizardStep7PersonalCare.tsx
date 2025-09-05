@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -448,6 +449,256 @@ export function WizardStep7PersonalCare({ form }: WizardStep7PersonalCareProps) 
                           <Label htmlFor="wizard-assist-turn-no">No</Label>
                         </div>
                       </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Washing, Showering, Bathing Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Washing, Showering, Bathing</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="personal_care.washing_showering_bathing_assistance_level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assistance Level Required</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select assistance level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="independent">Independent</SelectItem>
+                        <SelectItem value="supervision">Supervision</SelectItem>
+                        <SelectItem value="partial_assistance">Partial Assistance</SelectItem>
+                        <SelectItem value="full_assistance">Full Assistance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.prefer_bath_or_shower"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bath or Shower Preference</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select preference" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="bath">Bath</SelectItem>
+                        <SelectItem value="shower">Shower</SelectItem>
+                        <SelectItem value="either">Either</SelectItem>
+                        <SelectItem value="bed_bath">Bed Bath</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.bathing_frequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bathing Frequency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="every_other_day">Every Other Day</SelectItem>
+                        <SelectItem value="twice_weekly">Twice Weekly</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="as_needed">As Needed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="personal_care.wash_hands_face_independently"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Can wash hands and face independently</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="personal_care.wash_body_independently"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Can wash body independently</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="personal_care.get_in_out_bath_shower_independently"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Can get in/out of bath/shower independently</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="personal_care.dry_self_independently"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Can dry self independently</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="personal_care.specific_washing_requirements"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specific Washing Requirements</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe any specific washing requirements..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.skin_condition_considerations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skin Condition Considerations</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe any skin conditions or considerations..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.mobility_aids_for_bathing"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mobility Aids for Bathing</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List any mobility aids required for bathing..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.bathroom_safety_concerns"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bathroom Safety Concerns</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe any bathroom safety concerns..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.washing_showering_bathing_notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Any additional notes about washing, showering, or bathing..."
+                        className="resize-none"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

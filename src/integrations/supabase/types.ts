@@ -2033,76 +2033,112 @@ export type Database = {
           assist_getting_out_of_bed: boolean | null
           assist_going_to_bed: boolean | null
           assist_turn_to_sleep_position: boolean | null
+          bathing_frequency: string | null
           bathing_preferences: string | null
+          bathroom_safety_concerns: string | null
           behavioral_notes: string | null
           client_id: string
           comfort_measures: string | null
           continence_status: string | null
           created_at: string
           dressing_assistance_level: string | null
+          dry_self_independently: boolean | null
+          get_in_out_bath_shower_independently: boolean | null
           id: string
           incontinence_products_required: boolean | null
+          mobility_aids_for_bathing: string | null
           pain_management: string | null
           panic_button_in_bed: boolean | null
           personal_hygiene_needs: string | null
+          prefer_bath_or_shower: string | null
           skin_care_needs: string | null
+          skin_condition_considerations: string | null
           sleep_get_out_of_bed_time: string | null
           sleep_go_to_bed_time: string | null
           sleep_patterns: string | null
           sleep_prepare_duration: string | null
           sleep_wake_up_time: string | null
+          specific_washing_requirements: string | null
           toileting_assistance_level: string | null
           updated_at: string
+          wash_body_independently: boolean | null
+          wash_hands_face_independently: boolean | null
+          washing_showering_bathing_assistance_level: string | null
+          washing_showering_bathing_notes: string | null
         }
         Insert: {
           assist_getting_out_of_bed?: boolean | null
           assist_going_to_bed?: boolean | null
           assist_turn_to_sleep_position?: boolean | null
+          bathing_frequency?: string | null
           bathing_preferences?: string | null
+          bathroom_safety_concerns?: string | null
           behavioral_notes?: string | null
           client_id: string
           comfort_measures?: string | null
           continence_status?: string | null
           created_at?: string
           dressing_assistance_level?: string | null
+          dry_self_independently?: boolean | null
+          get_in_out_bath_shower_independently?: boolean | null
           id?: string
           incontinence_products_required?: boolean | null
+          mobility_aids_for_bathing?: string | null
           pain_management?: string | null
           panic_button_in_bed?: boolean | null
           personal_hygiene_needs?: string | null
+          prefer_bath_or_shower?: string | null
           skin_care_needs?: string | null
+          skin_condition_considerations?: string | null
           sleep_get_out_of_bed_time?: string | null
           sleep_go_to_bed_time?: string | null
           sleep_patterns?: string | null
           sleep_prepare_duration?: string | null
           sleep_wake_up_time?: string | null
+          specific_washing_requirements?: string | null
           toileting_assistance_level?: string | null
           updated_at?: string
+          wash_body_independently?: boolean | null
+          wash_hands_face_independently?: boolean | null
+          washing_showering_bathing_assistance_level?: string | null
+          washing_showering_bathing_notes?: string | null
         }
         Update: {
           assist_getting_out_of_bed?: boolean | null
           assist_going_to_bed?: boolean | null
           assist_turn_to_sleep_position?: boolean | null
+          bathing_frequency?: string | null
           bathing_preferences?: string | null
+          bathroom_safety_concerns?: string | null
           behavioral_notes?: string | null
           client_id?: string
           comfort_measures?: string | null
           continence_status?: string | null
           created_at?: string
           dressing_assistance_level?: string | null
+          dry_self_independently?: boolean | null
+          get_in_out_bath_shower_independently?: boolean | null
           id?: string
           incontinence_products_required?: boolean | null
+          mobility_aids_for_bathing?: string | null
           pain_management?: string | null
           panic_button_in_bed?: boolean | null
           personal_hygiene_needs?: string | null
+          prefer_bath_or_shower?: string | null
           skin_care_needs?: string | null
+          skin_condition_considerations?: string | null
           sleep_get_out_of_bed_time?: string | null
           sleep_go_to_bed_time?: string | null
           sleep_patterns?: string | null
           sleep_prepare_duration?: string | null
           sleep_wake_up_time?: string | null
+          specific_washing_requirements?: string | null
           toileting_assistance_level?: string | null
           updated_at?: string
+          wash_body_independently?: boolean | null
+          wash_hands_face_independently?: boolean | null
+          washing_showering_bathing_assistance_level?: string | null
+          washing_showering_bathing_notes?: string | null
         }
         Relationships: [
           {

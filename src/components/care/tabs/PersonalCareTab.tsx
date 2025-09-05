@@ -28,6 +28,19 @@ interface PersonalCareTabProps {
     assist_getting_out_of_bed?: boolean;
     panic_button_in_bed?: boolean;
     assist_turn_to_sleep_position?: boolean;
+    // Washing, Showering, Bathing section
+    washing_showering_bathing_assistance_level?: string;
+    washing_showering_bathing_notes?: string;
+    wash_hands_face_independently?: boolean;
+    wash_body_independently?: boolean;
+    get_in_out_bath_shower_independently?: boolean;
+    dry_self_independently?: boolean;
+    prefer_bath_or_shower?: string;
+    bathing_frequency?: string;
+    specific_washing_requirements?: string;
+    skin_condition_considerations?: string;
+    mobility_aids_for_bathing?: string;
+    bathroom_safety_concerns?: string;
   } | null;
   onEditPersonalCare?: () => void;
 }
@@ -207,6 +220,90 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
               </div>
             </div>
 
+            {/* Washing, Showering, Bathing Section */}
+            {(personalCare?.washing_showering_bathing_assistance_level || 
+              personalCare?.washing_showering_bathing_notes ||
+              personalCare?.wash_hands_face_independently ||
+              personalCare?.wash_body_independently ||
+              personalCare?.get_in_out_bath_shower_independently ||
+              personalCare?.dry_self_independently ||
+              personalCare?.prefer_bath_or_shower ||
+              personalCare?.bathing_frequency ||
+              personalCare?.specific_washing_requirements ||
+              personalCare?.skin_condition_considerations ||
+              personalCare?.mobility_aids_for_bathing ||
+              personalCare?.bathroom_safety_concerns) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Washing, Showering, Bathing</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {personalCare.washing_showering_bathing_assistance_level && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Assistance Level</p>
+                        <Badge variant="outline" className="capitalize">
+                          {personalCare.washing_showering_bathing_assistance_level.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {personalCare.prefer_bath_or_shower && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Bath/Shower Preference</p>
+                        <Badge variant="outline" className="capitalize">
+                          {personalCare.prefer_bath_or_shower.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {personalCare.bathing_frequency && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">Bathing Frequency</p>
+                        <Badge variant="outline" className="capitalize">
+                          {personalCare.bathing_frequency.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Independence Levels</p>
+                    {personalCare?.wash_hands_face_independently !== undefined && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Wash hands and face</span>
+                        <Badge variant={personalCare.wash_hands_face_independently ? "default" : "secondary"}>
+                          {personalCare.wash_hands_face_independently ? "Independent" : "Needs assistance"}
+                        </Badge>
+                      </div>
+                    )}
+                    {personalCare?.wash_body_independently !== undefined && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Wash body</span>
+                        <Badge variant={personalCare.wash_body_independently ? "default" : "secondary"}>
+                          {personalCare.wash_body_independently ? "Independent" : "Needs assistance"}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+
+                  {personalCare.specific_washing_requirements && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Specific Requirements</p>
+                      <p className="text-sm text-foreground">{personalCare.specific_washing_requirements}</p>
+                    </div>
+                  )}
+
+                  {personalCare.washing_showering_bathing_notes && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Additional Notes</p>
+                      <p className="text-sm text-foreground">{personalCare.washing_showering_bathing_notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Sleep Details Section */}
             <div>
               <h3 className="text-lg font-medium text-gray-800 mb-4">Sleep Details</h3>
@@ -336,11 +433,23 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
              personalCare?.assist_going_to_bed === undefined &&
              personalCare?.assist_getting_out_of_bed === undefined &&
              personalCare?.panic_button_in_bed === undefined &&
-             personalCare?.assist_turn_to_sleep_position === undefined && (
-               <div className="text-center py-8">
-                 <p className="text-gray-500">No personal care information available</p>
-               </div>
-             )}
+             personalCare?.assist_turn_to_sleep_position === undefined &&
+             !personalCare?.washing_showering_bathing_assistance_level &&
+             !personalCare?.washing_showering_bathing_notes &&
+             personalCare?.wash_hands_face_independently === undefined &&
+             personalCare?.wash_body_independently === undefined &&
+             personalCare?.get_in_out_bath_shower_independently === undefined &&
+             personalCare?.dry_self_independently === undefined &&
+             !personalCare?.prefer_bath_or_shower &&
+             !personalCare?.bathing_frequency &&
+             !personalCare?.specific_washing_requirements &&
+             !personalCare?.skin_condition_considerations &&
+             !personalCare?.mobility_aids_for_bathing &&
+             !personalCare?.bathroom_safety_concerns && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No personal care information available</p>
+                </div>
+              )}
           </div>
         </CardContent>
       </Card>
