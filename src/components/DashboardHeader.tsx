@@ -150,14 +150,8 @@ export function DashboardHeader() {
   
   return <header className="bg-background shadow-sm border-b border-border py-3 md:py-4 sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 flex justify-between items-center relative">
-        {/* Logo aligned to the left - simplified for mobile - clickable to go to admin home */}
-        <div 
-          className="flex items-center gap-2 md:gap-4 cursor-pointer hover:opacity-80 transition-opacity"
-          onClick={() => {
-            const targetPath = tenantSlug ? `/${tenantSlug}/admin-home` : '/admin-home';
-            navigate(targetPath);
-          }}
-        >
+        {/* Logo aligned to the left - simplified for mobile */}
+        <div className="flex items-center gap-2 md:gap-4">
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
           <div className="flex flex-col">
             <h2 className="text-sm md:text-lg font-bold tracking-tight">
