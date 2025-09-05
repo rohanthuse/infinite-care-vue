@@ -75,6 +75,11 @@ export function WizardStep8Dietary({ form }: WizardStep8DietaryProps) {
   const hasAllergies = form.watch("dietary.has_allergies");
   const atRiskMalnutrition = form.watch("dietary.at_risk_malnutrition");
   const needsCookingHelp = form.watch("dietary.needs_cooking_help");
+  const religiousCultural = form.watch("dietary.religious_cultural_requirements");
+  const swallowingConcerns = form.watch("dietary.swallowing_concerns");
+  const needsHelpCutting = form.watch("dietary.needs_help_cutting_food");
+  const mealSchedule = form.watch("dietary.meal_schedule_requirements");
+  const hydrationSupport = form.watch("dietary.hydration_support");
 
   return (
     <div className="space-y-6">
@@ -87,116 +92,366 @@ export function WizardStep8Dietary({ form }: WizardStep8DietaryProps) {
 
       <Form {...form}>
         <div className="space-y-8">
-          {/* Allergy Question */}
-          <FormField
-            control={form.control}
-            name="dietary.has_allergies"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-base font-medium">Are you allergic to any food?</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      // Clear allergies if "No" is selected
-                      if (value === "no") {
-                        form.setValue("dietary.food_allergies", []);
-                      }
-                    }}
-                    value={field.value}
-                    className="flex flex-col space-y-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="allergies-yes" />
-                      <FormLabel htmlFor="allergies-yes" className="font-normal">Yes</FormLabel>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="allergies-no" />
-                      <FormLabel htmlFor="allergies-no" className="font-normal">No</FormLabel>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Malnutrition Risk Question */}
-          <FormField
-            control={form.control}
-            name="dietary.at_risk_malnutrition"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-base font-medium">Are you at risk of malnutrition or dehydration?</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="flex flex-col space-y-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="malnutrition-yes" />
-                      <FormLabel htmlFor="malnutrition-yes" className="font-normal">Yes</FormLabel>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="malnutrition-no" />
-                      <FormLabel htmlFor="malnutrition-no" className="font-normal">No</FormLabel>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Cooking Help Question */}
-          <FormField
-            control={form.control}
-            name="dietary.needs_cooking_help"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel className="text-base font-medium">Do you need help with cooking or meal preparation?</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="flex flex-col space-y-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="yes" id="cooking-yes" />
-                      <FormLabel htmlFor="cooking-yes" className="font-normal">Yes</FormLabel>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="no" id="cooking-no" />
-                      <FormLabel htmlFor="cooking-no" className="font-normal">No</FormLabel>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Food Preparation Instructions */}
-          {needsCookingHelp === "yes" && (
+          {/* Screening Questions Section */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium text-gray-900">Dietary Screening Questions</h3>
+            
+            {/* Allergy Question */}
             <FormField
               control={form.control}
-              name="dietary.food_prep_instructions"
+              name="dietary.has_allergies"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Food Preparation Instructions</FormLabel>
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Are you allergic to any food?</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Describe specific help needed with cooking or meal preparation..."
-                      className="min-h-[100px]"
-                      {...field} 
-                    />
+                    <RadioGroup
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Clear allergies if "No" is selected
+                        if (value === "no") {
+                          form.setValue("dietary.food_allergies", []);
+                        }
+                      }}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="allergies-yes" />
+                        <FormLabel htmlFor="allergies-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="allergies-no" />
+                        <FormLabel htmlFor="allergies-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
+
+            {/* Religious/Cultural Requirements */}
+            <FormField
+              control={form.control}
+              name="dietary.religious_cultural_requirements"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Do you have any religious or cultural dietary requirements?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="religious-yes" />
+                        <FormLabel htmlFor="religious-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="religious-no" />
+                        <FormLabel htmlFor="religious-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Religious/Cultural Details */}
+            {religiousCultural === "yes" && (
+              <FormField
+                control={form.control}
+                name="dietary.religious_cultural_details"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Religious/Cultural Requirements Details</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Please describe your religious or cultural dietary requirements..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Swallowing Concerns */}
+            <FormField
+              control={form.control}
+              name="dietary.swallowing_concerns"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Do you have any swallowing concerns or difficulties?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="swallowing-yes" />
+                        <FormLabel htmlFor="swallowing-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="swallowing-no" />
+                        <FormLabel htmlFor="swallowing-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Swallowing Details */}
+            {swallowingConcerns === "yes" && (
+              <FormField
+                control={form.control}
+                name="dietary.swallowing_details"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Swallowing Concerns Details</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Please describe your swallowing concerns or difficulties..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Help Cutting Food */}
+            <FormField
+              control={form.control}
+              name="dietary.needs_help_cutting_food"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Do you need help cutting food?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="cutting-yes" />
+                        <FormLabel htmlFor="cutting-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="cutting-no" />
+                        <FormLabel htmlFor="cutting-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Cutting Food Details */}
+            {needsHelpCutting === "yes" && (
+              <FormField
+                control={form.control}
+                name="dietary.cutting_food_details"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Food Cutting Assistance Details</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Please describe what help you need with cutting food..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Meal Schedule Requirements */}
+            <FormField
+              control={form.control}
+              name="dietary.meal_schedule_requirements"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Do you have specific meal schedule requirements?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="schedule-yes" />
+                        <FormLabel htmlFor="schedule-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="schedule-no" />
+                        <FormLabel htmlFor="schedule-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Meal Schedule Details */}
+            {mealSchedule === "yes" && (
+              <FormField
+                control={form.control}
+                name="dietary.meal_schedule_details"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meal Schedule Details</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Please describe your specific meal schedule requirements..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Cooking Help Question */}
+            <FormField
+              control={form.control}
+              name="dietary.needs_cooking_help"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Do you need help with cooking or meal preparation?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="cooking-yes" />
+                        <FormLabel htmlFor="cooking-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="cooking-no" />
+                        <FormLabel htmlFor="cooking-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Food Preparation Instructions */}
+            {needsCookingHelp === "yes" && (
+              <FormField
+                control={form.control}
+                name="dietary.food_prep_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Food Preparation Instructions</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe specific help needed with cooking or meal preparation..."
+                        className="min-h-[100px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Hydration Support */}
+            <FormField
+              control={form.control}
+              name="dietary.hydration_support"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Do you need support with hydration or drinking?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="hydration-yes" />
+                        <FormLabel htmlFor="hydration-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="hydration-no" />
+                        <FormLabel htmlFor="hydration-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Hydration Details */}
+            {hydrationSupport === "yes" && (
+              <FormField
+                control={form.control}
+                name="dietary.hydration_details"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hydration Support Details</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Please describe what hydration or drinking support you need..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Malnutrition Risk Question */}
+            <FormField
+              control={form.control}
+              name="dietary.at_risk_malnutrition"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-medium">Are you at risk of malnutrition or dehydration?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="malnutrition-yes" />
+                        <FormLabel htmlFor="malnutrition-yes" className="font-normal">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="malnutrition-no" />
+                        <FormLabel htmlFor="malnutrition-no" className="font-normal">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Dietary Restrictions */}
           <div className="space-y-4">
