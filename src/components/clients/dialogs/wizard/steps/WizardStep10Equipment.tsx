@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { EQUIPMENT_OPTIONS } from "@/constants/equipment";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Combobox } from "@/components/ui/combobox";
+import { EQUIPMENT_OPTIONS, ENVIRONMENT_CHECKS, HOME_REPAIR_OPTIONS } from "@/constants/equipment";
 
 interface WizardStep10EquipmentProps {
   form: UseFormReturn<any>;
@@ -77,13 +79,13 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
         };
       });
       
-      form.setValue("equipment", transformedEquipment);
+      form.setValue("equipment.equipment_blocks", transformedEquipment);
     }
   }, [form]);
 
   const addEquipmentBlock = () => {
-    const current = form.getValues("equipment") || [];
-    form.setValue("equipment", [...current, {
+    const current = form.getValues("equipment.equipment_blocks") || [];
+    form.setValue("equipment.equipment_blocks", [...current, {
       equipmentUsed: [],
       supplier: "",
       dateReceived: "",
@@ -94,11 +96,11 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
   };
 
   const removeEquipmentBlock = (index: number) => {
-    const current = form.getValues("equipment") || [];
-    form.setValue("equipment", current.filter((_, i) => i !== index));
+    const current = form.getValues("equipment.equipment_blocks") || [];
+    form.setValue("equipment.equipment_blocks", current.filter((_, i) => i !== index));
   };
 
-  const equipment = form.watch("equipment") || [];
+  const equipment = form.watch("equipment.equipment_blocks") || [];
 
   return (
     <div className="space-y-6">
@@ -145,7 +147,7 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name={`equipment.${index}.equipmentUsed`}
+                  name={`equipment.equipment_blocks.${index}.equipmentUsed`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Equipment Used</FormLabel>
@@ -168,7 +170,7 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name={`equipment.${index}.supplier`}
+                    name={`equipment.equipment_blocks.${index}.supplier`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Supplier</FormLabel>
@@ -185,7 +187,7 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
 
                   <FormField
                     control={form.control}
-                    name={`equipment.${index}.dateReceived`}
+                    name={`equipment.equipment_blocks.${index}.dateReceived`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Date Received</FormLabel>
@@ -204,7 +206,7 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name={`equipment.${index}.dateTrained`}
+                    name={`equipment.equipment_blocks.${index}.dateTrained`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Date Trained</FormLabel>
@@ -221,7 +223,7 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
 
                   <FormField
                     control={form.control}
-                    name={`equipment.${index}.nextServiceDate`}
+                    name={`equipment.equipment_blocks.${index}.nextServiceDate`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Next Service Date</FormLabel>
@@ -239,7 +241,7 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
 
                 <FormField
                   control={form.control}
-                  name={`equipment.${index}.notes`}
+                  name={`equipment.equipment_blocks.${index}.notes`}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Notes</FormLabel>
@@ -257,6 +259,161 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
               </div>
             </div>
           ))}
+
+          {/* Moving & Handling of the Client */}
+          <div className="border rounded-lg p-6 space-y-4 bg-blue-50">
+            <h4 className="text-md font-medium">Moving & Handling of the Client</h4>
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="equipment.moving_handling.facilitation_independence"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Facilitation of Independence</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter details about facilitation of independence..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="equipment.moving_handling.manual_handling_considerations"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Manual Handling Considerations</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter manual handling considerations..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="equipment.moving_handling.moving_handling_advice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Moving & Handling Advice</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter moving and handling advice..."
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Environment Checks */}
+          <div className="border rounded-lg p-6 space-y-4 bg-green-50">
+            <h4 className="text-md font-medium">Environment Checks</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {ENVIRONMENT_CHECKS.map((check) => (
+                <FormField
+                  key={check.key}
+                  control={form.control}
+                  name={`equipment.environment_checks.${check.key}`}
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <FormLabel className="text-sm font-medium">{check.label}</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex space-x-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id={`${check.key}-yes`} />
+                            <label 
+                              htmlFor={`${check.key}-yes`}
+                              className="text-sm font-medium leading-none cursor-pointer"
+                            >
+                              Yes
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id={`${check.key}-no`} />
+                            <label 
+                              htmlFor={`${check.key}-no`}
+                              className="text-sm font-medium leading-none cursor-pointer"
+                            >
+                              No
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Home Repairs */}
+          <div className="border rounded-lg p-6 space-y-4 bg-yellow-50">
+            <h4 className="text-md font-medium">Home Repairs</h4>
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="equipment.home_repairs.repair_needed"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What repair is needed?</FormLabel>
+                    <FormControl>
+                      <div className="relative z-50">
+                        <Combobox
+                          options={HOME_REPAIR_OPTIONS}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                          placeholder="Select repair type..."
+                          searchPlaceholder="Search repairs..."
+                          emptyText="No repairs found."
+                          allowCustom={false}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("equipment.home_repairs.repair_needed") === "other" && (
+                <FormField
+                  control={form.control}
+                  name="equipment.home_repairs.repair_other"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Please specify other repair</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter other repair details..."
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </Form>
     </div>

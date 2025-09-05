@@ -27,7 +27,31 @@ const carePlanSchema = z.object({
   personal_care: z.any().optional(),
   dietary: z.any().optional(),
   risk_assessments: z.array(z.any()).optional(),
-  equipment: z.array(z.any()).optional(),
+  equipment: z.object({
+    equipment_blocks: z.array(z.any()).optional(),
+    moving_handling: z.object({
+      facilitation_independence: z.string().optional(),
+      manual_handling_considerations: z.string().optional(),
+      moving_handling_advice: z.string().optional(),
+    }).optional(),
+    environment_checks: z.object({
+      adequate_space: z.enum(["yes", "no"]).optional(),
+      stairs_steps: z.enum(["yes", "no"]).optional(),
+      loose_rugs: z.enum(["yes", "no"]).optional(),
+      appropriate_lighting: z.enum(["yes", "no"]).optional(),
+      trailing_leads: z.enum(["yes", "no"]).optional(),
+      slippery_surfaces: z.enum(["yes", "no"]).optional(),
+      pets: z.enum(["yes", "no"]).optional(),
+      clutter_obstacles: z.enum(["yes", "no"]).optional(),
+      narrow_doorways: z.enum(["yes", "no"]).optional(),
+      low_furniture: z.enum(["yes", "no"]).optional(),
+      other_hazards: z.enum(["yes", "no"]).optional(),
+    }).optional(),
+    home_repairs: z.object({
+      repair_needed: z.string().optional(),
+      repair_other: z.string().optional(),
+    }).optional(),
+  }).optional(),
   service_plans: z.array(z.any()).optional(),
   service_actions: z.array(z.any()).optional(),
   documents: z.array(z.any()).optional(),
@@ -110,7 +134,12 @@ export function CarePlanCreationWizard({
       personal_care: {},
       dietary: {},
       risk_assessments: [],
-      equipment: [],
+      equipment: {
+        equipment_blocks: [],
+        moving_handling: {},
+        environment_checks: {},
+        home_repairs: {},
+      },
       service_plans: [],
       service_actions: [],
       documents: [],
@@ -203,8 +232,27 @@ export function CarePlanCreationWizard({
             let value = savedData[key];
             
             // Handle array fields with safety checks
-            if (['risk_assessments', 'equipment', 'service_plans', 'service_actions', 'documents', 'goals', 'activities'].includes(key)) {
+            if (['risk_assessments', 'service_plans', 'service_actions', 'documents', 'goals', 'activities'].includes(key)) {
               value = initializeArrayField(value);
+            }
+            // Handle equipment field specially to preserve backward compatibility
+            else if (key === 'equipment') {
+              if (Array.isArray(value)) {
+                // Old format - convert to new format
+                value = {
+                  equipment_blocks: value,
+                  moving_handling: {},
+                  environment_checks: {},
+                  home_repairs: {},
+                };
+              } else if (!value || typeof value !== 'object') {
+                value = {
+                  equipment_blocks: [],
+                  moving_handling: {},
+                  environment_checks: {},
+                  home_repairs: {},
+                };
+              }
             }
             // Handle object fields with safety checks
             else if (['personal_info', 'about_me', 'medical_info', 'personal_care', 'dietary'].includes(key)) {
@@ -266,7 +314,12 @@ export function CarePlanCreationWizard({
       if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(8);
       if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(9);
       if (Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) completedSteps.push(10);
-      if (Array.isArray(formData.equipment) && formData.equipment.length > 0) completedSteps.push(11);
+      if (formData.equipment && typeof formData.equipment === 'object' && (
+        (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
+        (formData.equipment.moving_handling && Object.keys(formData.equipment.moving_handling).length > 0) ||
+        (formData.equipment.environment_checks && Object.keys(formData.equipment.environment_checks).length > 0) ||
+        (formData.equipment.home_repairs && Object.keys(formData.equipment.home_repairs).length > 0)
+      )) completedSteps.push(11);
       if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(12);
       if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(13);
       if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(14);
