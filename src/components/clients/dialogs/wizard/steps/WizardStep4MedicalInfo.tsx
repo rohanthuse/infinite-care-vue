@@ -570,19 +570,27 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                     name={`medical_info.service_band.details.${categoryKey}.impairment_type`}
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Type of impairment</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select impairment type" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            <SelectItem value="sight">Sight</SelectItem>
-                                            <SelectItem value="hearing">Hearing</SelectItem>
-                                            <SelectItem value="dual">Dual</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        <FormLabel>What is the impairment?</FormLabel>
+                                        <FormControl>
+                                          <RadioGroup
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            className="flex flex-col gap-3"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="sight" id={`${categoryKey}-sight`} />
+                                              <Label htmlFor={`${categoryKey}-sight`}>Sight</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="hearing" id={`${categoryKey}-hearing`} />
+                                              <Label htmlFor={`${categoryKey}-hearing`}>Hearing</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="dual" id={`${categoryKey}-dual`} />
+                                              <Label htmlFor={`${categoryKey}-dual`}>Dual</Label>
+                                            </div>
+                                          </RadioGroup>
+                                        </FormControl>
                                         <FormMessage />
                                       </FormItem>
                                     )}
@@ -594,18 +602,23 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                     name={`medical_info.service_band.details.${categoryKey}.sensory_loss_acquired`}
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>When was sensory loss acquired</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select when acquired" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            <SelectItem value="at_birth">At birth</SelectItem>
-                                            <SelectItem value="later">Later</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        <FormLabel>When was the sensory loss acquired?</FormLabel>
+                                        <FormControl>
+                                          <RadioGroup
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            className="flex flex-col gap-3"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="at_birth" id={`${categoryKey}-at-birth`} />
+                                              <Label htmlFor={`${categoryKey}-at-birth`}>At birth</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="later" id={`${categoryKey}-later`} />
+                                              <Label htmlFor={`${categoryKey}-later`}>Later</Label>
+                                            </div>
+                                          </RadioGroup>
+                                        </FormControl>
                                         <FormMessage />
                                       </FormItem>
                                     )}
@@ -617,19 +630,27 @@ export function WizardStep4MedicalInfo({ form }: WizardStep4MedicalInfoProps) {
                                     name={`medical_info.service_band.details.${categoryKey}.social_consequences`}
                                     render={({ field }) => (
                                       <FormItem>
-                                        <FormLabel>Consequences on social life</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                          <FormControl>
-                                            <SelectTrigger>
-                                              <SelectValue placeholder="Select consequences" />
-                                            </SelectTrigger>
-                                          </FormControl>
-                                          <SelectContent>
-                                            <SelectItem value="no_restrictions">No restrictions</SelectItem>
-                                            <SelectItem value="social_isolation">Social Isolation</SelectItem>
-                                            <SelectItem value="other">Other</SelectItem>
-                                          </SelectContent>
-                                        </Select>
+                                        <FormLabel>What has been the consequences of sensory impairment on the Client social life?</FormLabel>
+                                        <FormControl>
+                                          <RadioGroup
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            className="flex flex-col gap-3"
+                                          >
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="no_restrictions" id={`${categoryKey}-no-restrictions`} />
+                                              <Label htmlFor={`${categoryKey}-no-restrictions`}>No restrictions</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="social_isolation" id={`${categoryKey}-social-isolation`} />
+                                              <Label htmlFor={`${categoryKey}-social-isolation`}>Social Isolation</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                              <RadioGroupItem value="other" id={`${categoryKey}-other`} />
+                                              <Label htmlFor={`${categoryKey}-other`}>Other</Label>
+                                            </div>
+                                          </RadioGroup>
+                                        </FormControl>
                                         <FormMessage />
                                       </FormItem>
                                     )}
