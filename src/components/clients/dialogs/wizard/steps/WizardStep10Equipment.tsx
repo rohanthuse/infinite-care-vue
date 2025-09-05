@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { Plus, Trash2, Calendar } from "lucide-react";
@@ -33,53 +32,108 @@ interface WizardStep10EquipmentProps {
 export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
   // Migrate legacy data on component mount
   useEffect(() => {
-    const equipment = form.getValues("equipment") || [];
-    const hasLegacyData = equipment.some((item: any) => item.equipment_name || item.equipment_type);
+    const equipment = form.getValues("equipment");
     
-    if (hasLegacyData) {
-      const transformedEquipment = equipment.map((item: any) => {
-        // If it's already in new format, return as is
-        if (item.equipmentUsed && !item.equipment_name) {
-          return item;
-        }
-        
-        // Transform legacy format to new format
-        const equipmentUsed = [];
-        if (item.equipment_name) {
-          // Try to match equipment_name to an option
-          const matchedOption = EQUIPMENT_OPTIONS.find(opt => 
-            opt.label.toLowerCase().includes(item.equipment_name.toLowerCase()) ||
-            item.equipment_name.toLowerCase().includes(opt.label.toLowerCase())
-          );
-          if (matchedOption) {
-            equipmentUsed.push(matchedOption.value);
-          }
-        }
-        
-        // Preserve all legacy information in notes
-        const legacyInfo = [];
-        if (item.equipment_name && !equipmentUsed.length) legacyInfo.push(`Equipment: ${item.equipment_name}`);
-        if (item.equipment_type) legacyInfo.push(`Type: ${item.equipment_type}`);
-        if (item.manufacturer) legacyInfo.push(`Manufacturer: ${item.manufacturer}`);
-        if (item.model_number) legacyInfo.push(`Model: ${item.model_number}`);
-        if (item.serial_number) legacyInfo.push(`Serial: ${item.serial_number}`);
-        if (item.location) legacyInfo.push(`Location: ${item.location}`);
-        if (item.maintenance_schedule) legacyInfo.push(`Maintenance: ${item.maintenance_schedule}`);
-        
-        const existingNotes = item.notes || "";
-        const allNotes = [existingNotes, ...legacyInfo].filter(Boolean).join('\n');
-        
-        return {
-          equipmentUsed,
-          supplier: "",
-          dateReceived: item.installation_date || "",
-          dateTrained: "",
-          nextServiceDate: item.next_maintenance_date || "",
-          notes: allNotes
-        };
-      });
+    // Handle legacy array format
+    if (Array.isArray(equipment)) {
+      const hasLegacyData = equipment.some((item: any) => item.equipment_name || item.equipment_type);
       
-      form.setValue("equipment.equipment_blocks", transformedEquipment);
+      if (hasLegacyData) {
+        console.log("Migrating legacy equipment array format");
+        const transformedEquipment = equipment.map((item: any) => {
+          // If it's already in new format, return as is
+          if (item.equipmentUsed && !item.equipment_name) {
+            return item;
+          }
+          
+          // Transform legacy format to new format
+          const equipmentUsed = [];
+          if (item.equipment_name) {
+            // Try to match equipment_name to an option
+            const matchedOption = EQUIPMENT_OPTIONS.find(opt => 
+              opt.label.toLowerCase().includes(item.equipment_name.toLowerCase()) ||
+              item.equipment_name.toLowerCase().includes(opt.label.toLowerCase())
+            );
+            if (matchedOption) {
+              equipmentUsed.push(matchedOption.value);
+            }
+          }
+          
+          // Preserve all legacy information in notes
+          const legacyInfo = [];
+          if (item.equipment_name && !equipmentUsed.length) legacyInfo.push(`Equipment: ${item.equipment_name}`);
+          if (item.equipment_type) legacyInfo.push(`Type: ${item.equipment_type}`);
+          if (item.manufacturer) legacyInfo.push(`Manufacturer: ${item.manufacturer}`);
+          if (item.model_number) legacyInfo.push(`Model: ${item.model_number}`);
+          if (item.serial_number) legacyInfo.push(`Serial: ${item.serial_number}`);
+          if (item.location) legacyInfo.push(`Location: ${item.location}`);
+          if (item.maintenance_schedule) legacyInfo.push(`Maintenance: ${item.maintenance_schedule}`);
+          
+          const existingNotes = item.notes || "";
+          const allNotes = [existingNotes, ...legacyInfo].filter(Boolean).join('\n');
+          
+          return {
+            equipmentUsed,
+            supplier: "",
+            dateReceived: item.installation_date || "",
+            dateTrained: "",
+            nextServiceDate: item.next_maintenance_date || "",
+            notes: allNotes
+          };
+        });
+        
+        form.setValue("equipment.equipment_blocks", transformedEquipment);
+      }
+    } else if (equipment?.equipment_blocks && Array.isArray(equipment.equipment_blocks)) {
+      // Handle object format with legacy equipment_blocks
+      const hasLegacyData = equipment.equipment_blocks.some((item: any) => item.equipment_name || item.equipment_type);
+      
+      if (hasLegacyData) {
+        console.log("Migrating legacy equipment blocks within object format");
+        const transformedEquipment = equipment.equipment_blocks.map((item: any) => {
+          // If it's already in new format, return as is
+          if (item.equipmentUsed && !item.equipment_name) {
+            return item;
+          }
+          
+          // Transform legacy format to new format
+          const equipmentUsed = [];
+          if (item.equipment_name) {
+            // Try to match equipment_name to an option
+            const matchedOption = EQUIPMENT_OPTIONS.find(opt => 
+              opt.label.toLowerCase().includes(item.equipment_name.toLowerCase()) ||
+              item.equipment_name.toLowerCase().includes(opt.label.toLowerCase())
+            );
+            if (matchedOption) {
+              equipmentUsed.push(matchedOption.value);
+            }
+          }
+          
+          // Preserve all legacy information in notes
+          const legacyInfo = [];
+          if (item.equipment_name && !equipmentUsed.length) legacyInfo.push(`Equipment: ${item.equipment_name}`);
+          if (item.equipment_type) legacyInfo.push(`Type: ${item.equipment_type}`);
+          if (item.manufacturer) legacyInfo.push(`Manufacturer: ${item.manufacturer}`);
+          if (item.model_number) legacyInfo.push(`Model: ${item.model_number}`);
+          if (item.serial_number) legacyInfo.push(`Serial: ${item.serial_number}`);
+          if (item.location) legacyInfo.push(`Location: ${item.location}`);
+          if (item.maintenance_schedule) legacyInfo.push(`Maintenance: ${item.maintenance_schedule}`);
+          
+          const existingNotes = item.notes || "";
+          const allNotes = [existingNotes, ...legacyInfo].filter(Boolean).join('\n');
+          
+          return {
+            equipmentUsed,
+            supplier: "",
+            dateReceived: item.installation_date || "",
+            dateTrained: "",
+            nextServiceDate: item.next_maintenance_date || "",
+            notes: allNotes
+          };
+        });
+        
+        form.setValue("equipment.equipment_blocks", transformedEquipment);
+      }
     }
   }, [form]);
 
