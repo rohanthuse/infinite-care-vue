@@ -10,6 +10,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -233,6 +236,225 @@ export function WizardStep7PersonalCare({ form }: WizardStep7PersonalCareProps) 
               </FormItem>
             )}
           />
+
+          {/* Incontinence Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Incontinence</h3>
+            <FormField
+              control={form.control}
+              name="personal_care.incontinence_products_required"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Are incontinence products required?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="wizard-incontinence-yes" />
+                        <Label htmlFor="wizard-incontinence-yes">Yes</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="wizard-incontinence-no" />
+                        <Label htmlFor="wizard-incontinence-no">No</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Sleep Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Sleep</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="personal_care.sleep_go_to_bed_time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What time do you usually go to bed?</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        placeholder="e.g., 22:00"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.sleep_wake_up_time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What time do you usually wake up?</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        placeholder="e.g., 07:00"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.sleep_get_out_of_bed_time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>What time do you prefer to get out of bed?</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="time"
+                        placeholder="e.g., 08:00"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="personal_care.sleep_prepare_duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>How long will it take you to prepare to go to bed?</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., 30 minutes, 1 hour"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="personal_care.assist_going_to_bed"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you want us to assist you with going to bed?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="wizard-assist-bed-yes" />
+                          <Label htmlFor="wizard-assist-bed-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="wizard-assist-bed-no" />
+                          <Label htmlFor="wizard-assist-bed-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.assist_getting_out_of_bed"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you want us to assist you with getting out of the bed?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="wizard-assist-out-yes" />
+                          <Label htmlFor="wizard-assist-out-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="wizard-assist-out-no" />
+                          <Label htmlFor="wizard-assist-out-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.panic_button_in_bed"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you have a panic button to call for assistance when in bed?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="wizard-panic-button-yes" />
+                          <Label htmlFor="wizard-panic-button-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="wizard-panic-button-no" />
+                          <Label htmlFor="wizard-panic-button-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="personal_care.assist_turn_to_sleep_position"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you need assistance to turn to your preferred sleeping position at night?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="wizard-assist-turn-yes" />
+                          <Label htmlFor="wizard-assist-turn-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="wizard-assist-turn-no" />
+                          <Label htmlFor="wizard-assist-turn-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
         </div>
       </Form>
     </div>

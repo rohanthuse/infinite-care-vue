@@ -28,6 +28,9 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
   personal_hygiene_needs: z.string().optional(),
@@ -40,6 +43,17 @@ const formSchema = z.object({
   comfort_measures: z.string().optional(),
   pain_management: z.string().optional(),
   skin_care_needs: z.string().optional(),
+  // Incontinence section
+  incontinence_products_required: z.boolean().optional(),
+  // Sleep section
+  sleep_go_to_bed_time: z.string().optional(),
+  sleep_wake_up_time: z.string().optional(),
+  sleep_get_out_of_bed_time: z.string().optional(),
+  sleep_prepare_duration: z.string().optional(),
+  assist_going_to_bed: z.boolean().optional(),
+  assist_getting_out_of_bed: z.boolean().optional(),
+  panic_button_in_bed: z.boolean().optional(),
+  assist_turn_to_sleep_position: z.boolean().optional(),
 });
 
 interface EditPersonalCareDialogProps {
@@ -70,6 +84,17 @@ export const EditPersonalCareDialog: React.FC<EditPersonalCareDialogProps> = ({
       comfort_measures: personalCare?.comfort_measures || "",
       pain_management: personalCare?.pain_management || "",
       skin_care_needs: personalCare?.skin_care_needs || "",
+      // Incontinence section
+      incontinence_products_required: personalCare?.incontinence_products_required || false,
+      // Sleep section
+      sleep_go_to_bed_time: personalCare?.sleep_go_to_bed_time || "",
+      sleep_wake_up_time: personalCare?.sleep_wake_up_time || "",
+      sleep_get_out_of_bed_time: personalCare?.sleep_get_out_of_bed_time || "",
+      sleep_prepare_duration: personalCare?.sleep_prepare_duration || "",
+      assist_going_to_bed: personalCare?.assist_going_to_bed || false,
+      assist_getting_out_of_bed: personalCare?.assist_getting_out_of_bed || false,
+      panic_button_in_bed: personalCare?.panic_button_in_bed || false,
+      assist_turn_to_sleep_position: personalCare?.assist_turn_to_sleep_position || false,
     },
   });
 
@@ -306,6 +331,225 @@ export const EditPersonalCareDialog: React.FC<EditPersonalCareDialogProps> = ({
                 </FormItem>
               )}
             />
+
+            {/* Incontinence Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800">Incontinence</h3>
+              <FormField
+                control={form.control}
+                name="incontinence_products_required"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Are incontinence products required?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="incontinence-yes" />
+                          <Label htmlFor="incontinence-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="incontinence-no" />
+                          <Label htmlFor="incontinence-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Sleep Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800">Sleep</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="sleep_go_to_bed_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What time do you usually go to bed?</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          placeholder="e.g., 22:00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sleep_wake_up_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What time do you usually wake up?</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          placeholder="e.g., 07:00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sleep_get_out_of_bed_time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What time do you prefer to get out of bed?</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="time"
+                          placeholder="e.g., 08:00"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="sleep_prepare_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>How long will it take you to prepare to go to bed?</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., 30 minutes, 1 hour"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="assist_going_to_bed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Do you want us to assist you with going to bed?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                          onValueChange={(value) => field.onChange(value === 'yes')}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="assist-bed-yes" />
+                            <Label htmlFor="assist-bed-yes">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="assist-bed-no" />
+                            <Label htmlFor="assist-bed-no">No</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="assist_getting_out_of_bed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Do you want us to assist you with getting out of the bed?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                          onValueChange={(value) => field.onChange(value === 'yes')}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="assist-out-yes" />
+                            <Label htmlFor="assist-out-yes">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="assist-out-no" />
+                            <Label htmlFor="assist-out-no">No</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="panic_button_in_bed"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Do you have a panic button to call for assistance when in bed?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                          onValueChange={(value) => field.onChange(value === 'yes')}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="panic-button-yes" />
+                            <Label htmlFor="panic-button-yes">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="panic-button-no" />
+                            <Label htmlFor="panic-button-no">No</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="assist_turn_to_sleep_position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Do you need assistance to turn to your preferred sleeping position at night?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                          onValueChange={(value) => field.onChange(value === 'yes')}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="assist-turn-yes" />
+                            <Label htmlFor="assist-turn-yes">Yes</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="assist-turn-no" />
+                            <Label htmlFor="assist-turn-no">No</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

@@ -2030,6 +2030,9 @@ export type Database = {
       }
       client_personal_care: {
         Row: {
+          assist_getting_out_of_bed: boolean | null
+          assist_going_to_bed: boolean | null
+          assist_turn_to_sleep_position: boolean | null
           bathing_preferences: string | null
           behavioral_notes: string | null
           client_id: string
@@ -2038,14 +2041,23 @@ export type Database = {
           created_at: string
           dressing_assistance_level: string | null
           id: string
+          incontinence_products_required: boolean | null
           pain_management: string | null
+          panic_button_in_bed: boolean | null
           personal_hygiene_needs: string | null
           skin_care_needs: string | null
+          sleep_get_out_of_bed_time: string | null
+          sleep_go_to_bed_time: string | null
           sleep_patterns: string | null
+          sleep_prepare_duration: string | null
+          sleep_wake_up_time: string | null
           toileting_assistance_level: string | null
           updated_at: string
         }
         Insert: {
+          assist_getting_out_of_bed?: boolean | null
+          assist_going_to_bed?: boolean | null
+          assist_turn_to_sleep_position?: boolean | null
           bathing_preferences?: string | null
           behavioral_notes?: string | null
           client_id: string
@@ -2054,14 +2066,23 @@ export type Database = {
           created_at?: string
           dressing_assistance_level?: string | null
           id?: string
+          incontinence_products_required?: boolean | null
           pain_management?: string | null
+          panic_button_in_bed?: boolean | null
           personal_hygiene_needs?: string | null
           skin_care_needs?: string | null
+          sleep_get_out_of_bed_time?: string | null
+          sleep_go_to_bed_time?: string | null
           sleep_patterns?: string | null
+          sleep_prepare_duration?: string | null
+          sleep_wake_up_time?: string | null
           toileting_assistance_level?: string | null
           updated_at?: string
         }
         Update: {
+          assist_getting_out_of_bed?: boolean | null
+          assist_going_to_bed?: boolean | null
+          assist_turn_to_sleep_position?: boolean | null
           bathing_preferences?: string | null
           behavioral_notes?: string | null
           client_id?: string
@@ -2070,10 +2091,16 @@ export type Database = {
           created_at?: string
           dressing_assistance_level?: string | null
           id?: string
+          incontinence_products_required?: boolean | null
           pain_management?: string | null
+          panic_button_in_bed?: boolean | null
           personal_hygiene_needs?: string | null
           skin_care_needs?: string | null
+          sleep_get_out_of_bed_time?: string | null
+          sleep_go_to_bed_time?: string | null
           sleep_patterns?: string | null
+          sleep_prepare_duration?: string | null
+          sleep_wake_up_time?: string | null
           toileting_assistance_level?: string | null
           updated_at?: string
         }

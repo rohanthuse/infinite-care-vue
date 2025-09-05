@@ -15,6 +15,17 @@ export interface ClientPersonalCare {
   comfort_measures?: string;
   pain_management?: string;
   skin_care_needs?: string;
+  // Incontinence section
+  incontinence_products_required?: boolean;
+  // Sleep section
+  sleep_go_to_bed_time?: string;
+  sleep_wake_up_time?: string;
+  sleep_get_out_of_bed_time?: string;
+  sleep_prepare_duration?: string;
+  assist_going_to_bed?: boolean;
+  assist_getting_out_of_bed?: boolean;
+  panic_button_in_bed?: boolean;
+  assist_turn_to_sleep_position?: boolean;
   created_at: string;
   updated_at: string;
 }

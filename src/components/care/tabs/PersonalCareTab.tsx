@@ -17,6 +17,17 @@ interface PersonalCareTabProps {
     comfort_measures?: string;
     pain_management?: string;
     skin_care_needs?: string;
+    // Incontinence section
+    incontinence_products_required?: boolean;
+    // Sleep section
+    sleep_go_to_bed_time?: string;
+    sleep_wake_up_time?: string;
+    sleep_get_out_of_bed_time?: string;
+    sleep_prepare_duration?: string;
+    assist_going_to_bed?: boolean;
+    assist_getting_out_of_bed?: boolean;
+    panic_button_in_bed?: boolean;
+    assist_turn_to_sleep_position?: boolean;
   } | null;
   onEditPersonalCare?: () => void;
 }
@@ -175,6 +186,129 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
               </div>
             </div>
 
+            {/* Incontinence Section */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-800 mb-4">Incontinence</h3>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500 mb-2">Incontinence Products Required</h4>
+                {personalCare?.incontinence_products_required !== undefined ? (
+                  <Badge 
+                    variant="outline" 
+                    className={personalCare.incontinence_products_required 
+                      ? "bg-red-50 text-red-700 border-red-200" 
+                      : "bg-green-50 text-green-700 border-green-200"
+                    }
+                  >
+                    {personalCare.incontinence_products_required ? 'Yes' : 'No'}
+                  </Badge>
+                ) : (
+                  <p className="text-gray-500 text-sm">Not specified</p>
+                )}
+              </div>
+            </div>
+
+            {/* Sleep Details Section */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-800 mb-4">Sleep Details</h3>
+              <div className="space-y-4">
+                {/* Sleep Times */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Bedtime</h4>
+                    <p className="text-base">{personalCare?.sleep_go_to_bed_time || 'Not specified'}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Wake Up Time</h4>
+                    <p className="text-base">{personalCare?.sleep_wake_up_time || 'Not specified'}</p>
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Get Out of Bed Time</h4>
+                    <p className="text-base">{personalCare?.sleep_get_out_of_bed_time || 'Not specified'}</p>
+                  </div>
+                </div>
+
+                {personalCare?.sleep_prepare_duration && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Preparation Duration</h4>
+                    <p className="text-base">{personalCare.sleep_prepare_duration}</p>
+                  </div>
+                )}
+
+                {/* Sleep Assistance */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Assist Going to Bed</h4>
+                    {personalCare?.assist_going_to_bed !== undefined ? (
+                      <Badge 
+                        variant="outline" 
+                        className={personalCare.assist_going_to_bed 
+                          ? "bg-blue-50 text-blue-700 border-blue-200" 
+                          : "bg-gray-50 text-gray-700 border-gray-200"
+                        }
+                      >
+                        {personalCare.assist_going_to_bed ? 'Yes' : 'No'}
+                      </Badge>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not specified</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Assist Getting Out of Bed</h4>
+                    {personalCare?.assist_getting_out_of_bed !== undefined ? (
+                      <Badge 
+                        variant="outline" 
+                        className={personalCare.assist_getting_out_of_bed 
+                          ? "bg-blue-50 text-blue-700 border-blue-200" 
+                          : "bg-gray-50 text-gray-700 border-gray-200"
+                        }
+                      >
+                        {personalCare.assist_getting_out_of_bed ? 'Yes' : 'No'}
+                      </Badge>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not specified</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Panic Button in Bed</h4>
+                    {personalCare?.panic_button_in_bed !== undefined ? (
+                      <Badge 
+                        variant="outline" 
+                        className={personalCare.panic_button_in_bed 
+                          ? "bg-green-50 text-green-700 border-green-200" 
+                          : "bg-red-50 text-red-700 border-red-200"
+                        }
+                      >
+                        {personalCare.panic_button_in_bed ? 'Yes' : 'No'}
+                      </Badge>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not specified</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Assist Turning in Sleep</h4>
+                    {personalCare?.assist_turn_to_sleep_position !== undefined ? (
+                      <Badge 
+                        variant="outline" 
+                        className={personalCare.assist_turn_to_sleep_position 
+                          ? "bg-blue-50 text-blue-700 border-blue-200" 
+                          : "bg-gray-50 text-gray-700 border-gray-200"
+                        }
+                      >
+                        {personalCare.assist_turn_to_sleep_position ? 'Yes' : 'No'}
+                      </Badge>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Not specified</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Behavioral Notes */}
             {personalCare?.behavioral_notes && (
               <div>
@@ -193,11 +327,20 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
              !personalCare?.comfort_measures &&
              !personalCare?.pain_management &&
              !personalCare?.skin_care_needs &&
-             !personalCare?.behavioral_notes && (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No personal care information available</p>
-              </div>
-            )}
+             !personalCare?.behavioral_notes &&
+             personalCare?.incontinence_products_required === undefined &&
+             !personalCare?.sleep_go_to_bed_time &&
+             !personalCare?.sleep_wake_up_time &&
+             !personalCare?.sleep_get_out_of_bed_time &&
+             !personalCare?.sleep_prepare_duration &&
+             personalCare?.assist_going_to_bed === undefined &&
+             personalCare?.assist_getting_out_of_bed === undefined &&
+             personalCare?.panic_button_in_bed === undefined &&
+             personalCare?.assist_turn_to_sleep_position === undefined && (
+               <div className="text-center py-8">
+                 <p className="text-gray-500">No personal care information available</p>
+               </div>
+             )}
           </div>
         </CardContent>
       </Card>
