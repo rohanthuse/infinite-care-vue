@@ -135,6 +135,50 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
         form.setValue("equipment.equipment_blocks", transformedEquipment);
       }
     }
+
+    // Migrate legacy environment checks
+    if (equipment?.environment_checks) {
+      const envChecks = equipment.environment_checks;
+      const hasLegacyEnvData = 
+        envChecks.adequate_space !== undefined ||
+        envChecks.stairs_steps !== undefined ||
+        envChecks.loose_rugs !== undefined ||
+        envChecks.trailing_leads !== undefined ||
+        envChecks.slippery_surfaces !== undefined ||
+        envChecks.pets !== undefined ||
+        envChecks.clutter_obstacles !== undefined ||
+        envChecks.narrow_doorways !== undefined ||
+        envChecks.low_furniture !== undefined ||
+        envChecks.other_hazards !== undefined;
+
+      if (hasLegacyEnvData) {
+        console.log("Migrating legacy environment checks");
+        const migratedEnvChecks = {
+          // Map legacy fields to new fields where appropriate
+          adequate_lighting: envChecks.appropriate_lighting,
+          space_constraints: envChecks.adequate_space,
+          trip_hazards: envChecks.loose_rugs || envChecks.slippery_surfaces || envChecks.clutter_obstacles,
+          variation_in_levels: envChecks.stairs_steps,
+          narrow_passages: envChecks.narrow_doorways,
+          heavy_doors: undefined, // New field, no legacy equivalent
+          floor_surfaces: envChecks.slippery_surfaces,
+          pets_present: envChecks.pets,
+          other_people_present: undefined, // New field, no legacy equivalent
+          temperature_considerations: undefined, // New field, no legacy equivalent
+          other_considerations: envChecks.other_hazards,
+          // Preserve any existing new format data
+          ...Object.fromEntries(
+            Object.entries(envChecks).filter(([key]) => 
+              ['adequate_lighting', 'space_constraints', 'trip_hazards', 'variation_in_levels', 
+               'narrow_passages', 'heavy_doors', 'floor_surfaces', 'pets_present', 
+               'other_people_present', 'temperature_considerations', 'other_considerations'].includes(key)
+            )
+          )
+        };
+        
+        form.setValue("equipment.environment_checks", migratedEnvChecks);
+      }
+    }
   }, [form]);
 
   const addEquipmentBlock = () => {

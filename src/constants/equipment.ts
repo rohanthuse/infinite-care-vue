@@ -24,17 +24,17 @@ export const EQUIPMENT_OPTIONS = [
 ];
 
 export const ENVIRONMENT_CHECKS = [
-  { label: "Are there adequate space for safe mobility?", key: "adequate_space" },
-  { label: "Are there any stairs/steps?", key: "stairs_steps" },
-  { label: "Are there any loose rugs/mats?", key: "loose_rugs" },
-  { label: "Are there appropriate lighting?", key: "appropriate_lighting" },
-  { label: "Are there any trailing leads?", key: "trailing_leads" },
-  { label: "Are there any slippery surfaces?", key: "slippery_surfaces" },
-  { label: "Are there any pets?", key: "pets" },
-  { label: "Are there any clutter/obstacles?", key: "clutter_obstacles" },
-  { label: "Are there any narrow doorways?", key: "narrow_doorways" },
-  { label: "Are there any low furniture?", key: "low_furniture" },
-  { label: "Are there other environmental hazards?", key: "other_hazards" },
+  { label: "Are there adequate lighting?", key: "adequate_lighting" },
+  { label: "Are there space constraints?", key: "space_constraints" },
+  { label: "Are there trip hazards?", key: "trip_hazards" },
+  { label: "Are there variation in levels?", key: "variation_in_levels" },
+  { label: "Are there narrow passages?", key: "narrow_passages" },
+  { label: "Are there heavy doors?", key: "heavy_doors" },
+  { label: "Are there floor surfaces?", key: "floor_surfaces" },
+  { label: "Are there pets present?", key: "pets_present" },
+  { label: "Are there other people present?", key: "other_people_present" },
+  { label: "Are there temperature considerations?", key: "temperature_considerations" },
+  { label: "Are there other considerations?", key: "other_considerations" },
 ];
 
 export const HOME_REPAIR_OPTIONS = [
