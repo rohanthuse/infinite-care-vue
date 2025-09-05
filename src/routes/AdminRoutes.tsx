@@ -108,6 +108,7 @@ const AdminRoutes = () => [
     {/* Tenant-specific routes - these work within a tenant context */}
     <Route path="admin" element={<BranchAdminRedirector />} />
     <Route path="dashboard" element={<BranchAdminRedirector />} />
+    <Route path="admin-home" element={<Dashboard />} />
     <Route path="notifications" element={<Notifications />} />
     <Route path="notifications/:categoryId" element={<Notifications />} />
     <Route path="services" element={<Services />} />

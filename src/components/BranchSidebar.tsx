@@ -188,10 +188,20 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
         "border-t border-border mt-auto p-3",
         collapsed ? "text-center" : "px-4"
       )}>
-        <div className={cn(
-          "flex items-center text-xs text-muted-foreground",
-          collapsed ? "flex-col" : "justify-between"
-        )}>
+        <div 
+          className={cn(
+            "flex items-center text-xs text-muted-foreground cursor-pointer hover:text-primary transition-colors",
+            collapsed ? "flex-col" : "justify-between"
+          )}
+          onClick={() => {
+            // Navigate to admin home, parsing tenant from current location
+            const pathParts = location.pathname.split('/').filter(Boolean);
+            const branchDashboardIndex = pathParts.findIndex(part => part === 'branch-dashboard');
+            const tenantSlug = branchDashboardIndex > 0 ? pathParts[0] : null;
+            const targetPath = tenantSlug ? `/${tenantSlug}/admin-home` : '/admin-home';
+            navigate(targetPath);
+          }}
+        >
           <span>Powered by</span>
           <span className="font-medium">Med-Infinite</span>
         </div>
