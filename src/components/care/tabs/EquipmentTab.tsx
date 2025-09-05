@@ -1,10 +1,53 @@
 import React from "react";
-import { format } from "date-fns";
-import { Wrench, Plus, Calendar, MapPin, Settings } from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Wrench, Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { ClientEquipment } from "@/hooks/useClientData";
+
+const EQUIPMENT_OPTIONS = [
+  { label: "Electric Wheelchair", value: "electric-wheelchair" },
+  { label: "Manual Wheelchair", value: "manual-wheelchair" },
+  { label: "Walking frame", value: "walking-frame" },
+  { label: "Tripod frame", value: "tripod-frame" },
+  { label: "Wheeled walker", value: "wheeled-walker" },
+  { label: "Walking stick", value: "walking-stick" },
+  { label: "Hospital bed", value: "hospital-bed" },
+  { label: "Rise recline Chair", value: "rise-recline-chair" },
+  { label: "Bath lift", value: "bath-lift" },
+  { label: "Shower seat", value: "shower-seat" },
+  { label: "Static Commode", value: "static-commode" },
+  { label: "Glider Commode", value: "glider-commode" },
+  { label: "Ceiling track hoist", value: "ceiling-track-hoist" },
+  { label: "Mobile hoist", value: "mobile-hoist" },
+  { label: "Rotunda", value: "rotunda" },
+  { label: "Standing hoist", value: "standing-hoist" },
+  { label: "Stair lift", value: "stair-lift" },
+  { label: "Perching stool", value: "perching-stool" },
+  { label: "Raised toilet seat", value: "raised-toilet-seat" },
+  { label: "Banana board", value: "banana-board" },
+  { label: "Grab Rails", value: "grab-rails" },
+  { label: "Other", value: "other" },
+];
+
+const formSchema = z.object({
+  equipmentBlocks: z.array(z.object({
+    equipmentUsed: z.array(z.string()).min(1, "Please select at least one equipment"),
+    supplier: z.string().optional(),
+    dateReceived: z.string().optional(),
+    dateTrained: z.string().optional(),
+    nextServiceDate: z.string().optional(),
+    notes: z.string().optional(),
+  }))
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface EquipmentTabProps {
   clientId: string;
@@ -17,14 +60,41 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
   equipment,
   onAddEquipment,
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'retired': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      equipmentBlocks: [
+        {
+          equipmentUsed: [],
+          supplier: "",
+          dateReceived: "",
+          dateTrained: "",
+          nextServiceDate: "",
+          notes: "",
+        }
+      ],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "equipmentBlocks",
+  });
+
+  const handleAddEquipmentBlock = () => {
+    append({
+      equipmentUsed: [],
+      supplier: "",
+      dateReceived: "",
+      dateTrained: "",
+      nextServiceDate: "",
+      notes: "",
+    });
+  };
+
+  const onSubmit = (data: FormData) => {
+    console.log("Equipment data:", data);
+    // Handle form submission here
   };
 
   return (
@@ -36,75 +106,136 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
               <Wrench className="h-5 w-5 text-orange-600" />
               <CardTitle className="text-lg">Equipment & Devices</CardTitle>
             </div>
-            <Button size="sm" className="gap-1" onClick={onAddEquipment}>
+            <Button size="sm" className="gap-1" onClick={handleAddEquipmentBlock}>
               <Plus className="h-4 w-4" />
-              <span>Add Equipment</span>
+              <span>Add Equipment Block</span>
             </Button>
           </div>
           <CardDescription>Client equipment and assistive devices</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          {equipment.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Wrench className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm">No equipment registered</p>
-              {onAddEquipment && (
-                <Button variant="outline" className="mt-3" onClick={onAddEquipment}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Equipment
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {equipment.map((item) => (
-                <div key={item.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium">{item.equipment_name}</h3>
-                      <Badge className={getStatusColor(item.status)}>
-                        {item.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-4 w-4" />
-                        <span>Type: {item.equipment_type}</span>
-                      </div>
-                      {item.location && (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>Location: {item.location}</span>
-                        </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {fields.map((field, index) => (
+                <div key={field.id} className="border rounded-lg p-6 space-y-4 relative">
+                  {fields.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 h-8 w-8 p-0"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  <FormField
+                    control={form.control}
+                    name={`equipmentBlocks.${index}.equipmentUsed`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Equipment Used</FormLabel>
+                        <FormControl>
+                          <MultiSelect
+                            options={EQUIPMENT_OPTIONS}
+                            selected={field.value}
+                            onSelectionChange={field.onChange}
+                            placeholder="Select equipment..."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`equipmentBlocks.${index}.supplier`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Supplier</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter supplier name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
-                    {item.manufacturer && (
-                      <p className="text-sm"><span className="font-medium">Manufacturer:</span> {item.manufacturer}</p>
-                    )}
-                    {item.model_number && (
-                      <p className="text-sm"><span className="font-medium">Model:</span> {item.model_number}</p>
-                    )}
-                    {item.serial_number && (
-                      <p className="text-sm"><span className="font-medium">Serial:</span> {item.serial_number}</p>
-                    )}
-                    {item.installation_date && (
-                      <p className="text-sm">
-                        <span className="font-medium">Installed:</span> {format(new Date(item.installation_date), 'MMM dd, yyyy')}
-                      </p>
-                    )}
-                    {item.next_maintenance_date && (
-                      <p className="text-sm">
-                        <span className="font-medium">Next Maintenance:</span> {format(new Date(item.next_maintenance_date), 'MMM dd, yyyy')}
-                      </p>
-                    )}
-                    {item.notes && (
-                      <p className="text-sm text-gray-600">{item.notes}</p>
-                    )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`equipmentBlocks.${index}.dateReceived`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date Received</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`equipmentBlocks.${index}.dateTrained`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date Trained</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`equipmentBlocks.${index}.nextServiceDate`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Next Service Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
+
+                  <FormField
+                    control={form.control}
+                    name={`equipmentBlocks.${index}.notes`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter any additional notes about the equipment..."
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               ))}
-            </div>
-          )}
+
+              <div className="flex gap-2">
+                <Button type="submit">Save Equipment</Button>
+                <Button type="button" variant="outline" onClick={handleAddEquipmentBlock}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Another Equipment Block
+                </Button>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
