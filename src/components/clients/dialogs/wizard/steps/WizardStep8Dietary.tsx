@@ -1,6 +1,6 @@
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
@@ -69,8 +69,9 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <Form {...form}>
+      <div className="space-y-6">
+        <Card>
         <CardHeader>
           <CardTitle>Dietary Requirements</CardTitle>
           <CardDescription>
@@ -275,6 +276,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
           </Collapsible>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </Form>
   );
 }
