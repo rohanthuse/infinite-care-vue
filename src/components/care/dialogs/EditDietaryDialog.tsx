@@ -27,8 +27,22 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 
 const formSchema = z.object({
+  // New fields from the image
+  at_risk_malnutrition: z.boolean().optional().default(false),
+  malnutrition_items: z.array(z.string()).optional().default([]),
+  at_risk_dehydration: z.boolean().optional().default(false),
+  dehydration_items: z.array(z.string()).optional().default([]),
+  check_fridge_expiry: z.boolean().optional().default(false),
+  fridge_expiry_items: z.array(z.string()).optional().default([]),
+  do_you_cook: z.boolean().optional().default(false),
+  cooking_items: z.array(z.string()).optional().default([]),
+  avoid_medical_reasons: z.boolean().optional().default(false),
+  medical_avoidance_items: z.array(z.string()).optional().default([]),
+  avoid_religious_reasons: z.boolean().optional().default(false),
+  religious_avoidance_items: z.array(z.string()).optional().default([]),
+  
+  // Legacy fields
   has_allergies: z.enum(["yes", "no"]).optional(),
-  at_risk_malnutrition: z.enum(["yes", "no"]).optional(),
   needs_cooking_help: z.enum(["yes", "no"]).optional(),
   religious_cultural_requirements: z.enum(["yes", "no"]).optional(),
   swallowing_concerns: z.enum(["yes", "no"]).optional(),
@@ -41,16 +55,19 @@ const formSchema = z.object({
   cutting_food_details: z.string().optional(),
   meal_schedule_details: z.string().optional(),
   hydration_details: z.string().optional(),
-  dietary_restrictions: z.array(z.string()).optional(),
-  food_allergies: z.array(z.string()).optional(),
-  food_preferences: z.array(z.string()).optional(),
-  nutritional_needs: z.string().optional(),
-  supplements: z.array(z.string()).optional(),
-  feeding_assistance_required: z.boolean().optional(),
-  special_equipment_needed: z.string().optional(),
-  texture_modifications: z.string().optional(),
-  fluid_restrictions: z.string().optional(),
-  weight_monitoring: z.boolean().optional(),
+  
+  // Existing fields
+  dietary_restrictions: z.array(z.string()).optional().default([]),
+  food_allergies: z.array(z.string()).optional().default([]),
+  food_preferences: z.array(z.string()).optional().default([]),
+  meal_schedule: z.any().optional(),
+  nutritional_needs: z.string().optional().default(""),
+  supplements: z.array(z.string()).optional().default([]),
+  feeding_assistance_required: z.boolean().optional().default(false),
+  special_equipment_needed: z.string().optional().default(""),
+  texture_modifications: z.string().optional().default(""),
+  fluid_restrictions: z.string().optional().default(""),
+  weight_monitoring: z.boolean().optional().default(false),
 });
 
 interface EditDietaryDialogProps {
@@ -76,8 +93,22 @@ export const EditDietaryDialog: React.FC<EditDietaryDialogProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      // New fields from the image
+      at_risk_malnutrition: dietaryRequirements?.at_risk_malnutrition || false,
+      malnutrition_items: dietaryRequirements?.malnutrition_items || [],
+      at_risk_dehydration: dietaryRequirements?.at_risk_dehydration || false,
+      dehydration_items: dietaryRequirements?.dehydration_items || [],
+      check_fridge_expiry: dietaryRequirements?.check_fridge_expiry || false,
+      fridge_expiry_items: dietaryRequirements?.fridge_expiry_items || [],
+      do_you_cook: dietaryRequirements?.do_you_cook || false,
+      cooking_items: dietaryRequirements?.cooking_items || [],
+      avoid_medical_reasons: dietaryRequirements?.avoid_medical_reasons || false,
+      medical_avoidance_items: dietaryRequirements?.medical_avoidance_items || [],
+      avoid_religious_reasons: dietaryRequirements?.avoid_religious_reasons || false,
+      religious_avoidance_items: dietaryRequirements?.religious_avoidance_items || [],
+      
+      // Legacy fields
       has_allergies: dietaryRequirements?.has_allergies || "no",
-      at_risk_malnutrition: dietaryRequirements?.at_risk_malnutrition || "no",
       needs_cooking_help: dietaryRequirements?.needs_cooking_help || "no",
       religious_cultural_requirements: dietaryRequirements?.religious_cultural_requirements || "no",
       swallowing_concerns: dietaryRequirements?.swallowing_concerns || "no",
@@ -90,9 +121,12 @@ export const EditDietaryDialog: React.FC<EditDietaryDialogProps> = ({
       cutting_food_details: dietaryRequirements?.cutting_food_details || "",
       meal_schedule_details: dietaryRequirements?.meal_schedule_details || "",
       hydration_details: dietaryRequirements?.hydration_details || "",
+      
+      // Existing fields
       dietary_restrictions: dietaryRequirements?.dietary_restrictions || [],
       food_allergies: dietaryRequirements?.food_allergies || [],
       food_preferences: dietaryRequirements?.food_preferences || [],
+      meal_schedule: dietaryRequirements?.meal_schedule || null,
       nutritional_needs: dietaryRequirements?.nutritional_needs || "",
       supplements: dietaryRequirements?.supplements || [],
       feeding_assistance_required: dietaryRequirements?.feeding_assistance_required || false,

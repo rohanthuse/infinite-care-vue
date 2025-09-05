@@ -10,7 +10,7 @@ import { WizardStep5AdminMedication } from "./steps/WizardStep5AdminMedication";
 import { WizardStep5Goals } from "./steps/WizardStep5Goals";
 import { WizardStep6Activities } from "./steps/WizardStep6Activities";
 import { WizardStep7PersonalCare } from "./steps/WizardStep7PersonalCare";
-import { WizardStep8Dietary } from "./steps/WizardStep8Dietary";
+import WizardStep8Dietary from "./steps/WizardStep8Dietary";
 import { WizardStep9RiskAssessments } from "./steps/WizardStep9RiskAssessments";
 import { WizardStep10Equipment } from "./steps/WizardStep10Equipment";
 import { WizardStep11ServicePlans } from "./steps/WizardStep11ServicePlans";
