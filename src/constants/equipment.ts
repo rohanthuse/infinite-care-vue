@@ -38,12 +38,8 @@ export const ENVIRONMENT_CHECKS = [
 ];
 
 export const HOME_REPAIR_OPTIONS = [
-  { label: "Grab Rail", value: "grab_rail" },
-  { label: "Handrail", value: "handrail" },
-  { label: "Ramp", value: "ramp" },
-  { label: "Stair Rail", value: "stair_rail" },
-  { label: "Door Widening", value: "door_widening" },
-  { label: "Flooring", value: "flooring" },
-  { label: "Lighting", value: "lighting" },
+  { label: "My Family", value: "my_family" },
+  { label: "My Agent", value: "my_agent" },
+  { label: "My Housing Association", value: "my_housing_association" },
   { label: "Other", value: "other" },
 ];

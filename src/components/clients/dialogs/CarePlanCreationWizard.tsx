@@ -50,6 +50,8 @@ const carePlanSchema = z.object({
     home_repairs: z.object({
       repair_needed: z.string().optional(),
       repair_other: z.string().optional(),
+      contact_name: z.string().optional(),
+      contact_telephone: z.string().optional(),
     }).optional(),
   }).optional(),
   service_plans: z.array(z.any()).optional(),
@@ -138,7 +140,12 @@ export function CarePlanCreationWizard({
         equipment_blocks: [],
         moving_handling: {},
         environment_checks: {},
-        home_repairs: {},
+        home_repairs: {
+          repair_needed: "",
+          repair_other: "",
+          contact_name: "",
+          contact_telephone: "",
+        },
       },
       service_plans: [],
       service_actions: [],
@@ -243,14 +250,24 @@ export function CarePlanCreationWizard({
                   equipment_blocks: value,
                   moving_handling: {},
                   environment_checks: {},
-                  home_repairs: {},
+                  home_repairs: {
+                    repair_needed: "",
+                    repair_other: "",
+                    contact_name: "",
+                    contact_telephone: "",
+                  },
                 };
               } else if (!value || typeof value !== 'object') {
                 value = {
                   equipment_blocks: [],
                   moving_handling: {},
                   environment_checks: {},
-                  home_repairs: {},
+                  home_repairs: {
+                    repair_needed: "",
+                    repair_other: "", 
+                    contact_name: "",
+                    contact_telephone: "",
+                  },
                 };
               }
             }

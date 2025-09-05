@@ -470,16 +470,23 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                 name="equipment.home_repairs.repair_needed"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>What repair is needed?</FormLabel>
+                    <FormLabel>Who manages my home repairs?</FormLabel>
                     <FormControl>
                       <div className="relative z-50">
                         <Combobox
                           options={HOME_REPAIR_OPTIONS}
                           value={field.value || ""}
-                          onValueChange={field.onChange}
-                          placeholder="Select repair type..."
-                          searchPlaceholder="Search repairs..."
-                          emptyText="No repairs found."
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Clear contact fields if "My Family" is selected
+                            if (value === "my_family") {
+                              form.setValue("equipment.home_repairs.contact_name", "");
+                              form.setValue("equipment.home_repairs.contact_telephone", "");
+                            }
+                          }}
+                          placeholder="Select who manages repairs..."
+                          searchPlaceholder="Search options..."
+                          emptyText="No options found."
                           allowCustom={false}
                         />
                       </div>
@@ -495,10 +502,10 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                   name="equipment.home_repairs.repair_other"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Please specify other repair</FormLabel>
+                      <FormLabel>Please specify other</FormLabel>
                       <FormControl>
                         <Input 
-                          placeholder="Enter other repair details..."
+                          placeholder="Enter other details..."
                           {...field} 
                         />
                       </FormControl>
@@ -506,6 +513,44 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                     </FormItem>
                   )}
                 />
+              )}
+
+              {form.watch("equipment.home_repairs.repair_needed") && form.watch("equipment.home_repairs.repair_needed") !== "my_family" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="equipment.home_repairs.contact_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter contact name..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="equipment.home_repairs.contact_telephone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telephone</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter telephone number..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
             </div>
           </div>

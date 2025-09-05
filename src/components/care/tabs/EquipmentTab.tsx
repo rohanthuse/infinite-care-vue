@@ -45,6 +45,8 @@ const formSchema = z.object({
   homeRepairs: z.object({
     repairType: z.string().optional(),
     otherRepair: z.string().optional(),
+    contactName: z.string().optional(),
+    contactTelephone: z.string().optional(),
   }),
 });
 
@@ -93,6 +95,8 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
       homeRepairs: {
         repairType: "",
         otherRepair: "",
+        contactName: "",
+        contactTelephone: "",
       },
     },
   });
@@ -364,45 +368,90 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
         <CardContent className="pt-4">
           <Form {...form}>
             <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="homeRepairs.repairType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type of repair/modification needed</FormLabel>
-                    <FormControl>
-                      <Combobox
-                        options={HOME_REPAIR_OPTIONS}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        placeholder="Select repair type..."
-                        searchPlaceholder="Search repairs..."
-                        emptyText="No repairs found."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("homeRepairs.repairType") === "other" && (
                 <FormField
                   control={form.control}
-                  name="homeRepairs.otherRepair"
+                  name="homeRepairs.repairType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Please specify other repair</FormLabel>
+                      <FormLabel>Who manages my home repairs?</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="Enter other repair details..."
-                          {...field} 
+                        <Combobox
+                          options={HOME_REPAIR_OPTIONS}
+                          value={field.value}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // Clear contact fields if "My Family" is selected
+                            if (value === "my_family") {
+                              form.setValue("homeRepairs.contactName", "");
+                              form.setValue("homeRepairs.contactTelephone", "");
+                            }
+                          }}
+                          placeholder="Select who manages repairs..."
+                          searchPlaceholder="Search options..."
+                          emptyText="No options found."
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
+
+                {form.watch("homeRepairs.repairType") === "other" && (
+                  <FormField
+                    control={form.control}
+                    name="homeRepairs.otherRepair"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Please specify other</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter other details..."
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {form.watch("homeRepairs.repairType") && form.watch("homeRepairs.repairType") !== "my_family" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="homeRepairs.contactName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter contact name..."
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="homeRepairs.contactTelephone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telephone</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter telephone number..."
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
             </div>
           </Form>
         </CardContent>
