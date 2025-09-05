@@ -967,8 +967,8 @@ export function WizardStep4MedicalInfo({
                                    </>
                                  )}
 
-                                 {/* Standard fields for other categories (excluding Sensory Impairment, Learning Disability, Physical Disability/Condition, and People with an Eating Disorder) */}
-                                 {category !== "Sensory Impairment" && category !== "Learning Disability" && category !== "Physical Disability/Condition" && category !== "People with an Eating Disorder" && (
+                                  {/* Standard fields for other categories (excluding Sensory Impairment, Learning Disability, Physical Disability/Condition, People with an Eating Disorder, and Autistic Disorder) */}
+                                  {category !== "Sensory Impairment" && category !== "Learning Disability" && category !== "Physical Disability/Condition" && category !== "People with an Eating Disorder" && category !== "Autistic Disorder" && (
                                   <>
                                     {/* Risk of Wandering */}
                                     <FormField 
