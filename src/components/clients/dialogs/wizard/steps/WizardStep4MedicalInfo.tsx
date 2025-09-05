@@ -836,126 +836,136 @@ export function WizardStep4MedicalInfo({
                                   </>
                                 )}
 
-                                {/* People with an Eating Disorder Specific Fields */}
-                                {category === "People with an Eating Disorder" && (
-                                  <>
-                                    {/* Status Flags */}
-                                    <FormField 
-                                      control={form.control} 
-                                      name={`medical_info.service_band.details.${categoryKey}.status_flags`} 
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Status Flags</FormLabel>
-                                          <div className="grid grid-cols-2 gap-3">
-                                            {["Anorexia", "Bulimia", "Binge eating", "Other"].map((status) => (
-                                              <div key={status} className="flex items-center space-x-2">
-                                                <Checkbox 
-                                                  id={`${categoryKey}-status-${status}`}
-                                                  checked={field.value?.includes(status) || false}
-                                                  onCheckedChange={(checked) => {
-                                                    const currentValue = field.value || [];
-                                                    if (checked) {
-                                                      field.onChange([...currentValue, status]);
-                                                    } else {
-                                                      field.onChange(currentValue.filter((item: string) => item !== status));
-                                                    }
-                                                  }}
-                                                />
-                                                <Label htmlFor={`${categoryKey}-status-${status}`} className="cursor-pointer">
-                                                  {status}
-                                                </Label>
-                                              </div>
-                                            ))}
-                                          </div>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
+                                 {/* People with an Eating Disorder Specific Fields */}
+                                 {category === "People with an Eating Disorder" && (
+                                   <>
+                                     {/* Status Flags */}
+                                     <FormField 
+                                       control={form.control} 
+                                       name={`medical_info.service_band.details.${categoryKey}.status_flags`} 
+                                       render={({ field }) => {
+                                         // Sanitize existing values to only include new valid options
+                                         const validOptions = ["Frail", "Bed-bound", "Capable", "Other"];
+                                         const sanitizedValue = (field.value || []).filter((item: string) => validOptions.includes(item));
+                                         
+                                         // Update field value if it was sanitized
+                                         if (field.value && field.value.length !== sanitizedValue.length) {
+                                           field.onChange(sanitizedValue);
+                                         }
 
-                                    {/* Condition Explanation */}
-                                    <FormField 
-                                      control={form.control} 
-                                      name={`medical_info.service_band.details.${categoryKey}.condition_explanation`} 
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>Explain about Client eating disorder</FormLabel>
-                                          <FormControl>
-                                            <Textarea 
-                                              placeholder="Describe the client's eating disorder..." 
-                                              className="min-h-[80px]" 
-                                              {...field} 
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
+                                         return (
+                                           <FormItem>
+                                             <FormLabel>Please tick relevant box:</FormLabel>
+                                             <div className="grid grid-cols-2 gap-3">
+                                               {validOptions.map((status) => (
+                                                 <div key={status} className="flex items-center space-x-2">
+                                                   <Checkbox 
+                                                     id={`${categoryKey}-status-${status}`}
+                                                     checked={sanitizedValue?.includes(status) || false}
+                                                     onCheckedChange={(checked) => {
+                                                       const currentValue = sanitizedValue || [];
+                                                       if (checked) {
+                                                         field.onChange([...currentValue, status]);
+                                                       } else {
+                                                         field.onChange(currentValue.filter((item: string) => item !== status));
+                                                       }
+                                                     }}
+                                                   />
+                                                   <Label htmlFor={`${categoryKey}-status-${status}`} className="cursor-pointer">
+                                                     {status}
+                                                   </Label>
+                                                 </div>
+                                               ))}
+                                             </div>
+                                             <FormMessage />
+                                           </FormItem>
+                                         );
+                                       }} 
+                                     />
 
-                                    {/* Help in Place */}
-                                    <FormField 
-                                      control={form.control} 
-                                      name={`medical_info.service_band.details.${categoryKey}.help_in_place`} 
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>What help is already in place?</FormLabel>
-                                          <FormControl>
-                                            <Textarea 
-                                              placeholder="Describe what help is already in place..." 
-                                              className="min-h-[80px]" 
-                                              {...field} 
-                                            />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
+                                     {/* Condition Explanation */}
+                                     <FormField 
+                                       control={form.control} 
+                                       name={`medical_info.service_band.details.${categoryKey}.condition_explanation`} 
+                                       render={({ field }) => (
+                                         <FormItem>
+                                           <FormLabel>Explain Client condition/disorder:</FormLabel>
+                                           <FormControl>
+                                             <Textarea 
+                                               placeholder="Describe the client's condition/disorder..." 
+                                               className="min-h-[80px]" 
+                                               {...field} 
+                                             />
+                                           </FormControl>
+                                           <FormMessage />
+                                         </FormItem>
+                                       )} 
+                                     />
 
-                                    {/* Social Life Restrictions */}
-                                    <FormField 
-                                      control={form.control} 
-                                      name={`medical_info.service_band.details.${categoryKey}.social_life_restrictions`} 
-                                      render={({ field }) => (
-                                        <FormItem>
-                                          <FormLabel>What has been the consequences of eating disorder on the Client social life?</FormLabel>
-                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                              <SelectTrigger>
-                                                <SelectValue placeholder="Select restriction type" />
-                                              </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                              <SelectItem value="no_restrictions">No restrictions</SelectItem>
-                                              <SelectItem value="social_isolation">Social Isolation</SelectItem>
-                                              <SelectItem value="other">Other</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
+                                     {/* Social Life Restrictions */}
+                                     <FormField 
+                                       control={form.control} 
+                                       name={`medical_info.service_band.details.${categoryKey}.social_life_restrictions`} 
+                                       render={({ field }) => (
+                                         <FormItem>
+                                           <FormLabel>Has the condition put restrictions on the Client social life?</FormLabel>
+                                           <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                             <FormControl>
+                                               <SelectTrigger>
+                                                 <SelectValue placeholder="Select item …" />
+                                               </SelectTrigger>
+                                             </FormControl>
+                                             <SelectContent className="bg-background z-50">
+                                               <SelectItem value="no_restrictions">No restrictions</SelectItem>
+                                               <SelectItem value="social_isolation">Social Isolation</SelectItem>
+                                               <SelectItem value="other">Other</SelectItem>
+                                             </SelectContent>
+                                           </Select>
+                                           <FormMessage />
+                                         </FormItem>
+                                       )} 
+                                     />
 
-                                    {/* Other Restrictions Text Field - only show if "Other" is selected */}
-                                    {form.watch(`medical_info.service_band.details.${categoryKey}.social_life_restrictions`) === "other" && (
-                                      <FormField 
-                                        control={form.control} 
-                                        name={`medical_info.service_band.details.${categoryKey}.other_restrictions`} 
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel>Please specify other consequences</FormLabel>
-                                            <FormControl>
-                                              <Textarea 
-                                                placeholder="Enter other consequences..." 
-                                                className="min-h-[80px]" 
-                                                {...field} 
-                                              />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )} 
-                                      />
-                                    )}
-                                  </>
-                                )}
+                                     {/* Other Restrictions Text Field - only show if "Other" is selected */}
+                                     {form.watch(`medical_info.service_band.details.${categoryKey}.social_life_restrictions`) === "other" && (
+                                       <FormField 
+                                         control={form.control} 
+                                         name={`medical_info.service_band.details.${categoryKey}.other_restrictions`} 
+                                         render={({ field }) => (
+                                           <FormItem>
+                                             <FormLabel>Specify:</FormLabel>
+                                             <FormControl>
+                                               <Input 
+                                                 placeholder="Enter specification..." 
+                                                 {...field} 
+                                               />
+                                             </FormControl>
+                                             <FormMessage />
+                                           </FormItem>
+                                         )} 
+                                       />
+                                     )}
+
+                                     {/* Help in Place */}
+                                     <FormField 
+                                       control={form.control} 
+                                       name={`medical_info.service_band.details.${categoryKey}.help_in_place`} 
+                                       render={({ field }) => (
+                                         <FormItem>
+                                           <FormLabel>What type of help is in place for the Client?</FormLabel>
+                                           <FormControl>
+                                             <Textarea 
+                                               placeholder="Describe what help is in place..." 
+                                               className="min-h-[80px]" 
+                                               {...field} 
+                                             />
+                                           </FormControl>
+                                           <FormMessage />
+                                         </FormItem>
+                                       )} 
+                                     />
+                                   </>
+                                 )}
 
                                  {/* Standard fields for other categories (excluding Sensory Impairment, Learning Disability, Physical Disability/Condition, and People with an Eating Disorder) */}
                                  {category !== "Sensory Impairment" && category !== "Learning Disability" && category !== "Physical Disability/Condition" && category !== "People with an Eating Disorder" && (
