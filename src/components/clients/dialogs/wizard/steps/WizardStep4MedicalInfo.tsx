@@ -503,25 +503,6 @@ export function WizardStep4MedicalInfo({
                                     <FormMessage />
                                   </FormItem>} />
 
-                              {/* Tracking Device */}
-                              <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.tracking_device`} render={({
-                          field
-                        }) => {}} />
-
-                              {/* Risk of Challenging Behaviour */}
-                              <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.risk_of_challenging_behaviour`} render={({
-                          field
-                        }) => {}} />
-
-                              {/* Herbert Protocol */}
-                              <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.herbert_protocol`} render={({
-                          field
-                        }) => {}} />
-
-                              {/* Power of Attorney */}
-                              <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.power_of_attorney`} render={({
-                          field
-                        }) => {}} />
 
                               {/* How can we make a difference */}
                               <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.difference_message`} render={({
