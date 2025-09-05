@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Combobox } from "@/components/ui/combobox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 interface AddClientDialogProps {
@@ -24,6 +25,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    title: "",
     first_name: "",
     last_name: "",
     preferred_name: "",
@@ -120,6 +122,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
 
       // Reset form and close dialog
       setFormData({
+        title: "",
         first_name: "",
         last_name: "",
         preferred_name: "",
@@ -158,7 +161,30 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Combobox
+                options={[
+                  { value: "Lord", label: "Lord" },
+                  { value: "Professor", label: "Professor" },
+                  { value: "Dr", label: "Dr" },
+                  { value: "Sir", label: "Sir" },
+                  { value: "Mr", label: "Mr" },
+                  { value: "Lady", label: "Lady" },
+                  { value: "Dame", label: "Dame" },
+                  { value: "Miss", label: "Miss" },
+                  { value: "Mrs", label: "Mrs" },
+                  { value: "Ms", label: "Ms" },
+                  { value: "Mx", label: "Mx" }
+                ]}
+                value={formData.title}
+                onValueChange={(value) => handleInputChange("title", value)}
+                placeholder="Select title..."
+                searchPlaceholder="Search titles..."
+                emptyText="No title found."
+              />
+            </div>
             <div>
               <Label htmlFor="first_name">First Name *</Label>
               <Input id="first_name" value={formData.first_name} onChange={e => handleInputChange("first_name", e.target.value)} required />
