@@ -14,19 +14,58 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
   const watchedValues = form.watch();
   const [newAllergy, setNewAllergy] = React.useState('');
 
-  // Helper function to add items to arrays
+  // Initialize dietary defaults if not present
+  React.useEffect(() => {
+    try {
+      const currentDietary = form.getValues('dietary') || {};
+      const defaultDietary = {
+        food_allergies: [],
+        at_risk_malnutrition: false,
+        at_risk_dehydration: false,
+        check_fridge_expiry: false,
+        do_you_cook: false,
+        avoid_medical_reasons: false,
+        avoid_religious_reasons: false,
+        nutritional_needs: '',
+        feeding_assistance_required: false,
+        weight_monitoring: false,
+        ...currentDietary
+      };
+      
+      form.setValue('dietary', defaultDietary);
+      console.log('Dietary defaults initialized:', defaultDietary);
+    } catch (error) {
+      console.error('Error initializing dietary defaults:', error);
+    }
+  }, [form]);
+
+  // Helper function to add items to arrays with safety checks
   const addToArray = (fieldName: string, value: string, setter: (value: string) => void) => {
-    if (value.trim()) {
-      const current = form.getValues(fieldName) || [];
-      form.setValue(fieldName, [...current, value.trim()]);
-      setter('');
+    try {
+      if (value && value.trim()) {
+        const current = form.getValues(fieldName);
+        const currentArray = Array.isArray(current) ? current : [];
+        form.setValue(fieldName, [...currentArray, value.trim()]);
+        setter('');
+        console.log(`Added to ${fieldName}:`, value.trim());
+      }
+    } catch (error) {
+      console.error(`Error adding to ${fieldName}:`, error);
     }
   };
 
-  // Helper function to remove items from arrays
+  // Helper function to remove items from arrays with safety checks
   const removeFromArray = (fieldName: string, index: number) => {
-    const current = form.getValues(fieldName) || [];
-    form.setValue(fieldName, current.filter((_: any, i: number) => i !== index));
+    try {
+      const current = form.getValues(fieldName);
+      const currentArray = Array.isArray(current) ? current : [];
+      if (index >= 0 && index < currentArray.length) {
+        form.setValue(fieldName, currentArray.filter((_: any, i: number) => i !== index));
+        console.log(`Removed from ${fieldName} at index:`, index);
+      }
+    } catch (error) {
+      console.error(`Error removing from ${fieldName}:`, error);
+    }
   };
 
   return (
@@ -71,7 +110,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                         </Button>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {(field.value || []).map((item: string, index: number) => (
+                        {Array.isArray(field.value) && field.value.map((item: string, index: number) => (
                           <Badge key={index} variant="destructive" className="flex items-center gap-1">
                             {item}
                             <X 
@@ -100,7 +139,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <FormLabel className="text-base">At risk of malnutrition?</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -113,7 +152,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <FormLabel className="text-base">At risk of dehydration?</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -126,7 +165,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <FormLabel className="text-base">Check fridge & expiry dates?</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -144,7 +183,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <FormLabel className="text-base">Do you cook?</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -162,7 +201,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <FormLabel className="text-base">Avoid foods due to medical reasons?</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -175,7 +214,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <FormLabel className="text-base">Avoid foods due to religious reasons?</FormLabel>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch checked={!!field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
@@ -210,12 +249,12 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                   control={form.control}
                   name="dietary.feeding_assistance_required"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <FormLabel className="text-base">Feeding Assistance Required</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
+                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                       <FormLabel className="text-base">Feeding Assistance Required</FormLabel>
+                       <FormControl>
+                         <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                       </FormControl>
+                     </FormItem>
                   )}
                 />
 
@@ -223,12 +262,12 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
                   control={form.control}
                   name="dietary.weight_monitoring"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <FormLabel className="text-base">Weight Monitoring Required</FormLabel>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
+                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                       <FormLabel className="text-base">Weight Monitoring Required</FormLabel>
+                       <FormControl>
+                         <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                       </FormControl>
+                     </FormItem>
                   )}
                 />
               </div>
