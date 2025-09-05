@@ -41,6 +41,14 @@ interface PersonalCareTabProps {
     skin_condition_considerations?: string;
     mobility_aids_for_bathing?: string;
     bathroom_safety_concerns?: string;
+    // Oral Care section
+    oral_care_assist_cleaning_teeth?: boolean;
+    oral_care_assist_cleaning_dentures?: boolean;
+    oral_care_summary?: string;
+    // Podiatry section
+    has_podiatrist?: boolean;
+    // Personal care related Risks section
+    personal_care_risks_explanation?: string;
   } | null;
   onEditPersonalCare?: () => void;
 }
@@ -406,6 +414,75 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
               </div>
             </div>
 
+            {/* Oral Care Section */}
+            {(personalCare?.oral_care_assist_cleaning_teeth !== undefined || 
+              personalCare?.oral_care_assist_cleaning_dentures !== undefined ||
+              personalCare?.oral_care_summary) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Oral Care</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {personalCare?.oral_care_assist_cleaning_teeth !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Assistance with cleaning teeth</span>
+                      <Badge variant={personalCare.oral_care_assist_cleaning_teeth ? "destructive" : "default"}>
+                        {personalCare.oral_care_assist_cleaning_teeth ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
+                  )}
+                  
+                  {personalCare?.oral_care_assist_cleaning_dentures !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Assistance with cleaning dentures/retainers</span>
+                      <Badge variant={personalCare.oral_care_assist_cleaning_dentures ? "destructive" : "default"}>
+                        {personalCare.oral_care_assist_cleaning_dentures ? 'Yes' : 'No'}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {personalCare?.oral_care_summary && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">Summary</p>
+                      <p className="text-sm text-foreground">{personalCare.oral_care_summary}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Podiatry Section */}
+            {personalCare?.has_podiatrist !== undefined && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Podiatry</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Has a Podiatrist</span>
+                    <Badge variant={personalCare.has_podiatrist ? "default" : "secondary"}>
+                      {personalCare.has_podiatrist ? 'Yes' : 'No'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Personal care related Risks Section */}
+            {personalCare?.personal_care_risks_explanation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg text-foreground">Personal care related Risks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Explanation</p>
+                    <p className="text-sm text-foreground">{personalCare.personal_care_risks_explanation}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Behavioral Notes */}
             {personalCare?.behavioral_notes && (
               <div>
@@ -445,7 +522,12 @@ export const PersonalCareTab: React.FC<PersonalCareTabProps> = ({
              !personalCare?.specific_washing_requirements &&
              !personalCare?.skin_condition_considerations &&
              !personalCare?.mobility_aids_for_bathing &&
-             !personalCare?.bathroom_safety_concerns && (
+              !personalCare?.bathroom_safety_concerns &&
+              personalCare?.oral_care_assist_cleaning_teeth === undefined &&
+              personalCare?.oral_care_assist_cleaning_dentures === undefined &&
+              !personalCare?.oral_care_summary &&
+              personalCare?.has_podiatrist === undefined &&
+              !personalCare?.personal_care_risks_explanation && (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No personal care information available</p>
                 </div>

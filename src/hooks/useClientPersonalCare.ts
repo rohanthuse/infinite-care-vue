@@ -39,6 +39,14 @@ export interface ClientPersonalCare {
   skin_condition_considerations?: string;
   mobility_aids_for_bathing?: string;
   bathroom_safety_concerns?: string;
+  // Oral Care section
+  oral_care_assist_cleaning_teeth?: boolean;
+  oral_care_assist_cleaning_dentures?: boolean;
+  oral_care_summary?: string;
+  // Podiatry section
+  has_podiatrist?: boolean;
+  // Personal care related Risks section
+  personal_care_risks_explanation?: string;
   created_at: string;
   updated_at: string;
 }

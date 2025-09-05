@@ -68,6 +68,14 @@ const formSchema = z.object({
   skin_condition_considerations: z.string().optional(),
   mobility_aids_for_bathing: z.string().optional(),
   bathroom_safety_concerns: z.string().optional(),
+  // Oral Care fields
+  oral_care_assist_cleaning_teeth: z.boolean().optional(),
+  oral_care_assist_cleaning_dentures: z.boolean().optional(),
+  oral_care_summary: z.string().optional(),
+  // Podiatry field
+  has_podiatrist: z.boolean().optional(),
+  // Personal care related Risks field
+  personal_care_risks_explanation: z.string().optional(),
 });
 
 interface EditPersonalCareDialogProps {
@@ -122,6 +130,14 @@ export const EditPersonalCareDialog: React.FC<EditPersonalCareDialogProps> = ({
     skin_condition_considerations: personalCare?.skin_condition_considerations || "",
     mobility_aids_for_bathing: personalCare?.mobility_aids_for_bathing || "",
     bathroom_safety_concerns: personalCare?.bathroom_safety_concerns || "",
+    // Oral Care defaults
+    oral_care_assist_cleaning_teeth: personalCare?.oral_care_assist_cleaning_teeth || false,
+    oral_care_assist_cleaning_dentures: personalCare?.oral_care_assist_cleaning_dentures || false,
+    oral_care_summary: personalCare?.oral_care_summary || "",
+    // Podiatry default
+    has_podiatrist: personalCare?.has_podiatrist || false,
+    // Personal care related Risks default
+    personal_care_risks_explanation: personalCare?.personal_care_risks_explanation || "",
     },
   });
 
@@ -826,6 +842,138 @@ export const EditPersonalCareDialog: React.FC<EditPersonalCareDialogProps> = ({
                   )}
                 />
               </div>
+            </div>
+
+            {/* Oral Care Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800">Oral Care</h3>
+              
+              <FormField
+                control={form.control}
+                name="oral_care_assist_cleaning_teeth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you require assistance with cleaning your teeth?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="oral-teeth-yes" />
+                          <Label htmlFor="oral-teeth-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="oral-teeth-no" />
+                          <Label htmlFor="oral-teeth-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="oral_care_assist_cleaning_dentures"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you require assistance with cleaning dentures/retainers?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="oral-dentures-yes" />
+                          <Label htmlFor="oral-dentures-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="oral-dentures-no" />
+                          <Label htmlFor="oral-dentures-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="oral_care_summary"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Summary</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Provide a summary of oral care needs and preferences..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Podiatry Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800">Podiatry</h3>
+              
+              <FormField
+                control={form.control}
+                name="has_podiatrist"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Do you have a Podiatrist?</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                        onValueChange={(value) => field.onChange(value === 'yes')}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="podiatrist-yes" />
+                          <Label htmlFor="podiatrist-yes">Yes</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="podiatrist-no" />
+                          <Label htmlFor="podiatrist-no">No</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Personal care related Risks Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-gray-800">Personal care related Risks</h3>
+              
+              <FormField
+                control={form.control}
+                name="personal_care_risks_explanation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Explanation</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Explain any personal care related risks or concerns..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <DialogFooter>

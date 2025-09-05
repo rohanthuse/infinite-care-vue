@@ -706,6 +706,138 @@ export function WizardStep7PersonalCare({ form }: WizardStep7PersonalCareProps) 
               />
             </div>
           </div>
+
+          {/* Oral Care Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Oral Care</h3>
+            
+            <FormField
+              control={form.control}
+              name="personal_care.oral_care_assist_cleaning_teeth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Do you require assistance with cleaning your teeth?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="wizard-oral-teeth-yes" />
+                        <Label htmlFor="wizard-oral-teeth-yes">Yes</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="wizard-oral-teeth-no" />
+                        <Label htmlFor="wizard-oral-teeth-no">No</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="personal_care.oral_care_assist_cleaning_dentures"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Do you require assistance with cleaning dentures/retainers?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="wizard-oral-dentures-yes" />
+                        <Label htmlFor="wizard-oral-dentures-yes">Yes</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="wizard-oral-dentures-no" />
+                        <Label htmlFor="wizard-oral-dentures-no">No</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="personal_care.oral_care_summary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Summary</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Provide a summary of oral care needs and preferences..."
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Podiatry Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Podiatry</h3>
+            
+            <FormField
+              control={form.control}
+              name="personal_care.has_podiatrist"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Do you have a Podiatrist?</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value === true ? 'yes' : field.value === false ? 'no' : ''}
+                      onValueChange={(value) => field.onChange(value === 'yes')}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="wizard-podiatrist-yes" />
+                        <Label htmlFor="wizard-podiatrist-yes">Yes</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="wizard-podiatrist-no" />
+                        <Label htmlFor="wizard-podiatrist-no">No</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Personal care related Risks Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-800">Personal care related Risks</h3>
+            
+            <FormField
+              control={form.control}
+              name="personal_care.personal_care_risks_explanation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Explanation</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Explain any personal care related risks or concerns..."
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
       </Form>
     </div>

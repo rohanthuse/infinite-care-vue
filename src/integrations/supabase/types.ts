@@ -2044,11 +2044,16 @@ export type Database = {
           dressing_assistance_level: string | null
           dry_self_independently: boolean | null
           get_in_out_bath_shower_independently: boolean | null
+          has_podiatrist: boolean | null
           id: string
           incontinence_products_required: boolean | null
           mobility_aids_for_bathing: string | null
+          oral_care_assist_cleaning_dentures: boolean | null
+          oral_care_assist_cleaning_teeth: boolean | null
+          oral_care_summary: string | null
           pain_management: string | null
           panic_button_in_bed: boolean | null
+          personal_care_risks_explanation: string | null
           personal_hygiene_needs: string | null
           prefer_bath_or_shower: string | null
           skin_care_needs: string | null
@@ -2081,11 +2086,16 @@ export type Database = {
           dressing_assistance_level?: string | null
           dry_self_independently?: boolean | null
           get_in_out_bath_shower_independently?: boolean | null
+          has_podiatrist?: boolean | null
           id?: string
           incontinence_products_required?: boolean | null
           mobility_aids_for_bathing?: string | null
+          oral_care_assist_cleaning_dentures?: boolean | null
+          oral_care_assist_cleaning_teeth?: boolean | null
+          oral_care_summary?: string | null
           pain_management?: string | null
           panic_button_in_bed?: boolean | null
+          personal_care_risks_explanation?: string | null
           personal_hygiene_needs?: string | null
           prefer_bath_or_shower?: string | null
           skin_care_needs?: string | null
@@ -2118,11 +2128,16 @@ export type Database = {
           dressing_assistance_level?: string | null
           dry_self_independently?: boolean | null
           get_in_out_bath_shower_independently?: boolean | null
+          has_podiatrist?: boolean | null
           id?: string
           incontinence_products_required?: boolean | null
           mobility_aids_for_bathing?: string | null
+          oral_care_assist_cleaning_dentures?: boolean | null
+          oral_care_assist_cleaning_teeth?: boolean | null
+          oral_care_summary?: string | null
           pain_management?: string | null
           panic_button_in_bed?: boolean | null
+          personal_care_risks_explanation?: string | null
           personal_hygiene_needs?: string | null
           prefer_bath_or_shower?: string | null
           skin_care_needs?: string | null

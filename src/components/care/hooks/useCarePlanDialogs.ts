@@ -259,7 +259,10 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
           client_id: patientId,
           ...data
         });
-      } else if (data.personal_hygiene_needs || data.bathing_preferences || data.dressing_assistance_level) {
+      } else if (data.personal_hygiene_needs || data.bathing_preferences || data.dressing_assistance_level ||
+                 data.washing_showering_bathing_assistance_level || data.oral_care_assist_cleaning_teeth ||
+                 data.oral_care_assist_cleaning_dentures || data.oral_care_summary || data.has_podiatrist ||
+                 data.personal_care_risks_explanation) {
         // This is personal care data - use personal care mutation
         console.log('Detected personal care data, using personal care mutation');
         await updatePersonalCareMutation.mutateAsync({
