@@ -8,42 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { MultiSelect } from "@/components/ui/multi-select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Combobox } from "@/components/ui/combobox";
+import { EQUIPMENT_OPTIONS } from "@/constants/equipment";
 import { ClientEquipment } from "@/hooks/useClientData";
 
-const EQUIPMENT_OPTIONS = [
-  { label: "Electric Wheelchair", value: "electric-wheelchair" },
-  { label: "Manual Wheelchair", value: "manual-wheelchair" },
-  { label: "Walking frame", value: "walking-frame" },
-  { label: "Tripod frame", value: "tripod-frame" },
-  { label: "Wheeled walker", value: "wheeled-walker" },
-  { label: "Walking stick", value: "walking-stick" },
-  { label: "Hospital bed", value: "hospital-bed" },
-  { label: "Rise recline Chair", value: "rise-recline-chair" },
-  { label: "Bath lift", value: "bath-lift" },
-  { label: "Shower seat", value: "shower-seat" },
-  { label: "Static Commode", value: "static-commode" },
-  { label: "Glider Commode", value: "glider-commode" },
-  { label: "Ceiling track hoist", value: "ceiling-track-hoist" },
-  { label: "Mobile hoist", value: "mobile-hoist" },
-  { label: "Rotunda", value: "rotunda" },
-  { label: "Standing hoist", value: "standing-hoist" },
-  { label: "Stair lift", value: "stair-lift" },
-  { label: "Perching stool", value: "perching-stool" },
-  { label: "Raised toilet seat", value: "raised-toilet-seat" },
-  { label: "Banana board", value: "banana-board" },
-  { label: "Grab Rails", value: "grab-rails" },
-  { label: "Other", value: "other" },
-];
-
 const formSchema = z.object({
-  equipmentBlocks: z.array(z.object({
-    equipmentUsed: z.array(z.string()).min(1, "Please select at least one equipment"),
-    supplier: z.string().optional(),
-    dateReceived: z.string().optional(),
-    dateTrained: z.string().optional(),
-    nextServiceDate: z.string().optional(),
-    notes: z.string().optional(),
+  equipmentRows: z.array(z.object({
+    equipmentUsed: z.string().min(1, "Please select equipment"),
+    factorsToConsider: z.string().optional(),
+    remedialAction: z.string().optional(),
+    hasExpiryDate: z.string().optional(),
   }))
 });
 
@@ -63,14 +39,12 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      equipmentBlocks: [
+      equipmentRows: [
         {
-          equipmentUsed: [],
-          supplier: "",
-          dateReceived: "",
-          dateTrained: "",
-          nextServiceDate: "",
-          notes: "",
+          equipmentUsed: "",
+          factorsToConsider: "",
+          remedialAction: "",
+          hasExpiryDate: "",
         }
       ],
     },
@@ -78,17 +52,15 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "equipmentBlocks",
+    name: "equipmentRows",
   });
 
-  const handleAddEquipmentBlock = () => {
+  const handleAddRow = () => {
     append({
-      equipmentUsed: [],
-      supplier: "",
-      dateReceived: "",
-      dateTrained: "",
-      nextServiceDate: "",
-      notes: "",
+      equipmentUsed: "",
+      factorsToConsider: "",
+      remedialAction: "",
+      hasExpiryDate: "",
     });
   };
 
@@ -106,9 +78,9 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
               <Wrench className="h-5 w-5 text-orange-600" />
               <CardTitle className="text-lg">Equipment & Devices</CardTitle>
             </div>
-            <Button size="sm" className="gap-1" onClick={handleAddEquipmentBlock}>
+            <Button size="sm" className="gap-1" onClick={handleAddRow}>
               <Plus className="h-4 w-4" />
-              <span>Add Equipment Block</span>
+              <span>Add</span>
             </Button>
           </div>
           <CardDescription>Client equipment and assistive devices</CardDescription>
@@ -130,34 +102,22 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
                     </Button>
                   )}
                   
-                  <FormField
-                    control={form.control}
-                    name={`equipmentBlocks.${index}.equipmentUsed`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Equipment Used</FormLabel>
-                        <FormControl>
-                          <MultiSelect
-                            options={EQUIPMENT_OPTIONS}
-                            selected={field.value}
-                            onSelectionChange={field.onChange}
-                            placeholder="Select equipment..."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name={`equipmentBlocks.${index}.supplier`}
+                      name={`equipmentRows.${index}.equipmentUsed`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Supplier</FormLabel>
+                          <FormLabel>Equipment Used</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter supplier name" {...field} />
+                            <Combobox
+                              options={EQUIPMENT_OPTIONS}
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              placeholder="Select equipment..."
+                              searchPlaceholder="Search equipment..."
+                              emptyText="No equipment found."
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -166,40 +126,15 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
                     <FormField
                       control={form.control}
-                      name={`equipmentBlocks.${index}.dateReceived`}
+                      name={`equipmentRows.${index}.factorsToConsider`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Date Received</FormLabel>
+                          <FormLabel>Factors to be considered when moving and handling Client</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`equipmentBlocks.${index}.dateTrained`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date Trained</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`equipmentBlocks.${index}.nextServiceDate`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Next Service Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
+                            <Input 
+                              placeholder="Enter factors to consider..." 
+                              {...field} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -209,16 +144,43 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
                   <FormField
                     control={form.control}
-                    name={`equipmentBlocks.${index}.notes`}
+                    name={`equipmentRows.${index}.remedialAction`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Notes</FormLabel>
+                        <FormLabel>Possible Remedial Action?</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Enter any additional notes about the equipment..."
+                            placeholder="Enter possible remedial actions..."
                             className="min-h-[100px]"
                             {...field} 
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`equipmentRows.${index}.hasExpiryDate`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Has an expiry date?</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex flex-row space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id={`yes-${index}`} />
+                              <Label htmlFor={`yes-${index}`}>Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id={`no-${index}`} />
+                              <Label htmlFor={`no-${index}`}>No</Label>
+                            </div>
+                          </RadioGroup>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,9 +191,9 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
               <div className="flex gap-2">
                 <Button type="submit">Save Equipment</Button>
-                <Button type="button" variant="outline" onClick={handleAddEquipmentBlock}>
+                <Button type="button" variant="outline" onClick={handleAddRow}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Another Equipment Block
+                  Add Another Row
                 </Button>
               </div>
             </form>
