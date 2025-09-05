@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Plus, X, Stethoscope, Activity } from "lucide-react";
+import { Plus, X, Stethoscope, Activity, ChevronDown, ChevronUp } from "lucide-react";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +27,7 @@ export function WizardStep4MedicalInfo({
   form
 }: WizardStep4MedicalInfoProps) {
   const [activeSubTab, setActiveSubTab] = useState("medical");
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   
 
   // Service Band helper functions
@@ -34,10 +35,11 @@ export function WizardStep4MedicalInfo({
     const currentCategories = form.getValues("medical_info.service_band.categories") || [];
     const currentDetails = form.getValues("medical_info.service_band.details") || {};
     if (checked) {
-      // Add category
+      // Add category and expand it
       form.setValue("medical_info.service_band.categories", [...currentCategories, category]);
+      setExpandedCategories(prev => new Set([...prev, category]));
     } else {
-      // Remove category and clear its details
+      // Remove category, clear its details, and collapse it
       const newCategories = currentCategories.filter((cat: string) => cat !== category);
       const newDetails = {
         ...currentDetails
@@ -45,9 +47,34 @@ export function WizardStep4MedicalInfo({
       delete newDetails[toKey(category)];
       form.setValue("medical_info.service_band.categories", newCategories);
       form.setValue("medical_info.service_band.details", newDetails);
+      setExpandedCategories(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(category);
+        return newSet;
+      });
     }
   };
+
+  const toggleCategoryExpansion = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
   const serviceBandCategories = form.watch("medical_info.service_band.categories") || [];
+
+  // Auto-expand selected categories on load
+  useEffect(() => {
+    const selectedCategories = form.getValues("medical_info.service_band.categories") || [];
+    if (selectedCategories.length > 0) {
+      setExpandedCategories(new Set(selectedCategories));
+    }
+  }, [form]);
   const addMedicalCondition = () => {
     const current = form.getValues("medical_info.medical_conditions") || [];
     form.setValue("medical_info.medical_conditions", [...current, ""]);
@@ -351,27 +378,62 @@ export function WizardStep4MedicalInfo({
               <div className="space-y-4">
                 <FormLabel className="text-lg font-semibold">Service Band Categories</FormLabel>
                  <div className="space-y-4">
-                   {SERVICE_BAND_CATEGORIES.map(category => {
-                     const categoryKey = toKey(category);
-                     const isSelected = serviceBandCategories.includes(category);
-                     
-                     return (
-                       <div key={category} className="space-y-4">
-                         <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                           <Checkbox 
-                             id={`service-band-${categoryKey}`} 
-                             checked={isSelected} 
-                             onCheckedChange={checked => toggleServiceBandCategory(category, checked === true)} 
-                           />
-                           <Label htmlFor={`service-band-${categoryKey}`} className="text-sm font-medium cursor-pointer flex-1">
-                             {category}
-                           </Label>
-                         </div>
-                         
-                         {/* Inline details for selected category */}
-                         {isSelected && (
-                           <div className="ml-6 p-4 border rounded-lg bg-background space-y-4">
-                             <div className="grid gap-4">
+                     {SERVICE_BAND_CATEGORIES.map(category => {
+                      const categoryKey = toKey(category);
+                      const isSelected = serviceBandCategories.includes(category);
+                      const isExpanded = expandedCategories.has(category);
+                      
+                      return (
+                        <div key={category} className="space-y-4">
+                          <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                            <Checkbox 
+                              id={`service-band-${categoryKey}`} 
+                              checked={isSelected} 
+                              onCheckedChange={checked => toggleServiceBandCategory(category, checked === true)} 
+                            />
+                            <Label htmlFor={`service-band-${categoryKey}`} className="text-sm font-medium cursor-pointer flex-1">
+                              {category}
+                            </Label>
+                            {isSelected && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleCategoryExpansion(category)}
+                                className="ml-auto"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronUp className="h-4 w-4 mr-1" />
+                                    Close
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="h-4 w-4 mr-1" />
+                                    Show details
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                          
+                           {/* Inline details for selected and expanded category */}
+                          {isSelected && isExpanded && (
+                            <div className="ml-6 p-4 border rounded-lg bg-background space-y-4">
+                              <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-medium text-foreground">Category Details</h4>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleCategoryExpansion(category)}
+                                  className="text-muted-foreground hover:text-foreground"
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Close
+                                </Button>
+                              </div>
+                              <div className="grid gap-4">
                                {/* Sensory Impairment Specific Fields */}
                                {category === "Sensory Impairment" && (
                                  <>
@@ -646,15 +708,15 @@ export function WizardStep4MedicalInfo({
                                        <FormMessage />
                                      </FormItem>
                                    )} 
-                                 />
+                  />
+                </div>
                                </div>
-                             </div>
-                           </div>
-                         )}
-                       </div>
-                     );
-                   })}
-                 </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
               </div>
 
 
@@ -672,5 +734,5 @@ export function WizardStep4MedicalInfo({
           </Form>
         </TabsContent>
       </Tabs>
-    </div>;
+    </div>
 }
