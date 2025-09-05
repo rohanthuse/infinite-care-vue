@@ -320,14 +320,13 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
             <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="equipment.moving_handling.facilitation_independence"
+                name="equipment.moving_handling.how_to_transfer_client"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Facilitation of Independence</FormLabel>
+                    <FormLabel>How to transfer Client?</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter details about facilitation of independence..."
-                        className="min-h-[80px]"
+                      <Input 
+                        placeholder="Enter how to transfer the client..."
                         {...field} 
                       />
                     </FormControl>
@@ -338,14 +337,13 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
 
               <FormField
                 control={form.control}
-                name="equipment.moving_handling.manual_handling_considerations"
+                name="equipment.moving_handling.area_preparation_needed"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Manual Handling Considerations</FormLabel>
+                    <FormLabel>Does area needs to be prepared?</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter manual handling considerations..."
-                        className="min-h-[80px]"
+                      <Input 
+                        placeholder="Enter area preparation requirements..."
                         {...field} 
                       />
                     </FormControl>
@@ -356,14 +354,13 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
 
               <FormField
                 control={form.control}
-                name="equipment.moving_handling.moving_handling_advice"
+                name="equipment.moving_handling.type_of_equipment_required"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Moving & Handling Advice</FormLabel>
+                    <FormLabel>Type of equipment required?</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter moving and handling advice..."
-                        className="min-h-[80px]"
+                      <Input 
+                        placeholder="Enter type of equipment required..."
                         {...field} 
                       />
                     </FormControl>

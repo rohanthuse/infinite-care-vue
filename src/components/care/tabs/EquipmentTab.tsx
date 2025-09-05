@@ -23,9 +23,9 @@ const formSchema = z.object({
   })),
   // Moving & Handling section
   movingHandling: z.object({
-    clientCondition: z.string().optional(),
-    riskFactors: z.string().optional(),
-    handlingTechniques: z.string().optional(),
+    howToTransferClient: z.string().optional(),
+    areaPreparationNeeded: z.string().optional(),
+    typeOfEquipmentRequired: z.string().optional(),
   }),
   // Environment Checks section
   environmentChecks: z.object({
@@ -73,9 +73,9 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
         }
       ],
       movingHandling: {
-        clientCondition: "",
-        riskFactors: "",
-        handlingTechniques: "",
+        howToTransferClient: "",
+        areaPreparationNeeded: "",
+        typeOfEquipmentRequired: "",
       },
       environmentChecks: {
         adequate_space: "",
@@ -259,14 +259,13 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
             <div className="space-y-4">
               <FormField
                 control={form.control}
-                name="movingHandling.clientCondition"
+                name="movingHandling.howToTransferClient"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Client's condition/diagnosis affecting mobility</FormLabel>
+                    <FormLabel>How to transfer Client?</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe the client's condition or diagnosis..."
-                        className="min-h-[100px]"
+                      <Input 
+                        placeholder="Enter how to transfer the client..."
                         {...field} 
                       />
                     </FormControl>
@@ -277,14 +276,13 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
               <FormField
                 control={form.control}
-                name="movingHandling.riskFactors"
+                name="movingHandling.areaPreparationNeeded"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Risk factors to consider during moving and handling</FormLabel>
+                    <FormLabel>Does area needs to be prepared?</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="List any risk factors to consider..."
-                        className="min-h-[100px]"
+                      <Input 
+                        placeholder="Enter area preparation requirements..."
                         {...field} 
                       />
                     </FormControl>
@@ -295,14 +293,13 @@ export const EquipmentTab: React.FC<EquipmentTabProps> = ({
 
               <FormField
                 control={form.control}
-                name="movingHandling.handlingTechniques"
+                name="movingHandling.typeOfEquipmentRequired"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Recommended handling techniques and precautions</FormLabel>
+                    <FormLabel>Type of equipment required?</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe recommended techniques and precautions..."
-                        className="min-h-[100px]"
+                      <Input 
+                        placeholder="Enter type of equipment required..."
                         {...field} 
                       />
                     </FormControl>

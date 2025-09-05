@@ -30,9 +30,9 @@ const carePlanSchema = z.object({
   equipment: z.object({
     equipment_blocks: z.array(z.any()).optional(),
     moving_handling: z.object({
-      facilitation_independence: z.string().optional(),
-      manual_handling_considerations: z.string().optional(),
-      moving_handling_advice: z.string().optional(),
+      how_to_transfer_client: z.string().optional(),
+      area_preparation_needed: z.string().optional(),
+      type_of_equipment_required: z.string().optional(),
     }).optional(),
     environment_checks: z.object({
       adequate_space: z.enum(["yes", "no"]).optional(),
