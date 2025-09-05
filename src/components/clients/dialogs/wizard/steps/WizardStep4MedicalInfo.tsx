@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 interface WizardStep4MedicalInfoProps {
   form: UseFormReturn<any>;
 }
@@ -27,18 +27,17 @@ export function WizardStep4MedicalInfo({
   form
 }: WizardStep4MedicalInfoProps) {
   const [activeSubTab, setActiveSubTab] = useState("medical");
-  const [openCategories, setOpenCategories] = useState<string[]>([]);
+  
 
   // Service Band helper functions
   const toggleServiceBandCategory = (category: string, checked: boolean) => {
     const currentCategories = form.getValues("medical_info.service_band.categories") || [];
     const currentDetails = form.getValues("medical_info.service_band.details") || {};
     if (checked) {
-      // Add category and auto-open its accordion
+      // Add category
       form.setValue("medical_info.service_band.categories", [...currentCategories, category]);
-      setOpenCategories(prev => [...prev, category]);
     } else {
-      // Remove category, close its accordion, and clear its details
+      // Remove category and clear its details
       const newCategories = currentCategories.filter((cat: string) => cat !== category);
       const newDetails = {
         ...currentDetails
@@ -46,11 +45,7 @@ export function WizardStep4MedicalInfo({
       delete newDetails[toKey(category)];
       form.setValue("medical_info.service_band.categories", newCategories);
       form.setValue("medical_info.service_band.details", newDetails);
-      setOpenCategories(prev => prev.filter(cat => cat !== category));
     }
-  };
-  const closeCategory = (category: string) => {
-    setOpenCategories(prev => prev.filter(cat => cat !== category));
   };
   const serviceBandCategories = form.watch("medical_info.service_band.categories") || [];
   const addMedicalCondition = () => {
@@ -355,233 +350,313 @@ export function WizardStep4MedicalInfo({
               {/* Service Band Categories */}
               <div className="space-y-4">
                 <FormLabel className="text-lg font-semibold">Service Band Categories</FormLabel>
-                <div className="space-y-2">
-                  {SERVICE_BAND_CATEGORIES.map(category => <div key={category} className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-                      <Checkbox id={`service-band-${toKey(category)}`} checked={serviceBandCategories.includes(category)} onCheckedChange={checked => toggleServiceBandCategory(category, checked === true)} />
-                      <Label htmlFor={`service-band-${toKey(category)}`} className="text-sm font-medium cursor-pointer flex-1">
-                        {category}
-                      </Label>
-                    </div>)}
-                </div>
+                 <div className="space-y-4">
+                   {SERVICE_BAND_CATEGORIES.map(category => {
+                     const categoryKey = toKey(category);
+                     const isSelected = serviceBandCategories.includes(category);
+                     
+                     return (
+                       <div key={category} className="space-y-4">
+                         <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
+                           <Checkbox 
+                             id={`service-band-${categoryKey}`} 
+                             checked={isSelected} 
+                             onCheckedChange={checked => toggleServiceBandCategory(category, checked === true)} 
+                           />
+                           <Label htmlFor={`service-band-${categoryKey}`} className="text-sm font-medium cursor-pointer flex-1">
+                             {category}
+                           </Label>
+                         </div>
+                         
+                         {/* Inline details for selected category */}
+                         {isSelected && (
+                           <div className="ml-6 p-4 border rounded-lg bg-background space-y-4">
+                             <div className="grid gap-4">
+                               {/* Sensory Impairment Specific Fields */}
+                               {category === "Sensory Impairment" && (
+                                 <>
+                                   {/* Type of Impairment */}
+                                   <FormField 
+                                     control={form.control} 
+                                     name={`medical_info.service_band.details.${categoryKey}.impairment_type`} 
+                                     render={({ field }) => (
+                                       <FormItem>
+                                         <FormLabel>What is the impairment?</FormLabel>
+                                         <FormControl>
+                                           <RadioGroup 
+                                             value={field.value} 
+                                             onValueChange={field.onChange} 
+                                             className="flex flex-col gap-3"
+                                           >
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="sight" id={`${categoryKey}-sight`} />
+                                               <Label htmlFor={`${categoryKey}-sight`}>Sight</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="hearing" id={`${categoryKey}-hearing`} />
+                                               <Label htmlFor={`${categoryKey}-hearing`}>Hearing</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="dual" id={`${categoryKey}-dual`} />
+                                               <Label htmlFor={`${categoryKey}-dual`}>Dual</Label>
+                                             </div>
+                                           </RadioGroup>
+                                         </FormControl>
+                                         <FormMessage />
+                                       </FormItem>
+                                     )} 
+                                   />
+
+                                   {/* When was sensory loss acquired */}
+                                   <FormField 
+                                     control={form.control} 
+                                     name={`medical_info.service_band.details.${categoryKey}.sensory_loss_acquired`} 
+                                     render={({ field }) => (
+                                       <FormItem>
+                                         <FormLabel>When was the sensory loss acquired?</FormLabel>
+                                         <FormControl>
+                                           <RadioGroup 
+                                             value={field.value} 
+                                             onValueChange={field.onChange} 
+                                             className="flex flex-col gap-3"
+                                           >
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="at_birth" id={`${categoryKey}-at-birth`} />
+                                               <Label htmlFor={`${categoryKey}-at-birth`}>At birth</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="later" id={`${categoryKey}-later`} />
+                                               <Label htmlFor={`${categoryKey}-later`}>Later</Label>
+                                             </div>
+                                           </RadioGroup>
+                                         </FormControl>
+                                         <FormMessage />
+                                       </FormItem>
+                                     )} 
+                                   />
+
+                                   {/* Consequences on social life */}
+                                   <FormField 
+                                     control={form.control} 
+                                     name={`medical_info.service_band.details.${categoryKey}.social_consequences`} 
+                                     render={({ field }) => (
+                                       <FormItem>
+                                         <FormLabel>What has been the consequences of sensory impairment on the Client social life?</FormLabel>
+                                         <FormControl>
+                                           <RadioGroup 
+                                             value={field.value} 
+                                             onValueChange={field.onChange} 
+                                             className="flex flex-col gap-3"
+                                           >
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="no_restrictions" id={`${categoryKey}-no-restrictions`} />
+                                               <Label htmlFor={`${categoryKey}-no-restrictions`}>No restrictions</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="social_isolation" id={`${categoryKey}-social-isolation`} />
+                                               <Label htmlFor={`${categoryKey}-social-isolation`}>Social Isolation</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="other" id={`${categoryKey}-other`} />
+                                               <Label htmlFor={`${categoryKey}-other`}>Other</Label>
+                                             </div>
+                                           </RadioGroup>
+                                         </FormControl>
+                                         <FormMessage />
+                                       </FormItem>
+                                     )} 
+                                   />
+
+                                   {/* Other consequences text field - only show if "Other" is selected */}
+                                   {form.watch(`medical_info.service_band.details.${categoryKey}.social_consequences`) === "other" && (
+                                     <FormField 
+                                       control={form.control} 
+                                       name={`medical_info.service_band.details.${categoryKey}.other_consequences`} 
+                                       render={({ field }) => (
+                                         <FormItem>
+                                           <FormLabel>Please specify other consequences</FormLabel>
+                                           <FormControl>
+                                             <Textarea 
+                                               placeholder="Enter other consequences..." 
+                                               className="min-h-[80px]" 
+                                               {...field} 
+                                             />
+                                           </FormControl>
+                                           <FormMessage />
+                                         </FormItem>
+                                       )} 
+                                     />
+                                   )}
+                                 </>
+                               )}
+
+                               {/* Standard fields for non-Sensory Impairment categories */}
+                               {category !== "Sensory Impairment" && (
+                                 <>
+                                   {/* Risk of Wandering */}
+                                   <FormField 
+                                     control={form.control} 
+                                     name={`medical_info.service_band.details.${categoryKey}.risk_of_wandering`} 
+                                     render={({ field }) => (
+                                       <FormItem>
+                                         <FormLabel>Is there a risk of wandering?</FormLabel>
+                                         <FormControl>
+                                           <RadioGroup 
+                                             value={field.value === true ? "yes" : field.value === false ? "no" : undefined} 
+                                             onValueChange={value => field.onChange(value === "yes")} 
+                                             className="flex gap-6"
+                                           >
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="yes" id={`${categoryKey}-wandering-yes`} />
+                                               <Label htmlFor={`${categoryKey}-wandering-yes`}>Yes</Label>
+                                             </div>
+                                             <div className="flex items-center space-x-2">
+                                               <RadioGroupItem value="no" id={`${categoryKey}-wandering-no`} />
+                                               <Label htmlFor={`${categoryKey}-wandering-no`}>No</Label>
+                                             </div>
+                                           </RadioGroup>
+                                         </FormControl>
+                                         <FormMessage />
+                                       </FormItem>
+                                     )} 
+                                   />
+                                 </>
+                               )}
+
+                               {/* Instructions - with different label for Sensory Impairment */}
+                               <FormField 
+                                 control={form.control} 
+                                 name={`medical_info.service_band.details.${categoryKey}.instructions`} 
+                                 render={({ field }) => (
+                                   <FormItem>
+                                     <FormLabel>
+                                       {category === "Sensory Impairment" ? "Give specific instructions:" : "Any specific instructions or remarks:"}
+                                     </FormLabel>
+                                     <FormControl>
+                                       <Textarea 
+                                         placeholder="Enter instructions..." 
+                                         className="min-h-[80px]" 
+                                         {...field} 
+                                       />
+                                     </FormControl>
+                                     <FormMessage />
+                                   </FormItem>
+                                 )} 
+                               />
+
+                               {/* How can we make a difference */}
+                               <FormField 
+                                 control={form.control} 
+                                 name={`medical_info.service_band.details.${categoryKey}.difference_message`} 
+                                 render={({ field }) => (
+                                   <FormItem>
+                                     <FormLabel>How can we make a difference in the Client life?</FormLabel>
+                                     <FormControl>
+                                       <Textarea 
+                                         placeholder="Enter message..." 
+                                         className="min-h-[80px]" 
+                                         {...field} 
+                                       />
+                                     </FormControl>
+                                     <FormMessage />
+                                   </FormItem>
+                                 )} 
+                               />
+
+                               {/* Other Professionals Involved */}
+                               <div className="space-y-3">
+                                 <FormLabel className="text-sm font-medium">Other Professionals involved</FormLabel>
+                                 
+                                 <FormField 
+                                   control={form.control} 
+                                   name={`medical_info.service_band.details.${categoryKey}.other_professionals.nursing_team`} 
+                                   render={({ field }) => (
+                                     <FormItem>
+                                       <FormLabel>Is there a medical or nursing team involved?</FormLabel>
+                                       <FormControl>
+                                         <RadioGroup 
+                                           value={field.value === true ? "yes" : field.value === false ? "no" : undefined} 
+                                           onValueChange={value => field.onChange(value === "yes")} 
+                                           className="flex gap-6"
+                                         >
+                                           <div className="flex items-center space-x-2">
+                                             <RadioGroupItem value="yes" id={`${categoryKey}-nursing-yes`} />
+                                             <Label htmlFor={`${categoryKey}-nursing-yes`}>Yes</Label>
+                                           </div>
+                                           <div className="flex items-center space-x-2">
+                                             <RadioGroupItem value="no" id={`${categoryKey}-nursing-no`} />
+                                             <Label htmlFor={`${categoryKey}-nursing-no`}>No</Label>
+                                           </div>
+                                         </RadioGroup>
+                                       </FormControl>
+                                       <FormMessage />
+                                     </FormItem>
+                                   )} 
+                                 />
+
+                                 <FormField 
+                                   control={form.control} 
+                                   name={`medical_info.service_band.details.${categoryKey}.other_professionals.mental_health_team`} 
+                                   render={({ field }) => (
+                                     <FormItem>
+                                       <FormLabel>Is there a mental health team involved?</FormLabel>
+                                       <FormControl>
+                                         <RadioGroup 
+                                           value={field.value === true ? "yes" : field.value === false ? "no" : undefined} 
+                                           onValueChange={value => field.onChange(value === "yes")} 
+                                           className="flex gap-6"
+                                         >
+                                           <div className="flex items-center space-x-2">
+                                             <RadioGroupItem value="yes" id={`${categoryKey}-mental-yes`} />
+                                             <Label htmlFor={`${categoryKey}-mental-yes`}>Yes</Label>
+                                           </div>
+                                           <div className="flex items-center space-x-2">
+                                             <RadioGroupItem value="no" id={`${categoryKey}-mental-no`} />
+                                             <Label htmlFor={`${categoryKey}-mental-no`}>No</Label>
+                                           </div>
+                                         </RadioGroup>
+                                       </FormControl>
+                                       <FormMessage />
+                                     </FormItem>
+                                   )} 
+                                 />
+
+                                 <FormField 
+                                   control={form.control} 
+                                   name={`medical_info.service_band.details.${categoryKey}.other_professionals.charity_involved`} 
+                                   render={({ field }) => (
+                                     <FormItem>
+                                       <FormLabel>Is there a charity involved?</FormLabel>
+                                       <FormControl>
+                                         <RadioGroup 
+                                           value={field.value === true ? "yes" : field.value === false ? "no" : undefined} 
+                                           onValueChange={value => field.onChange(value === "yes")} 
+                                           className="flex gap-6"
+                                         >
+                                           <div className="flex items-center space-x-2">
+                                             <RadioGroupItem value="yes" id={`${categoryKey}-charity-yes`} />
+                                             <Label htmlFor={`${categoryKey}-charity-yes`}>Yes</Label>
+                                           </div>
+                                           <div className="flex items-center space-x-2">
+                                             <RadioGroupItem value="no" id={`${categoryKey}-charity-no`} />
+                                             <Label htmlFor={`${categoryKey}-charity-no`}>No</Label>
+                                           </div>
+                                         </RadioGroup>
+                                       </FormControl>
+                                       <FormMessage />
+                                     </FormItem>
+                                   )} 
+                                 />
+                               </div>
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     );
+                   })}
+                 </div>
               </div>
 
-              {/* Dynamic Accordion for Selected Categories */}
-              {serviceBandCategories.length > 0 && <div className="space-y-4">
-                  <FormLabel className="text-lg font-semibold">Category Details</FormLabel>
-                  <Accordion type="multiple" value={openCategories} onValueChange={setOpenCategories} className="w-full">
-                    {serviceBandCategories.map((category: string) => {
-                  const categoryKey = toKey(category);
-                  return <AccordionItem key={category} value={category}>
-                          <AccordionTrigger className="text-left">
-                            {category} Details
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-4 bg-background z-10 relative p-4 border rounded-lg">
-                            {/* Close Button */}
-                            <div className="sticky top-0 z-20 bg-background pb-3 border-b mb-4">
-                              <Button type="button" onClick={() => closeCategory(category)} size="sm" variant="outline" className="ml-auto flex items-center gap-2">
-                                <X className="h-4 w-4" />
-                                Close details
-                              </Button>
-                            </div>
-                            
-                            <div className="grid gap-4">
-                              {/* Sensory Impairment Specific Fields */}
-                              {category === "Sensory Impairment" && <>
-                                  {/* Type of Impairment */}
-                                  <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.impairment_type`} render={({
-                            field
-                          }) => <FormItem>
-                                        <FormLabel>What is the impairment?</FormLabel>
-                                        <FormControl>
-                                          <RadioGroup value={field.value} onValueChange={field.onChange} className="flex flex-col gap-3">
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="sight" id={`${categoryKey}-sight`} />
-                                              <Label htmlFor={`${categoryKey}-sight`}>Sight</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="hearing" id={`${categoryKey}-hearing`} />
-                                              <Label htmlFor={`${categoryKey}-hearing`}>Hearing</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="dual" id={`${categoryKey}-dual`} />
-                                              <Label htmlFor={`${categoryKey}-dual`}>Dual</Label>
-                                            </div>
-                                          </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>} />
-
-                                  {/* When was sensory loss acquired */}
-                                  <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.sensory_loss_acquired`} render={({
-                            field
-                          }) => <FormItem>
-                                        <FormLabel>When was the sensory loss acquired?</FormLabel>
-                                        <FormControl>
-                                          <RadioGroup value={field.value} onValueChange={field.onChange} className="flex flex-col gap-3">
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="at_birth" id={`${categoryKey}-at-birth`} />
-                                              <Label htmlFor={`${categoryKey}-at-birth`}>At birth</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="later" id={`${categoryKey}-later`} />
-                                              <Label htmlFor={`${categoryKey}-later`}>Later</Label>
-                                            </div>
-                                          </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>} />
-
-                                  {/* Consequences on social life */}
-                                  <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.social_consequences`} render={({
-                            field
-                          }) => <FormItem>
-                                        <FormLabel>What has been the consequences of sensory impairment on the Client social life?</FormLabel>
-                                        <FormControl>
-                                          <RadioGroup value={field.value} onValueChange={field.onChange} className="flex flex-col gap-3">
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="no_restrictions" id={`${categoryKey}-no-restrictions`} />
-                                              <Label htmlFor={`${categoryKey}-no-restrictions`}>No restrictions</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="social_isolation" id={`${categoryKey}-social-isolation`} />
-                                              <Label htmlFor={`${categoryKey}-social-isolation`}>Social Isolation</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="other" id={`${categoryKey}-other`} />
-                                              <Label htmlFor={`${categoryKey}-other`}>Other</Label>
-                                            </div>
-                                          </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>} />
-
-                                  {/* Other consequences text field - only show if "Other" is selected */}
-                                  {form.watch(`medical_info.service_band.details.${categoryKey}.social_consequences`) === "other" && <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.other_consequences`} render={({
-                            field
-                          }) => <FormItem>
-                                          <FormLabel>Please specify other consequences</FormLabel>
-                                          <FormControl>
-                                            <Textarea placeholder="Enter other consequences..." className="min-h-[80px]" {...field} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>} />}
-                                </>}
-
-                              {/* Standard fields for non-Sensory Impairment categories */}
-                              {category !== "Sensory Impairment" && <>
-                                  {/* Risk of Wandering */}
-                                  <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.risk_of_wandering`} render={({
-                            field
-                          }) => <FormItem>
-                                        <FormLabel>Is there a risk of wandering?</FormLabel>
-                                        <FormControl>
-                                          <RadioGroup value={field.value === true ? "yes" : field.value === false ? "no" : undefined} onValueChange={value => field.onChange(value === "yes")} className="flex gap-6">
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="yes" id={`${categoryKey}-wandering-yes`} />
-                                              <Label htmlFor={`${categoryKey}-wandering-yes`}>Yes</Label>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                              <RadioGroupItem value="no" id={`${categoryKey}-wandering-no`} />
-                                              <Label htmlFor={`${categoryKey}-wandering-no`}>No</Label>
-                                            </div>
-                                          </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>} />
-                                </>}
-
-                              {/* Instructions - with different label for Sensory Impairment */}
-                              <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.instructions`} render={({
-                          field
-                        }) => <FormItem>
-                                    <FormLabel>
-                                      {category === "Sensory Impairment" ? "Give specific instructions:" : "Any specific instructions or remarks:"}
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Textarea placeholder="Enter instructions..." className="min-h-[80px]" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>} />
-
-
-                              {/* How can we make a difference */}
-                              <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.difference_message`} render={({
-                          field
-                        }) => <FormItem>
-                                    <FormLabel>How can we make a difference in the Client life?</FormLabel>
-                                    <FormControl>
-                                      <Textarea placeholder="Enter message..." className="min-h-[80px]" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>} />
-
-                              {/* Other Professionals Involved */}
-                              <div className="space-y-3">
-                                <FormLabel className="text-sm font-medium">Other Professionals involved</FormLabel>
-                                
-                                <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.other_professionals.nursing_team`} render={({
-                            field
-                          }) => <FormItem>
-                                      <FormLabel>Is there a medical or nursing team involved?</FormLabel>
-                                      <FormControl>
-                                        <RadioGroup value={field.value === true ? "yes" : field.value === false ? "no" : undefined} onValueChange={value => field.onChange(value === "yes")} className="flex gap-6">
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="yes" id={`${categoryKey}-nursing-yes`} />
-                                            <Label htmlFor={`${categoryKey}-nursing-yes`}>Yes</Label>
-                                          </div>
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="no" id={`${categoryKey}-nursing-no`} />
-                                            <Label htmlFor={`${categoryKey}-nursing-no`}>No</Label>
-                                          </div>
-                                        </RadioGroup>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>} />
-
-                                <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.other_professionals.mental_health_team`} render={({
-                            field
-                          }) => <FormItem>
-                                      <FormLabel>Is there a mental health team involved?</FormLabel>
-                                      <FormControl>
-                                        <RadioGroup value={field.value === true ? "yes" : field.value === false ? "no" : undefined} onValueChange={value => field.onChange(value === "yes")} className="flex gap-6">
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="yes" id={`${categoryKey}-mental-yes`} />
-                                            <Label htmlFor={`${categoryKey}-mental-yes`}>Yes</Label>
-                                          </div>
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="no" id={`${categoryKey}-mental-no`} />
-                                            <Label htmlFor={`${categoryKey}-mental-no`}>No</Label>
-                                          </div>
-                                        </RadioGroup>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>} />
-
-                                <FormField control={form.control} name={`medical_info.service_band.details.${categoryKey}.other_professionals.charity_involved`} render={({
-                            field
-                          }) => <FormItem>
-                                      <FormLabel>Is there a charity involved?</FormLabel>
-                                      <FormControl>
-                                        <RadioGroup value={field.value === true ? "yes" : field.value === false ? "no" : undefined} onValueChange={value => field.onChange(value === "yes")} className="flex gap-6">
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="yes" id={`${categoryKey}-charity-yes`} />
-                                            <Label htmlFor={`${categoryKey}-charity-yes`}>Yes</Label>
-                                          </div>
-                                          <div className="flex items-center space-x-2">
-                                            <RadioGroupItem value="no" id={`${categoryKey}-charity-no`} />
-                                            <Label htmlFor={`${categoryKey}-charity-no`}>No</Label>
-                                          </div>
-                                        </RadioGroup>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>} />
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>;
-                })}
-                  </Accordion>
-                </div>}
 
               {/* Extra Information */}
               <FormField control={form.control} name="medical_info.service_band.extra_info" render={({
