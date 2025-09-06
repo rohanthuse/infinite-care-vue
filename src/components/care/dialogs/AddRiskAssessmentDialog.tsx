@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -46,6 +47,23 @@ const formSchema = z.object({
   assessed_by: z.string().min(1, "Assessed by is required"),
   review_date: z.date().optional(),
   status: z.string().default("active"),
+  // Risk section
+  rag_status: z.string().optional(),
+  has_pets: z.boolean().optional(),
+  fall_risk: z.string().optional(),
+  risk_to_staff: z.string().optional(),
+  adverse_weather_plan: z.string().optional(),
+  // Personal Risk section
+  lives_alone: z.boolean().optional(),
+  rural_area: z.boolean().optional(),
+  cared_in_bed: z.boolean().optional(),
+  smoker: z.boolean().optional(),
+  can_call_for_assistance: z.boolean().optional(),
+  communication_needs: z.string().optional(),
+  social_support: z.string().optional(),
+  fallen_past_six_months: z.boolean().optional(),
+  has_assistance_device: z.boolean().optional(),
+  arrange_assistance_device: z.boolean().optional(),
 });
 
 interface AddRiskAssessmentDialogProps {
@@ -86,6 +104,23 @@ export const AddRiskAssessmentDialog: React.FC<AddRiskAssessmentDialogProps> = (
       assessed_by: values.assessed_by,
       review_date: values.review_date ? values.review_date.toISOString().split('T')[0] : null,
       status: values.status,
+      // Risk section
+      rag_status: values.rag_status,
+      has_pets: values.has_pets,
+      fall_risk: values.fall_risk,
+      risk_to_staff: values.risk_to_staff ? values.risk_to_staff.split('\n').filter(r => r.trim()) : [],
+      adverse_weather_plan: values.adverse_weather_plan,
+      // Personal Risk section
+      lives_alone: values.lives_alone,
+      rural_area: values.rural_area,
+      cared_in_bed: values.cared_in_bed,
+      smoker: values.smoker,
+      can_call_for_assistance: values.can_call_for_assistance,
+      communication_needs: values.communication_needs,
+      social_support: values.social_support,
+      fallen_past_six_months: values.fallen_past_six_months,
+      has_assistance_device: values.has_assistance_device,
+      arrange_assistance_device: values.arrange_assistance_device,
     };
     
     onSave(formattedData);
@@ -299,6 +334,301 @@ export const AddRiskAssessmentDialog: React.FC<AddRiskAssessmentDialogProps> = (
                 </FormItem>
               )}
             />
+
+            {/* Risk Section */}
+            <div className="space-y-4 pt-6 border-t">
+              <h3 className="text-lg font-semibold text-gray-800">Risk</h3>
+              
+              <FormField
+                control={form.control}
+                name="rag_status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RAG Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select RAG status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="has_pets"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Has Pets</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="fall_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fall Risk</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe fall risk factors..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_to_staff"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Risk to Staff (one per line)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter risks to staff, one per line..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="adverse_weather_plan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adverse Weather Plan</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe adverse weather contingency plan..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Personal Risk Section */}
+            <div className="space-y-4 pt-6 border-t">
+              <h3 className="text-lg font-semibold text-gray-800">Personal Risk</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="lives_alone"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Lives Alone</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="rural_area"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Rural Area</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="cared_in_bed"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Cared in Bed</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="smoker"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Smoker</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="can_call_for_assistance"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Can Call for Assistance</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fallen_past_six_months"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Fallen in Past 6 Months</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="has_assistance_device"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Has Assistance Device</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="arrange_assistance_device"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Arrange Assistance Device</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="communication_needs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Communication Needs</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe communication needs..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="social_support"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Social Support</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe social support network..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

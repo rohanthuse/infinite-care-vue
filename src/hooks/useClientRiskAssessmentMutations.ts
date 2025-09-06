@@ -13,6 +13,23 @@ export interface CreateRiskAssessmentData {
   risk_factors?: string[];
   mitigation_strategies?: string[];
   review_date?: string;
+  // Risk section
+  rag_status?: string;
+  has_pets?: boolean;
+  fall_risk?: string;
+  risk_to_staff?: string[];
+  adverse_weather_plan?: string;
+  // Personal Risk section
+  lives_alone?: boolean;
+  rural_area?: boolean;
+  cared_in_bed?: boolean;
+  smoker?: boolean;
+  can_call_for_assistance?: boolean;
+  communication_needs?: string;
+  social_support?: string;
+  fallen_past_six_months?: boolean;
+  has_assistance_device?: boolean;
+  arrange_assistance_device?: boolean;
 }
 
 export const useCreateClientRiskAssessment = () => {

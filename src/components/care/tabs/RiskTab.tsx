@@ -150,6 +150,107 @@ export const RiskTab: React.FC<RiskTabProps> = ({
                     </div>
                   )}
 
+                  {/* Risk Section */}
+                  {(risk.rag_status || risk.has_pets || risk.fall_risk || risk.adverse_weather_plan || (risk.risk_to_staff && risk.risk_to_staff.length > 0)) && (
+                    <div className="pt-3 border-t">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Risk Information</p>
+                      <div className="bg-orange-50 p-3 rounded-md border border-orange-100 space-y-3">
+                        {risk.rag_status && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-orange-800">RAG Status:</span>
+                            <Badge variant="outline" className={
+                              risk.rag_status === 'high' ? 'bg-red-100 text-red-700 border-red-300' :
+                              risk.rag_status === 'medium' ? 'bg-amber-100 text-amber-700 border-amber-300' :
+                              risk.rag_status === 'low' ? 'bg-green-100 text-green-700 border-green-300' :
+                              'bg-gray-100 text-gray-700 border-gray-300'
+                            }>
+                              {risk.rag_status.charAt(0).toUpperCase() + risk.rag_status.slice(1)}
+                            </Badge>
+                          </div>
+                        )}
+                        {risk.has_pets && (
+                          <div className="text-sm text-orange-800">
+                            <span className="font-medium">• Has pets</span>
+                          </div>
+                        )}
+                        {risk.fall_risk && (
+                          <div className="text-sm">
+                            <span className="font-medium text-orange-800">Fall Risk: </span>
+                            <span className="text-orange-700">{risk.fall_risk}</span>
+                          </div>
+                        )}
+                        {risk.risk_to_staff && risk.risk_to_staff.length > 0 && (
+                          <div>
+                            <span className="text-sm font-medium text-orange-800 block mb-1">Risks to Staff:</span>
+                            <div className="space-y-1">
+                              {risk.risk_to_staff.map((staffRisk, index) => (
+                                <div key={index} className="text-sm text-orange-700 flex items-start">
+                                  <AlertTriangle className="h-3 w-3 mr-2 flex-shrink-0 mt-0.5 text-orange-600" />
+                                  {staffRisk}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {risk.adverse_weather_plan && (
+                          <div className="text-sm">
+                            <span className="font-medium text-orange-800">Weather Plan: </span>
+                            <span className="text-orange-700">{risk.adverse_weather_plan}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Personal Risk Section */}
+                  {(risk.lives_alone || risk.rural_area || risk.cared_in_bed || risk.smoker || risk.can_call_for_assistance || 
+                    risk.fallen_past_six_months || risk.has_assistance_device || risk.arrange_assistance_device ||
+                    risk.communication_needs || risk.social_support) && (
+                    <div className="pt-3 border-t">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Personal Risk Factors</p>
+                      <div className="bg-blue-50 p-3 rounded-md border border-blue-100 space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {risk.lives_alone && (
+                            <div className="text-sm text-blue-800">• Lives alone</div>
+                          )}
+                          {risk.rural_area && (
+                            <div className="text-sm text-blue-800">• Rural area</div>
+                          )}
+                          {risk.cared_in_bed && (
+                            <div className="text-sm text-blue-800">• Cared in bed</div>
+                          )}
+                          {risk.smoker && (
+                            <div className="text-sm text-blue-800">• Smoker</div>
+                          )}
+                          {risk.can_call_for_assistance && (
+                            <div className="text-sm text-blue-800">• Can call for assistance</div>
+                          )}
+                          {risk.fallen_past_six_months && (
+                            <div className="text-sm text-blue-800">• Fallen in past 6 months</div>
+                          )}
+                          {risk.has_assistance_device && (
+                            <div className="text-sm text-blue-800">• Has assistance device</div>
+                          )}
+                          {risk.arrange_assistance_device && (
+                            <div className="text-sm text-blue-800">• Needs assistance device arranged</div>
+                          )}
+                        </div>
+                        {risk.communication_needs && (
+                          <div className="text-sm pt-2 border-t border-blue-200">
+                            <span className="font-medium text-blue-800">Communication Needs: </span>
+                            <span className="text-blue-700">{risk.communication_needs}</span>
+                          </div>
+                        )}
+                        {risk.social_support && (
+                          <div className="text-sm">
+                            <span className="font-medium text-blue-800">Social Support: </span>
+                            <span className="text-blue-700">{risk.social_support}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex justify-end gap-2 mt-4">
                     {onEditRiskAssessment && (
                       <Button variant="outline" size="sm" onClick={() => onEditRiskAssessment(risk)}>

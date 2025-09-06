@@ -2238,44 +2238,89 @@ export type Database = {
       }
       client_risk_assessments: {
         Row: {
+          adverse_weather_plan: string | null
+          arrange_assistance_device: boolean | null
           assessed_by: string
           assessment_date: string
+          can_call_for_assistance: boolean | null
+          cared_in_bed: boolean | null
           client_id: string
+          communication_needs: string | null
           created_at: string
+          fall_risk: string | null
+          fallen_past_six_months: boolean | null
+          has_assistance_device: boolean | null
+          has_pets: boolean | null
           id: string
+          lives_alone: boolean | null
           mitigation_strategies: string[] | null
+          rag_status: string | null
           review_date: string | null
           risk_factors: string[] | null
           risk_level: string
+          risk_to_staff: string[]
           risk_type: string
+          rural_area: boolean | null
+          smoker: boolean | null
+          social_support: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          adverse_weather_plan?: string | null
+          arrange_assistance_device?: boolean | null
           assessed_by: string
           assessment_date: string
+          can_call_for_assistance?: boolean | null
+          cared_in_bed?: boolean | null
           client_id: string
+          communication_needs?: string | null
           created_at?: string
+          fall_risk?: string | null
+          fallen_past_six_months?: boolean | null
+          has_assistance_device?: boolean | null
+          has_pets?: boolean | null
           id?: string
+          lives_alone?: boolean | null
           mitigation_strategies?: string[] | null
+          rag_status?: string | null
           review_date?: string | null
           risk_factors?: string[] | null
           risk_level: string
+          risk_to_staff?: string[]
           risk_type: string
+          rural_area?: boolean | null
+          smoker?: boolean | null
+          social_support?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          adverse_weather_plan?: string | null
+          arrange_assistance_device?: boolean | null
           assessed_by?: string
           assessment_date?: string
+          can_call_for_assistance?: boolean | null
+          cared_in_bed?: boolean | null
           client_id?: string
+          communication_needs?: string | null
           created_at?: string
+          fall_risk?: string | null
+          fallen_past_six_months?: boolean | null
+          has_assistance_device?: boolean | null
+          has_pets?: boolean | null
           id?: string
+          lives_alone?: boolean | null
           mitigation_strategies?: string[] | null
+          rag_status?: string | null
           review_date?: string | null
           risk_factors?: string[] | null
           risk_level?: string
+          risk_to_staff?: string[]
           risk_type?: string
+          rural_area?: boolean | null
+          smoker?: boolean | null
+          social_support?: string | null
           status?: string
           updated_at?: string
         }
