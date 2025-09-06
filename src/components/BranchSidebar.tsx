@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTenant } from "@/contexts/TenantContext";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
   Calendar, Star, MessageSquare, Pill, PoundSterling, 
@@ -116,6 +117,7 @@ interface BranchSidebarProps {
 export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { tenantSlug } = useTenant();
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
@@ -143,6 +145,13 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
+  };
+
+  // Handle navigation back to admin dashboard
+  const handleAdminNavigation = () => {
+    // Navigate to appropriate admin dashboard based on tenant context
+    const adminPath = tenantSlug ? `/${tenantSlug}/dashboard` : '/dashboard';
+    navigate(adminPath);
   };
   
   return (
@@ -188,10 +197,22 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
         "border-t border-border mt-auto p-3",
         collapsed ? "text-center" : "px-4"
       )}>
-        <div className={cn(
-          "flex items-center text-xs text-muted-foreground",
-          collapsed ? "flex-col" : "justify-between"
-        )}>
+        <div 
+          className={cn(
+            "flex items-center text-xs text-muted-foreground cursor-pointer hover:text-primary transition-colors",
+            collapsed ? "flex-col" : "justify-between"
+          )}
+          onClick={handleAdminNavigation}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleAdminNavigation();
+            }
+          }}
+          aria-label="Return to Admin Dashboard"
+        >
           <span>Powered by</span>
           <span className="font-medium">Med-Infinite</span>
         </div>

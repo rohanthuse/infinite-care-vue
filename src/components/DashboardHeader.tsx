@@ -11,6 +11,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
+import { useTenant } from "@/contexts/TenantContext";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export function DashboardHeader() {
   const { signOut } = useAuth();
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const { toast } = useToast();
+  const { tenantSlug } = useTenant();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   
@@ -55,7 +57,7 @@ export function DashboardHeader() {
     };
   };
 
-  const { tenantSlug, branchId, branchName, isBranchContext } = parseBranchContext();
+  const { branchId, branchName, isBranchContext } = parseBranchContext();
 
   // Close mobile menu when resizing to desktop
   useEffect(() => {
@@ -147,11 +149,30 @@ export function DashboardHeader() {
         return "User";
     }
   };
+
+  // Handle navigation back to admin dashboard
+  const handleLogoClick = () => {
+    // Navigate to appropriate admin dashboard based on tenant context
+    const adminPath = tenantSlug ? `/${tenantSlug}/dashboard` : '/dashboard';
+    navigate(adminPath);
+  };
   
   return <header className="bg-background shadow-sm border-b border-border py-3 md:py-4 sticky top-0 z-50 w-full">
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo aligned to the left - simplified for mobile */}
-        <div className="flex items-center gap-2 md:gap-4">
+        <div 
+          className="flex items-center gap-2 md:gap-4 cursor-pointer hover:opacity-80 transition-opacity" 
+          onClick={handleLogoClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleLogoClick();
+            }
+          }}
+          aria-label="Return to Admin Dashboard"
+        >
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
           <div className="flex flex-col">
             <h2 className="text-sm md:text-lg font-bold tracking-tight">
