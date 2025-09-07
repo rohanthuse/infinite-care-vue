@@ -121,6 +121,84 @@ export const RiskAssessmentsTab: React.FC<RiskAssessmentsTabProps> = ({
                         <span>Review due: {format(new Date(assessment.review_date), 'MMM dd, yyyy')}</span>
                       </div>
                     )}
+
+                    {/* Risk Section */}
+                    {(assessment.rag_status || assessment.has_pets || assessment.fall_risk || assessment.risk_to_staff || assessment.adverse_weather_plan) && (
+                      <div className="mt-4 border-t pt-3">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Risk Information</h4>
+                        <div className="space-y-2">
+                          {assessment.rag_status && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">RAG Status:</span>
+                              <Badge 
+                                className={
+                                  assessment.rag_status === 'red' ? 'bg-red-100 text-red-800' :
+                                  assessment.rag_status === 'amber' ? 'bg-amber-100 text-amber-800' :
+                                  assessment.rag_status === 'green' ? 'bg-green-100 text-green-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }
+                              >
+                                {assessment.rag_status === '' ? 'None' : assessment.rag_status.charAt(0).toUpperCase() + assessment.rag_status.slice(1)}
+                              </Badge>
+                            </div>
+                          )}
+                          {assessment.has_pets && (
+                            <div className="text-sm text-gray-600">• Has pets</div>
+                          )}
+                          {assessment.fall_risk && (
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-700">Fall Risk:</span>
+                              <span className="text-gray-600 ml-1">{assessment.fall_risk}</span>
+                            </div>
+                          )}
+                          {assessment.risk_to_staff && assessment.risk_to_staff.length > 0 && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-700">Risk to Staff:</span>
+                              <ul className="text-sm text-gray-600 list-disc list-inside ml-2">
+                                {assessment.risk_to_staff.map((risk, index) => (
+                                  <li key={index}>{risk}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {assessment.adverse_weather_plan && (
+                            <div className="text-sm">
+                              <span className="font-medium text-gray-700">Adverse Weather Plan:</span>
+                              <span className="text-gray-600 ml-1">{assessment.adverse_weather_plan}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Personal Risk Section */}
+                    {(assessment.lives_alone || assessment.rural_area || assessment.cared_in_bed || assessment.smoker || assessment.can_call_for_assistance || assessment.communication_needs || assessment.social_support || assessment.fallen_past_six_months || assessment.has_assistance_device || assessment.arrange_assistance_device) && (
+                      <div className="mt-4 border-t pt-3">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Personal Risk Factors</h4>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          {assessment.lives_alone && <div>• Lives alone</div>}
+                          {assessment.rural_area && <div>• Lives in rural area</div>}
+                          {assessment.cared_in_bed && <div>• Cared in bed</div>}
+                          {assessment.smoker && <div>• Smoker</div>}
+                          {assessment.can_call_for_assistance && <div>• Can call for assistance</div>}
+                          {assessment.fallen_past_six_months && <div>• Fallen in past 6 months</div>}
+                          {assessment.has_assistance_device && <div>• Has assistance device</div>}
+                          {assessment.arrange_assistance_device && <div>• Need to arrange assistance device</div>}
+                          {assessment.communication_needs && (
+                            <div>
+                              <span className="font-medium text-gray-700">Communication needs:</span>
+                              <span className="ml-1">{assessment.communication_needs}</span>
+                            </div>
+                          )}
+                          {assessment.social_support && (
+                            <div>
+                              <span className="font-medium text-gray-700">Social support:</span>
+                              <span className="ml-1">{assessment.social_support}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

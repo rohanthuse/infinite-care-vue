@@ -29,7 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -107,6 +107,23 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
         assessed_by: riskAssessment.assessed_by,
         review_date: riskAssessment.review_date ? new Date(riskAssessment.review_date) : undefined,
         status: riskAssessment.status,
+        // Risk section 
+        rag_status: riskAssessment.rag_status || "",
+        has_pets: riskAssessment.has_pets || false,
+        fall_risk: riskAssessment.fall_risk || "",
+        risk_to_staff: riskAssessment.risk_to_staff?.join('\n') || "",
+        adverse_weather_plan: riskAssessment.adverse_weather_plan || "",
+        // Personal Risk section
+        lives_alone: riskAssessment.lives_alone || false,
+        rural_area: riskAssessment.rural_area || false,
+        cared_in_bed: riskAssessment.cared_in_bed || false,
+        smoker: riskAssessment.smoker || false,
+        can_call_for_assistance: riskAssessment.can_call_for_assistance || false,
+        communication_needs: riskAssessment.communication_needs || "",
+        social_support: riskAssessment.social_support || "",
+        fallen_past_six_months: riskAssessment.fallen_past_six_months || false,
+        has_assistance_device: riskAssessment.has_assistance_device || false,
+        arrange_assistance_device: riskAssessment.arrange_assistance_device || false,
       });
     }
   }, [riskAssessment, open, form]);
@@ -385,19 +402,30 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>RAG Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select RAG status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex flex-wrap gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="" id="rag-none-edit" />
+                          <label htmlFor="rag-none-edit" className="text-sm">None</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="green" id="rag-green-edit" />
+                          <label htmlFor="rag-green-edit" className="text-sm text-green-600">Green</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="amber" id="rag-amber-edit" />
+                          <label htmlFor="rag-amber-edit" className="text-sm text-amber-600">Amber</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="red" id="rag-red-edit" />
+                          <label htmlFor="rag-red-edit" className="text-sm text-red-600">Red</label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -408,16 +436,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="has_pets"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Has Pets</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="has-pets-yes-edit" />
+                            <label htmlFor="has-pets-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="has-pets-no-edit" />
+                            <label htmlFor="has-pets-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Has Pets</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -490,16 +527,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="lives_alone"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Lives Alone</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="lives-alone-yes-edit" />
+                            <label htmlFor="lives-alone-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="lives-alone-no-edit" />
+                            <label htmlFor="lives-alone-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Lives Alone</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -508,16 +554,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="rural_area"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Rural Area</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="rural-area-yes-edit" />
+                            <label htmlFor="rural-area-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="rural-area-no-edit" />
+                            <label htmlFor="rural-area-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Rural Area</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -526,16 +581,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="cared_in_bed"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Cared in Bed</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="cared-in-bed-yes-edit" />
+                            <label htmlFor="cared-in-bed-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="cared-in-bed-no-edit" />
+                            <label htmlFor="cared-in-bed-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Cared in Bed</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -544,16 +608,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="smoker"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Smoker</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="smoker-yes-edit" />
+                            <label htmlFor="smoker-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="smoker-no-edit" />
+                            <label htmlFor="smoker-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Smoker</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -562,16 +635,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="can_call_for_assistance"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Can Call for Assistance</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="can-call-yes-edit" />
+                            <label htmlFor="can-call-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="can-call-no-edit" />
+                            <label htmlFor="can-call-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Can Call for Assistance</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -580,16 +662,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="fallen_past_six_months"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Fallen in Past 6 Months</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="fallen-past-six-yes-edit" />
+                            <label htmlFor="fallen-past-six-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="fallen-past-six-no-edit" />
+                            <label htmlFor="fallen-past-six-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Fallen in Past 6 Months</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -598,16 +689,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="has_assistance_device"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Has Assistance Device</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="has-assistance-device-yes-edit" />
+                            <label htmlFor="has-assistance-device-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="has-assistance-device-no-edit" />
+                            <label htmlFor="has-assistance-device-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Has Assistance Device</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -616,16 +716,25 @@ export const EditRiskAssessmentDialog: React.FC<EditRiskAssessmentDialogProps> =
                   control={form.control}
                   name="arrange_assistance_device"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem>
+                      <FormLabel>Arrange Assistance Device</FormLabel>
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <RadioGroup
+                          onValueChange={(value) => field.onChange(value === "yes")}
+                          value={field.value ? "yes" : "no"}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id="arrange-assistance-device-yes-edit" />
+                            <label htmlFor="arrange-assistance-device-yes-edit" className="text-sm">Yes</label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id="arrange-assistance-device-no-edit" />
+                            <label htmlFor="arrange-assistance-device-no-edit" className="text-sm">No</label>
+                          </div>
+                        </RadioGroup>
                       </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Arrange Assistance Device</FormLabel>
-                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

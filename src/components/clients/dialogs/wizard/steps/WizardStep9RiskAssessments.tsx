@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 
 interface WizardStep9RiskAssessmentsProps {
@@ -41,7 +42,24 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
       risk_factors: [],
       mitigation_strategies: [],
       review_date: null,
-      assessed_by: ""
+      assessed_by: "",
+      // Risk section
+      rag_status: "",
+      has_pets: false,
+      fall_risk: "",
+      risk_to_staff: [],
+      adverse_weather_plan: "",
+      // Personal Risk section
+      lives_alone: false,
+      rural_area: false,
+      cared_in_bed: false,
+      smoker: false,
+      can_call_for_assistance: false,
+      communication_needs: "",
+      social_support: "",
+      fallen_past_six_months: false,
+      has_assistance_device: false,
+      arrange_assistance_device: false,
     }]);
   };
 
