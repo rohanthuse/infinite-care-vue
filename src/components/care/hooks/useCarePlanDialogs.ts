@@ -213,6 +213,25 @@ export const useCarePlanDialogs = (carePlanId: string, patientId: string, branch
         assessed_by: riskData.assessed_by,
         status: riskData.status || 'active',
         review_date: riskData.review_date,
+
+        // Risk section
+        rag_status: riskData.rag_status,
+        has_pets: riskData.has_pets,
+        fall_risk: riskData.fall_risk,
+        risk_to_staff: riskData.risk_to_staff || [],
+        adverse_weather_plan: riskData.adverse_weather_plan,
+
+        // Personal Risk section
+        lives_alone: riskData.lives_alone,
+        rural_area: riskData.rural_area,
+        cared_in_bed: riskData.cared_in_bed,
+        smoker: riskData.smoker,
+        can_call_for_assistance: riskData.can_call_for_assistance,
+        communication_needs: riskData.communication_needs,
+        social_support: riskData.social_support,
+        fallen_past_six_months: riskData.fallen_past_six_months,
+        has_assistance_device: riskData.has_assistance_device,
+        arrange_assistance_device: riskData.arrange_assistance_device,
       });
       setAddRiskAssessmentDialogOpen(false);
     } catch (error) {
