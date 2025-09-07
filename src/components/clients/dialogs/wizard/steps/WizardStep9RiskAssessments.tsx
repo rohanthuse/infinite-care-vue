@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface WizardStep9RiskAssessmentsProps {
@@ -653,6 +654,463 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
               </div>
             </div>
           ))}
+
+          {/* Equipment & Dietary Risk Section */}
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">Equipment & Dietary Risk</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="risk_equipment_dietary.equipment_required"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Equipment Required</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="equipment-required-yes" />
+                          <FormLabel htmlFor="equipment-required-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="equipment-required-no" />
+                          <FormLabel htmlFor="equipment-required-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_dietary_food.dietary_restrictions_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dietary Restrictions Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="dietary-restrictions-yes" />
+                          <FormLabel htmlFor="dietary-restrictions-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="dietary-restrictions-no" />
+                          <FormLabel htmlFor="dietary-restrictions-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="risk_equipment_dietary.equipment_breakdown_impact"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Equipment Breakdown Impact</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe the impact if equipment breaks down..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_equipment_dietary.equipment_backup_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Equipment Backup Plan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe backup plan for equipment failures..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_equipment_dietary.dietary_emergency_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Dietary Emergency Plan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe emergency plan for dietary issues..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_equipment_dietary.special_dietary_equipment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Special Dietary Equipment</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="List any special equipment needed for dietary requirements..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Medication Risk Section */}
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">Medication Risk</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="risk_medication.medication_errors_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medication Errors Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="med-errors-yes" />
+                          <FormLabel htmlFor="med-errors-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="med-errors-no" />
+                          <FormLabel htmlFor="med-errors-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_medication.medication_compliance_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medication Compliance Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="med-compliance-yes" />
+                          <FormLabel htmlFor="med-compliance-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="med-compliance-no" />
+                          <FormLabel htmlFor="med-compliance-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_medication.medication_storage_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medication Storage Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="med-storage-yes" />
+                          <FormLabel htmlFor="med-storage-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="med-storage-no" />
+                          <FormLabel htmlFor="med-storage-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_medication.medication_side_effects_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medication Side Effects Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="med-side-effects-yes" />
+                          <FormLabel htmlFor="med-side-effects-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="med-side-effects-no" />
+                          <FormLabel htmlFor="med-side-effects-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_medication.medication_interaction_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medication Interaction Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="med-interaction-yes" />
+                          <FormLabel htmlFor="med-interaction-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="med-interaction-no" />
+                          <FormLabel htmlFor="med-interaction-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="risk_medication.medication_emergency_contact"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Medication Emergency Contact</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter emergency contact for medication issues..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_medication.medication_contingency_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Medication Contingency Plan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe contingency plan for medication-related emergencies..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Dietary & Food Risk Section */}
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">Dietary & Food Risk</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="risk_dietary_food.food_allergies_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Food Allergies Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="food-allergies-yes" />
+                          <FormLabel htmlFor="food-allergies-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="food-allergies-no" />
+                          <FormLabel htmlFor="food-allergies-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_dietary_food.choking_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Choking Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="choking-risk-yes" />
+                          <FormLabel htmlFor="choking-risk-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="choking-risk-no" />
+                          <FormLabel htmlFor="choking-risk-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_dietary_food.nutritional_deficiency_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nutritional Deficiency Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="nutritional-deficiency-yes" />
+                          <FormLabel htmlFor="nutritional-deficiency-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="nutritional-deficiency-no" />
+                          <FormLabel htmlFor="nutritional-deficiency-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_dietary_food.food_poisoning_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Food Poisoning Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="food-poisoning-yes" />
+                          <FormLabel htmlFor="food-poisoning-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="food-poisoning-no" />
+                          <FormLabel htmlFor="food-poisoning-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="risk_dietary_food.eating_disorder_risk"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Eating Disorder Risk</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={(value) => field.onChange(value === "yes")}
+                        defaultValue={field.value ? "yes" : "no"}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="yes" id="eating-disorder-yes" />
+                          <FormLabel htmlFor="eating-disorder-yes" className="text-sm">Yes</FormLabel>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="no" id="eating-disorder-no" />
+                          <FormLabel htmlFor="eating-disorder-no" className="text-sm">No</FormLabel>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="risk_dietary_food.food_preparation_safety"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Food Preparation Safety</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe food preparation safety measures..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_dietary_food.emergency_nutrition_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Emergency Nutrition Plan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe emergency nutrition plan..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
       </Form>
     </div>

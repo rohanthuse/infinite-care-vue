@@ -75,6 +75,32 @@ const carePlanSchema = z.object({
     weight_monitoring: z.boolean().optional().default(false),
   }).optional(),
   risk_assessments: z.array(z.any()).optional(),
+  risk_equipment_dietary: z.object({
+    equipment_required: z.boolean().optional().default(false),
+    equipment_breakdown_impact: z.string().optional().default(""),
+    equipment_backup_plan: z.string().optional().default(""),
+    dietary_restrictions_risk: z.boolean().optional().default(false),
+    dietary_emergency_plan: z.string().optional().default(""),
+    special_dietary_equipment: z.string().optional().default(""),
+  }).optional(),
+  risk_medication: z.object({
+    medication_errors_risk: z.boolean().optional().default(false),
+    medication_compliance_risk: z.boolean().optional().default(false),
+    medication_storage_risk: z.boolean().optional().default(false),
+    medication_side_effects_risk: z.boolean().optional().default(false),
+    medication_interaction_risk: z.boolean().optional().default(false),
+    medication_emergency_contact: z.string().optional().default(""),
+    medication_contingency_plan: z.string().optional().default(""),
+  }).optional(),
+  risk_dietary_food: z.object({
+    food_allergies_risk: z.boolean().optional().default(false),
+    choking_risk: z.boolean().optional().default(false),
+    nutritional_deficiency_risk: z.boolean().optional().default(false),
+    food_poisoning_risk: z.boolean().optional().default(false),
+    eating_disorder_risk: z.boolean().optional().default(false),
+    food_preparation_safety: z.string().optional().default(""),
+    emergency_nutrition_plan: z.string().optional().default(""),
+  }).optional(),
   equipment: z.object({
     equipment_blocks: z.array(z.any()).optional(),
     moving_handling: z.object({
@@ -184,6 +210,9 @@ export function CarePlanCreationWizard({
       personal_care: {},
       dietary: {},
       risk_assessments: [],
+      risk_equipment_dietary: {},
+      risk_medication: {},
+      risk_dietary_food: {},
       equipment: {
         equipment_blocks: [],
         moving_handling: {},
@@ -320,7 +349,7 @@ export function CarePlanCreationWizard({
               }
             }
             // Handle object fields with safety checks
-            else if (['personal_info', 'about_me', 'medical_info', 'personal_care', 'dietary'].includes(key)) {
+            else if (['personal_info', 'about_me', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food'].includes(key)) {
               value = initializeObjectField(value);
             }
             
@@ -378,7 +407,10 @@ export function CarePlanCreationWizard({
       if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(7);
       if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(8);
       if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(9);
-      if (Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) completedSteps.push(10);
+      if ((Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) ||
+          (formData.risk_equipment_dietary && Object.keys(formData.risk_equipment_dietary).length > 0) ||
+          (formData.risk_medication && Object.keys(formData.risk_medication).length > 0) ||
+          (formData.risk_dietary_food && Object.keys(formData.risk_dietary_food).length > 0)) completedSteps.push(10);
       if (formData.equipment && typeof formData.equipment === 'object' && (
         (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
         (formData.equipment.moving_handling && Object.keys(formData.equipment.moving_handling).length > 0) ||
