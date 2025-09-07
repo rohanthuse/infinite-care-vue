@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
 import { CarePlanWizardSidebar } from "./wizard/CarePlanWizardSidebar";
 import { CarePlanWizardSteps } from "./wizard/CarePlanWizardSteps";
 import { CarePlanWizardFooter } from "./wizard/CarePlanWizardFooter";
@@ -662,11 +663,13 @@ export function CarePlanCreationWizard({
             <div className="flex-1 flex flex-col min-h-0 relative">
               <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4">
                 <div className="max-w-4xl mx-auto space-y-6">
-                  <CarePlanWizardSteps 
-                    currentStep={currentStep} 
-                    form={form} 
-                    clientId={clientId}
-                  />
+                  <Form {...form}>
+                    <CarePlanWizardSteps 
+                      currentStep={currentStep} 
+                      form={form} 
+                      clientId={clientId}
+                    />
+                  </Form>
                 </div>
               </div>
 
