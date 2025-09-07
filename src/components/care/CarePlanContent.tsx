@@ -291,6 +291,14 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
               />
             </TabsContent>
 
+            <TabsContent value="risk">
+              <RiskAssessmentsTab 
+                clientId={carePlan.patientId}
+                riskAssessments={riskAssessments}
+                onAddRiskAssessment={onAddRiskAssessment}
+              />
+            </TabsContent>
+
             <TabsContent value="riskassessments">
               <RiskAssessmentsTab 
                 clientId={carePlan.patientId}
