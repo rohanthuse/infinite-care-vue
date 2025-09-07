@@ -11,7 +11,7 @@ async function fetchHobbies() {
   const { data, error } = await supabase
     .from("hobbies")
     .select("id, title, status")
-    .eq("status", "active")
+    .in("status", ["active", "Active"])
     .order("title");
   
   if (error) throw error;
