@@ -1111,6 +1111,247 @@ export function WizardStep9RiskAssessments({ form }: WizardStep9RiskAssessmentsP
               )}
             />
           </div>
+
+          {/* Warning & Instructions Section */}
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">Warning & Instructions</h3>
+            
+            <FormField
+              control={form.control}
+              name="risk_warning_instructions.warning_notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Warning Notes</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Enter any critical warnings or precautions..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_warning_instructions.special_instructions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Special Instructions</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Enter specific instructions for care providers..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_warning_instructions.emergency_contacts"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Emergency Contacts</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="List emergency contact information..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_warning_instructions.important_information"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Important Information</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Any other important information to highlight..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Choking Section */}
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">Choking</h3>
+            
+            <FormField
+              control={form.control}
+              name="risk_choking.choking_risk"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Choking Risk Present</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={(value) => field.onChange(value === "yes")}
+                      defaultValue={field.value ? "yes" : "no"}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="choking-risk-present-yes" />
+                        <FormLabel htmlFor="choking-risk-present-yes" className="text-sm">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="choking-risk-present-no" />
+                        <FormLabel htmlFor="choking-risk-present-no" className="text-sm">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_choking.risk_level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Risk Level</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select choking risk level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_choking.mitigation_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mitigation Plan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe plans to reduce choking risk..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_choking.emergency_procedure"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Emergency Procedure</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe emergency procedures if choking occurs..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Pressure Damage Section */}
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">Pressure Damage</h3>
+            
+            <FormField
+              control={form.control}
+              name="risk_pressure_damage.pressure_damage_risk"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pressure Damage Risk Present</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={(value) => field.onChange(value === "yes")}
+                      defaultValue={field.value ? "yes" : "no"}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="yes" id="pressure-damage-risk-yes" />
+                        <FormLabel htmlFor="pressure-damage-risk-yes" className="text-sm">Yes</FormLabel>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="no" id="pressure-damage-risk-no" />
+                        <FormLabel htmlFor="pressure-damage-risk-no" className="text-sm">No</FormLabel>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_pressure_damage.risk_level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Risk Level</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select pressure damage risk level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_pressure_damage.prevention_plan"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prevention Plan</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe prevention strategies for pressure damage..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_pressure_damage.monitoring_schedule"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monitoring Schedule</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe monitoring schedule and procedures..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="risk_pressure_damage.equipment_needed"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Equipment Needed</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="List equipment needed for pressure damage prevention..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
       </Form>
     </div>

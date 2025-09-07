@@ -101,6 +101,27 @@ const carePlanSchema = z.object({
     food_preparation_safety: z.string().optional().default(""),
     emergency_nutrition_plan: z.string().optional().default(""),
   }).optional(),
+  risk_warning_instructions: z.object({
+    warning_notes: z.string().optional().default(""),
+    special_instructions: z.string().optional().default(""),
+    emergency_contacts: z.string().optional().default(""),
+    important_information: z.string().optional().default(""),
+  }).optional(),
+  risk_choking: z.object({
+    choking_risk: z.boolean().optional().default(false),
+    risk_level: z.string().optional().default(""),
+    risk_factors: z.array(z.string()).optional().default([]),
+    mitigation_plan: z.string().optional().default(""),
+    emergency_procedure: z.string().optional().default(""),
+  }).optional(),
+  risk_pressure_damage: z.object({
+    pressure_damage_risk: z.boolean().optional().default(false),
+    risk_level: z.string().optional().default(""),
+    risk_areas: z.array(z.string()).optional().default([]),
+    prevention_plan: z.string().optional().default(""),
+    monitoring_schedule: z.string().optional().default(""),
+    equipment_needed: z.string().optional().default(""),
+  }).optional(),
   equipment: z.object({
     equipment_blocks: z.array(z.any()).optional(),
     moving_handling: z.object({
@@ -213,6 +234,9 @@ export function CarePlanCreationWizard({
       risk_equipment_dietary: {},
       risk_medication: {},
       risk_dietary_food: {},
+      risk_warning_instructions: {},
+      risk_choking: {},
+      risk_pressure_damage: {},
       equipment: {
         equipment_blocks: [],
         moving_handling: {},
@@ -349,7 +373,7 @@ export function CarePlanCreationWizard({
               }
             }
             // Handle object fields with safety checks
-            else if (['personal_info', 'about_me', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food'].includes(key)) {
+            else if (['personal_info', 'about_me', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food', 'risk_warning_instructions', 'risk_choking', 'risk_pressure_damage'].includes(key)) {
               value = initializeObjectField(value);
             }
             
@@ -410,7 +434,10 @@ export function CarePlanCreationWizard({
       if ((Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) ||
           (formData.risk_equipment_dietary && Object.keys(formData.risk_equipment_dietary).length > 0) ||
           (formData.risk_medication && Object.keys(formData.risk_medication).length > 0) ||
-          (formData.risk_dietary_food && Object.keys(formData.risk_dietary_food).length > 0)) completedSteps.push(10);
+          (formData.risk_dietary_food && Object.keys(formData.risk_dietary_food).length > 0) ||
+          (formData.risk_warning_instructions && Object.keys(formData.risk_warning_instructions).length > 0) ||
+          (formData.risk_choking && Object.keys(formData.risk_choking).length > 0) ||
+          (formData.risk_pressure_damage && Object.keys(formData.risk_pressure_damage).length > 0)) completedSteps.push(10);
       if (formData.equipment && typeof formData.equipment === 'object' && (
         (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
         (formData.equipment.moving_handling && Object.keys(formData.equipment.moving_handling).length > 0) ||
