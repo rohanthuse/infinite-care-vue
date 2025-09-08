@@ -11,9 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { MedicationCalendar } from "@/components/care/medication/MedicationCalendar";
+import { AddMedicationDialog } from "@/components/care/medication/AddMedicationDialog";
+import { useMedicationsByCarePlan, useCreateMedication } from "@/hooks/useMedications";
+import { toast } from "sonner";
 
 interface WizardStep4MedicalInfoProps {
   form: UseFormReturn<any>;
+  effectiveCarePlanId?: string;
 }
 const PHYSICAL_HEALTH_CONDITIONS = ["Cancer", "Arthritis", "Heart Condition", "Diabetes", "Chronic Pain", "Chronic Respiratory", "Addiction", "Other Medical Conditions", "Blood Pressure", "Thyroid", "Multiple Sclerosis", "Parkinson's", "Bilateral Periventricular Leukomalacia", "Quadriplegic", "Cerebral Palsy", "Non", "Epilepsy"];
 const MENTAL_HEALTH_CONDITIONS = ["Dementia", "Insomnia", "Alzheimer's Disease", "Hoarding Disorder", "Self-harm", "Phobia", "Panic Disorder", "Stress Disorder", "Schizophrenia", "Obsessive Compulsive Disorder", "Autism", "Other Mental Conditions", "Chronic Neurological", "Depression", "Non"];
@@ -35,10 +40,16 @@ const toKey = (label: string): string => {
   return label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 };
 export function WizardStep4MedicalInfo({
-  form
+  form,
+  effectiveCarePlanId
 }: WizardStep4MedicalInfoProps) {
   const [activeSubTab, setActiveSubTab] = useState("medical");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [isAddMedicationOpen, setIsAddMedicationOpen] = useState(false);
+  
+  // Fetch existing medications from database if care plan exists
+  const { data: existingMedications = [] } = useMedicationsByCarePlan(effectiveCarePlanId || "");
+  const createMedicationMutation = useCreateMedication();
   
 
   // Service Band helper functions
@@ -122,6 +133,34 @@ export function WizardStep4MedicalInfo({
   const medications = form.watch("medical_info.current_medications") || [];
   const allergies = form.watch("medical_info.allergies") || [];
   const sensoryImpairments = form.watch("medical_info.sensory_impairments") || [];
+  
+  // Handle saving new medication
+  const handleSaveMedication = (medication: any) => {
+    // Add to form state
+    const currentMedications = form.getValues("medical_info.medication_manager.medications") || [];
+    form.setValue("medical_info.medication_manager.medications", [...currentMedications, medication]);
+    
+    // If we have a care plan ID, also persist to database
+    if (effectiveCarePlanId) {
+      createMedicationMutation.mutate({
+        care_plan_id: effectiveCarePlanId,
+        name: medication.name,
+        dosage: medication.dosage,
+        frequency: medication.frequency,
+        start_date: medication.start_date,
+        end_date: medication.end_date,
+        status: medication.status || "active"
+      }, {
+        onSuccess: () => {
+          toast.success("Medication added successfully");
+        },
+        onError: (error) => {
+          console.error("Failed to save medication:", error);
+          toast.error("Failed to save medication to database");
+        }
+      });
+    }
+  };
   return <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-gray-900 mb-2">Medical and Mental</h2>
@@ -131,10 +170,14 @@ export function WizardStep4MedicalInfo({
       </div>
 
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="medical" className="flex items-center gap-2">
             <Stethoscope className="h-4 w-4" />
             Medical and Mental
+          </TabsTrigger>
+          <TabsTrigger value="medication" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Medication
           </TabsTrigger>
           <TabsTrigger value="serviceband" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -380,6 +423,40 @@ export function WizardStep4MedicalInfo({
               </div>
             </div>
           </Form>
+        </TabsContent>
+
+        <TabsContent value="medication" className="space-y-6">
+          <MedicationCalendar 
+            medications={[
+              // Medications from form state
+              ...(form.watch("medical_info.medication_manager.medications") || []),
+              // Medications from database (transformed to match interface)
+              ...existingMedications.map(med => ({
+                id: med.id,
+                name: med.name,
+                dosage: med.dosage,
+                frequency: med.frequency,
+                start_date: med.start_date,
+                end_date: med.end_date || undefined,
+                status: med.status,
+                // Additional fields from form (may not exist in DB)
+                shape: "",
+                route: "",
+                who_administers: "",
+                level: "",
+                instruction: "",
+                warning: "",
+                side_effect: ""
+              }))
+            ]}
+            onAddMedication={() => setIsAddMedicationOpen(true)}
+          />
+          
+          <AddMedicationDialog
+            isOpen={isAddMedicationOpen}
+            onClose={() => setIsAddMedicationOpen(false)}
+            onSave={handleSaveMedication}
+          />
         </TabsContent>
 
         <TabsContent value="serviceband" className="space-y-6">

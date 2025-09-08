@@ -25,9 +25,10 @@ interface CarePlanWizardStepsProps {
   currentStep: number;
   form: UseFormReturn<any>;
   clientId: string;
+  effectiveCarePlanId?: string;
 }
 
-export function CarePlanWizardSteps({ currentStep, form, clientId }: CarePlanWizardStepsProps) {
+export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCarePlanId }: CarePlanWizardStepsProps) {
   const renderStep = () => {
     // Log current step for debugging
     console.log(`Rendering step ${currentStep}`, {
@@ -47,7 +48,7 @@ export function CarePlanWizardSteps({ currentStep, form, clientId }: CarePlanWiz
       case 5:
         return <WizardStep5Hobbies form={form} />;
       case 6:
-        return <WizardStep4MedicalInfo form={form} />;
+        return <WizardStep4MedicalInfo form={form} effectiveCarePlanId={effectiveCarePlanId} />;
       case 7:
         return <WizardStep5AdminMedication form={form} />;
       case 8:

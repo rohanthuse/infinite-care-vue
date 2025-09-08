@@ -41,7 +41,26 @@ const carePlanSchema = z.object({
   hobbies: z.object({
     selected_hobbies: z.array(z.string()).optional().default([]),
   }).optional(),
-  medical_info: z.any().optional(),
+  medical_info: z.object({
+    medication_manager: z.object({
+      medications: z.array(z.object({
+        id: z.string().optional(),
+        name: z.string(),
+        dosage: z.string(),
+        shape: z.string().optional(),
+        route: z.string().optional(),
+        who_administers: z.string().optional(),
+        level: z.string().optional(),
+        instruction: z.string().optional(),
+        warning: z.string().optional(),
+        side_effect: z.string().optional(),
+        frequency: z.string(),
+        start_date: z.string(),
+        end_date: z.string().optional(),
+        status: z.string().optional().default("active")
+      })).optional().default([])
+    }).optional().default({ medications: [] })
+  }).optional(),
   goals: z.array(z.any()).optional(),
   activities: z.array(z.any()).optional(),
   personal_care: z.any().optional(),
@@ -313,7 +332,11 @@ export function CarePlanCreationWizard({
       about_me: {},
       general: {},
       hobbies: {},
-      medical_info: {},
+      medical_info: {
+        medication_manager: {
+          medications: []
+        }
+      },
       goals: [],
       activities: [],
       personal_care: {},
@@ -352,6 +375,9 @@ export function CarePlanCreationWizard({
     isSaving,
     savedCarePlanId,
   } = useCarePlanDraft(clientId, carePlanId);
+
+  // Effective care plan ID for database operations
+  const effectiveCarePlanId = savedCarePlanId || carePlanId;
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
 
@@ -734,6 +760,7 @@ export function CarePlanCreationWizard({
                       currentStep={currentStep} 
                       form={form} 
                       clientId={clientId}
+                      effectiveCarePlanId={effectiveCarePlanId}
                     />
                   </Form>
                 </div>
