@@ -182,8 +182,28 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   const renderStepContent = () => {
     if (!carePlanWithDetails) return null;
 
+    // Enhanced read-only styles for client context
+    const readOnlyStyles = context === 'client' 
+      ? `[&_input]:pointer-events-none [&_input]:bg-muted/50 [&_input]:cursor-not-allowed
+         [&_textarea]:pointer-events-none [&_textarea]:bg-muted/50 [&_textarea]:cursor-not-allowed
+         [&_select]:pointer-events-none [&_button[role=combobox]]:pointer-events-none [&_button[role=combobox]]:bg-muted/50 [&_button[role=combobox]]:cursor-not-allowed
+         [&_button:not(.sidebar-nav-button)]:pointer-events-none [&_button:not(.sidebar-nav-button)]:opacity-50 [&_button:not(.sidebar-nav-button)]:cursor-not-allowed
+         [&_[role=checkbox]]:pointer-events-none [&_[role=checkbox]]:opacity-50
+         [&_[role=radio]]:pointer-events-none [&_[role=radio]]:opacity-50
+         [&_[role=switch]]:pointer-events-none [&_[role=switch]]:opacity-50
+         [&_[role=slider]]:pointer-events-none [&_[role=slider]]:opacity-50
+         [&_[type=file]]:pointer-events-none [&_[type=file]]:opacity-50
+         [&_.dropzone]:pointer-events-none [&_.dropzone]:opacity-50
+         [&_a:not(.sidebar-link)]:pointer-events-none [&_a:not(.sidebar-link)]:opacity-50
+         [&_[role=spinbutton]]:pointer-events-none [&_[role=spinbutton]]:bg-muted/50
+         [&_[data-calendar]]:pointer-events-none [&_[data-calendar]]:opacity-50`
+      : '';
+
     return (
-      <div className="[&_input]:pointer-events-none [&_input]:bg-muted/50 [&_textarea]:pointer-events-none [&_textarea]:bg-muted/50 [&_select]:pointer-events-none [&_button[role=combobox]]:pointer-events-none [&_button[role=combobox]]:bg-muted/50">
+      <div 
+        className={readOnlyStyles}
+        aria-readonly={context === 'client' ? 'true' : undefined}
+      >
         <Form {...form}>
           <CarePlanWizardSteps 
             currentStep={currentStep} 
