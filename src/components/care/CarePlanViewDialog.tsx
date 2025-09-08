@@ -652,6 +652,683 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
           </Card>
         );
 
+      case 4: // General
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                General Preferences
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.general && Object.keys(carePlanWithDetails.general).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(carePlanWithDetails.general).map(([key, value]) => {
+                    if (!value) return null;
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No general preferences available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 5: // Hobbies
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Hobbies & Interests
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.hobbies && (carePlanWithDetails.hobbies.selected_hobbies?.length > 0 || Object.keys(carePlanWithDetails.hobbies).length > 0) ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.hobbies.selected_hobbies && carePlanWithDetails.hobbies.selected_hobbies.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Selected Hobbies</label>
+                      <div className="flex flex-wrap gap-2">
+                        {carePlanWithDetails.hobbies.selected_hobbies.map((hobby: string, index: number) => (
+                          <Badge key={index} variant="secondary">{hobby}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {Object.entries(carePlanWithDetails.hobbies).filter(([key]) => key !== 'selected_hobbies').map(([key, value]) => {
+                    if (!value) return null;
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No hobbies or interests recorded</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 6: // Medical and Mental
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Stethoscope className="h-5 w-5" />
+                Medical & Mental Health
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.medical_info && Object.keys(carePlanWithDetails.medical_info).length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.medical_info.physical_health_conditions && carePlanWithDetails.medical_info.physical_health_conditions.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Physical Health Conditions</label>
+                      <div className="flex flex-wrap gap-2">
+                        {carePlanWithDetails.medical_info.physical_health_conditions.map((condition: string, index: number) => (
+                          <Badge key={index} variant="outline" className="bg-red-50 text-red-700 border-red-200">{condition}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {carePlanWithDetails.medical_info.mental_health_conditions && carePlanWithDetails.medical_info.mental_health_conditions.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Mental Health Conditions</label>
+                      <div className="flex flex-wrap gap-2">
+                        {carePlanWithDetails.medical_info.mental_health_conditions.map((condition: string, index: number) => (
+                          <Badge key={index} variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{condition}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {Object.entries(carePlanWithDetails.medical_info).filter(([key]) => !['physical_health_conditions', 'mental_health_conditions', 'medication_manager'].includes(key)).map(([key, value]) => {
+                    if (!value) return null;
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Stethoscope className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No medical information available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 7: // Medication
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Pill className="h-5 w-5" />
+                Medications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {((carePlanWithDetails.medications && carePlanWithDetails.medications.length > 0) || 
+                (carePlanWithDetails.medical_info?.medication_manager?.medications && carePlanWithDetails.medical_info.medication_manager.medications.length > 0)) ? (
+                <div className="space-y-4">
+                  {(carePlanWithDetails.medications || carePlanWithDetails.medical_info?.medication_manager?.medications || []).map((medication: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Medication</label>
+                          <p className="text-sm font-medium">{medication.name || medication.medication_name || 'Unknown medication'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Dosage</label>
+                          <p className="text-sm">{medication.dosage || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Frequency</label>
+                          <p className="text-sm">{medication.frequency || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status</label>
+                          <Badge variant="outline" className={medication.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}>
+                            {medication.status || 'Active'}
+                          </Badge>
+                        </div>
+                      </div>
+                      {medication.instructions && (
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Instructions</label>
+                          <p className="text-sm p-2 bg-muted rounded">{medication.instructions}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No medications recorded</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 8: // Admin Medication
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Syringe className="h-5 w-5" />
+                Medication Administration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {((carePlanWithDetails.medications && carePlanWithDetails.medications.length > 0) || 
+                (carePlanWithDetails.medical_info?.medication_manager?.medications && carePlanWithDetails.medical_info.medication_manager.medications.length > 0)) ? (
+                <div className="space-y-4">
+                  {(carePlanWithDetails.medications || carePlanWithDetails.medical_info?.medication_manager?.medications || []).map((medication: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Medication</label>
+                          <p className="text-sm font-medium">{medication.name || medication.medication_name || 'Unknown medication'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Who Administers</label>
+                          <p className="text-sm">{medication.who_administers || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Administration Level</label>
+                          <p className="text-sm">{medication.level || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Times</label>
+                          <p className="text-sm">{medication.times?.join(', ') || 'Not specified'}</p>
+                        </div>
+                      </div>
+                      {medication.instruction && (
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Administration Instructions</label>
+                          <p className="text-sm p-2 bg-muted rounded">{medication.instruction}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Syringe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No medication administration details available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 9: // Goals
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Care Goals
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.goals && carePlanWithDetails.goals.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.goals.map((goal: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium">{goal.description || goal.goal_description || `Goal ${index + 1}`}</h4>
+                        <Badge variant="outline" className={goal.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
+                          {goal.status || 'Active'}
+                        </Badge>
+                      </div>
+                      {goal.progress !== undefined && (
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-muted-foreground">Progress</span>
+                            <span className="text-sm font-medium">{goal.progress}%</span>
+                          </div>
+                          <Progress value={goal.progress} className="h-2" />
+                        </div>
+                      )}
+                      {goal.notes && (
+                        <div className="mt-2">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Notes</label>
+                          <p className="text-sm p-2 bg-muted rounded">{goal.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No care goals defined</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 10: // Activities
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Care Activities
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.activities && carePlanWithDetails.activities.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.activities.map((activity: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium">{activity.name || activity.activity_name || `Activity ${index + 1}`}</h4>
+                        <Badge variant="outline" className={activity.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}>
+                          {activity.status || 'Active'}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Frequency</label>
+                          <p className="text-sm">{activity.frequency || 'Not specified'}</p>
+                        </div>
+                        {activity.duration && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Duration</label>
+                            <p className="text-sm">{activity.duration}</p>
+                          </div>
+                        )}
+                      </div>
+                      {activity.description && (
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Description</label>
+                          <p className="text-sm p-2 bg-muted rounded">{activity.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No activities recorded</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 11: // Personal Care
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5" />
+                Personal Care
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.personal_care && Object.keys(carePlanWithDetails.personal_care).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(carePlanWithDetails.personal_care).map(([key, value]) => {
+                    if (!value) return null;
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No personal care information available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 12: // Dietary
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Utensils className="h-5 w-5" />
+                Dietary Requirements
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.dietary_requirements && Object.keys(carePlanWithDetails.dietary_requirements).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(carePlanWithDetails.dietary_requirements).map(([key, value]) => {
+                    if (!value) return null;
+                    return (
+                      <div key={key}>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </label>
+                        <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Utensils className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No dietary requirements specified</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 13: // Risk Assessments
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5" />
+                Risk Assessments
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.risk_assessments && carePlanWithDetails.risk_assessments.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.risk_assessments.map((risk: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium">{risk.risk_type || `Risk Assessment ${index + 1}`}</h4>
+                        <Badge variant="outline" className={
+                          risk.risk_level === 'high' ? 'bg-red-50 text-red-700 border-red-200' :
+                          risk.risk_level === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                          'bg-green-50 text-green-700 border-green-200'
+                        }>
+                          {risk.risk_level || 'Not specified'}
+                        </Badge>
+                      </div>
+                      {risk.description && (
+                        <div className="mb-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Description</label>
+                          <p className="text-sm p-2 bg-muted rounded">{risk.description}</p>
+                        </div>
+                      )}
+                      {risk.mitigation && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Mitigation</label>
+                          <p className="text-sm p-2 bg-muted rounded">{risk.mitigation}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <ShieldCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No risk assessments recorded</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 14: // Equipment
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Equipment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.equipment && carePlanWithDetails.equipment.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.equipment.map((item: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Equipment</label>
+                          <p className="text-sm font-medium">{item.equipment_name || item.name || `Equipment ${index + 1}`}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Type</label>
+                          <p className="text-sm">{item.equipment_type || item.type || 'Not specified'}</p>
+                        </div>
+                        {item.location && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Location</label>
+                            <p className="text-sm">{item.location}</p>
+                          </div>
+                        )}
+                        {item.status && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Status</label>
+                            <Badge variant="outline" className={item.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}>
+                              {item.status}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                      {item.notes && (
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Notes</label>
+                          <p className="text-sm p-2 bg-muted rounded">{item.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No equipment recorded</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 15: // Service Plans
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                Service Plans
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.service_plans && carePlanWithDetails.service_plans.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.service_plans.map((plan: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Service</label>
+                          <p className="text-sm font-medium">{plan.service_name || `Service Plan ${index + 1}`}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Category</label>
+                          <p className="text-sm">{plan.service_category || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Provider</label>
+                          <p className="text-sm">{plan.provider_name || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Frequency</label>
+                          <p className="text-sm">{plan.frequency || 'Not specified'}</p>
+                        </div>
+                      </div>
+                      {plan.goals && plan.goals.length > 0 && (
+                        <div className="mb-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-2 block">Goals</label>
+                          <div className="flex flex-wrap gap-2">
+                            {plan.goals.map((goal: string, goalIndex: number) => (
+                              <Badge key={goalIndex} variant="secondary">{goal}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {plan.notes && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Notes</label>
+                          <p className="text-sm p-2 bg-muted rounded">{plan.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No service plans defined</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 16: // Service Actions
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ListChecks className="h-5 w-5" />
+                Service Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.service_actions && carePlanWithDetails.service_actions.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.service_actions.map((action: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="font-medium">{action.service_name || `Service Action ${index + 1}`}</h4>
+                        <Badge variant="outline" className={action.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}>
+                          {action.status || 'Active'}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Category</label>
+                          <p className="text-sm">{action.service_category || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Provider</label>
+                          <p className="text-sm">{action.provider_name || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Frequency</label>
+                          <p className="text-sm">{action.frequency || 'Not specified'}</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Duration</label>
+                          <p className="text-sm">{action.duration || 'Not specified'}</p>
+                        </div>
+                      </div>
+                      {action.objectives && (
+                        <div className="mt-3">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Objectives</label>
+                          <p className="text-sm p-2 bg-muted rounded">{action.objectives}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <ListChecks className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No service actions defined</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case 17: // Documents
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {carePlanWithDetails.documents && carePlanWithDetails.documents.length > 0 ? (
+                <div className="space-y-4">
+                  {carePlanWithDetails.documents.map((doc: any, index: number) => (
+                    <div key={index} className="p-4 border rounded-lg">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <h4 className="font-medium">{doc.name || doc.file_name || `Document ${index + 1}`}</h4>
+                          <p className="text-sm text-muted-foreground">{doc.type || doc.file_type || 'Unknown type'}</p>
+                        </div>
+                        <Badge variant="outline">
+                          {doc.category || 'General'}
+                        </Badge>
+                      </div>
+                      {doc.description && (
+                        <div className="mt-2">
+                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Description</label>
+                          <p className="text-sm p-2 bg-muted rounded">{doc.description}</p>
+                        </div>
+                      )}
+                      {doc.created_at && (
+                        <div className="mt-2">
+                          <label className="text-sm font-medium text-muted-foreground">Upload Date</label>
+                          <p className="text-sm">{format(new Date(doc.created_at), 'PPP')}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No documents available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+
       case 19: // Review Summary
         return (
           <Card>
