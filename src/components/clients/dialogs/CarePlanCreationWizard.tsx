@@ -277,18 +277,19 @@ const wizardSteps = [
   { id: 4, name: "General", description: "General preferences and safety notes" },
   { id: 5, name: "Hobbies", description: "Client hobbies and interests" },
   { id: 6, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 7, name: "Admin Medication", description: "Medication administration details" },
-  { id: 8, name: "Goals", description: "Care goals and objectives" },
-  { id: 9, name: "Activities", description: "Daily activities and routines" },
-  { id: 10, name: "Personal Care", description: "Personal care requirements" },
-  { id: 11, name: "Dietary", description: "Dietary needs and restrictions" },
-  { id: 12, name: "Risk Assessments", description: "Safety and risk evaluations" },
-  { id: 13, name: "Equipment", description: "Required equipment and aids" },
-  { id: 14, name: "Service Plans", description: "Service delivery plans" },
-  { id: 15, name: "Service Actions", description: "Specific service actions" },
-  { id: 16, name: "Documents", description: "Supporting documents" },
-  { id: 17, name: "Consent", description: "Consent and capacity assessment" },
-  { id: 18, name: "Review", description: "Review and finalize care plan" },
+  { id: 7, name: "Medication", description: "Medication management and calendar" },
+  { id: 8, name: "Admin Medication", description: "Medication administration details" },
+  { id: 9, name: "Goals", description: "Care goals and objectives" },
+  { id: 10, name: "Activities", description: "Daily activities and routines" },
+  { id: 11, name: "Personal Care", description: "Personal care requirements" },
+  { id: 12, name: "Dietary", description: "Dietary needs and restrictions" },
+  { id: 13, name: "Risk Assessments", description: "Safety and risk evaluations" },
+  { id: 14, name: "Equipment", description: "Required equipment and aids" },
+  { id: 15, name: "Service Plans", description: "Service delivery plans" },
+  { id: 16, name: "Service Actions", description: "Specific service actions" },
+  { id: 17, name: "Documents", description: "Supporting documents" },
+  { id: 18, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 19, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
@@ -316,7 +317,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 18;
+  const totalSteps = 19;
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
