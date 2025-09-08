@@ -18,6 +18,7 @@ import { WizardStep10Equipment } from "./steps/WizardStep10Equipment";
 import { WizardStep11ServicePlans } from "./steps/WizardStep11ServicePlans";
 import { WizardStep12ServiceActions } from "./steps/WizardStep12ServiceActions";
 import { WizardStep13Documents } from "./steps/WizardStep13Documents";
+import { WizardStepConsent } from "./steps/WizardStepConsent";
 import { WizardStep14Review } from "./steps/WizardStep14Review";
 
 interface CarePlanWizardStepsProps {
@@ -68,6 +69,8 @@ export function CarePlanWizardSteps({ currentStep, form, clientId }: CarePlanWiz
       case 16:
         return <WizardStep13Documents form={form} clientId={clientId} />;
       case 17:
+        return <WizardStepConsent form={form} />;
+      case 18:
         return <WizardStep14Review form={form} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);

@@ -172,6 +172,27 @@ const carePlanSchema = z.object({
   service_plans: z.array(z.any()).optional(),
   service_actions: z.array(z.any()).optional(),
   documents: z.array(z.any()).optional(),
+  consent: z.object({
+    // Having Capacity tab
+    has_capacity: z.boolean().optional().default(false),
+    capacity_assessment_date: z.string().optional().default(""),
+    capacity_notes: z.string().optional().default(""),
+    
+    // Lacking Capacity tab
+    lacks_capacity: z.boolean().optional().default(false),
+    capacity_loss_reason: z.string().optional().default(""),
+    best_interest_decision: z.boolean().optional().default(false),
+    best_interest_date: z.string().optional().default(""),
+    best_interest_notes: z.string().optional().default(""),
+    
+    // Third Party Consent tab
+    third_party_consent: z.boolean().optional().default(false),
+    third_party_name: z.string().optional().default(""),
+    third_party_relationship: z.string().optional().default(""),
+    third_party_contact: z.string().optional().default(""),
+    third_party_consent_date: z.string().optional().default(""),
+    third_party_notes: z.string().optional().default(""),
+  }).optional(),
   additional_notes: z.string().optional(),
 });
 
@@ -205,7 +226,8 @@ const wizardSteps = [
   { id: 14, name: "Service Plans", description: "Service delivery plans" },
   { id: 15, name: "Service Actions", description: "Specific service actions" },
   { id: 16, name: "Documents", description: "Supporting documents" },
-  { id: 17, name: "Review", description: "Review and finalize care plan" },
+  { id: 17, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 18, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
@@ -233,7 +255,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 17;
+  const totalSteps = 18;
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
@@ -275,6 +297,7 @@ export function CarePlanCreationWizard({
       service_plans: [],
       service_actions: [],
       documents: [],
+      consent: {},
       additional_notes: "",
     },
   });
@@ -397,7 +420,7 @@ export function CarePlanCreationWizard({
               }
             }
             // Handle object fields with safety checks
-            else if (['personal_info', 'about_me', 'general', 'hobbies', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food', 'risk_warning_instructions', 'risk_choking', 'risk_pressure_damage'].includes(key)) {
+            else if (['personal_info', 'about_me', 'general', 'hobbies', 'medical_info', 'personal_care', 'dietary', 'risk_equipment_dietary', 'risk_medication', 'risk_dietary_food', 'risk_warning_instructions', 'risk_choking', 'risk_pressure_damage', 'consent'].includes(key)) {
               value = initializeObjectField(value);
             }
             
@@ -488,9 +511,10 @@ export function CarePlanCreationWizard({
       if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(14);
       if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(15);
       if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(16);
+      if (formData.consent && Object.keys(formData.consent).length > 0) completedSteps.push(17);
       
-      // Step 16 (Review) is considered completed when ready to finalize
-      if (completedSteps.length >= 4) completedSteps.push(16);
+      // Step 18 (Review) is considered completed when ready to finalize
+      if (completedSteps.length >= 4) completedSteps.push(18);
 
       return completedSteps;
     } catch (error) {
