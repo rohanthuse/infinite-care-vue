@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { UseFormReturn } from "react-hook-form";
-import { Activity } from "lucide-react";
+import { Activity } from "lucide-react";  
 import { MedicationCalendar } from "@/components/care/medication/MedicationCalendar";
+import { MedicationList } from "@/components/care/medication/MedicationList";
 import { AddMedicationDialog } from "@/components/care/medication/AddMedicationDialog";
-import { useMedicationsByCarePlan, useCreateMedication } from "@/hooks/useMedications";
+import { MedicationDetailsDialog } from "@/components/care/medication/MedicationDetailsDialog";
+import { EditPersistedMedicationDialog } from "@/components/care/medication/EditPersistedMedicationDialog";
+import { useMedicationsByCarePlan, useCreateMedication, useDeleteMedication } from "@/hooks/useMedications";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 interface WizardStepMedicationProps {
@@ -17,9 +21,17 @@ export function WizardStepMedication({
 }: WizardStepMedicationProps) {
   const [isAddMedicationOpen, setIsAddMedicationOpen] = useState(false);
   
+  // Dialog states
+  const [selectedMedication, setSelectedMedication] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPersistedEditOpen, setIsPersistedEditOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
   // Fetch existing medications from database if care plan exists
   const { data: existingMedications = [] } = useMedicationsByCarePlan(effectiveCarePlanId || "");
   const createMedicationMutation = useCreateMedication();
+  const deleteMedicationMutation = useDeleteMedication();
   
   // Handle saving new medication
   const handleSaveMedication = (medication: any) => {
@@ -49,6 +61,66 @@ export function WizardStepMedication({
     }
   };
 
+  // Handle updating local medication
+  const handleUpdateMedication = (updatedMedication: any) => {
+    const currentMedications = form.getValues("medical_info.medication_manager.medications") || [];
+    const updatedMedications = currentMedications.map((med: any) => 
+      med.id === updatedMedication.id ? updatedMedication : med
+    );
+    form.setValue("medical_info.medication_manager.medications", updatedMedications);
+    toast.success("Medication updated successfully");
+  };
+
+  // Handle list actions
+  const handleViewMedication = (medication: any) => {
+    setSelectedMedication(medication);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditMedication = (medication: any) => {
+    setSelectedMedication(medication);
+    const isLocal = medication.id?.startsWith("med-");
+    
+    if (isLocal) {
+      setIsEditDialogOpen(true);
+    } else {
+      setIsPersistedEditOpen(true);
+    }
+  };
+
+  const handleDeleteMedication = (medication: any) => {
+    setSelectedMedication(medication);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!selectedMedication) return;
+    
+    const isLocal = selectedMedication.id?.startsWith("med-");
+    
+    if (isLocal) {
+      // Remove from form state
+      const currentMedications = form.getValues("medical_info.medication_manager.medications") || [];
+      const filteredMedications = currentMedications.filter((med: any) => med.id !== selectedMedication.id);
+      form.setValue("medical_info.medication_manager.medications", filteredMedications);
+      toast.success("Medication removed successfully");
+    } else {
+      // Delete from database
+      deleteMedicationMutation.mutate(selectedMedication.id, {
+        onSuccess: () => {
+          toast.success("Medication deleted successfully");
+        },
+        onError: (error) => {
+          console.error("Failed to delete medication:", error);
+          toast.error("Failed to delete medication");
+        }
+      });
+    }
+    
+    setIsDeleteDialogOpen(false);
+    setSelectedMedication(null);
+  };
+
   // Get medications from form and database
   const formMedications = form.watch("medical_info.medication_manager.medications") || [];
   const allMedications = [...formMedications, ...existingMedications];
@@ -70,11 +142,62 @@ export function WizardStepMedication({
         onAddMedication={() => setIsAddMedicationOpen(true)}
       />
 
+      <MedicationList
+        medications={allMedications}
+        onView={handleViewMedication}
+        onEdit={handleEditMedication}
+        onDelete={handleDeleteMedication}
+      />
+
       <AddMedicationDialog
         isOpen={isAddMedicationOpen}
         onClose={() => setIsAddMedicationOpen(false)}
         onSave={handleSaveMedication}
       />
+
+      <AddMedicationDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setSelectedMedication(null);
+        }}
+        onUpdate={handleUpdateMedication}
+        mode="edit"
+        initialMedication={selectedMedication}
+      />
+
+      <MedicationDetailsDialog
+        isOpen={isViewDialogOpen}
+        onClose={() => {
+          setIsViewDialogOpen(false);
+          setSelectedMedication(null);
+        }}
+        medication={selectedMedication}
+      />
+
+      <EditPersistedMedicationDialog
+        isOpen={isPersistedEditOpen}
+        onClose={() => {
+          setIsPersistedEditOpen(false);
+          setSelectedMedication(null);
+        }}
+        medication={selectedMedication}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Medication</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedMedication?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedMedication(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

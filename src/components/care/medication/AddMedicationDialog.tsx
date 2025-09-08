@@ -38,7 +38,10 @@ type MedicationFormData = z.infer<typeof medicationSchema>;
 interface AddMedicationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (medication: any) => void;
+  onSave?: (medication: any) => void;
+  onUpdate?: (medication: any) => void;
+  mode?: 'add' | 'edit';
+  initialMedication?: Partial<MedicationFormData> & { id?: string };
 }
 
 // NHS Database medications (simplified example)
@@ -80,7 +83,14 @@ const FREQUENCY_OPTIONS = [
   { value: "as_needed", label: "As needed (PRN)" }
 ];
 
-export function AddMedicationDialog({ isOpen, onClose, onSave }: AddMedicationDialogProps) {
+export function AddMedicationDialog({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  onUpdate, 
+  mode = 'add', 
+  initialMedication 
+}: AddMedicationDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredMedications, setFilteredMedications] = useState<string[]>([]);
 
@@ -101,6 +111,27 @@ export function AddMedicationDialog({ isOpen, onClose, onSave }: AddMedicationDi
       start_date: new Date(),
     }
   });
+
+  // Reset form when initialMedication changes
+  React.useEffect(() => {
+    if (initialMedication && mode === 'edit') {
+      form.reset({
+        source: "new_medication", // Always new_medication for local edits
+        name: initialMedication.name || "",
+        dosage: initialMedication.dosage || "",
+        shape: initialMedication.shape || "",
+        route: initialMedication.route || "",
+        who_administers: initialMedication.who_administers || "",
+        level: initialMedication.level || "",
+        instruction: initialMedication.instruction || "",
+        warning: initialMedication.warning || "",
+        side_effect: initialMedication.side_effect || "",
+        frequency: initialMedication.frequency || "",
+        start_date: initialMedication.start_date ? new Date(initialMedication.start_date) : new Date(),
+        end_date: initialMedication.end_date ? new Date(initialMedication.end_date) : undefined,
+      });
+    }
+  }, [initialMedication, mode, form]);
 
   const watchedSource = form.watch("source");
 
@@ -127,7 +158,7 @@ export function AddMedicationDialog({ isOpen, onClose, onSave }: AddMedicationDi
 
   const handleSave = (data: MedicationFormData) => {
     const medication = {
-      id: `med-${Date.now()}`, // Generate temporary ID
+      id: mode === 'edit' && initialMedication?.id ? initialMedication.id : `med-${Date.now()}`,
       name: data.name,
       dosage: data.dosage,
       shape: data.shape,
@@ -143,7 +174,11 @@ export function AddMedicationDialog({ isOpen, onClose, onSave }: AddMedicationDi
       status: "active"
     };
     
-    onSave(medication);
+    if (mode === 'edit' && onUpdate) {
+      onUpdate(medication);
+    } else if (onSave) {
+      onSave(medication);
+    }
     handleClose();
   };
 
@@ -158,7 +193,7 @@ export function AddMedicationDialog({ isOpen, onClose, onSave }: AddMedicationDi
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Medication</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Edit Medication' : 'Add Medication'}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
