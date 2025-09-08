@@ -69,6 +69,9 @@ export interface CarePlanWithDetails extends CarePlanData {
   personal_care?: any;
   dietary_requirements?: any;
   about_me?: any;
+  consent?: any;
+  general?: any;
+  hobbies?: any;
   risk_assessments?: any[];
   service_actions?: any[];
   service_plans?: any[];
@@ -230,6 +233,9 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     personal_care: autoSaveData.personal_care || {},
     dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
     about_me: autoSaveData.about_me || {},
+    consent: autoSaveData.consent || {},
+    general: autoSaveData.general || {},
+    hobbies: autoSaveData.hobbies || {},
     // Also extract other detailed sections as in fetchClientCarePlansWithDetails
     risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
     service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],

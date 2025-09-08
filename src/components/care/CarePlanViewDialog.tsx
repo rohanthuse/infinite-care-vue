@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit, FileText, Calendar, User, Target, Activity, Pill, Heart, Utensils, ShieldCheck, Clock, 
          Phone, MapPin, AlertTriangle, Briefcase, FileX, Settings, Info, 
-         UserCheck, Stethoscope, Home, UtensilsCrossed, CheckCircle2, Download, UserX } from 'lucide-react';
+         UserCheck, Stethoscope, Home, UtensilsCrossed, CheckCircle2, Download, UserX, 
+         ClipboardCheck, Syringe, ListChecks } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
@@ -222,6 +223,18 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                   <User className="h-3 w-3 mr-1" />
                   About Me
                 </TabsTrigger>
+                <TabsTrigger value="consent" className="text-xs">
+                  <ClipboardCheck className="h-3 w-3 mr-1" />
+                  Consent
+                </TabsTrigger>
+                <TabsTrigger value="general" className="text-xs">
+                  <Heart className="h-3 w-3 mr-1" />
+                  General
+                </TabsTrigger>
+                <TabsTrigger value="hobbies" className="text-xs">
+                  <ListChecks className="h-3 w-3 mr-1" />
+                  Hobbies
+                </TabsTrigger>
                 <TabsTrigger value="medical" className="text-xs">
                   <Stethoscope className="h-3 w-3 mr-1" />
                   Medical
@@ -245,6 +258,10 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                 <TabsTrigger value="medications" className="text-xs">
                   <Pill className="h-3 w-3 mr-1" />
                   Medications
+                </TabsTrigger>
+                <TabsTrigger value="admin-medication" className="text-xs">
+                  <Syringe className="h-3 w-3 mr-1" />
+                  Admin Medication
                 </TabsTrigger>
                 <TabsTrigger value="services" className="text-xs">
                   <Briefcase className="h-3 w-3 mr-1" />
@@ -539,7 +556,94 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                   </Card>
                 </TabsContent>
 
-                {/* Medical Information Tab */}
+                {/* Consent Tab */}
+                <TabsContent value="consent" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ClipboardCheck className="h-5 w-5" />
+                        Consent Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {carePlanWithDetails.consent && Object.keys(carePlanWithDetails.consent).length > 0 ? (
+                        <div className="space-y-4">
+                          {Object.entries(carePlanWithDetails.consent).map(([key, value]) => (
+                            <div key={key}>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <ClipboardCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No consent information available</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* General Tab */}
+                <TabsContent value="general" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Heart className="h-5 w-5" />
+                        General Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {carePlanWithDetails.general && Object.keys(carePlanWithDetails.general).length > 0 ? (
+                        <div className="space-y-4">
+                          {Object.entries(carePlanWithDetails.general).map(([key, value]) => (
+                            <div key={key}>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No general information available</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Hobbies Tab */}
+                <TabsContent value="hobbies" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <ListChecks className="h-5 w-5" />
+                        Hobbies & Interests
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {carePlanWithDetails.hobbies && Object.keys(carePlanWithDetails.hobbies).length > 0 ? (
+                        <div className="space-y-4">
+                          {Object.entries(carePlanWithDetails.hobbies).map(([key, value]) => (
+                            <div key={key}>
+                              <label className="text-sm font-medium text-muted-foreground mb-2 block">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</label>
+                              <p className="text-sm p-3 bg-muted rounded-md">{String(value)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <ListChecks className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No hobbies information available</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Client Information Tab */}
                 <TabsContent value="client" className="space-y-4 mt-0">
                   <Card>
                     <CardHeader>
@@ -1001,6 +1105,65 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                         <div className="text-center py-8">
                           <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                           <p className="text-muted-foreground">No medications prescribed</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Admin Medication Tab */}
+                <TabsContent value="admin-medication" className="space-y-4 mt-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Syringe className="h-5 w-5" />
+                        Admin Medication
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {carePlanWithDetails.medical_info?.admin_medication && Array.isArray(carePlanWithDetails.medical_info.admin_medication) && carePlanWithDetails.medical_info.admin_medication.length > 0 ? (
+                        <div className="space-y-4">
+                          {carePlanWithDetails.medical_info.admin_medication.map((medication: any, index: number) => (
+                            <Card key={index} className="border-l-4 border-l-blue-500">
+                              <CardContent className="pt-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-start justify-between">
+                                    <h4 className="font-medium">{medication.medication_name || medication.name || `Admin Medication ${index + 1}`}</h4>
+                                    <Badge className={medication.status === 'active' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}>
+                                      {medication.status || 'Active'}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                      <label className="text-muted-foreground">Dosage</label>
+                                      <p className="font-medium">{medication.dosage || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                      <label className="text-muted-foreground">Frequency</label>
+                                      <p className="font-medium">{medication.frequency || 'Not specified'}</p>
+                                    </div>
+                                    <div>
+                                      <label className="text-muted-foreground">Administration Method</label>
+                                      <p className="font-medium">{medication.administration_method || 'Not specified'}</p>
+                                    </div>
+                                  </div>
+                                  
+                                  {medication.instructions && (
+                                    <div className="mt-3">
+                                      <label className="text-muted-foreground text-sm">Instructions</label>
+                                      <p className="text-sm mt-1 p-2 bg-muted rounded">{medication.instructions}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Syringe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">No admin medications defined</p>
                         </div>
                       )}
                     </CardContent>
