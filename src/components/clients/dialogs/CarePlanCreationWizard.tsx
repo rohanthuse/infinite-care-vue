@@ -209,6 +209,24 @@ const carePlanSchema = z.object({
     best_interest_date: z.string().optional().default(""),
     best_interest_notes: z.string().optional().default(""),
     
+    // Lacking Capacity - Assessor statements
+    assessor_statement_1: z.enum(["yes", "no"]).optional(),
+    assessor_statement_2: z.enum(["yes", "no"]).optional(),
+    assessor_statement_3: z.enum(["yes", "no"]).optional(),
+    assessor_statement_4: z.enum(["yes", "no"]).optional(),
+    assessor_statement_5: z.enum(["yes", "no"]).optional(),
+    assessor_statement_6: z.enum(["yes", "no"]).optional(),
+    assessor_statement_7: z.enum(["yes", "no"]).optional(),
+    assessor_statement_8: z.enum(["yes", "no"]).optional(),
+    assessor_statement_9: z.enum(["yes", "no"]).optional(),
+    
+    // Lacking Capacity - Additional fields
+    best_interest_decision_files: z.array(z.string()).optional().default([]),
+    lacking_capacity_extra_information: z.string().optional().default(""),
+    assessor_full_name: z.string().optional().default(""),
+    assessor_signature_data: z.string().optional().default(""),
+    assessor_confirmed_on: z.string().optional().default(""),
+    
     // Third Party Consent tab
     third_party_consent: z.boolean().optional().default(false),
     third_party_name: z.string().optional().default(""),
