@@ -546,44 +546,147 @@ export function CarePlanCreationWizard({
     return () => subscription.unsubscribe();
   }, [form, autoSave, currentStep, isOpen, savedCarePlanId, clientDataLoaded]);
 
+  // Helper functions for step completion validation
+  const isNonEmptyString = (value: any): boolean => {
+    return typeof value === 'string' && value.trim().length > 0;
+  };
+
+  const hasAnyValue = (obj: any): boolean => {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+    
+    return Object.values(obj).some(value => {
+      if (typeof value === 'string') return value.trim().length > 0;
+      if (typeof value === 'boolean') return value === true;
+      if (Array.isArray(value)) return value.length > 0 && value.some(item => item && (typeof item === 'string' ? item.trim() : true));
+      if (typeof value === 'object' && value !== null) return hasAnyValue(value);
+      return value !== null && value !== undefined && value !== '';
+    });
+  };
+
+  const hasPersonalInfo = (personalInfo: any): boolean => {
+    if (!personalInfo || typeof personalInfo !== 'object') return false;
+    
+    // Check for any meaningful personal information fields
+    const meaningfulFields = [
+      'first_name', 'last_name', 'date_of_birth', 'gender', 'ethnicity',
+      'nationality', 'language', 'religion', 'marital_status', 'address',
+      'phone', 'email', 'emergency_contact_name', 'emergency_contact_phone',
+      'gp_name', 'gp_address', 'gp_phone'
+    ];
+    
+    return meaningfulFields.some(field => isNonEmptyString(personalInfo[field]));
+  };
+
+  const hasMedicalInfo = (medicalInfo: any): boolean => {
+    if (!medicalInfo || typeof medicalInfo !== 'object') return false;
+    
+    // Check for medical conditions
+    if (Array.isArray(medicalInfo.physical_health_conditions) && medicalInfo.physical_health_conditions.length > 0) return true;
+    if (Array.isArray(medicalInfo.mental_health_conditions) && medicalInfo.mental_health_conditions.length > 0) return true;
+    
+    // Check for medications
+    if (medicalInfo.medication_manager?.medications && Array.isArray(medicalInfo.medication_manager.medications) && medicalInfo.medication_manager.medications.length > 0) return true;
+    
+    // Check for other medical fields
+    const medicalFields = ['allergies', 'current_medications', 'medical_history', 'service_band'];
+    return medicalFields.some(field => isNonEmptyString(medicalInfo[field]));
+  };
+
+  const hasHobbiesInfo = (hobbies: any): boolean => {
+    if (!hobbies || typeof hobbies !== 'object') return false;
+    
+    // Check for selected hobbies
+    return Array.isArray(hobbies.selected_hobbies) && hobbies.selected_hobbies.length > 0;
+  };
+
+  const hasConsentInfo = (consent: any): boolean => {
+    if (!consent || typeof consent !== 'object') return false;
+    
+    // Check for any consent responses (yes/no selections)
+    const consentFields = [
+      'discuss_health_and_risks', 'medication_support_consent', 'care_plan_importance_understood',
+      'share_info_with_professionals', 'regular_reviews_understood', 'may_need_capacity_assessment',
+      'consent_to_care_and_support', 'consent_to_personal_care', 'consent_to_medication_administration',
+      'consent_to_healthcare_professionals', 'consent_to_emergency_services', 'consent_to_data_sharing',
+      'consent_to_care_plan_changes'
+    ];
+    
+    const hasConsentAnswers = consentFields.some(field => consent[field] === 'yes' || consent[field] === 'no');
+    
+    // Check for capacity assessment fields
+    const hasCapacityInfo = consent.has_capacity === true || consent.lacks_capacity === true;
+    
+    // Check for text fields
+    const textFields = ['typed_full_name', 'extra_information', 'capacity_notes', 'best_interest_notes'];
+    const hasTextInfo = textFields.some(field => isNonEmptyString(consent[field]));
+    
+    return hasConsentAnswers || hasCapacityInfo || hasTextInfo;
+  };
+
+  const hasRiskAssessments = (formData: any): boolean => {
+    // Check main risk assessments array
+    if (Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) return true;
+    
+    // Check individual risk assessment objects for any meaningful data
+    const riskObjects = [
+      formData.risk_equipment_dietary,
+      formData.risk_medication,
+      formData.risk_dietary_food,
+      formData.risk_warning_instructions,
+      formData.risk_choking,
+      formData.risk_pressure_damage
+    ];
+    
+    return riskObjects.some(riskObj => {
+      if (!riskObj || typeof riskObj !== 'object') return false;
+      
+      return Object.values(riskObj).some(value => {
+        if (typeof value === 'boolean') return value === true;
+        if (typeof value === 'string') return value.trim().length > 0;
+        if (Array.isArray(value)) return value.length > 0;
+        return false;
+      });
+    });
+  };
+
   // Calculate completed steps based on form data
   const getCompletedSteps = () => {
     try {
       const formData = form.getValues();
       const completedSteps: number[] = [];
 
-      // Check each step for completion with safety checks
+      // Check each step for completion with proper validation
       if (formData.title?.trim()) completedSteps.push(1);
-      if (formData.personal_info && Object.keys(formData.personal_info).length > 0) completedSteps.push(2);
-      if (formData.about_me && Object.keys(formData.about_me).length > 0) completedSteps.push(3);
-      if (formData.general && Object.keys(formData.general).length > 0) completedSteps.push(4);
-      if (formData.hobbies && Object.keys(formData.hobbies).length > 0) completedSteps.push(5);
-      if (formData.medical_info && Object.keys(formData.medical_info).length > 0) completedSteps.push(6);
-      if (formData.medical_info && typeof formData.medical_info === 'object' && 'admin_medication' in formData.medical_info && formData.medical_info.admin_medication && Object.keys(formData.medical_info.admin_medication).length > 0) completedSteps.push(7);
-      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(8);
-      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(9);
-      if (formData.personal_care && Object.keys(formData.personal_care).length > 0) completedSteps.push(10);
-      if (formData.dietary && Object.keys(formData.dietary).length > 0) completedSteps.push(11);
-      if ((Array.isArray(formData.risk_assessments) && formData.risk_assessments.length > 0) ||
-          (formData.risk_equipment_dietary && Object.keys(formData.risk_equipment_dietary).length > 0) ||
-          (formData.risk_medication && Object.keys(formData.risk_medication).length > 0) ||
-          (formData.risk_dietary_food && Object.keys(formData.risk_dietary_food).length > 0) ||
-          (formData.risk_warning_instructions && Object.keys(formData.risk_warning_instructions).length > 0) ||
-          (formData.risk_choking && Object.keys(formData.risk_choking).length > 0) ||
-          (formData.risk_pressure_damage && Object.keys(formData.risk_pressure_damage).length > 0)) completedSteps.push(12);
+      if (hasPersonalInfo(formData.personal_info)) completedSteps.push(2);
+      if (hasAnyValue(formData.about_me)) completedSteps.push(3);
+      if (hasAnyValue(formData.general)) completedSteps.push(4);
+      if (hasHobbiesInfo(formData.hobbies)) completedSteps.push(5);
+      if (hasMedicalInfo(formData.medical_info)) completedSteps.push(6);
+      // Step 7 is now Medication (standard medication management)
+      if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && formData.medical_info.medication_manager.medications.length > 0) completedSteps.push(7);
+      // Step 8 is now Admin Medication - check if there are any medication administration details
+      if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && 
+          formData.medical_info.medication_manager.medications.some(med => 
+            isNonEmptyString(med?.who_administers) || isNonEmptyString(med?.level) || isNonEmptyString(med?.instruction)
+          )) completedSteps.push(8);
+      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(9);
+      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(10);
+      if (hasAnyValue(formData.personal_care)) completedSteps.push(11);
+      if (hasAnyValue(formData.dietary)) completedSteps.push(12);
+      if (hasRiskAssessments(formData)) completedSteps.push(13);
       if (formData.equipment && typeof formData.equipment === 'object' && (
         (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
-        (formData.equipment.moving_handling && Object.keys(formData.equipment.moving_handling).length > 0) ||
-        (formData.equipment.environment_checks && Object.keys(formData.equipment.environment_checks).length > 0) ||
-        (formData.equipment.home_repairs && Object.keys(formData.equipment.home_repairs).length > 0)
-      )) completedSteps.push(13);
-      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(14);
-      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(15);
-      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(16);
-      if (formData.consent && Object.keys(formData.consent).length > 0) completedSteps.push(17);
+        (formData.equipment.moving_handling && hasAnyValue(formData.equipment.moving_handling)) ||
+        (formData.equipment.environment_checks && hasAnyValue(formData.equipment.environment_checks)) ||
+        (formData.equipment.home_repairs && hasAnyValue(formData.equipment.home_repairs))
+      )) completedSteps.push(14);
+      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(15);
+      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(16);
+      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(17);
+      if (hasConsentInfo(formData.consent)) completedSteps.push(18);
       
-      // Step 18 (Review) is considered completed when ready to finalize
-      if (completedSteps.length >= 4) completedSteps.push(18);
+      // Step 19 (Review) is considered completed when ready to finalize
+      if (completedSteps.length >= 4) completedSteps.push(19);
 
       return completedSteps;
     } catch (error) {
