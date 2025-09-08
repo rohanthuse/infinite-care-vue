@@ -22,6 +22,7 @@ interface CarePlanViewDialogProps {
   carePlanId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  context?: 'staff' | 'client'; // Add context to control which actions to show
 }
 
 const viewSteps = [
@@ -86,7 +87,7 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
   };
 };
 
-export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanViewDialogProps) {
+export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = 'staff' }: CarePlanViewDialogProps) {
   const navigate = useNavigate();
   const { id: branchId, branchName } = useParams();
   const { tenantSlug } = useTenant();
@@ -235,37 +236,39 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange }: CarePlanV
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleEditToggle}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Plan
-              </Button>
-              {carePlan.status === 'pending_approval' && (
-                <>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleApprovalAction('reject')}
-                    className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <UserX className="h-4 w-4 mr-2" />
-                    Request Changes
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleApprovalAction('approve')}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Approve
-                  </Button>
-                </>
-              )}
-            </div>
+            {context === 'staff' && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleEditToggle}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Plan
+                </Button>
+                {carePlan.status === 'pending_approval' && (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleApprovalAction('reject')}
+                      className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <UserX className="h-4 w-4 mr-2" />
+                      Request Changes
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleApprovalAction('approve')}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Approve
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4 mt-4">
             <div className="flex-1">

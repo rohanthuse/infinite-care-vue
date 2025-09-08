@@ -12,12 +12,14 @@ import { ClientChangeRequestDialog } from "@/components/client/ClientChangeReque
 import { useApproveCarePlan, useRejectCarePlan, useCarePlanRequiresApproval, useCarePlanStatus, useRequestChanges, useCarePlanHasChangeRequest } from "@/hooks/useCarePlanApproval";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { CarePlanDataEnhancer } from "@/components/care/CarePlanDataEnhancer";
+import { CarePlanViewDialog } from "@/components/care/CarePlanViewDialog";
 const ClientCarePlans = () => {
   const {
     toast
   } = useToast();
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
   const [changeRequestDialogOpen, setChangeRequestDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedCarePlan, setSelectedCarePlan] = useState<any>(null);
   const approveCarePlanMutation = useApproveCarePlan();
   const rejectCarePlanMutation = useRejectCarePlan();
@@ -38,6 +40,11 @@ const ClientCarePlans = () => {
   const handleOpenChangeRequestDialog = (carePlan: any) => {
     setSelectedCarePlan(carePlan);
     setChangeRequestDialogOpen(true);
+  };
+
+  const handleOpenViewDialog = (carePlan: any) => {
+    setSelectedCarePlan(carePlan);
+    setViewDialogOpen(true);
   };
 
   const handleSubmitChangeRequest = (comments: string) => {
@@ -211,6 +218,13 @@ const ClientCarePlans = () => {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleOpenViewDialog(carePlan)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
                     {requiresApproval ? (
                       <>
                         <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
@@ -828,6 +842,16 @@ const ClientCarePlans = () => {
         existingRequestDate={selectedCarePlan?.changes_requested_at ? new Date(selectedCarePlan.changes_requested_at).toLocaleDateString() : undefined}
         existingComments={selectedCarePlan?.change_request_comments}
       />}
+
+      {/* View Details Dialog */}
+      {selectedCarePlan && (
+        <CarePlanViewDialog
+          carePlanId={selectedCarePlan.id}
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          context="client"
+        />
+      )}
     </div>;
 };
 export default ClientCarePlans;
