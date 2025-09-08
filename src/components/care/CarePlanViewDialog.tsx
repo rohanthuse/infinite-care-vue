@@ -62,8 +62,6 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       ...safeObject(carePlan.personal_info),
       first_name: safeString(carePlan.client?.first_name),
       last_name: safeString(carePlan.client?.last_name),
-      email: safeString(carePlan.client?.email),
-      phone: safeString(carePlan.client?.phone),
     },
     about_me: safeObject(carePlan.about_me),
     general: safeObject(carePlan.general),
