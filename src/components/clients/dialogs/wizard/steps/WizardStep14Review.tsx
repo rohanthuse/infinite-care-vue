@@ -1,7 +1,7 @@
 
 import React from "react";
 import { UseFormReturn } from "react-hook-form";
-import { CheckCircle, AlertCircle, FileText, User, Activity, Target, Utensils, Shield, Wrench, Calendar, ClipboardList, Upload, XCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, FileText, User, Activity, Target, Utensils, Shield, Wrench, Calendar, ClipboardList, Upload, XCircle, Pill, Syringe, ClipboardCheck, Heart, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 import {
   Form,
@@ -53,6 +53,36 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       title: "About Me",
       icon: User,
       data: formData.about_me
+    },
+    {
+      id: "consent",
+      title: "Consent",
+      icon: ClipboardCheck,
+      data: formData.consent
+    },
+    {
+      id: "general",
+      title: "General",
+      icon: Heart,
+      data: formData.general
+    },
+    {
+      id: "hobbies",
+      title: "Hobbies",
+      icon: ListChecks,
+      data: formData.hobbies
+    },
+    {
+      id: "medication",
+      title: "Medication",
+      icon: Pill,
+      data: formData.medical_info?.medication_manager?.medications
+    },
+    {
+      id: "admin_medication",
+      title: "Admin Medication",
+      icon: Syringe,
+      data: formData.medical_info?.admin_medication
     },
     {
       id: "medical_info",
