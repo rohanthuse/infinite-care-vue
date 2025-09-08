@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { EnhancedSignatureCanvas } from "@/components/agreements/EnhancedSignatureCanvas";
 
 interface WizardStepConsentProps {
   form: UseFormReturn<any>;
@@ -213,6 +214,306 @@ export function WizardStepConsent({ form }: WizardStepConsentProps) {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              <div className="border-t pt-6 space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Consent Statements</h3>
+                  <p className="text-sm text-muted-foreground">Please confirm your consent to the following aspects of care and support:</p>
+                  
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_care_and_support"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to receiving care and support as outlined in my care plan <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="care-support-yes" />
+                              <Label htmlFor="care-support-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="care-support-no" />
+                              <Label htmlFor="care-support-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_personal_care"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to receiving personal care assistance as detailed in my care plan <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="personal-care-yes" />
+                              <Label htmlFor="personal-care-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="personal-care-no" />
+                              <Label htmlFor="personal-care-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_medication_administration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to medication administration and support as specified in my care plan <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="medication-admin-yes" />
+                              <Label htmlFor="medication-admin-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="medication-admin-no" />
+                              <Label htmlFor="medication-admin-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_healthcare_professionals"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to liaising with healthcare professionals on my behalf <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="healthcare-prof-yes" />
+                              <Label htmlFor="healthcare-prof-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="healthcare-prof-no" />
+                              <Label htmlFor="healthcare-prof-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_emergency_services"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to contacting emergency services if necessary <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="emergency-services-yes" />
+                              <Label htmlFor="emergency-services-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="emergency-services-no" />
+                              <Label htmlFor="emergency-services-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_data_sharing"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to sharing my personal data as outlined in the privacy policy <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="data-sharing-yes" />
+                              <Label htmlFor="data-sharing-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="data-sharing-no" />
+                              <Label htmlFor="data-sharing-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="consent.consent_to_care_plan_changes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          I consent to reasonable adjustments to my care plan as needed <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="yes" id="care-changes-yes" />
+                              <Label htmlFor="care-changes-yes">Yes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="no" id="care-changes-no" />
+                              <Label htmlFor="care-changes-no">No</Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="consent.extra_information"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Extra Information</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Please provide any additional information or specific requirements regarding your consent and care preferences..."
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="consent.typed_full_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Type your full name <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter your full legal name"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // Update confirmed_by when typing full name
+                            form.setValue("consent.confirmed_by", e.target.value);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-4">
+                  <FormLabel>
+                    Signature <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="consent.signature_data"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <EnhancedSignatureCanvas
+                            onSignatureSave={(signature) => {
+                              field.onChange(signature);
+                              // Set confirmation timestamp when signature is saved
+                              form.setValue("consent.confirmed_on", new Date().toISOString());
+                            }}
+                            initialSignature={field.value}
+                            disabled={false}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Confirmation Section - Read Only */}
+                <div className="border-t pt-6 space-y-4">
+                  <h4 className="text-lg font-medium">Confirmation</h4>
+                  <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-muted-foreground">Confirmed by:</span>
+                        <p className="mt-1">{form.watch("consent.confirmed_by") || "Not specified"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-muted-foreground">Confirmed on:</span>
+                        <p className="mt-1">
+                          {form.watch("consent.confirmed_on") 
+                            ? new Date(form.watch("consent.confirmed_on")).toLocaleString()
+                            : "Not confirmed"
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="border-t pt-6 space-y-4">

@@ -181,6 +181,22 @@ const carePlanSchema = z.object({
     regular_reviews_understood: z.enum(["yes", "no"]).optional(),
     may_need_capacity_assessment: z.enum(["yes", "no"]).optional(),
     
+    // Having Capacity tab - additional consent statements
+    consent_to_care_and_support: z.enum(["yes", "no"]).optional(),
+    consent_to_personal_care: z.enum(["yes", "no"]).optional(),
+    consent_to_medication_administration: z.enum(["yes", "no"]).optional(),
+    consent_to_healthcare_professionals: z.enum(["yes", "no"]).optional(),
+    consent_to_emergency_services: z.enum(["yes", "no"]).optional(),
+    consent_to_data_sharing: z.enum(["yes", "no"]).optional(),
+    consent_to_care_plan_changes: z.enum(["yes", "no"]).optional(),
+    
+    // Having Capacity tab - additional fields
+    extra_information: z.string().optional().default(""),
+    typed_full_name: z.string().optional().default(""),
+    signature_data: z.string().optional().default(""),
+    confirmed_by: z.string().optional().default(""),
+    confirmed_on: z.string().optional().default(""),
+    
     // Having Capacity tab - existing fields
     has_capacity: z.boolean().optional().default(false),
     capacity_assessment_date: z.string().optional().default(""),
