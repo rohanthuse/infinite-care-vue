@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { FileText, Clock, Plus, User, Calendar, MoreVertical, Trash2 } from "lucide-react";
+import { FileText, Clock, Plus, User, Calendar, MoreVertical, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateCarePlanDialog } from "../dialogs/CreateCarePlanDialog";
 import { DeleteCarePlanDialog } from "../dialogs/DeleteCarePlanDialog";
+import { CarePlanViewDialog } from "@/components/care/CarePlanViewDialog";
 import { getStatusBadgeClass } from "@/utils/statusHelpers";
 import { useClientCarePlans } from "@/hooks/useClientData";
 import { useDeleteCarePlan } from "@/hooks/useDeleteCarePlan";
@@ -29,6 +30,8 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [carePlanToDelete, setCarePlanToDelete] = useState<any>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [carePlanToView, setCarePlanToView] = useState<any>(null);
   
   const { data: carePlans = [], isLoading } = useClientCarePlans(clientId);
   const { id: branchId } = useParams();
@@ -75,6 +78,11 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
 
   const handleCreateCarePlan = async (carePlanData: any) => {
     await createCarePlanMutation.mutateAsync(carePlanData);
+  };
+
+  const handleViewCarePlan = (carePlan: any) => {
+    setCarePlanToView(carePlan);
+    setViewDialogOpen(true);
   };
 
   const handleDeleteCarePlan = (carePlan: any) => {
@@ -206,6 +214,10 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleViewCarePlan(plan)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleDeleteCarePlan(plan)}
                           className="text-red-600 focus:text-red-600"
@@ -236,6 +248,12 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
         onConfirm={confirmDeleteCarePlan}
         carePlanTitle={carePlanToDelete?.title || ""}
         isLoading={deleteCarePlanMutation.isPending}
+      />
+
+      <CarePlanViewDialog
+        carePlanId={carePlanToView?.id}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
       />
     </div>
   );
