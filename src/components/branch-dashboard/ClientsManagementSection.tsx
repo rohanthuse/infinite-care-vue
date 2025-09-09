@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { SetClientPasswordDialog } from "@/components/clients/SetClientPasswordDialog";
+import { AdminClientDetailsDialog } from "@/components/clients/dialogs/AdminClientDetailsDialog";
 
 interface ClientsManagementSectionProps {
   branchId?: string;
@@ -31,6 +32,7 @@ export function ClientsManagementSection({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [clientDetailsDialogOpen, setClientDetailsDialogOpen] = useState(false);
   
   const itemsPerPage = 10;
 
@@ -52,6 +54,11 @@ export function ClientsManagementSection({
   const handleSetPassword = (client: any) => {
     setSelectedClient(client);
     setPasswordDialogOpen(true);
+  };
+
+  const handleClientDetails = (client: any) => {
+    setSelectedClient(client);
+    setClientDetailsDialogOpen(true);
   };
 
   const handleSort = (column: 'name' | 'email' | 'pin_code' | 'region' | 'created_at') => {
@@ -303,6 +310,10 @@ export function ClientsManagementSection({
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Client
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleClientDetails(client)}>
+                                <FileText className="h-4 w-4 mr-2" />
+                                Add Client Details
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleSetPassword(client)}>
                                 <Key className="h-4 w-4 mr-2" />
                                 Set Password
@@ -352,6 +363,10 @@ export function ClientsManagementSection({
                               <DropdownMenuItem onClick={() => onEditClient(client)}>
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Client
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleClientDetails(client)}>
+                                <FileText className="h-4 w-4 mr-2" />
+                                Add Client Details
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handleSetPassword(client)}>
                                 <Key className="h-4 w-4 mr-2" />
@@ -410,6 +425,13 @@ export function ClientsManagementSection({
       <SetClientPasswordDialog
         open={passwordDialogOpen}
         onOpenChange={setPasswordDialogOpen}
+        client={selectedClient}
+      />
+
+      {/* Add Client Details Dialog */}
+      <AdminClientDetailsDialog
+        open={clientDetailsDialogOpen}
+        onOpenChange={setClientDetailsDialogOpen}
         client={selectedClient}
       />
     </div>
