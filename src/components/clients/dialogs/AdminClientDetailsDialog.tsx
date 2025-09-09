@@ -231,17 +231,16 @@ export function AdminClientDetailsDialog({
 
           {/* Right Panel - Tabbed Content */}
           <div className="flex-1 flex flex-col">
-            <div className="border-b border-border px-6 py-4">
-              <ClientTabBar 
-                activeTab={activeMainTab}
-                onChange={setActiveMainTab}
-              />
-            </div>
+            <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex flex-col h-full">
+              <div className="border-b border-border px-6 py-4">
+                <ClientTabBar 
+                  activeTab={activeMainTab}
+                  onChange={setActiveMainTab}
+                />
+              </div>
 
-            <ScrollArea className="flex-1">
-              {/* Personal Info Tab */}
-              {activeMainTab === "personal" && (
-                <div className="p-6">
+              <ScrollArea className="flex-1">
+                <TabsContent value="personal" className="mt-0 p-6">
                   <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -577,68 +576,56 @@ export function AdminClientDetailsDialog({
                               {updatePersonalInfo.isPending ? "Saving..." : "Save Changes"}
                             </Button>
                           </div>
-                        </form>
-                      </Form>
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              )}
+                         </form>
+                       </Form>
+                     </TabsContent>
+                   </Tabs>
+                </TabsContent>
 
-              {/* Other Main Tabs - Placeholder content */}
-              {activeMainTab === "notes" && (
-                <div className="p-6">
+                {/* Other Main Tabs - Placeholder content */}
+                <TabsContent value="notes" className="mt-0 p-6">
                   <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">Notes & Communications</h3>
                     <p className="text-sm text-muted-foreground">This section will contain client notes and communication history.</p>
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {activeMainTab === "documents" && (
-                <div className="p-6">
+                <TabsContent value="documents" className="mt-0 p-6">
                   <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">Documents & Files</h3>
                     <p className="text-sm text-muted-foreground">This section will contain client documents and file uploads.</p>
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {activeMainTab === "appointments" && (
-                <div className="p-6">
+                <TabsContent value="appointments" className="mt-0 p-6">
                   <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">Appointments & Scheduling</h3>
                     <p className="text-sm text-muted-foreground">This section will contain appointment scheduling and history.</p>
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {activeMainTab === "billing" && (
-                <div className="p-6">
+                <TabsContent value="billing" className="mt-0 p-6">
                   <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">Billing & Payments</h3>
                     <p className="text-sm text-muted-foreground">This section will contain billing information and payment history.</p>
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {activeMainTab === "careplans" && (
-                <div className="p-6">
+                <TabsContent value="careplans" className="mt-0 p-6">
                   <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">Care Plans</h3>
                     <p className="text-sm text-muted-foreground">This section will contain care plan details and management.</p>
                   </div>
-                </div>
-              )}
+                </TabsContent>
 
-              {activeMainTab === "eventslogs" && (
-                <div className="p-6">
+                <TabsContent value="eventslogs" className="mt-0 p-6">
                   <div className="text-center py-12">
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">Events & Activity Logs</h3>
                     <p className="text-sm text-muted-foreground">This section will contain activity logs and event history.</p>
                   </div>
-                </div>
-              )}
-            </ScrollArea>
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
           </div>
         </div>
       </DialogContent>
