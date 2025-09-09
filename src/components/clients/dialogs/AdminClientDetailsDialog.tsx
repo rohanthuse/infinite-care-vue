@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"; 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,9 +17,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useToast } from "@/hooks/use-toast";
-import { User, Phone, Users, Stethoscope, FileText } from "lucide-react";
+import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck } from "lucide-react";
 
 const formSchema = z.object({
   emergency_contact_name: z.string().optional(),
@@ -128,333 +129,430 @@ export function AdminClientDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-7xl max-h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border">
+          <DialogTitle className="flex items-center gap-2 text-xl">
             <User className="h-5 w-5 text-primary" />
             Client Details - {client.first_name} {client.last_name}
           </DialogTitle>
-          <DialogDescription>
-            Update extended client information including emergency contacts, preferences, and GP details.
-          </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh] pr-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Emergency Contact Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Phone className="h-4 w-4" />
-                    Emergency Contact
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="emergency_contact_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter emergency contact name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+        <div className="flex h-full">
+          {/* Left Panel - Client Information */}
+          <div className="w-80 border-r border-border bg-muted/30">
+            <ScrollArea className="h-[calc(90vh-80px)]">
+              <div className="p-6 space-y-6">
+                {/* Client Summary Card */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <User className="h-4 w-4" />
+                      Client Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{client.first_name} {client.last_name}</span>
+                      </div>
+                      
+                      {client.email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span>{client.email}</span>
+                        </div>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="emergency_contact_phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Contact Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter phone number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      
+                      {client.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{client.phone}</span>
+                        </div>
                       )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="emergency_contact_relationship"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Relationship</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select relationship" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="spouse">Spouse</SelectItem>
-                            <SelectItem value="partner">Partner</SelectItem>
-                            <SelectItem value="parent">Parent</SelectItem>
-                            <SelectItem value="child">Child</SelectItem>
-                            <SelectItem value="sibling">Sibling</SelectItem>
-                            <SelectItem value="friend">Friend</SelectItem>
-                            <SelectItem value="carer">Carer</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+                      
+                      {client.address && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4 text-muted-foreground" />
+                          <span className="line-clamp-2">{client.address}</span>
+                        </div>
+                      )}
+                      
+                      {client.date_of_birth && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>DOB: {new Date(client.date_of_birth).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
-              {/* Next of Kin Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Users className="h-4 w-4" />
-                    Next of Kin
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="next_of_kin_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Next of Kin Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter next of kin name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                {/* Current Personal Info Summary */}
+                {personalInfo && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-muted-foreground">Current Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                      {personalInfo.emergency_contact_name && (
+                        <div>
+                          <span className="font-medium">Emergency: </span>
+                          <span>{personalInfo.emergency_contact_name}</span>
+                        </div>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="next_of_kin_phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Next of Kin Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter phone number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      {personalInfo.gp_name && (
+                        <div>
+                          <span className="font-medium">GP: </span>
+                          <span>{personalInfo.gp_name}</span>
+                        </div>
                       )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="next_of_kin_relationship"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Relationship</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select relationship" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="spouse">Spouse</SelectItem>
-                            <SelectItem value="partner">Partner</SelectItem>
-                            <SelectItem value="parent">Parent</SelectItem>
-                            <SelectItem value="child">Child</SelectItem>
-                            <SelectItem value="sibling">Sibling</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* GP Information Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Stethoscope className="h-4 w-4" />
-                    General Practitioner (GP)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="gp_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>GP Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter GP name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      {personalInfo.preferred_communication && (
+                        <div>
+                          <span className="font-medium">Prefers: </span>
+                          <span className="capitalize">{personalInfo.preferred_communication}</span>
+                        </div>
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="gp_phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>GP Phone</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter GP phone number" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="gp_practice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>GP Practice</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter GP practice name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Preferences Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <FileText className="h-4 w-4" />
-                    Preferences & Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="preferred_communication"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Preferred Communication</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select preference" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="phone">Phone</SelectItem>
-                              <SelectItem value="email">Email</SelectItem>
-                              <SelectItem value="text">Text Message</SelectItem>
-                              <SelectItem value="letter">Letter</SelectItem>
-                              <SelectItem value="face-to-face">Face to Face</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="language_preferences"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Language Preferences</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter preferred language" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="religion"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Religion</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter religion" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="marital_status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Marital Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="single">Single</SelectItem>
-                              <SelectItem value="married">Married</SelectItem>
-                              <SelectItem value="divorced">Divorced</SelectItem>
-                              <SelectItem value="widowed">Widowed</SelectItem>
-                              <SelectItem value="separated">Separated</SelectItem>
-                              <SelectItem value="partner">In Partnership</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="cultural_preferences"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cultural Preferences</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Enter any cultural preferences or requirements"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                  disabled={updatePersonalInfo.isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={updatePersonalInfo.isPending}
-                >
-                  {updatePersonalInfo.isPending ? "Saving..." : "Save Details"}
-                </Button>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
-            </form>
-          </Form>
-        </ScrollArea>
+            </ScrollArea>
+          </div>
+
+          {/* Right Panel - Tabbed Content */}
+          <div className="flex-1 flex flex-col">
+            <Tabs defaultValue="personal" className="flex-1 flex flex-col">
+              <div className="border-b border-border px-6 py-4">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="personal" className="text-sm">Personal Info</TabsTrigger>
+                  <TabsTrigger value="medical" disabled className="text-sm opacity-50">Medical Info</TabsTrigger>
+                  <TabsTrigger value="care" disabled className="text-sm opacity-50">Care Needs</TabsTrigger>
+                  <TabsTrigger value="documents" disabled className="text-sm opacity-50">Documents</TabsTrigger>
+                </TabsList>
+              </div>
+
+              <ScrollArea className="flex-1">
+                <TabsContent value="personal" className="p-6 m-0">
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                      {/* Emergency Contact Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Phone className="h-4 w-4 text-primary" />
+                          <h3 className="text-lg font-semibold">Emergency Contact</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="emergency_contact_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Contact Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter emergency contact name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="emergency_contact_phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Contact Phone</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter phone number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="emergency_contact_relationship"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Relationship</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select relationship" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="spouse">Spouse</SelectItem>
+                                  <SelectItem value="partner">Partner</SelectItem>
+                                  <SelectItem value="parent">Parent</SelectItem>
+                                  <SelectItem value="child">Child</SelectItem>
+                                  <SelectItem value="sibling">Sibling</SelectItem>
+                                  <SelectItem value="friend">Friend</SelectItem>
+                                  <SelectItem value="carer">Carer</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Next of Kin Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Users className="h-4 w-4 text-primary" />
+                          <h3 className="text-lg font-semibold">Next of Kin</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="next_of_kin_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Next of Kin Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter next of kin name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="next_of_kin_phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Next of Kin Phone</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter phone number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="next_of_kin_relationship"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Relationship</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select relationship" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="spouse">Spouse</SelectItem>
+                                  <SelectItem value="partner">Partner</SelectItem>
+                                  <SelectItem value="parent">Parent</SelectItem>
+                                  <SelectItem value="child">Child</SelectItem>
+                                  <SelectItem value="sibling">Sibling</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* GP Information Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Stethoscope className="h-4 w-4 text-primary" />
+                          <h3 className="text-lg font-semibold">General Practitioner (GP)</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="gp_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>GP Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter GP name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="gp_phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>GP Phone</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter GP phone number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="gp_practice"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>GP Practice</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter GP practice name" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <Separator />
+
+                      {/* Preferences Section */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-4">
+                          <FileText className="h-4 w-4 text-primary" />
+                          <h3 className="text-lg font-semibold">Preferences & Information</h3>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="preferred_communication"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Preferred Communication</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select preference" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="phone">Phone</SelectItem>
+                                    <SelectItem value="email">Email</SelectItem>
+                                    <SelectItem value="text">Text Message</SelectItem>
+                                    <SelectItem value="letter">Letter</SelectItem>
+                                    <SelectItem value="face-to-face">Face to Face</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="language_preferences"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Language Preferences</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter preferred language" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="religion"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Religion</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter religion" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="marital_status"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Marital Status</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="single">Single</SelectItem>
+                                    <SelectItem value="married">Married</SelectItem>
+                                    <SelectItem value="divorced">Divorced</SelectItem>
+                                    <SelectItem value="widowed">Widowed</SelectItem>
+                                    <SelectItem value="separated">Separated</SelectItem>
+                                    <SelectItem value="partner">In Partnership</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="cultural_preferences"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cultural Preferences</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Enter cultural preferences and considerations" 
+                                  className="min-h-[80px]"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex justify-end gap-3 pt-6 border-t border-border">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => onOpenChange(false)}
+                          disabled={updatePersonalInfo.isPending}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          disabled={updatePersonalInfo.isPending}
+                          className="min-w-[100px]"
+                        >
+                          {updatePersonalInfo.isPending ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </TabsContent>
+              </ScrollArea>
+            </Tabs>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
