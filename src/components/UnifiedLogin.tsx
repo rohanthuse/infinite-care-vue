@@ -328,7 +328,8 @@ const UnifiedLogin = () => {
         const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
         if (redeemResult) {
           toast.success("Third-party access activated successfully!");
-          setTimeout(() => navigate('/third-party/workspace', { replace: true }), 100);
+          // Force page refresh for third-party navigation
+          window.location.replace('/third-party/workspace');
           return;
         } else {
           // If redemption failed, continue with normal login flow
@@ -359,7 +360,8 @@ const UnifiedLogin = () => {
         if (orgSlug) {
           console.log('[LOGIN DEBUG] Super admin with organization, redirecting to:', `/${orgSlug}/dashboard`);
           toast.success("Welcome back, Super Administrator!");
-          setTimeout(() => navigate(`/${orgSlug}/dashboard`, { replace: true }), 100);
+          // Force page refresh for reliable navigation
+          window.location.replace(`/${orgSlug}/dashboard`);
           return;
         } else {
           console.error('[LOGIN DEBUG] Super admin without organization');
@@ -373,7 +375,8 @@ const UnifiedLogin = () => {
       if (userRole === 'app_admin') {
         console.log('[LOGIN DEBUG] App admin detected, redirecting to system dashboard');
         toast.success("Welcome back, System Administrator!");
-        setTimeout(() => navigate('/system-dashboard', { replace: true }), 100);
+        // Force page refresh for reliable navigation
+        window.location.replace('/system-dashboard');
         return;
       }
 
@@ -412,12 +415,8 @@ const UnifiedLogin = () => {
 
       console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
       
-      // Use replace to prevent back navigation to login page
-      // Add a small delay to ensure auth state is fully updated
-      setTimeout(() => {
-        console.log('[LOGIN DEBUG] Executing navigation to:', dashboardPath);
-        navigate(dashboardPath, { replace: true });
-      }, 100);
+      // Force page refresh for reliable navigation to fix the stuck login page issue
+      window.location.replace(dashboardPath);
 
     } catch (error: any) {
       console.error('[LOGIN DEBUG] Login error occurred:', error);
@@ -440,11 +439,6 @@ const UnifiedLogin = () => {
       console.log('[LOGIN DEBUG] Cleaning up login process');
       clearTimeout(timeoutId);
       setLoading(false);
-      
-      // Clear any conflicting auth listeners that might interfere with navigation
-      setTimeout(() => {
-        console.log('[LOGIN DEBUG] Navigation cleanup completed');
-      }, 200);
     }
   };
 
@@ -462,6 +456,13 @@ const UnifiedLogin = () => {
     }
   };
 
+  const handleForceRefresh = () => {
+    toast.loading("Refreshing page...");
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
   const handleNuclearReset = async () => {
     try {
       toast.loading("Performing complete reset...");
@@ -476,11 +477,6 @@ const UnifiedLogin = () => {
       console.error('Nuclear reset error:', error);
       toast.error("Failed to perform complete reset");
     }
-  };
-
-  const handleForceRefresh = () => {
-    toast.loading("Refreshing page...");
-    window.location.reload();
   };
 
   const handleForgotPassword = async () => {
