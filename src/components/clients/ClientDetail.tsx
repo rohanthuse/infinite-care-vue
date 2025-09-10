@@ -8,7 +8,7 @@ import { generatePDF } from "@/utils/pdfGenerator";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 
-import { ClientTabBar } from "./ClientTabBar";
+import { ClientSideTabNav } from "./ClientSideTabNav";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { NotesTab } from "./tabs/NotesTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
@@ -170,9 +170,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           </div>
         </div>
         
-        <div className="flex-1 overflow-auto p-6">
-          <div className="flex flex-col md:flex-row md:items-start gap-6">
-            <div className="w-full md:w-1/3">
+        <div className="flex flex-1 overflow-hidden">
+          {/* Client Info Sidebar */}
+          <div className="w-80 bg-muted/30 border-r border-border overflow-y-auto">
+            <div className="p-6">
               <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
                 <div className="p-4 border-b border-border">
                   <h3 className="text-lg font-medium text-foreground">Client Information</h3>
@@ -201,12 +202,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Navigation and Content */}
+          <div className="flex flex-1 overflow-hidden">
+            <ClientSideTabNav activeTab={activeTab} onChange={setActiveTab} />
             
-            <div className="w-full md:w-2/3">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <ClientTabBar activeTab={activeTab} onChange={setActiveTab} />
-                
-                <TabsContent value="personal">
+            <div className="flex-1 overflow-y-auto">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+                <TabsContent value="personal" className="p-6 m-0">
                   <PersonalInfoTab 
                     client={realClientData || client} 
                     isEditing={isEditing}
@@ -215,39 +219,38 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                   />
                 </TabsContent>
                 
-                <TabsContent value="notes">
+                <TabsContent value="notes" className="p-6 m-0">
                   <NotesTab clientId={client.id} />
                 </TabsContent>
                 
-                <TabsContent value="documents">
+                <TabsContent value="documents" className="p-6 m-0">
                   <DocumentsTab clientId={client.id} />
                 </TabsContent>
                 
-                <TabsContent value="appointments">
+                <TabsContent value="appointments" className="p-6 m-0">
                   <AppointmentsTab clientId={client.id} />
                 </TabsContent>
                 
-                <TabsContent value="billing">
+                <TabsContent value="billing" className="p-6 m-0">
                   <BillingTab clientId={client.id} branchId={branchId} />
                 </TabsContent>
                 
-                <TabsContent value="careplans">
+                <TabsContent value="careplans" className="p-6 m-0">
                   <CarePlansTab clientId={client.id} />
                 </TabsContent>
                 
-                <TabsContent value="eventslogs">
+                <TabsContent value="eventslogs" className="p-6 m-0">
                   <EventsLogsTab clientId={client.id} />
                 </TabsContent>
                 
-                <TabsContent value="rates">
+                <TabsContent value="rates" className="p-6 m-0">
                   <ClientRatesTab clientId={client.id} branchId={branchId} />
                 </TabsContent>
                 
-                <TabsContent value="hobbies">
+                <TabsContent value="hobbies" className="p-6 m-0">
                   <ClientHobbiesTab clientId={client.id} />
                 </TabsContent>
               </Tabs>
-            </div>
             </div>
           </div>
         </div>
@@ -259,5 +262,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           branchId={branchId}
         />
       </div>
-    );
-  };
+    </div>
+  );
+};
