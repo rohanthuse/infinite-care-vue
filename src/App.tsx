@@ -166,7 +166,11 @@ const AppContent = () => {
               } />
               
               {/* Main Admin Dashboard Route for Super Admins */}
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={
+                <SystemGuard>
+                  <Dashboard />
+                </SystemGuard>
+              } />
               
               {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
               <Route path="/branch-dashboard/*" element={<BranchDashboardRedirect />} />
