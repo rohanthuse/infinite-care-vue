@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Plus, FileText, Download, Car, Route } from "lucide-react";
-import { TravelRecord, useCreateTravelRecord, useTravelRecords, useUpdateTravelRecord, useDeleteTravelRecord } from "@/hooks/useAccountingData";
+import { TravelRecord, useCreateTravelRecord, useTravelRecords, useDeleteTravelRecord } from "@/hooks/useAccountingData";
 import TravelRecordsTable from "./TravelRecordsTable";
 import AddTravelRecordDialog from "./AddTravelRecordDialog";
 import FilterTravelDialog from "./FilterTravelDialog";
@@ -43,7 +43,6 @@ interface TravelTabProps {
 const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
   const { data: travelRecords = [], isLoading } = useTravelRecords(branchId);
   const createTravelRecord = useCreateTravelRecord();
-  const updateTravelRecord = useUpdateTravelRecord();
   const deleteTravelRecord = useDeleteTravelRecord();
   
   const [filteredRecords, setFilteredRecords] = useState<TravelRecord[]>([]);
@@ -160,10 +159,7 @@ const TravelTab: React.FC<TravelTabProps> = ({ branchId, branchName }) => {
         ...updatedData
       });
       
-      await updateTravelRecord.mutateAsync({
-        id: currentRecord.id,
-        ...updatedData
-      });
+      await createTravelRecord.mutateAsync(updatedData);
       setAddDialogOpen(false);
       setCurrentRecord(undefined);
     } catch (error) {

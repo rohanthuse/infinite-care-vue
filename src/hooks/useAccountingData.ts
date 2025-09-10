@@ -584,7 +584,8 @@ export function useCreateTravelRecord() {
   });
 }
 
-export const useUpdateTravelRecord = () => {
+// Hook to create service rate
+export function useCreateServiceRate() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -659,52 +660,6 @@ export function useCreateExtraTimeRecord() {
   });
 }
 
-export const useUpdateTravelRecord = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ id, ...record }: { id: string } & Partial<TravelRecord>) => {
-      // Remove fields that shouldn't be updated and add status preservation
-      const { staff, client, ...updateData } = record as any;
-      
-      // Add status field back for updates (preserve existing status)
-      if (!updateData.status) {
-        const { data: existingRecord } = await supabase
-          .from('travel_records')
-          .select('status')
-          .eq('id', id)
-          .single();
-        updateData.status = existingRecord?.status || 'pending';
-      }
-      
-      const { data, error } = await supabase
-        .from('travel_records')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating travel record:', error);
-        throw new Error(`Failed to update travel record: ${error.message}`);
-      }
-      
-      return data;
-    },
-    onSuccess: (data) => {
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['travel-records', data.branch_id] });
-      
-      toast.success('Travel record updated successfully');
-    },
-    onError: (error: any) => {
-      console.error('Failed to update travel record:', error);
-      const errorMessage = error.message || 'Failed to update travel record. Please try again.';
-      toast.error(errorMessage);
-    },
-  });
-};
-
 export const useDeleteTravelRecord = () => {
   const queryClient = useQueryClient();
   
@@ -753,6 +708,8 @@ export function useDeleteServiceRate() {
     },
   });
 }
+
+export function useClientsList(branchId?: string) {
   return useQuery({
     queryKey: ['staff-list', branchId],
     queryFn: async () => {
@@ -776,10 +733,9 @@ export function useDeleteServiceRate() {
     },
     enabled: !!branchId,
   });
-} // Fixed syntax error
+}
 
-// Hook to create a service rate
-export function useCreateServiceRate() {
+export function useStaffList(branchId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({

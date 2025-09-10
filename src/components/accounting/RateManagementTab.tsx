@@ -161,7 +161,7 @@ const RateManagementTab: React.FC<RateManagementTabProps> = ({ branchId, branchN
   const confirmDeleteRate = async () => {
     if (rateToDelete && branchId) {
       try {
-        await deleteServiceRate.mutateAsync({ id: rateToDelete, branchId });
+        await deleteServiceRate.mutateAsync(rateToDelete);
         
         // Remove the item from local state immediately for better UX
         setFilteredRates(prev => prev.filter(r => r.id !== rateToDelete));
