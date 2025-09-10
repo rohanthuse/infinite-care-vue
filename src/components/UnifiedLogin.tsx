@@ -353,11 +353,18 @@ const UnifiedLogin = () => {
         }
       }
 
-      // For super admins, route to main admin dashboard
+      // For super admins, route to tenant-specific dashboard if organization found
       if (userRole === 'super_admin') {
-        console.log('[LOGIN DEBUG] Super admin detected, redirecting to main dashboard');
+        console.log('[LOGIN DEBUG] Super admin detected, orgSlug:', orgSlug);
         toast.success("Welcome back, Super Administrator!");
-        setTimeout(() => navigate('/dashboard', { replace: true }), 500);
+        
+        if (orgSlug) {
+          console.log('[LOGIN DEBUG] Redirecting super admin to tenant dashboard:', `/${orgSlug}/dashboard`);
+          setTimeout(() => navigate(`/${orgSlug}/dashboard`, { replace: true }), 500);
+        } else {
+          console.log('[LOGIN DEBUG] No organization found for super admin, redirecting to global dashboard');
+          setTimeout(() => navigate('/dashboard', { replace: true }), 500);
+        }
         return;
       }
 
