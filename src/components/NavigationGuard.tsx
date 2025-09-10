@@ -32,11 +32,9 @@ export const NavigationGuard = () => {
         
         let targetPath = '/';
         
-        // System admin gets system dashboard, super admin gets main dashboard
+        // System admin gets system dashboard
         if (role === 'app_admin') {
           targetPath = '/system-dashboard';
-        } else if (role === 'super_admin') {
-          targetPath = '/dashboard';
         } else {
           console.warn('[NavigationGuard] Non-system admin user - let UnifiedLogin handle tenant-aware routing');
           return; // Let UnifiedLogin handle tenant-aware routing

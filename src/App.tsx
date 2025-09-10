@@ -33,7 +33,6 @@ import SystemTenants from "./pages/system/SystemTenants";
 import SystemUsers from "./pages/system/SystemUsers";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
-import Dashboard from "./pages/Dashboard";
 import TenantLogin from "./pages/TenantLogin";
 import TenantClientLogin from "./pages/TenantClientLogin";
 import TenantCarerLogin from "./pages/TenantCarerLogin";
@@ -162,13 +161,6 @@ const AppContent = () => {
               <Route path="/system-dashboard/database" element={
                 <SystemGuard>
                   <SystemAnalytics />
-                </SystemGuard>
-              } />
-              
-              {/* Main Admin Dashboard Route for Super Admins */}
-              <Route path="/dashboard" element={
-                <SystemGuard>
-                  <Dashboard />
                 </SystemGuard>
               } />
               
