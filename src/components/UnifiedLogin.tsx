@@ -353,20 +353,12 @@ const UnifiedLogin = () => {
         }
       }
 
-      // For super admins, always route to their organization dashboard
+      // For super admins, route to main admin dashboard
       if (userRole === 'super_admin') {
-        console.log('[LOGIN DEBUG] Super admin detected');
-        if (orgSlug) {
-          console.log('[LOGIN DEBUG] Super admin with organization, redirecting to:', `/${orgSlug}/dashboard`);
-          toast.success("Welcome back, Super Administrator!");
-          setTimeout(() => navigate(`/${orgSlug}/dashboard`, { replace: true }), 500);
-          return;
-        } else {
-          console.error('[LOGIN DEBUG] Super admin without organization');
-          toast.error("No organization found for super admin account. Please contact support.");
-          await supabase.auth.signOut();
-          return;
-        }
+        console.log('[LOGIN DEBUG] Super admin detected, redirecting to main dashboard');
+        toast.success("Welcome back, Super Administrator!");
+        setTimeout(() => navigate('/dashboard', { replace: true }), 500);
+        return;
       }
 
       // For app_admin (system administrators), route to system dashboard
