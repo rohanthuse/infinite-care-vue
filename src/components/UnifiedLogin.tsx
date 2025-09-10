@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState, withProgressiveTimeout } from "@/utils/authRecovery";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import { NavigationGuard } from "./NavigationGuard";
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
@@ -327,7 +328,7 @@ const UnifiedLogin = () => {
         const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
         if (redeemResult) {
           toast.success("Third-party access activated successfully!");
-          navigate('/third-party/workspace');
+          setTimeout(() => navigate('/third-party/workspace', { replace: true }), 100);
           return;
         } else {
           // If redemption failed, continue with normal login flow
@@ -358,7 +359,7 @@ const UnifiedLogin = () => {
         if (orgSlug) {
           console.log('[LOGIN DEBUG] Super admin with organization, redirecting to:', `/${orgSlug}/dashboard`);
           toast.success("Welcome back, Super Administrator!");
-          navigate(`/${orgSlug}/dashboard`);
+          setTimeout(() => navigate(`/${orgSlug}/dashboard`, { replace: true }), 100);
           return;
         } else {
           console.error('[LOGIN DEBUG] Super admin without organization');
@@ -372,7 +373,7 @@ const UnifiedLogin = () => {
       if (userRole === 'app_admin') {
         console.log('[LOGIN DEBUG] App admin detected, redirecting to system dashboard');
         toast.success("Welcome back, System Administrator!");
-        navigate('/system-dashboard');
+        setTimeout(() => navigate('/system-dashboard', { replace: true }), 100);
         return;
       }
 
@@ -410,7 +411,13 @@ const UnifiedLogin = () => {
       }
 
       console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
-      navigate(dashboardPath);
+      
+      // Use replace to prevent back navigation to login page
+      // Add a small delay to ensure auth state is fully updated
+      setTimeout(() => {
+        console.log('[LOGIN DEBUG] Executing navigation to:', dashboardPath);
+        navigate(dashboardPath, { replace: true });
+      }, 100);
 
     } catch (error: any) {
       console.error('[LOGIN DEBUG] Login error occurred:', error);
@@ -433,6 +440,11 @@ const UnifiedLogin = () => {
       console.log('[LOGIN DEBUG] Cleaning up login process');
       clearTimeout(timeoutId);
       setLoading(false);
+      
+      // Clear any conflicting auth listeners that might interfere with navigation
+      setTimeout(() => {
+        console.log('[LOGIN DEBUG] Navigation cleanup completed');
+      }, 200);
     }
   };
 
@@ -497,6 +509,7 @@ const UnifiedLogin = () => {
 
   return (
     <div className="login-page-light min-h-screen flex">
+      <NavigationGuard />
       {/* Left Column - Gradient Background with Info */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-cyan-600 relative">
         {/* Wave Pattern */}

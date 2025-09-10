@@ -78,11 +78,14 @@ export function useCarerAuth() {
           const hasRole = await checkCarerRole(session.user.id);
           
           if (hasRole) {
-            // Only navigate on actual sign in, not during normal app usage
-            // Check if this is a fresh sign in (not just a page refresh/navigation)
+            // Only navigate on actual sign in from specific login pages
+            // Don't navigate from unified login - let UnifiedLogin handle navigation
             const currentPath = window.location.pathname;
             if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
+              console.log('[useCarerAuth] Navigating from specific carer login page');
               navigate('/carer-dashboard');
+            } else {
+              console.log('[useCarerAuth] Carer role confirmed, letting current login flow handle navigation');
             }
           } else {
             console.error('[useCarerAuth] User does not have carer role');
