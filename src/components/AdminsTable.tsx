@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useTenant } from "@/contexts/TenantContext";
+import { useTenantSafe } from "@/hooks/useTenantSafe";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -60,25 +60,31 @@ export const AdminsTable = () => {
   // Get current user authentication state with enhanced error handling
   const { data: currentUser, isLoading: authLoading, error: authError } = useUserRole();
   
-  // Get current organization context for tenant isolation
-  const { organization, isLoading: tenantLoading, error: tenantError } = useTenant();
+  // Get current organization context for tenant isolation (safe for super admins)
+  const { organization, isLoading: tenantLoading, error: tenantError } = useTenantSafe();
 
-  // Fetch branch admins filtered by organization
+  // Fetch branch admins (organization-filtered for tenant context, all admins for super admins)
   const { data: admins = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['branch-admins', currentUser?.id, organization?.id],
+    queryKey: ['branch-admins', currentUser?.id, organization?.id, currentUser?.role],
     queryFn: async () => {
-      if (!organization?.id) {
-        console.log('No organization context available');
+      const isSuperAdmin = currentUser?.role === 'super_admin';
+      
+      if (!isSuperAdmin && !organization?.id) {
+        console.log('No organization context available and not super admin');
         return [];
       }
 
-      console.log('Fetching branch admins for organization:', { 
-        organizationId: organization.id, 
-        organizationName: organization.name 
-      });
+      if (isSuperAdmin) {
+        console.log('Fetching ALL branch admins for super admin');
+      } else {
+        console.log('Fetching branch admins for organization:', { 
+          organizationId: organization.id, 
+          organizationName: organization.name 
+        });
+      }
       
-      // Get admin branches filtered by organization
-      const { data: adminBranches, error: branchError } = await supabase
+      // Get admin branches - filtered by organization for normal admins, all for super admins
+      let query = supabase
         .from('admin_branches')
         .select(`
           admin_id,
@@ -88,8 +94,14 @@ export const AdminsTable = () => {
             name,
             organization_id
           )
-        `)
-        .eq('branches.organization_id', organization.id);
+        `);
+      
+      // Only filter by organization if not super admin
+      if (!isSuperAdmin && organization?.id) {
+        query = query.eq('branches.organization_id', organization.id);
+      }
+      
+      const { data: adminBranches, error: branchError } = await query;
 
       if (branchError) {
         console.error('Error fetching admin branches:', branchError);
@@ -161,10 +173,11 @@ export const AdminsTable = () => {
       });
 
       const transformedData = Array.from(adminMap.values());
-      console.log('Grouped admin data for organization:', transformedData);
+      const logContext = isSuperAdmin ? 'all organizations' : `organization: ${organization?.name}`;
+      console.log(`Grouped admin data for ${logContext}:`, transformedData);
       return transformedData;
     },
-    enabled: !!currentUser && !!organization?.id && (currentUser.role === 'super_admin' || currentUser.role === 'branch_admin'),
+    enabled: !!currentUser && (currentUser.role === 'super_admin' || (!!organization?.id && currentUser.role === 'branch_admin')),
     retry: 3,
     retryDelay: 1000,
   });
@@ -337,6 +350,7 @@ export const AdminsTable = () => {
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   {searchTerm ? "No admins match your search." : 
+                   currentUser?.role === 'super_admin' ? "No branch admins found across all organizations." :
                    organization?.name ? `No branch admins found for ${organization.name}.` : 
                    "No branch admins found."}
                 </TableCell>
