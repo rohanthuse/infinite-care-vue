@@ -10,7 +10,7 @@ interface ClientTabBarProps {
 
 export const ClientTabBar: React.FC<ClientTabBarProps> = ({ activeTab, onChange }) => {
   return (
-    <TabsList className="grid grid-cols-2 md:grid-cols-7 w-full mb-4 overflow-x-auto">
+    <TabsList className="grid grid-cols-2 md:grid-cols-8 w-full mb-4 overflow-x-auto">
       <TabsTrigger 
         value="personal"
         onClick={() => onChange("personal")}
@@ -66,6 +66,14 @@ export const ClientTabBar: React.FC<ClientTabBarProps> = ({ activeTab, onChange 
       >
         <FileBarChart2 className="h-4 w-4" />
         <span>Events & Logs</span>
+      </TabsTrigger>
+      <TabsTrigger 
+        value="rates" 
+        onClick={() => onChange("rates")}
+        className={`flex items-center gap-1 ${activeTab === "rates" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+      >
+        <CreditCard className="h-4 w-4" />
+        <span>Rates</span>
       </TabsTrigger>
     </TabsList>
   );

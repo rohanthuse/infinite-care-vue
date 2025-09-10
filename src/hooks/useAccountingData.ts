@@ -584,7 +584,7 @@ export function useCreateTravelRecord() {
   });
 }
 
-export function useCreateServiceRate() {
+export const useUpdateTravelRecord = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -735,7 +735,7 @@ export const useDeleteTravelRecord = () => {
   });
 };
 
-export const useDeleteServiceRate = () => {
+// Hook to fetch clients list for branch
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -790,6 +790,68 @@ export function useStaffList(branchId?: string) {
       return data || [];
     },
     enabled: !!branchId,
+  });
+}
+
+// Hook to create a service rate
+export function useCreateServiceRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (rateData: Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>) => {
+      const { data, error } = await supabase
+        .from('service_rates')
+        .insert(rateData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
+    },
+  });
+}
+
+// Hook to update a service rate
+export function useUpdateServiceRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ rateId, updates }: { rateId: string; updates: Partial<ServiceRate> }) => {
+      const { data, error } = await supabase
+        .from('service_rates')
+        .update(updates)
+        .eq('id', rateId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
+    },
+  });
+}
+
+// Hook to delete a service rate
+export function useDeleteServiceRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (rateId: string) => {
+      const { error } = await supabase
+        .from('service_rates')
+        .delete()
+        .eq('id', rateId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
+    },
   });
 }
 
