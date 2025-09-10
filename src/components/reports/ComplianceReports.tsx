@@ -10,6 +10,9 @@ import { format, addDays } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useComplianceReportsData } from "@/hooks/useComplianceReportsData";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
@@ -54,6 +57,21 @@ export function ComplianceReports({ branchId, branchName }: ComplianceReportsPro
           value: item.value,
           compliant: '',
           noncompliant: ''
+        })),
+        ...complianceData.carerPerformance.map(item => ({
+          type: 'Carer Performance',
+          name: item.carerName,
+          missedCalls: item.missedCalls,
+          lateArrivals: item.lateArrivals,
+          reliabilityPercentage: item.reliabilityPercentage
+        })),
+        ...complianceData.medicationAdministration.map(item => ({
+          type: 'Medication Administration',
+          clientName: item.clientName,
+          medicationName: item.medicationName,
+          dosage: item.dosage,
+          status: item.status,
+          administeredAt: item.administeredAt
         }))
       ];
 
@@ -62,12 +80,12 @@ export function ComplianceReports({ branchId, branchName }: ComplianceReportsPro
         : null;
 
       const options = {
-        title: 'Compliance Reports',
+        title: 'Enhanced Compliance Reports',
         data: exportData,
-        columns: ['type', 'name', 'compliant', 'noncompliant', 'value'],
+        columns: ['type', 'name', 'compliant', 'noncompliant', 'value', 'missedCalls', 'lateArrivals', 'reliabilityPercentage', 'clientName', 'medicationName', 'dosage', 'status', 'administeredAt'],
         branchName,
         dateRange: exportDateRange,
-        fileName: `Compliance_Report_${branchName}_${format(new Date(), 'yyyyMMdd')}`
+        fileName: `Enhanced_Compliance_Report_${branchName}_${format(new Date(), 'yyyyMMdd')}`
       };
 
       if (type === 'pdf') {
@@ -182,8 +200,7 @@ export function ComplianceReports({ branchId, branchName }: ComplianceReportsPro
           </Card>
 
           {/* Incident Types */}
-          <Card>
-            <CardHeader>
+          <Card>            <CardHeader>
               <CardTitle>Incident Types</CardTitle>
             </CardHeader>
             <CardContent>
@@ -207,6 +224,118 @@ export function ComplianceReports({ branchId, branchName }: ComplianceReportsPro
                   </PieChart>
                 </ResponsiveContainer>
               </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Carer Performance */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Carer Performance & Attendance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-80">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Carer Name</TableHead>
+                      <TableHead>Total Bookings</TableHead>
+                      <TableHead>Missed Calls</TableHead>
+                      <TableHead>Late Arrivals</TableHead>
+                      <TableHead>Reliability %</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {complianceData?.carerPerformance?.map((carer, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{carer.carerName}</TableCell>
+                        <TableCell>{carer.totalBookings}</TableCell>
+                        <TableCell>
+                          <Badge variant={carer.missedCalls > 0 ? "destructive" : "secondary"}>
+                            {carer.missedCalls}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={carer.lateArrivals > 0 ? "destructive" : "secondary"}>
+                            {carer.lateArrivals}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={carer.reliabilityPercentage >= 95 ? "default" : carer.reliabilityPercentage >= 85 ? "secondary" : "destructive"}>
+                            {carer.reliabilityPercentage}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Medication Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Medication Administration Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Total Medications:</span>
+                  <Badge variant="outline">{complianceData?.medicationSummary?.totalMedications || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Administered:</span>
+                  <Badge variant="default">{complianceData?.medicationSummary?.administeredCount || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Missed:</span>
+                  <Badge variant="destructive">{complianceData?.medicationSummary?.missedCount || 0}</Badge>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Administration Rate:</span>
+                  <Badge variant={
+                    (complianceData?.medicationSummary?.administrationRate || 0) >= 95 ? "default" :
+                    (complianceData?.medicationSummary?.administrationRate || 0) >= 85 ? "secondary" : "destructive"
+                  }>
+                    {complianceData?.medicationSummary?.administrationRate || 0}%
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Detailed Medication Administration */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Medication Administration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-80">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Medication</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Administered By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {complianceData?.medicationAdministration?.slice(0, 10).map((med, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{med.clientName}</TableCell>
+                        <TableCell>{med.medicationName} ({med.dosage})</TableCell>
+                        <TableCell>
+                          <Badge variant={med.status === 'Administered' ? "default" : "destructive"}>
+                            {med.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{med.administeredByName || 'N/A'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             </CardContent>
           </Card>
 

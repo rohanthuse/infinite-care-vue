@@ -24,24 +24,57 @@ interface ComplianceTrend {
   incidents: number;
 }
 
+interface CarerPerformance {
+  carerName: string;
+  carerId: string;
+  missedCalls: number;
+  lateArrivals: number;
+  totalBookings: number;
+  reliabilityPercentage: number;
+}
+
+interface MedicationAdministration {
+  clientName: string;
+  clientId: string;
+  medicationName: string;
+  dosage: string;
+  administrationMethod: string;
+  administeredAt: string;
+  status: string;
+  administrationNotes: string;
+  missedReason: string;
+  sideEffectsObserved: string;
+  administeredByName: string;
+}
+
+interface MedicationSummary {
+  totalMedications: number;
+  administeredCount: number;
+  missedCount: number;
+  administrationRate: number;
+}
+
 export interface ComplianceReportsData {
   trainingCompliance: TrainingCompliance[];
   incidentTypes: IncidentType[];
   complianceTrends: ComplianceTrend[];
+  carerPerformance: CarerPerformance[];
+  medicationAdministration: MedicationAdministration[];
+  medicationSummary: MedicationSummary;
 }
 
 export const useComplianceReportsData = ({ branchId, startDate, endDate }: ComplianceReportsDataParams) => {
   return useQuery({
-    queryKey: ['compliance-reports-data', branchId, startDate, endDate],
+    queryKey: ['enhanced-compliance-reports-data', branchId, startDate, endDate],
     queryFn: async (): Promise<ComplianceReportsData> => {
-      const { data, error } = await supabase.rpc('get_compliance_reports_data', {
+      const { data, error } = await supabase.rpc('get_enhanced_compliance_reports_data', {
         p_branch_id: branchId,
         p_start_date: startDate || null,
         p_end_date: endDate || null
       });
 
       if (error) {
-        console.error('Error fetching compliance reports data:', error);
+        console.error('Error fetching enhanced compliance reports data:', error);
         throw error;
       }
 

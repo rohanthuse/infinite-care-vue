@@ -6907,6 +6907,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_enhanced_compliance_reports_data: {
+        Args: {
+          p_branch_id: string
+          p_end_date?: string
+          p_start_date?: string
+        }
+        Returns: Json
+      }
       get_financial_reports_data: {
         Args: {
           p_branch_id: string
