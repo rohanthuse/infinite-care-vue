@@ -461,15 +461,18 @@ export class EnhancedPdfGenerator {
     this.doc.text(title, 20, this.currentY);
     this.currentY += 15;
 
-    // Add data as a table
+    // Add data as a table with proper width and text wrapping
     autoTable(this.doc, {
       head: [["Field", "Value"]],
       body: data,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 9,
-        cellPadding: 3,
+        cellPadding: 4,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
@@ -477,8 +480,8 @@ export class EnhancedPdfGenerator {
         fontStyle: 'bold',
       },
       columnStyles: {
-        0: { fontStyle: 'bold', cellWidth: 60 },
-        1: { cellWidth: 'auto' }
+        0: { fontStyle: 'bold', cellWidth: 50 },
+        1: { cellWidth: 'auto', overflow: 'linebreak' }
       }
     });
 
@@ -509,15 +512,25 @@ export class EnhancedPdfGenerator {
       head: [["Risk Type", "Level", "Risk Factors", "Assessed By", "Date"]],
       body: riskData,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 'auto', overflow: 'linebreak' },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 25 }
       }
     });
 
@@ -548,15 +561,25 @@ export class EnhancedPdfGenerator {
       head: [["Equipment Name", "Type", "Manufacturer", "Status", "Location"]],
       body: equipmentData,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 'auto', overflow: 'linebreak' }
       }
     });
 
@@ -587,15 +610,25 @@ export class EnhancedPdfGenerator {
       head: [["Service", "Category", "Provider", "Frequency", "Status"]],
       body: serviceData,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 'auto', overflow: 'linebreak' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 }
       }
     });
 
@@ -626,15 +659,25 @@ export class EnhancedPdfGenerator {
       head: [["Assessment", "Type", "Performed By", "Date", "Status"]],
       body: assessmentData,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 'auto', overflow: 'linebreak' },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 }
       }
     });
 
@@ -647,11 +690,6 @@ export class EnhancedPdfGenerator {
       this.doc.addPage();
       this.currentY = 20;
     }
-
-    this.doc.setFontSize(14);
-    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    this.doc.text("About Me", 20, this.currentY);
-    this.currentY += 15;
 
     const aboutMeData: [string, string][] = [
       ["Life History", aboutMe.life_history || 'N/A'],
@@ -669,7 +707,7 @@ export class EnhancedPdfGenerator {
       ["Supported by", aboutMe.supported_to_write_this_by || 'N/A']
     ];
 
-    this.addSection("About Me Details", aboutMeData);
+    this.addSection("About Me", aboutMeData);
   }
 
   // Helper method for General Information section
@@ -732,10 +770,13 @@ export class EnhancedPdfGenerator {
       head: [["Goal Description", "Priority", "Target Date", "Measurable Outcome"]],
       body: goalsData,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 8,
         cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
@@ -743,10 +784,10 @@ export class EnhancedPdfGenerator {
         fontStyle: 'bold',
       },
       columnStyles: {
-        0: { cellWidth: 60 },
+        0: { cellWidth: 'auto', overflow: 'linebreak' },
         1: { cellWidth: 25 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 'auto' }
+        2: { cellWidth: 25 },
+        3: { cellWidth: 'auto', overflow: 'linebreak' }
       }
     });
 
@@ -777,15 +818,25 @@ export class EnhancedPdfGenerator {
       head: [["Activity Name", "Description", "Frequency", "Duration", "Time of Day"]],
       body: activitiesData,
       startY: this.currentY,
+      tableWidth: this.pageWidth - 40,
       theme: 'grid',
       styles: {
         fontSize: 8,
-        cellPadding: 2,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
       },
       headStyles: {
         fillColor: BRAND_COLORS.primary,
         textColor: BRAND_COLORS.white,
         fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },
+        1: { cellWidth: 'auto', overflow: 'linebreak' },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 25 }
       }
     });
 
