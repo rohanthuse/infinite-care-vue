@@ -400,6 +400,41 @@ export class EnhancedPdfGenerator {
       this.addAssessmentsSection(clientData.assessments);
     }
 
+    // About Me Section
+    if (clientData.aboutMe) {
+      this.addAboutMeSection(clientData.aboutMe);
+    }
+
+    // General Information Section
+    if (clientData.general) {
+      this.addGeneralInformationSection(clientData.general);
+    }
+
+    // Hobbies and Interests Section
+    if (clientData.hobbies && clientData.hobbies.length > 0) {
+      this.addHobbiesSection(clientData.hobbies);
+    }
+
+    // Goals Section
+    if (clientData.goals && clientData.goals.length > 0) {
+      this.addGoalsSection(clientData.goals);
+    }
+
+    // Activities Section
+    if (clientData.activities && clientData.activities.length > 0) {
+      this.addActivitiesSection(clientData.activities);
+    }
+
+    // Consent Information Section
+    if (clientData.consent) {
+      this.addConsentSection(clientData.consent);
+    }
+
+    // Additional Notes Section
+    if (clientData.additionalNotes || carePlan.additionalNotes) {
+      this.addAdditionalNotesSection(clientData.additionalNotes || carePlan.additionalNotes);
+    }
+
     // Add pagination
     const totalPages = this.doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
@@ -604,6 +639,193 @@ export class EnhancedPdfGenerator {
     });
 
     this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for About Me section
+  private addAboutMeSection(aboutMe: any): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("About Me", 20, this.currentY);
+    this.currentY += 15;
+
+    const aboutMeData: [string, string][] = [
+      ["Life History", aboutMe.life_history || 'N/A'],
+      ["Personality Traits", aboutMe.personality_traits || 'N/A'],
+      ["Communication Style", aboutMe.communication_style || 'N/A'],
+      ["Important People", aboutMe.important_people || 'N/A'],
+      ["Meaningful Activities", aboutMe.meaningful_activities || 'N/A'],
+      ["What is Most Important", aboutMe.what_is_most_important_to_me || 'N/A'],
+      ["How to Communicate", aboutMe.how_to_communicate_with_me || 'N/A'],
+      ["Please Do", aboutMe.please_do || 'N/A'],
+      ["Please Don't", aboutMe.please_dont || 'N/A'],
+      ["My Wellness", aboutMe.my_wellness || 'N/A'],
+      ["How to Support Me", aboutMe.how_and_when_to_support_me || 'N/A'],
+      ["Worth Knowing", aboutMe.also_worth_knowing_about_me || 'N/A'],
+      ["Supported by", aboutMe.supported_to_write_this_by || 'N/A']
+    ];
+
+    this.addSection("About Me Details", aboutMeData);
+  }
+
+  // Helper method for General Information section
+  private addGeneralInformationSection(general: any): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    const generalData: [string, string][] = [
+      ["Preferred Name", general.preferred_name || 'N/A'],
+      ["Relationship Status", general.relationship_status || 'N/A'],
+      ["Occupation", general.occupation || 'N/A'],
+      ["Religion/Beliefs", general.religion || 'N/A'],
+      ["Cultural Background", general.cultural_background || 'N/A']
+    ];
+
+    this.addSection("General Information", generalData);
+  }
+
+  // Helper method for Hobbies section
+  private addHobbiesSection(hobbies: string[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Hobbies and Interests", 20, this.currentY);
+    this.currentY += 15;
+
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(0, 0, 0);
+    const hobbiesText = hobbies.join(', ') || 'None recorded';
+    this.doc.text(hobbiesText, 20, this.currentY, { maxWidth: this.pageWidth - 40 });
+    this.currentY += 25;
+  }
+
+  // Helper method for Goals section
+  private addGoalsSection(goals: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Care Goals", 20, this.currentY);
+    this.currentY += 15;
+
+    const goalsData = goals.map(goal => [
+      goal.description || 'N/A',
+      goal.priority || 'N/A',
+      goal.target_date ? format(new Date(goal.target_date), "dd MMM yyyy") : 'N/A',
+      goal.measurable_outcome || 'N/A'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Goal Description", "Priority", "Target Date", "Measurable Outcome"]],
+      body: goalsData,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 'auto' }
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for Activities section
+  private addActivitiesSection(activities: any[]): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Scheduled Activities", 20, this.currentY);
+    this.currentY += 15;
+
+    const activitiesData = activities.map(activity => [
+      activity.name || 'N/A',
+      activity.description || 'N/A',
+      activity.frequency || 'N/A',
+      activity.duration || 'N/A',
+      activity.time_of_day || 'N/A'
+    ]);
+
+    autoTable(this.doc, {
+      head: [["Activity Name", "Description", "Frequency", "Duration", "Time of Day"]],
+      body: activitiesData,
+      startY: this.currentY,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: BRAND_COLORS.primary,
+        textColor: BRAND_COLORS.white,
+        fontStyle: 'bold',
+      }
+    });
+
+    this.currentY = (this.doc as any).lastAutoTable.finalY + 15;
+  }
+
+  // Helper method for Consent section
+  private addConsentSection(consent: any): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    const consentData: [string, string][] = [
+      ["Capacity Assessment", consent.capacity_assessment || 'N/A'],
+      ["Consent Given By", consent.consent_given_by || 'N/A'],
+      ["Consent Date", consent.consent_date ? format(new Date(consent.consent_date), "dd MMM yyyy") : 'N/A'],
+      ["Consent Notes", consent.consent_notes || 'N/A']
+    ];
+
+    this.addSection("Consent and Capacity Information", consentData);
+  }
+
+  // Helper method for Additional Notes section
+  private addAdditionalNotesSection(notes: string): void {
+    if (this.currentY > this.pageHeight - 80) {
+      this.doc.addPage();
+      this.currentY = 20;
+    }
+
+    this.doc.setFontSize(14);
+    this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.text("Additional Notes", 20, this.currentY);
+    this.currentY += 15;
+
+    this.doc.setFontSize(10);
+    this.doc.setTextColor(0, 0, 0);
+    const splitNotes = this.doc.splitTextToSize(notes, this.pageWidth - 40);
+    this.doc.text(splitNotes, 20, this.currentY);
+    this.currentY += splitNotes.length * 5 + 15;
   }
 
   // Helper method to calculate duration

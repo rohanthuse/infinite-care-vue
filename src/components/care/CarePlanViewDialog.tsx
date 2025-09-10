@@ -100,7 +100,9 @@ const transformCarePlanForPDF = (carePlan: CarePlanWithDetails) => {
     activities: carePlan.activities || [],
     aboutMe: carePlan.about_me || {},
     general: carePlan.general || {},
-    hobbies: carePlan.hobbies?.selected_hobbies || []
+    hobbies: carePlan.hobbies?.selected_hobbies || [],
+    consent: carePlan.consent || {},
+    additionalNotes: (carePlan as any).additional_notes || (carePlan as any).review?.additional_notes || ''
   };
 
   return { carePlanData, clientData };
