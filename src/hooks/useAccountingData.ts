@@ -584,37 +584,7 @@ export function useCreateTravelRecord() {
   });
 }
 
-// Hook to create service rate
-export function useCreateServiceRate() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (rate: Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('service_rates')
-        .insert(rate)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
-      toast.success('Service rate created successfully');
-    },
-    onError: (error: any) => {
-      console.error('Error creating service rate:', error);
-      // Log the actual error message for debugging
-      if (error?.message) {
-        console.error('Supabase error message:', error.message);
-      }
-      toast.error('Failed to create service rate');
-    },
-  });
-}
-
-// Enhanced mutation for creating extra time records with better error handling
+// Hook to create extra time record
 export function useCreateExtraTimeRecord() {
   const queryClient = useQueryClient();
 
@@ -690,26 +660,8 @@ export const useDeleteTravelRecord = () => {
   });
 };
 
-// Hook to delete a service rate
-export function useDeleteServiceRate() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (rateId: string) => {
-      const { error } = await supabase
-        .from('service_rates')
-        .delete()
-        .eq('id', rateId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
-    },
-  });
-}
-
-export function useClientsList(branchId?: string) {
+// Hook to get staff list for dropdowns
+export function useStaffList(branchId?: string) {
   return useQuery({
     queryKey: ['staff-list', branchId],
     queryFn: async () => {
@@ -721,7 +673,7 @@ export function useClientsList(branchId?: string) {
         .from('staff')
         .select('id, first_name, last_name, email')
         .eq('branch_id', branchId)
-        .eq('status', 'Active'); // Fixed: Changed from 'active' to 'Active'
+        .eq('status', 'Active');
 
       if (error) {
         console.error('Error fetching staff list:', error);
@@ -735,7 +687,8 @@ export function useClientsList(branchId?: string) {
   });
 }
 
-export function useStaffList(branchId?: string) {
+// Hook to create a service rate
+export function useCreateServiceRate() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -777,7 +730,26 @@ export function useUpdateServiceRate() {
   });
 }
 
-// Hook to get clients list for dropdowns - FIXED STATUS FILTER
+// Hook to delete a service rate
+export function useDeleteServiceRate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (rateId: string) => {
+      const { error } = await supabase
+        .from('service_rates')
+        .delete()
+        .eq('id', rateId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
+    },
+  });
+}
+
+// Hook to get clients list for dropdowns
 export function useClientsList(branchId?: string) {
   return useQuery({
     queryKey: ['clients-list', branchId],
@@ -790,7 +762,6 @@ export function useClientsList(branchId?: string) {
         .from('clients')
         .select('id, first_name, last_name, email, pin_code')
         .eq('branch_id', branchId);
-        // Note: Removed status filter as clients table may not have consistent status values
 
       if (error) {
         console.error('Error fetching clients list:', error);
@@ -803,6 +774,8 @@ export function useClientsList(branchId?: string) {
     enabled: !!branchId,
   });
 }
+
+// Approval mutations for Extra Time, Expenses, and Travel Records
 
 // Approval mutations for Extra Time, Expenses, and Travel Records
 export function useApproveExtraTime() {
