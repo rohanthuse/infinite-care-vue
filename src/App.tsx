@@ -39,6 +39,7 @@ import TenantClientLogin from "./pages/TenantClientLogin";
 import TenantCarerLogin from "./pages/TenantCarerLogin";
 import TenantDashboard from "./pages/TenantDashboard";
 import { SystemGuard } from "@/components/system/SystemGuard";
+import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
 import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
@@ -167,9 +168,9 @@ const AppContent = () => {
               
               {/* Main Admin Dashboard Route for Super Admins */}
               <Route path="/dashboard" element={
-                <SystemGuard>
+                <SuperAdminGuard>
                   <Dashboard />
-                </SystemGuard>
+                </SuperAdminGuard>
               } />
               
               {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
