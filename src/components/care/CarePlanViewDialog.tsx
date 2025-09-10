@@ -303,11 +303,47 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
 
         <div className="flex-1 flex min-h-0 gap-6">
           <div className="lg:hidden w-full">
-            <ScrollArea className="h-full">
-              <div className="p-4 space-y-6">
-                {renderStepContent()}
+            <div className="flex flex-col h-full">
+              {/* Mobile Navigation */}
+              <div className="flex-shrink-0 p-4 border-b">
+                <Select value={currentStep.toString()} onValueChange={(value) => setCurrentStep(parseInt(value))}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue>
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium">
+                          {viewSteps.find(step => step.id === currentStep)?.name || "Select Section"}
+                        </span>
+                        <Badge variant="outline" className="ml-2">
+                          {currentStep} of {viewSteps.length}
+                        </Badge>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {viewSteps.map((step) => (
+                      <SelectItem key={step.id} value={step.id.toString()}>
+                        <div className="flex items-center justify-between w-full">
+                          <div>
+                            <div className="font-medium">{step.name}</div>
+                            <div className="text-sm text-muted-foreground">{step.description}</div>
+                          </div>
+                          {completedSteps.includes(step.id) && (
+                            <CheckCircle2 className="h-4 w-4 text-green-600 ml-2" />
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </ScrollArea>
+              
+              {/* Mobile Content */}
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-6">
+                  {renderStepContent()}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
 
           <div className="hidden lg:flex flex-1 min-h-0 gap-6">
