@@ -735,39 +735,24 @@ export const useDeleteTravelRecord = () => {
   });
 };
 
-// Hook to fetch clients list for branch
+// Hook to delete a service rate
+export function useDeleteServiceRate() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+    mutationFn: async (rateId: string) => {
       const { error } = await supabase
         .from('service_rates')
         .delete()
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error deleting service rate:', error);
-        throw error;
-      }
-      
-      return { id, branchId };
+        .eq('id', rateId);
+
+      if (error) throw error;
     },
-    onSuccess: (data) => {
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['service-rates', data.branchId] });
-      
-      toast.success('Service rate deleted successfully');
-    },
-    onError: (error: any) => {
-      console.error('Failed to delete service rate:', error);
-      const errorMessage = error?.message || 'Failed to delete service rate. Please try again.';
-      toast.error(errorMessage);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
     },
   });
-};
-
-// Hook to get staff list for dropdowns - FIXED STATUS FILTER
-export function useStaffList(branchId?: string) {
+}
   return useQuery({
     queryKey: ['staff-list', branchId],
     queryFn: async () => {
@@ -791,7 +776,7 @@ export function useStaffList(branchId?: string) {
     },
     enabled: !!branchId,
   });
-}
+} // Fixed syntax error
 
 // Hook to create a service rate
 export function useCreateServiceRate() {
@@ -829,25 +814,6 @@ export function useUpdateServiceRate() {
 
       if (error) throw error;
       return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['service-rates'] });
-    },
-  });
-}
-
-// Hook to delete a service rate
-export function useDeleteServiceRate() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (rateId: string) => {
-      const { error } = await supabase
-        .from('service_rates')
-        .delete()
-        .eq('id', rateId);
-
-      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-rates'] });
