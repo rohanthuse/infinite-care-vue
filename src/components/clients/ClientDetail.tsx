@@ -171,44 +171,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
         </div>
         
         <div className="flex flex-1 overflow-hidden">
-          {/* Client Info Sidebar */}
-          <div className="w-80 bg-muted/30 border-r border-border overflow-y-auto">
-            <div className="p-6">
-              <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-border">
-                  <h3 className="text-lg font-medium text-foreground">Client Information</h3>
-                </div>
-                <div className="p-4 space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
-                    <p className="font-medium text-foreground">{realClientData?.email || client.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
-                    <p className="font-medium text-foreground">{realClientData?.phone || client.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Address</p>
-                    <p className="font-medium text-foreground">{realClientData?.address || client.location}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Region</p>
-                    <p className="font-medium text-foreground">{realClientData?.region || client.region}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status</p>
-                    <p className="font-medium text-foreground">{realClientData?.status || client.status}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation and Content */}
-          <div className="flex flex-1 overflow-hidden">
-            <ClientSideTabNav activeTab={activeTab} onChange={setActiveTab} />
-            
-            <div className="flex-1 overflow-y-auto">
+          <ClientSideTabNav activeTab={activeTab} onChange={setActiveTab} />
+          
+          <div className="flex-1 overflow-y-auto">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
                 <TabsContent value="personal" className="p-6 m-0">
                   <PersonalInfoTab 
@@ -252,7 +217,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
               </Tabs>
             </div>
-          </div>
         </div>
 
         <ClientProfileSharingDialog
