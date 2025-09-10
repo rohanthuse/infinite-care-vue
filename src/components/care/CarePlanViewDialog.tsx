@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CarePlanWizardSidebar } from '@/components/clients/dialogs/wizard/CarePlanWizardSidebar';
 import { CarePlanWizardSteps } from '@/components/clients/dialogs/wizard/CarePlanWizardSteps';
-import { Edit, Download, CheckCircle2, UserX } from 'lucide-react';
+import { Edit, Download, CheckCircle2, UserX, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
@@ -132,6 +132,9 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
         medications: safeArray(carePlan.medical_info?.medication_manager?.medications),
       },
     },
+    news2_monitoring_enabled: (carePlan as any).news2_monitoring_enabled || false,
+    news2_monitoring_frequency: safeString((carePlan as any).news2_monitoring_frequency) || 'daily',
+    news2_monitoring_notes: safeString((carePlan as any).news2_monitoring_notes),
     goals: safeArray(carePlan.goals),
     activities: safeArray(carePlan.activities),
     personal_care: safeObject(carePlan.personal_care),
@@ -329,13 +332,19 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
               <DialogTitle>
                 {carePlan.title || `Care Plan #${carePlan.display_id}`}
               </DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2">
                 <Badge className={getStatusColor(carePlan.status)} variant="outline">
                   {carePlan.status?.replace('_', ' ')}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
                   {carePlan.client ? `${carePlan.client.first_name} ${carePlan.client.last_name}` : 'Client not found'}
                 </span>
+                {(carePlan as any).news2_monitoring_enabled && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                    <Activity className="h-3 w-3 mr-1" />
+                    NEWS2 Monitoring
+                  </Badge>
+                )}
               </div>
             </div>
             {context === 'staff' && (

@@ -320,6 +320,85 @@ export function WizardStep4MedicalInfo({
                     <FormMessage />
                   </FormItem>} />
 
+              {/* NEWS2 Health Monitoring */}
+              <Card className="border-blue-200 bg-blue-50/50">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    NEWS2 Health Monitoring
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="news2_monitoring_enabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">
+                            Enable NEWS2 Health Monitoring
+                          </FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Monitor vital signs and calculate NEWS2 scores for this client
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {form.watch("news2_monitoring_enabled") && (
+                    <div className="space-y-4 border-t pt-4">
+                      <FormField
+                        control={form.control}
+                        name="news2_monitoring_frequency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monitoring Frequency</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value || 'daily'}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select monitoring frequency" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="daily">Daily</SelectItem>
+                                <SelectItem value="twice_daily">Twice Daily</SelectItem>
+                                <SelectItem value="weekly">Weekly</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="news2_monitoring_notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Monitoring Notes (Optional)</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Any special instructions for NEWS2 monitoring..."
+                                className="min-h-[60px]"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               {/* Physical and Mental Health Conditions Checkboxes */}
               <div className="grid gap-6 md:grid-cols-2">
                 {/* Physical Health Conditions */}

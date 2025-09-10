@@ -129,6 +129,97 @@ export const useCarePlanCreation = () => {
 
       console.log('[useCarePlanCreation] Care plan updated successfully:', updatedCarePlan);
 
+      // Handle NEWS2 monitoring enrollment/deactivation
+      if (updatedCarePlan.news2_monitoring_enabled !== undefined) {
+        try {
+          console.log('[useCarePlanCreation] Processing NEWS2 monitoring:', {
+            enabled: updatedCarePlan.news2_monitoring_enabled,
+            frequency: updatedCarePlan.news2_monitoring_frequency,
+            clientId: data.client_id
+          });
+
+          // Get client branch_id for NEWS2 patient creation
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('branch_id')
+            .eq('id', data.client_id)
+            .single();
+
+          if (!clientData) {
+            console.error('[useCarePlanCreation] Could not find client branch_id for NEWS2 setup');
+            throw new Error('Client not found for NEWS2 setup');
+          }
+
+          if (updatedCarePlan.news2_monitoring_enabled) {
+            // Enable NEWS2 monitoring - create or update patient record
+            const { data: existingPatient } = await supabase
+              .from('news2_patients')
+              .select('id')
+              .eq('client_id', data.client_id)
+              .eq('is_active', true)
+              .maybeSingle();
+
+            if (!existingPatient) {
+              // Create new NEWS2 patient record
+              const { error: news2Error } = await supabase
+                .from('news2_patients')
+                .insert({
+                  client_id: data.client_id,
+                  branch_id: clientData.branch_id,
+                  assigned_carer_id: updatedCarePlan.staff_id,
+                  monitoring_frequency: updatedCarePlan.news2_monitoring_frequency || 'daily',
+                  notes: updatedCarePlan.news2_monitoring_notes,
+                  risk_category: 'low',
+                  is_active: true
+                });
+
+              if (news2Error) {
+                console.error('[useCarePlanCreation] Error creating NEWS2 patient:', news2Error);
+              } else {
+                console.log('[useCarePlanCreation] NEWS2 patient record created successfully');
+              }
+            } else {
+              // Update existing NEWS2 patient record
+              const { error: news2UpdateError } = await supabase
+                .from('news2_patients')
+                .update({
+                  assigned_carer_id: updatedCarePlan.staff_id,
+                  monitoring_frequency: updatedCarePlan.news2_monitoring_frequency || 'daily',
+                  notes: updatedCarePlan.news2_monitoring_notes,
+                  is_active: true,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', existingPatient.id);
+
+              if (news2UpdateError) {
+                console.error('[useCarePlanCreation] Error updating NEWS2 patient:', news2UpdateError);
+              } else {
+                console.log('[useCarePlanCreation] NEWS2 patient record updated successfully');
+              }
+            }
+          } else {
+            // Disable NEWS2 monitoring - deactivate patient record
+            const { error: deactivateError } = await supabase
+              .from('news2_patients')
+              .update({
+                is_active: false,
+                updated_at: new Date().toISOString()
+              })
+              .eq('client_id', data.client_id)
+              .eq('is_active', true);
+
+            if (deactivateError) {
+              console.error('[useCarePlanCreation] Error deactivating NEWS2 patient:', deactivateError);
+            } else {
+              console.log('[useCarePlanCreation] NEWS2 patient record deactivated successfully');
+            }
+          }
+        } catch (news2Error) {
+          console.error('[useCarePlanCreation] Error processing NEWS2 monitoring:', news2Error);
+          // Don't fail the entire operation for NEWS2 errors
+        }
+      }
+
       // Create approval record and notifications if sending for client approval
       if (data.status === 'pending_client_approval') {
         const { error: approvalError } = await supabase

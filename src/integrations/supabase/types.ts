@@ -1394,6 +1394,9 @@ export type Database = {
           goals_progress: number | null
           id: string
           last_step_completed: number | null
+          news2_monitoring_enabled: boolean | null
+          news2_monitoring_frequency: string | null
+          news2_monitoring_notes: string | null
           notes: string | null
           priority: string | null
           provider_name: string
@@ -1429,6 +1432,9 @@ export type Database = {
           goals_progress?: number | null
           id?: string
           last_step_completed?: number | null
+          news2_monitoring_enabled?: boolean | null
+          news2_monitoring_frequency?: string | null
+          news2_monitoring_notes?: string | null
           notes?: string | null
           priority?: string | null
           provider_name: string
@@ -1464,6 +1470,9 @@ export type Database = {
           goals_progress?: number | null
           id?: string
           last_step_completed?: number | null
+          news2_monitoring_enabled?: boolean | null
+          news2_monitoring_frequency?: string | null
+          news2_monitoring_notes?: string | null
           notes?: string | null
           priority?: string | null
           provider_name?: string
