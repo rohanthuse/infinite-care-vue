@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientTabBar } from "@/components/clients/ClientTabBar";
 import { PersonalInfoTab } from "@/components/care/tabs/PersonalInfoTab";
+import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
@@ -612,10 +613,7 @@ export function AdminClientDetailsDialog({
                 </TabsContent>
 
                 <TabsContent value="careplans" className="mt-0 p-6">
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-muted-foreground mb-2">Care Plans</h3>
-                    <p className="text-sm text-muted-foreground">This section will contain care plan details and management.</p>
-                  </div>
+                  <CarePlansTab clientId={client.id} />
                 </TabsContent>
 
                 <TabsContent value="eventslogs" className="mt-0 p-6">
