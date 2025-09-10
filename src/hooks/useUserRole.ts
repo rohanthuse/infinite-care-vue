@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'super_admin' | 'branch_admin' | 'carer' | 'client';
+export type UserRole = 'super_admin' | 'branch_admin' | 'carer' | 'client' | 'app_admin';
 
 export interface UserWithRole {
   id: string;
@@ -13,6 +13,7 @@ export interface UserWithRole {
   firstName?: string;
   lastName?: string;
   fullName?: string;
+  organizationSlug?: string;
 }
 
 export const useUserRole = () => {

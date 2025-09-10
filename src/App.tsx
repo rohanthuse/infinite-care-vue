@@ -9,6 +9,7 @@ import { TaskProvider } from "@/contexts/TaskContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
+import { NavigationGuard } from "@/components/NavigationGuard";
 import Index from "./pages/Index";
 import UnifiedLogin from "./components/UnifiedLogin";
 import CarerLogin from "./pages/CarerLogin";
@@ -97,6 +98,7 @@ const AppContent = () => {
       <BrowserRouter>
         <TaskProvider>
           <ErrorBoundary fallback={<RoutingErrorFallback />}>
+            <NavigationGuard />
             <PWAInstallPrompt />
             <OfflineIndicator />
             <PWAUpdatePrompt />

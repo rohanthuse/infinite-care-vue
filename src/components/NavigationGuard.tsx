@@ -5,7 +5,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 /**
  * Navigation guard to handle stuck authentication states
- * Ensures users are redirected properly after successful login
+ * Ensures users are redirected properly after successful login with tenant-aware paths
  */
 export const NavigationGuard = () => {
   const navigate = useNavigate();
@@ -17,33 +17,32 @@ export const NavigationGuard = () => {
     if (!user || !session || isLoading) return;
     
     const currentPath = window.location.pathname;
-    const isOnLoginPage = currentPath === '/login' || currentPath.includes('/login');
+    const isOnLoginPage = currentPath === '/login' || currentPath.includes('login');
     
     if (isOnLoginPage && userRoleData?.role) {
-      console.log('[NavigationGuard] User authenticated but stuck on login page, redirecting...');
+      console.log('[NavigationGuard] User authenticated but stuck on login page, redirecting...', {
+        role: userRoleData.role,
+        branchId: userRoleData.branchId,
+        currentPath
+      });
       
-      // Small delay to prevent navigation conflicts
+      // Small delay to prevent navigation conflicts with UnifiedLogin
       setTimeout(() => {
         const role = userRoleData.role;
-        const branchId = userRoleData.branchId;
         
         let targetPath = '/';
         
-        if (role === 'app_admin' as any) {
+        // System admin gets system dashboard
+        if (role === 'app_admin') {
           targetPath = '/system-dashboard';
-        } else if (role === 'super_admin' as any) {
-          targetPath = '/dashboard'; // fallback for super admin
-        } else if (role === 'branch_admin' as any) {
-          targetPath = '/dashboard'; // fallback for branch admin
-        } else if (role === 'carer' as any) {
-          targetPath = '/carer-dashboard';
-        } else if (role === 'client' as any) {
-          targetPath = '/client-dashboard';
+        } else {
+          console.warn('[NavigationGuard] Non-system admin user - let UnifiedLogin handle tenant-aware routing');
+          return; // Let UnifiedLogin handle tenant-aware routing
         }
         
         console.log('[NavigationGuard] Redirecting to:', targetPath);
         navigate(targetPath, { replace: true });
-      }, 500);
+      }, 1000); // Longer delay to let UnifiedLogin handle navigation first
     }
   }, [user, session, userRoleData, isLoading, navigate]);
 

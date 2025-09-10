@@ -72,31 +72,17 @@ export function useCarerAuth() {
       setSession(session);
       setUser(session?.user ?? null);
 
-      if (event === 'SIGNED_IN' && session?.user) {
-        try {
-          // Check carer role for signed in user
-          const hasRole = await checkCarerRole(session.user.id);
+        // Enhanced navigation logic - disable to prevent conflicts with UnifiedLogin
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('[useCarerAuth] User signed in, checking carer role (no auto-navigation)');
           
-          if (hasRole) {
-            // Only navigate on actual sign in from specific login pages
-            // Don't navigate from unified login - let UnifiedLogin handle navigation
-            const currentPath = window.location.pathname;
-            if (currentPath === '/carer-login' || currentPath === '/carer-invitation') {
-              console.log('[useCarerAuth] Navigating from specific carer login page');
-              navigate('/carer-dashboard');
-            } else {
-              console.log('[useCarerAuth] Carer role confirmed, letting current login flow handle navigation');
-            }
-          } else {
-            console.error('[useCarerAuth] User does not have carer role');
-            toast.error('Access denied. This account is not registered as a carer.');
-            await supabase.auth.signOut();
-          }
-        } catch (error) {
-          console.error('[useCarerAuth] Error during sign in process:', error);
-          toast.error('Authentication error occurred');
+          const userId = session.user.id;
+          const hasCarerRole = await checkCarerRole(userId);
+          setIsCarerRole(hasCarerRole);
+          
+          console.log('[useCarerAuth] User carer role status:', hasCarerRole);
+          // Note: Navigation is now handled by UnifiedLogin and NavigationGuard
         }
-      }
 
       if (event === 'SIGNED_OUT') {
         console.log('[useCarerAuth] User signed out');

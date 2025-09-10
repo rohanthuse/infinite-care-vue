@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState, withProgressiveTimeout } from "@/utils/authRecovery";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
-import { NavigationGuard } from "./NavigationGuard";
+
 
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
@@ -509,7 +509,6 @@ const UnifiedLogin = () => {
 
   return (
     <div className="login-page-light min-h-screen flex">
-      <NavigationGuard />
       {/* Left Column - Gradient Background with Info */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-cyan-600 relative">
         {/* Wave Pattern */}
