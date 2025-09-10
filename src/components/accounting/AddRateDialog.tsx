@@ -3,6 +3,8 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ServiceRate } from "@/hooks/useAccountingData";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ServiceRate, useServiceRates } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 import { useUserRole } from "@/hooks/useUserRole";
+import { cn } from "@/lib/utils";
 
 const rateSchema = z.object({
   service_name: z.string().min(1, "Service name is required"),
@@ -210,14 +215,232 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
 
   if (variant === 'optionsOnly') {
     const [selectedOption, setSelectedOption] = React.useState<string>('');
+    const [showDefinedRateForm, setShowDefinedRateForm] = React.useState(false);
+    const [selectedAuthority, setSelectedAuthority] = React.useState<string>('');
+    const [selectedRate, setSelectedRate] = React.useState<string>('');
+    const [startDate, setStartDate] = React.useState<Date>();
+    const [endDate, setEndDate] = React.useState<Date>();
+    const [errors, setErrors] = React.useState<{[key: string]: string}>({});
+
+    // Get available rates for the dropdowns
+    const { data: availableRates = [] } = useServiceRates(branchId);
+
+    // Get unique authorities from available rates
+    const authorities = React.useMemo(() => {
+      const uniqueAuthorities = [...new Set(availableRates.map(rate => rate.client_type))];
+      return uniqueAuthorities.filter(Boolean);
+    }, [availableRates]);
+
+    // Get rates for selected authority
+    const ratesForAuthority = React.useMemo(() => {
+      if (!selectedAuthority) return [];
+      return availableRates.filter(rate => rate.client_type === selectedAuthority);
+    }, [availableRates, selectedAuthority]);
 
     const handleOptionSelect = (option: string) => {
       setSelectedOption(option);
-      // For now, just close the dialog when an option is selected
-      setTimeout(() => {
-        onClose();
-      }, 100);
+      if (option === 'use-defined') {
+        setShowDefinedRateForm(true);
+      } else {
+        // For now, just close the dialog for other options
+        setTimeout(() => {
+          onClose();
+        }, 100);
+      }
     };
+
+    const validateForm = () => {
+      const newErrors: {[key: string]: string} = {};
+      
+      if (!selectedAuthority) {
+        newErrors.authority = 'This field is required';
+      }
+      if (!selectedRate) {
+        newErrors.rate = 'This field is required';
+      }
+      if (!startDate) {
+        newErrors.startDate = 'This field is required';
+      }
+      
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+
+    const handleAddRate = () => {
+      if (!validateForm()) return;
+
+      const rateData = availableRates.find(rate => rate.id === selectedRate);
+      if (!rateData) {
+        toast.error('Selected rate not found');
+        return;
+      }
+
+      // Create new rate with overridden dates
+      const newRate: Partial<ServiceRate> = {
+        ...rateData,
+        effective_from: startDate!.toISOString().split('T')[0],
+        effective_to: endDate?.toISOString().split('T')[0],
+      };
+
+      onAddRate(newRate);
+      onClose();
+    };
+
+    const handleBack = () => {
+      setShowDefinedRateForm(false);
+      setSelectedOption('');
+      setSelectedAuthority('');
+      setSelectedRate('');
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setErrors({});
+    };
+
+    if (showDefinedRateForm) {
+      return (
+        <Dialog open={open} onOpenChange={onClose}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Use a Defined Rate</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="authority">Authority *</Label>
+                <Select value={selectedAuthority} onValueChange={(value) => {
+                  setSelectedAuthority(value);
+                  setSelectedRate(''); // Reset rate when authority changes
+                  if (errors.authority) {
+                    setErrors(prev => ({ ...prev, authority: '' }));
+                  }
+                }}>
+                  <SelectTrigger className={errors.authority ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select authority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {authorities.map((authority) => (
+                      <SelectItem key={authority} value={authority}>
+                        {authority === 'local_authority' ? 'Local Authority' :
+                         authority === 'nhs' ? 'NHS' :
+                         authority === 'private' ? 'Private' :
+                         authority === 'insurance' ? 'Insurance' :
+                         authority === 'other' ? 'Other' : authority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.authority && (
+                  <p className="text-sm text-red-600">{errors.authority}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rate">Rate *</Label>
+                <Select value={selectedRate} onValueChange={(value) => {
+                  setSelectedRate(value);
+                  if (errors.rate) {
+                    setErrors(prev => ({ ...prev, rate: '' }));
+                  }
+                }} disabled={!selectedAuthority}>
+                  <SelectTrigger className={errors.rate ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select rate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ratesForAuthority.map((rate) => (
+                      <SelectItem key={rate.id} value={rate.id}>
+                        {rate.service_name} - £{rate.amount} ({rate.rate_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.rate && (
+                  <p className="text-sm text-red-600">{errors.rate}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !startDate && "text-muted-foreground",
+                          errors.startDate && "border-red-500"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={(date) => {
+                          setStartDate(date);
+                          if (errors.startDate) {
+                            setErrors(prev => ({ ...prev, startDate: '' }));
+                          }
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.startDate && (
+                    <p className="text-sm text-red-600">{errors.startDate}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <div className="space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleAddRate}>
+                  Add Rate
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
 
     return (
       <Dialog open={open} onOpenChange={onClose}>
