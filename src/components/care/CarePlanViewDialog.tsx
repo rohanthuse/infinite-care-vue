@@ -17,6 +17,7 @@ import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
 import { useStaffApproveCarePlan, useStaffRejectCarePlan } from '@/hooks/useStaffCarePlanApproval';
 import { useToast } from '@/hooks/use-toast';
+import { generateCarePlanDetailPDF } from '@/services/enhancedPdfGenerator';
 
 interface CarePlanViewDialogProps {
   carePlanId: string;
@@ -46,6 +47,64 @@ const viewSteps = [
   { id: 18, name: "Consent", description: "Consent and capacity assessment" },
   { id: 19, name: "Review", description: "Review and finalize care plan" },
 ];
+
+// Transform care plan data for PDF generation
+const transformCarePlanForPDF = (carePlan: CarePlanWithDetails) => {
+  const carePlanData = {
+    title: carePlan.title || 'Untitled Care Plan',
+    assignedTo: carePlan.provider_name || `${carePlan.staff?.first_name || ''} ${carePlan.staff?.last_name || ''}`.trim(),
+    assignedToType: carePlan.staff_id ? 'Staff Member' : 'External Provider',
+    status: carePlan.status || 'draft',
+    dateCreated: carePlan.created_at ? new Date(carePlan.created_at) : new Date(),
+    lastUpdated: carePlan.updated_at ? new Date(carePlan.updated_at) : new Date(),
+    patientName: carePlan.client ? `${carePlan.client.first_name} ${carePlan.client.last_name}` : 'Unknown Patient'
+  };
+
+  const clientData = {
+    clientProfile: {
+      first_name: carePlan.client?.first_name || '',
+      last_name: carePlan.client?.last_name || '',
+      date_of_birth: carePlan.personal_info?.date_of_birth || '',
+      address: carePlan.personal_info?.address || '',
+      phone: carePlan.personal_info?.phone || '',
+      email: carePlan.personal_info?.email || ''
+    },
+    medicalInfo: {
+      allergies: carePlan.medical_info?.allergies || [],
+      medical_conditions: carePlan.medical_info?.medical_conditions || [],
+      current_medications: carePlan.medical_info?.medication_manager?.medications?.map(med => 
+        `${med.name} - ${med.dosage}${med.frequency ? ' (' + med.frequency + ')' : ''}`
+      ) || [],
+      mobility_status: carePlan.medical_info?.mobility_status || '',
+      communication_needs: carePlan.medical_info?.communication_needs || ''
+    },
+    personalCare: {
+      personal_hygiene_needs: carePlan.personal_care?.personal_hygiene_needs || '',
+      bathing_preferences: carePlan.personal_care?.bathing_preferences || '',
+      dressing_assistance_level: carePlan.personal_care?.dressing_assistance_level || '',
+      toileting_assistance_level: carePlan.personal_care?.toileting_assistance_level || '',
+      sleep_patterns: carePlan.personal_care?.sleep_patterns || ''
+    },
+    dietaryRequirements: {
+      dietary_restrictions: carePlan.dietary_requirements?.dietary_restrictions || [],
+      food_allergies: carePlan.dietary_requirements?.food_allergies || [],
+      food_preferences: carePlan.dietary_requirements?.food_preferences || [],
+      nutritional_needs: carePlan.dietary_requirements?.nutritional_needs || '',
+      supplements: carePlan.dietary_requirements?.supplements || []
+    },
+    riskAssessments: carePlan.risk_assessments || [],
+    equipment: carePlan.equipment || [],
+    serviceActions: carePlan.service_actions || [],
+    assessments: [],
+    goals: carePlan.goals || [],
+    activities: carePlan.activities || [],
+    aboutMe: carePlan.about_me || {},
+    general: carePlan.general || {},
+    hobbies: carePlan.hobbies?.selected_hobbies || []
+  };
+
+  return { carePlanData, clientData };
+};
 
 // Mapping function to convert care plan data to wizard form format
 const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
@@ -140,7 +199,30 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   };
 
   const handleExport = () => {
-    console.log('Export care plan:', carePlanId);
+    if (!carePlan) {
+      toast({
+        title: "Export Error",
+        description: "No care plan data available to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { carePlanData, clientData } = transformCarePlanForPDF(carePlan);
+      generateCarePlanDetailPDF(carePlanData, clientData, branchName || "Med-Infinite");
+      toast({
+        title: "Export Successful",
+        description: "Care plan has been exported to PDF successfully.",
+      });
+    } catch (error) {
+      console.error('Error exporting care plan:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export care plan. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleApprovalAction = (action: 'approve' | 'reject') => {
