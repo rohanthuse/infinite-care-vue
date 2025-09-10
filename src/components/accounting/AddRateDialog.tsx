@@ -57,6 +57,7 @@ interface AddRateDialogProps {
   onAddRate: (rate: Partial<ServiceRate>) => void;
   initialRate?: ServiceRate;
   branchId?: string;
+  variant?: 'full' | 'optionsOnly';
 }
 
 const rateTypeLabels = {
@@ -90,6 +91,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
   onAddRate,
   initialRate,
   branchId,
+  variant = 'full',
 }) => {
   console.log('[AddRateDialog] Received props:', { branchId, open, initialRate });
   const isEditing = Boolean(initialRate);
@@ -205,6 +207,44 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
     reset();
     onClose();
   };
+
+  if (variant === 'optionsOnly') {
+    const [selectedOption, setSelectedOption] = React.useState<string>('');
+
+    const handleOptionSelect = (option: string) => {
+      setSelectedOption(option);
+      // For now, just close the dialog when an option is selected
+      setTimeout(() => {
+        onClose();
+      }, 100);
+    };
+
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Add New Rate</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rate-option">Set a new rate:</Label>
+              <Select value={selectedOption} onValueChange={handleOptionSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="use-defined">Use a Defined Rate</SelectItem>
+                  <SelectItem value="create-new">Create a new rate</SelectItem>
+                  <SelectItem value="change-by-percent">Change by %</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>

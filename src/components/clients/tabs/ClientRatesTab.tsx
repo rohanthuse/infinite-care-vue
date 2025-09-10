@@ -236,6 +236,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
         onClose={() => setIsAddRateDialogOpen(false)}
         onAddRate={handleAddRate}
         branchId={branchId}
+        variant="optionsOnly"
       />
 
       <EditRateDialog
