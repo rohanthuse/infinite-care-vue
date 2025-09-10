@@ -33,6 +33,7 @@ import SystemTenants from "./pages/system/SystemTenants";
 import SystemUsers from "./pages/system/SystemUsers";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
+import Dashboard from "./pages/Dashboard";
 import TenantLogin from "./pages/TenantLogin";
 import TenantClientLogin from "./pages/TenantClientLogin";
 import TenantCarerLogin from "./pages/TenantCarerLogin";
@@ -163,6 +164,9 @@ const AppContent = () => {
                   <SystemAnalytics />
                 </SystemGuard>
               } />
+              
+              {/* Main Admin Dashboard Route for Super Admins */}
+              <Route path="/dashboard" element={<Dashboard />} />
               
               {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
               <Route path="/branch-dashboard/*" element={<BranchDashboardRedirect />} />
