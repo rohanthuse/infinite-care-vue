@@ -30,20 +30,14 @@ export const NavigationGuard = () => {
       setTimeout(() => {
         const role = userRoleData.role;
         
-        let targetPath = '/';
-        
-        // System admin gets system dashboard, super admin gets main dashboard
+        // Only handle system admin routing - let UnifiedLogin handle all other roles
         if (role === 'app_admin') {
-          targetPath = '/system-dashboard';
-        } else if (role === 'super_admin') {
-          targetPath = '/dashboard';
+          console.log('[NavigationGuard] Redirecting app_admin to system dashboard');
+          navigate('/system-dashboard', { replace: true });
         } else {
-          console.warn('[NavigationGuard] Non-system admin user - let UnifiedLogin handle tenant-aware routing');
-          return; // Let UnifiedLogin handle tenant-aware routing
+          console.log('[NavigationGuard] Non-system admin user - let UnifiedLogin handle tenant-aware routing');
+          return; // Let UnifiedLogin handle all tenant-aware routing including super_admin
         }
-        
-        console.log('[NavigationGuard] Redirecting to:', targetPath);
-        navigate(targetPath, { replace: true });
       }, 1000); // Longer delay to let UnifiedLogin handle navigation first
     }
   }, [user, session, userRoleData, isLoading, navigate]);
