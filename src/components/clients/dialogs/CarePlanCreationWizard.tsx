@@ -38,9 +38,6 @@ const carePlanSchema = z.object({
       })
     ).optional().default([]),
   }).optional(),
-  hobbies: z.object({
-    selected_hobbies: z.array(z.string()).optional().default([]),
-  }).optional(),
   medical_info: z.object({
     medication_manager: z.object({
       medications: z.array(z.object({
@@ -275,21 +272,20 @@ const wizardSteps = [
   { id: 2, name: "Personal Information", description: "Client personal details" },
   { id: 3, name: "About Me", description: "Client preferences and background" },
   { id: 4, name: "General", description: "General preferences and safety notes" },
-  { id: 5, name: "Hobbies", description: "Client hobbies and interests" },
-  { id: 6, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 7, name: "Medication", description: "Medication management and calendar" },
-  { id: 8, name: "Admin Medication", description: "Medication administration details" },
-  { id: 9, name: "Goals", description: "Care goals and objectives" },
-  { id: 10, name: "Activities", description: "Daily activities and routines" },
-  { id: 11, name: "Personal Care", description: "Personal care requirements" },
-  { id: 12, name: "Dietary", description: "Dietary needs and restrictions" },
-  { id: 13, name: "Risk Assessments", description: "Safety and risk evaluations" },
-  { id: 14, name: "Equipment", description: "Required equipment and aids" },
-  { id: 15, name: "Service Plans", description: "Service delivery plans" },
-  { id: 16, name: "Service Actions", description: "Specific service actions" },
-  { id: 17, name: "Documents", description: "Supporting documents" },
-  { id: 18, name: "Consent", description: "Consent and capacity assessment" },
-  { id: 19, name: "Review", description: "Review and finalize care plan" },
+  { id: 5, name: "Medical and Mental", description: "Health conditions and medications" },
+  { id: 6, name: "Medication", description: "Medication management and calendar" },
+  { id: 7, name: "Admin Medication", description: "Medication administration details" },
+  { id: 8, name: "Goals", description: "Care goals and objectives" },
+  { id: 9, name: "Activities", description: "Daily activities and routines" },
+  { id: 10, name: "Personal Care", description: "Personal care requirements" },
+  { id: 11, name: "Dietary", description: "Dietary needs and restrictions" },
+  { id: 12, name: "Risk Assessments", description: "Safety and risk evaluations" },
+  { id: 13, name: "Equipment", description: "Required equipment and aids" },
+  { id: 14, name: "Service Plans", description: "Service delivery plans" },
+  { id: 15, name: "Service Actions", description: "Specific service actions" },
+  { id: 16, name: "Documents", description: "Supporting documents" },
+  { id: 17, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 18, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
@@ -317,7 +313,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 19;
+  const totalSteps = 18;
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
@@ -332,7 +328,6 @@ export function CarePlanCreationWizard({
       personal_info: {},
       about_me: {},
       general: {},
-      hobbies: {},
       medical_info: {
         medication_manager: {
           medications: []
@@ -592,12 +587,6 @@ export function CarePlanCreationWizard({
     return medicalFields.some(field => isNonEmptyString(medicalInfo[field]));
   };
 
-  const hasHobbiesInfo = (hobbies: any): boolean => {
-    if (!hobbies || typeof hobbies !== 'object') return false;
-    
-    // Check for selected hobbies
-    return Array.isArray(hobbies.selected_hobbies) && hobbies.selected_hobbies.length > 0;
-  };
 
   const hasConsentInfo = (consent: any): boolean => {
     if (!consent || typeof consent !== 'object') return false;
@@ -660,19 +649,18 @@ export function CarePlanCreationWizard({
       if (hasPersonalInfo(formData.personal_info)) completedSteps.push(2);
       if (hasAnyValue(formData.about_me)) completedSteps.push(3);
       if (hasAnyValue(formData.general)) completedSteps.push(4);
-      if (hasHobbiesInfo(formData.hobbies)) completedSteps.push(5);
-      if (hasMedicalInfo(formData.medical_info)) completedSteps.push(6);
-      // Step 7 is now Medication (standard medication management)
-      if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && formData.medical_info.medication_manager.medications.length > 0) completedSteps.push(7);
-      // Step 8 is now Admin Medication - check if there are any medication administration details
+      if (hasMedicalInfo(formData.medical_info)) completedSteps.push(5);
+      // Step 6 is now Medication (standard medication management)
+      if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && formData.medical_info.medication_manager.medications.length > 0) completedSteps.push(6);
+      // Step 7 is now Admin Medication - check if there are any medication administration details
       if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && 
           formData.medical_info.medication_manager.medications.some(med => 
             isNonEmptyString(med?.who_administers) || isNonEmptyString(med?.level) || isNonEmptyString(med?.instruction)
-          )) completedSteps.push(8);
-      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(9);
-      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(10);
-      if (hasAnyValue(formData.personal_care)) completedSteps.push(11);
-      if (hasAnyValue(formData.dietary)) completedSteps.push(12);
+           )) completedSteps.push(7);
+      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(8);
+      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(9);
+      if (hasAnyValue(formData.personal_care)) completedSteps.push(10);
+      if (hasAnyValue(formData.dietary)) completedSteps.push(11);
       if (hasRiskAssessments(formData)) completedSteps.push(13);
       if (formData.equipment && typeof formData.equipment === 'object' && (
         (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
