@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ServiceRate, useServiceRates } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
@@ -216,11 +217,25 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
   if (variant === 'optionsOnly') {
     const [selectedOption, setSelectedOption] = React.useState<string>('');
     const [showDefinedRateForm, setShowDefinedRateForm] = React.useState(false);
+    const [showCreateNewForm, setShowCreateNewForm] = React.useState(false);
     const [selectedAuthority, setSelectedAuthority] = React.useState<string>('');
     const [selectedRate, setSelectedRate] = React.useState<string>('');
     const [startDate, setStartDate] = React.useState<Date>();
     const [endDate, setEndDate] = React.useState<Date>();
     const [errors, setErrors] = React.useState<{[key: string]: string}>({});
+
+    // Create new rate form state
+    const [createFormData, setCreateFormData] = React.useState({
+      authority: '',
+      payBasedOn: '',
+      startDate: undefined as Date | undefined,
+      endDate: undefined as Date | undefined,
+      selectedDays: [] as string[],
+      effectiveFrom: '',
+      effectiveUntil: '',
+      rateAmount: '',
+      isVatable: ''
+    });
 
     // Get available rates for the dropdowns
     const { data: availableRates = [] } = useServiceRates(branchId);
@@ -241,6 +256,8 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       setSelectedOption(option);
       if (option === 'use-defined') {
         setShowDefinedRateForm(true);
+      } else if (option === 'create-new') {
+        setShowCreateNewForm(true);
       } else {
         // For now, just close the dialog for other options
         setTimeout(() => {
@@ -288,13 +305,359 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
 
     const handleBack = () => {
       setShowDefinedRateForm(false);
+      setShowCreateNewForm(false);
       setSelectedOption('');
       setSelectedAuthority('');
       setSelectedRate('');
       setStartDate(undefined);
       setEndDate(undefined);
       setErrors({});
+      setCreateFormData({
+        authority: '',
+        payBasedOn: '',
+        startDate: undefined,
+        endDate: undefined,
+        selectedDays: [],
+        effectiveFrom: '',
+        effectiveUntil: '',
+        rateAmount: '',
+        isVatable: ''
+      });
     };
+
+    const validateCreateForm = () => {
+      const newErrors: {[key: string]: string} = {};
+      
+      if (!createFormData.authority) newErrors.authority = 'This field is required';
+      if (!createFormData.payBasedOn) newErrors.payBasedOn = 'This field is required';
+      if (!createFormData.startDate) newErrors.startDate = 'This field is required';
+      if (!createFormData.rateAmount || parseFloat(createFormData.rateAmount) <= 0) {
+        newErrors.rateAmount = 'Rate amount is required and must be greater than 0';
+      }
+      if (!createFormData.effectiveFrom) newErrors.effectiveFrom = 'This field is required';
+      if (!createFormData.effectiveUntil) newErrors.effectiveUntil = 'This field is required';
+      if (createFormData.selectedDays.length === 0) newErrors.selectedDays = 'At least one day must be selected';
+      if (!createFormData.isVatable) newErrors.isVatable = 'This field is required';
+      
+      // Validate time range
+      if (createFormData.effectiveFrom && createFormData.effectiveUntil) {
+        const fromTime = new Date(`2000-01-01T${createFormData.effectiveFrom}`);
+        const untilTime = new Date(`2000-01-01T${createFormData.effectiveUntil}`);
+        if (fromTime >= untilTime) {
+          newErrors.effectiveUntil = 'Effective until must be after effective from';
+        }
+      }
+      
+      // Validate date range
+      if (createFormData.startDate && createFormData.endDate) {
+        if (createFormData.startDate > createFormData.endDate) {
+          newErrors.endDate = 'End date must be on or after start date';
+        }
+      }
+      
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+
+    const handleCreateNewRate = () => {
+      if (!validateCreateForm()) return;
+
+      const authorityLabels = {
+        'private': 'Private',
+        'local_authority': 'Local Authority', 
+        'nhs': 'NHS',
+        'insurance': 'Insurance',
+        'other': 'Other'
+      };
+
+      const payBasedOnLabels = {
+        'hourly': 'Hourly',
+        'daily': 'Daily',
+        'weekly': 'Weekly',
+        'per_visit': 'Per Visit',
+        'fixed': 'Fixed Rate'
+      };
+
+      // Create service rate payload
+      const timestamp = Date.now();
+      const newRate: Partial<ServiceRate> = {
+        service_name: `Client Rate - ${authorityLabels[createFormData.authority as keyof typeof authorityLabels]} (${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]})`,
+        service_code: `CR-${timestamp}`,
+        rate_type: createFormData.payBasedOn as any,
+        amount: parseFloat(createFormData.rateAmount),
+        currency: "GBP",
+        effective_from: createFormData.startDate!.toISOString().split('T')[0],
+        effective_to: createFormData.endDate?.toISOString().split('T')[0],
+        client_type: createFormData.authority as any,
+        funding_source: createFormData.authority === 'private' ? 'self_funded' : createFormData.authority as any,
+        applicable_days: createFormData.selectedDays,
+        is_default: false,
+        status: 'active' as any,
+        description: `VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
+      };
+
+      onAddRate(newRate);
+      onClose();
+    };
+
+    const dayOptions = [
+      { id: "monday", label: "Mon" },
+      { id: "tuesday", label: "Tue" },
+      { id: "wednesday", label: "Wed" },
+      { id: "thursday", label: "Thu" },
+      { id: "friday", label: "Fri" },
+      { id: "saturday", label: "Sat" },
+      { id: "sunday", label: "Sun" },
+    ];
+
+    const handleDayToggle = (dayId: string) => {
+      const newDays = createFormData.selectedDays.includes(dayId)
+        ? createFormData.selectedDays.filter(d => d !== dayId)
+        : [...createFormData.selectedDays, dayId];
+      
+      setCreateFormData(prev => ({ ...prev, selectedDays: newDays }));
+      if (errors.selectedDays) {
+        setErrors(prev => ({ ...prev, selectedDays: '' }));
+      }
+    };
+
+    if (showCreateNewForm) {
+      return (
+        <Dialog open={open} onOpenChange={onClose}>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create a New Rate</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Authority & Pay Based On */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="authority">Authorities *</Label>
+                  <Select value={createFormData.authority} onValueChange={(value) => {
+                    setCreateFormData(prev => ({ ...prev, authority: value }));
+                    if (errors.authority) setErrors(prev => ({ ...prev, authority: '' }));
+                  }}>
+                    <SelectTrigger className={errors.authority ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select authority" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                      <SelectItem value="private">Private</SelectItem>
+                      <SelectItem value="local_authority">Local Authority</SelectItem>
+                      <SelectItem value="nhs">NHS</SelectItem>
+                      <SelectItem value="insurance">Insurance</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.authority && <p className="text-sm text-red-600">{errors.authority}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="payBasedOn">Pay Based On *</Label>
+                  <Select value={createFormData.payBasedOn} onValueChange={(value) => {
+                    setCreateFormData(prev => ({ ...prev, payBasedOn: value }));
+                    if (errors.payBasedOn) setErrors(prev => ({ ...prev, payBasedOn: '' }));
+                  }}>
+                    <SelectTrigger className={errors.payBasedOn ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select pay type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="per_visit">Per Visit</SelectItem>
+                      <SelectItem value="fixed">Fixed Rate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.payBasedOn && <p className="text-sm text-red-600">{errors.payBasedOn}</p>}
+                </div>
+              </div>
+
+              {/* Start & End Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !createFormData.startDate && "text-muted-foreground",
+                          errors.startDate && "border-red-500"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {createFormData.startDate ? format(createFormData.startDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-background" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={createFormData.startDate}
+                        onSelect={(date) => {
+                          setCreateFormData(prev => ({ ...prev, startDate: date }));
+                          if (errors.startDate) setErrors(prev => ({ ...prev, startDate: '' }));
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.startDate && <p className="text-sm text-red-600">{errors.startDate}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !createFormData.endDate && "text-muted-foreground",
+                          errors.endDate && "border-red-500"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {createFormData.endDate ? format(createFormData.endDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-background" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={createFormData.endDate}
+                        onSelect={(date) => {
+                          setCreateFormData(prev => ({ ...prev, endDate: date }));
+                          if (errors.endDate) setErrors(prev => ({ ...prev, endDate: '' }));
+                        }}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.endDate && <p className="text-sm text-red-600">{errors.endDate}</p>}
+                </div>
+              </div>
+
+              {/* Rates Section */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Rates</Label>
+                
+                {/* Days Selection */}
+                <div className="space-y-2">
+                  <Label>Days *</Label>
+                  <div className="flex gap-2 flex-wrap">
+                    {dayOptions.map((day) => (
+                      <div key={day.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`day-${day.id}`}
+                          checked={createFormData.selectedDays.includes(day.id)}
+                          onCheckedChange={() => handleDayToggle(day.id)}
+                        />
+                        <Label htmlFor={`day-${day.id}`} className="cursor-pointer text-sm">
+                          {day.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.selectedDays && <p className="text-sm text-red-600">{errors.selectedDays}</p>}
+                </div>
+
+                {/* Time Range */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="effectiveFrom">Effective From *</Label>
+                    <Input
+                      id="effectiveFrom"
+                      type="time"
+                      value={createFormData.effectiveFrom}
+                      onChange={(e) => {
+                        setCreateFormData(prev => ({ ...prev, effectiveFrom: e.target.value }));
+                        if (errors.effectiveFrom) setErrors(prev => ({ ...prev, effectiveFrom: '' }));
+                      }}
+                      className={errors.effectiveFrom ? "border-red-500" : ""}
+                    />
+                    {errors.effectiveFrom && <p className="text-sm text-red-600">{errors.effectiveFrom}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="effectiveUntil">Effective Until *</Label>
+                    <Input
+                      id="effectiveUntil"
+                      type="time"
+                      value={createFormData.effectiveUntil}
+                      onChange={(e) => {
+                        setCreateFormData(prev => ({ ...prev, effectiveUntil: e.target.value }));
+                        if (errors.effectiveUntil) setErrors(prev => ({ ...prev, effectiveUntil: '' }));
+                      }}
+                      className={errors.effectiveUntil ? "border-red-500" : ""}
+                    />
+                    {errors.effectiveUntil && <p className="text-sm text-red-600">{errors.effectiveUntil}</p>}
+                  </div>
+                </div>
+
+                {/* Rate Amount */}
+                <div className="space-y-2">
+                  <Label htmlFor="rateAmount">Rate Amount (£) *</Label>
+                  <Input
+                    id="rateAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    value={createFormData.rateAmount}
+                    onChange={(e) => {
+                      setCreateFormData(prev => ({ ...prev, rateAmount: e.target.value }));
+                      if (errors.rateAmount) setErrors(prev => ({ ...prev, rateAmount: '' }));
+                    }}
+                    className={errors.rateAmount ? "border-red-500" : ""}
+                  />
+                  {errors.rateAmount && <p className="text-sm text-red-600">{errors.rateAmount}</p>}
+                </div>
+
+                {/* VAT Question */}
+                <div className="space-y-3">
+                  <Label>Is this rate VATable? *</Label>
+                  <RadioGroup
+                    value={createFormData.isVatable}
+                    onValueChange={(value) => {
+                      setCreateFormData(prev => ({ ...prev, isVatable: value }));
+                      if (errors.isVatable) setErrors(prev => ({ ...prev, isVatable: '' }));
+                    }}
+                    className="flex gap-6"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Yes" id="vat-yes" />
+                      <Label htmlFor="vat-yes" className="cursor-pointer">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="No" id="vat-no" />
+                      <Label htmlFor="vat-no" className="cursor-pointer">No</Label>
+                    </div>
+                  </RadioGroup>
+                  {errors.isVatable && <p className="text-sm text-red-600">{errors.isVatable}</p>}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <div className="space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleCreateNewRate}>
+                  + Add
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
 
     if (showDefinedRateForm) {
       return (
