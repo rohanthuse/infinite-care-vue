@@ -328,8 +328,7 @@ const UnifiedLogin = () => {
         const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
         if (redeemResult) {
           toast.success("Third-party access activated successfully!");
-          // Force page refresh for third-party navigation
-          window.location.replace('/third-party/workspace');
+          setTimeout(() => navigate('/third-party/workspace', { replace: true }), 500);
           return;
         } else {
           // If redemption failed, continue with normal login flow
@@ -360,8 +359,7 @@ const UnifiedLogin = () => {
         if (orgSlug) {
           console.log('[LOGIN DEBUG] Super admin with organization, redirecting to:', `/${orgSlug}/dashboard`);
           toast.success("Welcome back, Super Administrator!");
-          // Force page refresh for reliable navigation
-          window.location.replace(`/${orgSlug}/dashboard`);
+          setTimeout(() => navigate(`/${orgSlug}/dashboard`, { replace: true }), 500);
           return;
         } else {
           console.error('[LOGIN DEBUG] Super admin without organization');
@@ -375,8 +373,7 @@ const UnifiedLogin = () => {
       if (userRole === 'app_admin') {
         console.log('[LOGIN DEBUG] App admin detected, redirecting to system dashboard');
         toast.success("Welcome back, System Administrator!");
-        // Force page refresh for reliable navigation
-        window.location.replace('/system-dashboard');
+        setTimeout(() => navigate('/system-dashboard', { replace: true }), 500);
         return;
       }
 
@@ -415,8 +412,11 @@ const UnifiedLogin = () => {
 
       console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
       
-      // Force page refresh for reliable navigation to fix the stuck login page issue
-      window.location.replace(dashboardPath);
+      // Use proper React Router navigation with longer delay to ensure auth state is settled
+      setTimeout(() => {
+        console.log('[LOGIN DEBUG] Executing navigation to:', dashboardPath);
+        navigate(dashboardPath, { replace: true });
+      }, 500);
 
     } catch (error: any) {
       console.error('[LOGIN DEBUG] Login error occurred:', error);

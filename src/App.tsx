@@ -89,23 +89,6 @@ const AppContent = () => {
 
   console.log('[App] Route check:', { isPublicRoute, shouldShowLoading: loading && !isPublicRoute });
 
-  // Force refresh if user is authenticated but still on login page (stuck navigation fix)
-  React.useEffect(() => {
-    if (user && (window.location.pathname === '/login' || window.location.pathname.includes('/login'))) {
-      console.warn('[App] User authenticated but on login page, forcing navigation check');
-      // Small delay to allow auth state to fully settle
-      const timeoutId = setTimeout(() => {
-        const currentPath = window.location.pathname;
-        if (user && (currentPath === '/login' || currentPath.includes('/login'))) {
-          console.warn('[App] Still stuck on login page after auth, clearing navigation state');
-          // Force a page refresh as last resort
-          window.location.reload();
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [user]);
 
   if (loading && !isPublicRoute) {
     console.log('[App] Showing loading screen for protected route');
