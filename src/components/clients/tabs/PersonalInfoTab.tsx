@@ -10,7 +10,9 @@ import { Save } from "lucide-react";
 import { format } from "date-fns";
 import { useClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientServiceActions } from "@/hooks/useClientServiceActions";
+import { useClientVaccinations } from "@/hooks/useClientVaccinations";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
+import { VaccinationDialog } from "@/components/care/dialogs/VaccinationDialog";
 interface PersonalInfoTabProps {
   client: any;
   isEditing?: boolean;
@@ -255,6 +257,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   }
   const { data: personalInfo, isLoading: isPersonalInfoLoading } = useClientPersonalInfo(client?.id);
   const { data: serviceActions, isLoading: isServiceActionsLoading } = useClientServiceActions(client?.id);
+  const { data: vaccinations, isLoading: isVaccinationsLoading } = useClientVaccinations(client?.id);
 
   return <div className="space-y-6">
       <Tabs defaultValue="personal-details" className="w-full">
@@ -410,84 +413,118 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             </Card>
           ) : (
             <div className="space-y-4">
+              {/* Background & Identity Section */}
               <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Emergency Contact</h3>
+                <h3 className="text-lg font-medium mb-4">Background & Identity</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Name</h4>
-                    <p className="mt-1">{personalInfo?.emergency_contact_name || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Ethnicity</h4>
+                    <p className="mt-1">{personalInfo?.ethnicity || 'Not provided'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
-                    <p className="mt-1">{personalInfo?.emergency_contact_phone || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Sexual Orientation</h4>
+                    <p className="mt-1">{personalInfo?.sexual_orientation || 'Not provided'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Relationship</h4>
-                    <p className="mt-1">{personalInfo?.emergency_contact_relationship || 'Not provided'}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Next of Kin</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Name</h4>
-                    <p className="mt-1">{personalInfo?.next_of_kin_name || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Gender Identity</h4>
+                    <p className="mt-1">{personalInfo?.gender_identity || 'Not provided'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
-                    <p className="mt-1">{personalInfo?.next_of_kin_phone || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Nationality</h4>
+                    <p className="mt-1">{personalInfo?.nationality || 'Not provided'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Relationship</h4>
-                    <p className="mt-1">{personalInfo?.next_of_kin_relationship || 'Not provided'}</p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Preferences</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication</h4>
-                    <p className="mt-1">{personalInfo?.preferred_communication || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Primary Language</h4>
+                    <p className="mt-1">{personalInfo?.primary_language || 'Not provided'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Language Preferences</h4>
-                    <p className="mt-1">{personalInfo?.language_preferences || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Interpreter Required</h4>
+                    <p className="mt-1">{personalInfo?.interpreter_required ? 'Yes' : 'No'}</p>
                   </div>
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Cultural Preferences</h4>
-                    <p className="mt-1">{personalInfo?.cultural_preferences || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Interpreter Language</h4>
+                    <p className="mt-1">{personalInfo?.preferred_interpreter_language || 'Not provided'}</p>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
                     <p className="mt-1">{personalInfo?.religion || 'Not provided'}</p>
                   </div>
+                </div>
+              </Card>
+
+              {/* My Home Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">My Home</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Marital Status</h4>
-                    <p className="mt-1">{personalInfo?.marital_status || 'Not provided'}</p>
+                    <h4 className="text-sm font-medium text-muted-foreground">Property Type</h4>
+                    <p className="mt-1">{personalInfo?.property_type || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Living Arrangement</h4>
+                    <p className="mt-1">{personalInfo?.living_arrangement || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Home Accessibility</h4>
+                    <p className="mt-1">{personalInfo?.home_accessibility || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Pets</h4>
+                    <p className="mt-1">{personalInfo?.pets || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Key Safe Location</h4>
+                    <p className="mt-1">{personalInfo?.key_safe_location || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Parking Availability</h4>
+                    <p className="mt-1">{personalInfo?.parking_availability || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Emergency Access</h4>
+                    <p className="mt-1">{personalInfo?.emergency_access || 'Not provided'}</p>
                   </div>
                 </div>
               </Card>
 
+              {/* Vaccination Section */}
               <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">GP Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
-                    <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">GP Practice</h4>
-                    <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">GP Phone</h4>
-                    <p className="mt-1">{personalInfo?.gp_phone || 'Not provided'}</p>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium">Vaccination</h3>
+                  <VaccinationDialog clientId={client?.id} />
                 </div>
+                {isVaccinationsLoading ? (
+                  <p>Loading vaccinations...</p>
+                ) : vaccinations && vaccinations.length > 0 ? (
+                  <div className="space-y-3">
+                    {vaccinations.map((vaccination) => (
+                      <div key={vaccination.id} className="border rounded-lg p-3">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          <div>
+                            <h4 className="text-sm font-medium text-muted-foreground">Vaccination</h4>
+                            <p className="mt-1 font-medium">{vaccination.vaccination_name}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
+                            <p className="mt-1">{formatDate(vaccination.vaccination_date)}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-muted-foreground">Next Due</h4>
+                            <p className="mt-1">{vaccination.next_due_date ? formatDate(vaccination.next_due_date) : 'N/A'}</p>
+                          </div>
+                        </div>
+                        {vaccination.notes && (
+                          <div className="mt-2">
+                            <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
+                            <p className="mt-1 text-sm">{vaccination.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No vaccination records found.</p>
+                )}
               </Card>
             </div>
           )}

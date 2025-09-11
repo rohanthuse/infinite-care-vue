@@ -19,6 +19,22 @@ export interface ClientPersonalInfo {
   gp_name?: string;
   gp_practice?: string;
   gp_phone?: string;
+  // Background & Identity fields
+  ethnicity?: string;
+  sexual_orientation?: string;
+  gender_identity?: string;
+  nationality?: string;
+  primary_language?: string;
+  interpreter_required?: boolean;
+  preferred_interpreter_language?: string;
+  // My Home fields
+  property_type?: string;
+  living_arrangement?: string;
+  home_accessibility?: string;
+  pets?: string;
+  key_safe_location?: string;
+  parking_availability?: string;
+  emergency_access?: string;
   created_at: string;
   updated_at: string;
 }
