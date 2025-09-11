@@ -5,8 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save } from "lucide-react";
 import { format } from "date-fns";
+import { useClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
+import { useClientServiceActions } from "@/hooks/useClientServiceActions";
+import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 interface PersonalInfoTabProps {
   client: any;
   isEditing?: boolean;
@@ -232,116 +236,231 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </Card>
       </div>;
   }
+  const { data: personalInfo, isLoading: isPersonalInfoLoading } = useClientPersonalInfo(client?.id);
+  const { data: serviceActions, isLoading: isServiceActionsLoading } = useClientServiceActions(client?.id);
+
   return <div className="space-y-6">
-      <Card className="p-4 border border-border shadow-sm">
-        <h3 className="text-lg font-medium mb-4">Personal Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Title</h4>
-            <p className="mt-1">{client.title || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">First Name</h4>
-            <p className="mt-1">{client.first_name || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Middle Name</h4>
-            <p className="mt-1">{client.middle_name || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Last Name</h4>
-            <p className="mt-1">{client.last_name || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Preferred Name</h4>
-            <p className="mt-1">{client.preferred_name || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Pronouns</h4>
-            <p className="mt-1">{client.pronouns || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Date of Birth</h4>
-            <p className="mt-1">{formatDate(client.date_of_birth)}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Gender</h4>
-            <p className="mt-1">{client.gender || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Client ID</h4>
-            <p className="mt-1">{client.id}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Other Identifier</h4>
-            <p className="mt-1">{client.other_identifier || 'Not provided'}</p>
-          </div>
-        </div>
-      </Card>
+      <Tabs defaultValue="personal-details" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="personal-details">Personal Details</TabsTrigger>
+          <TabsTrigger value="address">Address</TabsTrigger>
+          <TabsTrigger value="related-info">Related Info</TabsTrigger>
+          <TabsTrigger value="service-actions">Service Actions</TabsTrigger>
+        </TabsList>
 
-      <Card className="p-4 border border-border shadow-sm">
-        <h3 className="text-lg font-medium mb-4">Contact Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
-            <p className="mt-1">{client.email || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
-            <p className="mt-1">{client.phone || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Mobile Number</h4>
-            <p className="mt-1">{client.mobile_number || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>
-            <p className="mt-1">{client.telephone_number || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Country Code</h4>
-            <p className="mt-1">{client.country_code || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
-            <p className="mt-1">{client.address || client.location || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Pin Code</h4>
-            <p className="mt-1">{client.pin_code || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Region</h4>
-            <p className="mt-1">{client.region || 'Not provided'}</p>
-          </div>
-        </div>
-      </Card>
+        <TabsContent value="personal-details" className="mt-6">
+          <Card className="p-4 border border-border shadow-sm">
+            <h3 className="text-lg font-medium mb-4">Personal Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Title</h4>
+                <p className="mt-1">{client.title || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">First Name</h4>
+                <p className="mt-1">{client.first_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Middle Name</h4>
+                <p className="mt-1">{client.middle_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Last Name</h4>
+                <p className="mt-1">{client.last_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Preferred Name</h4>
+                <p className="mt-1">{client.preferred_name || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Pronouns</h4>
+                <p className="mt-1">{client.pronouns || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Date of Birth</h4>
+                <p className="mt-1">{formatDate(client.date_of_birth)}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Gender</h4>
+                <p className="mt-1">{client.gender || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Client ID</h4>
+                <p className="mt-1">{client.id}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Other Identifier</h4>
+                <p className="mt-1">{client.other_identifier || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
+                <p className="mt-1">{client.status || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Registered On</h4>
+                <p className="mt-1">{formatDate(client.registered_on || client.registeredOn)}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Referral Route</h4>
+                <p className="mt-1">{client.referral_route || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Avatar Initials</h4>
+                <p className="mt-1">{client.avatar_initials || client.avatar || 'Not provided'}</p>
+              </div>
+            </div>
+            
+            {client.additional_information && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-muted-foreground">Additional Information</h4>
+                <p className="mt-1 whitespace-pre-wrap">{client.additional_information}</p>
+              </div>
+            )}
+          </Card>
+        </TabsContent>
 
-      <Card className="p-4 border border-border shadow-sm">
-        <h3 className="text-lg font-medium mb-4">Additional Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
-            <p className="mt-1">{client.status || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Registered On</h4>
-            <p className="mt-1">{formatDate(client.registered_on || client.registeredOn)}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Referral Route</h4>
-            <p className="mt-1">{client.referral_route || 'Not provided'}</p>
-          </div>
-          <div>
-            <h4 className="text-sm font-medium text-muted-foreground">Avatar Initials</h4>
-            <p className="mt-1">{client.avatar_initials || client.avatar || 'Not provided'}</p>
-          </div>
-        </div>
-        
-        {client.additional_information && <div className="mt-4">
-            <h4 className="text-sm font-medium text-muted-foreground">Additional Information</h4>
-            <p className="mt-1 whitespace-pre-wrap">{client.additional_information}</p>
-          </div>}
-      </Card>
+        <TabsContent value="address" className="mt-6">
+          <Card className="p-4 border border-border shadow-sm">
+            <h3 className="text-lg font-medium mb-4">Contact & Address Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
+                <p className="mt-1">{client.email || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
+                <p className="mt-1">{client.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Mobile Number</h4>
+                <p className="mt-1">{client.mobile_number || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>
+                <p className="mt-1">{client.telephone_number || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Country Code</h4>
+                <p className="mt-1">{client.country_code || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
+                <p className="mt-1">{client.address || client.location || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Pin Code</h4>
+                <p className="mt-1">{client.pin_code || 'Not provided'}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Region</h4>
+                <p className="mt-1">{client.region || 'Not provided'}</p>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="related-info" className="mt-6">
+          {isPersonalInfoLoading ? (
+            <Card className="p-4 border border-border shadow-sm">
+              <p>Loading related information...</p>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Emergency Contact</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Name</h4>
+                    <p className="mt-1">{personalInfo?.emergency_contact_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
+                    <p className="mt-1">{personalInfo?.emergency_contact_phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Relationship</h4>
+                    <p className="mt-1">{personalInfo?.emergency_contact_relationship || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Next of Kin</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Name</h4>
+                    <p className="mt-1">{personalInfo?.next_of_kin_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
+                    <p className="mt-1">{personalInfo?.next_of_kin_phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Relationship</h4>
+                    <p className="mt-1">{personalInfo?.next_of_kin_relationship || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Preferences</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication</h4>
+                    <p className="mt-1">{personalInfo?.preferred_communication || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Language Preferences</h4>
+                    <p className="mt-1">{personalInfo?.language_preferences || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Cultural Preferences</h4>
+                    <p className="mt-1">{personalInfo?.cultural_preferences || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
+                    <p className="mt-1">{personalInfo?.religion || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Marital Status</h4>
+                    <p className="mt-1">{personalInfo?.marital_status || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">GP Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
+                    <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">GP Practice</h4>
+                    <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">GP Phone</h4>
+                    <p className="mt-1">{personalInfo?.gp_phone || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="service-actions" className="mt-6">
+          {isServiceActionsLoading ? (
+            <Card className="p-4 border border-border shadow-sm">
+              <p>Loading service actions...</p>
+            </Card>
+          ) : (
+            <ServiceActionsTab 
+              serviceActions={serviceActions || []} 
+              onAddServiceAction={() => {}} 
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </div>;
 };
