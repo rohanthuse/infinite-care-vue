@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save } from "lucide-react";
 import { format } from "date-fns";
 import { useClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
-import { useClientServiceActions } from "@/hooks/useClientServiceActions";
+import { useClientServiceActions, useCreateClientServiceAction } from "@/hooks/useClientServiceActions";
 import { useClientVaccinations } from "@/hooks/useClientVaccinations";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { VaccinationDialog } from "@/components/care/dialogs/VaccinationDialog";
+import { AddServiceActionV2Dialog } from "@/components/care/dialogs/AddServiceActionV2Dialog";
 interface PersonalInfoTabProps {
   client: any;
   isEditing?: boolean;
@@ -255,9 +256,22 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </Card>
       </div>;
   }
+  const [isAddServiceActionOpen, setIsAddServiceActionOpen] = useState(false);
+  
   const { data: personalInfo, isLoading: isPersonalInfoLoading } = useClientPersonalInfo(client?.id);
   const { data: serviceActions, isLoading: isServiceActionsLoading } = useClientServiceActions(client?.id);
   const { data: vaccinations, isLoading: isVaccinationsLoading } = useClientVaccinations(client?.id);
+  const createServiceActionMutation = useCreateClientServiceAction();
+  const handleSaveServiceAction = (data: any) => {
+    createServiceActionMutation.mutate(data, {
+      onSuccess: () => {
+        setIsAddServiceActionOpen(false);
+      },
+      onError: (error) => {
+        console.error('Error creating service action:', error);
+      }
+    });
+  };
 
   return <div className="space-y-6">
       <Tabs defaultValue="personal-details" className="w-full">
@@ -701,9 +715,18 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           ) : (
             <ServiceActionsTab 
               serviceActions={serviceActions || []} 
-              onAddServiceAction={() => {}} 
+              onAddServiceAction={() => setIsAddServiceActionOpen(true)} 
             />
           )}
+          
+          <AddServiceActionV2Dialog
+            open={isAddServiceActionOpen}
+            onOpenChange={setIsAddServiceActionOpen}
+            onSave={handleSaveServiceAction}
+            clientId={client?.id}
+            branchId={client?.branch_id}
+            isLoading={createServiceActionMutation.isPending}
+          />
         </TabsContent>
       </Tabs>
     </div>;
