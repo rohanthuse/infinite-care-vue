@@ -232,6 +232,13 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       serviceRateMode: '', // For Flat Rate, Pro Rata, Hourly Rate
       serviceId: '', // Selected service
       rateAmount: '', // Rate amount when Service is selected
+      hoursMinutesMode: '', // For Rate per Hour, Rate per Minutes (Pro Rata), Rate per Minutes (Flat Rate)
+      hourlyRate: '', // Rate when Rate per Hour is selected
+      consecutiveHours: '', // Consecutive Hours field
+      rate15Minutes: '', // Rate at 15 Minutes
+      rate30Minutes: '', // Rate at 30 Minutes
+      rate45Minutes: '', // Rate at 45 Minutes
+      rate60Minutes: '', // Rate at 60 Minutes
       startDate: undefined as Date | undefined,
       endDate: undefined as Date | undefined,
       selectedDays: [] as string[],
@@ -324,6 +331,13 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         serviceRateMode: '',
         serviceId: '',
         rateAmount: '',
+        hoursMinutesMode: '',
+        hourlyRate: '',
+        consecutiveHours: '',
+        rate15Minutes: '',
+        rate30Minutes: '',
+        rate45Minutes: '',
+        rate60Minutes: '',
         startDate: undefined,
         endDate: undefined,
         selectedDays: [],
@@ -350,6 +364,35 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         if (!createFormData.serviceId) newErrors.serviceId = 'This field is required';
         if (!createFormData.rateAmount || parseFloat(createFormData.rateAmount) <= 0) {
           newErrors.rateAmount = 'Rate amount is required and must be greater than 0';
+        }
+      }
+      
+      // Additional validation when Hours/Minutes is selected
+      if (createFormData.payBasedOn === 'hours_minutes') {
+        if (!createFormData.hoursMinutesMode) newErrors.hoursMinutesMode = 'This field is required';
+        
+        if (createFormData.hoursMinutesMode === 'rate_per_hour') {
+          if (!createFormData.hourlyRate || parseFloat(createFormData.hourlyRate) <= 0) {
+            newErrors.hourlyRate = 'Hourly rate is required and must be greater than 0';
+          }
+          if (!createFormData.consecutiveHours || parseFloat(createFormData.consecutiveHours) <= 0) {
+            newErrors.consecutiveHours = 'Consecutive hours is required and must be greater than 0';
+          }
+        }
+        
+        if (createFormData.hoursMinutesMode === 'rate_per_minutes_pro_rata' || createFormData.hoursMinutesMode === 'rate_per_minutes_flat_rate') {
+          if (!createFormData.rate30Minutes || parseFloat(createFormData.rate30Minutes) <= 0) {
+            newErrors.rate30Minutes = '30 minutes rate is required and must be greater than 0';
+          }
+          if (!createFormData.rate45Minutes || parseFloat(createFormData.rate45Minutes) <= 0) {
+            newErrors.rate45Minutes = '45 minutes rate is required and must be greater than 0';
+          }
+          if (!createFormData.rate60Minutes || parseFloat(createFormData.rate60Minutes) <= 0) {
+            newErrors.rate60Minutes = '60 minutes rate is required and must be greater than 0';
+          }
+          if (!createFormData.consecutiveHours || parseFloat(createFormData.consecutiveHours) <= 0) {
+            newErrors.consecutiveHours = 'Consecutive hours is required and must be greater than 0';
+          }
         }
       }
       
@@ -392,6 +435,8 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
 
       // Map Pay Based On to rate_type
       let mappedRateType = '';
+      let rateAmount = 0;
+      
       if (createFormData.payBasedOn === 'service') {
         // Map service rate modes to rate types
         const serviceRateModeMap = {
@@ -400,9 +445,17 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
           'hourly_rate': 'hourly'
         };
         mappedRateType = serviceRateModeMap[createFormData.serviceRateMode as keyof typeof serviceRateModeMap] || 'per_visit';
+        rateAmount = parseFloat(createFormData.rateAmount) || 0;
+      } else if (createFormData.payBasedOn === 'hours_minutes') {
+        mappedRateType = 'hourly';
+        if (createFormData.hoursMinutesMode === 'rate_per_hour') {
+          rateAmount = parseFloat(createFormData.hourlyRate) || 0;
+        } else {
+          // For per minutes options, we'll use the 60-minute rate as the primary amount
+          rateAmount = parseFloat(createFormData.rate60Minutes) || 0;
+        }
       } else {
         const rateTypeMap = {
-          'hours_minutes': 'hourly',
           'daily_flat_rate': 'daily'
         };
         mappedRateType = rateTypeMap[createFormData.payBasedOn as keyof typeof rateTypeMap] || 'hourly';
@@ -420,9 +473,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
           : `Client Rate - ${authorityLabels[createFormData.authority as keyof typeof authorityLabels]} (${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]})`,
         service_code: `CR-${timestamp}`,
         rate_type: mappedRateType as any,
-        amount: createFormData.payBasedOn === 'service' 
-          ? parseFloat(createFormData.rateAmount) || 0
-          : 0, // Amount TBD for non-service options
+        amount: rateAmount,
         currency: "GBP",
         effective_from: createFormData.startDate!.toISOString().split('T')[0],
         effective_to: createFormData.endDate?.toISOString().split('T')[0],
@@ -431,9 +482,23 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         applicable_days: createFormData.selectedDays,
         is_default: false,
         status: 'active' as any,
-        description: createFormData.payBasedOn === 'service'
-          ? `Service: ${serviceName}; Rate Mode: ${createFormData.serviceRateMode}; VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
-          : `Amount TBD - pricing based on ${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]} selection; VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
+        description: (() => {
+          const baseInfo = `VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`;
+          
+          if (createFormData.payBasedOn === 'service') {
+            return `Service: ${serviceName}; Rate Mode: ${createFormData.serviceRateMode}; ${baseInfo}`;
+          } else if (createFormData.payBasedOn === 'hours_minutes') {
+            if (createFormData.hoursMinutesMode === 'rate_per_hour') {
+              return `Hours/Minutes: Rate per Hour (£${createFormData.hourlyRate}/hr); Consecutive Hours: ${createFormData.consecutiveHours}; ${baseInfo}`;
+            } else if (createFormData.hoursMinutesMode === 'rate_per_minutes_pro_rata') {
+              return `Hours/Minutes: Rate per Minutes (Pro Rata) - 15min: £${createFormData.rate15Minutes}, 30min: £${createFormData.rate30Minutes}, 45min: £${createFormData.rate45Minutes}, 60min: £${createFormData.rate60Minutes}; Consecutive Hours: ${createFormData.consecutiveHours}; ${baseInfo}`;
+            } else if (createFormData.hoursMinutesMode === 'rate_per_minutes_flat_rate') {
+              return `Hours/Minutes: Rate per Minutes (Flat Rate) - 15min: £${createFormData.rate15Minutes}, 30min: £${createFormData.rate30Minutes}, 45min: £${createFormData.rate45Minutes}, 60min: £${createFormData.rate60Minutes}; Consecutive Hours: ${createFormData.consecutiveHours}; ${baseInfo}`;
+            }
+          }
+          
+          return `Amount TBD - pricing based on ${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]} selection; ${baseInfo}`;
+        })()
       };
 
       onAddRate(newRate);
@@ -650,6 +715,175 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
                       />
                       {errors.rateAmount && <p className="text-sm text-red-600">{errors.rateAmount}</p>}
                     </div>
+                  </div>
+                )}
+                
+                {/* Hours/Minutes-specific fields - only show when Hours/Minutes is selected */}
+                {createFormData.payBasedOn === 'hours_minutes' && (
+                  <div className="space-y-4 border-l-2 border-primary/20 pl-4">
+                    {/* Hours/Minutes Rate Mode - Radio Group */}
+                    <div className="space-y-3">
+                      <Label>Rate Type *</Label>
+                      <RadioGroup
+                        value={createFormData.hoursMinutesMode}
+                        onValueChange={(value) => {
+                          setCreateFormData(prev => ({ ...prev, hoursMinutesMode: value }));
+                          if (errors.hoursMinutesMode) setErrors(prev => ({ ...prev, hoursMinutesMode: '' }));
+                        }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rate_per_hour" id="rate-per-hour" />
+                          <Label htmlFor="rate-per-hour" className="cursor-pointer">Rate per Hour</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rate_per_minutes_pro_rata" id="rate-per-minutes-pro-rata" />
+                          <Label htmlFor="rate-per-minutes-pro-rata" className="cursor-pointer">Rate per Minutes (Pro Rata)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="rate_per_minutes_flat_rate" id="rate-per-minutes-flat-rate" />
+                          <Label htmlFor="rate-per-minutes-flat-rate" className="cursor-pointer">Rate per Minutes (Flat Rate)</Label>
+                        </div>
+                      </RadioGroup>
+                      {errors.hoursMinutesMode && <p className="text-sm text-red-600">{errors.hoursMinutesMode}</p>}
+                    </div>
+
+                    {/* Rate per Hour fields */}
+                    {createFormData.hoursMinutesMode === 'rate_per_hour' && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="hourlyRate">Rate: *</Label>
+                          <Input
+                            id="hourlyRate"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={createFormData.hourlyRate}
+                            onChange={(e) => {
+                              setCreateFormData(prev => ({ ...prev, hourlyRate: e.target.value }));
+                              if (errors.hourlyRate) setErrors(prev => ({ ...prev, hourlyRate: '' }));
+                            }}
+                            placeholder="0.00"
+                            className={errors.hourlyRate ? "border-red-500" : ""}
+                          />
+                          {errors.hourlyRate && <p className="text-sm text-red-600">{errors.hourlyRate}</p>}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="consecutiveHours">Consecutive Hours: *</Label>
+                          <Input
+                            id="consecutiveHours"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={createFormData.consecutiveHours}
+                            onChange={(e) => {
+                              setCreateFormData(prev => ({ ...prev, consecutiveHours: e.target.value }));
+                              if (errors.consecutiveHours) setErrors(prev => ({ ...prev, consecutiveHours: '' }));
+                            }}
+                            placeholder="0.00"
+                            className={errors.consecutiveHours ? "border-red-500" : ""}
+                          />
+                          {errors.consecutiveHours && <p className="text-sm text-red-600">{errors.consecutiveHours}</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rate per Minutes fields */}
+                    {(createFormData.hoursMinutesMode === 'rate_per_minutes_pro_rata' || createFormData.hoursMinutesMode === 'rate_per_minutes_flat_rate') && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Rate at Minutes: *</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label htmlFor="rate15Minutes" className="text-xs text-muted-foreground">15 Minutes</Label>
+                              <Input
+                                id="rate15Minutes"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={createFormData.rate15Minutes}
+                                onChange={(e) => {
+                                  setCreateFormData(prev => ({ ...prev, rate15Minutes: e.target.value }));
+                                  if (errors.rate15Minutes) setErrors(prev => ({ ...prev, rate15Minutes: '' }));
+                                }}
+                                placeholder="0.00"
+                                className={errors.rate15Minutes ? "border-red-500" : ""}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label htmlFor="rate30Minutes" className="text-xs text-muted-foreground">30 Minutes</Label>
+                              <Input
+                                id="rate30Minutes"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={createFormData.rate30Minutes}
+                                onChange={(e) => {
+                                  setCreateFormData(prev => ({ ...prev, rate30Minutes: e.target.value }));
+                                  if (errors.rate30Minutes) setErrors(prev => ({ ...prev, rate30Minutes: '' }));
+                                }}
+                                placeholder="0.00"
+                                className={errors.rate30Minutes ? "border-red-500" : ""}
+                              />
+                              {errors.rate30Minutes && <p className="text-xs text-red-600">{errors.rate30Minutes}</p>}
+                            </div>
+                            <div className="space-y-1">
+                              <Label htmlFor="rate45Minutes" className="text-xs text-muted-foreground">45 Minutes</Label>
+                              <Input
+                                id="rate45Minutes"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={createFormData.rate45Minutes}
+                                onChange={(e) => {
+                                  setCreateFormData(prev => ({ ...prev, rate45Minutes: e.target.value }));
+                                  if (errors.rate45Minutes) setErrors(prev => ({ ...prev, rate45Minutes: '' }));
+                                }}
+                                placeholder="0.00"
+                                className={errors.rate45Minutes ? "border-red-500" : ""}
+                              />
+                              {errors.rate45Minutes && <p className="text-xs text-red-600">{errors.rate45Minutes}</p>}
+                            </div>
+                            <div className="space-y-1">
+                              <Label htmlFor="rate60Minutes" className="text-xs text-muted-foreground">60 Minutes</Label>
+                              <Input
+                                id="rate60Minutes"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={createFormData.rate60Minutes}
+                                onChange={(e) => {
+                                  setCreateFormData(prev => ({ ...prev, rate60Minutes: e.target.value }));
+                                  if (errors.rate60Minutes) setErrors(prev => ({ ...prev, rate60Minutes: '' }));
+                                }}
+                                placeholder="0.00"
+                                className={errors.rate60Minutes ? "border-red-500" : ""}
+                              />
+                              {errors.rate60Minutes && <p className="text-xs text-red-600">{errors.rate60Minutes}</p>}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="consecutiveHoursMinutes">Consecutive Hours: *</Label>
+                          <Input
+                            id="consecutiveHoursMinutes"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={createFormData.consecutiveHours}
+                            onChange={(e) => {
+                              setCreateFormData(prev => ({ ...prev, consecutiveHours: e.target.value }));
+                              if (errors.consecutiveHours) setErrors(prev => ({ ...prev, consecutiveHours: '' }));
+                            }}
+                            placeholder="0.00"
+                            className={errors.consecutiveHours ? "border-red-500" : ""}
+                          />
+                          {errors.consecutiveHours && <p className="text-sm text-red-600">{errors.consecutiveHours}</p>}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 
