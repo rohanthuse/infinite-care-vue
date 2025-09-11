@@ -331,9 +331,6 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       if (!createFormData.authority) newErrors.authority = 'This field is required';
       if (!createFormData.payBasedOn) newErrors.payBasedOn = 'This field is required';
       if (!createFormData.startDate) newErrors.startDate = 'This field is required';
-      if (!createFormData.rateAmount || parseFloat(createFormData.rateAmount) <= 0) {
-        newErrors.rateAmount = 'Rate amount is required and must be greater than 0';
-      }
       if (!createFormData.effectiveFrom) newErrors.effectiveFrom = 'This field is required';
       if (!createFormData.effectiveUntil) newErrors.effectiveUntil = 'This field is required';
       if (createFormData.selectedDays.length === 0) newErrors.selectedDays = 'At least one day must be selected';
@@ -371,11 +368,16 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       };
 
       const payBasedOnLabels = {
-        'hourly': 'Hourly',
-        'daily': 'Daily',
-        'weekly': 'Weekly',
-        'per_visit': 'Per Visit',
-        'fixed': 'Fixed Rate'
+        'service': 'Service',
+        'hours_minutes': 'Hours/Minutes',
+        'daily_flat_rate': 'Daily Flat Rate'
+      };
+
+      // Map Pay Based On to rate_type
+      const rateTypeMap = {
+        'service': 'per_visit',
+        'hours_minutes': 'hourly',
+        'daily_flat_rate': 'daily'
       };
 
       // Create service rate payload
@@ -383,8 +385,8 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       const newRate: Partial<ServiceRate> = {
         service_name: `Client Rate - ${authorityLabels[createFormData.authority as keyof typeof authorityLabels]} (${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]})`,
         service_code: `CR-${timestamp}`,
-        rate_type: createFormData.payBasedOn as any,
-        amount: parseFloat(createFormData.rateAmount),
+        rate_type: rateTypeMap[createFormData.payBasedOn as keyof typeof rateTypeMap] as any,
+        amount: 0, // Amount TBD - will be set based on Pay Based On selection
         currency: "GBP",
         effective_from: createFormData.startDate!.toISOString().split('T')[0],
         effective_to: createFormData.endDate?.toISOString().split('T')[0],
@@ -393,7 +395,7 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         applicable_days: createFormData.selectedDays,
         is_default: false,
         status: 'active' as any,
-        description: `VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
+        description: `Amount TBD - pricing based on ${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]} selection; VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
       };
 
       onAddRate(newRate);
@@ -430,47 +432,25 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
             </DialogHeader>
 
             <div className="space-y-6 py-4">
-              {/* Authority & Pay Based On */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="authority">Authorities *</Label>
-                  <Select value={createFormData.authority} onValueChange={(value) => {
-                    setCreateFormData(prev => ({ ...prev, authority: value }));
-                    if (errors.authority) setErrors(prev => ({ ...prev, authority: '' }));
-                  }}>
-                    <SelectTrigger className={errors.authority ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select authority" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background">
-                      <SelectItem value="private">Private</SelectItem>
-                      <SelectItem value="local_authority">Local Authority</SelectItem>
-                      <SelectItem value="nhs">NHS</SelectItem>
-                      <SelectItem value="insurance">Insurance</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.authority && <p className="text-sm text-red-600">{errors.authority}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="payBasedOn">Pay Based On *</Label>
-                  <Select value={createFormData.payBasedOn} onValueChange={(value) => {
-                    setCreateFormData(prev => ({ ...prev, payBasedOn: value }));
-                    if (errors.payBasedOn) setErrors(prev => ({ ...prev, payBasedOn: '' }));
-                  }}>
-                    <SelectTrigger className={errors.payBasedOn ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select pay type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background">
-                      <SelectItem value="hourly">Hourly</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="per_visit">Per Visit</SelectItem>
-                      <SelectItem value="fixed">Fixed Rate</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.payBasedOn && <p className="text-sm text-red-600">{errors.payBasedOn}</p>}
-                </div>
+              {/* Authority */}
+              <div className="space-y-2">
+                <Label htmlFor="authority">Authorities *</Label>
+                <Select value={createFormData.authority} onValueChange={(value) => {
+                  setCreateFormData(prev => ({ ...prev, authority: value }));
+                  if (errors.authority) setErrors(prev => ({ ...prev, authority: '' }));
+                }}>
+                  <SelectTrigger className={errors.authority ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select authority" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="local_authority">Local Authority</SelectItem>
+                    <SelectItem value="nhs">NHS</SelectItem>
+                    <SelectItem value="insurance">Insurance</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.authority && <p className="text-sm text-red-600">{errors.authority}</p>}
               </div>
 
               {/* Start & End Date */}
@@ -544,6 +524,25 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
               <div className="space-y-4">
                 <Label className="text-base font-semibold">Rates</Label>
                 
+                {/* Pay Based On */}
+                <div className="space-y-2">
+                  <Label htmlFor="payBasedOn">Pay Based On *</Label>
+                  <Select value={createFormData.payBasedOn} onValueChange={(value) => {
+                    setCreateFormData(prev => ({ ...prev, payBasedOn: value }));
+                    if (errors.payBasedOn) setErrors(prev => ({ ...prev, payBasedOn: '' }));
+                  }}>
+                    <SelectTrigger className={errors.payBasedOn ? "border-red-500" : ""}>
+                      <SelectValue placeholder="Select pay type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background">
+                      <SelectItem value="service">Service</SelectItem>
+                      <SelectItem value="hours_minutes">Hours/Minutes</SelectItem>
+                      <SelectItem value="daily_flat_rate">Daily Flat Rate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.payBasedOn && <p className="text-sm text-red-600">{errors.payBasedOn}</p>}
+                </div>
+                
                 {/* Days Selection */}
                 <div className="space-y-2">
                   <Label>Days *</Label>
@@ -597,24 +596,6 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
                   </div>
                 </div>
 
-                {/* Rate Amount */}
-                <div className="space-y-2">
-                  <Label htmlFor="rateAmount">Rate Amount (£) *</Label>
-                  <Input
-                    id="rateAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={createFormData.rateAmount}
-                    onChange={(e) => {
-                      setCreateFormData(prev => ({ ...prev, rateAmount: e.target.value }));
-                      if (errors.rateAmount) setErrors(prev => ({ ...prev, rateAmount: '' }));
-                    }}
-                    className={errors.rateAmount ? "border-red-500" : ""}
-                  />
-                  {errors.rateAmount && <p className="text-sm text-red-600">{errors.rateAmount}</p>}
-                </div>
 
                 {/* VAT Question */}
                 <div className="space-y-3">
