@@ -487,6 +487,169 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 </div>
               </Card>
 
+              {/* My Accessibility and Communication Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">My Accessibility and Communication</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Sensory Impairment</h4>
+                    <p className="mt-1">{personalInfo?.sensory_impairment || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Communication Aids</h4>
+                    <p className="mt-1">{personalInfo?.communication_aids || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication Method</h4>
+                    <p className="mt-1">{personalInfo?.preferred_communication_method || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Hearing Difficulties</h4>
+                    <p className="mt-1">{personalInfo?.hearing_difficulties === null ? 'Not provided' : personalInfo?.hearing_difficulties ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Vision Difficulties</h4>
+                    <p className="mt-1">{personalInfo?.vision_difficulties === null ? 'Not provided' : personalInfo?.vision_difficulties ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Speech Difficulties</h4>
+                    <p className="mt-1">{personalInfo?.speech_difficulties === null ? 'Not provided' : personalInfo?.speech_difficulties ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Cognitive Impairment</h4>
+                    <p className="mt-1">{personalInfo?.cognitive_impairment === null ? 'Not provided' : personalInfo?.cognitive_impairment ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Mobility Aids</h4>
+                    <p className="mt-1">{personalInfo?.mobility_aids || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Do's & Don'ts Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Do's & Don'ts</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Likes/Preferences</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.likes_preferences || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Dislikes/Restrictions</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dislikes_restrictions || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Do's</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dos || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Don'ts</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.donts || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Pets Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Pets</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Pet Information</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.pets || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* My GP Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">My GP</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
+                    <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
+                    <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
+                    <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
+                    <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
+                    <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
+                    <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Find NHS services and healthcare providers at{' '}
+                    <a 
+                      href="https://digital.nhs.uk/services/organisation-data-service/ods-portal" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      NHS Digital ODS Portal
+                    </a>
+                  </p>
+                </div>
+              </Card>
+
+              {/* Pharmacy Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Pharmacy</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Name</h4>
+                    <p className="mt-1">{personalInfo?.pharmacy_name || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Address</h4>
+                    <p className="mt-1">{personalInfo?.pharmacy_address || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Phone</h4>
+                    <p className="mt-1">{personalInfo?.pharmacy_phone || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
+                    <p className="mt-1">{personalInfo?.pharmacy_ods_code || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Desired outcomes Section */}
+              <Card className="p-4 border border-border shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Desired outcomes</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Personal Goals</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.personal_goals || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Desired Outcomes</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.desired_outcomes || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Success Measures</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.success_measures || 'Not provided'}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Priority Areas</h4>
+                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.priority_areas || 'Not provided'}</p>
+                  </div>
+                </div>
+              </Card>
+
               {/* Vaccination Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <div className="flex items-center justify-between mb-4">

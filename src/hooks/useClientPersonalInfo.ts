@@ -35,6 +35,35 @@ export interface ClientPersonalInfo {
   key_safe_location?: string;
   parking_availability?: string;
   emergency_access?: string;
+  // My Accessibility and Communication fields
+  sensory_impairment?: string;
+  communication_aids?: string;
+  preferred_communication_method?: string;
+  hearing_difficulties?: boolean;
+  vision_difficulties?: boolean;
+  speech_difficulties?: boolean;
+  cognitive_impairment?: boolean;
+  mobility_aids?: string;
+  // Do's & Don'ts fields
+  likes_preferences?: string;
+  dislikes_restrictions?: string;
+  dos?: string;
+  donts?: string;
+  // My GP fields
+  gp_surgery_name?: string;
+  gp_surgery_address?: string;
+  gp_surgery_phone?: string;
+  gp_surgery_ods_code?: string;
+  // Pharmacy fields
+  pharmacy_name?: string;
+  pharmacy_address?: string;
+  pharmacy_phone?: string;
+  pharmacy_ods_code?: string;
+  // Desired outcomes fields
+  personal_goals?: string;
+  desired_outcomes?: string;
+  success_measures?: string;
+  priority_areas?: string;
   created_at: string;
   updated_at: string;
 }
