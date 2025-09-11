@@ -11,6 +11,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { ClientSideTabNav } from "./ClientSideTabNav";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { NotesTab } from "./tabs/NotesTab";
+import { SuspendTab } from "./tabs/SuspendTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { AppointmentsTab } from "./tabs/AppointmentsTab";
 import { BillingTab } from "./tabs/BillingTab";
@@ -186,6 +187,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="notes" className="p-6 m-0">
                   <NotesTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="suspend" className="p-6 m-0">
+                  <SuspendTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="documents" className="p-6 m-0">

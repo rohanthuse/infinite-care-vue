@@ -2421,6 +2421,68 @@ export type Database = {
           },
         ]
       }
+      client_status_history: {
+        Row: {
+          action: string
+          apply_to: Json
+          attachments: Json
+          client_id: string
+          created_at: string
+          created_by: string | null
+          details: string | null
+          effective_from: string
+          effective_until: string | null
+          from_status: string | null
+          id: string
+          notify: Json
+          reason: string | null
+          suspension_type: string | null
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          apply_to?: Json
+          attachments?: Json
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          details?: string | null
+          effective_from?: string
+          effective_until?: string | null
+          from_status?: string | null
+          id?: string
+          notify?: Json
+          reason?: string | null
+          suspension_type?: string | null
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          apply_to?: Json
+          attachments?: Json
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          details?: string | null
+          effective_from?: string
+          effective_until?: string | null
+          from_status?: string | null
+          id?: string
+          notify?: Json
+          reason?: string | null
+          suspension_type?: string | null
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_status_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           additional_information: string | null
@@ -6871,6 +6933,18 @@ export type Database = {
           p_start_date?: string
         }
         Returns: Json
+      }
+      get_client_suspension_status: {
+        Args: { client_id_param: string }
+        Returns: {
+          apply_to: Json
+          effective_from: string
+          effective_until: string
+          is_suspended: boolean
+          reason: string
+          suspension_id: string
+          suspension_type: string
+        }[]
       }
       get_compliance_reports_data: {
         Args: {
