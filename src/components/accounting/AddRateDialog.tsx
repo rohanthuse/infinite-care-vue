@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ServiceRate, useServiceRates } from "@/hooks/useAccountingData";
+import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -228,17 +229,22 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
     const [createFormData, setCreateFormData] = React.useState({
       authority: '',
       payBasedOn: '',
+      serviceRateMode: '', // For Flat Rate, Pro Rata, Hourly Rate
+      serviceId: '', // Selected service
+      rateAmount: '', // Rate amount when Service is selected
       startDate: undefined as Date | undefined,
       endDate: undefined as Date | undefined,
       selectedDays: [] as string[],
       effectiveFrom: '',
       effectiveUntil: '',
-      rateAmount: '',
       isVatable: ''
     });
 
     // Get available rates for the dropdowns
     const { data: availableRates = [] } = useServiceRates(branchId);
+    
+    // Get available services for the services dropdown
+    const { data: availableServices = [] } = useServices();
 
     // Get unique authorities from available rates
     const authorities = React.useMemo(() => {
@@ -315,12 +321,14 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       setCreateFormData({
         authority: '',
         payBasedOn: '',
+        serviceRateMode: '',
+        serviceId: '',
+        rateAmount: '',
         startDate: undefined,
         endDate: undefined,
         selectedDays: [],
         effectiveFrom: '',
         effectiveUntil: '',
-        rateAmount: '',
         isVatable: ''
       });
     };
@@ -335,6 +343,15 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       if (!createFormData.effectiveUntil) newErrors.effectiveUntil = 'This field is required';
       if (createFormData.selectedDays.length === 0) newErrors.selectedDays = 'At least one day must be selected';
       if (!createFormData.isVatable) newErrors.isVatable = 'This field is required';
+      
+      // Additional validation when Service is selected
+      if (createFormData.payBasedOn === 'service') {
+        if (!createFormData.serviceRateMode) newErrors.serviceRateMode = 'This field is required';
+        if (!createFormData.serviceId) newErrors.serviceId = 'This field is required';
+        if (!createFormData.rateAmount || parseFloat(createFormData.rateAmount) <= 0) {
+          newErrors.rateAmount = 'Rate amount is required and must be greater than 0';
+        }
+      }
       
       // Validate time range
       if (createFormData.effectiveFrom && createFormData.effectiveUntil) {
@@ -374,19 +391,38 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       };
 
       // Map Pay Based On to rate_type
-      const rateTypeMap = {
-        'service': 'per_visit',
-        'hours_minutes': 'hourly',
-        'daily_flat_rate': 'daily'
-      };
+      let mappedRateType = '';
+      if (createFormData.payBasedOn === 'service') {
+        // Map service rate modes to rate types
+        const serviceRateModeMap = {
+          'flat_rate': 'fixed',
+          'pro_rata': 'per_visit',
+          'hourly_rate': 'hourly'
+        };
+        mappedRateType = serviceRateModeMap[createFormData.serviceRateMode as keyof typeof serviceRateModeMap] || 'per_visit';
+      } else {
+        const rateTypeMap = {
+          'hours_minutes': 'hourly',
+          'daily_flat_rate': 'daily'
+        };
+        mappedRateType = rateTypeMap[createFormData.payBasedOn as keyof typeof rateTypeMap] || 'hourly';
+      }
+
+      // Get service name if service is selected
+      const selectedService = availableServices.find(service => service.id === createFormData.serviceId);
+      const serviceName = selectedService ? selectedService.title : '';
 
       // Create service rate payload
       const timestamp = Date.now();
       const newRate: Partial<ServiceRate> = {
-        service_name: `Client Rate - ${authorityLabels[createFormData.authority as keyof typeof authorityLabels]} (${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]})`,
+        service_name: createFormData.payBasedOn === 'service' && serviceName 
+          ? `${serviceName} - ${authorityLabels[createFormData.authority as keyof typeof authorityLabels]}`
+          : `Client Rate - ${authorityLabels[createFormData.authority as keyof typeof authorityLabels]} (${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]})`,
         service_code: `CR-${timestamp}`,
-        rate_type: rateTypeMap[createFormData.payBasedOn as keyof typeof rateTypeMap] as any,
-        amount: 0, // Amount TBD - will be set based on Pay Based On selection
+        rate_type: mappedRateType as any,
+        amount: createFormData.payBasedOn === 'service' 
+          ? parseFloat(createFormData.rateAmount) || 0
+          : 0, // Amount TBD for non-service options
         currency: "GBP",
         effective_from: createFormData.startDate!.toISOString().split('T')[0],
         effective_to: createFormData.endDate?.toISOString().split('T')[0],
@@ -395,7 +431,9 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         applicable_days: createFormData.selectedDays,
         is_default: false,
         status: 'active' as any,
-        description: `Amount TBD - pricing based on ${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]} selection; VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
+        description: createFormData.payBasedOn === 'service'
+          ? `Service: ${serviceName}; Rate Mode: ${createFormData.serviceRateMode}; VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
+          : `Amount TBD - pricing based on ${payBasedOnLabels[createFormData.payBasedOn as keyof typeof payBasedOnLabels]} selection; VATable: ${createFormData.isVatable}; Effective Hours: ${createFormData.effectiveFrom}–${createFormData.effectiveUntil}; Days: ${createFormData.selectedDays.join(', ')}`
       };
 
       onAddRate(newRate);
@@ -531,10 +569,10 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
                     setCreateFormData(prev => ({ ...prev, payBasedOn: value }));
                     if (errors.payBasedOn) setErrors(prev => ({ ...prev, payBasedOn: '' }));
                   }}>
-                    <SelectTrigger className={errors.payBasedOn ? "border-red-500" : ""}>
+                    <SelectTrigger className={cn("z-10", errors.payBasedOn ? "border-red-500" : "")}>
                       <SelectValue placeholder="Select pay type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-background">
+                    <SelectContent className="bg-background z-50">
                       <SelectItem value="service">Service</SelectItem>
                       <SelectItem value="hours_minutes">Hours/Minutes</SelectItem>
                       <SelectItem value="daily_flat_rate">Daily Flat Rate</SelectItem>
@@ -542,6 +580,78 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
                   </Select>
                   {errors.payBasedOn && <p className="text-sm text-red-600">{errors.payBasedOn}</p>}
                 </div>
+
+                {/* Service-specific fields - only show when Service is selected */}
+                {createFormData.payBasedOn === 'service' && (
+                  <div className="space-y-4 border-l-2 border-primary/20 pl-4">
+                    {/* Service Rate Mode - Radio Group */}
+                    <div className="space-y-3">
+                      <Label>Service Rate Mode *</Label>
+                      <RadioGroup
+                        value={createFormData.serviceRateMode}
+                        onValueChange={(value) => {
+                          setCreateFormData(prev => ({ ...prev, serviceRateMode: value }));
+                          if (errors.serviceRateMode) setErrors(prev => ({ ...prev, serviceRateMode: '' }));
+                        }}
+                        className="flex gap-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="flat_rate" id="flat-rate" />
+                          <Label htmlFor="flat-rate" className="cursor-pointer">Flat Rate</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="pro_rata" id="pro-rata" />
+                          <Label htmlFor="pro-rata" className="cursor-pointer">Pro Rata</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="hourly_rate" id="hourly-rate" />
+                          <Label htmlFor="hourly-rate" className="cursor-pointer">Hourly Rate</Label>
+                        </div>
+                      </RadioGroup>
+                      {errors.serviceRateMode && <p className="text-sm text-red-600">{errors.serviceRateMode}</p>}
+                    </div>
+
+                    {/* Services Dropdown */}
+                    <div className="space-y-2">
+                      <Label htmlFor="services">Services: *</Label>
+                      <Select value={createFormData.serviceId} onValueChange={(value) => {
+                        setCreateFormData(prev => ({ ...prev, serviceId: value }));
+                        if (errors.serviceId) setErrors(prev => ({ ...prev, serviceId: '' }));
+                      }}>
+                        <SelectTrigger className={cn("z-10", errors.serviceId ? "border-red-500" : "")}>
+                          <SelectValue placeholder="Select a service" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {availableServices.map((service) => (
+                            <SelectItem key={service.id} value={service.id}>
+                              {service.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.serviceId && <p className="text-sm text-red-600">{errors.serviceId}</p>}
+                    </div>
+
+                    {/* Rate Amount */}
+                    <div className="space-y-2">
+                      <Label htmlFor="rateAmount">Rate: *</Label>
+                      <Input
+                        id="rateAmount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={createFormData.rateAmount}
+                        onChange={(e) => {
+                          setCreateFormData(prev => ({ ...prev, rateAmount: e.target.value }));
+                          if (errors.rateAmount) setErrors(prev => ({ ...prev, rateAmount: '' }));
+                        }}
+                        placeholder="0.00"
+                        className={errors.rateAmount ? "border-red-500" : ""}
+                      />
+                      {errors.rateAmount && <p className="text-sm text-red-600">{errors.rateAmount}</p>}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Days Selection */}
                 <div className="space-y-2">
