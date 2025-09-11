@@ -219,11 +219,21 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
     const [selectedOption, setSelectedOption] = React.useState<string>('');
     const [showDefinedRateForm, setShowDefinedRateForm] = React.useState(false);
     const [showCreateNewForm, setShowCreateNewForm] = React.useState(false);
+    const [showChangeByPercentForm, setShowChangeByPercentForm] = React.useState(false);
     const [selectedAuthority, setSelectedAuthority] = React.useState<string>('');
     const [selectedRate, setSelectedRate] = React.useState<string>('');
     const [startDate, setStartDate] = React.useState<Date>();
     const [endDate, setEndDate] = React.useState<Date>();
     const [errors, setErrors] = React.useState<{[key: string]: string}>({});
+
+    // Change by % form state
+    const [percentChangeData, setPercentChangeData] = React.useState({
+      authority: '',
+      type: '', // 'increment' or 'decrement'
+      amount: '', // percentage amount
+      startDate: undefined as Date | undefined,
+      endDate: undefined as Date | undefined,
+    });
 
     // Create new rate form state
     const [createFormData, setCreateFormData] = React.useState({
@@ -271,6 +281,8 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         setShowDefinedRateForm(true);
       } else if (option === 'create-new') {
         setShowCreateNewForm(true);
+      } else if (option === 'change-by-percent') {
+        setShowChangeByPercentForm(true);
       } else {
         // For now, just close the dialog for other options
         setTimeout(() => {
@@ -319,12 +331,20 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
     const handleBack = () => {
       setShowDefinedRateForm(false);
       setShowCreateNewForm(false);
+      setShowChangeByPercentForm(false);
       setSelectedOption('');
       setSelectedAuthority('');
       setSelectedRate('');
       setStartDate(undefined);
       setEndDate(undefined);
       setErrors({});
+      setPercentChangeData({
+        authority: '',
+        type: '',
+        amount: '',
+        startDate: undefined,
+        endDate: undefined,
+      });
       setCreateFormData({
         authority: '',
         payBasedOn: '',
@@ -414,6 +434,60 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
       
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
+    };
+
+    const validatePercentChangeForm = () => {
+      const newErrors: {[key: string]: string} = {};
+      
+      if (!percentChangeData.authority) {
+        newErrors.authority = 'This field is required';
+      }
+      if (!percentChangeData.type) {
+        newErrors.type = 'This field is required';
+      }
+      if (!percentChangeData.amount || parseFloat(percentChangeData.amount) <= 0) {
+        newErrors.amount = 'Amount is required and must be greater than 0';
+      }
+      if (!percentChangeData.startDate) {
+        newErrors.startDate = 'This field is required';
+      }
+      
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+
+    const handleApplyPercentChange = () => {
+      if (!validatePercentChangeForm()) return;
+
+      // Find existing rates for the selected authority
+      const ratesForAuthority = availableRates.filter(rate => rate.client_type === percentChangeData.authority);
+      
+      if (ratesForAuthority.length === 0) {
+        toast.error('No rates found for the selected authority');
+        return;
+      }
+
+      const percentage = parseFloat(percentChangeData.amount) / 100;
+      const isIncrement = percentChangeData.type === 'increment';
+      
+      // Create new rates with percentage adjustments
+      ratesForAuthority.forEach(rate => {
+        const multiplier = isIncrement ? (1 + percentage) : (1 - percentage);
+        const newAmount = Math.round(rate.amount * multiplier * 100) / 100; // Round to 2 decimal places
+        
+        const newRate: Partial<ServiceRate> = {
+          ...rate,
+          amount: newAmount,
+          effective_from: percentChangeData.startDate!.toISOString().split('T')[0],
+          effective_to: percentChangeData.endDate?.toISOString().split('T')[0],
+          description: `${rate.description || ''} ${rate.description ? ' | ' : ''}Rate adjusted by ${isIncrement ? '+' : '-'}${percentChangeData.amount}% from £${rate.amount} to £${newAmount}`.trim(),
+        };
+        
+        onAddRate(newRate);
+      });
+      
+      toast.success(`Applied ${isIncrement ? 'increment' : 'decrement'} of ${percentChangeData.amount}% to ${ratesForAuthority.length} rate(s)`);
+      onClose();
     };
 
     const handleCreateNewRate = () => {
@@ -1122,6 +1196,146 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
                 </Button>
                 <Button type="button" onClick={handleAddRate}>
                   Add Rate
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+
+    // Show Change by % form
+    if (showChangeByPercentForm) {
+      return (
+        <Dialog open={open} onOpenChange={onClose}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Change by %</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Authority</Label>
+                <Select 
+                  value={percentChangeData.authority} 
+                  onValueChange={(value) => setPercentChangeData({...percentChangeData, authority: value})}
+                >
+                  <SelectTrigger className={errors.authority ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select Authority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="local_authority">Local Authority</SelectItem>
+                    <SelectItem value="nhs">NHS</SelectItem>
+                    <SelectItem value="insurance">Insurance</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.authority && <p className="text-sm text-red-600">{errors.authority}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <RadioGroup 
+                  value={percentChangeData.type} 
+                  onValueChange={(value) => setPercentChangeData({...percentChangeData, type: value})}
+                  className="flex space-x-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="increment" id="increment" />
+                    <Label htmlFor="increment">Increment</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="decrement" id="decrement" />
+                    <Label htmlFor="decrement">Decrement</Label>
+                  </div>
+                </RadioGroup>
+                {errors.type && <p className="text-sm text-red-600">{errors.type}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Amount (%)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Enter percentage"
+                  value={percentChangeData.amount}
+                  onChange={(e) => setPercentChangeData({...percentChangeData, amount: e.target.value})}
+                  className={errors.amount ? "border-red-500" : ""}
+                />
+                {errors.amount && <p className="text-sm text-red-600">{errors.amount}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !percentChangeData.startDate && "text-muted-foreground",
+                          errors.startDate && "border-red-500"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {percentChangeData.startDate ? format(percentChangeData.startDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={percentChangeData.startDate}
+                        onSelect={(date) => setPercentChangeData({...percentChangeData, startDate: date})}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {errors.startDate && <p className="text-sm text-red-600">{errors.startDate}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date (Optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "justify-start text-left font-normal",
+                          !percentChangeData.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {percentChangeData.endDate ? format(percentChangeData.endDate, "PPP") : "Pick a date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={percentChangeData.endDate}
+                        onSelect={(date) => setPercentChangeData({...percentChangeData, endDate: date})}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="flex justify-between">
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <div className="space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="button" onClick={handleApplyPercentChange}>
+                  Apply Changes
                 </Button>
               </div>
             </DialogFooter>
