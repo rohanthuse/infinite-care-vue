@@ -104,6 +104,23 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     }
   };
   const displayName = client.preferred_name || `${client.first_name || ''} ${client.last_name || ''}`.trim() || client.name;
+
+  // Parse address into components
+  const parseAddress = (address: string) => {
+    if (!address) return {};
+    
+    const parts = address.split(',').map(part => part.trim());
+    return {
+      houseNo: parts[0] || '',
+      street: parts[1] || '',
+      city: parts[parts.length - 3] || '',
+      county: parts[parts.length - 2] || '',
+      postcode: parts[parts.length - 1] || '',
+      country: 'United Kingdom' // Default assumption
+    };
+  };
+
+  const addressComponents = parseAddress(client.address || client.location || '');
   if (isEditing) {
     return <div className="space-y-6">
         <Card className="p-4 border border-border shadow-sm">
@@ -309,9 +326,32 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 <p className="mt-1">{client.avatar_initials || client.avatar || 'Not provided'}</p>
               </div>
             </div>
+
+            {/* Contact Information Section */}
+            <div className="mt-6">
+              <h3 className="text-lg font-medium mb-4">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
+                  <p className="mt-1">{client.email || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
+                  <p className="mt-1">{client.phone || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Mobile Number</h4>
+                  <p className="mt-1">{client.mobile_number || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>
+                  <p className="mt-1">{client.telephone_number || 'Not provided'}</p>
+                </div>
+              </div>
+            </div>
             
             {client.additional_information && (
-              <div className="mt-4">
+              <div className="mt-6">
                 <h4 className="text-sm font-medium text-muted-foreground">Additional Information</h4>
                 <p className="mt-1 whitespace-pre-wrap">{client.additional_information}</p>
               </div>
@@ -321,39 +361,43 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
         <TabsContent value="address" className="mt-6">
           <Card className="p-4 border border-border shadow-sm">
-            <h3 className="text-lg font-medium mb-4">Contact & Address Information</h3>
+            <h3 className="text-lg font-medium mb-4">Address Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Email</h4>
-                <p className="mt-1">{client.email || 'Not provided'}</p>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  House No/Name <span className="text-red-500">*</span>
+                </h4>
+                <p className="mt-1">{addressComponents.houseNo || 'Not provided'}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
-                <p className="mt-1">{client.phone || 'Not provided'}</p>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Street <span className="text-red-500">*</span>
+                </h4>
+                <p className="mt-1">{addressComponents.street || 'Not provided'}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Mobile Number</h4>
-                <p className="mt-1">{client.mobile_number || 'Not provided'}</p>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Country <span className="text-red-500">*</span>
+                </h4>
+                <p className="mt-1">{addressComponents.country || 'Not provided'}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>
-                <p className="mt-1">{client.telephone_number || 'Not provided'}</p>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  County <span className="text-red-500">*</span>
+                </h4>
+                <p className="mt-1">{addressComponents.county || 'Not provided'}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Country Code</h4>
-                <p className="mt-1">{client.country_code || 'Not provided'}</p>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  City <span className="text-red-500">*</span>
+                </h4>
+                <p className="mt-1">{addressComponents.city || 'Not provided'}</p>
               </div>
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
-                <p className="mt-1">{client.address || client.location || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Pin Code</h4>
-                <p className="mt-1">{client.pin_code || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Region</h4>
-                <p className="mt-1">{client.region || 'Not provided'}</p>
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Postcode <span className="text-red-500">*</span>
+                </h4>
+                <p className="mt-1">{addressComponents.postcode || client.pin_code || 'Not provided'}</p>
               </div>
             </div>
           </Card>
