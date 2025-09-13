@@ -25,7 +25,9 @@ import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useC
 import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useToast } from "@/hooks/use-toast";
-import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck } from "lucide-react";
+import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
   emergency_contact_name: z.string().optional(),
@@ -42,6 +44,19 @@ const formSchema = z.object({
   gp_name: z.string().optional(),
   gp_practice: z.string().optional(),
   gp_phone: z.string().optional(),
+  // General information fields
+  main_reasons_for_care: z.string().optional(),
+  used_other_care_providers: z.boolean().optional(),
+  fallen_past_six_months: z.boolean().optional(),
+  has_assistance_device: z.boolean().optional(),
+  arrange_assistance_device: z.boolean().optional(),
+  bereavement_past_two_years: z.boolean().optional(),
+  warnings: z.array(z.string()).optional(),
+  instructions: z.array(z.string()).optional(),
+  important_occasions: z.array(z.object({
+    occasion: z.string().optional(),
+    date: z.string().optional(),
+  })).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -59,6 +74,37 @@ export function AdminClientDetailsDialog({
 }: AdminClientDetailsDialogProps) {
   const [activeMainTab, setActiveMainTab] = useState("personal");
   const [activeSubTab, setActiveSubTab] = useState("profile");
+  
+  // Dynamic array handlers for General Information
+  const handleAddWarning = () => {
+    const current = form.getValues("warnings") || [];
+    form.setValue("warnings", [...current, ""]);
+  };
+
+  const handleRemoveWarning = (index: number) => {
+    const current = form.getValues("warnings") || [];
+    form.setValue("warnings", current.filter((_, i) => i !== index));
+  };
+
+  const handleAddInstruction = () => {
+    const current = form.getValues("instructions") || [];
+    form.setValue("instructions", [...current, ""]);
+  };
+
+  const handleRemoveInstruction = (index: number) => {
+    const current = form.getValues("instructions") || [];
+    form.setValue("instructions", current.filter((_, i) => i !== index));
+  };
+
+  const handleAddOccasion = () => {
+    const current = form.getValues("important_occasions") || [];
+    form.setValue("important_occasions", [...current, { occasion: "", date: "" }]);
+  };
+
+  const handleRemoveOccasion = (index: number) => {
+    const current = form.getValues("important_occasions") || [];
+    form.setValue("important_occasions", current.filter((_, i) => i !== index));
+  };
   
   const { data: personalInfo, isLoading } = useClientPersonalInfo(client?.id || '');
   const { data: medicalInfo } = useClientMedicalInfo(client?.id || '');
@@ -83,6 +129,15 @@ export function AdminClientDetailsDialog({
       gp_name: "",
       gp_practice: "",
       gp_phone: "",
+      main_reasons_for_care: "",
+      used_other_care_providers: false,
+      fallen_past_six_months: false,
+      has_assistance_device: false,
+      arrange_assistance_device: false,
+      bereavement_past_two_years: false,
+      warnings: [],
+      instructions: [],
+      important_occasions: [],
     },
   });
 
@@ -104,6 +159,15 @@ export function AdminClientDetailsDialog({
         gp_name: personalInfo.gp_name || "",
         gp_practice: personalInfo.gp_practice || "",
         gp_phone: personalInfo.gp_phone || "",
+        main_reasons_for_care: personalInfo.main_reasons_for_care || "",
+        used_other_care_providers: personalInfo.used_other_care_providers || false,
+        fallen_past_six_months: personalInfo.fallen_past_six_months || false,
+        has_assistance_device: personalInfo.has_assistance_device || false,
+        arrange_assistance_device: personalInfo.arrange_assistance_device || false,
+        bereavement_past_two_years: personalInfo.bereavement_past_two_years || false,
+        warnings: personalInfo.warnings || [],
+        instructions: personalInfo.instructions || [],
+        important_occasions: personalInfo.important_occasions || [],
       });
     }
   }, [personalInfo, form]);
@@ -243,9 +307,10 @@ export function AdminClientDetailsDialog({
               <ScrollArea className="flex-1">
                 <TabsContent value="personal" className="mt-0 p-6">
                   <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="profile">Profile</TabsTrigger>
                       <TabsTrigger value="extended">Extended Details</TabsTrigger>
+                      <TabsTrigger value="general">General Information</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="profile" className="mt-6">
@@ -334,222 +399,43 @@ export function AdminClientDetailsDialog({
 
                           <Separator />
 
-                          {/* Next of Kin Section */}
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-4">
-                              <Users className="h-4 w-4 text-primary" />
-                              <h3 className="text-lg font-semibold">Next of Kin</h3>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name="next_of_kin_name"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Next of Kin Name</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Enter next of kin name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="next_of_kin_phone"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Next of Kin Phone</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Enter phone number" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            <FormField
-                              control={form.control}
-                              name="next_of_kin_relationship"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Relationship</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select relationship" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="spouse">Spouse</SelectItem>
-                                      <SelectItem value="partner">Partner</SelectItem>
-                                      <SelectItem value="parent">Parent</SelectItem>
-                                      <SelectItem value="child">Child</SelectItem>
-                                      <SelectItem value="sibling">Sibling</SelectItem>
-                                      <SelectItem value="other">Other</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
+                          {/* Action Buttons */}
+                          <div className="flex justify-end gap-3 pt-6 border-t border-border">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              onClick={() => onOpenChange(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              type="submit"
+                              disabled={updatePersonalInfo.isPending}
+                            >
+                              {updatePersonalInfo.isPending ? "Saving..." : "Save Changes"}
+                            </Button>
                           </div>
-
-                          <Separator />
-
-                          {/* GP Information Section */}
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-4">
-                              <Stethoscope className="h-4 w-4 text-primary" />
-                              <h3 className="text-lg font-semibold">General Practitioner (GP)</h3>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name="gp_name"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>GP Name</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Enter GP name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="gp_phone"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>GP Phone</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Enter GP phone number" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
+                        </form>
+                      </Form>
+                    </TabsContent>
+                    
+                    <TabsContent value="general" className="mt-6">
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                          {/* Care & Support Section */}
+                          <div className="space-y-6">
+                            <h3 className="text-lg font-medium text-gray-900">Care & Support</h3>
                             
                             <FormField
                               control={form.control}
-                              name="gp_practice"
+                              name="main_reasons_for_care"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>GP Practice</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="Enter GP practice name" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-
-                          <Separator />
-
-                          {/* Preferences Section */}
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2 mb-4">
-                              <FileText className="h-4 w-4 text-primary" />
-                              <h3 className="text-lg font-semibold">Preferences & Information</h3>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name="preferred_communication"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Preferred Communication</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select preference" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="phone">Phone</SelectItem>
-                                        <SelectItem value="email">Email</SelectItem>
-                                        <SelectItem value="text">Text Message</SelectItem>
-                                        <SelectItem value="letter">Letter</SelectItem>
-                                        <SelectItem value="face-to-face">Face to Face</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="language_preferences"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Language Preferences</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Enter preferred language" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name="religion"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Religion</FormLabel>
-                                    <FormControl>
-                                      <Input placeholder="Enter religion" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="marital_status"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Marital Status</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="single">Single</SelectItem>
-                                        <SelectItem value="married">Married</SelectItem>
-                                        <SelectItem value="divorced">Divorced</SelectItem>
-                                        <SelectItem value="widowed">Widowed</SelectItem>
-                                        <SelectItem value="separated">Separated</SelectItem>
-                                        <SelectItem value="partner">In Partnership</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            
-                            <FormField
-                              control={form.control}
-                              name="cultural_preferences"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Cultural Preferences</FormLabel>
+                                  <FormLabel>Main reasons for arranging care and support?</FormLabel>
                                   <FormControl>
                                     <Textarea 
-                                      placeholder="Enter cultural preferences and considerations" 
-                                      className="min-h-[80px]"
+                                      placeholder="Please describe the main reasons for arranging care and support..."
+                                      className="min-h-[100px]"
                                       {...field} 
                                     />
                                   </FormControl>
@@ -557,6 +443,313 @@ export function AdminClientDetailsDialog({
                                 </FormItem>
                               )}
                             />
+
+                            <div className="space-y-4">
+                              <FormField
+                                control={form.control}
+                                name="used_other_care_providers"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex items-center justify-between">
+                                      <FormLabel>Have you previously used other care providers?</FormLabel>
+                                      <FormControl>
+                                        <RadioGroup
+                                          onValueChange={(value) => field.onChange(value === "true")}
+                                          value={field.value ? "true" : "false"}
+                                          className="flex space-x-6"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="true" id="used_providers_yes" />
+                                            <Label htmlFor="used_providers_yes">Yes</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="false" id="used_providers_no" />
+                                            <Label htmlFor="used_providers_no">No</Label>
+                                          </div>
+                                        </RadioGroup>
+                                      </FormControl>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="fallen_past_six_months"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex items-center justify-between">
+                                      <FormLabel>Have you had any falls in the past 6 months?</FormLabel>
+                                      <FormControl>
+                                        <RadioGroup
+                                          onValueChange={(value) => field.onChange(value === "true")}
+                                          value={field.value ? "true" : "false"}
+                                          className="flex space-x-6"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="true" id="fallen_yes" />
+                                            <Label htmlFor="fallen_yes">Yes</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="false" id="fallen_no" />
+                                            <Label htmlFor="fallen_no">No</Label>
+                                          </div>
+                                        </RadioGroup>
+                                      </FormControl>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="has_assistance_device"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex items-center justify-between">
+                                      <FormLabel>Do you have any assistance devices (e.g., walking frame, mobility scooter)?</FormLabel>
+                                      <FormControl>
+                                        <RadioGroup
+                                          onValueChange={(value) => field.onChange(value === "true")}
+                                          value={field.value ? "true" : "false"}
+                                          className="flex space-x-6"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="true" id="has_device_yes" />
+                                            <Label htmlFor="has_device_yes">Yes</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="false" id="has_device_no" />
+                                            <Label htmlFor="has_device_no">No</Label>
+                                          </div>
+                                        </RadioGroup>
+                                      </FormControl>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="arrange_assistance_device"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex items-center justify-between">
+                                      <FormLabel>Would you like us to arrange an assistance device for you?</FormLabel>
+                                      <FormControl>
+                                        <RadioGroup
+                                          onValueChange={(value) => field.onChange(value === "true")}
+                                          value={field.value ? "true" : "false"}
+                                          className="flex space-x-6"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="true" id="arrange_device_yes" />
+                                            <Label htmlFor="arrange_device_yes">Yes</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="false" id="arrange_device_no" />
+                                            <Label htmlFor="arrange_device_no">No</Label>
+                                          </div>
+                                        </RadioGroup>
+                                      </FormControl>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="bereavement_past_two_years"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <div className="flex items-center justify-between">
+                                      <FormLabel>Have you experienced any bereavements in the past 2 years?</FormLabel>
+                                      <FormControl>
+                                        <RadioGroup
+                                          onValueChange={(value) => field.onChange(value === "true")}
+                                          value={field.value ? "true" : "false"}
+                                          className="flex space-x-6"
+                                        >
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="true" id="bereavement_yes" />
+                                            <Label htmlFor="bereavement_yes">Yes</Label>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="false" id="bereavement_no" />
+                                            <Label htmlFor="bereavement_no">No</Label>
+                                          </div>
+                                        </RadioGroup>
+                                      </FormControl>
+                                    </div>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Warning And Instructions Section */}
+                          <div className="space-y-6">
+                            <h3 className="text-lg font-medium text-gray-900">Warning And Instructions</h3>
+                            
+                            <div className="space-y-4">
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  <Label className="text-sm font-medium">Warning:</Label>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleAddWarning}
+                                    className="text-xs"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Warning
+                                  </Button>
+                                </div>
+                                <div className="space-y-2">
+                                  {(form.watch("warnings") || []).map((warning: string, index: number) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                      <Input
+                                        placeholder="Enter warning..."
+                                        value={warning}
+                                        onChange={(e) => {
+                                          const newWarnings = [...(form.getValues("warnings") || [])];
+                                          newWarnings[index] = e.target.value;
+                                          form.setValue("warnings", newWarnings);
+                                        }}
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveWarning(index)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  {(form.watch("warnings") || []).length === 0 && (
+                                    <p className="text-sm text-gray-500 italic">No warnings added yet.</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  <Label className="text-sm font-medium">Instructions:</Label>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleAddInstruction}
+                                    className="text-xs"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Instruction
+                                  </Button>
+                                </div>
+                                <div className="space-y-2">
+                                  {(form.watch("instructions") || []).map((instruction: string, index: number) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                      <Input
+                                        placeholder="Enter instruction..."
+                                        value={instruction}
+                                        onChange={(e) => {
+                                          const newInstructions = [...(form.getValues("instructions") || [])];
+                                          newInstructions[index] = e.target.value;
+                                          form.setValue("instructions", newInstructions);
+                                        }}
+                                        className="flex-1"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveInstruction(index)}
+                                        className="text-red-500 hover:text-red-700"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                  {(form.watch("instructions") || []).length === 0 && (
+                                    <p className="text-sm text-gray-500 italic">No instructions added yet.</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Important Occasions Section */}
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-medium text-gray-900">Important Occasions</h3>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleAddOccasion}
+                                className="text-xs"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                            
+                            <div className="border rounded-lg">
+                              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 border-b font-medium text-sm">
+                                <div>Occasion</div>
+                                <div>Date</div>
+                                <div>Actions</div>
+                              </div>
+                              
+                              {(form.watch("important_occasions") || []).length === 0 ? (
+                                <div className="p-6 text-center text-gray-500">
+                                  No records found
+                                </div>
+                              ) : (
+                                <div className="divide-y">
+                                  {(form.watch("important_occasions") || []).map((occasion: any, index: number) => (
+                                    <div key={index} className="grid grid-cols-3 gap-4 p-4 items-center">
+                                      <Input
+                                        placeholder="Occasion name..."
+                                        value={occasion.occasion || ""}
+                                        onChange={(e) => {
+                                          const newOccasions = [...(form.getValues("important_occasions") || [])];
+                                          newOccasions[index] = { ...newOccasions[index], occasion: e.target.value };
+                                          form.setValue("important_occasions", newOccasions);
+                                        }}
+                                      />
+                                      <Input
+                                        type="date"
+                                        value={occasion.date || ""}
+                                        onChange={(e) => {
+                                          const newOccasions = [...(form.getValues("important_occasions") || [])];
+                                          newOccasions[index] = { ...newOccasions[index], date: e.target.value };
+                                          form.setValue("important_occasions", newOccasions);
+                                        }}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleRemoveOccasion(index)}
+                                        className="text-red-500 hover:text-red-700 justify-start"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Action Buttons */}
@@ -565,61 +758,37 @@ export function AdminClientDetailsDialog({
                               type="button" 
                               variant="outline" 
                               onClick={() => onOpenChange(false)}
-                              disabled={updatePersonalInfo.isPending}
                             >
                               Cancel
                             </Button>
                             <Button 
-                              type="submit" 
+                              type="submit"
                               disabled={updatePersonalInfo.isPending}
-                              className="min-w-[100px]"
                             >
                               {updatePersonalInfo.isPending ? "Saving..." : "Save Changes"}
                             </Button>
                           </div>
-                         </form>
-                       </Form>
-                     </TabsContent>
-                   </Tabs>
+                        </form>
+                      </Form>
+                    </TabsContent>
+                  </Tabs>
                 </TabsContent>
 
-                {/* Other Main Tabs - Placeholder content */}
-                <TabsContent value="notes" className="mt-0 p-6">
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-muted-foreground mb-2">Notes & Communications</h3>
-                    <p className="text-sm text-muted-foreground">This section will contain client notes and communication history.</p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="documents" className="mt-0 p-6">
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-muted-foreground mb-2">Documents & Files</h3>
-                    <p className="text-sm text-muted-foreground">This section will contain client documents and file uploads.</p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="appointments" className="mt-0 p-6">
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-muted-foreground mb-2">Appointments & Scheduling</h3>
-                    <p className="text-sm text-muted-foreground">This section will contain appointment scheduling and history.</p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="billing" className="mt-0 p-6">
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-muted-foreground mb-2">Billing & Payments</h3>
-                    <p className="text-sm text-muted-foreground">This section will contain billing information and payment history.</p>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="careplans" className="mt-0 p-6">
+                <TabsContent value="care-plans" className="mt-0 p-6">
                   <CarePlansTab clientId={client.id} />
                 </TabsContent>
 
-                <TabsContent value="eventslogs" className="mt-0 p-6">
-                  <div className="text-center py-12">
-                    <h3 className="text-lg font-medium text-muted-foreground mb-2">Events & Activity Logs</h3>
-                    <p className="text-sm text-muted-foreground">This section will contain activity logs and event history.</p>
+                <TabsContent value="forms" className="mt-0 p-6">
+                  <div className="text-center py-8">
+                    <h3 className="text-lg font-medium text-muted-foreground">Forms Management</h3>
+                    <p className="text-sm text-muted-foreground mt-2">Coming soon...</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="activity" className="mt-0 p-6">
+                  <div className="text-center py-8">
+                    <h3 className="text-lg font-medium text-muted-foreground">Activity Log</h3>
+                    <p className="text-sm text-muted-foreground mt-2">Coming soon...</p>
                   </div>
                 </TabsContent>
               </ScrollArea>

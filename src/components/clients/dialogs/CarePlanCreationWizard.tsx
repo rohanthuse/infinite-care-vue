@@ -270,7 +270,7 @@ interface CarePlanCreationWizardProps {
 const wizardSteps = [
   { id: 1, name: "Basic Information", description: "Care plan details and personal information" },
   { id: 2, name: "About Me", description: "Client preferences and background" },
-  { id: 3, name: "General", description: "General preferences and safety notes" },
+  { id: 3, name: "Hobbies", description: "Client hobbies and interests" },
   { id: 4, name: "Medical and Mental", description: "Health conditions and medications" },
   { id: 5, name: "Medication", description: "Medication management and calendar" },
   { id: 6, name: "Admin Medication", description: "Medication administration details" },
@@ -312,7 +312,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 17;
+  const totalSteps = 16;
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
