@@ -61,18 +61,6 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       data: formData.consent
     },
     {
-      id: "general",
-      title: "General",
-      icon: Heart,
-      data: formData.general
-    },
-    {
-      id: "hobbies",
-      title: "Hobbies",
-      icon: ListChecks,
-      data: formData.hobbies
-    },
-    {
       id: "medication",
       title: "Medication",
       icon: Pill,
