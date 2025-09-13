@@ -28,23 +28,21 @@ interface CarePlanViewDialogProps {
 
 const viewSteps = [
   { id: 1, name: "Basic Information", description: "Care plan title and basic details" },
-  { id: 2, name: "Personal Information", description: "Client personal details" },
-  { id: 3, name: "About Me", description: "Client preferences and background" },
-  { id: 4, name: "General", description: "General preferences and safety notes" },
-  { id: 5, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 6, name: "Medication", description: "Medication management and calendar" },
-  { id: 7, name: "Admin Medication", description: "Medication administration details" },
-  { id: 8, name: "Goals", description: "Care goals and objectives" },
-  { id: 9, name: "Activities", description: "Daily activities and routines" },
-  { id: 10, name: "Personal Care", description: "Personal care requirements" },
-  { id: 11, name: "Dietary", description: "Dietary needs and restrictions" },
-  { id: 12, name: "Risk Assessments", description: "Safety and risk evaluations" },
-  { id: 13, name: "Equipment", description: "Required equipment and aids" },
-  { id: 14, name: "Service Plans", description: "Service delivery plans" },
-  { id: 15, name: "Service Actions", description: "Specific service actions" },
-  { id: 16, name: "Documents", description: "Supporting documents" },
-  { id: 17, name: "Consent", description: "Consent and capacity assessment" },
-  { id: 18, name: "Review", description: "Review and finalize care plan" },
+  { id: 2, name: "About Me", description: "Client preferences and background" },
+  { id: 3, name: "Medical and Mental", description: "Health conditions and medications" },
+  { id: 4, name: "Medication", description: "Medication management and calendar" },
+  { id: 5, name: "Admin Medication", description: "Medication administration details" },
+  { id: 6, name: "Goals", description: "Care goals and objectives" },
+  { id: 7, name: "Activities", description: "Daily activities and routines" },
+  { id: 8, name: "Personal Care", description: "Personal care requirements" },
+  { id: 9, name: "Dietary", description: "Dietary needs and restrictions" },
+  { id: 10, name: "Risk Assessments", description: "Safety and risk evaluations" },
+  { id: 11, name: "Equipment", description: "Required equipment and aids" },
+  { id: 12, name: "Service Plans", description: "Service delivery plans" },
+  { id: 13, name: "Service Actions", description: "Specific service actions" },
+  { id: 14, name: "Documents", description: "Supporting documents" },
+  { id: 15, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 16, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Transform care plan data for PDF generation
@@ -124,7 +122,6 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       last_name: safeString(carePlan.client?.last_name),
     },
     about_me: safeObject(carePlan.about_me),
-    general: safeObject(carePlan.general),
     medical_info: {
       ...safeObject(carePlan.medical_info),
       medication_manager: {
