@@ -311,7 +311,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 15;
+  const totalSteps = wizardSteps.length; // 16 steps total
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
