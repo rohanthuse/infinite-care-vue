@@ -180,7 +180,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     };
   };
 
-  // Extract data from auto_save_data if available
+  // Extract data from auto_save_data if available - Enhanced extraction
   const autoSaveData = typeof data.auto_save_data === 'object' && data.auto_save_data !== null ? data.auto_save_data as Record<string, any> : {};
   
   // Extract goals from auto_save_data if not available from joined table
@@ -192,7 +192,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     notes: goal.notes || goal.additional_notes || ''
   })) : [];
 
-  // Extract medications from auto_save_data if not available from joined table
+  // Extract medications from auto_save_data if not available from joined table - Enhanced
   const medicationsFromAutoSave = Array.isArray(autoSaveData.medications) ? autoSaveData.medications.map((med: any, index: number) => ({
     id: `med-${index}`,
     name: med.medication_name || med.name || '',
@@ -203,6 +203,9 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     status: med.status || 'active'
   })) : [];
 
+  // Enhanced medication manager extraction
+  const medicationManagerFromAutoSave = autoSaveData.medical_info?.medication_manager || {};
+
   // Extract activities from auto_save_data if not available from joined table
   const activitiesFromAutoSave = Array.isArray(autoSaveData.activities) ? autoSaveData.activities.map((activity: any, index: number) => ({
     id: `activity-${index}`,
@@ -212,7 +215,15 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     status: activity.status || 'active'
   })) : [];
 
-  // Transform the data to handle potential null staff relations and extract data from auto_save_data
+  // Enhanced extraction of complex nested structures
+  const extractComplexData = (key: string, defaultValue: any = []) => {
+    if (Array.isArray(autoSaveData[key]) && autoSaveData[key].length > 0) {
+      return autoSaveData[key];
+    }
+    return defaultValue;
+  };
+
+  // Transform the data to handle potential null staff relations and extract data from auto_save_data - Enhanced
   const transformedData: CarePlanWithDetails = {
     ...data,
     staff: data.staff || null,
@@ -221,27 +232,57 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     goals: data.goals?.length > 0 ? data.goals : goalsFromAutoSave,
     medications: data.medications?.length > 0 ? data.medications : medicationsFromAutoSave,
     activities: data.activities?.length > 0 ? data.activities : activitiesFromAutoSave,
-    // Add additional extracted data from auto_save_data
+    // Enhanced basic field extraction from auto_save_data
     care_plan_type: autoSaveData.care_plan_type || data.care_plan_type,
     priority: autoSaveData.priority || data.priority,
     review_date: autoSaveData.review_date || data.review_date,
+    end_date: autoSaveData.end_date || data.end_date,
     goals_progress: autoSaveData.goals_progress || data.goals_progress,
-    notes: autoSaveData.notes || data.notes,
+    notes: autoSaveData.notes || autoSaveData.additional_notes || data.notes,
     // Extract additional care plan details with normalized personal info
     personal_info: normalizePersonalInfo(autoSaveData, data.client),
-    medical_info: autoSaveData.medical_info || {},
-    personal_care: autoSaveData.personal_care || {},
+    // Enhanced medical info extraction
+    medical_info: {
+      ...autoSaveData.medical_info || {},
+      medication_manager: {
+        ...medicationManagerFromAutoSave,
+        medications: medicationsFromAutoSave.length > 0 ? medicationsFromAutoSave : (medicationManagerFromAutoSave.medications || []),
+      },
+      admin_medication: autoSaveData.medical_info?.admin_medication || {},
+    },
+    // Enhanced personal care extraction with detailed fields
+    personal_care: {
+      ...autoSaveData.personal_care || {},
+      // Ensure all sleep-related fields are extracted
+      sleep_go_to_bed_time: autoSaveData.personal_care?.sleep_go_to_bed_time,
+      sleep_wake_up_time: autoSaveData.personal_care?.sleep_wake_up_time,
+      sleep_get_out_of_bed_time: autoSaveData.personal_care?.sleep_get_out_of_bed_time,
+      sleep_prepare_duration: autoSaveData.personal_care?.sleep_prepare_duration,
+      assist_going_to_bed: autoSaveData.personal_care?.assist_going_to_bed,
+      assist_getting_out_of_bed: autoSaveData.personal_care?.assist_getting_out_of_bed,
+      incontinence_products_required: autoSaveData.personal_care?.incontinence_products_required,
+    },
     dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
     about_me: autoSaveData.about_me || {},
     consent: autoSaveData.consent || {},
-    general: autoSaveData.general || {},
     hobbies: autoSaveData.hobbies || {},
-    // Also extract other detailed sections as in fetchClientCarePlansWithDetails
-    risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
-    service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
-    service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],
-    equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
-    documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : []
+    // Enhanced extraction of complex structures with proper date handling
+    risk_assessments: extractComplexData('risk_assessments', []).map((assessment: any) => ({
+      ...assessment,
+      review_date: assessment.review_date ? new Date(assessment.review_date).toISOString() : null,
+    })),
+    service_actions: extractComplexData('service_actions', []).map((action: any) => ({
+      ...action,
+      start_date: action.start_date ? new Date(action.start_date).toISOString() : null,
+      end_date: action.end_date ? new Date(action.end_date).toISOString() : null,
+    })),
+    service_plans: extractComplexData('service_plans', []).map((plan: any) => ({
+      ...plan,
+      start_date: plan.start_date ? new Date(plan.start_date).toISOString() : null,  
+      end_date: plan.end_date ? new Date(plan.end_date).toISOString() : null,
+    })),
+    equipment: extractComplexData('equipment', []),
+    documents: extractComplexData('documents', [])
   };
 
   return transformedData;

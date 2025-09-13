@@ -109,39 +109,125 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
   const safeArray = (value: any) => Array.isArray(value) ? value : [];
   const safeObject = (value: any) => (value && typeof value === 'object' && !Array.isArray(value)) ? value : {};
   const safeString = (value: any) => typeof value === 'string' ? value : '';
+  const safeBool = (value: any) => typeof value === 'boolean' ? value : false;
 
+  // Enhanced extraction from auto_save_data for comprehensive field mapping
+  const autoSaveData = safeObject((carePlan as any).auto_save_data);
+  
   return {
-    title: safeString(carePlan.title),
-    provider_name: safeString(carePlan.provider_name || carePlan.staff?.first_name + ' ' + carePlan.staff?.last_name),
+    // Basic Information - Enhanced with missing fields
+    title: safeString(carePlan.title || autoSaveData.title),
+    provider_name: safeString(carePlan.provider_name || carePlan.staff?.first_name + ' ' + carePlan.staff?.last_name || autoSaveData.provider_name),
     provider_type: carePlan.staff_id ? 'staff' : 'external',
-    start_date: carePlan.start_date ? new Date(carePlan.start_date).toISOString().split('T')[0] : '',
-    priority: carePlan.priority || 'medium',
+    staff_id: carePlan.staff_id || autoSaveData.staff_id,
+    start_date: carePlan.start_date ? new Date(carePlan.start_date).toISOString().split('T')[0] : (autoSaveData.start_date ? new Date(autoSaveData.start_date).toISOString().split('T')[0] : ''),
+    end_date: carePlan.end_date ? new Date(carePlan.end_date).toISOString().split('T')[0] : (autoSaveData.end_date ? new Date(autoSaveData.end_date).toISOString().split('T')[0] : ''),
+    review_date: carePlan.review_date ? new Date(carePlan.review_date).toISOString().split('T')[0] : (autoSaveData.review_date ? new Date(autoSaveData.review_date).toISOString().split('T')[0] : ''),
+    priority: carePlan.priority || autoSaveData.priority || 'medium',
+    care_plan_type: carePlan.care_plan_type || autoSaveData.care_plan_type || 'standard',
+    
+    // Personal Information
     personal_info: {
       ...safeObject(carePlan.personal_info),
+      ...safeObject(autoSaveData.personal_info),
       first_name: safeString(carePlan.client?.first_name),
       last_name: safeString(carePlan.client?.last_name),
     },
-    about_me: safeObject(carePlan.about_me),
+    
+    // About Me
+    about_me: {
+      ...safeObject(carePlan.about_me),
+      ...safeObject(autoSaveData.about_me),
+    },
+    
+    // Medical Info - Enhanced with admin medication and complex structures
     medical_info: {
       ...safeObject(carePlan.medical_info),
+      ...safeObject(autoSaveData.medical_info),
       medication_manager: {
-        medications: safeArray(carePlan.medical_info?.medication_manager?.medications),
+        medications: safeArray(carePlan.medical_info?.medication_manager?.medications || autoSaveData.medical_info?.medication_manager?.medications),
+        ...safeObject(carePlan.medical_info?.medication_manager || autoSaveData.medical_info?.medication_manager),
+      },
+      admin_medication: {
+        ...safeObject(carePlan.medical_info?.admin_medication || autoSaveData.medical_info?.admin_medication),
       },
     },
-    news2_monitoring_enabled: (carePlan as any).news2_monitoring_enabled || false,
-    news2_monitoring_frequency: safeString((carePlan as any).news2_monitoring_frequency) || 'daily',
-    news2_monitoring_notes: safeString((carePlan as any).news2_monitoring_notes),
-    goals: safeArray(carePlan.goals),
-    activities: safeArray(carePlan.activities),
-    personal_care: safeObject(carePlan.personal_care),
-    dietary: safeObject(carePlan.dietary_requirements),
-    risk_assessments: safeArray(carePlan.risk_assessments),
-    equipment: safeObject(carePlan.equipment),
-    service_plans: safeArray(carePlan.service_plans),
-    service_actions: safeArray(carePlan.service_actions),
-    documents: safeArray(carePlan.documents),
-    consent: safeObject(carePlan.consent),
-    additional_notes: safeString(carePlan.notes),
+    
+    // NEWS2 Monitoring
+    news2_monitoring_enabled: (carePlan as any).news2_monitoring_enabled || autoSaveData.news2_monitoring_enabled || false,
+    news2_monitoring_frequency: safeString((carePlan as any).news2_monitoring_frequency || autoSaveData.news2_monitoring_frequency) || 'daily',
+    news2_monitoring_notes: safeString((carePlan as any).news2_monitoring_notes || autoSaveData.news2_monitoring_notes),
+    
+    // Goals and Activities
+    goals: safeArray(carePlan.goals?.length > 0 ? carePlan.goals : autoSaveData.goals),
+    activities: safeArray(carePlan.activities?.length > 0 ? carePlan.activities : autoSaveData.activities),
+    
+    // Personal Care - Enhanced with detailed sleep and assistance fields
+    personal_care: {
+      ...safeObject(carePlan.personal_care),
+      ...safeObject(autoSaveData.personal_care),
+      // Sleep schedule fields
+      sleep_go_to_bed_time: safeString(carePlan.personal_care?.sleep_go_to_bed_time || autoSaveData.personal_care?.sleep_go_to_bed_time),
+      sleep_wake_up_time: safeString(carePlan.personal_care?.sleep_wake_up_time || autoSaveData.personal_care?.sleep_wake_up_time),
+      sleep_get_out_of_bed_time: safeString(carePlan.personal_care?.sleep_get_out_of_bed_time || autoSaveData.personal_care?.sleep_get_out_of_bed_time),
+      sleep_prepare_duration: safeString(carePlan.personal_care?.sleep_prepare_duration || autoSaveData.personal_care?.sleep_prepare_duration),
+      // Assistance preferences
+      assist_going_to_bed: safeBool(carePlan.personal_care?.assist_going_to_bed || autoSaveData.personal_care?.assist_going_to_bed),
+      assist_getting_out_of_bed: safeBool(carePlan.personal_care?.assist_getting_out_of_bed || autoSaveData.personal_care?.assist_getting_out_of_bed),
+      // Incontinence
+      incontinence_products_required: safeBool(carePlan.personal_care?.incontinence_products_required || autoSaveData.personal_care?.incontinence_products_required),
+      // Detailed care fields
+      dressing_assistance_level: safeString(carePlan.personal_care?.dressing_assistance_level || autoSaveData.personal_care?.dressing_assistance_level),
+      toileting_assistance_level: safeString(carePlan.personal_care?.toileting_assistance_level || autoSaveData.personal_care?.toileting_assistance_level),
+      continence_status: safeString(carePlan.personal_care?.continence_status || autoSaveData.personal_care?.continence_status),
+      bathing_preferences: safeString(carePlan.personal_care?.bathing_preferences || autoSaveData.personal_care?.bathing_preferences),
+      personal_hygiene_needs: safeString(carePlan.personal_care?.personal_hygiene_needs || autoSaveData.personal_care?.personal_hygiene_needs),
+      skin_care_needs: safeString(carePlan.personal_care?.skin_care_needs || autoSaveData.personal_care?.skin_care_needs),
+      pain_management: safeString(carePlan.personal_care?.pain_management || autoSaveData.personal_care?.pain_management),
+      comfort_measures: safeString(carePlan.personal_care?.comfort_measures || autoSaveData.personal_care?.comfort_measures),
+      behavioral_notes: safeString(carePlan.personal_care?.behavioral_notes || autoSaveData.personal_care?.behavioral_notes),
+    },
+    
+    // Dietary Requirements
+    dietary: {
+      ...safeObject(carePlan.dietary_requirements),
+      ...safeObject(autoSaveData.dietary_requirements || autoSaveData.dietary),
+    },
+    
+    // Risk Assessments - Enhanced with review dates
+    risk_assessments: safeArray(carePlan.risk_assessments?.length > 0 ? carePlan.risk_assessments : autoSaveData.risk_assessments).map((assessment: any) => ({
+      ...assessment,
+      review_date: assessment.review_date ? new Date(assessment.review_date).toISOString().split('T')[0] : '',
+    })),
+    
+    // Equipment - Enhanced with detailed information
+    equipment: safeArray(carePlan.equipment?.length > 0 ? carePlan.equipment : autoSaveData.equipment),
+    
+    // Service Plans - Enhanced with end dates
+    service_plans: safeArray(carePlan.service_plans?.length > 0 ? carePlan.service_plans : autoSaveData.service_plans).map((plan: any) => ({
+      ...plan,
+      start_date: plan.start_date ? new Date(plan.start_date).toISOString().split('T')[0] : '',
+      end_date: plan.end_date ? new Date(plan.end_date).toISOString().split('T')[0] : '',
+    })),
+    
+    // Service Actions - Enhanced with end dates
+    service_actions: safeArray(carePlan.service_actions?.length > 0 ? carePlan.service_actions : autoSaveData.service_actions).map((action: any) => ({
+      ...action,
+      start_date: action.start_date ? new Date(action.start_date).toISOString().split('T')[0] : '',
+      end_date: action.end_date ? new Date(action.end_date).toISOString().split('T')[0] : '',
+    })),
+    
+    // Documents
+    documents: safeArray(carePlan.documents?.length > 0 ? carePlan.documents : autoSaveData.documents),
+    
+    // Consent
+    consent: {
+      ...safeObject(carePlan.consent),
+      ...safeObject(autoSaveData.consent),
+    },
+    
+    // Additional Notes
+    additional_notes: safeString(carePlan.notes || autoSaveData.notes || autoSaveData.additional_notes),
   };
 };
 
