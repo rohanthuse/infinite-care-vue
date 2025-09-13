@@ -268,24 +268,23 @@ interface CarePlanCreationWizardProps {
 }
 
 const wizardSteps = [
-  { id: 1, name: "Basic Information", description: "Care plan title and basic details" },
-  { id: 2, name: "Personal Information", description: "Client personal details" },
-  { id: 3, name: "About Me", description: "Client preferences and background" },
-  { id: 4, name: "General", description: "General preferences and safety notes" },
-  { id: 5, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 6, name: "Medication", description: "Medication management and calendar" },
-  { id: 7, name: "Admin Medication", description: "Medication administration details" },
-  { id: 8, name: "Goals", description: "Care goals and objectives" },
-  { id: 9, name: "Activities", description: "Daily activities and routines" },
-  { id: 10, name: "Personal Care", description: "Personal care requirements" },
-  { id: 11, name: "Dietary", description: "Dietary needs and restrictions" },
-  { id: 12, name: "Risk Assessments", description: "Safety and risk evaluations" },
-  { id: 13, name: "Equipment", description: "Required equipment and aids" },
-  { id: 14, name: "Service Plans", description: "Service delivery plans" },
-  { id: 15, name: "Service Actions", description: "Specific service actions" },
-  { id: 16, name: "Documents", description: "Supporting documents" },
-  { id: 17, name: "Consent", description: "Consent and capacity assessment" },
-  { id: 18, name: "Review", description: "Review and finalize care plan" },
+  { id: 1, name: "Basic Information", description: "Care plan details and personal information" },
+  { id: 2, name: "About Me", description: "Client preferences and background" },
+  { id: 3, name: "General", description: "General preferences and safety notes" },
+  { id: 4, name: "Medical and Mental", description: "Health conditions and medications" },
+  { id: 5, name: "Medication", description: "Medication management and calendar" },
+  { id: 6, name: "Admin Medication", description: "Medication administration details" },
+  { id: 7, name: "Goals", description: "Care goals and objectives" },
+  { id: 8, name: "Activities", description: "Daily activities and routines" },
+  { id: 9, name: "Personal Care", description: "Personal care requirements" },
+  { id: 10, name: "Dietary", description: "Dietary needs and restrictions" },
+  { id: 11, name: "Risk Assessments", description: "Safety and risk evaluations" },
+  { id: 12, name: "Equipment", description: "Required equipment and aids" },
+  { id: 13, name: "Service Plans", description: "Service delivery plans" },
+  { id: 14, name: "Service Actions", description: "Specific service actions" },
+  { id: 15, name: "Documents", description: "Supporting documents" },
+  { id: 16, name: "Consent", description: "Consent and capacity assessment" },
+  { id: 17, name: "Review", description: "Review and finalize care plan" },
 ];
 
 // Safe array initialization helper
@@ -313,7 +312,7 @@ export function CarePlanCreationWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
-  const totalSteps = 18;
+  const totalSteps = 17;
   
   const form = useForm({
     resolver: zodResolver(carePlanSchema),
