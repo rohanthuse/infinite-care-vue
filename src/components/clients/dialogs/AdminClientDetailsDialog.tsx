@@ -24,8 +24,11 @@ import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
+import { useServiceRates } from "@/hooks/useAccountingData";
 import { useToast } from "@/hooks/use-toast";
-import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus } from "lucide-react";
+import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus, BarChart3, Clock, PoundSterling } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { formatCurrency } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -72,7 +75,7 @@ export function AdminClientDetailsDialog({
   onOpenChange,
   client,
 }: AdminClientDetailsDialogProps) {
-  const [activeMainTab, setActiveMainTab] = useState("personal");
+  const [activeMainTab, setActiveMainTab] = useState("overview");
   const [activeSubTab, setActiveSubTab] = useState("profile");
   
   // Dynamic array handlers for General Information
@@ -108,6 +111,7 @@ export function AdminClientDetailsDialog({
   
   const { data: personalInfo, isLoading } = useClientPersonalInfo(client?.id || '');
   const { data: medicalInfo } = useClientMedicalInfo(client?.id || '');
+  const { data: serviceRates = [] } = useServiceRates(client?.branch_id);
   const updatePersonalInfo = useUpdateClientPersonalInfo();
   const updateClient = useUpdateClient();
   const { toast } = useToast();
@@ -305,6 +309,160 @@ export function AdminClientDetailsDialog({
               </div>
 
               <ScrollArea className="flex-1">
+                <TabsContent value="overview" className="mt-0 p-6">
+                  <div className="space-y-6">
+                    {/* Client Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Registration Length Card */}
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Registration Length</p>
+                              <p className="text-lg font-semibold">
+                                {client.registered_on || client.created_at 
+                                  ? formatDistanceToNow(new Date(client.registered_on || client.created_at), { addSuffix: false })
+                                  : "Unknown"}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Contact Information Card */}
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Contact Methods</p>
+                              <p className="text-lg font-semibold">
+                                {[client.email, client.mobile_number, client.telephone_number, client.phone].filter(Boolean).length || 0}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Location Card */}
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Location</p>
+                              <p className="text-sm font-semibold truncate">
+                                {client.address || client.region || "Not specified"}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Active Rates Card */}
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <PoundSterling className="h-4 w-4 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium">Active Rates</p>
+                              <p className="text-lg font-semibold">
+                                {serviceRates.filter(rate => rate.status === 'active').length}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Client Details Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Basic Information */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <User className="h-4 w-4" />
+                            Basic Information
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-muted-foreground">Joined On:</span>
+                              <p className="font-medium">
+                                {client.registered_on 
+                                  ? new Date(client.registered_on).toLocaleDateString()
+                                  : client.created_at 
+                                    ? new Date(client.created_at).toLocaleDateString()
+                                    : "Not available"}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Status:</span>
+                              <p className="font-medium capitalize">{client.status || "Active"}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Email:</span>
+                              <p className="font-medium">{client.email || "Not provided"}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Mobile:</span>
+                              <p className="font-medium">{client.mobile_number || client.phone || "Not provided"}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Telephone:</span>
+                              <p className="font-medium">{client.telephone_number || "Not provided"}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Location:</span>
+                              <p className="font-medium">{client.address || client.region || "Not specified"}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Service Rates Summary */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" />
+                            Service Rates Overview
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {serviceRates.length > 0 ? (
+                            <div className="space-y-3">
+                              {serviceRates.slice(0, 5).map((rate) => (
+                                <div key={rate.id} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                                  <div>
+                                    <p className="font-medium text-sm">{rate.service_name}</p>
+                                    <p className="text-xs text-muted-foreground">{rate.rate_type}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-medium text-sm">{formatCurrency(rate.amount)}</p>
+                                    <p className="text-xs text-muted-foreground capitalize">{rate.status}</p>
+                                  </div>
+                                </div>
+                              ))}
+                              {serviceRates.length > 5 && (
+                                <p className="text-xs text-center text-muted-foreground pt-2">
+                                  +{serviceRates.length - 5} more rates available in Rates tab
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center py-6">
+                              <p className="text-sm text-muted-foreground">No service rates configured</p>
+                              <p className="text-xs text-muted-foreground mt-1">Rates can be added in the Rates tab</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="personal" className="mt-0 p-6">
                   <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3">

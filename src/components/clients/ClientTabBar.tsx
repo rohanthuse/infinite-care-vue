@@ -1,7 +1,7 @@
 
 import React from "react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart } from "lucide-react";
+import { BarChart3, User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart } from "lucide-react";
 
 interface ClientTabBarProps {
   activeTab: string;
@@ -10,7 +10,15 @@ interface ClientTabBarProps {
 
 export const ClientTabBar: React.FC<ClientTabBarProps> = ({ activeTab, onChange }) => {
   return (
-    <TabsList className="grid grid-cols-2 md:grid-cols-9 w-full mb-4 overflow-x-auto">
+    <TabsList className="grid grid-cols-2 md:grid-cols-10 w-full mb-4 overflow-x-auto">
+      <TabsTrigger 
+        value="overview"
+        onClick={() => onChange("overview")}
+        className={`flex items-center gap-1 ${activeTab === "overview" ? "data-[state=active]:bg-blue-100 data-[state=active]:text-blue-700" : ""}`}
+      >
+        <BarChart3 className="h-4 w-4" />
+        <span>Overview</span>
+      </TabsTrigger>
       <TabsTrigger 
         value="personal"
         onClick={() => onChange("personal")}
