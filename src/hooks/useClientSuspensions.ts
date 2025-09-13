@@ -49,6 +49,23 @@ interface EndSuspensionData {
   suspensionId: string;
 }
 
+interface UpdateSuspensionData {
+  suspensionId: string;
+  clientId: string;
+  data: {
+    suspension_type: "temporary" | "indefinite";
+    reason: string;
+    details?: string | null;
+    effective_from: string;
+    effective_until?: string | null;
+  };
+}
+
+interface DeleteSuspensionData {
+  suspensionId: string;
+  clientId: string;
+}
+
 // Fetch client suspension status
 const fetchClientSuspensions = async (clientId: string): Promise<SuspensionStatus | null> => {
   if (!clientId) return null;
@@ -136,6 +153,50 @@ const endSuspension = async ({ clientId, suspensionId }: EndSuspensionData): Pro
   }
 };
 
+// Update suspension
+const updateSuspension = async ({ suspensionId, clientId, data }: UpdateSuspensionData): Promise<void> => {
+  const { error } = await supabase
+    .from("client_status_history")
+    .update({
+      suspension_type: data.suspension_type,
+      reason: data.reason,
+      details: data.details,
+      effective_from: data.effective_from,
+      effective_until: data.effective_until,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", suspensionId);
+
+  if (error) {
+    console.error("Error updating suspension:", error);
+    throw error;
+  }
+};
+
+// Delete suspension
+const deleteSuspension = async ({ suspensionId, clientId }: DeleteSuspensionData): Promise<void> => {
+  const { error } = await supabase
+    .from("client_status_history")
+    .delete()
+    .eq("id", suspensionId);
+
+  if (error) {
+    console.error("Error deleting suspension:", error);
+    throw error;
+  }
+
+  // Update client status back to Active if this was the active suspension
+  const { error: updateError } = await supabase
+    .from("clients")
+    .update({ status: "Active" })
+    .eq("id", clientId);
+
+  if (updateError) {
+    console.error("Error updating client status after deletion:", updateError);
+    throw updateError;
+  }
+};
+
 // Fetch suspension history
 const fetchSuspensionHistory = async (clientId: string): Promise<ClientStatusHistory[]> => {
   if (!clientId) return [];
@@ -193,6 +254,49 @@ export const useEndSuspension = () => {
         queryKey: ["client-suspensions", variables.clientId],
       });
       
+      // Invalidate client data queries to reflect status change
+      queryClient.invalidateQueries({
+        queryKey: ["admin-client-detail", variables.clientId],
+      });
+    },
+  });
+};
+
+export const useUpdateSuspension = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateSuspension,
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch suspension status
+      queryClient.invalidateQueries({
+        queryKey: ["client-suspensions", variables.clientId],
+      });
+      
+      // Invalidate suspension history
+      queryClient.invalidateQueries({
+        queryKey: ["suspension-history", variables.clientId],
+      });
+    },
+  });
+};
+
+export const useDeleteSuspension = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteSuspension,
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch suspension status
+      queryClient.invalidateQueries({
+        queryKey: ["client-suspensions", variables.clientId],
+      });
+      
+      // Invalidate suspension history
+      queryClient.invalidateQueries({
+        queryKey: ["suspension-history", variables.clientId],
+      });
+
       // Invalidate client data queries to reflect status change
       queryClient.invalidateQueries({
         queryKey: ["admin-client-detail", variables.clientId],
