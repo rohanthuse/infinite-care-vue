@@ -64,6 +64,16 @@ export interface ClientPersonalInfo {
   desired_outcomes?: string;
   success_measures?: string;
   priority_areas?: string;
+  // General fields
+  main_reasons_for_care?: string;
+  used_other_care_providers?: boolean;
+  fallen_past_six_months?: boolean;
+  has_assistance_device?: boolean;
+  arrange_assistance_device?: boolean;
+  bereavement_past_two_years?: boolean;
+  warnings?: string[];
+  instructions?: string[];
+  important_occasions?: Array<{ occasion?: string; date?: string }>;
   created_at: string;
   updated_at: string;
 }
