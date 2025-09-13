@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 
 import { ClientSideTabNav } from "./ClientSideTabNav";
+import { ClientOverviewTab } from "./tabs/ClientOverviewTab";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { NotesTab } from "./tabs/NotesTab";
 import { SuspendTab } from "./tabs/SuspendTab";
@@ -48,7 +49,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   onClose,
   startInEditMode = false,
 }) => {
-  const [activeTab, setActiveTab] = useState("personal");
+  const [activeTab, setActiveTab] = useState("overview");
   const [sharingDialogOpen, setSharingDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(startInEditMode);
   const navigate = useNavigate();
@@ -176,6 +177,13 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           
           <div className="flex-1 overflow-y-auto">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+                <TabsContent value="overview" className="p-6 m-0">
+                  <ClientOverviewTab 
+                    client={realClientData || client} 
+                    branchId={branchId}
+                  />
+                </TabsContent>
+                
                 <TabsContent value="personal" className="p-6 m-0">
                   <PersonalInfoTab 
                     client={realClientData || client} 

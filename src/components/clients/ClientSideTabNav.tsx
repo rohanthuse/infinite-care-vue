@@ -1,5 +1,5 @@
 import React from "react";
-import { User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart, DollarSign, PauseCircle } from "lucide-react";
+import { User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart, DollarSign, PauseCircle, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,11 @@ interface ClientSideTabNavProps {
 }
 
 const navItems = [
+  {
+    id: "overview",
+    label: "Overview",
+    icon: BarChart3,
+  },
   {
     id: "personal",
     label: "Personal Info",
