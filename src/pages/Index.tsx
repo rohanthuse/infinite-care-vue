@@ -28,27 +28,9 @@ const Index = () => {
     if (user && userRole) {
       console.log('[Index] User authenticated, redirecting based on role:', userRole.role);
       
-      // Redirect based on user role
-      switch (userRole.role) {
-        case 'super_admin':
-          console.log('[Index] Redirecting super admin to system dashboard');
-          navigate('/system-dashboard', { replace: true });
-          break;
-        case 'branch_admin':
-          console.log('[Index] Redirecting branch admin to admin dashboard');
-          navigate('/admin-dashboard', { replace: true });
-          break;
-        case 'carer':
-          console.log('[Index] Redirecting carer to carer dashboard');
-          navigate('/carer-dashboard', { replace: true });
-          break;
-        case 'client':
-          console.log('[Index] Redirecting client to client dashboard');
-          navigate('/client-dashboard', { replace: true });
-          break;
-        default:
-          console.log('[Index] Unknown role, staying on landing page');
-      }
+      // Don't redirect authenticated users from Index page - let login pages handle routing
+      console.log('[Index] User is authenticated with role:', userRole.role, '- letting login components handle navigation');
+      return;
     } else if (user && !userRole) {
       console.log('[Index] User authenticated but no role found - redirecting to login');
       navigate('/login', { replace: true });

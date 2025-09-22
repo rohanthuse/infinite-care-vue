@@ -415,7 +415,7 @@ const UnifiedLogin = () => {
       setTimeout(() => {
         console.log('[LOGIN DEBUG] Executing navigation to:', dashboardPath);
         navigate(dashboardPath, { replace: true });
-      }, 500);
+      }, 1000);
 
     } catch (error: any) {
       console.error('[LOGIN DEBUG] Login error occurred:', error);

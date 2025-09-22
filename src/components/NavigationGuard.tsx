@@ -17,7 +17,8 @@ export const NavigationGuard = () => {
     if (!user || !session || isLoading) return;
     
     const currentPath = window.location.pathname;
-    const isOnLoginPage = currentPath === '/login' || currentPath.includes('login');
+    // More specific login page detection - avoid false matches like /audi/login
+    const isOnLoginPage = currentPath === '/login';
     
     if (isOnLoginPage && userRoleData?.role) {
       console.log('[NavigationGuard] User authenticated but stuck on login page, redirecting...', {
@@ -26,7 +27,7 @@ export const NavigationGuard = () => {
         currentPath
       });
       
-      // Small delay to prevent navigation conflicts with UnifiedLogin
+      // Delay to prevent navigation conflicts with UnifiedLogin
       setTimeout(() => {
         const role = userRoleData.role;
         
@@ -35,10 +36,10 @@ export const NavigationGuard = () => {
           console.log('[NavigationGuard] Redirecting app_admin to system dashboard');
           navigate('/system-dashboard', { replace: true });
         } else {
-          console.log('[NavigationGuard] Non-system admin user - let UnifiedLogin handle tenant-aware routing');
-          return; // Let UnifiedLogin handle all tenant-aware routing including super_admin
+          console.log('[NavigationGuard] Non-system admin user - UnifiedLogin should handle routing');
+          // Don't interfere with other roles - UnifiedLogin handles tenant-aware routing
         }
-      }, 1000); // Longer delay to let UnifiedLogin handle navigation first
+      }, 1500); // Longer delay to ensure UnifiedLogin completes first
     }
   }, [user, session, userRoleData, isLoading, navigate]);
 
