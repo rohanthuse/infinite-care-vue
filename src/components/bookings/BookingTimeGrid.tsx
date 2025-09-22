@@ -681,6 +681,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
             entities={clientBookings}
             selectedEntityId={selectedClientId}
             onSelect={handleClientSelect}
+            currentDate={validDate}
+            viewType={viewType}
+            weekDates={weekDates}
           />
         </div>
         
@@ -694,6 +697,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
             entities={carerBookings}
             selectedEntityId={selectedCarerId}
             onSelect={handleCarerSelect}
+            currentDate={validDate}
+            viewType={viewType}
+            weekDates={weekDates}
           />
         </div>
         

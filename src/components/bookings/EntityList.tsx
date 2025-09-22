@@ -11,6 +11,9 @@ interface EntityListProps {
   entities: Client[] | Carer[];
   selectedEntityId: string | null;
   onSelect: (id: string) => void;
+  currentDate?: Date;
+  viewType?: "daily" | "weekly" | "monthly";
+  weekDates?: Date[];
 }
 
 export const EntityList: React.FC<EntityListProps> = ({
@@ -18,12 +21,46 @@ export const EntityList: React.FC<EntityListProps> = ({
   entities,
   selectedEntityId,
   onSelect,
+  currentDate,
+  viewType = "daily",
+  weekDates = [],
 }) => {
+  const filterBookingsByDateRange = (bookings?: Booking[]) => {
+    if (!bookings || bookings.length === 0) return [];
+    if (!currentDate) return bookings;
+
+    return bookings.filter(booking => {
+      if (!booking.date) return false;
+      
+      try {
+        const bookingDate = new Date(booking.date);
+        if (isNaN(bookingDate.getTime())) return false;
+        
+        if (viewType === "daily") {
+          return bookingDate.toDateString() === currentDate.toDateString();
+        } else if (viewType === "weekly") {
+          return weekDates.some(weekDate => 
+            bookingDate.toDateString() === weekDate.toDateString()
+          );
+        } else if (viewType === "monthly") {
+          return bookingDate.getMonth() === currentDate.getMonth() && 
+                 bookingDate.getFullYear() === currentDate.getFullYear();
+        }
+        
+        return false;
+      } catch (error) {
+        console.error("Error filtering booking date:", booking.date, error);
+        return false;
+      }
+    });
+  };
+
   const calculateTotalHours = (bookings?: Booking[]) => {
-    if (!bookings || bookings.length === 0) return 0;
+    const filteredBookings = filterBookingsByDateRange(bookings);
+    if (filteredBookings.length === 0) return 0;
     
     let totalMinutes = 0;
-    bookings.forEach(booking => {
+    filteredBookings.forEach(booking => {
       if (booking.status !== "cancelled") {
         const startParts = booking.startTime.split(':').map(Number);
         const endParts = booking.endTime.split(':').map(Number);
@@ -43,11 +80,12 @@ export const EntityList: React.FC<EntityListProps> = ({
   };
   
   const getBookingsByStatus = (bookings?: Booking[]) => {
-    if (!bookings || bookings.length === 0) return {};
+    const filteredBookings = filterBookingsByDateRange(bookings);
+    if (filteredBookings.length === 0) return {};
     
     const result: Record<string, { count: number, hours: number }> = {};
     
-    bookings.forEach(booking => {
+    filteredBookings.forEach(booking => {
       if (!result[booking.status]) {
         result[booking.status] = { count: 0, hours: 0 };
       }
