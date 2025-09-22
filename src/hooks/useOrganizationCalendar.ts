@@ -141,7 +141,221 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         staffIds: booking.staff_id ? [booking.staff_id] : []
       }));
       
-      events.push(...bookingEvents);
+    events.push(...bookingEvents);
+    }
+
+    // Fetch scheduled agreements
+    if (!eventType || eventType === 'all' || eventType === 'agreement') {
+      try {
+        const { data: agreements, error: agreementsError } = await supabase
+          .from('scheduled_agreements')
+          .select(`
+            id,
+            title,
+            scheduled_for,
+            scheduled_with_name,
+            scheduled_with_client_id,
+            scheduled_with_staff_id,
+            branch_id,
+            notes,
+            status,
+            agreement_types (
+              name
+            ),
+            branches (
+              name
+            )
+          `)
+          .gte('scheduled_for', startDate.toISOString().split('T')[0])
+          .lte('scheduled_for', endDate.toISOString().split('T')[0])
+          .in('branch_id', targetBranchIds)
+          .order('scheduled_for', { ascending: true });
+
+        if (agreementsError) {
+          console.error('[fetchOrganizationCalendarEvents] Agreements error:', agreementsError);
+        } else if (agreements) {
+          const agreementEvents = agreements.map(agreement => ({
+            id: agreement.id,
+            type: 'agreement' as const,
+            title: agreement.title || 'Agreement Meeting',
+            startTime: new Date(`${agreement.scheduled_for}T09:00:00`),
+            endTime: new Date(`${agreement.scheduled_for}T10:00:00`),
+            status: (agreement.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
+            branchId: agreement.branch_id,
+            branchName: agreement.branches?.name || 'Unknown Branch',
+            participants: agreement.scheduled_with_name ? [{
+              id: agreement.scheduled_with_client_id || agreement.scheduled_with_staff_id || '',
+              name: agreement.scheduled_with_name,
+              role: agreement.scheduled_with_client_id ? 'client' : 'staff'
+            }] : [],
+            location: agreement.branches?.name,
+            priority: 'medium' as const,
+            clientId: agreement.scheduled_with_client_id,
+            staffIds: agreement.scheduled_with_staff_id ? [agreement.scheduled_with_staff_id] : []
+          }));
+          
+          events.push(...agreementEvents);
+        }
+      } catch (error) {
+        console.error('[fetchOrganizationCalendarEvents] Agreements fetch error:', error);
+      }
+    }
+
+    // Fetch staff training records
+    if (!eventType || eventType === 'all' || eventType === 'training') {
+      try {
+        const { data: trainings, error: trainingsError } = await supabase
+          .from('staff_training_records')
+          .select(`
+            id,
+            assigned_date,
+            completion_date,
+            status,
+            staff_id,
+            branch_id,
+            training_course_id,
+            staff (
+              first_name,
+              last_name
+            ),
+            branches (
+              name
+            )
+          `)
+          .gte('assigned_date', startDate.toISOString().split('T')[0])
+          .lte('assigned_date', endDate.toISOString().split('T')[0])
+          .in('branch_id', targetBranchIds)
+          .order('assigned_date', { ascending: true });
+
+        if (trainingsError) {
+          console.error('[fetchOrganizationCalendarEvents] Trainings error:', trainingsError);
+        } else if (trainings) {
+          const trainingEvents = trainings.map(training => ({
+            id: training.id,
+            type: 'training' as const,
+            title: `Training Session`,
+            startTime: new Date(`${training.assigned_date}T14:00:00`),
+            endTime: new Date(`${training.assigned_date}T16:00:00`),
+            status: (training.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
+            branchId: training.branch_id,
+            branchName: training.branches?.name || 'Unknown Branch',
+            participants: training.staff ? [{
+              id: training.staff_id,
+              name: `${training.staff.first_name} ${training.staff.last_name}`,
+              role: 'staff'
+            }] : [],
+            location: training.branches?.name,
+            priority: 'medium' as const,
+            staffIds: [training.staff_id]
+          }));
+          
+          events.push(...trainingEvents);
+        }
+      } catch (error) {
+        console.error('[fetchOrganizationCalendarEvents] Trainings fetch error:', error);
+      }
+    }
+
+    // Fetch annual leave calendar events
+    if (!eventType || eventType === 'all' || eventType === 'leave') {
+      try {
+        const { data: leaves, error: leavesError } = await supabase
+          .from('annual_leave_calendar')
+          .select(`
+            id,
+            leave_name,
+            leave_date,
+            is_company_wide,
+            is_recurring,
+            branch_id,
+            branches (
+              name
+            )
+          `)
+          .gte('leave_date', startDate.toISOString().split('T')[0])
+          .lte('leave_date', endDate.toISOString().split('T')[0])
+          .or(`branch_id.in.(${targetBranchIds.join(',')}),is_company_wide.eq.true`)
+          .order('leave_date', { ascending: true });
+
+        if (leavesError) {
+          console.error('[fetchOrganizationCalendarEvents] Leaves error:', leavesError);
+        } else if (leaves) {
+          const leaveEvents = leaves.map(leave => ({
+            id: leave.id,
+            type: 'leave' as const,
+            title: leave.leave_name,
+            startTime: new Date(`${leave.leave_date}T00:00:00`),
+            endTime: new Date(`${leave.leave_date}T23:59:59`),
+            status: 'scheduled' as const,
+            branchId: leave.branch_id || targetBranchIds[0],
+            branchName: leave.is_company_wide ? 'Company-wide' : (leave.branches?.name || 'Unknown Branch'),
+            participants: [],
+            location: leave.is_company_wide ? 'All Locations' : leave.branches?.name,
+            priority: 'low' as const,
+            staffIds: []
+          }));
+          
+          events.push(...leaveEvents);
+        }
+      } catch (error) {
+        console.error('[fetchOrganizationCalendarEvents] Leaves fetch error:', error);
+      }
+    }
+
+    // Fetch client appointments
+    if (!eventType || eventType === 'all' || eventType === 'meeting') {
+      try {
+        const { data: appointments, error: appointmentsError } = await supabase
+          .from('client_appointments')
+          .select(`
+            id,
+            appointment_type,
+            provider_name,
+            appointment_date,
+            appointment_time,
+            location,
+            status,
+            client_id,
+            clients (
+              first_name,
+              last_name,
+              branch_id
+            )
+          `)
+          .gte('appointment_date', startDate.toISOString().split('T')[0])
+          .lte('appointment_date', endDate.toISOString().split('T')[0])
+          .order('appointment_date', { ascending: true });
+
+        if (appointmentsError) {
+          console.error('[fetchOrganizationCalendarEvents] Appointments error:', appointmentsError);
+        } else if (appointments) {
+          const appointmentEvents = appointments
+            .filter(appointment => appointment.clients && targetBranchIds.includes(appointment.clients.branch_id))
+            .map(appointment => ({
+              id: appointment.id,
+              type: 'meeting' as const,
+              title: `${appointment.appointment_type} - ${appointment.provider_name}`,
+              startTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
+              endTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
+              status: (appointment.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
+              branchId: appointment.clients?.branch_id || targetBranchIds[0],
+              branchName: 'External Appointment',
+              participants: appointment.clients ? [{
+                id: appointment.client_id,
+                name: `${appointment.clients.first_name} ${appointment.clients.last_name}`,
+                role: 'client'
+              }] : [],
+              location: appointment.location || 'External',
+              priority: 'medium' as const,
+              clientId: appointment.client_id,
+              staffIds: []
+            }));
+          
+          events.push(...appointmentEvents);
+        }
+      } catch (error) {
+        console.error('[fetchOrganizationCalendarEvents] Appointments fetch error:', error);
+      }
     }
 
     // Filter by event type if specified

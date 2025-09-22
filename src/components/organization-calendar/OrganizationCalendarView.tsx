@@ -9,18 +9,14 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Calendar,
-  Search,
-  Filter,
-  Download,
-  Plus,
-  Users,
-  Clock,
-  MapPin,
-  AlertCircle
-} from 'lucide-react';
+import { Download, Plus, Search, Filter, Calendar as CalendarIcon, ChevronDown, Users, Clock, MapPin, AlertCircle, FileText } from 'lucide-react';
 import { DateNavigation } from '@/components/bookings/DateNavigation';
 import { CalendarDayView } from './CalendarDayView';
 import { CalendarWeekView } from './CalendarWeekView';
@@ -36,6 +32,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent } from '@/types/calendar';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useScheduledAgreements, useCreateScheduledAgreement } from '@/data/hooks/agreements';
+import { useAnnualLeave, useCreateAnnualLeave } from '@/hooks/useLeaveManagement';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -47,6 +45,7 @@ export const OrganizationCalendarView = () => {
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
+  const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   
   const { organization } = useTenant();
@@ -146,8 +145,34 @@ export const OrganizationCalendarView = () => {
     }
   };
 
+  const handleNewEvent = (eventType: 'booking' | 'agreement' | 'training' | 'leave' | 'meeting') => {
+    setNewEventType(eventType);
+    
+    switch (eventType) {
+      case 'booking':
+        setNewBookingDialogOpen(true);
+        break;
+      case 'agreement':
+        // Handle agreement creation
+        toast.info('Agreement scheduling will be available soon');
+        break;
+      case 'training':
+        // Handle training creation
+        toast.info('Training scheduling will be available soon');
+        break;
+      case 'leave':
+        // Handle leave creation
+        toast.info('Leave scheduling will be available soon');
+        break;
+      case 'meeting':
+        // Handle meeting creation
+        toast.info('Meeting scheduling will be available soon');
+        break;
+    }
+  };
+
   const handleNewBooking = () => {
-    setNewBookingDialogOpen(true);
+    handleNewEvent('booking');
   };
 
   const handleCreateBooking = async (bookingData: any, selectedCarers: any[] = []) => {
@@ -177,11 +202,11 @@ export const OrganizationCalendarView = () => {
   };
 
   const eventTypeColors = {
-    booking: 'bg-blue-500',
-    meeting: 'bg-purple-500',
-    leave: 'bg-orange-500',
-    training: 'bg-green-500',
-    agreement: 'bg-yellow-500'
+    booking: 'bg-primary',
+    meeting: 'bg-secondary', 
+    leave: 'bg-accent',
+    training: 'bg-muted',
+    agreement: 'bg-card'
   };
 
   const renderCalendarView = () => {
@@ -224,7 +249,7 @@ export const OrganizationCalendarView = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-primary" />
+            <CalendarIcon className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">Organization Calendar</h1>
           </div>
           <Badge variant="secondary" className="text-sm">
@@ -241,10 +266,37 @@ export const OrganizationCalendarView = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button size="sm" onClick={handleNewBooking}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Booking
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Event
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleNewEvent('booking')}>
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                New Booking
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNewEvent('meeting')}>
+                <Users className="h-4 w-4 mr-2" />
+                New Meeting
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNewEvent('training')}>
+                <Clock className="h-4 w-4 mr-2" />
+                Schedule Training
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNewEvent('agreement')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Schedule Agreement
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleNewEvent('leave')}>
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                Add Leave/Holiday
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -338,8 +390,8 @@ export const OrganizationCalendarView = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
-                <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 rounded-lg bg-primary/10">
+                <CalendarIcon className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Events</p>
@@ -354,8 +406,8 @@ export const OrganizationCalendarView = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
-                <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active Staff</p>
@@ -370,8 +422,8 @@ export const OrganizationCalendarView = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900">
-                <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Clock className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Capacity</p>
@@ -386,8 +438,8 @@ export const OrganizationCalendarView = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900">
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Conflicts</p>
