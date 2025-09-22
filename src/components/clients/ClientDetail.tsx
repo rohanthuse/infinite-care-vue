@@ -12,6 +12,7 @@ import { ClientSideTabNav } from "./ClientSideTabNav";
 import { ClientOverviewTab } from "./tabs/ClientOverviewTab";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
 import { NotesTab } from "./tabs/NotesTab";
+import MessagesTab from "./tabs/MessagesTab";
 import { SuspendTab } from "./tabs/SuspendTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { AppointmentsTab } from "./tabs/AppointmentsTab";
@@ -199,6 +200,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="notes" className="p-6 m-0">
                   <NotesTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="messages" className="p-6 m-0">
+                  <MessagesTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="reviews" className="p-6 m-0">

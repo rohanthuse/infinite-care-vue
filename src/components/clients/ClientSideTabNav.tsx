@@ -22,6 +22,11 @@ const navItems = [
   {
     id: "notes",
     label: "Notes",
+    icon: FileText,
+  },
+  {
+    id: "messages",
+    label: "Messages",
     icon: MessageCircle,
   },
   {
