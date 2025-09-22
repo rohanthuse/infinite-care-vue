@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { 
   LayoutDashboard, Workflow, ListChecks, Users, 
-  Calendar, Star, MessageSquare, Pill, PoundSterling, 
+  Calendar, CalendarDays, Star, MessageSquare, Pill, PoundSterling, 
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Search, Plus, UserPlus2, FileSignature, CalendarPlus, 
@@ -56,7 +56,7 @@ interface TabGroup {
 
 const primaryTabs: TabItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", value: "dashboard", description: "Branch overview" },
-  { icon: Calendar, label: "Organization Calendar", value: "organization-calendar", description: "Comprehensive calendar view" },
+  { icon: CalendarDays, label: "Organization Calendar", value: "organization-calendar", description: "Comprehensive calendar view" },
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
