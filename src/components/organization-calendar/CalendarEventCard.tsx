@@ -44,11 +44,11 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
 
   const getEventColor = (type: string) => {
     const colors = {
-      booking: 'border-primary bg-primary/5',
-      meeting: 'border-secondary bg-secondary/5',
-      leave: 'border-accent bg-accent/5',
-      training: 'border-muted-foreground bg-muted/20',
-      agreement: 'border-border bg-card'
+      booking: 'border-blue-500 bg-blue-50 dark:bg-blue-950/50',
+      meeting: 'border-purple-500 bg-purple-50 dark:bg-purple-950/50',
+      leave: 'border-orange-500 bg-orange-50 dark:bg-orange-950/50',
+      training: 'border-green-500 bg-green-50 dark:bg-green-950/50',
+      agreement: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/50'
     };
     return colors[type as keyof typeof colors] || 'border-border bg-card';
   };
