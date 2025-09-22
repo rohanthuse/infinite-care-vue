@@ -1,9 +1,11 @@
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Client, Carer, Booking } from "../BookingTimeGrid";
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { useBranchClients } from "@/data/hooks/useBranchClients";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
+import { useAuthSafe } from "@/hooks/useAuthSafe";
+import { toast } from "sonner";
 import { 
   mapDBClientToClient, 
   mapDBCarerToCarer,
@@ -13,17 +15,50 @@ import {
 import { makeDummyBookings, dummyClients, dummyCarers } from "../utils/dummyDataGenerator";
 
 export function useBookingData(branchId?: string) {
-  const { data: bookingsDB = [], isLoading: isLoadingBookings } = useBranchBookings(branchId);
+  const { user, loading: authLoading } = useAuthSafe();
+  
+  // Only fetch data if user is authenticated
+  const shouldFetchData = !authLoading && !!user;
+  
+  const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(
+    shouldFetchData ? branchId : undefined
+  );
   const {
     data: clientsResponse,
-    isLoading: isLoadingClients
+    isLoading: isLoadingClients,
+    error: clientsError
   } = useBranchClients({
-    branchId,
+    branchId: shouldFetchData ? branchId : undefined,
     searchTerm: "",
     page: 1,
     itemsPerPage: 100
   });
-  const { data: carersData = [], isLoading: isLoadingCarers } = useBranchCarers(branchId);
+  
+  const { data: carersData = [], isLoading: isLoadingCarers, error: carersError } = useBranchCarers(
+    shouldFetchData ? branchId : undefined
+  );
+
+  // Monitor authentication state and show appropriate errors
+  useEffect(() => {
+    if (!authLoading && !user) {
+      console.warn('[useBookingData] No authenticated user - booking data will be limited');
+    }
+    
+    if (bookingsError || clientsError || carersError) {
+      console.error('[useBookingData] Data fetch errors:', {
+        bookingsError,
+        clientsError, 
+        carersError
+      });
+      
+      // Show error toast if there are data fetch issues
+      if (user && (bookingsError || clientsError || carersError)) {
+        toast.error('Failed to load booking data', {
+          description: 'Please check your connection and try refreshing the page'
+        });
+      }
+    }
+  }, [user, authLoading, bookingsError, clientsError, carersError]);
 
   const { clients, carers, bookings } = useMemo(() => {
     console.log("[useBookingData] Raw data received:");
@@ -153,6 +188,8 @@ export function useBookingData(branchId?: string) {
     clients,
     carers,
     bookings,
-    isLoading: isLoadingBookings || isLoadingClients || isLoadingCarers
+    isLoading: authLoading || isLoadingBookings || isLoadingClients || isLoadingCarers,
+    hasAuthError: !authLoading && !user,
+    hasDataError: !!(bookingsError || clientsError || carersError)
   };
 }

@@ -35,18 +35,23 @@ const Index = () => {
           navigate('/system-dashboard', { replace: true });
           break;
         case 'branch_admin':
+          console.log('[Index] Redirecting branch admin to admin dashboard');
+          navigate('/admin-dashboard', { replace: true });
+          break;
         case 'carer':
+          console.log('[Index] Redirecting carer to carer dashboard');
+          navigate('/carer-dashboard', { replace: true });
+          break;
         case 'client':
-          // For tenant users, we'll need to determine their organization
-          // For now, redirect to login to let them choose their organization
-          console.log('[Index] Redirecting tenant user to login');
-          navigate('/login', { replace: true });
+          console.log('[Index] Redirecting client to client dashboard');
+          navigate('/client-dashboard', { replace: true });
           break;
         default:
           console.log('[Index] Unknown role, staying on landing page');
       }
     } else if (user && !userRole) {
-      console.log('[Index] User authenticated but no role found');
+      console.log('[Index] User authenticated but no role found - redirecting to login');
+      navigate('/login', { replace: true });
     } else {
       console.log('[Index] User not authenticated, showing landing page');
     }

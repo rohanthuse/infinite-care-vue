@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,66 +9,94 @@ export function useRealTimeBookingSync(branchId?: string) {
   const channelRef = useRef<any>(null);
 
   useEffect(() => {
-    if (!branchId) return;
-
-    console.log("[useRealTimeBookingSync] Setting up real-time subscription for branch:", branchId);
-
-    // Clean up any existing channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+    if (!branchId) {
+      console.log("[useRealTimeBookingSync] No branch ID provided");
+      return;
     }
 
-    // Create a unique channel name to avoid conflicts
-    const channelName = `booking-changes-${branchId}-${Date.now()}`;
+    // Check if user is authenticated before setting up real-time sync
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          console.log("[useRealTimeBookingSync] No authenticated user, skipping real-time setup");
+          setIsConnected(false);
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error("[useRealTimeBookingSync] Auth check failed:", error);
+        setIsConnected(false);
+        return false;
+      }
+    };
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bookings',
-          filter: `branch_id=eq.${branchId}`
-        },
-        (payload) => {
-          console.log("[useRealTimeBookingSync] Real-time booking change detected:", payload);
+    const setupRealTimeSync = async () => {
+      const isAuthenticated = await checkAuth();
+      if (!isAuthenticated) return;
+
+      console.log("[useRealTimeBookingSync] Setting up real-time subscription for branch:", branchId);
+
+      // Clean up any existing channel
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
+      // Create a unique channel name to avoid conflicts
+      const channelName = `booking-changes-${branchId}-${Date.now()}`;
+
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'bookings',
+            filter: `branch_id=eq.${branchId}`
+          },
+          (payload) => {
+            console.log("[useRealTimeBookingSync] Real-time booking change detected:", payload);
+            
+            // Invalidate and refetch booking data
+            queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+            
+            // Show appropriate notifications
+            if (payload.eventType === 'INSERT') {
+              toast.success("New booking created", {
+                description: "Calendar updated automatically"
+              });
+            } else if (payload.eventType === 'UPDATE') {
+              toast.info("Booking updated", {
+                description: "Calendar refreshed"
+              });
+            } else if (payload.eventType === 'DELETE') {
+              toast.info("Booking removed", {
+                description: "Calendar updated"
+              });
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log("[useRealTimeBookingSync] Subscription status:", status);
+          setIsConnected(status === 'SUBSCRIBED');
           
-          // Invalidate and refetch booking data
-          queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
-          
-          // Show appropriate notifications
-          if (payload.eventType === 'INSERT') {
-            toast.success("New booking created", {
-              description: "Calendar updated automatically"
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            toast.info("Booking updated", {
-              description: "Calendar refreshed"
-            });
-          } else if (payload.eventType === 'DELETE') {
-            toast.info("Booking removed", {
-              description: "Calendar updated"
+          if (status === 'SUBSCRIBED') {
+            console.log("[useRealTimeBookingSync] ✅ Real-time booking sync connected");
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error("[useRealTimeBookingSync] ❌ Real-time connection failed:", status);
+            toast.error("Real-time sync disconnected", {
+              description: "Manual refresh may be needed"
             });
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log("[useRealTimeBookingSync] Subscription status:", status);
-        setIsConnected(status === 'SUBSCRIBED');
-        
-        if (status === 'SUBSCRIBED') {
-          console.log("[useRealTimeBookingSync] ✅ Real-time booking sync connected");
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error("[useRealTimeBookingSync] ❌ Real-time connection failed:", status);
-          toast.error("Real-time sync disconnected", {
-            description: "Manual refresh may be needed"
-          });
-        }
-      });
+        });
 
-    channelRef.current = channel;
+      channelRef.current = channel;
+    };
+
+    // Setup sync
+    setupRealTimeSync();
 
     return () => {
       console.log("[useRealTimeBookingSync] Cleaning up real-time subscription");

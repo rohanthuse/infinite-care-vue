@@ -35,7 +35,7 @@ interface BookingsTabProps {
 }
 
 export function BookingsTab({ branchId }: BookingsTabProps) {
-  const { user } = useAuthSafe();
+  const { user, loading: authLoading, error: authError } = useAuthSafe();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get initial values from URL parameters
@@ -171,12 +171,50 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     }
   };
 
-  if (isLoading) {
+  // Show authentication error if present
+  if (authError) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Authentication Error</p>
+          <p className="text-muted-foreground">Please login to view bookings</p>
+          <Button 
+            onClick={() => window.location.href = '/login'}
+            className="mt-4"
+          >
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state for authentication or data
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Loading bookings...</p>
+          <p className="text-muted-foreground">
+            {authLoading ? 'Authenticating...' : 'Loading bookings...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if user is not authenticated
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-2">Please authenticate to view bookings</p>
+          <Button 
+            onClick={() => window.location.href = '/login'}
+            className="mt-4"
+          >
+            Go to Login
+          </Button>
         </div>
       </div>
     );
@@ -214,6 +252,30 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {!isRealTimeConnected && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      toast.warning("Real-time sync is offline", {
+                        description: "Please use the refresh button to update booking data manually"
+                      });
+                      handleRefresh();
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sync Offline - Manual Refresh
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Real-time sync is disconnected. Click to manually refresh data.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <Button
             variant="outline"
             size="sm"

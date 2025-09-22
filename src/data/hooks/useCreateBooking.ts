@@ -41,16 +41,50 @@ export function useCreateBooking(branchId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createBooking,
-    onSuccess: (data) => {
-      // Always invalidate queries using the created booking's branch_id
-      const bookingBranchId = data.branch_id;
-      queryClient.invalidateQueries({ queryKey: ["branch-bookings", bookingBranchId] });
-      queryClient.invalidateQueries({ queryKey: ["client-bookings", data.client_id] });
-      queryClient.invalidateQueries({ queryKey: ["carer-bookings", data.staff_id] });
-      
-      // Also invalidate with the provided branchId for backwards compatibility
-      if (branchId && branchId !== bookingBranchId) {
-        queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+    onSuccess: async (data) => {
+      try {
+        // Always invalidate queries using the created booking's branch_id
+        const bookingBranchId = data.branch_id;
+        
+        console.log('[useCreateBooking] Invalidating queries for successful booking creation:', {
+          bookingId: data.id,
+          branchId: bookingBranchId,
+          clientId: data.client_id,
+          staffId: data.staff_id
+        });
+
+        // Comprehensive cache invalidation with retry logic
+        const invalidateWithRetry = async (queryKey: (string | undefined)[]) => {
+          try {
+            await queryClient.invalidateQueries({ queryKey });
+            console.log('[useCreateBooking] Successfully invalidated:', queryKey);
+          } catch (error) {
+            console.warn('[useCreateBooking] Failed to invalidate, retrying:', queryKey, error);
+            // Retry once after a short delay
+            setTimeout(() => {
+              queryClient.invalidateQueries({ queryKey }).catch(console.error);
+            }, 1000);
+          }
+        };
+
+        // Invalidate all relevant queries
+        await Promise.all([
+          invalidateWithRetry(["branch-bookings", bookingBranchId]),
+          invalidateWithRetry(["client-bookings", data.client_id]),
+          invalidateWithRetry(["carer-bookings", data.staff_id]),
+          invalidateWithRetry(["carer-appointments-full", data.staff_id])
+        ]);
+        
+        // Also invalidate with the provided branchId for backwards compatibility
+        if (branchId && branchId !== bookingBranchId) {
+          await invalidateWithRetry(["branch-bookings", branchId]);
+        }
+
+        console.log('[useCreateBooking] All query invalidations completed');
+      } catch (error) {
+        console.error('[useCreateBooking] Error during query invalidation:', error);
+        // Force a hard refetch as fallback
+        queryClient.refetchQueries({ queryKey: ["branch-bookings"] });
       }
     },
   });
