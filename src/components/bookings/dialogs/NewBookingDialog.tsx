@@ -62,7 +62,8 @@ const scheduleSchema = z.object({
 
 const formSchema = z.object({
   clientId: z.string().min(1, { message: "Client ID required" }),
-  carerIds: z.array(z.string()).min(1, { message: "At least one carer required" }),
+  carerIds: z.array(z.string()).optional(), // Made optional to support unassigned bookings
+  assignLater: z.boolean().optional(), // New field for "assign carer later" option
   fromDate: z.date({
     required_error: "From date is required.",
   }),
@@ -78,6 +79,14 @@ const formSchema = z.object({
       code: z.ZodIssueCode.custom,
       message: "Until date must be on or after the from date",
       path: ["untilDate"],
+    });
+  }
+  // If not assigning later, require at least one carer
+  if (!data.assignLater && (!data.carerIds || data.carerIds.length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select at least one carer or choose 'Assign carer later'",
+      path: ["carerIds"],
     });
   }
 });
@@ -165,6 +174,7 @@ export function NewBookingDialog({
     defaultValues: {
       clientId: "",
       carerIds: prefilledData?.carerId ? [prefilledData.carerId] : [],
+      assignLater: false,
       fromDate: prefilledData?.date || new Date(),
       untilDate: prefilledData?.date || new Date(),
       notes: "",
@@ -189,22 +199,37 @@ export function NewBookingDialog({
   }, [open, preSelectedClientId, form]);
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    // Create bookings for each selected carer
-    const bookingsToCreate = data.carerIds.map(carerId => ({
-      ...data,
-      carerId, // Convert back to single carerId for each booking
-    }));
-    
-    // Create bookings sequentially for each carer
-    bookingsToCreate.forEach(bookingData => {
-      onCreateBooking(bookingData, carers);
-    });
-    
-    form.reset();
-    onOpenChange(false);
-    toast("Bookings submitted", {
-      description: `Created bookings for ${data.carerIds.length} carer(s)`,
-    });
+    if (data.assignLater || !data.carerIds || data.carerIds.length === 0) {
+      // Create unassigned booking
+      const unassignedBooking = {
+        ...data,
+        carerId: null, // No carer assigned
+      };
+      onCreateBooking(unassignedBooking, carers);
+      
+      form.reset();
+      onOpenChange(false);
+      toast("Unassigned booking created", {
+        description: "Booking created without carer assignment. Remember to assign a carer before the scheduled time.",
+      });
+    } else {
+      // Create bookings for each selected carer
+      const bookingsToCreate = data.carerIds.map(carerId => ({
+        ...data,
+        carerId, // Convert back to single carerId for each booking
+      }));
+      
+      // Create bookings sequentially for each carer
+      bookingsToCreate.forEach(bookingData => {
+        onCreateBooking(bookingData, carers);
+      });
+      
+      form.reset();
+      onOpenChange(false);
+      toast("Bookings submitted", {
+        description: `Created bookings for ${data.carerIds.length} carer(s)`,
+      });
+    }
   }
 
   const addSchedule = () => {
@@ -505,6 +530,36 @@ export function NewBookingDialog({
                         )}
                       </div>
                       <FormMessage />
+                      
+                      {/* Assign Later Option */}
+                      <FormField
+                        control={form.control}
+                        name="assignLater"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked);
+                                  if (checked) {
+                                    // Clear selected carers when assigning later
+                                    form.setValue("carerIds", []);
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                Assign carer later
+                              </FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Create booking without assigning a carer. You can assign one later.
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </FormItem>
                   )}
                 />

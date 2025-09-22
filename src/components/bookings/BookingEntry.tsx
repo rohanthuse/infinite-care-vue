@@ -40,7 +40,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   // Determine background color based on status
   const statusColors = {
     assigned: "bg-green-100 border-green-300 text-green-800",
-    unassigned: "bg-amber-100 border-amber-300 text-amber-800",
+    unassigned: "bg-amber-100 border-amber-400 border-2 text-amber-900", // Enhanced styling for unassigned
     done: "bg-blue-100 border-blue-300 text-blue-800",
     "in-progress": "bg-purple-100 border-purple-300 text-purple-800",
     cancelled: "bg-red-100 border-red-300 text-red-800",
@@ -128,10 +128,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 text-xs py-1 px-2 rounded-full ${statusColors[booking.status]}`}>
             {booking.status === 'in-progress' && <div className="w-2 h-2 bg-current rounded-full animate-pulse" />}
+            {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 text-amber-600" />}
             {booking.status === 'cancelled' && <AlertCircle className="h-3 w-3" />}
             {booking.status === 'done' && <div className="w-2 h-2 bg-current rounded-full" />}
             <span className="font-medium">
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('-', ' ')}
+              {booking.status === 'unassigned' 
+                ? 'Unassigned - Carer Needed' 
+                : booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('-', ' ')
+              }
             </span>
           </div>
         </div>
@@ -192,11 +196,15 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
               >
                 <div className="p-1 overflow-hidden h-full flex flex-col">
                   <div className="font-medium truncate flex items-center">
+                    {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
                     <span>{booking.startTime}-{booking.endTime}</span>
                     <Info className="h-3 w-3 ml-1 opacity-60" />
                   </div>
                   <div className="truncate mt-auto">
-                    {type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials}
+                    {booking.status === 'unassigned' 
+                      ? 'Needs Carer Assignment' 
+                      : (type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials)
+                    }
                   </div>
                 </div>
               </div>
@@ -235,13 +243,17 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
           >
             <div className="p-1 overflow-hidden h-full flex flex-col">
               <div className="font-medium truncate flex items-center">
+                {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
                 <span>{booking.startTime}-{booking.endTime}</span>
                 {width > 10 && (
                   <Info className="h-3 w-3 ml-1 opacity-60" />
                 )}
               </div>
               <div className="truncate mt-auto">
-                {type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials}
+                {booking.status === 'unassigned' 
+                  ? 'Needs Carer Assignment' 
+                  : (type === "client" ? booking.carerName.split(",")[0] : booking.clientInitials)
+                }
               </div>
             </div>
           </div>

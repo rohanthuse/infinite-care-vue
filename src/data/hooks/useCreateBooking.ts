@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface CreateBookingInput {
   branch_id: string;
   client_id: string;
-  staff_id: string;
+  staff_id?: string; // Made optional to support unassigned bookings
   start_time: string; // ISO string
   end_time: string;   // ISO string
   service_id: string; // Required service ID
@@ -21,12 +21,12 @@ export async function createBooking(input: CreateBookingInput) {
       {
         branch_id: input.branch_id,
         client_id: input.client_id,
-        staff_id: input.staff_id,
+        staff_id: input.staff_id || null, // Handle null staff_id for unassigned bookings
         start_time: input.start_time,
         end_time: input.end_time,
         service_id: input.service_id,
         revenue: input.revenue || null,
-        status: input.status || "assigned", // <-- ADDED
+        status: input.status || (input.staff_id ? "assigned" : "unassigned"), // Auto-set status based on staff assignment
         notes: input.notes || null,
       },
     ])
