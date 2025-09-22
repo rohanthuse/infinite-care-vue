@@ -14,35 +14,48 @@ interface ActivitiesTabProps {
 
 interface ClientActivity {
   id: string;
-  client_id: string;
-  activity_name: string;
-  activity_type: string;
-  duration_minutes?: number;
-  participation_level: string;
-  notes?: string;
-  activity_date: string;
+  care_plan_id: string;
+  name: string;
+  description?: string;
+  frequency: string;
+  status: string;
   created_at: string;
+  updated_at: string;
 }
 
 export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
-  // Fetch client activities
+  // Fetch client activities from care plans
   const { data: activities = [], isLoading: activitiesLoading } = useQuery({
     queryKey: ['client-activities', clientId],
     queryFn: async () => {
       console.log('[ActivitiesTab] Fetching activities for client:', clientId);
       
+      // Get activities through client care plans
       const { data, error } = await supabase
-        .from('client_activities')
-        .select('*')
+        .from('client_care_plans')
+        .select(`
+          activities:client_activities(
+            id,
+            care_plan_id,
+            name,
+            description,
+            frequency,
+            status,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('client_id', clientId)
-        .order('activity_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('[ActivitiesTab] Error fetching activities:', error);
-        return []; // Return empty array if table doesn't exist yet
+        return [];
       }
 
-      return data as ClientActivity[];
+      // Flatten activities from all care plans
+      const allActivities = data?.flatMap(cp => cp.activities || []) || [];
+      return allActivities as ClientActivity[];
     },
     enabled: !!clientId,
   });
@@ -65,19 +78,19 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
     }
   };
 
-  const getParticipationBadge = (level: string) => {
+  const getStatusBadge = (status: string) => {
     const config: Record<string, { variant: any, color: string }> = {
-      'full': { variant: 'default', color: 'bg-green-100 text-green-800' },
-      'partial': { variant: 'secondary', color: 'bg-orange-100 text-orange-800' },
-      'minimal': { variant: 'outline', color: 'bg-red-100 text-red-800' },
-      'assisted': { variant: 'secondary', color: 'bg-blue-100 text-blue-800' },
+      'active': { variant: 'default', color: 'bg-green-100 text-green-800' },
+      'completed': { variant: 'secondary', color: 'bg-blue-100 text-blue-800' },
+      'paused': { variant: 'outline', color: 'bg-orange-100 text-orange-800' },
+      'cancelled': { variant: 'secondary', color: 'bg-red-100 text-red-800' },
     };
     
-    const levelConfig = config[level?.toLowerCase()] || config.partial;
+    const statusConfig = config[status?.toLowerCase()] || config.active;
     
     return (
-      <Badge variant={levelConfig.variant} className={levelConfig.color}>
-        {level.charAt(0).toUpperCase() + level.slice(1)}
+      <Badge variant={statusConfig.variant} className={statusConfig.color}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
   };
@@ -88,13 +101,11 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
   };
 
   const thisWeekActivities = activities.filter(activity => 
-    isWithinInterval(parseISO(activity.activity_date), currentWeek)
+    isWithinInterval(parseISO(activity.created_at), currentWeek)
   );
 
-  const activityTypes = [...new Set(activities.map(a => a.activity_type))];
-  const totalDuration = activities.reduce((total, activity) => 
-    total + (activity.duration_minutes || 0), 0
-  );
+  const activityStatuses = [...new Set(activities.map(a => a.status))];
+  const activeActivities = activities.filter(a => a.status === 'active').length;
 
   // Engagement events from client_events_logs
   const engagementEvents = clientEvents.filter(event => 
@@ -143,13 +154,13 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <span>Total Time</span>
+              <Activity className="h-5 w-5 text-green-600" />
+              <span>Active</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{Math.floor(totalDuration / 60)}h</div>
-            <p className="text-xs text-muted-foreground">{totalDuration % 60}m engaged</p>
+            <div className="text-3xl font-bold text-green-600">{activeActivities}</div>
+            <p className="text-xs text-muted-foreground">active activities</p>
           </CardContent>
         </Card>
 
@@ -161,47 +172,44 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-600">{activityTypes.length}</div>
-            <p className="text-xs text-muted-foreground">different types</p>
+            <div className="text-3xl font-bold text-purple-600">{activityStatuses.length}</div>
+            <p className="text-xs text-muted-foreground">different statuses</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Activity Types Overview */}
+      {/* Activity Status Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>Activity Types Participation</CardTitle>
+          <CardTitle>Activity Status Overview</CardTitle>
           <CardDescription>
-            Breakdown of activities by category
+            Breakdown of activities by status
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {activityTypes.length === 0 ? (
+          {activityStatuses.length === 0 ? (
             <div className="text-center py-8">
               <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No activities recorded yet</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activityTypes.map(type => {
-                const typeActivities = activities.filter(a => a.activity_type === type);
-                const avgParticipation = typeActivities.length > 0 
-                  ? typeActivities.filter(a => a.participation_level === 'full').length / typeActivities.length * 100
-                  : 0;
+              {activityStatuses.map(status => {
+                const statusActivities = activities.filter(a => a.status === status);
                 
                 return (
-                  <Card key={type}>
+                  <Card key={status}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-2">
-                          {getActivityTypeIcon(type)}
-                          <span className="font-medium capitalize">{type}</span>
+                          {getActivityTypeIcon(status)}
+                          <span className="font-medium capitalize">{status}</span>
                         </div>
-                        <Badge variant="outline">{typeActivities.length}</Badge>
+                        <Badge variant="outline">{statusActivities.length}</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        <p>{avgParticipation.toFixed(0)}% full participation</p>
-                        <p>{typeActivities.reduce((sum, a) => sum + (a.duration_minutes || 0), 0)}min total</p>
+                        <p>{statusActivities.length} activities</p>
+                        <p>Various frequencies</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -236,36 +244,27 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Activity</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Participation</TableHead>
-                  <TableHead>Notes</TableHead>
+                  <TableHead>Activity Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Frequency</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activities.slice(0, 10).map((activity) => (
-                  <TableRow key={activity.id}>
-                    <TableCell className="font-medium">{activity.activity_name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getActivityTypeIcon(activity.activity_type)}
-                        <span className="capitalize">{activity.activity_type}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{format(parseISO(activity.activity_date), 'MMM dd, yyyy')}</TableCell>
-                    <TableCell>
-                      {activity.duration_minutes ? `${activity.duration_minutes}min` : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {getParticipationBadge(activity.participation_level)}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {activity.notes || 'No notes'}
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {activities.slice(0, 10).map((activity) => (
+                <TableRow key={activity.id}>
+                  <TableCell className="font-medium">{activity.name}</TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {activity.description || 'No description'}
+                  </TableCell>
+                  <TableCell>{activity.frequency}</TableCell>
+                  <TableCell>
+                    {getStatusBadge(activity.status)}
+                  </TableCell>
+                  <TableCell>{format(parseISO(activity.created_at), 'MMM dd, yyyy')}</TableCell>
+                </TableRow>
+              ))}
               </TableBody>
             </Table>
           )}

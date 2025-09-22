@@ -15,9 +15,14 @@ interface VisitRecordsTabProps {
 interface VisitRecord {
   id: string;
   booking_id: string;
-  carer_id: string;
-  start_time: string;
-  end_time: string;
+  client_id: string;
+  staff_id: string;
+  branch_id: string;
+  visit_start_time: string;
+  visit_end_time: string;
+  actual_duration_minutes?: number;
+  status: string;
+  visit_notes?: string;
   visit_summary?: string;
   completion_percentage: number;
   created_at: string;
@@ -38,32 +43,21 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
     queryFn: async () => {
       console.log('[VisitRecordsTab] Fetching visit records for client:', clientId);
       
-      // Get visit records with related booking and carer information
+      // Get visit records directly by client_id
       const { data, error } = await supabase
         .from('visit_records')
-        .select(`
-          *,
-          bookings!inner(
-            id,
-            client_id,
-            service_id,
-            services(title)
-          )
-        `)
-        .eq('bookings.client_id', clientId)
-        .order('start_time', { ascending: false });
+        .select('*')
+        .eq('client_id', clientId)
+        .order('visit_start_time', { ascending: false });
 
       if (error) {
         console.error('[VisitRecordsTab] Error fetching visit records:', error);
         throw error;
       }
 
-      // Transform the data - simplified for demo
+      // Transform the data - use correct field names
       const transformedData = data?.map(visit => ({
         ...visit,
-        carer_id: visit.carer_id || '',
-        start_time: visit.start_time || visit.created_at,
-        end_time: visit.end_time || visit.updated_at,
         carer_name: 'Care Team',
         booking_service: 'Care Service',
       })) || [];
@@ -131,6 +125,8 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
   };
 
   const getDuration = (startTime: string, endTime: string) => {
+    if (!startTime || !endTime) return 'N/A';
+    
     const start = new Date(startTime);
     const end = new Date(endTime);
     const durationMs = end.getTime() - start.getTime();
@@ -156,8 +152,9 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
 
   const completedVisits = visitRecords.filter(v => v.completion_percentage >= 100).length;
   const totalDuration = visitRecords.reduce((total, visit) => {
-    const start = new Date(visit.start_time);
-    const end = new Date(visit.end_time);
+    if (!visit.visit_start_time || !visit.visit_end_time) return total;
+    const start = new Date(visit.visit_start_time);
+    const end = new Date(visit.visit_end_time);
     return total + (end.getTime() - start.getTime());
   }, 0);
   const avgDurationMin = visitRecords.length > 0 ? Math.round(totalDuration / (visitRecords.length * 1000 * 60)) : 0;
@@ -209,13 +206,14 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
             <CardTitle className="text-lg">This Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">
-              {visitRecords.filter(v => {
-                const visitDate = new Date(v.start_time);
-                const now = new Date();
-                return visitDate.getMonth() === now.getMonth() && visitDate.getFullYear() === now.getFullYear();
-              }).length}
-            </div>
+          <div className="text-3xl font-bold text-primary">
+            {visitRecords.filter(v => {
+              if (!v.visit_start_time) return false;
+              const visitDate = new Date(v.visit_start_time);
+              const now = new Date();
+              return visitDate.getMonth() === now.getMonth() && visitDate.getFullYear() === now.getFullYear();
+            }).length}
+          </div>
             <p className="text-xs text-muted-foreground">visits this month</p>
           </CardContent>
         </Card>
@@ -259,10 +257,13 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium">
-                          {format(parseISO(visit.start_time), 'MMM dd, yyyy')}
+                          {visit.visit_start_time ? format(parseISO(visit.visit_start_time), 'MMM dd, yyyy') : 'N/A'}
                         </span>
                         <span className="text-sm text-muted-foreground">
-                          {format(parseISO(visit.start_time), 'HH:mm')} - {format(parseISO(visit.end_time), 'HH:mm')}
+                          {visit.visit_start_time && visit.visit_end_time ? 
+                            `${format(parseISO(visit.visit_start_time), 'HH:mm')} - ${format(parseISO(visit.visit_end_time), 'HH:mm')}` :
+                            'Time not recorded'
+                          }
                         </span>
                       </div>
                     </TableCell>
@@ -275,7 +276,8 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
                     <TableCell>
                       <Badge variant="outline">{visit.booking_service}</Badge>
                     </TableCell>
-                    <TableCell>{getDuration(visit.start_time, visit.end_time)}</TableCell>
+                    <TableCell>{visit.actual_duration_minutes ? `${visit.actual_duration_minutes}m` : 
+                      getDuration(visit.visit_start_time || '', visit.visit_end_time || '')}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         {getCompletionBadge(visit.completion_percentage)}
@@ -318,24 +320,30 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
               <CardContent className="space-y-4">
                 <div className="bg-muted/30 rounded-lg p-3">
                   <h4 className="font-medium mb-2">Visit Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Date:</span>
-                      <span>{format(parseISO(visit.start_time), 'MMM dd, yyyy')}</span>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Date:</span>
+                        <span>{visit.visit_start_time ? format(parseISO(visit.visit_start_time), 'MMM dd, yyyy') : 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Time:</span>
+                        <span>
+                          {visit.visit_start_time && visit.visit_end_time ? 
+                            `${format(parseISO(visit.visit_start_time), 'HH:mm')} - ${format(parseISO(visit.visit_end_time), 'HH:mm')}` :
+                            'Not recorded'
+                          }
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Duration:</span>
+                        <span>{visit.actual_duration_minutes ? `${visit.actual_duration_minutes}m` : 
+                          getDuration(visit.visit_start_time || '', visit.visit_end_time || '')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Carer:</span>
+                        <span>{visit.carer_name}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Time:</span>
-                      <span>{format(parseISO(visit.start_time), 'HH:mm')} - {format(parseISO(visit.end_time), 'HH:mm')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Duration:</span>
-                      <span>{getDuration(visit.start_time, visit.end_time)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Carer:</span>
-                      <span>{visit.carer_name}</span>
-                    </div>
-                  </div>
                 </div>
 
                 {visit.visit_summary && (
