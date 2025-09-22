@@ -7222,6 +7222,10 @@ export type Database = {
           role: string
         }[]
       }
+      notify_unassigned_bookings: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       reset_system_user_password_with_session: {
         Args:
           | { p_admin_id: string; p_new_password: string; p_user_id: string }

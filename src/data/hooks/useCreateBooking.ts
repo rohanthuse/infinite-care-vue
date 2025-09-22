@@ -68,12 +68,20 @@ export function useCreateBooking(branchId?: string) {
         };
 
         // Invalidate all relevant queries
-        await Promise.all([
+        const invalidationPromises = [
           invalidateWithRetry(["branch-bookings", bookingBranchId]),
-          invalidateWithRetry(["client-bookings", data.client_id]),
-          invalidateWithRetry(["carer-bookings", data.staff_id]),
-          invalidateWithRetry(["carer-appointments-full", data.staff_id])
-        ]);
+          invalidateWithRetry(["client-bookings", data.client_id])
+        ];
+
+        // Only invalidate carer-related queries if staff_id exists (not unassigned booking)
+        if (data.staff_id) {
+          invalidationPromises.push(
+            invalidateWithRetry(["carer-bookings", data.staff_id]),
+            invalidateWithRetry(["carer-appointments-full", data.staff_id])
+          );
+        }
+
+        await Promise.all(invalidationPromises);
         
         // Also invalidate with the provided branchId for backwards compatibility
         if (branchId && branchId !== bookingBranchId) {
