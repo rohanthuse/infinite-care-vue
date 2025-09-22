@@ -46,7 +46,30 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
     // Create tenant-aware query helper
     const tenantQuery = createTenantQuery(organizationId);
     
-    // Fetch bookings with organization filtering
+    // First, get all branch IDs for this organization to ensure proper data isolation
+    const { data: organizationBranches, error: branchesError } = await supabase
+      .from('branches')
+      .select('id')
+      .eq('organization_id', organizationId);
+
+    if (branchesError) {
+      console.error('[fetchOrganizationCalendarEvents] Error fetching branches:', branchesError);
+      throw branchesError;
+    }
+
+    // If organization has no branches, return empty array
+    if (!organizationBranches || organizationBranches.length === 0) {
+      console.log('[fetchOrganizationCalendarEvents] Organization has no branches, returning empty events');
+      return [];
+    }
+
+    const organizationBranchIds = organizationBranches.map(branch => branch.id);
+    console.log('[fetchOrganizationCalendarEvents] Organization branch IDs:', organizationBranchIds);
+
+    // Filter by specific branch if provided, otherwise use all organization branches
+    const targetBranchIds = branchId ? [branchId] : organizationBranchIds;
+    
+    // Fetch bookings with proper organization isolation using branch IDs
     let bookingsQuery = supabase
       .from('bookings')
       .select(`
@@ -81,12 +104,8 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
       `)
       .gte('start_time', startDate.toISOString())
       .lte('start_time', endDate.toISOString())
-      .eq('branches.organization_id', organizationId)
+      .in('branch_id', targetBranchIds)
       .order('start_time', { ascending: true });
-
-    if (branchId) {
-      bookingsQuery = bookingsQuery.eq('branch_id', branchId);
-    }
 
     const { data: bookings, error: bookingsError } = await bookingsQuery;
 
