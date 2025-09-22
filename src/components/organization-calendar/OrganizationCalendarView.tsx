@@ -26,13 +26,16 @@ import { CalendarDayView } from './CalendarDayView';
 import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarMonthView } from './CalendarMonthView';
 import { ViewBookingDialog } from '@/components/bookings/dialogs/ViewBookingDialog';
+import { NewBookingDialog } from '@/components/bookings/dialogs/NewBookingDialog';
 import { useOrganizationCalendar } from '@/hooks/useOrganizationCalendar';
 import { useOrganizationCalendarStats } from '@/hooks/useOrganizationCalendarStats';
 import { useTenantAwareQuery } from '@/hooks/useTenantAware';
+import { useCreateBooking } from '@/data/hooks/useCreateBooking';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent } from '@/types/calendar';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -44,6 +47,7 @@ export const OrganizationCalendarView = () => {
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   
   const { organization } = useTenant();
 
@@ -86,6 +90,32 @@ export const OrganizationCalendarView = () => {
     { enabled: !!organization?.id }
   );
 
+  // Fetch carers for booking dialog
+  const { data: carers } = useTenantAwareQuery(
+    ['organization-carers'],
+    async (organizationId) => {
+      const { data, error } = await supabase
+        .from('staff')
+        .select('id, first_name, last_name, email')
+        .eq('status', 'active')
+        .in('branch_id', 
+          (await supabase
+            .from('branches')
+            .select('id')
+            .eq('organization_id', organizationId)
+          ).data?.map(b => b.id) || []
+        );
+      if (error) throw error;
+      return data?.map(carer => ({
+        ...carer,
+        name: `${carer.first_name} ${carer.last_name}`
+      })) || [];
+    },
+    { enabled: !!organization?.id }
+  );
+
+  const createBookingMutation = useCreateBooking();
+
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
   };
@@ -113,6 +143,31 @@ export const OrganizationCalendarView = () => {
       };
       setSelectedEvent(event);
       setViewBookingDialogOpen(true);
+    }
+  };
+
+  const handleNewBooking = () => {
+    setNewBookingDialogOpen(true);
+  };
+
+  const handleCreateBooking = async (bookingData: any, selectedCarers: any[] = []) => {
+    try {
+      await createBookingMutation.mutateAsync({
+        branch_id: selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id,
+        client_id: bookingData.clientId,
+        service_id: bookingData.serviceId,
+        staff_id: selectedCarers[0]?.id,
+        start_time: `${bookingData.date}T${bookingData.startTime}:00`,
+        end_time: `${bookingData.date}T${bookingData.endTime}:00`,
+        notes: bookingData.notes,
+        status: 'scheduled',
+      });
+      
+      toast.success('Booking created successfully!');
+      setNewBookingDialogOpen(false);
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      toast.error('Failed to create booking');
     }
   };
 
@@ -186,9 +241,9 @@ export const OrganizationCalendarView = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleNewBooking}>
             <Plus className="h-4 w-4 mr-2" />
-            New Event
+            New Booking
           </Button>
         </div>
       </div>
@@ -344,6 +399,19 @@ export const OrganizationCalendarView = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* New Booking Dialog */}
+      <NewBookingDialog
+        open={newBookingDialogOpen}
+        onOpenChange={setNewBookingDialogOpen}
+        onCreateBooking={handleCreateBooking}
+        carers={carers || []}
+        services={services || []}
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+        prefilledData={{
+          date: currentDate,
+        }}
+      />
 
       {/* Booking Details Dialog */}
       {selectedEvent && (
