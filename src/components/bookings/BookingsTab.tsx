@@ -13,6 +13,7 @@ import { BookingTimeGrid } from "./BookingTimeGrid";
 import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
 import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
+import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import { NewBookingDialog } from "./dialogs/NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { ViewBookingDialog } from "./dialogs/ViewBookingDialog";
@@ -297,11 +298,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="staff-schedule">Staff Schedule</TabsTrigger>
+          <TabsTrigger value="client-schedule">Client Schedule</TabsTrigger>
         </TabsList>
         
         <TabsContent value="calendar" className="space-y-4">
@@ -362,6 +364,28 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             onCreateBooking={(staffId, timeSlot) => {
               // Create new booking with pre-filled staff and time (preserve exact 30-minute slot)
               handleContextMenuBooking(selectedDate, timeSlot, undefined, staffId);
+            }}
+            onDateChange={setSelectedDate}
+            clients={clients}
+            carers={carers}
+            selectedClient={selectedClientId}
+            selectedCarer={selectedCarerId}
+            selectedStatus={statusFilter}
+            onClientChange={setSelectedClientId}
+            onCarerChange={setSelectedCarerId}
+            onStatusChange={setStatusFilter}
+          />
+        </TabsContent>
+
+        <TabsContent value="client-schedule" className="w-full min-w-0">
+          <ClientScheduleCalendar
+            date={selectedDate}
+            bookings={filteredBookings}
+            branchId={branchId}
+            onViewBooking={handleViewBooking}
+            onCreateBooking={(clientId, timeSlot) => {
+              // Create new booking with pre-filled client and time (preserve exact 30-minute slot)
+              handleContextMenuBooking(selectedDate, timeSlot, clientId, undefined);
             }}
             onDateChange={setSelectedDate}
             clients={clients}
