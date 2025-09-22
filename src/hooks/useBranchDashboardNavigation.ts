@@ -17,7 +17,7 @@ export const useBranchDashboardNavigation = () => {
     'bookings', 'carers', 'clients', 'reviews', 'communication', 'medication',
     'accounting', 'finance', 'care-plan', 'agreements', 'forms', 'notifications',
     'events-logs', 'attendance', 'form-builder', 'documents', 'library', 
-    'third-party', 'reports'
+    'third-party', 'reports', 'organization-calendar'
   ];
 
   // Extract the active tab from the current path - improved logic for tenant-aware paths
