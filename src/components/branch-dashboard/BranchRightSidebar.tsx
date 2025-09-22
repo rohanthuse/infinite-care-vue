@@ -56,6 +56,7 @@ interface TabGroup {
 
 const primaryTabs: TabItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", value: "dashboard", description: "Branch overview" },
+  { icon: Calendar, label: "Organization Calendar", value: "organization-calendar", description: "Comprehensive calendar view" },
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
@@ -224,7 +225,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
     const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` : `/branch-dashboard/${id}/${branchName}`;
     
     // Navigate to dedicated pages for modules that have them
-    const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms', 'notifications', 'workflow'];
+    const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms', 'notifications', 'workflow', 'organization-calendar'];
     
     if (dedicatedModules.includes(tabValue)) {
       console.log(`Navigating to: ${basePath}/${tabValue}`); // Debug log
