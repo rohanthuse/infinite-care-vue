@@ -70,6 +70,9 @@ const formSchema = z.object({
   untilDate: z.date({
     required_error: "Until date is required.",
   }),
+  recurrenceFrequency: z.enum(["1", "2", "3", "4"], {
+    required_error: "Recurrence frequency is required.",
+  }),
   schedules: z.array(scheduleSchema).min(1, { message: "At least one schedule is required" }),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -177,6 +180,7 @@ export function NewBookingDialog({
       assignLater: false,
       fromDate: prefilledData?.date || new Date(),
       untilDate: prefilledData?.date || new Date(),
+      recurrenceFrequency: "1", // Default to weekly
       notes: "",
       schedules: [
         {
@@ -267,7 +271,7 @@ export function NewBookingDialog({
             Schedule Booking
           </DialogTitle>
           <DialogDescription>
-            Schedule a new booking for a client with a carer.
+            Schedule a new booking for a client with a carer. Choose from weekly, bi-weekly, tri-weekly, or monthly recurrence.
           </DialogDescription>
           
           {/* Prefilled Data Banner */}
@@ -613,6 +617,34 @@ export function NewBookingDialog({
                   )}
                 />
               </div>
+
+              {/* Recurrence Frequency */}
+              <FormField
+                control={form.control}
+                name="recurrenceFrequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recurrence Frequency</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="1">Every week</SelectItem>
+                        <SelectItem value="2">Every 2 weeks</SelectItem>
+                        <SelectItem value="3">Every 3 weeks</SelectItem>
+                        <SelectItem value="4">Every 4 weeks (monthly)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      How often should this booking repeat on the selected days?
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Bank Holiday Notifications */}
               {form.watch("fromDate") && (

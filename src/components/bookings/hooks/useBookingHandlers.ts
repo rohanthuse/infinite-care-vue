@@ -381,6 +381,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         ? dayBooleans
         : { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true };
 
+      const recurrenceFrequencyWeeks = parseInt(bookingData.recurrenceFrequency || "1");
+
       let curr = new Date(from);
       curr.setHours(0, 0, 0, 0);
       const end = new Date(until);
@@ -401,7 +403,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             notes: bookingData.notes || null,
           });
         }
-        curr.setDate(curr.getDate() + 1);
+        // Increment by the recurrence frequency in weeks (7 days per week)
+        curr.setDate(curr.getDate() + (recurrenceFrequencyWeeks * 7));
       }
     }
 
