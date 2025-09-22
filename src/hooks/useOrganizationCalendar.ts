@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent } from '@/types/calendar';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { useTenant } from '@/contexts/TenantContext';
+import { createTenantQuery } from '@/hooks/useTenantAware';
 
 interface UseOrganizationCalendarParams {
   date: Date;
@@ -11,10 +13,10 @@ interface UseOrganizationCalendarParams {
   eventType?: string;
 }
 
-const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarParams): Promise<CalendarEvent[]> => {
+const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarParams & { organizationId: string }): Promise<CalendarEvent[]> => {
   console.log('[fetchOrganizationCalendarEvents] Fetching events with params:', params);
   
-  const { date, viewType, searchTerm, branchId, eventType } = params;
+  const { date, viewType, searchTerm, branchId, eventType, organizationId } = params;
   
   // Determine date range based on view type
   let startDate: Date;
@@ -41,7 +43,10 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
   const events: CalendarEvent[] = [];
 
   try {
-    // Fetch bookings
+    // Create tenant-aware query helper
+    const tenantQuery = createTenantQuery(organizationId);
+    
+    // Fetch bookings with organization filtering
     let bookingsQuery = supabase
       .from('bookings')
       .select(`
@@ -66,7 +71,8 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         ),
         branches (
           id,
-          name
+          name,
+          organization_id
         ),
         services (
           id,
@@ -75,6 +81,7 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
       `)
       .gte('start_time', startDate.toISOString())
       .lte('start_time', endDate.toISOString())
+      .eq('branches.organization_id', organizationId)
       .order('start_time', { ascending: true });
 
     if (branchId) {
@@ -142,9 +149,17 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
 };
 
 export const useOrganizationCalendar = (params: UseOrganizationCalendarParams) => {
+  const { organization } = useTenant();
+  
   return useQuery({
-    queryKey: ['organization-calendar', params],
-    queryFn: () => fetchOrganizationCalendarEvents(params),
+    queryKey: ['organization-calendar', params, organization?.id],
+    queryFn: () => {
+      if (!organization?.id) {
+        throw new Error('Organization context required for organization calendar');
+      }
+      return fetchOrganizationCalendarEvents({ ...params, organizationId: organization.id });
+    },
+    enabled: !!organization?.id,
     staleTime: 1000 * 60, // 1 minute
     refetchOnWindowFocus: true,
   });

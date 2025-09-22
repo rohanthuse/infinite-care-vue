@@ -26,6 +26,9 @@ import { CalendarDayView } from './CalendarDayView';
 import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarMonthView } from './CalendarMonthView';
 import { useOrganizationCalendar } from '@/hooks/useOrganizationCalendar';
+import { useTenantAwareQuery } from '@/hooks/useTenantAware';
+import { useTenant } from '@/contexts/TenantContext';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -36,6 +39,22 @@ export const OrganizationCalendarView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
+  
+  const { organization } = useTenant();
+
+  // Fetch branches for the current organization
+  const { data: branches } = useTenantAwareQuery(
+    ['organization-branches'],
+    async (organizationId) => {
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .eq('organization_id', organizationId);
+      if (error) throw error;
+      return data;
+    },
+    { enabled: !!organization?.id }
+  );
 
   const { data: calendarEvents, isLoading } = useOrganizationCalendar({
     date: currentDate,
@@ -161,9 +180,11 @@ export const OrganizationCalendarView = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Branches</SelectItem>
-                  <SelectItem value="main">Main Branch</SelectItem>
-                  <SelectItem value="north">North Branch</SelectItem>
-                  <SelectItem value="south">South Branch</SelectItem>
+                  {branches?.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
