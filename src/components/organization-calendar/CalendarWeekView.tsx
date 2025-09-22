@@ -10,12 +10,14 @@ interface CalendarWeekViewProps {
   date: Date;
   events?: CalendarEvent[];
   isLoading?: boolean;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   date,
   events = [],
-  isLoading = false
+  isLoading = false,
+  onEventClick
 }) => {
   const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Start week on Monday
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
@@ -96,6 +98,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                             event={event}
                             compact
                             showTime={false}
+                            onClick={onEventClick}
                           />
                         ))}
                       </div>

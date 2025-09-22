@@ -10,12 +10,14 @@ interface CalendarDayViewProps {
   date: Date;
   events?: CalendarEvent[];
   isLoading?: boolean;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   date,
   events = [],
-  isLoading = false
+  isLoading = false,
+  onEventClick
 }) => {
   // Generate time slots from 7 AM to 10 PM (15 hours * 2 = 30 slots of 30 minutes)
   const timeSlots = Array.from({ length: 30 }, (_, index) => {
@@ -85,6 +87,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                           key={`${event.id}-${eventIndex}`}
                           event={event}
                           compact
+                          onClick={onEventClick}
                         />
                       ))}
                     </div>

@@ -19,12 +19,14 @@ interface CalendarMonthViewProps {
   date: Date;
   events?: CalendarEvent[];
   isLoading?: boolean;
+  onEventClick?: (event: CalendarEvent) => void;
 }
 
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   date,
   events = [],
-  isLoading = false
+  isLoading = false,
+  onEventClick
 }) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
@@ -121,8 +123,9 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                   {dayEvents.slice(0, 3).map((event, eventIndex) => (
                     <div
                       key={eventIndex}
-                      className={`text-xs p-1 rounded text-white truncate ${getEventTypeColor(event.type)}`}
+                      className={`text-xs p-1 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity ${getEventTypeColor(event.type)}`}
                       title={event.title}
+                      onClick={() => onEventClick?.(event)}
                     >
                       <div className="font-medium">{event.title}</div>
                       <div className="opacity-80">

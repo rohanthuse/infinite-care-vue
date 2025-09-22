@@ -17,13 +17,20 @@ interface CalendarEventCardProps {
   event: CalendarEvent;
   compact?: boolean;
   showTime?: boolean;
+  onClick?: (event: CalendarEvent) => void;
 }
 
 export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
   event,
   compact = false,
-  showTime = true
+  showTime = true,
+  onClick
 }) => {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(event);
+    }
+  };
   const getEventIcon = (type: string) => {
     const icons = {
       booking: Calendar,
@@ -62,6 +69,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
     return (
       <div
         className={`p-2 rounded-md border-l-4 ${getEventColor(event.type)} cursor-pointer hover:shadow-sm transition-shadow`}
+        onClick={handleClick}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -95,7 +103,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
   }
 
   return (
-    <Card className={`${getEventColor(event.type)} cursor-pointer hover:shadow-md transition-shadow`}>
+    <Card className={`${getEventColor(event.type)} cursor-pointer hover:shadow-md transition-shadow`} onClick={handleClick}>
       <CardContent className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">

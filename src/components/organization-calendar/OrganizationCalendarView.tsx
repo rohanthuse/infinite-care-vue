@@ -25,10 +25,13 @@ import { DateNavigation } from '@/components/bookings/DateNavigation';
 import { CalendarDayView } from './CalendarDayView';
 import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarMonthView } from './CalendarMonthView';
+import { ViewBookingDialog } from '@/components/bookings/dialogs/ViewBookingDialog';
 import { useOrganizationCalendar } from '@/hooks/useOrganizationCalendar';
+import { useOrganizationCalendarStats } from '@/hooks/useOrganizationCalendarStats';
 import { useTenantAwareQuery } from '@/hooks/useTenantAware';
 import { useTenant } from '@/contexts/TenantContext';
 import { supabase } from '@/integrations/supabase/client';
+import { CalendarEvent } from '@/types/calendar';
 import { format } from 'date-fns';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -39,6 +42,8 @@ export const OrganizationCalendarView = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
   
   const { organization } = useTenant();
 
@@ -64,12 +69,51 @@ export const OrganizationCalendarView = () => {
     eventType: selectedEventType !== 'all' ? selectedEventType : undefined,
   });
 
+  // Fetch dynamic statistics
+  const { data: stats, isLoading: statsLoading } = useOrganizationCalendarStats(calendarEvents || [], currentDate);
+
+  // Fetch services for booking dialog
+  const { data: services } = useTenantAwareQuery(
+    ['organization-services'],
+    async (organizationId) => {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('organization_id', organizationId);
+      if (error) throw error;
+      return data;
+    },
+    { enabled: !!organization?.id }
+  );
+
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
   };
 
   const handleViewTypeChange = (type: ViewType) => {
     setViewType(type);
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    console.log('Event clicked:', event);
+    if (event.type === 'booking') {
+      // Convert CalendarEvent to booking format for dialog
+      const bookingData = {
+        id: event.id,
+        date: format(event.startTime, 'yyyy-MM-dd'),
+        startTime: format(event.startTime, 'HH:mm'),
+        endTime: format(event.endTime, 'HH:mm'),
+        status: event.status,
+        clientName: event.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
+        carerName: event.participants?.find(p => p.role === 'staff')?.name || 'Unknown Staff',
+        clientId: event.clientId,
+        carerId: event.staffIds?.[0],
+        service_id: null, // This would need to be part of CalendarEvent if needed
+        notes: '' // This would need to be part of CalendarEvent if needed
+      };
+      setSelectedEvent(event);
+      setViewBookingDialogOpen(true);
+    }
   };
 
   const handleExportCalendar = () => {
@@ -93,6 +137,7 @@ export const OrganizationCalendarView = () => {
             date={currentDate}
             events={calendarEvents}
             isLoading={isLoading}
+            onEventClick={handleEventClick}
           />
         );
       case 'weekly':
@@ -101,6 +146,7 @@ export const OrganizationCalendarView = () => {
             date={currentDate}
             events={calendarEvents}
             isLoading={isLoading}
+            onEventClick={handleEventClick}
           />
         );
       case 'monthly':
@@ -109,6 +155,7 @@ export const OrganizationCalendarView = () => {
             date={currentDate}
             events={calendarEvents}
             isLoading={isLoading}
+            onEventClick={handleEventClick}
           />
         );
       default:
@@ -257,7 +304,9 @@ export const OrganizationCalendarView = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active Staff</p>
-                <p className="text-2xl font-bold text-foreground">24</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '...' : stats?.activeStaff || 0}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -271,7 +320,9 @@ export const OrganizationCalendarView = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Capacity</p>
-                <p className="text-2xl font-bold text-foreground">78%</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '...' : `${stats?.capacityPercentage || 0}%`}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -285,12 +336,37 @@ export const OrganizationCalendarView = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Conflicts</p>
-                <p className="text-2xl font-bold text-foreground">3</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {statsLoading ? '...' : stats?.conflictCount || 0}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Booking Details Dialog */}
+      {selectedEvent && (
+        <ViewBookingDialog
+          open={viewBookingDialogOpen}
+          onOpenChange={setViewBookingDialogOpen}
+          booking={{
+            id: selectedEvent.id,
+            date: format(selectedEvent.startTime, 'yyyy-MM-dd'),
+            startTime: format(selectedEvent.startTime, 'HH:mm'),
+            endTime: format(selectedEvent.endTime, 'HH:mm'),
+            status: selectedEvent.status,
+            clientName: selectedEvent.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
+            carerName: selectedEvent.participants?.find(p => p.role === 'staff')?.name || 'Unknown Staff',
+            clientId: selectedEvent.clientId,
+            carerId: selectedEvent.staffIds?.[0],
+            service_id: null,
+            notes: ''
+          }}
+          services={services || []}
+          branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
+        />
+      )}
     </div>
   );
 };

@@ -139,8 +139,38 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         )
       : filteredEvents;
 
-    console.log('[fetchOrganizationCalendarEvents] Successfully fetched', searchFilteredEvents.length, 'events');
-    return searchFilteredEvents;
+      // Add conflict detection
+      const eventsWithConflicts = searchFilteredEvents.map(event => {
+        const conflicts: string[] = [];
+        
+        // Check for overlapping events with same staff
+        searchFilteredEvents.forEach(otherEvent => {
+          if (event.id !== otherEvent.id) {
+            // Check if events have overlapping staff and time
+            const hasCommonStaff = event.staffIds.some(staffId => otherEvent.staffIds.includes(staffId));
+            
+            if (hasCommonStaff) {
+              const start1 = new Date(event.startTime);
+              const end1 = new Date(event.endTime);
+              const start2 = new Date(otherEvent.startTime);
+              const end2 = new Date(otherEvent.endTime);
+              
+              // Check for time overlap
+              if (start1 < end2 && start2 < end1) {
+                conflicts.push(otherEvent.id);
+              }
+            }
+          }
+        });
+        
+        return {
+          ...event,
+          conflictsWith: conflicts
+        };
+      });
+
+      console.log('[fetchOrganizationCalendarEvents] Successfully fetched', eventsWithConflicts.length, 'events with conflicts detected');
+      return eventsWithConflicts;
 
   } catch (error) {
     console.error('[fetchOrganizationCalendarEvents] Error:', error);
