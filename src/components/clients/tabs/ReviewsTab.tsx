@@ -23,17 +23,19 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
     ));
   };
 
-  const getServiceBadge = (serviceType: string) => {
+  const getServiceBadge = (serviceType: string | null) => {
+    const displayType = serviceType || "General Service";
     const colors: Record<string, string> = {
       "Personal Care": "bg-blue-100 text-blue-800",
       "Medication": "bg-green-100 text-green-800",
       "Companionship": "bg-purple-100 text-purple-800",
       "Domestic": "bg-orange-100 text-orange-800",
+      "General Service": "bg-gray-100 text-gray-800",
     };
     
     return (
-      <Badge variant="secondary" className={colors[serviceType] || ""}>
-        {serviceType}
+      <Badge variant="secondary" className={colors[displayType] || "bg-gray-100 text-gray-800"}>
+        {displayType}
       </Badge>
     );
   };
@@ -68,101 +70,106 @@ export const ReviewsTab: React.FC<ReviewsTabProps> = ({ clientId }) => {
       {/* Reviews Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Reviews</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{reviews.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Average Rating</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <span className="text-3xl font-bold text-primary">
-                {averageRating.toFixed(1)}
-              </span>
-              <div className="flex">
-                {renderStars(Math.round(averageRating))}
+              <MessageSquare className="h-4 w-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Total Reviews</p>
+                <p className="text-2xl font-bold text-primary">{reviews.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Latest Review</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground">
-              {reviews.length > 0
-                ? format(parseISO(reviews[0].created_at), "MMM dd, yyyy")
-                : "No reviews yet"
-              }
-            </div>
-            {reviews.length > 0 && (
-              <div className="flex mt-1">
-                {renderStars(reviews[0].rating)}
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <div>
+                <p className="text-sm font-medium">Average Rating</p>
+                <div className="flex items-center space-x-1">
+                  <p className="text-2xl font-bold text-primary">{averageRating.toFixed(1)}</p>
+                  <div className="flex">
+                    {renderStars(Math.round(averageRating))}
+                  </div>
+                </div>
               </div>
-            )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Latest Review</p>
+                <p className="text-lg font-bold">
+                  {reviews.length > 0
+                    ? format(parseISO(reviews[0].created_at), "MMM dd, yyyy")
+                    : "No reviews yet"
+                  }
+                </p>
+                {reviews.length > 0 && (
+                  <div className="flex mt-1">
+                    {renderStars(reviews[0].rating)}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Reviews List */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5" />
-            <span>Client Reviews</span>
-          </CardTitle>
-          <CardDescription>
-            Feedback from completed services
-          </CardDescription>
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Client Reviews</CardTitle>
+          </div>
+          <CardDescription>Feedback from completed services</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {reviews.length === 0 ? (
-            <div className="text-center py-8">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No reviews available yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="text-center py-8 text-gray-500">
+              <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No reviews available yet</p>
+              <p className="text-xs text-gray-400 mt-1">
                 Reviews will appear after services are completed
               </p>
             </div>
           ) : (
             <div className="space-y-4">
               {reviews.map((review) => (
-                <div key={review.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex">
-                        {renderStars(review.rating)}
+                <div key={review.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="flex">
+                          {renderStars(review.rating)}
+                        </div>
+                        <span className="font-medium">{review.rating}/5 Stars</span>
+                        {getServiceBadge(review.service_type)}
                       </div>
-                      <span className="font-medium">{review.rating}/5 Stars</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{format(parseISO(review.service_date), "MMM dd, yyyy")}</span>
-                    </div>
-                  </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          <span>Service: {format(parseISO(review.service_date), "MMM dd, yyyy")}</span>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Service:</span>
-                    {getServiceBadge(review.service_type)}
-                  </div>
+                      {review.comment && (
+                        <div className="bg-muted/30 rounded-lg p-3 mt-2">
+                          <p className="text-sm italic">"{review.comment}"</p>
+                        </div>
+                      )}
 
-                  {review.comment && (
-                    <div className="bg-muted/30 rounded-lg p-3">
-                      <p className="text-sm italic">"{review.comment}"</p>
+                      <div className="text-xs text-gray-500">
+                        Submitted on {format(parseISO(review.created_at), "MMM dd, yyyy 'at' HH:mm")}
+                      </div>
                     </div>
-                  )}
-
-                  <div className="text-xs text-muted-foreground">
-                    Submitted on {format(parseISO(review.created_at), "MMM dd, yyyy 'at' HH:mm")}
                   </div>
                 </div>
               ))}

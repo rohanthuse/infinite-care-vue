@@ -63,70 +63,72 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
       {/* Medication Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Pill className="h-5 w-5 text-green-600" />
-              <span>Active</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">{activeMedications.length}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Pill className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-2xl font-bold text-green-600">{activeMedications.length}</p>
+                <p className="text-xs text-muted-foreground">medications</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-orange-600" />
-              <span>Pending</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-orange-600">{pendingMedications.length}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">Pending</p>
+                <p className="text-2xl font-bold text-orange-600">{pendingMedications.length}</p>
+                <p className="text-xs text-muted-foreground">to start</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
-              <span>Completed</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{completedMedications.length}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Completed</p>
+                <p className="text-2xl font-bold text-blue-600">{completedMedications.length}</p>
+                <p className="text-xs text-muted-foreground">courses</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Total Records</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{adminRecords.length}</div>
-            <p className="text-xs text-muted-foreground">Administration records</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Admin Records</p>
+                <p className="text-2xl font-bold text-primary">{adminRecords.length}</p>
+                <p className="text-xs text-muted-foreground">total records</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Active Medications */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Pill className="h-5 w-5" />
-              <span>Active Medications</span>
-            </div>
-          </CardTitle>
-          <CardDescription>
-            Currently prescribed medications
-          </CardDescription>
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center gap-2">
+            <Pill className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Active Medications</CardTitle>
+          </div>
+          <CardDescription>Currently prescribed medications</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {activeMedications.length === 0 ? (
-            <div className="text-center py-8">
-              <Pill className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No active medications</p>
+            <div className="text-center py-8 text-gray-500">
+              <Pill className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No active medications</p>
             </div>
           ) : (
             <Table>

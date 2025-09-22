@@ -164,78 +164,79 @@ export const VisitRecordsTab: React.FC<VisitRecordsTabProps> = ({ clientId }) =>
       {/* Visit Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-primary" />
-              <span>Total Visits</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{visitRecords.length}</div>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Total Visits</p>
+                <p className="text-2xl font-bold text-primary">{visitRecords.length}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span>Completed</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">{completedVisits}</div>
-            <p className="text-xs text-muted-foreground">100% completion rate</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Completed</p>
+                <p className="text-2xl font-bold text-green-600">{completedVisits}</p>
+                <p className="text-xs text-muted-foreground">visits</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <span>Avg Duration</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{Math.floor(avgDurationMin / 60)}h</div>
-            <p className="text-xs text-muted-foreground">{avgDurationMin % 60} minutes</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium">Avg Duration</p>
+                <p className="text-2xl font-bold text-blue-600">{Math.floor(avgDurationMin / 60)}h {avgDurationMin % 60}m</p>
+                <p className="text-xs text-muted-foreground">per visit</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">This Month</CardTitle>
-          </CardHeader>
-          <CardContent>
-          <div className="text-3xl font-bold text-primary">
-            {visitRecords.filter(v => {
-              if (!v.visit_start_time) return false;
-              const visitDate = new Date(v.visit_start_time);
-              const now = new Date();
-              return visitDate.getMonth() === now.getMonth() && visitDate.getFullYear() === now.getFullYear();
-            }).length}
-          </div>
-            <p className="text-xs text-muted-foreground">visits this month</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">This Month</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {visitRecords.filter(v => {
+                    if (!v.visit_start_time) return false;
+                    const visitDate = new Date(v.visit_start_time);
+                    const now = new Date();
+                    return visitDate.getMonth() === now.getMonth() && visitDate.getFullYear() === now.getFullYear();
+                  }).length}
+                </p>
+                <p className="text-xs text-muted-foreground">visits</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Recent Visits */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5" />
-            <span>Visit Records</span>
-          </CardTitle>
-          <CardDescription>
-            Detailed records of all care visits
-          </CardDescription>
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Visit Records</CardTitle>
+          </div>
+          <CardDescription>Detailed records of all care visits</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {visitRecords.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No visit records available</p>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No visit records available</p>
+              <p className="text-xs text-gray-400 mt-1">
                 Visit records will appear after care visits are completed
               </p>
             </div>

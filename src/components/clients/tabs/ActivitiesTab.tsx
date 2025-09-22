@@ -126,54 +126,53 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
       {/* Activity Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Activity className="h-5 w-5 text-primary" />
-              <span>Total Activities</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{activities.length}</div>
-            <p className="text-xs text-muted-foreground">recorded activities</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-4 w-4 text-primary" />
+              <div>
+                <p className="text-sm font-medium">Total Activities</p>
+                <p className="text-2xl font-bold text-primary">{activities.length}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-green-600" />
-              <span>This Week</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">{thisWeekActivities.length}</div>
-            <p className="text-xs text-muted-foreground">activities this week</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Calendar className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">This Week</p>
+                <p className="text-2xl font-bold text-green-600">{thisWeekActivities.length}</p>
+                <p className="text-xs text-muted-foreground">activities</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Activity className="h-5 w-5 text-green-600" />
-              <span>Active</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">{activeActivities}</div>
-            <p className="text-xs text-muted-foreground">active activities</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-2xl font-bold text-green-600">{activeActivities}</p>
+                <p className="text-xs text-muted-foreground">ongoing</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <Trophy className="h-5 w-5 text-purple-600" />
-              <span>Activity Types</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-600">{activityStatuses.length}</div>
-            <p className="text-xs text-muted-foreground">different statuses</p>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Trophy className="h-4 w-4 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium">Activity Types</p>
+                <p className="text-2xl font-bold text-purple-600">{activityStatuses.length}</p>
+                <p className="text-xs text-muted-foreground">different types</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -222,21 +221,19 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
 
       {/* Recent Activities */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Heart className="h-5 w-5" />
-            <span>Recent Activities</span>
-          </CardTitle>
-          <CardDescription>
-            Detailed activity participation records
-          </CardDescription>
+        <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Recent Activities</CardTitle>
+          </div>
+          <CardDescription>Detailed activity participation records</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {activities.length === 0 ? (
-            <div className="text-center py-8">
-              <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No activities recorded</p>
-              <p className="text-sm text-muted-foreground mt-1">
+            <div className="text-center py-8 text-gray-500">
+              <Heart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-sm">No activities recorded</p>
+              <p className="text-xs text-gray-400 mt-1">
                 Activity records will appear when engagement activities are logged
               </p>
             </div>
