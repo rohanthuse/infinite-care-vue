@@ -25,6 +25,26 @@ const navItems = [
     icon: MessageCircle,
   },
   {
+    id: "reviews",
+    label: "Reviews",
+    icon: MessageCircle,
+  },
+  {
+    id: "medications",
+    label: "Medications",
+    icon: ClipboardList,
+  },
+  {
+    id: "visits",
+    label: "Visit Records",
+    icon: Calendar,
+  },
+  {
+    id: "activities",
+    label: "Activities",
+    icon: Heart,
+  },
+  {
     id: "suspend",
     label: "Suspend",
     icon: PauseCircle,

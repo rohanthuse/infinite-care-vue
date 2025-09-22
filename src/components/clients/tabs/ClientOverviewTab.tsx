@@ -5,7 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistance } from "date-fns";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useServiceRates } from "@/hooks/useAccountingData";
-import { Calendar, MapPin, Mail, Phone, Smartphone } from "lucide-react";
+import { useClientReviews } from "@/hooks/useClientReviews";
+import { useMedicationsByClient } from "@/hooks/useMedications";
+import { useClientEvents } from "@/hooks/useClientEvents";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Calendar, MapPin, Mail, Phone, Smartphone, Star, Activity, Clock, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
 
 interface ClientOverviewTabProps {
   client: any;
@@ -14,6 +20,33 @@ interface ClientOverviewTabProps {
 
 export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, branchId }) => {
   const { data: serviceRates, isLoading: isLoadingRates } = useServiceRates(branchId);
+  const { data: reviews = [] } = useClientReviews(client.id);
+  const { data: medications = [] } = useMedicationsByClient(client.id);
+  const { data: clientEvents = [] } = useClientEvents(client.id);
+
+  // Fetch recent bookings for activity timeline
+  const { data: recentBookings = [] } = useQuery({
+    queryKey: ['client-recent-bookings', client.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          start_time,
+          end_time,
+          status,
+          services(title),
+          staff(first_name, last_name)
+        `)
+        .eq('client_id', client.id)
+        .order('start_time', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!client.id,
+  });
 
   const registeredDate = client.registered_on || client.registeredOn;
   const lengthOfRegistration = registeredDate 
@@ -38,6 +71,17 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
     return new Date(dateString).toLocaleDateString('en-GB');
   };
 
+  const averageRating = reviews.length > 0 
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length 
+    : 0;
+
+  const activeMedications = medications.filter(med => med.status === 'active').length;
+  const recentEvents = clientEvents.filter(event => {
+    const eventDate = new Date(event.created_at);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return eventDate > weekAgo;
+  }).length;
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -57,10 +101,52 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
+              <Star className="h-4 w-4 text-yellow-500" />
+              <div>
+                <p className="text-sm font-medium">Avg Rating</p>
+                <p className="text-lg font-bold">{averageRating.toFixed(1)} / 5</p>
+                <p className="text-xs text-muted-foreground">{reviews.length} reviews</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-sm font-medium">Active Meds</p>
+                <p className="text-lg font-bold">{activeMedications}</p>
+                <p className="text-xs text-muted-foreground">medications</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-sm font-medium">Recent Events</p>
+                <p className="text-lg font-bold">{recentEvents}</p>
+                <p className="text-xs text-muted-foreground">last 7 days</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Location</p>
-                <p className="text-lg font-bold">{client.location || client.address || 'N/A'}</p>
+                <p className="text-sm text-muted-foreground">{client.location || client.address || 'N/A'}</p>
               </div>
             </div>
           </CardContent>
@@ -72,7 +158,7 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
               <Mail className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Email</p>
-                <p className="text-lg font-bold truncate">{client.email || 'N/A'}</p>
+                <p className="text-sm text-muted-foreground truncate">{client.email || 'N/A'}</p>
               </div>
             </div>
           </CardContent>
@@ -84,12 +170,59 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
               <Smartphone className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Mobile</p>
-                <p className="text-lg font-bold">{client.mobile || client.phone || 'N/A'}</p>
+                <p className="text-sm text-muted-foreground">{client.mobile || client.phone || 'N/A'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Telephone</p>
+                <p className="text-sm text-muted-foreground">{client.telephone || client.landline || 'N/A'}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Activity Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Clock className="h-5 w-5" />
+            <span>Recent Activity Timeline</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentBookings.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No recent activity</p>
+            ) : (
+              recentBookings.map((booking) => (
+                <div key={booking.id} className="flex items-center space-x-3 border-l-2 border-primary pl-4 pb-2">
+                  <div className="w-2 h-2 bg-primary rounded-full -ml-5"></div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{booking.services?.title || 'Service'}</span>
+                      <Badge variant={booking.status === 'completed' ? 'default' : 'secondary'}>
+                        {booking.status}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {booking.staff?.first_name} {booking.staff?.last_name} • 
+                      {format(new Date(booking.start_time), 'MMM dd, yyyy HH:mm')}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Client Information */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -103,8 +236,8 @@ export const ClientOverviewTab: React.FC<ClientOverviewTabProps> = ({ client, br
               <span>{lengthOfRegistration}</span>
             </div>
             <div className="flex justify-between">
-              <span className="font-medium">Telephone:</span>
-              <span>{client.telephone || client.landline || 'N/A'}</span>
+              <span className="font-medium">Total Reviews:</span>
+              <span>{reviews.length}</span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Status:</span>

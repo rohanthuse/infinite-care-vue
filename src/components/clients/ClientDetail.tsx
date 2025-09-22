@@ -20,6 +20,10 @@ import { CarePlansTab } from "./tabs/CarePlansTab";
 import { EventsLogsTab } from "./tabs/EventsLogsTab";
 import { ClientRatesTab } from "./tabs/ClientRatesTab";
 import { ClientHobbiesTab } from "./tabs/ClientHobbiesTab";
+import { ReviewsTab } from "./tabs/ReviewsTab";
+import { ClientMedicationsTab } from "./tabs/ClientMedicationsTab";
+import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
+import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ClientProfileSharingDialog } from "./ClientProfileSharingDialog";
@@ -195,6 +199,22 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="notes" className="p-6 m-0">
                   <NotesTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="reviews" className="p-6 m-0">
+                  <ReviewsTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="medications" className="p-6 m-0">
+                  <ClientMedicationsTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="visits" className="p-6 m-0">
+                  <VisitRecordsTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="activities" className="p-6 m-0">
+                  <ActivitiesTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="suspend" className="p-6 m-0">
