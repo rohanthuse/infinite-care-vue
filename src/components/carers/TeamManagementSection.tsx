@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AddCarerDialog } from "./AddCarerDialog";
 import { EditCarerDialog } from "./EditCarerDialog";
+import { ViewStaffDetailsDialog } from "./ViewStaffDetailsDialog";
 import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
 import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
@@ -67,11 +68,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCarer, setEditingCarer] = useState<CarerDB | null>(null);
+  const [viewingCarer, setViewingCarer] = useState<CarerDB | null>(null);
   const [settingPasswordCarer, setSettingPasswordCarer] = useState<CarerDB | null>(null);
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'view' | 'edit'>('edit');
 
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
@@ -308,11 +309,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { setDialogMode('view'); setEditingCarer(carer); }}>
+                      <DropdownMenuItem onClick={() => setViewingCarer(carer)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setDialogMode('edit'); setEditingCarer(carer); }}>
+                      <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details
                       </DropdownMenuItem>
@@ -407,11 +408,18 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         branchId={branchId}
       />
 
+      <ViewStaffDetailsDialog
+        carer={viewingCarer}
+        isOpen={!!viewingCarer}
+        onClose={() => setViewingCarer(null)}
+        branchId={branchId}
+        branchName={branchName}
+      />
+
       <EditCarerDialog
         open={!!editingCarer}
         onOpenChange={(open) => !open && setEditingCarer(null)}
         carer={editingCarer}
-        mode={dialogMode}
       />
 
       <SetCarerPasswordDialog

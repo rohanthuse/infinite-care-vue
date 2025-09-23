@@ -78,7 +78,10 @@ export const useCarerPerformance = (carerId: string) => {
   return useQuery({
     queryKey: ['carer-performance', carerId],
     queryFn: () => fetchCarerPerformance(carerId),
-    enabled: Boolean(carerId),
+    enabled: Boolean(carerId) && carerId.length > 0,
     staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };

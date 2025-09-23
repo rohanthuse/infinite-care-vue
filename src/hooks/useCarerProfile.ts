@@ -79,7 +79,11 @@ export const useCarerProfileById = (carerId?: string) => {
   return useQuery({
     queryKey: ['carer-profile-by-id', carerId],
     queryFn: async () => {
-      if (!carerId) throw new Error('No carer ID provided');
+      if (!carerId || carerId.length === 0) {
+        throw new Error('No carer ID provided');
+      }
+
+      console.log('[useCarerProfileById] Fetching profile for carerId:', carerId);
 
       const { data, error } = await supabase
         .from('staff')
@@ -120,14 +124,18 @@ export const useCarerProfileById = (carerId?: string) => {
       }
 
       if (!data) {
-        console.error('[useCarerProfileById] No profile found for carerId:', carerId);
+        console.log('[useCarerProfileById] No profile found for carerId:', carerId);
         throw new Error('Profile not found');
       }
 
+      console.log('[useCarerProfileById] Profile found successfully');
       return data as CarerProfile;
     },
-    enabled: !!carerId,
+    enabled: Boolean(carerId) && carerId.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
