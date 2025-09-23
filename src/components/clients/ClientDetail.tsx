@@ -26,6 +26,7 @@ import { ClientMedicationsTab } from "./tabs/ClientMedicationsTab";
 import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { ServiceReportsTab } from "../service-reports/ServiceReportsTab";
+import { ServiceReportsErrorBoundary } from "../service-reports/ServiceReportsErrorBoundary";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ClientProfileSharingDialog } from "./ClientProfileSharingDialog";
@@ -212,7 +213,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="service-reports" className="p-6 m-0">
-                  <ServiceReportsTab clientId={client.id} />
+                  <ServiceReportsErrorBoundary clientId={client.id}>
+                    <ServiceReportsTab clientId={client.id} />
+                  </ServiceReportsErrorBoundary>
                 </TabsContent>
                 
                 <TabsContent value="medications" className="p-6 m-0">

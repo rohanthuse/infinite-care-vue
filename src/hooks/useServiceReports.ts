@@ -207,25 +207,43 @@ export const useApprovedServiceReports = (clientId?: string) => {
   return useQuery({
     queryKey: ['approved-service-reports', clientId],
     queryFn: async () => {
-      if (!clientId) throw new Error('Client ID is required');
+      if (!clientId) {
+        console.warn('[useApprovedServiceReports] No client ID provided');
+        return [];
+      }
       
-      const { data, error } = await supabase
-        .from('client_service_reports')
-        .select(`
-          *,
-          staff!inner (
-            first_name,
-            last_name
-          )
-        `)
-        .eq('client_id', clientId)
-        .eq('status', 'approved')
-        .eq('visible_to_client', true)
-        .order('service_date', { ascending: false });
+      console.log('[useApprovedServiceReports] Fetching reports for client:', clientId);
+      
+      try {
+        const { data, error } = await supabase
+          .from('client_service_reports')
+          .select(`
+            *,
+            staff!inner (
+              first_name,
+              last_name
+            )
+          `)
+          .eq('client_id', clientId)
+          .eq('status', 'approved')
+          .eq('visible_to_client', true)
+          .order('service_date', { ascending: false });
 
-      if (error) throw error;
-      return data;
+        if (error) {
+          console.error('[useApprovedServiceReports] Query error:', error);
+          throw error;
+        }
+        
+        console.log('[useApprovedServiceReports] Successfully fetched', data?.length || 0, 'reports');
+        return data || [];
+      } catch (error) {
+        console.error('[useApprovedServiceReports] Fetch error:', error);
+        throw error;
+      }
     },
     enabled: Boolean(clientId),
+    retry: 1,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
   });
 };

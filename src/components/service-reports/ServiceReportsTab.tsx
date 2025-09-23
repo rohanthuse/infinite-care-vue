@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { useApprovedServiceReports } from '@/hooks/useServiceReports';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,9 +30,17 @@ interface ServiceReportsTabProps {
   clientId: string;
 }
 
-export function ServiceReportsTab({ clientId }: ServiceReportsTabProps) {
+export const ServiceReportsTab = memo(function ServiceReportsTab({ clientId }: ServiceReportsTabProps) {
   const { data: reports = [], isLoading, error } = useApprovedServiceReports(clientId);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+
+  useEffect(() => {
+    console.log('[ServiceReportsTab] Component mounted/updated', { clientId, reportsCount: reports?.length });
+    
+    return () => {
+      console.log('[ServiceReportsTab] Component unmounting');
+    };
+  }, [clientId, reports?.length]);
 
   if (isLoading) {
     return (
@@ -170,10 +178,10 @@ export function ServiceReportsTab({ clientId }: ServiceReportsTabProps) {
       </div>
     </div>
   );
-}
+});
 
 // Component for detailed view of service report
-function ServiceReportDetails({ report }: { report: any }) {
+const ServiceReportDetails = memo(function ServiceReportDetails({ report }: { report: any }) {
   return (
     <ScrollArea className="max-h-[60vh]">
       <div className="space-y-6">
@@ -316,4 +324,4 @@ function ServiceReportDetails({ report }: { report: any }) {
       </div>
     </ScrollArea>
   );
-}
+});
