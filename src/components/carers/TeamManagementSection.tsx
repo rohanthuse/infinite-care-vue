@@ -17,6 +17,7 @@ import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
 
 import { useBranchCarers, CarerDB, useDeleteCarer, useUpdateCarer } from "@/data/hooks/useBranchCarers";
+import { useDialogManager } from "@/hooks/useDialogManager";
 import {
   Table,
   TableBody,
@@ -62,6 +63,7 @@ const ITEMS_PER_PAGE = 10;
 export function TeamManagementSection({ branchId, branchName }: TeamManagementSectionProps) {
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
+  const { closeAllDropdowns } = useDialogManager();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
@@ -350,7 +352,10 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setViewingCarer(carer)}>
+                      <DropdownMenuItem onClick={() => {
+                        closeAllDropdowns();
+                        setTimeout(() => setViewingCarer(carer), 100);
+                      }}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>

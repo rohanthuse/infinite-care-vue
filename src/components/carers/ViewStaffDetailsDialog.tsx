@@ -1,12 +1,6 @@
 import React from "react";
 import { Eye, Mail, Phone, MapPin, Calendar, Clock, ExternalLink } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { ControlledDialog } from "@/components/ui/controlled-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -73,17 +67,14 @@ export function ViewStaffDetailsDialog({
   if (!carer) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Staff Details - {carer.first_name} {carer.last_name}
-          </DialogTitle>
-          <DialogDescription>
-            View detailed information about this carer including contact details, employment information, and current status.
-          </DialogDescription>
-        </DialogHeader>
+    <ControlledDialog
+      id="view-staff-details"
+      open={isOpen}
+      onOpenChange={(open) => !open && onClose()}
+      title={`Staff Details - ${carer.first_name} ${carer.last_name}`}
+      description="View detailed information about this carer including contact details, employment information, and current status."
+      className="max-w-2xl max-h-[90vh] overflow-y-auto"
+    >
 
         <div className="space-y-6">
           {/* Basic Information */}
@@ -166,7 +157,6 @@ export function ViewStaffDetailsDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ControlledDialog>
   );
 }
