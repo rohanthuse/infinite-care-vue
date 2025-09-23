@@ -112,17 +112,29 @@ export function useBookingData(branchId?: string) {
           client = getOrCreatePlaceholderClient(bk.client_id);
         if (!carer && bk.staff_id)
           carer = getOrCreatePlaceholderCarer(bk.staff_id);
-        // Parse datetime properly - timezone-aware handling
+        // Parse datetime properly - preserve user's local time intent
         const parseDateTime = (dateTimeStr: string) => {
           if (!dateTimeStr) return null;
           try {
-            // Handle both space and T-separated formats, treating as local time
+            // Parse the stored datetime as a local time to preserve user's intent
+            // This ensures that 11:00 stored shows as 11:00 displayed
             let isoString = dateTimeStr.includes('T') ? dateTimeStr : dateTimeStr.replace(' ', 'T');
-            // Remove Z suffix if present to treat as local time
-            if (isoString.endsWith('Z')) {
-              isoString = isoString.slice(0, -1);
-            }
-            return new Date(isoString);
+            
+            // Remove timezone suffix (Z, +XX:XX, etc.) to treat as local time
+            isoString = isoString.replace(/[Z]|[+-]\d{2}:\d{2}$/g, '');
+            
+            // Parse as local time to preserve the original time intent
+            const parts = isoString.split('T')[0].split('-');
+            const timeParts = isoString.split('T')[1].split(':');
+            
+            return new Date(
+              parseInt(parts[0]), // year
+              parseInt(parts[1]) - 1, // month (0-indexed)
+              parseInt(parts[2]), // day
+              parseInt(timeParts[0]), // hour
+              parseInt(timeParts[1]), // minute
+              parseInt(timeParts[2] || '0') // second
+            );
           } catch (error) {
             console.warn('[useBookingData] Failed to parse datetime:', dateTimeStr, error);
             return null;

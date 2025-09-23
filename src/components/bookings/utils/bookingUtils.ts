@@ -9,8 +9,13 @@ export function combineDateAndTimeToISO(date: Date, time: string): string {
   let [h, m] = time.split(':');
   h = h.padStart(2, '0');
   m = m.padStart(2, '0');
-  // Create local datetime without forcing UTC - let the database handle timezone conversion
-  return `${yyyy}-${mm}-${dd}T${h}:${m}:00`;
+  
+  // Create a local datetime that preserves the user's intended time
+  // by explicitly setting it in their timezone
+  const localDateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(h), parseInt(m));
+  
+  // Return as ISO string which will be treated as local time by the database
+  return localDateTime.toISOString().slice(0, 19); // Remove Z suffix to keep as local time reference
 }
 
 // Filter bookings by search and status
