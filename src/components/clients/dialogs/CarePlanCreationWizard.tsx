@@ -166,17 +166,19 @@ export function CarePlanCreationWizard({
   const [clientDataLoaded, setClientDataLoaded] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   
-  // Filter steps based on client age group
-  const getFilteredSteps = () => {
+  // Fetch client profile data first
+  const { data: clientProfile, isLoading: isClientLoading } = useClientProfile(clientId);
+  
+  // Filter steps based on client age group - using useMemo for reactivity
+  const filteredSteps = React.useMemo(() => {
     const isChild = clientProfile?.age_group === 'child' || clientProfile?.age_group === 'young_person';
     
     if (!isChild) {
       return wizardSteps.filter(step => !step.childOnly);
     }
     return wizardSteps; // Show all steps for children/young persons
-  };
+  }, [clientProfile?.age_group]);
   
-  const filteredSteps = getFilteredSteps();
   const totalSteps = filteredSteps.length;
   
   const form = useForm({
@@ -240,9 +242,6 @@ export function CarePlanCreationWizard({
   const effectiveCarePlanId = savedCarePlanId || carePlanId;
 
   const { createCarePlan, isCreating } = useCarePlanCreation();
-
-  // Fetch client profile data
-  const { data: clientProfile, isLoading: isClientLoading } = useClientProfile(clientId);
 
   // Debug logging for form state
   useEffect(() => {
