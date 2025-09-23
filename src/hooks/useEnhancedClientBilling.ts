@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 export interface InvoiceLineItem {
   id: string;
   invoice_id: string;
+  organization_id?: string; // Optional since trigger will populate
   service_id?: string;
   description: string;
   quantity: number;
@@ -153,14 +154,15 @@ const createEnhancedInvoice = async (invoiceData: {
       due_date: invoiceData.due_date,
       amount: 0, // Will be calculated by the function
       tax_amount: invoiceData.tax_amount || 0,
-      currency: invoiceData.currency || 'USD',
+      currency: invoiceData.currency || 'GBP', // Fixed to GBP
       payment_terms: invoiceData.payment_terms || '30 days',
       notes: invoiceData.notes,
       booking_id: invoiceData.booking_id,
       service_provided_date: invoiceData.service_provided_date,
       status: 'draft',
       generated_from_booking: !!invoiceData.booking_id,
-      invoice_type: invoiceData.booking_id ? 'automatic' : 'manual'
+      invoice_type: invoiceData.booking_id ? 'automatic' : 'manual',
+      organization_id: '', // Trigger will populate with correct value
     }])
     .select()
     .single();
@@ -178,7 +180,8 @@ const createEnhancedInvoice = async (invoiceData: {
     quantity: item.quantity,
     unit_price: item.unit_price,
     discount_amount: item.discount_amount || 0,
-    line_total: (item.quantity * item.unit_price) - (item.discount_amount || 0)
+    line_total: (item.quantity * item.unit_price) - (item.discount_amount || 0),
+    organization_id: '', // Trigger will populate with correct value
   }));
 
   const { error: lineItemsError } = await supabase
@@ -258,7 +261,8 @@ const updateInvoice = async (invoiceId: string, invoiceData: {
       quantity: item.quantity,
       unit_price: item.unit_price,
       discount_amount: item.discount_amount || 0,
-      line_total: (item.quantity * item.unit_price) - (item.discount_amount || 0)
+      line_total: (item.quantity * item.unit_price) - (item.discount_amount || 0),
+      organization_id: '', // Trigger will populate with correct value
     }));
 
     const { error: lineItemsError } = await supabase

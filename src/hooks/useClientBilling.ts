@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface ClientBilling {
   id: string;
   client_id: string;
+  organization_id?: string; // Optional since trigger will populate
   description: string;
   amount: number;
   invoice_number: string;
@@ -27,10 +28,14 @@ const fetchClientBilling = async (clientId: string): Promise<ClientBilling[]> =>
   return data || [];
 };
 
-const createClientBilling = async (billing: Omit<ClientBilling, 'id' | 'created_at' | 'updated_at' | 'status' | 'paid_date'>) => {
+const createClientBilling = async (billing: Omit<ClientBilling, 'id' | 'created_at' | 'updated_at' | 'status' | 'paid_date' | 'organization_id'>) => {
   const { data, error } = await supabase
     .from('client_billing')
-    .insert([{ ...billing, status: 'pending' }])
+    .insert([{ 
+      ...billing, 
+      status: 'pending',
+      organization_id: '', // Trigger will populate with correct value
+    }])
     .select()
     .single();
 

@@ -21,6 +21,7 @@ const fetchBranchInvoices = async (
   filters: BranchInvoiceFilters = {},
   sorting: BranchInvoiceSorting = { field: 'due_date', direction: 'desc' }
 ) => {
+  // Enhanced query with organization isolation
   let query = supabase
     .from('client_billing')
     .select(`
