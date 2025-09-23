@@ -35,6 +35,11 @@ const navItems = [
     icon: MessageCircle,
   },
   {
+    id: "service-reports",
+    label: "Service Reports",
+    icon: FileBarChart2,
+  },
+  {
     id: "medications",
     label: "Medications",
     icon: ClipboardList,

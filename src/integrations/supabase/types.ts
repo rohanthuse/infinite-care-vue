@@ -2670,6 +2670,129 @@ export type Database = {
           },
         ]
       }
+      client_service_reports: {
+        Row: {
+          activities_undertaken: string | null
+          booking_id: string | null
+          branch_id: string
+          carer_observations: string | null
+          client_engagement: string | null
+          client_feedback: string | null
+          client_id: string
+          client_mood: string | null
+          client_viewed_at: string | null
+          created_at: string | null
+          created_by: string
+          id: string
+          incident_details: string | null
+          incident_occurred: boolean | null
+          last_modified_by: string | null
+          medication_administered: boolean | null
+          medication_notes: string | null
+          next_visit_preparations: string | null
+          organization_id: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          revision_requested_at: string | null
+          service_date: string
+          service_duration_minutes: number | null
+          services_provided: string[]
+          staff_id: string
+          status: string
+          submitted_at: string | null
+          tasks_completed: string[] | null
+          updated_at: string | null
+          visible_to_client: boolean | null
+          visit_record_id: string | null
+        }
+        Insert: {
+          activities_undertaken?: string | null
+          booking_id?: string | null
+          branch_id: string
+          carer_observations?: string | null
+          client_engagement?: string | null
+          client_feedback?: string | null
+          client_id: string
+          client_mood?: string | null
+          client_viewed_at?: string | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          incident_details?: string | null
+          incident_occurred?: boolean | null
+          last_modified_by?: string | null
+          medication_administered?: boolean | null
+          medication_notes?: string | null
+          next_visit_preparations?: string | null
+          organization_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_requested_at?: string | null
+          service_date: string
+          service_duration_minutes?: number | null
+          services_provided?: string[]
+          staff_id: string
+          status?: string
+          submitted_at?: string | null
+          tasks_completed?: string[] | null
+          updated_at?: string | null
+          visible_to_client?: boolean | null
+          visit_record_id?: string | null
+        }
+        Update: {
+          activities_undertaken?: string | null
+          booking_id?: string | null
+          branch_id?: string
+          carer_observations?: string | null
+          client_engagement?: string | null
+          client_feedback?: string | null
+          client_id?: string
+          client_mood?: string | null
+          client_viewed_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          incident_details?: string | null
+          incident_occurred?: boolean | null
+          last_modified_by?: string | null
+          medication_administered?: boolean | null
+          medication_notes?: string | null
+          next_visit_preparations?: string | null
+          organization_id?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          revision_requested_at?: string | null
+          service_date?: string
+          service_duration_minutes?: number | null
+          services_provided?: string[]
+          staff_id?: string
+          status?: string
+          submitted_at?: string | null
+          tasks_completed?: string[] | null
+          updated_at?: string | null
+          visible_to_client?: boolean | null
+          visit_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_service_reports_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_service_reports_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_status_history: {
         Row: {
           action: string
