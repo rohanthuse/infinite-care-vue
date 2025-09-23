@@ -1,6 +1,7 @@
 import React from "react";
 import { User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart, DollarSign, PauseCircle, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface ClientSideTabNavProps {
@@ -104,27 +105,29 @@ export const ClientSideTabNav: React.FC<ClientSideTabNavProps> = ({ activeTab, o
           Client Details
         </h3>
       </div>
-      <nav className="p-2 flex-1 overflow-y-auto">
-        <div className="space-y-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start h-10",
-                  activeTab === item.id && "bg-primary/10 text-primary font-medium"
-                )}
-                onClick={() => onChange(item.id)}
-              >
-                <Icon className="h-4 w-4 mr-3" />
-                {item.label}
-              </Button>
-            );
-          })}
-        </div>
-      </nav>
+      <ScrollArea className="flex-1">
+        <nav className="p-2">
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.id}
+                  variant={activeTab === item.id ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-start h-10",
+                    activeTab === item.id && "bg-primary/10 text-primary font-medium"
+                  )}
+                  onClick={() => onChange(item.id)}
+                >
+                  <Icon className="h-4 w-4 mr-3" />
+                  {item.label}
+                </Button>
+              );
+            })}
+          </div>
+        </nav>
+      </ScrollArea>
     </div>
   );
 };

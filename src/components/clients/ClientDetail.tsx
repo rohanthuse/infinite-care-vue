@@ -179,7 +179,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           </div>
         </div>
         
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden min-h-0">
           <ClientSideTabNav activeTab={activeTab} onChange={setActiveTab} />
           
           <div className="flex-1 overflow-y-auto">
