@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +19,37 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const focusTimeoutRef = useRef<NodeJS.Timeout>();
   const setPasswordMutation = useSetCarerPassword();
   const generatePasswordMutation = useGenerateTemporaryPassword();
+
+  // Enhanced cleanup and focus management
+  const resetForm = useCallback(() => {
+    setPassword('');
+    setConfirmPassword('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setIsSubmitting(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (focusTimeoutRef.current) {
+        clearTimeout(focusTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      resetForm();
+    }
+  }, [open, resetForm]);
 
   const handleGeneratePassword = async () => {
     try {
@@ -36,7 +64,7 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!carer) return;
+    if (!carer || isSubmitting) return;
     
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -48,26 +76,27 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
       return;
     }
 
+    setIsSubmitting(true);
     try {
       await setPasswordMutation.mutateAsync({
         staffId: carer.id,
         password: password
       });
       
-      // Reset form and close dialog
-      setPassword('');
-      setConfirmPassword('');
+      resetForm();
       onOpenChange(false);
     } catch (error) {
       // Error is handled by the mutation
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleClose = () => {
-    setPassword('');
-    setConfirmPassword('');
+  const handleClose = useCallback(() => {
+    if (isSubmitting) return; // Prevent closing while submitting
+    resetForm();
     onOpenChange(false);
-  };
+  }, [isSubmitting, resetForm, onOpenChange]);
 
   const getPasswordStrength = (pwd: string) => {
     let strength = 0;
@@ -85,7 +114,9 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent ref={dialogRef} className="sm:max-w-md" onPointerDownOutside={(e) => {
+        if (isSubmitting) e.preventDefault(); // Prevent closing while submitting
+      }}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-600" />
@@ -176,14 +207,14 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={setPasswordMutation.isPending || password !== confirmPassword || password.length < 8}
+              disabled={isSubmitting || setPasswordMutation.isPending || password !== confirmPassword || password.length < 8}
             >
-              {setPasswordMutation.isPending ? 'Setting Password...' : 'Set Password'}
+              {(isSubmitting || setPasswordMutation.isPending) ? 'Setting Password...' : 'Set Password'}
             </Button>
           </DialogFooter>
         </form>

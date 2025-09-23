@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings } from "lucide-react";
@@ -73,10 +73,28 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
+  
+  // Refs for preventing race conditions and memory leaks
+  const dialogCleanupRef = useRef<NodeJS.Timeout>();
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  const isUnmountedRef = useRef(false);
 
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
   const updateCarerMutation = useUpdateCarer();
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isUnmountedRef.current = true;
+      if (dialogCleanupRef.current) {
+        clearTimeout(dialogCleanupRef.current);
+      }
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
 
   const filteredCarers = useMemo(() => {
@@ -111,44 +129,67 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
     }
   };
 
-  const handleBulkStatusChange = async (carerIds: string[], newStatus: string, reason?: string) => {
+  const handleBulkStatusChange = useCallback(async (carerIds: string[], newStatus: string, reason?: string) => {
+    if (isUnmountedRef.current) return;
+    
     try {
-      // Update each carer's status
-      for (const carerId of carerIds) {
-        await updateCarerMutation.mutateAsync({
-          id: carerId,
-          status: newStatus
+      // Update each carer's status with timeout protection
+      const promises = carerIds.map(carerId => 
+        Promise.race([
+          updateCarerMutation.mutateAsync({
+            id: carerId,
+            status: newStatus
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Update timeout')), 10000)
+          )
+        ])
+      );
+      
+      await Promise.allSettled(promises);
+      
+      if (!isUnmountedRef.current) {
+        toast.success(`Status updated for ${carerIds.length} staff member${carerIds.length > 1 ? 's' : ''}`, {
+          description: reason ? `Reason: ${reason}` : undefined
+        });
+        
+        // Clear selection with delay to prevent race conditions
+        updateTimeoutRef.current = setTimeout(() => {
+          if (!isUnmountedRef.current) {
+            setSelectedCarers([]);
+          }
+        }, 100);
+      }
+    } catch (error) {
+      if (!isUnmountedRef.current) {
+        toast.error("Failed to update status", {
+          description: "Some staff members may not have been updated successfully."
         });
       }
-      
-      toast.success(`Status updated for ${carerIds.length} staff member${carerIds.length > 1 ? 's' : ''}`, {
-        description: reason ? `Reason: ${reason}` : undefined
-      });
-      
-      // Clear selection
-      setSelectedCarers([]);
-    } catch (error) {
-      toast.error("Failed to update status", {
-        description: "Some staff members may not have been updated successfully."
-      });
     }
-  };
+  }, [updateCarerMutation]);
 
-  const handleCarerSelection = (carer: CarerDB, checked: boolean) => {
-    if (checked) {
-      setSelectedCarers(prev => [...prev, carer]);
-    } else {
-      setSelectedCarers(prev => prev.filter(c => c.id !== carer.id));
-    }
-  };
+  const handleCarerSelection = useCallback((carer: CarerDB, checked: boolean) => {
+    if (isUnmountedRef.current) return;
+    
+    setSelectedCarers(prev => {
+      if (checked) {
+        return prev.some(c => c.id === carer.id) ? prev : [...prev, carer];
+      } else {
+        return prev.filter(c => c.id !== carer.id);
+      }
+    });
+  }, []);
 
-  const handleSelectAll = (checked: boolean) => {
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (isUnmountedRef.current) return;
+    
     if (checked) {
       setSelectedCarers(paginatedCarers);
     } else {
       setSelectedCarers([]);
     }
-  };
+  }, [paginatedCarers]);
 
   const isCarerSelected = (carer: CarerDB) => {
     return selectedCarers.some(c => c.id === carer.id);

@@ -1,8 +1,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "@/hooks/use-toast";
+import { debounce } from "lodash";
 
 export interface Notification {
   id: string;
@@ -30,6 +31,10 @@ export interface NotificationStats {
 export const useNotifications = (branchId?: string) => {
   const queryClient = useQueryClient();
   const channelRef = useRef<any>(null);
+  const failureCountRef = useRef(0);
+  const lastInvalidationRef = useRef(0);
+  const isDisabledRef = useRef(false);
+  const cleanupTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Fetch notifications with comprehensive error handling
   const {
@@ -131,6 +136,23 @@ export const useNotifications = (branchId?: string) => {
     retryDelay: 1000,
   });
 
+  // Debounced query invalidation to prevent spam
+  const debouncedInvalidateQueries = useMemo(
+    () => debounce(() => {
+      const now = Date.now();
+      if (now - lastInvalidationRef.current < 1000) return; // Rate limit: max once per second
+      
+      lastInvalidationRef.current = now;
+      try {
+        queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
+      } catch (error) {
+        console.error('Error during query invalidation:', error);
+      }
+    }, 500),
+    [queryClient]
+  );
+
   // Mark notification as read with error handling
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
@@ -150,8 +172,7 @@ export const useNotifications = (branchId?: string) => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
+      debouncedInvalidateQueries();
     },
     onError: (error) => {
       toast({
@@ -187,8 +208,7 @@ export const useNotifications = (branchId?: string) => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
+      debouncedInvalidateQueries();
       toast({
         title: "Success",
         description: "All notifications marked as read",
@@ -203,33 +223,42 @@ export const useNotifications = (branchId?: string) => {
     },
   });
 
-  // Real-time subscription with circuit breaker pattern
+  // Enhanced real-time subscription with comprehensive circuit breaker
   useEffect(() => {
-    let retryCount = 0;
-    const maxRetries = 3;
     let retryTimeout: NodeJS.Timeout;
+    const maxRetries = 2; // Reduced max retries
+    const maxFailures = 5; // Emergency disable threshold
+    
+    const forceCleanup = () => {
+      if (cleanupTimeoutRef.current) {
+        clearTimeout(cleanupTimeoutRef.current);
+      }
+      if (channelRef.current) {
+        try {
+          console.log('Force cleaning up notification channel...');
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        } catch (error) {
+          console.warn('Error during force cleanup:', error);
+          channelRef.current = null; // Force null on error
+        }
+      }
+    };
 
     const setupRealTimeSubscription = () => {
       try {
-        // Skip subscription if too many failures
-        if (retryCount >= maxRetries) {
-          console.warn(`Max retries (${maxRetries}) reached for notification subscription. Relying on polling.`);
+        // Emergency circuit breaker - disable if too many failures
+        if (failureCountRef.current >= maxFailures || isDisabledRef.current) {
+          console.warn(`Notification subscription disabled due to excessive failures (${failureCountRef.current}/${maxFailures}). Using polling only.`);
           return;
         }
 
-        // Create a unique channel name to avoid conflicts
-        const channelName = `notifications-${branchId || 'global'}-${Date.now()}`;
-        
-        // Clean up any existing channel
-        if (channelRef.current) {
-          try {
-            supabase.removeChannel(channelRef.current);
-          } catch (error) {
-            console.warn('Error removing existing channel:', error);
-          }
-          channelRef.current = null;
-        }
+        // Force cleanup first
+        forceCleanup();
 
+        // Create channel with timestamp to ensure uniqueness
+        const channelName = `notifications-safe-${branchId || 'global'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
         const channel = supabase
           .channel(channelName)
           .on(
@@ -240,28 +269,34 @@ export const useNotifications = (branchId?: string) => {
               table: 'notifications'
             },
             (payload) => {
-              console.log('Notification change received:', payload);
-              // Reset retry count on successful message
-              retryCount = 0;
-              try {
-                queryClient.invalidateQueries({ queryKey: ['notifications'] });
-                queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
-              } catch (error) {
-                console.error('Error invalidating queries:', error);
-              }
+              console.log('Notification change received:', payload.eventType);
+              // Reset failure count on successful message
+              failureCountRef.current = 0;
+              
+              // Use debounced invalidation to prevent spam
+              debouncedInvalidateQueries();
             }
           )
           .subscribe((status) => {
-            console.log('Notification subscription status:', status);
+            console.log(`Notification subscription [${channelName}]:`, status);
+            
             if (status === 'SUBSCRIBED') {
-              retryCount = 0; // Reset on successful connection
+              failureCountRef.current = 0; // Reset on successful connection
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              retryCount++;
-              console.error(`Notification subscription failed: ${status} (attempt ${retryCount}/${maxRetries})`);
+              failureCountRef.current++;
+              console.error(`Notification subscription failed: ${status} (failure ${failureCountRef.current}/${maxFailures})`);
               
-              // Retry with exponential backoff
-              if (retryCount < maxRetries) {
-                const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+              // Emergency disable if too many failures
+              if (failureCountRef.current >= maxFailures) {
+                console.error('Emergency circuit breaker activated - disabling real-time notifications');
+                isDisabledRef.current = true;
+                forceCleanup();
+                return;
+              }
+              
+              // Limited retry with longer delays
+              if (failureCountRef.current < maxRetries) {
+                const delay = Math.min(2000 * Math.pow(2, failureCountRef.current), 30000);
                 retryTimeout = setTimeout(() => {
                   console.log(`Retrying notification subscription in ${delay}ms...`);
                   setupRealTimeSubscription();
@@ -271,28 +306,32 @@ export const useNotifications = (branchId?: string) => {
           });
 
         channelRef.current = channel;
+        
+        // Safety cleanup after 5 minutes to prevent memory leaks
+        cleanupTimeoutRef.current = setTimeout(() => {
+          console.log('Safety cleanup of notification subscription after 5 minutes');
+          forceCleanup();
+        }, 5 * 60 * 1000);
+        
       } catch (error) {
-        console.error('Error setting up real-time subscription:', error);
-        retryCount++;
+        console.error('Critical error setting up real-time subscription:', error);
+        failureCountRef.current++;
+        forceCleanup();
       }
     };
 
-    setupRealTimeSubscription();
+    // Only setup if not disabled
+    if (!isDisabledRef.current) {
+      setupRealTimeSubscription();
+    }
 
     return () => {
       if (retryTimeout) {
         clearTimeout(retryTimeout);
       }
-      if (channelRef.current) {
-        try {
-          supabase.removeChannel(channelRef.current);
-        } catch (error) {
-          console.warn('Error cleaning up channel:', error);
-        }
-        channelRef.current = null;
-      }
+      forceCleanup();
     };
-  }, [queryClient, branchId]);
+  }, [queryClient, branchId, debouncedInvalidateQueries]);
 
   return {
     notifications,
