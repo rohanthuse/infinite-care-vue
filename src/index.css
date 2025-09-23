@@ -445,3 +445,25 @@ html {
     backdrop-filter: blur(8px);
   }
 }
+
+/* Dialog Safety Rules - Prevent stuck overlays */
+[data-state="closed"] {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Ensure proper dropdown z-index hierarchy */
+[data-radix-popper-content-wrapper] {
+  z-index: 100 !important;
+}
+
+/* Prevent dropdown transparency issues */
+.bg-popover {
+  @apply bg-background border border-border shadow-md;
+}
+
+/* Enhanced dropdown menu styling */
+[role="menu"] {
+  @apply bg-background border border-border shadow-lg;
+  z-index: 100 !important;
+}

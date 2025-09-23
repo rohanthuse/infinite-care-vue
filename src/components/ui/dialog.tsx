@@ -4,6 +4,9 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Context for providing description ID to DialogDescription
+const DialogDescriptionContext = React.createContext<{ descriptionId: string } | null>(null);
+
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
@@ -29,11 +32,17 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    onEscapeKeyDown?: (event: KeyboardEvent) => void;
+    onPointerDownOutside?: (event: PointerEvent) => void;
+  }
+>(({ className, children, onEscapeKeyDown, onPointerDownOutside, ...props }, ref) => {
   // Generate a unique ID for accessibility if not provided
   const contentId = React.useId();
   const descriptionId = `${contentId}-description`;
+  
+  // Provide the description ID to children context
+  const contextValue = React.useMemo(() => ({ descriptionId }), [descriptionId]);
   
   return (
     <DialogPortal>
@@ -45,9 +54,17 @@ const DialogContent = React.forwardRef<
           className
         )}
         aria-describedby={descriptionId}
+        onEscapeKeyDown={(event) => {
+          onEscapeKeyDown?.(event);
+        }}
+        onPointerDownOutside={(event) => {
+          onPointerDownOutside?.(event);
+        }}
         {...props}
       >
-        {children}
+        <DialogDescriptionContext.Provider value={contextValue}>
+          {children}
+        </DialogDescriptionContext.Provider>
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-10">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
@@ -104,13 +121,19 @@ DialogTitle.displayName = DialogPrimitive.Title.displayName
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-))
+>(({ className, id, ...props }, ref) => {
+  const context = React.useContext(DialogDescriptionContext);
+  const descriptionId = id || context?.descriptionId;
+  
+  return (
+    <DialogPrimitive.Description
+      ref={ref}
+      id={descriptionId}
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  );
+})
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
 export {

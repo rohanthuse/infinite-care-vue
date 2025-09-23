@@ -33,6 +33,7 @@ export function ClientsManagementSection({
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [clientDetailsDialogOpen, setClientDetailsDialogOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   
   const itemsPerPage = 10;
 
@@ -51,14 +52,24 @@ export function ClientsManagementSection({
   const totalCount = clientsData?.count || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  const handleSetPassword = (client: any) => {
-    setSelectedClient(client);
-    setPasswordDialogOpen(true);
-  };
 
   const handleClientDetails = (client: any) => {
-    setSelectedClient(client);
-    setClientDetailsDialogOpen(true);
+    // Close dropdown first to prevent focus trap conflicts
+    setDropdownOpen(null);
+    // Small delay to allow dropdown to close completely
+    setTimeout(() => {
+      setSelectedClient(client);
+      setClientDetailsDialogOpen(true);
+    }, 50);
+  };
+
+  const handleSetPassword = (client: any) => {
+    // Close dropdown first to prevent focus trap conflicts
+    setDropdownOpen(null);
+    setTimeout(() => {
+      setSelectedClient(client);
+      setPasswordDialogOpen(true);
+    }, 50);
   };
 
   const handleSort = (column: 'name' | 'email' | 'pin_code' | 'region' | 'created_at') => {
@@ -295,13 +306,13 @@ export function ClientsManagementSection({
                           {client.registered_on ? new Date(client.registered_on).toLocaleDateString() : 'N/A'}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <DropdownMenu>
+                          <DropdownMenu open={dropdownOpen === client.id} onOpenChange={(open) => setDropdownOpen(open ? client.id : null)}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
                               <DropdownMenuItem onClick={() => onViewClient(client)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
@@ -349,13 +360,13 @@ export function ClientsManagementSection({
                           <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
                             {client.status || 'pending'}
                           </Badge>
-                          <DropdownMenu>
+                          <DropdownMenu open={dropdownOpen === `mobile-${client.id}`} onOpenChange={(open) => setDropdownOpen(open ? `mobile-${client.id}` : null)}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
                               <DropdownMenuItem onClick={() => onViewClient(client)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details

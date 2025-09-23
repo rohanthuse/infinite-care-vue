@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +79,21 @@ export function AdminClientDetailsDialog({
 }: AdminClientDetailsDialogProps) {
   const [activeMainTab, setActiveMainTab] = useState("overview");
   const [activeSubTab, setActiveSubTab] = useState("profile");
+  
+  // Use controlled dialog for proper cleanup and route change handling
+  const dialogId = `admin-client-details-${client?.id || 'unknown'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
+  // Sync with external open/onOpenChange props
+  React.useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open]);
+  
+  React.useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
   
   // Dynamic array handlers for General Information
   const handleAddWarning = () => {
@@ -207,14 +223,18 @@ export function AdminClientDetailsDialog({
   if (!client) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
+    <Dialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
+      <DialogContent 
+        className="max-w-7xl max-h-[95vh] p-0 overflow-hidden"
+        onEscapeKeyDown={() => controlledDialog.onOpenChange(false)}
+        onPointerDownOutside={() => controlledDialog.onOpenChange(false)}
+      >
         <DialogHeader className="px-6 py-4 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <User className="h-5 w-5 text-primary" />
             Client Details - {client.first_name} {client.last_name}
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogDescription>
             View and manage comprehensive client information, care plans, and personal details.
           </DialogDescription>
         </DialogHeader>
