@@ -20,6 +20,7 @@ export interface ClientProfile {
   country_code?: string;
   region?: string;
   gender?: string;
+  age_group?: 'adult' | 'child' | 'young_person';
   pronouns?: string;
   referral_route?: string;
   other_identifier?: string;

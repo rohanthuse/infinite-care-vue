@@ -19,15 +19,19 @@ import { WizardStep12ServiceActions } from "./steps/WizardStep12ServiceActions";
 import { WizardStep13Documents } from "./steps/WizardStep13Documents";
 import { WizardStepConsent } from "./steps/WizardStepConsent";
 import { WizardStep14Review } from "./steps/WizardStep14Review";
+import { BehaviorSupportTab } from "@/components/care/tabs/BehaviorSupportTab";
+import { EducationDevelopmentTab } from "@/components/care/tabs/EducationDevelopmentTab";
+import { SafeguardingRisksTab } from "@/components/care/tabs/SafeguardingRisksTab";
 
 interface CarePlanWizardStepsProps {
   currentStep: number;
   form: UseFormReturn<any>;
   clientId: string;
   effectiveCarePlanId?: string;
+  filteredSteps?: any[];
 }
 
-export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCarePlanId }: CarePlanWizardStepsProps) {
+export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCarePlanId, filteredSteps }: CarePlanWizardStepsProps) {
   const renderStep = () => {
     // Log current step for debugging
     console.log(`Rendering step ${currentStep}`, {
@@ -68,6 +72,12 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
         return <WizardStepConsent form={form} />;
       case 16:
         return <WizardStep14Review form={form} />;
+      case 17:
+        return <BehaviorSupportTab clientId={clientId} clientName="" />;
+      case 18:
+        return <EducationDevelopmentTab clientId={clientId} clientName="" />;
+      case 19:
+        return <SafeguardingRisksTab clientId={clientId} clientName="" />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
         return <WizardStep1BasicInfo form={form} />;
