@@ -132,8 +132,21 @@ export function CreateServiceReportDialog({
     }
 
     const reportData = {
-      ...data,
       client_id: data.client_id,
+      service_date: data.service_date,
+      service_duration_minutes: data.service_duration_minutes,
+      services_provided: data.services_provided,
+      tasks_completed: data.tasks_completed,
+      client_mood: data.client_mood,
+      client_engagement: data.client_engagement,
+      activities_undertaken: data.activities_undertaken,
+      medication_administered: data.medication_administered,
+      medication_notes: data.medication_notes,
+      incident_occurred: data.incident_occurred,
+      incident_details: data.incident_details,
+      next_visit_preparations: data.next_visit_preparations,
+      carer_observations: data.carer_observations,
+      client_feedback: data.client_feedback,
       staff_id: carerContext.staffProfile.id,
       branch_id: carerContext.staffProfile.branch_id,
       visit_record_id: visitRecordId,

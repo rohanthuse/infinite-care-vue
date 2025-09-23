@@ -18,7 +18,7 @@ export const useClientServiceReports = (clientId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          staff!inner (
+          staff_profile:staff_id!inner (
             first_name,
             last_name,
             email
@@ -45,7 +45,7 @@ export const useCarerServiceReports = (staffId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          clients:client_id (
+          client_profile:client_id!inner (
             first_name,
             last_name,
             email
@@ -72,12 +72,12 @@ export const usePendingServiceReports = (branchId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          clients:client_id (
+          client_profile:client_id!inner (
             first_name,
             last_name,
             email
           ),
-          staff:staff_id (
+          staff_profile:staff_id!inner (
             first_name,
             last_name,
             email
@@ -213,7 +213,7 @@ export const useApprovedServiceReports = (clientId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
-          staff:staff_id (
+          staff_profile:staff_id!inner (
             first_name,
             last_name
           )
