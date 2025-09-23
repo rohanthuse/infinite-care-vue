@@ -1,7 +1,7 @@
 
 import { Booking } from "../BookingTimeGrid";
 
-// Helper: Combine date and time to ISO (timezone-aware)
+// Helper: Combine date and time to ISO (preserves user's local time intent)
 export function combineDateAndTimeToISO(date: Date, time: string): string {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -10,12 +10,9 @@ export function combineDateAndTimeToISO(date: Date, time: string): string {
   h = h.padStart(2, '0');
   m = m.padStart(2, '0');
   
-  // Create a local datetime that preserves the user's intended time
-  // by explicitly setting it in their timezone
-  const localDateTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(h), parseInt(m));
-  
-  // Return as ISO string which will be treated as local time by the database
-  return localDateTime.toISOString().slice(0, 19); // Remove Z suffix to keep as local time reference
+  // Create datetime string that preserves the user's local time intent
+  // No timezone conversion - store exactly what user sees (11:00 remains 11:00)
+  return `${yyyy}-${mm}-${dd}T${h}:${m}:00`;
 }
 
 // Filter bookings by search and status
