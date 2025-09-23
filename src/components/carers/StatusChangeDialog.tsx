@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -49,6 +49,9 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
           <DialogTitle>
             Change Status for {carers.length} Carer{carers.length > 1 ? 's' : ''}
           </DialogTitle>
+          <DialogDescription>
+            Update the status for the selected carer{carers.length > 1 ? 's' : ''}. Choose the appropriate status and optionally provide a reason for the change.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

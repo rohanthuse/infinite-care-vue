@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -91,6 +91,9 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
             <Shield className="h-5 w-5 text-blue-600" />
             Set Password for {carer?.first_name} {carer?.last_name}
           </DialogTitle>
+          <DialogDescription>
+            Set a new password for this carer. Use a strong password with at least 8 characters including uppercase, lowercase, numbers, and symbols.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
