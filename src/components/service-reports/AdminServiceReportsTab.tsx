@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AdminServiceReportForm } from './AdminServiceReportForm';
 import { 
   Calendar, 
   Clock, 
@@ -20,7 +21,9 @@ import {
   ThumbsUp,
   ThumbsDown,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  Plus,
+  Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -36,9 +39,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 interface AdminServiceReportsTabProps {
   clientId: string;
+  branchId: string;
+  clients?: Array<{ id: string; first_name: string; last_name: string; }>;
+  staff?: Array<{ id: string; first_name: string; last_name: string; }>;
 }
 
-export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps) {
+export function AdminServiceReportsTab({ 
+  clientId, 
+  branchId, 
+  clients = [], 
+  staff = [] 
+}: AdminServiceReportsTabProps) {
   const { data: reports = [], isLoading, error } = useClientServiceReports(clientId);
   const reviewReport = useReviewServiceReport();
   const [reviewDialog, setReviewDialog] = useState<{ open: boolean; report: any }>({ 
@@ -47,6 +58,11 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
   });
   const [reviewNotes, setReviewNotes] = useState('');
   const [visibleToClient, setVisibleToClient] = useState(true);
+  const [createReportOpen, setCreateReportOpen] = useState(false);
+  const [editReportDialog, setEditReportDialog] = useState<{ open: boolean; report: any }>({
+    open: false,
+    report: null
+  });
 
   if (isLoading) {
     return (
@@ -93,6 +109,10 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
     setVisibleToClient(true);
   };
 
+  const openEditDialog = (report: any) => {
+    setEditReportDialog({ open: true, report });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -103,6 +123,10 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
             Review and manage service reports for this client
           </p>
         </div>
+        <Button onClick={() => setCreateReportOpen(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Create Report
+        </Button>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
@@ -145,7 +169,12 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
             <EmptyState message="No approved reports" />
           ) : (
             approvedReports.map((report) => (
-              <ServiceReportCard key={report.id} report={report} />
+              <ServiceReportCard 
+                key={report.id} 
+                report={report} 
+                onEdit={() => openEditDialog(report)}
+                showEditButton
+              />
             ))
           )}
         </TabsContent>
@@ -159,7 +188,9 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
                 key={report.id}
                 report={report}
                 onReview={() => openReviewDialog(report)}
+                onEdit={() => openEditDialog(report)}
                 showReviewButtons
+                showEditButton
               />
             ))
           )}
@@ -170,7 +201,12 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
             <EmptyState message="No rejected reports" />
           ) : (
             rejectedReports.map((report) => (
-              <ServiceReportCard key={report.id} report={report} />
+              <ServiceReportCard 
+                key={report.id} 
+                report={report} 
+                onEdit={() => openEditDialog(report)}
+                showEditButton
+              />
             ))
           )}
         </TabsContent>
@@ -252,6 +288,35 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create Report Dialog */}
+      <AdminServiceReportForm
+        open={createReportOpen}
+        onOpenChange={setCreateReportOpen}
+        branchId={branchId}
+        clients={clients.length > 0 ? clients : [{ 
+          id: clientId, 
+          first_name: 'Selected', 
+          last_name: 'Client' 
+        }]}
+        staff={staff}
+        mode="create"
+      />
+
+      {/* Edit Report Dialog */}
+      <AdminServiceReportForm
+        open={editReportDialog.open}
+        onOpenChange={(open) => setEditReportDialog({ open, report: null })}
+        branchId={branchId}
+        clients={clients.length > 0 ? clients : [{ 
+          id: clientId, 
+          first_name: 'Selected', 
+          last_name: 'Client' 
+        }]}
+        staff={staff}
+        existingReport={editReportDialog.report}
+        mode="edit"
+      />
     </div>
   );
 }
@@ -260,11 +325,15 @@ export function AdminServiceReportsTab({ clientId }: AdminServiceReportsTabProps
 function ServiceReportCard({ 
   report, 
   onReview, 
-  showReviewButtons = false 
+  onEdit,
+  showReviewButtons = false,
+  showEditButton = false 
 }: { 
   report: any;
   onReview?: () => void;
+  onEdit?: () => void;
   showReviewButtons?: boolean;
+  showEditButton?: boolean;
 }) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -304,6 +373,12 @@ function ServiceReportCard({
           </div>
           
           <div className="flex gap-2">
+            {showEditButton && onEdit && (
+              <Button onClick={onEdit} size="sm" variant="outline">
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+            )}
             {showReviewButtons && onReview && (
               <Button onClick={onReview} size="sm">
                 <Eye className="h-4 w-4 mr-1" />
