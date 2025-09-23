@@ -203,10 +203,20 @@ export const useNotifications = (branchId?: string) => {
     },
   });
 
-  // Real-time subscription with robust error handling
+  // Real-time subscription with circuit breaker pattern
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 3;
+    let retryTimeout: NodeJS.Timeout;
+
     const setupRealTimeSubscription = () => {
       try {
+        // Skip subscription if too many failures
+        if (retryCount >= maxRetries) {
+          console.warn(`Max retries (${maxRetries}) reached for notification subscription. Relying on polling.`);
+          return;
+        }
+
         // Create a unique channel name to avoid conflicts
         const channelName = `notifications-${branchId || 'global'}-${Date.now()}`;
         
@@ -231,6 +241,8 @@ export const useNotifications = (branchId?: string) => {
             },
             (payload) => {
               console.log('Notification change received:', payload);
+              // Reset retry count on successful message
+              retryCount = 0;
               try {
                 queryClient.invalidateQueries({ queryKey: ['notifications'] });
                 queryClient.invalidateQueries({ queryKey: ['notification-stats'] });
@@ -241,21 +253,36 @@ export const useNotifications = (branchId?: string) => {
           )
           .subscribe((status) => {
             console.log('Notification subscription status:', status);
-            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              console.error('Notification subscription failed:', status);
-              // Don't show toast for subscription errors to avoid spam
+            if (status === 'SUBSCRIBED') {
+              retryCount = 0; // Reset on successful connection
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              retryCount++;
+              console.error(`Notification subscription failed: ${status} (attempt ${retryCount}/${maxRetries})`);
+              
+              // Retry with exponential backoff
+              if (retryCount < maxRetries) {
+                const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+                retryTimeout = setTimeout(() => {
+                  console.log(`Retrying notification subscription in ${delay}ms...`);
+                  setupRealTimeSubscription();
+                }, delay);
+              }
             }
           });
 
         channelRef.current = channel;
       } catch (error) {
         console.error('Error setting up real-time subscription:', error);
+        retryCount++;
       }
     };
 
     setupRealTimeSubscription();
 
     return () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
       if (channelRef.current) {
         try {
           supabase.removeChannel(channelRef.current);
