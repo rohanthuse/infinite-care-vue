@@ -5,8 +5,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Send, Users, Clock, ArrowLeft } from 'lucide-react';
+import { MessageCircle, Send, Users, Clock, ArrowLeft, MessageCirclePlus } from 'lucide-react';
 import { useClientMessageThreads, useClientThreadMessages, useSendMessageToClient } from '@/hooks/useClientProfileMessaging';
+import { MessageComposer } from '@/components/communications/MessageComposer';
+import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -18,10 +20,12 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
 
-  const { data: threads = [], isLoading: threadsLoading } = useClientMessageThreads(clientId);
+  const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useClientMessageThreads(clientId);
   const { data: messages = [], isLoading: messagesLoading } = useClientThreadMessages(selectedThreadId || '');
   const sendMessageMutation = useSendMessageToClient();
+  const { data: currentUser } = useUserRole();
 
   const handleSendMessage = async () => {
     if (!selectedThreadId || !newMessage.trim()) return;
@@ -44,6 +48,16 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
 
   const selectedThread = threads.find(t => t.id === selectedThreadId);
 
+  const handleComposeMessage = () => {
+    setShowComposer(true);
+    setSelectedThreadId(null);
+  };
+
+  const handleCloseComposer = () => {
+    setShowComposer(false);
+    refetchThreads();
+  };
+
   if (threadsLoading) {
     return (
       <Card>
@@ -54,15 +68,19 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
     );
   }
 
-  if (threads.length === 0) {
+  if (threads.length === 0 && !showComposer) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center p-8">
           <MessageCircle className="h-12 w-12 text-muted-foreground mb-4" />
           <div className="text-lg font-medium text-muted-foreground mb-2">No Messages Found</div>
-          <div className="text-sm text-muted-foreground text-center">
-            This client has no message history yet. Messages will appear here when conversations begin.
+          <div className="text-sm text-muted-foreground text-center mb-4">
+            This client has no message history yet. Start a conversation to begin messaging.
           </div>
+          <Button onClick={handleComposeMessage} className="flex items-center gap-2">
+            <MessageCirclePlus className="h-4 w-4" />
+            Start Conversation
+          </Button>
         </CardContent>
       </Card>
     );
@@ -70,7 +88,18 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
 
   return (
     <div className="space-y-4">
-      {selectedThreadId ? (
+      {showComposer ? (
+        // Message composer for new conversations
+        <Card>
+          <CardContent className="p-0">
+            <MessageComposer
+              branchId={currentUser?.branchId || ''}
+              onClose={handleCloseComposer}
+              selectedContactId={clientId}
+            />
+          </CardContent>
+        </Card>
+      ) : selectedThreadId ? (
         // Message thread view
         <Card>
           <CardHeader className="pb-4">
@@ -175,10 +204,16 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
         // Thread list view
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" />
-              Message Threads ({threads.length})
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Message Threads ({threads.length})
+              </CardTitle>
+              <Button onClick={handleComposeMessage} size="sm" variant="outline" className="flex items-center gap-2">
+                <MessageCirclePlus className="h-4 w-4" />
+                New Message
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
