@@ -89,7 +89,7 @@ export function AdminClientDetailsDialog({
     if (open !== controlledDialog.open) {
       controlledDialog.onOpenChange(open);
     }
-  }, [open]);
+  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
   
   React.useEffect(() => {
     onOpenChange(controlledDialog.open);

@@ -446,8 +446,29 @@ html {
   }
 }
 
-/* Dialog Safety Rules - Prevent stuck overlays */
+/* Global Safety Rules for Dialog System */
 [data-state="closed"] {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+
+/* Enhanced dropdown z-index hierarchy */
+[data-radix-dropdown-menu-content] {
+  z-index: 50 !important;
+}
+
+/* Dialog overlay and content z-index */
+[data-radix-dialog-overlay] {
+  z-index: 100 !important;
+}
+
+[data-radix-dialog-content] {
+  z-index: 101 !important;
+}
+
+/* Prevent interaction with closed overlays */
+[data-radix-dialog-overlay][data-state="closed"],
+[data-radix-dropdown-menu-content][data-state="closed"] {
   pointer-events: none !important;
   opacity: 0 !important;
 }

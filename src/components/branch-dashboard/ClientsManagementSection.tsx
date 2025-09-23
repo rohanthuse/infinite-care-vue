@@ -63,6 +63,14 @@ export function ClientsManagementSection({
     }, 50);
   };
 
+  const handleViewClient = (client: any) => {
+    // Close dropdown first to prevent focus trap conflicts
+    setDropdownOpen(null);
+    setTimeout(() => {
+      onViewClient(client);
+    }, 50);
+  };
+
   const handleSetPassword = (client: any) => {
     // Close dropdown first to prevent focus trap conflicts
     setDropdownOpen(null);
@@ -313,7 +321,7 @@ export function ClientsManagementSection({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
-                              <DropdownMenuItem onClick={() => onViewClient(client)}>
+                              <DropdownMenuItem onClick={() => handleViewClient(client)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
@@ -367,7 +375,7 @@ export function ClientsManagementSection({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
-                              <DropdownMenuItem onClick={() => onViewClient(client)}>
+                              <DropdownMenuItem onClick={() => handleViewClient(client)}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>

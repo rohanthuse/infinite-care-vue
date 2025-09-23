@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 
 interface DeleteCarePlanDialogProps {
   open: boolean;
@@ -26,8 +27,22 @@ export function DeleteCarePlanDialog({
   carePlanTitle,
   isLoading = false
 }: DeleteCarePlanDialogProps) {
+  const dialogId = `delete-care-plan-${carePlanTitle.replace(/\s+/g, '-').toLowerCase()}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
+  // Sync with external props
+  React.useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
+  
+  React.useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Care Plan</AlertDialogTitle>

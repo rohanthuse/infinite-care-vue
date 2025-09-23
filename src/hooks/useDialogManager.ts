@@ -25,6 +25,21 @@ export function useDialogManager() {
     previousLocation.current = location.pathname;
   }, [location.pathname, dialogs]);
 
+  // Close any open dropdowns before opening dialogs
+  const closeAllDropdowns = useCallback(() => {
+    // Close all radix dropdown menus by pressing escape
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    
+    // Additional cleanup - find any open dropdowns and close them
+    const openDropdowns = document.querySelectorAll('[data-state="open"][data-radix-collection-item]');
+    openDropdowns.forEach(dropdown => {
+      const closeButton = dropdown.querySelector('[data-radix-dropdown-menu-trigger]');
+      if (closeButton) {
+        (closeButton as HTMLElement).click();
+      }
+    });
+  }, []);
+
   const registerDialog = useCallback((id: string, onClose: () => void) => {
     setDialogs(prev => {
       const existing = prev.find(d => d.id === id);
@@ -39,13 +54,23 @@ export function useDialogManager() {
     };
   }, []);
 
-  const openDialog = useCallback((id: string) => {
-    // Close any currently open dialogs to prevent multiple modals
-    setDialogs(prev => prev.map(d => ({ 
-      ...d, 
-      isOpen: d.id === id ? true : false 
-    })));
-  }, []);
+  const openDialog = useCallback((id: string, closeDropdownsFirst = true) => {
+    if (closeDropdownsFirst) {
+      closeAllDropdowns();
+      // Small delay to ensure dropdown closes completely before opening dialog
+      setTimeout(() => {
+        setDialogs(prev => prev.map(d => ({ 
+          ...d, 
+          isOpen: d.id === id ? true : false 
+        })));
+      }, 100);
+    } else {
+      setDialogs(prev => prev.map(d => ({ 
+        ...d, 
+        isOpen: d.id === id ? true : false 
+      })));
+    }
+  }, [closeAllDropdowns]);
 
   const closeDialog = useCallback((id: string) => {
     setDialogs(prev => prev.map(d => 
@@ -71,6 +96,7 @@ export function useDialogManager() {
     openDialog,
     closeDialog,
     closeAllDialogs,
+    closeAllDropdowns,
     isDialogOpen,
     hasOpenDialogs: dialogs.some(d => d.isOpen)
   };
@@ -83,7 +109,7 @@ export function useControlledDialog(id: string, initialOpen = false) {
   const handleOpenChange = useCallback((newOpen: boolean) => {
     setOpen(newOpen);
     if (newOpen) {
-      openDialog(id);
+      openDialog(id, true); // Always close dropdowns when opening dialog
     } else {
       closeDialog(id);
     }

@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useUpdateCarePlanAssignment } from '@/hooks/useUpdateCarePlan';
+import { useControlledDialog } from '@/hooks/useDialogManager';
 
 interface UpdateCarePlanAssignmentDialogProps {
   open: boolean;
@@ -29,6 +30,19 @@ export const UpdateCarePlanAssignmentDialog: React.FC<UpdateCarePlanAssignmentDi
   newProviderName,
 }) => {
   const updateAssignmentMutation = useUpdateCarePlanAssignment();
+  const dialogId = `update-care-plan-assignment-${carePlanId}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
+  // Sync with external props
+  React.useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
+  
+  React.useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
 
   const handleUpdate = async () => {
     try {
@@ -37,15 +51,18 @@ export const UpdateCarePlanAssignmentDialog: React.FC<UpdateCarePlanAssignmentDi
         staffId: newStaffId,
         providerName: newProviderName,
       });
-      onOpenChange(false);
+      controlledDialog.onOpenChange(false);
     } catch (error) {
       console.error('Failed to update care plan assignment:', error);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
+      <DialogContent
+        onEscapeKeyDown={() => controlledDialog.onOpenChange(false)}
+        onPointerDownOutside={() => controlledDialog.onOpenChange(false)}
+      >
         <DialogHeader>
           <DialogTitle>Update Care Plan Assignment</DialogTitle>
           <DialogDescription>
@@ -53,7 +70,7 @@ export const UpdateCarePlanAssignmentDialog: React.FC<UpdateCarePlanAssignmentDi
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => controlledDialog.onOpenChange(false)}>
             Cancel
           </Button>
           <Button 

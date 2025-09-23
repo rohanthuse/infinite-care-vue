@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 import { ClientNote } from "@/hooks/useClientNotes";
 
 interface DeleteNoteDialogProps {
@@ -21,10 +22,24 @@ interface DeleteNoteDialogProps {
 }
 
 export function DeleteNoteDialog({ open, onOpenChange, onConfirm, note }: DeleteNoteDialogProps) {
+  const dialogId = `delete-note-${note?.id || 'unknown'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
+  // Sync with external props
+  React.useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
+  
+  React.useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
+
   if (!note) return null;
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-red-600">

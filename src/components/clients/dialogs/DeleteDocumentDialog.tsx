@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 
 interface DeleteDocumentDialogProps {
   open: boolean;
@@ -24,14 +25,32 @@ export function DeleteDocumentDialog({
   onConfirm,
   document,
 }: DeleteDocumentDialogProps) {
+  const dialogId = `delete-document-${document?.id || 'unknown'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
+  // Sync with external props
+  React.useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
+  
+  React.useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
+
   const handleConfirm = () => {
     onConfirm();
-    onOpenChange(false);
+    controlledDialog.onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
+      <DialogContent 
+        className="sm:max-w-md"
+        onEscapeKeyDown={() => controlledDialog.onOpenChange(false)}
+        onPointerDownOutside={() => controlledDialog.onOpenChange(false)}
+      >
         <DialogHeader>
           <div className="flex items-center space-x-2">
             <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -43,7 +62,7 @@ export function DeleteDocumentDialog({
         </DialogHeader>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={() => controlledDialog.onOpenChange(false)}>
             Cancel
           </Button>
           <Button 
