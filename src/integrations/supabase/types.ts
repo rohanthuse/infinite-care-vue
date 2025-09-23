@@ -1245,7 +1245,7 @@ export type Database = {
           invoice_number: string
           invoice_type: string | null
           notes: string | null
-          organization_id: string | null
+          organization_id: string
           overdue_date: string | null
           paid_date: string | null
           payment_terms: string | null
@@ -1270,7 +1270,7 @@ export type Database = {
           invoice_number: string
           invoice_type?: string | null
           notes?: string | null
-          organization_id?: string | null
+          organization_id: string
           overdue_date?: string | null
           paid_date?: string | null
           payment_terms?: string | null
@@ -1295,7 +1295,7 @@ export type Database = {
           invoice_number?: string
           invoice_type?: string | null
           notes?: string | null
-          organization_id?: string | null
+          organization_id?: string
           overdue_date?: string | null
           paid_date?: string | null
           payment_terms?: string | null
@@ -3709,6 +3709,7 @@ export type Database = {
           id: string
           invoice_id: string
           line_total: number
+          organization_id: string
           quantity: number | null
           service_id: string | null
           unit_price: number
@@ -3721,6 +3722,7 @@ export type Database = {
           id?: string
           invoice_id: string
           line_total: number
+          organization_id: string
           quantity?: number | null
           service_id?: string | null
           unit_price: number
@@ -3733,6 +3735,7 @@ export type Database = {
           id?: string
           invoice_id?: string
           line_total?: number
+          organization_id?: string
           quantity?: number | null
           service_id?: string | null
           unit_price?: number
@@ -7335,6 +7338,10 @@ export type Database = {
           subscription_status: string
           total_users: number
         }[]
+      }
+      get_organization_id_from_client: {
+        Args: { client_id_param: string }
+        Returns: string
       }
       get_service_reports_data: {
         Args: {
