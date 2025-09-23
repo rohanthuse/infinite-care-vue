@@ -115,7 +115,9 @@ export const EntityList: React.FC<EntityListProps> = ({
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-2">
           {entities.map((entity) => {
-            // Calculate total hours for this entity if it has bookings
+            // Calculate filtered bookings and hours for current view
+            const filteredBookings = filterBookingsByDateRange('bookings' in entity ? entity.bookings : undefined);
+            const filteredBookingCount = filteredBookings.length;
             const totalHours = calculateTotalHours('bookings' in entity ? entity.bookings : undefined);
             const bookingsByStatus = getBookingsByStatus('bookings' in entity ? entity.bookings : undefined);
             
@@ -159,7 +161,7 @@ export const EntityList: React.FC<EntityListProps> = ({
                             : "bg-purple-50 text-purple-700"
                         } text-xs`}
                       >
-                        {entity.bookingCount} booking{entity.bookingCount !== 1 ? "s" : ""}
+                        {filteredBookingCount} booking{filteredBookingCount !== 1 ? "s" : ""}
                       </Badge>
                       
                       {totalHours > 0 && (
