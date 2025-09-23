@@ -58,6 +58,11 @@ export const useCarerNavigation = () => {
       icon: "FileText" 
     },
     { 
+      name: "Service Reports", 
+      path: createCarerPath("/service-reports"), 
+      icon: "FileBarChart2" 
+    },
+    { 
       name: "Library", 
       path: createCarerPath("/library"), 
       icon: "BookOpen" 

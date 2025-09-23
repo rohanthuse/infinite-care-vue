@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Clock,
   FileText,
+  FileBarChart,
   Home,
   Users,
   X,
@@ -55,6 +56,11 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
       name: "Attendance", 
       path: getCarerMenuItems().find(item => item.name === "Reports")?.path || "/carer-dashboard/attendance", 
       icon: Clock 
+    },
+    { 
+      name: "Service Reports", 
+      path: getCarerMenuItems().find(item => item.name === "Service Reports")?.path || "/carer-dashboard/service-reports", 
+      icon: FileBarChart 
     },
     { 
       name: "Documents", 

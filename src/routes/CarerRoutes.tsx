@@ -25,6 +25,7 @@ import CarerNotifications from "@/pages/carer/CarerNotifications";
 import CarerMessages from "@/pages/carer/CarerMessages";
 import CarerAgreements from "@/pages/carer/CarerAgreements";
 import CarerMyTasks from "@/pages/carer/CarerMyTasks";
+import { CarerReportsTab } from "@/components/carer/CarerReportsTab";
 
 const RequireCarerAuth = () => {
   const { isAuthenticated, loading } = useCarerAuthSafe();
@@ -66,6 +67,7 @@ const CarerRoutes = () => [
       <Route path="my-tasks" element={<CarerMyTasks />} />
       <Route path="news2" element={<CarerNews2 />} />
       <Route path="reports" element={<CarerReports />} />
+      <Route path="service-reports" element={<CarerReportsTab />} />
       <Route path="payments" element={<CarerPayments />} />
       <Route path="training" element={<CarerTraining />} />
       <Route path="clients" element={<CarerClients />} />

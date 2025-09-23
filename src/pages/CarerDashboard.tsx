@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 
@@ -27,7 +27,7 @@ const CarerDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, loading, signOut } = useCarerAuthSafe();
+  const { user, isAuthenticated, loading, signOut, carerProfile } = useUnifiedCarerAuth();
   const { data: carerContext } = useCarerContext();
   const { getCarerMenuItems, createCarerPath, tenantSlug } = useCarerNavigation();
 
@@ -43,6 +43,7 @@ const CarerDashboard: React.FC = () => {
       "ClipboardList": ClipboardList,
       "Newspaper": Newspaper,
       "FileBarChart": FileBarChart,
+      "FileBarChart2": FileBarChart,
       "Wallet": Wallet,
       "GraduationCap": GraduationCap,
       "Users": Users
@@ -84,7 +85,7 @@ const CarerDashboard: React.FC = () => {
     return null;
   }
 
-  const carerName = carerContext?.staffProfile ? `${carerContext.staffProfile.first_name} ${carerContext.staffProfile.last_name}` : "Carer";
+  const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : (carerContext?.staffProfile ? `${carerContext.staffProfile.first_name} ${carerContext.staffProfile.last_name}` : "Carer");
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

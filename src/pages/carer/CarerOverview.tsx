@@ -9,18 +9,19 @@ import { AttendanceStatusWidget } from "@/components/attendance/AttendanceStatus
 import { useCarerDashboard } from "@/hooks/useCarerDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
-import { useCarerAuth } from "@/hooks/useCarerAuth";
+import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { CarePlanStatusWidget } from "@/components/carer/CarePlanStatusWidget";
 import { ActiveVisitBanner } from "@/components/carer/ActiveVisitBanner";
 import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
 import { ReadyToStartSection } from "@/components/carer/ReadyToStartSection";
+import { ServiceReportsDashboardWidget } from "@/components/carer/ServiceReportsDashboardWidget";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
-  const { user, isAuthenticated } = useCarerAuth();
+  const { user, isAuthenticated } = useUnifiedCarerAuth();
   const { data: carerProfile } = useCarerProfile();
   const {
     todayAppointments,
@@ -158,6 +159,11 @@ const CarerOverview: React.FC = () => {
         {/* Active Visits */}
         <div className="lg:col-span-1">
           <ActiveVisitsSection />
+        </div>
+
+        {/* Service Reports Widget */}
+        <div className="lg:col-span-1">
+          <ServiceReportsDashboardWidget />
         </div>
 
         {/* Attendance Widget */}
