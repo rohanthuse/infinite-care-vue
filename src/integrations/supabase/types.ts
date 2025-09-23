@@ -1177,6 +1177,59 @@ export type Database = {
           },
         ]
       }
+      client_behavior_support: {
+        Row: {
+          behavior_triggers: string | null
+          challenging_behaviors: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          crisis_management_plan: string | null
+          early_warning_signs: string | null
+          id: string
+          post_incident_protocol: string | null
+          preventative_strategies: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          behavior_triggers?: string | null
+          challenging_behaviors?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          crisis_management_plan?: string | null
+          early_warning_signs?: string | null
+          id?: string
+          post_incident_protocol?: string | null
+          preventative_strategies?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          behavior_triggers?: string | null
+          challenging_behaviors?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          crisis_management_plan?: string | null
+          early_warning_signs?: string | null
+          id?: string
+          post_incident_protocol?: string | null
+          preventative_strategies?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_behavior_support_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_billing: {
         Row: {
           amount: number
@@ -1515,6 +1568,98 @@ export type Database = {
           },
         ]
       }
+      client_child_info: {
+        Row: {
+          calming_techniques: string | null
+          client_id: string
+          communication_triggers: string | null
+          created_at: string
+          daily_learning_goals: string | null
+          dressing_support: string | null
+          eating_drinking_support: string | null
+          education_placement: string | null
+          ehcp_targets_linked: boolean | null
+          hygiene_routines: string | null
+          id: string
+          independence_level: string | null
+          independence_skills: string | null
+          key_words_phrases: string | null
+          legal_status: string | null
+          legal_status_other: string | null
+          preferred_communication_approach: string | null
+          primary_communication: string | null
+          primary_communication_other: string | null
+          social_skills_development: string | null
+          social_worker_contact: string | null
+          social_worker_email: string | null
+          social_worker_name: string | null
+          toileting_needs: string | null
+          updated_at: string
+        }
+        Insert: {
+          calming_techniques?: string | null
+          client_id: string
+          communication_triggers?: string | null
+          created_at?: string
+          daily_learning_goals?: string | null
+          dressing_support?: string | null
+          eating_drinking_support?: string | null
+          education_placement?: string | null
+          ehcp_targets_linked?: boolean | null
+          hygiene_routines?: string | null
+          id?: string
+          independence_level?: string | null
+          independence_skills?: string | null
+          key_words_phrases?: string | null
+          legal_status?: string | null
+          legal_status_other?: string | null
+          preferred_communication_approach?: string | null
+          primary_communication?: string | null
+          primary_communication_other?: string | null
+          social_skills_development?: string | null
+          social_worker_contact?: string | null
+          social_worker_email?: string | null
+          social_worker_name?: string | null
+          toileting_needs?: string | null
+          updated_at?: string
+        }
+        Update: {
+          calming_techniques?: string | null
+          client_id?: string
+          communication_triggers?: string | null
+          created_at?: string
+          daily_learning_goals?: string | null
+          dressing_support?: string | null
+          eating_drinking_support?: string | null
+          education_placement?: string | null
+          ehcp_targets_linked?: boolean | null
+          hygiene_routines?: string | null
+          id?: string
+          independence_level?: string | null
+          independence_skills?: string | null
+          key_words_phrases?: string | null
+          legal_status?: string | null
+          legal_status_other?: string | null
+          preferred_communication_approach?: string | null
+          primary_communication?: string | null
+          primary_communication_other?: string | null
+          social_skills_development?: string | null
+          social_worker_contact?: string | null
+          social_worker_email?: string | null
+          social_worker_name?: string | null
+          toileting_needs?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_child_info_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_dietary_requirements: {
         Row: {
           client_id: string
@@ -1839,6 +1984,48 @@ export type Database = {
             columns: ["recorded_by_staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_hobbies: {
+        Row: {
+          client_id: string
+          created_at: string
+          hobby_id: string
+          id: string
+          interest_level: string | null
+          notes: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          hobby_id: string
+          id?: string
+          interest_level?: string | null
+          notes?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          hobby_id?: string
+          id?: string
+          interest_level?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_hobbies_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_hobbies_hobby_id_fkey"
+            columns: ["hobby_id"]
+            isOneToOne: false
+            referencedRelation: "hobbies"
             referencedColumns: ["id"]
           },
         ]
@@ -2343,6 +2530,68 @@ export type Database = {
           },
         ]
       }
+      client_safeguarding: {
+        Row: {
+          absconding_plan: string | null
+          absconding_risk: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          environmental_risks: string | null
+          id: string
+          safeguarding_notes: string | null
+          safeguarding_restrictions: string | null
+          self_harm_plan: string | null
+          self_harm_risk: string | null
+          updated_at: string
+          updated_by: string | null
+          violence_aggression_risk: string | null
+          violence_plan: string | null
+        }
+        Insert: {
+          absconding_plan?: string | null
+          absconding_risk?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          environmental_risks?: string | null
+          id?: string
+          safeguarding_notes?: string | null
+          safeguarding_restrictions?: string | null
+          self_harm_plan?: string | null
+          self_harm_risk?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          violence_aggression_risk?: string | null
+          violence_plan?: string | null
+        }
+        Update: {
+          absconding_plan?: string | null
+          absconding_risk?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          environmental_risks?: string | null
+          id?: string
+          safeguarding_notes?: string | null
+          safeguarding_restrictions?: string | null
+          self_harm_plan?: string | null
+          self_harm_risk?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          violence_aggression_risk?: string | null
+          violence_plan?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_safeguarding_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_service_actions: {
         Row: {
           care_plan_id: string | null
@@ -2487,6 +2736,7 @@ export type Database = {
         Row: {
           additional_information: string | null
           address: string | null
+          age_group: Database["public"]["Enums"]["age_group"]
           auth_user_id: string | null
           avatar_initials: string | null
           branch_id: string | null
@@ -2525,6 +2775,7 @@ export type Database = {
         Insert: {
           additional_information?: string | null
           address?: string | null
+          age_group?: Database["public"]["Enums"]["age_group"]
           auth_user_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
@@ -2563,6 +2814,7 @@ export type Database = {
         Update: {
           additional_information?: string | null
           address?: string | null
+          age_group?: Database["public"]["Enums"]["age_group"]
           auth_user_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
@@ -5215,6 +5467,51 @@ export type Database = {
           },
         ]
       }
+      staff_hobbies: {
+        Row: {
+          created_at: string
+          enjoys_teaching: boolean | null
+          hobby_id: string
+          id: string
+          notes: string | null
+          proficiency_level: string | null
+          staff_id: string
+        }
+        Insert: {
+          created_at?: string
+          enjoys_teaching?: boolean | null
+          hobby_id: string
+          id?: string
+          notes?: string | null
+          proficiency_level?: string | null
+          staff_id: string
+        }
+        Update: {
+          created_at?: string
+          enjoys_teaching?: boolean | null
+          hobby_id?: string
+          id?: string
+          notes?: string | null
+          proficiency_level?: string | null
+          staff_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_hobbies_hobby_id_fkey"
+            columns: ["hobby_id"]
+            isOneToOne: false
+            referencedRelation: "hobbies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_hobbies_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_leave_requests: {
         Row: {
           branch_id: string
@@ -7377,6 +7674,7 @@ export type Database = {
       }
     }
     Enums: {
+      age_group: "child" | "young_person" | "adult"
       agreement_party: "client" | "staff" | "other"
       agreement_status: "Active" | "Pending" | "Expired" | "Terminated"
       app_role:
@@ -7540,6 +7838,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      age_group: ["child", "young_person", "adult"],
       agreement_party: ["client", "staff", "other"],
       agreement_status: ["Active", "Pending", "Expired", "Terminated"],
       app_role: [
