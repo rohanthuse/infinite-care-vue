@@ -18,6 +18,7 @@ interface Client {
   gp_details?: any;
   mobility_status?: string;
   communication_preferences?: any;
+  age_group?: 'adult' | 'child' | 'young_person';
 }
 
 interface ClientSelectorProps {
@@ -36,7 +37,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, email, phone, address, date_of_birth, emergency_contact, emergency_phone, gp_details, mobility_status, communication_preferences')
+        .select('id, first_name, last_name, email, phone, address, date_of_birth, emergency_contact, emergency_phone, gp_details, mobility_status, communication_preferences, age_group')
         .eq('branch_id', branchId)
         .order('last_name');
       
@@ -70,13 +71,18 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
         <SelectTrigger className="w-64">
           <SelectValue placeholder="Select a client to create care plan for..." />
         </SelectTrigger>
-        <SelectContent>
-          {clients.map((client) => (
-            <SelectItem key={client.id} value={client.id}>
-              {client.last_name}, {client.first_name}
-            </SelectItem>
-          ))}
-        </SelectContent>
+            <SelectContent>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.last_name}, {client.first_name}
+                  {client.age_group && client.age_group !== 'adult' && (
+                    <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                      {client.age_group === 'child' ? 'Child' : 'Young Person'}
+                    </span>
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
       </Select>
     </div>
   );
