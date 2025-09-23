@@ -84,11 +84,13 @@ export function useCarerAuthSafe() {
               localStorage.setItem('carerCurrentSessionWelcome', sessionStart);
             }
             
-            // Only navigate if coming from login pages
-            if (isFromLoginPage) {
-              const dashboardPath = tenantSlug ? `/${tenantSlug}/carer-dashboard` : '/carer-dashboard';
-              navigate(dashboardPath);
-            }
+            // DISABLED: Navigation removed to prevent conflicts with UnifiedLogin
+            // UnifiedLogin now handles all post-authentication navigation
+            // Legacy navigation code (commented out):
+            // if (isFromLoginPage) {
+            //   const dashboardPath = tenantSlug ? `/${tenantSlug}/carer-dashboard` : '/carer-dashboard';
+            //   navigate(dashboardPath);
+            // }
           } else {
             setError('No carer profile found for this account.');
             await supabase.auth.signOut();
