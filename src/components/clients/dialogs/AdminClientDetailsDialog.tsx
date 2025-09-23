@@ -21,12 +21,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientTabBar } from "@/components/clients/ClientTabBar";
 import { PersonalInfoTab } from "@/components/care/tabs/PersonalInfoTab";
 import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
+import { ClientNews2Tab } from "@/components/clients/tabs/ClientNews2Tab";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useServiceRates } from "@/hooks/useAccountingData";
 import { useToast } from "@/hooks/use-toast";
-import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus, BarChart3, Clock, PoundSterling } from "lucide-react";
+import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus, BarChart3, Clock, PoundSterling, Activity, MessageCircle, CreditCard } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -207,7 +208,7 @@ export function AdminClientDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b border-border">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <User className="h-5 w-5 text-primary" />
@@ -215,10 +216,10 @@ export function AdminClientDetailsDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex h-full">
+        <div className="flex h-[calc(95vh-80px)]">
           {/* Left Panel - Client Information */}
-          <div className="w-80 border-r border-border bg-muted/30">
-            <ScrollArea className="h-[calc(90vh-80px)]">
+          <div className="w-80 border-r border-border bg-muted/30 flex flex-col">
+            <ScrollArea className="flex-1 min-h-0">
               <div className="p-6 space-y-6">
                 {/* Client Summary Card */}
                 <Card>
@@ -308,7 +309,8 @@ export function AdminClientDetailsDialog({
                 />
               </div>
 
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="min-h-full">
                 <TabsContent value="overview" className="mt-0 p-6">
                   <div className="space-y-6">
                     {/* Client Summary Cards */}
@@ -932,23 +934,46 @@ export function AdminClientDetailsDialog({
                   </Tabs>
                 </TabsContent>
 
-                <TabsContent value="care-plans" className="mt-0 p-6">
+                <TabsContent value="news2" className="mt-0 p-6">
+                  <ClientNews2Tab clientId={client.id} />
+                </TabsContent>
+
+                <TabsContent value="careplans" className="mt-0 p-6">
                   <CarePlansTab clientId={client.id} />
                 </TabsContent>
 
-                <TabsContent value="forms" className="mt-0 p-6">
+                <TabsContent value="notes" className="mt-0 p-6">
                   <div className="text-center py-8">
-                    <h3 className="text-lg font-medium text-muted-foreground">Forms Management</h3>
-                    <p className="text-sm text-muted-foreground mt-2">Coming soon...</p>
+                    <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground">Client Notes</h3>
+                    <p className="text-sm text-muted-foreground mt-2">Notes management coming soon...</p>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="activity" className="mt-0 p-6">
+                <TabsContent value="documents" className="mt-0 p-6">
                   <div className="text-center py-8">
-                    <h3 className="text-lg font-medium text-muted-foreground">Activity Log</h3>
-                    <p className="text-sm text-muted-foreground mt-2">Coming soon...</p>
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground">Document Management</h3>
+                    <p className="text-sm text-muted-foreground mt-2">Document storage and management coming soon...</p>
                   </div>
                 </TabsContent>
+
+                <TabsContent value="appointments" className="mt-0 p-6">
+                  <div className="text-center py-8">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground">Appointments</h3>
+                    <p className="text-sm text-muted-foreground mt-2">Appointment scheduling coming soon...</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="billing" className="mt-0 p-6">
+                  <div className="text-center py-8">
+                    <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground">Billing Information</h3>
+                    <p className="text-sm text-muted-foreground mt-2">Billing and invoice management coming soon...</p>
+                  </div>
+                </TabsContent>
+                </div>
               </ScrollArea>
             </Tabs>
           </div>
