@@ -138,6 +138,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
       if (hasChangedSchedule && bookingToUpdate.carerId) {
         console.log("[useBookingHandlers] SCHEDULE CHANGED - PERFORMING ENHANCED VALIDATION");
+        console.log("[useBookingHandlers] Branch context:", { branchId });
         
         // Use enhanced validation
         const validation = await validateBooking(
