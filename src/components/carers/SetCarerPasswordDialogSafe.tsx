@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,6 +100,9 @@ export const SetCarerPasswordDialogSafe = ({ open, onOpenChange, carer }: SetCar
             <Shield className="h-5 w-5 text-blue-600" />
             Set Password for {carer.first_name} {carer.last_name}
           </DialogTitle>
+          <DialogDescription>
+            Set a secure password for this carer's account. You can generate a random password or create a custom one with at least 8 characters.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

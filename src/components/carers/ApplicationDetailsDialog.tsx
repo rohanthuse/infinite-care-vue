@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,6 +78,9 @@ export const ApplicationDetailsDialog = ({ isOpen, onClose, candidate }: Applica
           <DialogTitle className="text-2xl font-bold">
             Application Details for {candidate.name}
           </DialogTitle>
+          <DialogDescription>
+            Review the candidate's application details, update status, and add admin notes. This dialog provides comprehensive information about the applicant.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Note: This component is deprecated. Use ApplicationDetailsPage instead */}
