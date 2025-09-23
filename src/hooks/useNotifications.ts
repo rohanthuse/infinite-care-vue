@@ -223,11 +223,11 @@ export const useNotifications = (branchId?: string) => {
     },
   });
 
-  // Enhanced real-time subscription with comprehensive circuit breaker
+  // Enhanced real-time subscription with more lenient circuit breaker
   useEffect(() => {
     let retryTimeout: NodeJS.Timeout;
-    const maxRetries = 2; // Reduced max retries
-    const maxFailures = 5; // Emergency disable threshold
+    const maxRetries = 3; // Increased retries
+    const maxFailures = 10; // More lenient emergency threshold
     
     const forceCleanup = () => {
       if (cleanupTimeoutRef.current) {

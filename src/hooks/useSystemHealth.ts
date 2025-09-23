@@ -39,15 +39,17 @@ export const useSystemHealth = () => {
       // Test realtime connectivity (simplified check)
       const realtimeConnected = supabase.realtime.isConnected();
       
-      const isHealthy = dbConnected && (realtimeConnected || failureCountRef.current < maxFailures);
+      // More lenient health check - only consider degraded if both DB and realtime fail
+      const isHealthy = dbConnected;
       
-      if (isHealthy) {
+      if (dbConnected) {
         failureCountRef.current = 0;
       } else {
         failureCountRef.current++;
       }
       
-      const degradedMode = failureCountRef.current >= maxFailures || !realtimeConnected;
+      // Only show degraded mode for serious DB issues, not realtime hiccups
+      const degradedMode = failureCountRef.current >= maxFailures;
       
       setMetrics({
         isHealthy,

@@ -488,3 +488,23 @@ html {
   @apply bg-background border border-border shadow-lg;
   z-index: 100 !important;
 }
+
+/* Table Actions column visibility fix */
+.table-actions-column {
+  min-width: 70px !important;
+  width: 70px !important;
+  position: relative;
+}
+
+/* Ensure dropdown triggers are visible and clickable */
+[data-radix-dropdown-menu-trigger] {
+  z-index: 10 !important;
+}
+
+/* Dropdown menu specific improvements */
+[data-radix-dropdown-menu-content] {
+  z-index: 100 !important;
+  background-color: white !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}

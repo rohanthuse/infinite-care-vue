@@ -303,7 +303,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
               <TableHead className="hidden lg:table-cell whitespace-nowrap">Specialization</TableHead>
               <TableHead className="whitespace-nowrap">Status</TableHead>
               <TableHead className="hidden md:table-cell whitespace-nowrap">Auth Account</TableHead>
-              <TableHead className="w-[70px]">Actions</TableHead>
+              <TableHead className="w-[70px] table-actions-column">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -342,10 +342,10 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="table-actions-column">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
