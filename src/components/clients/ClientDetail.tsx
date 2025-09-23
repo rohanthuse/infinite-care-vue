@@ -129,8 +129,8 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-hidden">
-      <div className="bg-card rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
@@ -179,10 +179,12 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           </div>
         </div>
         
-        <div className="flex flex-1 overflow-hidden min-h-0">
-          <ClientSideTabNav activeTab={activeTab} onChange={setActiveTab} />
+        <div className="flex flex-1 min-h-0">
+          <div className="flex-shrink-0">
+            <ClientSideTabNav activeTab={activeTab} onChange={setActiveTab} />
+          </div>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-w-0">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
                 <TabsContent value="overview" className="p-6 m-0">
                   <ClientOverviewTab 

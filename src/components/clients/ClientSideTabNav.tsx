@@ -99,7 +99,7 @@ const navItems = [
 
 export const ClientSideTabNav: React.FC<ClientSideTabNavProps> = ({ activeTab, onChange }) => {
   return (
-    <div className="w-64 bg-card border-r border-border flex flex-col h-full">
+    <div className="w-64 bg-card border-r border-border flex flex-col h-full max-h-[calc(90vh-120px)]">
       <div className="p-4 border-b border-border flex-shrink-0">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           Client Details
