@@ -446,11 +446,7 @@ html {
   }
 }
 
-/* Global Safety Rules for Dialog System */
-[data-state="closed"] {
-  pointer-events: none !important;
-  opacity: 0 !important;
-}
+/* Global Safety Rules for Dialog System - Removed overly broad rule */
 
 /* Enhanced dropdown z-index hierarchy */
 [data-radix-dropdown-menu-content] {
