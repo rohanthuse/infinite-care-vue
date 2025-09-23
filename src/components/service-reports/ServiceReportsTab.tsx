@@ -94,7 +94,7 @@ export function ServiceReportsTab({ clientId }: ServiceReportsTabProps) {
                   <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        {report.staff_profile?.first_name} {report.staff_profile?.last_name}
+                        {report.staff?.first_name} {report.staff?.last_name}
                       </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
@@ -113,7 +113,7 @@ export function ServiceReportsTab({ clientId }: ServiceReportsTabProps) {
                     <DialogHeader>
                       <DialogTitle>Service Report - {format(new Date(report.service_date), 'MMMM d, yyyy')}</DialogTitle>
                       <DialogDescription>
-                        Care services provided by {report.staff_profile?.first_name} {report.staff_profile?.last_name}
+                        Care services provided by {report.staff?.first_name} {report.staff?.last_name}
                       </DialogDescription>
                     </DialogHeader>
                     <ServiceReportDetails report={report} />

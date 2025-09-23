@@ -2791,6 +2791,27 @@ export type Database = {
             referencedRelation: "visit_records"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_client_service_reports_branch_id"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_service_reports_client_id"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_client_service_reports_staff_id"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
         ]
       }
       client_status_history: {

@@ -134,11 +134,11 @@ export function PendingReportsAdmin({ branchId }: PendingReportsAdminProps) {
                     <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        Carer: {report.staff_profile?.first_name} {report.staff_profile?.last_name}
+                        Carer: {report.staff?.first_name} {report.staff?.last_name}
                       </span>
                       <span className="flex items-center gap-1">
                         <User className="h-3 w-3" />
-                        Client: {report.client_profile?.first_name} {report.client_profile?.last_name}
+                        Client: {report.clients?.first_name} {report.clients?.last_name}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -317,11 +317,11 @@ function ServiceReportDetails({ report }: { report: any }) {
         </div>
           <div>
             <span className="font-medium">Carer:</span>
-            <p>{report.staff_profile?.first_name} {report.staff_profile?.last_name}</p>
+            <p>{report.staff?.first_name} {report.staff?.last_name}</p>
           </div>
           <div>
             <span className="font-medium">Client:</span>
-            <p>{report.client_profile?.first_name} {report.client_profile?.last_name}</p>
+            <p>{report.clients?.first_name} {report.clients?.last_name}</p>
           </div>
       </div>
 
