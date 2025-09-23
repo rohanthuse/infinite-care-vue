@@ -214,6 +214,9 @@ export function AdminClientDetailsDialog({
             <User className="h-5 w-5 text-primary" />
             Client Details - {client.first_name} {client.last_name}
           </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            View and manage comprehensive client information, care plans, and personal details.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex h-[calc(95vh-80px)]">
