@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +80,9 @@ export function ViewStaffDetailsDialog({
             <Eye className="h-5 w-5" />
             Staff Details - {carer.first_name} {carer.last_name}
           </DialogTitle>
+          <DialogDescription>
+            View detailed information about this carer including contact details, employment information, and current status.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">

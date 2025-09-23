@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -106,6 +106,9 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
           <DialogTitle>
             {isView ? `Staff Details - ${carer.first_name} ${carer.last_name}` : `Edit Carer - ${carer.first_name} ${carer.last_name}`}
           </DialogTitle>
+          <DialogDescription>
+            {isView ? 'View detailed information about this carer.' : 'Update the carer information in the form below.'}
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
