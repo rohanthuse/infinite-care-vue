@@ -384,14 +384,19 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
       const recurrenceFrequencyWeeks = parseInt(bookingData.recurrenceFrequency || "1");
 
-      let curr = new Date(from);
-      curr.setHours(0, 0, 0, 0);
-      const end = new Date(until);
-      end.setHours(0, 0, 0, 0);
+      // Safe date cloning that preserves the original date without timezone conversion
+      console.log("[useBookingHandlers] Original dates - from:", from, "until:", until);
+      let curr = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+      const end = new Date(until.getFullYear(), until.getMonth(), until.getDate());
+      console.log("[useBookingHandlers] Safe cloned dates - curr:", curr, "end:", end);
 
       while (curr <= end) {
         const dayNum = curr.getDay();
+        console.log("[useBookingHandlers] Processing date:", curr.toDateString(), "dayNum:", dayNum, "selected:", daysSelected[dayNum]);
+        
         if (daysSelected[dayNum]) {
+          console.log("[useBookingHandlers] Creating booking for date:", curr.toDateString(), "time:", startTime, "-", endTime);
+          
           bookingsToCreate.push({
             branch_id: branchId,
             client_id: bookingData.clientId,
@@ -402,6 +407,12 @@ export function useBookingHandlers(branchId?: string, user?: any) {
             revenue: null,
             status: "assigned",
             notes: bookingData.notes || null,
+          });
+          
+          console.log("[useBookingHandlers] Generated booking times:", {
+            date: curr.toDateString(),
+            start_time: combineDateAndTimeToISO(curr, startTime),
+            end_time: combineDateAndTimeToISO(curr, endTime)
           });
         }
         // Increment by the recurrence frequency in weeks (7 days per week)
