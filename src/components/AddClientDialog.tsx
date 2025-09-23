@@ -37,7 +37,6 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     region: "North",
     date_of_birth: "",
     gender: "",
-    age_group: "adult",
     emergency_contact: "",
     emergency_phone: "",
     gp_details: "",
@@ -82,8 +81,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         branch_id: branchId,
         avatar_initials: generateAvatarInitials(formData.first_name, formData.last_name),
         registered_on: new Date().toISOString().split('T')[0],
-        date_of_birth: formData.date_of_birth || null,
-        age_group: formData.age_group as "adult" | "child" | "young_person"
+        date_of_birth: formData.date_of_birth || null
       };
       console.log("Client data to insert:", clientData);
       const {
@@ -136,7 +134,6 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         region: "North",
         date_of_birth: "",
         gender: "",
-        age_group: "adult",
         emergency_contact: "",
         emergency_phone: "",
         gp_details: "",
@@ -262,7 +259,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="date_of_birth">Date of Birth</Label>
               <Input id="date_of_birth" type="date" value={formData.date_of_birth} onChange={e => handleInputChange("date_of_birth", e.target.value)} />
@@ -278,19 +275,6 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
                   <SelectItem value="Female">Female</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                   <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="age_group">Age Group *</Label>
-              <Select value={formData.age_group} onValueChange={value => handleInputChange("age_group", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adult">Adult (18+ years)</SelectItem>
-                  <SelectItem value="young_person">Young Person (16-17 years)</SelectItem>
-                  <SelectItem value="child">Child (0-15 years)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
