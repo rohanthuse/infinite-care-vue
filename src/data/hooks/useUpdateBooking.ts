@@ -17,6 +17,8 @@ interface UpdateBookingPayload {
 }
 
 async function updateBooking({ bookingId, updatedData }: UpdateBookingPayload) {
+  console.log("[useUpdateBooking] Updating booking:", { bookingId, updatedData });
+  
   const { data, error } = await supabase
     .from("bookings")
     .update(updatedData)
@@ -25,9 +27,11 @@ async function updateBooking({ bookingId, updatedData }: UpdateBookingPayload) {
     .single();
 
   if (error) {
-    console.error("Error updating booking:", error);
+    console.error("[useUpdateBooking] Database error:", error);
     throw error;
   }
+  
+  console.log("[useUpdateBooking] Successfully updated booking:", data);
   return data;
 }
 

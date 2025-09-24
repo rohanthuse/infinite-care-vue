@@ -3,6 +3,9 @@ import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { checkBookingOverlaps, getAvailableCarers, BookingOverlap } from "../utils/bookingOverlapDetection";
 import { Booking } from "../BookingTimeGrid";
 
+/**
+ * @deprecated Use useConsolidatedValidation instead. This hook is no longer maintained.
+ */
 export function useBookingOverlapCheck(branchId?: string) {
   const { data: bookingsDB = [], isLoading } = useBranchBookings(branchId);
 

@@ -12,6 +12,9 @@ export interface BookingRecord {
   status: string;
 }
 
+/**
+ * @deprecated Use useConsolidatedValidation instead. This hook is no longer maintained.
+ */
 export function useRealTimeOverlapCheck(branchId?: string) {
   const [isChecking, setIsChecking] = useState(false);
 

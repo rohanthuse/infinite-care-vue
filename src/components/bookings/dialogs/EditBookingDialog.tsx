@@ -2,6 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Save, X } from "lucide-react";
+import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
+import { BookingValidationAlert } from "../BookingValidationAlert";
+import { BookingOverlapAlert } from "../BookingOverlapAlert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -80,6 +83,17 @@ export function EditBookingDialog({
   const updateBooking = useUpdateBooking(branchId);
   const deleteBooking = useDeleteBooking(branchId);
   const { data: userRole } = useUserRole();
+  
+  // Consolidated validation system
+  const { validateBooking, isValidating } = useConsolidatedValidation(branchId);
+  
+  // Validation states
+  const [validationResult, setValidationResult] = useState<{
+    isValid: boolean;
+    error?: string;
+    conflictingBookings: any[];
+  } | null>(null);
+  const [showOverlapAlert, setShowOverlapAlert] = useState(false);
 
   const form = useForm<EditBookingFormData>({
     resolver: zodResolver(editBookingSchema),
@@ -109,7 +123,7 @@ export function EditBookingDialog({
     }
   };
 
-  // Update form when booking changes
+  // Update form when booking changes and reset validation state
   useEffect(() => {
     if (booking && open) {
       const startDate = parseISO(booking.start_time);
@@ -119,10 +133,59 @@ export function EditBookingDialog({
       form.setValue("end_time", format(endDate, "yyyy-MM-dd'T'HH:mm"));
       form.setValue("service_id", booking.service_id || "");
       form.setValue("notes", booking.notes || "");
+      
+      // Reset validation state when dialog opens
+      setValidationResult(null);
+      setShowOverlapAlert(false);
     }
   }, [booking, open, form]);
 
+  // Validate booking when time fields change
+  const validateCurrentBooking = async () => {
+    if (!booking) return;
+    
+    const formValues = form.getValues();
+    const startDateTime = new Date(formValues.start_time);
+    const endDateTime = new Date(formValues.end_time);
+    
+    const date = format(startDateTime, "yyyy-MM-dd");
+    const startTime = format(startDateTime, "HH:mm");
+    const endTime = format(endDateTime, "HH:mm");
+    
+    console.log("[EditBookingDialog] Validating booking:", {
+      carerId: booking.carerId,
+      date,
+      startTime,
+      endTime,
+      excludeBookingId: booking.id
+    });
+    
+    const result = await validateBooking(
+      booking.carerId,
+      startTime,
+      endTime,
+      date,
+      booking.id // Exclude current booking from validation
+    );
+    
+    setValidationResult(result);
+    
+    if (!result.isValid && result.conflictingBookings.length > 0) {
+      setShowOverlapAlert(true);
+      return false;
+    }
+    
+    return result.isValid;
+  };
+
   const onSubmit = async (data: EditBookingFormData) => {
+    // Validate before submitting
+    const isValidBooking = await validateCurrentBooking();
+    if (!isValidBooking) {
+      console.log("[EditBookingDialog] Validation failed, not submitting");
+      return;
+    }
+    
     try {
       await updateBooking.mutateAsync({
         bookingId: booking.id,
@@ -167,9 +230,18 @@ export function EditBookingDialog({
             </p>
           </div>
         ) : (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+          <>
+            {/* Validation Alert */}
+            <BookingValidationAlert
+              isValidating={isValidating}
+              validationError={validationResult?.error}
+              isValid={validationResult?.isValid}
+              conflictCount={validationResult?.conflictingBookings?.length}
+            />
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
                 control={form.control}
                 name="service_id"
                 render={({ field }) => (
@@ -205,6 +277,11 @@ export function EditBookingDialog({
                         <Input
                           type="datetime-local"
                           {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // Reset validation when time changes
+                            setValidationResult(null);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -222,6 +299,11 @@ export function EditBookingDialog({
                         <Input
                           type="datetime-local"
                           {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            // Reset validation when time changes
+                            setValidationResult(null);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -248,9 +330,29 @@ export function EditBookingDialog({
                 )}
               />
 
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </>
         )}
+
+        {/* Overlap Alert Dialog */}
+        <BookingOverlapAlert
+          open={showOverlapAlert}
+          onOpenChange={setShowOverlapAlert}
+          conflictingBookings={validationResult?.conflictingBookings || []}
+          carerName={booking?.carerName || "Unknown Carer"}
+          proposedTime={form.getValues().start_time ? format(new Date(form.getValues().start_time), "HH:mm") : ""}
+          proposedDate={form.getValues().start_time ? format(new Date(form.getValues().start_time), "yyyy-MM-dd") : ""}
+          availableCarers={[]} // Not applicable for editing
+          onChooseDifferentCarer={() => {
+            setShowOverlapAlert(false);
+            toast.info("Please contact an administrator to assign a different carer");
+          }}
+          onModifyTime={() => {
+            setShowOverlapAlert(false);
+            toast.info("Please adjust the appointment times to avoid conflicts");
+          }}
+        />
 
         <DialogFooter className="gap-2 sm:gap-0">
           <div className="flex justify-between w-full">
@@ -292,13 +394,23 @@ export function EditBookingDialog({
                 Cancel
               </Button>
               {!hasStarted && (
-                <Button 
-                  type="submit" 
-                  disabled={updateBooking.isPending}
-                  onClick={form.handleSubmit(onSubmit)}
-                >
-                  {updateBooking.isPending ? "Saving..." : "Save Changes"}
-                </Button>
+                <>
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    disabled={isValidating}
+                    onClick={validateCurrentBooking}
+                  >
+                    {isValidating ? "Validating..." : "Check for Conflicts"}
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={updateBooking.isPending || isValidating || (validationResult && !validationResult.isValid)}
+                    onClick={form.handleSubmit(onSubmit)}
+                  >
+                    {updateBooking.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                </>
               )}
             </div>
           </div>

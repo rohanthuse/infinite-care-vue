@@ -15,6 +15,9 @@ export interface ValidationResult {
   }>;
 }
 
+/**
+ * @deprecated Use useConsolidatedValidation instead. This hook is no longer maintained.
+ */
 export function useEnhancedOverlapValidation(branchId?: string) {
   const [isValidating, setIsValidating] = useState(false);
 
