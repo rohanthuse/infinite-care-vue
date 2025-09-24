@@ -112,25 +112,30 @@ export function useBookingData(branchId?: string) {
           client = getOrCreatePlaceholderClient(bk.client_id);
         if (!carer && bk.staff_id)
           carer = getOrCreatePlaceholderCarer(bk.staff_id);
-        // Parse datetime - preserve user's local time intent
-        const parseDateTime = (dateTimeStr: string) => {
-          if (!dateTimeStr) return null;
-          try {
-            // Simple parsing that preserves user's time intent
-            // If user stored 11:00, display 11:00
-            let cleanStr = dateTimeStr.replace(/[Z]|[+-]\d{2}:?\d{2}$/g, '');
-            if (!cleanStr.includes('T')) {
-              cleanStr = cleanStr.replace(' ', 'T');
-            }
-            return new Date(cleanStr + (cleanStr.includes('T') ? '' : 'T00:00:00'));
-          } catch (error) {
-            console.warn('[useBookingData] Failed to parse datetime:', dateTimeStr, error);
-            return null;
-          }
+        // Extract date and time directly from ISO string without timezone conversion
+        const extractDate = (isoString: string) => {
+          if (!isoString) return "";
+          return isoString.split('T')[0] || "";
         };
 
-        const startDate = parseDateTime(bk.start_time);
-        const endDate = parseDateTime(bk.end_time);
+        const extractTime = (isoString: string) => {
+          if (!isoString) return "07:00";
+          const timePart = isoString.split('T')[1]?.split(/[+\-Z]/)[0];
+          return timePart?.substring(0, 5) || "07:00"; // HH:MM format
+        };
+
+        const startDate = extractDate(bk.start_time);
+        const startTime = extractTime(bk.start_time);
+        const endTime = extractTime(bk.end_time);
+
+        console.log('[BookingDisplay] Database vs Display:', {
+          bookingId: bk.id,
+          storedStartTime: bk.start_time,
+          storedEndTime: bk.end_time,
+          extractedDate: startDate,
+          extractedStartTime: startTime,
+          extractedEndTime: endTime
+        });
 
         return {
           id: bk.id,
@@ -140,9 +145,9 @@ export function useBookingData(branchId?: string) {
           carerId: bk.staff_id,
           carerName: carer?.name || "(Unknown Carer)",
           carerInitials: carer?.initials || "??",
-          startTime: startDate ? startDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) : "07:00",
-          endTime: endDate ? endDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) : "07:30",
-          date: startDate ? startDate.toLocaleDateString('en-CA') : "", // YYYY-MM-DD format
+          startTime: startTime,
+          endTime: endTime,
+          date: startDate,
           status: bk.status || "assigned",
           notes: bk.notes || "",
         };
