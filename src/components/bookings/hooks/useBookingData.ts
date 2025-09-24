@@ -15,10 +15,25 @@ import {
 import { makeDummyBookings, dummyClients, dummyCarers } from "../utils/dummyDataGenerator";
 
 export function useBookingData(branchId?: string) {
-  const { user, loading: authLoading } = useAuthSafe();
+  const { user, loading: authLoading, error: authError } = useAuthSafe();
   
-  // Only fetch data if user is authenticated
-  const shouldFetchData = !authLoading && !!user;
+  // Debug authentication state for booking data fetch
+  console.log("[useBookingData] Auth Debug:", {
+    user: !!user,
+    userEmail: user?.email,
+    authLoading,
+    authError,
+    branchId,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Only fetch data if user is authenticated OR if branchId is provided (allow demo/unauthenticated access)
+  const shouldFetchData = (!authLoading && !!user) || !!branchId;
+  
+  console.log("[useBookingData] Fetch Decision:", {
+    shouldFetchData,
+    reason: shouldFetchData ? (user ? "authenticated" : "branchId provided") : "no auth or branchId"
+  });
   
   const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(
     shouldFetchData ? branchId : undefined
@@ -40,6 +55,14 @@ export function useBookingData(branchId?: string) {
 
   // Monitor authentication state and show appropriate errors
   useEffect(() => {
+    console.log('[useBookingData] Auth Monitor Effect:', {
+      authLoading,
+      hasUser: !!user,
+      userEmail: user?.email,
+      shouldFetchData,
+      branchId
+    });
+    
     if (!authLoading && !user) {
       console.warn('[useBookingData] No authenticated user - booking data will be limited');
     }
@@ -51,21 +74,32 @@ export function useBookingData(branchId?: string) {
         carersError
       });
       
-      // Show error toast if there are data fetch issues
+      // Show error toast if there are data fetch issues (only if user is authenticated)
       if (user && (bookingsError || clientsError || carersError)) {
         toast.error('Failed to load booking data', {
           description: 'Please check your connection and try refreshing the page'
         });
       }
     }
-  }, [user, authLoading, bookingsError, clientsError, carersError]);
+  }, [user, authLoading, bookingsError, clientsError, carersError, shouldFetchData, branchId]);
 
   const { clients, carers, bookings } = useMemo(() => {
     console.log("[useBookingData] ===== PROCESSING RAW DATA =====");
+    console.log("- Auth State:", { user: !!user, authLoading, shouldFetchData });
     console.log("- clientsResponse:", clientsResponse);
     console.log("- carersData:", carersData);
     console.log("- bookingsDB count:", bookingsDB?.length || 0);
     console.log("- branchId:", branchId);
+    
+    // Log first few bookings for debugging
+    if (bookingsDB?.length > 0) {
+      console.log("- Sample bookings:", bookingsDB.slice(0, 3).map(b => ({
+        id: b.id,
+        start_time: b.start_time,
+        client_id: b.client_id,
+        staff_id: b.staff_id
+      })));
+    }
 
     // Extract clients from the response - the hook returns { clients: [], count: number }
     let clientsRaw = [];

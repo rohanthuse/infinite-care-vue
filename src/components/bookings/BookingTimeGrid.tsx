@@ -6,6 +6,7 @@ import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
 import { EditBookingDialog } from "./EditBookingDialog";
+import { BookingDebugPanel } from "./BookingDebugPanel";
 import { Maximize2, Minimize2, Calendar, Clock, AlertCircle } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
@@ -67,6 +68,7 @@ interface BookingTimeGridProps {
   carers: Carer[];
   viewType: "daily" | "weekly" | "monthly";
   viewMode: "client" | "group";
+  branchId?: string; // Add branchId for debug panel
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
   onUpdateBooking?: (booking: Booking, carers: Carer[]) => void;
   onEditBooking?: (booking: Booking) => void;
@@ -94,6 +96,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   carers,
   viewType,
   viewMode,
+  branchId,
   onCreateBooking,
   onUpdateBooking,
   onEditBooking,
@@ -118,6 +121,22 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
 
   useEffect(() => {
     setLocalBookings(bookings);
+    
+    // Debug booking updates
+    console.log(`[BookingTimeGrid] Bookings updated: ${bookings.length} total bookings`);
+    if (bookings.length > 0) {
+      console.log('[BookingTimeGrid] Sample booking dates:', 
+        bookings.slice(0, 5).map(b => ({ id: b.id, date: b.date }))
+      );
+      
+      // Check if we have any bookings for September 28, 2025
+      const sept28Bookings = bookings.filter(b => b.date === '2025-09-28');
+      if (sept28Bookings.length > 0) {
+        console.log(`[BookingTimeGrid] Found ${sept28Bookings.length} bookings for 2025-09-28:`, sept28Bookings);
+      } else {
+        console.log('[BookingTimeGrid] No bookings found for 2025-09-28');
+      }
+    }
   }, [bookings]);
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -222,8 +241,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
       // Direct string comparison - more reliable than date parsing
       const result = booking.date === checkDateString;
       
-      // Always log for debugging booking visibility issues
-      console.log(`[isBookingOnDate] Booking ${booking.id}: "${booking.date}" vs "${checkDateString}" => ${result}`);
+      // Only log for September 28, 2025 to avoid spam
+      if (checkDateString === '2025-09-28' || booking.date === '2025-09-28') {
+        console.log(`[isBookingOnDate] Booking ${booking.id}: "${booking.date}" vs "${checkDateString}" => ${result}`);
+      }
       
       return result;
     } catch (error) {
@@ -800,6 +821,9 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Debug Panel - only shown in development */}
+      <BookingDebugPanel branchId={branchId} selectedDate={date} />
     </div>
   );
 };

@@ -205,8 +205,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     );
   }
 
-  // Show message if user is not authenticated
-  if (!user) {
+  // Show message if user is not authenticated - but allow data fetching if branchId exists
+  if (!user && !branchId) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -340,6 +340,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             carers={carers}
             viewType={viewType}
             viewMode="client"
+            branchId={branchId}
             onCreateBooking={handleContextMenuBooking}
             onUpdateBooking={handleUpdateBooking}
             onViewBooking={handleViewBooking}
