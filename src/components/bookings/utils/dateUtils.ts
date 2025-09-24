@@ -193,6 +193,18 @@ export function isValidTimeString(timeString: string): boolean {
 }
 
 /**
+ * Format date for booking storage (timezone-safe)
+ * Converts Date object to YYYY-MM-DD format without timezone conversion issues
+ */
+export function formatDateForBooking(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Validate date range
  */
 export function isValidDateRange(startDate: string, endDate: string): boolean {

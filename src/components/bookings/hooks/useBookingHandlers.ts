@@ -9,7 +9,7 @@ import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
-import { createBookingDateTime } from "../utils/dateUtils";
+import { createBookingDateTime, formatDateForBooking } from "../utils/dateUtils";
 import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
 import { generateRecurringBookings, previewRecurringBookings } from "../utils/recurringBookingLogic";
 import { validateBookingFormData } from "../utils/bookingValidation";
@@ -358,18 +358,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     // Create single booking directly without recurring logic
+    const bookingDateStr = formatDateForBooking(bookingData.fromDate);
     const singleBooking = {
       branch_id: branchId,
       client_id: bookingData.clientId,
       staff_id: bookingData.carerId || null,
-      start_time: createBookingDateTime(
-        bookingData.fromDate.toISOString().split('T')[0], 
-        schedule.startTime
-      ),
-      end_time: createBookingDateTime(
-        bookingData.fromDate.toISOString().split('T')[0], 
-        schedule.endTime
-      ),
+      start_time: createBookingDateTime(bookingDateStr, schedule.startTime),
+      end_time: createBookingDateTime(bookingDateStr, schedule.endTime),
       service_id: schedule.services[0],
       status: bookingData.carerId ? "assigned" : "unassigned",
       notes: bookingData.notes || null,
@@ -394,8 +389,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       });
 
       // Navigate to the booking date
-      const bookingDateStr = bookingData.fromDate.toISOString().split('T')[0];
-      navigateToBookingDate(bookingDateStr, createdBooking.id);
+      const navigationDateStr = formatDateForBooking(bookingData.fromDate);
+      navigateToBookingDate(navigationDateStr, createdBooking.id);
 
       // Verify booking appears
       setTimeout(() => {
