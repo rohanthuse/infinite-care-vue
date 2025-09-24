@@ -205,6 +205,15 @@ export function useBookingData(branchId?: string) {
       console.log("- Failed to process:", failedProcessingCount);
       console.log("- Total raw bookings:", bookingsDB.length);
       
+      // Debug: show sample booking dates
+      const sampleBookings = bookings.slice(0, 3).map(b => ({
+        id: b.id.substring(0, 8),
+        date: b.date,
+        time: `${b.startTime}-${b.endTime}`,
+        client: b.clientName
+      }));
+      console.log("- Sample processed bookings:", sampleBookings);
+      
       if (failedProcessingCount > 0) {
         console.warn(`[useBookingData] WARNING: ${failedProcessingCount} bookings failed processing`);
       }

@@ -210,21 +210,27 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   };
 
   const isBookingOnDate = (booking: Booking, checkDate: Date) => {
-    if (!booking.date) return false;
+    if (!booking.date) {
+      console.log(`[isBookingOnDate] No date for booking ${booking.id}`);
+      return false;
+    }
+    
     try {
-      // Use parseISO for consistent local date parsing
-      const bookingDate = parseISO(booking.date);
-      if (isNaN(bookingDate.getTime())) return false;
-      const result = isSameDay(bookingDate, checkDate);
+      // Convert checkDate to YYYY-MM-DD format for direct string comparison
+      const checkDateString = format(checkDate, 'yyyy-MM-dd');
       
-      // Dev-only logging for verification
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[isBookingOnDate] ${booking.date} vs ${format(checkDate, 'yyyy-MM-dd')} => ${result}`);
-      }
+      // Direct string comparison - more reliable than date parsing
+      const result = booking.date === checkDateString;
+      
+      // Always log for debugging booking visibility issues
+      console.log(`[isBookingOnDate] Booking ${booking.id}: "${booking.date}" vs "${checkDateString}" => ${result}`);
       
       return result;
     } catch (error) {
-      console.error("Error parsing booking date:", booking.date, error);
+      console.error(`[isBookingOnDate] Error comparing dates for booking ${booking.id}:`, error, { 
+        bookingDate: booking.date, 
+        checkDate: checkDate 
+      });
       return false;
     }
   };
@@ -504,7 +510,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                           <div key={timeIndex} className="hour-cell"></div>
                         ))}
                               
-                        {entity.bookings?.filter(booking => isBookingOnDate(booking, date)).map((booking, index) => {
+                         {(() => {
+                           const filteredBookings = entity.bookings?.filter(booking => isBookingOnDate(booking, date)) || [];
+                           console.log(`[BookingTimeGrid] Daily view - Entity ${entity.name} has ${entity.bookings?.length || 0} bookings, ${filteredBookings.length} for date ${format(date, 'yyyy-MM-dd')}`);
+                           return filteredBookings.map((booking, index) => {
                           const position = getBookingPosition(booking.startTime, booking.endTime);
                                 
                           return (
@@ -518,10 +527,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                               onViewBooking={onViewBooking}
                               isHighlighted={booking.id === highlightedBookingId}
                             />
-                          );
-                        })}
-                              
-                        {isToday(date) && (
+                           );
+                         });
+                         })()}
+                               
+                         {isToday(date) && (
                           <div 
                             className="current-time-line" 
                             style={{ top: `${getCurrentTimePosition()}px` }}
@@ -567,7 +577,10 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                                 <div key={timeIndex} className="hour-cell"></div>
                               ))}
                                       
-                              {entity.bookings?.filter(booking => isBookingOnDate(booking, day)).map((booking, index) => {
+                               {(() => {
+                                 const filteredBookings = entity.bookings?.filter(booking => isBookingOnDate(booking, day)) || [];
+                                 console.log(`[BookingTimeGrid] Weekly view - Entity ${entity.name} has ${entity.bookings?.length || 0} bookings, ${filteredBookings.length} for date ${format(day, 'yyyy-MM-dd')}`);
+                                 return filteredBookings.map((booking, index) => {
                                 const position = getBookingPosition(booking.startTime, booking.endTime);
                                         
                                 return (
@@ -581,10 +594,11 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
                                     onViewBooking={onViewBooking}
                                     isHighlighted={booking.id === highlightedBookingId}
                                   />
-                                );
-                              })}
-                                      
-                              {isToday(day) && (
+                                 );
+                               });
+                               })()}
+                                       
+                               {isToday(day) && (
                                 <div 
                                   className="current-time-line" 
                                   style={{ top: `${getCurrentTimePosition()}px` }}
