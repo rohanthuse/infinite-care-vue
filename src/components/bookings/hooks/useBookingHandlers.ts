@@ -7,8 +7,10 @@ import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBooking
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
-import { createBookingDateTime, addDaysToDateString, getDayOfWeekFromString } from "../utils/bookingUtils";
+import { createBookingDateTime } from "../utils/dateUtils";
 import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
+import { generateRecurringBookings, previewRecurringBookings } from "../utils/recurringBookingLogic";
+import { validateBookingFormData } from "../utils/bookingValidation";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
@@ -242,86 +244,58 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const checkForOverlapsAndCreate = (bookingData: any, carers: any[]) => {
+    console.log("[useBookingHandlers] Starting overlap check and creation process");
+    
+    // Enhanced validation first
+    const validation = validateBookingFormData(bookingData);
+    if (!validation.isValid) {
+      validation.errors.forEach(error => {
+        toast.error("Booking Validation Failed", { description: error });
+      });
+      return;
+    }
+
+    // Show warnings but don't stop creation
+    validation.warnings.forEach(warning => {
+      toast.warning("Booking Warning", { description: warning });
+    });
+
+    // If no carer selected, proceed directly to creation (unassigned booking)
     if (!bookingData.carerId) {
+      console.log("[useBookingHandlers] No carer selected, proceeding with unassigned booking");
       proceedWithBookingCreation(bookingData);
       return;
     }
 
-    // Check for overlaps in the first schedule
+    // Check for overlaps in the first schedule only (for efficiency)
     const firstSchedule = bookingData.schedules[0];
     if (!firstSchedule) {
-      proceedWithBookingCreation(bookingData);
+      toast.error("No schedule data found");
       return;
     }
 
-    // Extract date as plain string - no Date objects
-    const fromDateStr = typeof bookingData.fromDate === 'string' 
-      ? (bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate)
-      : bookingData.fromDate.toISOString().split('T')[0];
-
-    // Build selected days object from the schedule
-    const { days } = firstSchedule;
-    const dayBooleans: Partial<Record<number, boolean>> = {};
-    if (days) {
-      if (days.mon) dayBooleans[1] = true;
-      if (days.tue) dayBooleans[2] = true;
-      if (days.wed) dayBooleans[3] = true;
-      if (days.thu) dayBooleans[4] = true;
-      if (days.fri) dayBooleans[5] = true;
-      if (days.sat) dayBooleans[6] = true;
-      if (days.sun) dayBooleans[0] = true;
+    // Preview the bookings to find the first occurrence for overlap checking
+    const preview = previewRecurringBookings(bookingData, branchId || '');
+    if (preview.errors.length > 0) {
+      preview.errors.forEach(error => {
+        toast.error("Preview Generation Failed", { description: error });
+      });
+      return;
     }
 
-    const anyDaysSelected = Object.values(dayBooleans).some(Boolean);
-    const selectedDays = anyDaysSelected
-      ? dayBooleans
-      : { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true };
+    if (preview.dates.length === 0) {
+      toast.error("No valid booking dates found in the selected range");
+      return;
+    }
 
-    // Helper function to find the first actual recurring date
-    const findFirstRecurringDate = (fromDateStr: string, selectedDays: Partial<Record<number, boolean>>) => {
-      let currentDate = fromDateStr;
-      const untilDateStr = typeof bookingData.untilDate === 'string' 
-        ? (bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate)
-        : bookingData.untilDate.toISOString().split('T')[0];
-
-      console.log("[findFirstRecurringDate] Searching from:", currentDate, "until:", untilDateStr);
-      console.log("[findFirstRecurringDate] Selected days:", selectedDays);
-
-      let attempts = 0;
-      const maxAttempts = 7; // Only check one week ahead to find first occurrence
-      
-      while (currentDate <= untilDateStr && attempts < maxAttempts) {
-        const dayNum = getDayOfWeekFromString(currentDate);
-        console.log("[findFirstRecurringDate] Checking date:", currentDate, "day:", dayNum, "selected:", !!selectedDays[dayNum]);
-        
-        if (selectedDays[dayNum]) {
-          console.log("[findFirstRecurringDate] ✅ Found first occurrence:", currentDate, "day:", dayNum);
-          return currentDate;
-        }
-        currentDate = addDaysToDateString(currentDate, 1);
-        attempts++;
-      }
-      
-      console.warn("[findFirstRecurringDate] No occurrence found, falling back to start date:", fromDateStr);
-      return fromDateStr; // fallback
-    };
-
-    // Find the first actual recurring date instead of using fromDate
-    const firstRecurringDate = findFirstRecurringDate(fromDateStr, selectedDays);
-    
-    console.log("[useBookingHandlers] Conflict check:", {
-      fromDate: fromDateStr,
-      firstRecurringDate,
-      selectedDays,
-      carerId: bookingData.carerId,
-      time: `${firstSchedule.startTime} - ${firstSchedule.endTime}`
-    });
+    const firstBookingDate = preview.dates[0];
+    console.log("[useBookingHandlers] Checking overlap for first booking date:", firstBookingDate);
 
     const overlap = checkOverlap(
       bookingData.carerId,
       firstSchedule.startTime,
       firstSchedule.endTime,
-      firstRecurringDate
+      firstBookingDate
     );
 
     if (overlap.hasOverlap) {
@@ -331,10 +305,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         carers,
         firstSchedule.startTime,
         firstSchedule.endTime,
-        firstRecurringDate
+        firstBookingDate
       );
 
-      // Enhanced error messaging with toast notification
       toast.error(`${carerName} Already Assigned`, {
         description: `This carer has ${overlap.conflictingBookings.length} conflicting appointment${overlap.conflictingBookings.length > 1 ? 's' : ''} at the selected time`,
         duration: 5000,
@@ -348,7 +321,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         conflictingBookings: overlap.conflictingBookings,
         carerName,
         proposedTime: `${firstSchedule.startTime} - ${firstSchedule.endTime}`,
-        proposedDate: firstRecurringDate,
+        proposedDate: firstBookingDate,
         availableCarers,
       });
       setPendingBookingData(bookingData);
@@ -359,6 +332,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const proceedWithBookingCreation = (bookingData: any) => {
+    console.log("[useBookingHandlers] Starting enhanced booking creation process");
+    
     if (!user) {
       toast.error("You must be logged in to create bookings");
       return;
@@ -367,223 +342,47 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       toast.error("Branch ID is required");
       return;
     }
-    if (
-      !bookingData ||
-      !bookingData.schedules ||
-      !Array.isArray(bookingData.schedules) ||
-      bookingData.schedules.length === 0
-    ) {
-      toast.error("Invalid booking data. Please select at least one schedule.");
-      return;
-    }
 
-    // Extract date strings - no Date objects needed
-    const fromDateStr = typeof bookingData.fromDate === 'string' 
-      ? (bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate)
-      : bookingData.fromDate.toISOString().split('T')[0];
-    const untilDateStr = typeof bookingData.untilDate === 'string' 
-      ? (bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate)
-      : bookingData.untilDate.toISOString().split('T')[0];
+    // Use the enhanced recurring booking logic
+    const result = generateRecurringBookings(bookingData, branchId);
     
-    if (!fromDateStr || !untilDateStr) {
-      toast.error("Please select both a start and end date.");
-      return;
-    }
-
-    // String-based date validation
-    if (fromDateStr > untilDateStr) {
-      toast.error("Invalid date range", {
-        description: "From date must be before or equal to until date.",
+    if (!result.success) {
+      console.error("[useBookingHandlers] Booking generation failed:", result.errors);
+      result.errors.forEach(error => {
+        toast.error("Booking Generation Failed", { description: error });
       });
       return;
     }
 
-    // Same-day time validation
-    if (fromDateStr === untilDateStr) {
-      const hasInvalidTimes = bookingData.schedules.some((schedule: any) => 
-        schedule.startTime && schedule.endTime && schedule.startTime >= schedule.endTime
-      );
-      
-      if (hasInvalidTimes) {
-        toast.error("Invalid time range", {
-          description: "For same-day bookings, start time must be before end time.",
-        });
-        return;
-      }
-    }
+    // Show warnings but continue
+    result.warnings.forEach(warning => {
+      toast.warning("Booking Warning", { description: warning });
+    });
 
-    const bookingsToCreate: any[] = [];
-    for (const schedule of bookingData.schedules) {
-      const { startTime, endTime, services, days } = schedule;
-      if (!startTime || !endTime) continue;
-
-      let serviceId: string | null = null;
-      if (
-        Array.isArray(services) &&
-        services[0] &&
-        /^[0-9a-fA-F-]{36}$/.test(services[0])
-      ) {
-        serviceId = services[0];
-      }
-
-      const dayBooleans: Partial<Record<number, boolean>> = {};
-      if (days) {
-        if (days.mon) dayBooleans[1] = true;
-        if (days.tue) dayBooleans[2] = true;
-        if (days.wed) dayBooleans[3] = true;
-        if (days.thu) dayBooleans[4] = true;
-        if (days.fri) dayBooleans[5] = true;
-        if (days.sat) dayBooleans[6] = true;
-        if (days.sun) dayBooleans[0] = true;
-      }
-
-      const anyDaysSelected = Object.values(dayBooleans).some(Boolean);
-      const daysSelected = anyDaysSelected
-        ? dayBooleans
-        : { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true };
-
-      const recurrenceFrequencyWeeks = parseInt(bookingData.recurrenceFrequency || "1");
-
-      // COMPREHENSIVE DEBUGGING FOR BOOKING CREATION
-      console.log("[useBookingHandlers] DEBUGGING BOOKING CREATION:");
-      console.log("- Date range:", fromDateStr, "to", untilDateStr);
-      console.log("- Raw days object:", days);
-      console.log("- DayBooleans object:", dayBooleans);
-      console.log("- Recurrence frequency (weeks):", recurrenceFrequencyWeeks);
-      
-      // Get the selected days as an array for easier processing
-      const selectedDayNumbers = Object.keys(daysSelected)
-        .filter(day => daysSelected[parseInt(day)])
-        .map(day => parseInt(day))
-        .sort((a, b) => a - b);
-      
-      console.log("[useBookingHandlers] Selected day numbers:", selectedDayNumbers);
-      
-      // Test the getDayOfWeekFromString function for the start date
-      const startDayOfWeek = getDayOfWeekFromString(fromDateStr);
-      console.log("[useBookingHandlers] Start date", fromDateStr, "is day of week:", startDayOfWeek, "(" + 
-        ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][startDayOfWeek] + ")");
-      
-      // For each selected day of week, find all matching dates in the range
-      for (const targetDayNum of selectedDayNumbers) {
-        console.log("[useBookingHandlers] ========================================");
-        console.log("[useBookingHandlers] Processing target day:", targetDayNum, "(" + 
-          ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")");
-        
-        // Find the first occurrence of this day of week from the start date
-        let currentDateStr = fromDateStr;
-        let foundFirstOccurrence = false;
-        
-        // Search for the first occurrence of the target day
-        const maxSearchDays = 7; // Only search one week ahead to find the first occurrence
-        let searchDays = 0;
-        
-        while (currentDateStr <= untilDateStr && !foundFirstOccurrence && searchDays < maxSearchDays) {
-          const dayNum = getDayOfWeekFromString(currentDateStr);
-          console.log("[useBookingHandlers] Searching... date:", currentDateStr, "day of week:", dayNum, 
-            "target:", targetDayNum, "match:", dayNum === targetDayNum);
-          
-          if (dayNum === targetDayNum) {
-            foundFirstOccurrence = true;
-            let bookingDateStr = currentDateStr;
-            let bookingCount = 0;
-            
-            console.log("[useBookingHandlers] ✅ Found first occurrence! Starting recurring bookings from:", bookingDateStr);
-            
-            // Create bookings with the recurrence frequency
-            while (bookingDateStr <= untilDateStr) {
-              bookingCount++;
-              const verifyDayOfWeek = getDayOfWeekFromString(bookingDateStr);
-              
-              console.log("[useBookingHandlers] Creating booking #" + bookingCount + 
-                " for date:", bookingDateStr, 
-                "expected day:", targetDayNum, 
-                "actual day:", verifyDayOfWeek,
-                "matches:", verifyDayOfWeek === targetDayNum,
-                "time:", startTime, "-", endTime);
-              
-              // Double-check that we're creating the booking on the correct day
-              if (verifyDayOfWeek !== targetDayNum) {
-                console.error("[useBookingHandlers] ❌ CRITICAL ERROR: Day mismatch! Expected", targetDayNum, 
-                  "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")",
-                  "but got", verifyDayOfWeek,
-                  "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][verifyDayOfWeek] + ")",
-                  "for date", bookingDateStr);
-                break;
-              }
-              
-              const startDateTime = createBookingDateTime(bookingDateStr, startTime);
-              const endDateTime = createBookingDateTime(bookingDateStr, endTime);
-              
-              console.log("[useBookingHandlers] ✅ Booking validated - creating database entry:", {
-                date: bookingDateStr,
-                dayOfWeek: verifyDayOfWeek,
-                dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][verifyDayOfWeek],
-                start_time: startDateTime,
-                end_time: endDateTime
-              });
-              
-              bookingsToCreate.push({
-                branch_id: branchId,
-                client_id: bookingData.clientId,
-                staff_id: bookingData.carerId,
-                start_time: startDateTime,
-                end_time: endDateTime,
-                service_id: serviceId,
-                revenue: null,
-                status: "assigned",
-                notes: bookingData.notes || null,
-              });
-              
-              // Increment by the recurrence frequency in weeks (7 days per week)
-              const daysToAdd = recurrenceFrequencyWeeks * 7;
-              const nextBookingDate = addDaysToDateString(bookingDateStr, daysToAdd);
-              console.log("[useBookingHandlers] Next recurrence: incrementing", bookingDateStr, 
-                "by", daysToAdd, "days (", recurrenceFrequencyWeeks, "weeks) to get", nextBookingDate);
-              
-              // Verify next date is still the same day of week
-              if (nextBookingDate <= untilDateStr) {
-                const nextDayOfWeek = getDayOfWeekFromString(nextBookingDate);
-                if (nextDayOfWeek !== targetDayNum) {
-                  console.error("[useBookingHandlers] ❌ RECURRENCE ERROR: Next date", nextBookingDate, 
-                    "has day of week", nextDayOfWeek, "but expected", targetDayNum);
-                }
-              }
-              
-              bookingDateStr = nextBookingDate;
-            }
-            
-            console.log("[useBookingHandlers] ✅ Completed", bookingCount, "bookings for", 
-              ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum]);
-          } else {
-            // Move to next day to find the target day of week
-            currentDateStr = addDaysToDateString(currentDateStr, 1);
-            searchDays++;
-          }
-        }
-        
-        if (!foundFirstOccurrence) {
-          console.warn("[useBookingHandlers] ⚠️ No occurrence found for target day", targetDayNum, 
-            "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")",
-            "in date range", fromDateStr, "to", untilDateStr);
-        }
-      }
-    }
-
-    if (bookingsToCreate.length === 0) {
-      toast.error("No valid days/times selected for recurrence.");
+    if (result.bookings.length === 0) {
+      toast.error("No valid bookings could be generated from the selected criteria");
       return;
     }
 
-    console.log("[useBookingHandlers] Creating", bookingsToCreate.length, "bookings for branch:", branchId);
-    console.log("[useBookingHandlers] Bookings to create:", bookingsToCreate.map(b => ({
-      client_id: b.client_id,
-      staff_id: b.staff_id,
-      start_time: b.start_time,
-      end_time: b.end_time
-    })));
+    // Show creation summary
+    const { summary } = result;
+    const dayNames = summary.selectedDays.map(d => 
+      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]
+    ).join(', ');
 
-    createMultipleBookingsMutation.mutate(bookingsToCreate, {
+    console.log("[useBookingHandlers] Creating bookings:", {
+      total: result.bookings.length,
+      dateRange: summary.dateRange,
+      selectedDays: dayNames,
+      recurrenceWeeks: summary.recurrenceWeeks
+    });
+
+    toast.info("Creating Bookings...", {
+      description: `Generating ${result.bookings.length} bookings for ${dayNames} from ${summary.dateRange.start} to ${summary.dateRange.end}`,
+      duration: 3000
+    });
+
+    createMultipleBookingsMutation.mutate(result.bookings, {
       onError: (error: any) => {
         console.error("[useBookingHandlers] Booking creation error:", error);
         if (error.message?.includes("row-level security")) {
@@ -598,9 +397,24 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       },
       onSuccess: (data: any) => {
         console.log("[useBookingHandlers] ✅ Bookings created successfully:", data);
-        toast.success("Bookings created!", {
-          description: `Created ${data?.length || bookingsToCreate.length} bookings. Refreshing calendar...`,
+        
+        // Enhanced success message with details
+        const actualCount = data?.length || result.bookings.length;
+        const preview = previewRecurringBookings(bookingData, branchId);
+        
+        let successDescription = `Created ${actualCount} bookings successfully!`;
+        if (preview.dayBreakdown.length > 0) {
+          const breakdown = preview.dayBreakdown
+            .map(d => `${d.day}: ${d.dates.length}`)
+            .join(', ');
+          successDescription += ` (${breakdown})`;
+        }
+
+        toast.success("Bookings Created Successfully! ✅", {
+          description: successDescription,
+          duration: 5000
         });
+        
         setNewBookingDialogOpen(false);
         createMultipleBookingsMutation.reset();
       },
