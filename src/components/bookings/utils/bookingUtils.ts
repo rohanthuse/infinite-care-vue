@@ -35,7 +35,14 @@ export function addDaysToDateString(dateString: string, days: number): string {
 export function getDayOfWeekFromString(dateString: string): number {
   const [year, month, day] = dateString.split('-').map(Number);
   const tempDate = new Date(year, month - 1, day);
-  return tempDate.getDay();
+  const dayOfWeek = tempDate.getDay();
+  
+  // Add debugging to verify this function works correctly
+  console.log("[getDayOfWeekFromString] Input:", dateString, "-> Year:", year, "Month:", month, "Day:", day, 
+    "-> Date object:", tempDate.toDateString(), "-> Day of week:", dayOfWeek, 
+    "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek] + ")");
+  
+  return dayOfWeek;
 }
 
 // Legacy function - use createBookingDateTime instead

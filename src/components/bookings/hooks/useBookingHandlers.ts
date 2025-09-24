@@ -432,8 +432,12 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
       const recurrenceFrequencyWeeks = parseInt(bookingData.recurrenceFrequency || "1");
 
-      // Pure string-based date processing - no Date objects
-      console.log("[useBookingHandlers] Date range generation - from:", fromDateStr, "until:", untilDateStr);
+      // COMPREHENSIVE DEBUGGING FOR BOOKING CREATION
+      console.log("[useBookingHandlers] DEBUGGING BOOKING CREATION:");
+      console.log("- Date range:", fromDateStr, "to", untilDateStr);
+      console.log("- Raw days object:", days);
+      console.log("- DayBooleans object:", dayBooleans);
+      console.log("- Recurrence frequency (weeks):", recurrenceFrequencyWeeks);
       
       // Get the selected days as an array for easier processing
       const selectedDayNumbers = Object.keys(daysSelected)
@@ -441,23 +445,49 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         .map(day => parseInt(day))
         .sort((a, b) => a - b);
       
-      console.log("[useBookingHandlers] Selected days:", selectedDayNumbers);
+      console.log("[useBookingHandlers] Selected day numbers:", selectedDayNumbers);
+      
+      // Test the getDayOfWeekFromString function for the start date
+      const startDayOfWeek = getDayOfWeekFromString(fromDateStr);
+      console.log("[useBookingHandlers] Start date", fromDateStr, "is day of week:", startDayOfWeek, "(" + 
+        ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][startDayOfWeek] + ")");
       
       // For each selected day of week, find all matching dates in the range
       for (const targetDayNum of selectedDayNumbers) {
+        console.log("[useBookingHandlers] Processing target day:", targetDayNum, "(" + 
+          ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")");
+        
         // Find the first occurrence of this day of week from the start date
         let currentDateStr = fromDateStr;
+        let foundFirstOccurrence = false;
         
-        // If the start date is not the target day, find the next occurrence
-        while (currentDateStr <= untilDateStr) {
+        // Search for the first occurrence of the target day
+        while (currentDateStr <= untilDateStr && !foundFirstOccurrence) {
           const dayNum = getDayOfWeekFromString(currentDateStr);
+          console.log("[useBookingHandlers] Checking date:", currentDateStr, "day of week:", dayNum, 
+            "target:", targetDayNum, "match:", dayNum === targetDayNum);
           
           if (dayNum === targetDayNum) {
-            // Found the first occurrence, now create bookings with the recurrence frequency
+            foundFirstOccurrence = true;
             let bookingDateStr = currentDateStr;
+            let bookingCount = 0;
             
+            // Create bookings with the recurrence frequency
             while (bookingDateStr <= untilDateStr) {
-              console.log("[useBookingHandlers] Creating booking for date:", bookingDateStr, "dayNum:", targetDayNum, "time:", startTime, "-", endTime);
+              bookingCount++;
+              const verifyDayOfWeek = getDayOfWeekFromString(bookingDateStr);
+              
+              console.log("[useBookingHandlers] Creating booking #" + bookingCount + 
+                " for date:", bookingDateStr, 
+                "expected day:", targetDayNum, 
+                "actual day:", verifyDayOfWeek,
+                "time:", startTime, "-", endTime);
+              
+              // Double-check that we're creating the booking on the correct day
+              if (verifyDayOfWeek !== targetDayNum) {
+                console.error("[useBookingHandlers] ERROR: Day mismatch! Expected", targetDayNum, "but got", verifyDayOfWeek, "for date", bookingDateStr);
+                break;
+              }
               
               bookingsToCreate.push({
                 branch_id: branchId,
@@ -471,21 +501,30 @@ export function useBookingHandlers(branchId?: string, user?: any) {
                 notes: bookingData.notes || null,
               });
               
-              console.log("[useBookingHandlers] Generated booking times:", {
+              console.log("[useBookingHandlers] ✅ Generated booking:", {
                 date: bookingDateStr,
-                dayOfWeek: targetDayNum,
+                dayOfWeek: verifyDayOfWeek,
+                dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][verifyDayOfWeek],
                 start_time: createBookingDateTime(bookingDateStr, startTime),
                 end_time: createBookingDateTime(bookingDateStr, endTime)
               });
               
               // Increment by the recurrence frequency in weeks (7 days per week)
-              bookingDateStr = addDaysToDateString(bookingDateStr, recurrenceFrequencyWeeks * 7);
+              const nextBookingDate = addDaysToDateString(bookingDateStr, recurrenceFrequencyWeeks * 7);
+              console.log("[useBookingHandlers] Next recurrence: incrementing", bookingDateStr, 
+                "by", recurrenceFrequencyWeeks * 7, "days to get", nextBookingDate);
+              bookingDateStr = nextBookingDate;
             }
-            break; // Found and processed this day, move to next selected day
+            
+            console.log("[useBookingHandlers] Completed", bookingCount, "bookings for day", targetDayNum);
+          } else {
+            // Move to next day to find the target day of week
+            currentDateStr = addDaysToDateString(currentDateStr, 1);
           }
-          
-          // Move to next day to find the target day of week
-          currentDateStr = addDaysToDateString(currentDateStr, 1);
+        }
+        
+        if (!foundFirstOccurrence) {
+          console.warn("[useBookingHandlers] No occurrence found for target day", targetDayNum, "in date range");
         }
       }
     }
