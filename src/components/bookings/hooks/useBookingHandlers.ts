@@ -284,13 +284,25 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         ? (bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate)
         : bookingData.untilDate.toISOString().split('T')[0];
 
-      while (currentDate <= untilDateStr) {
+      console.log("[findFirstRecurringDate] Searching from:", currentDate, "until:", untilDateStr);
+      console.log("[findFirstRecurringDate] Selected days:", selectedDays);
+
+      let attempts = 0;
+      const maxAttempts = 7; // Only check one week ahead to find first occurrence
+      
+      while (currentDate <= untilDateStr && attempts < maxAttempts) {
         const dayNum = getDayOfWeekFromString(currentDate);
+        console.log("[findFirstRecurringDate] Checking date:", currentDate, "day:", dayNum, "selected:", !!selectedDays[dayNum]);
+        
         if (selectedDays[dayNum]) {
+          console.log("[findFirstRecurringDate] ✅ Found first occurrence:", currentDate, "day:", dayNum);
           return currentDate;
         }
         currentDate = addDaysToDateString(currentDate, 1);
+        attempts++;
       }
+      
+      console.warn("[findFirstRecurringDate] No occurrence found, falling back to start date:", fromDateStr);
       return fromDateStr; // fallback
     };
 
@@ -454,6 +466,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       
       // For each selected day of week, find all matching dates in the range
       for (const targetDayNum of selectedDayNumbers) {
+        console.log("[useBookingHandlers] ========================================");
         console.log("[useBookingHandlers] Processing target day:", targetDayNum, "(" + 
           ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")");
         
@@ -462,15 +475,20 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         let foundFirstOccurrence = false;
         
         // Search for the first occurrence of the target day
-        while (currentDateStr <= untilDateStr && !foundFirstOccurrence) {
+        const maxSearchDays = 7; // Only search one week ahead to find the first occurrence
+        let searchDays = 0;
+        
+        while (currentDateStr <= untilDateStr && !foundFirstOccurrence && searchDays < maxSearchDays) {
           const dayNum = getDayOfWeekFromString(currentDateStr);
-          console.log("[useBookingHandlers] Checking date:", currentDateStr, "day of week:", dayNum, 
+          console.log("[useBookingHandlers] Searching... date:", currentDateStr, "day of week:", dayNum, 
             "target:", targetDayNum, "match:", dayNum === targetDayNum);
           
           if (dayNum === targetDayNum) {
             foundFirstOccurrence = true;
             let bookingDateStr = currentDateStr;
             let bookingCount = 0;
+            
+            console.log("[useBookingHandlers] ✅ Found first occurrence! Starting recurring bookings from:", bookingDateStr);
             
             // Create bookings with the recurrence frequency
             while (bookingDateStr <= untilDateStr) {
@@ -481,50 +499,73 @@ export function useBookingHandlers(branchId?: string, user?: any) {
                 " for date:", bookingDateStr, 
                 "expected day:", targetDayNum, 
                 "actual day:", verifyDayOfWeek,
+                "matches:", verifyDayOfWeek === targetDayNum,
                 "time:", startTime, "-", endTime);
               
               // Double-check that we're creating the booking on the correct day
               if (verifyDayOfWeek !== targetDayNum) {
-                console.error("[useBookingHandlers] ERROR: Day mismatch! Expected", targetDayNum, "but got", verifyDayOfWeek, "for date", bookingDateStr);
+                console.error("[useBookingHandlers] ❌ CRITICAL ERROR: Day mismatch! Expected", targetDayNum, 
+                  "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")",
+                  "but got", verifyDayOfWeek,
+                  "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][verifyDayOfWeek] + ")",
+                  "for date", bookingDateStr);
                 break;
               }
+              
+              const startDateTime = createBookingDateTime(bookingDateStr, startTime);
+              const endDateTime = createBookingDateTime(bookingDateStr, endTime);
+              
+              console.log("[useBookingHandlers] ✅ Booking validated - creating database entry:", {
+                date: bookingDateStr,
+                dayOfWeek: verifyDayOfWeek,
+                dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][verifyDayOfWeek],
+                start_time: startDateTime,
+                end_time: endDateTime
+              });
               
               bookingsToCreate.push({
                 branch_id: branchId,
                 client_id: bookingData.clientId,
                 staff_id: bookingData.carerId,
-                start_time: createBookingDateTime(bookingDateStr, startTime),
-                end_time: createBookingDateTime(bookingDateStr, endTime),
+                start_time: startDateTime,
+                end_time: endDateTime,
                 service_id: serviceId,
                 revenue: null,
                 status: "assigned",
                 notes: bookingData.notes || null,
               });
               
-              console.log("[useBookingHandlers] ✅ Generated booking:", {
-                date: bookingDateStr,
-                dayOfWeek: verifyDayOfWeek,
-                dayName: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][verifyDayOfWeek],
-                start_time: createBookingDateTime(bookingDateStr, startTime),
-                end_time: createBookingDateTime(bookingDateStr, endTime)
-              });
-              
               // Increment by the recurrence frequency in weeks (7 days per week)
-              const nextBookingDate = addDaysToDateString(bookingDateStr, recurrenceFrequencyWeeks * 7);
+              const daysToAdd = recurrenceFrequencyWeeks * 7;
+              const nextBookingDate = addDaysToDateString(bookingDateStr, daysToAdd);
               console.log("[useBookingHandlers] Next recurrence: incrementing", bookingDateStr, 
-                "by", recurrenceFrequencyWeeks * 7, "days to get", nextBookingDate);
+                "by", daysToAdd, "days (", recurrenceFrequencyWeeks, "weeks) to get", nextBookingDate);
+              
+              // Verify next date is still the same day of week
+              if (nextBookingDate <= untilDateStr) {
+                const nextDayOfWeek = getDayOfWeekFromString(nextBookingDate);
+                if (nextDayOfWeek !== targetDayNum) {
+                  console.error("[useBookingHandlers] ❌ RECURRENCE ERROR: Next date", nextBookingDate, 
+                    "has day of week", nextDayOfWeek, "but expected", targetDayNum);
+                }
+              }
+              
               bookingDateStr = nextBookingDate;
             }
             
-            console.log("[useBookingHandlers] Completed", bookingCount, "bookings for day", targetDayNum);
+            console.log("[useBookingHandlers] ✅ Completed", bookingCount, "bookings for", 
+              ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum]);
           } else {
             // Move to next day to find the target day of week
             currentDateStr = addDaysToDateString(currentDateStr, 1);
+            searchDays++;
           }
         }
         
         if (!foundFirstOccurrence) {
-          console.warn("[useBookingHandlers] No occurrence found for target day", targetDayNum, "in date range");
+          console.warn("[useBookingHandlers] ⚠️ No occurrence found for target day", targetDayNum, 
+            "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][targetDayNum] + ")",
+            "in date range", fromDateStr, "to", untilDateStr);
         }
       }
     }

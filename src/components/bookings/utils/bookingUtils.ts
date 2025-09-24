@@ -20,26 +20,44 @@ export function addDaysToDateString(dateString: string, days: number): string {
   // Parse date string manually
   const [year, month, day] = dateString.split('-').map(Number);
   
-  // Create date only for arithmetic, then extract result as string
-  const tempDate = new Date(year, month - 1, day);
-  tempDate.setDate(tempDate.getDate() + days);
+  // Validate input
+  if (!year || !month || !day) {
+    console.error("[addDaysToDateString] Invalid date string:", dateString);
+    return dateString;
+  }
   
-  const resultYear = tempDate.getFullYear();
-  const resultMonth = String(tempDate.getMonth() + 1).padStart(2, '0');
-  const resultDay = String(tempDate.getDate()).padStart(2, '0');
+  // Use UTC to avoid timezone issues
+  const tempDate = new Date(Date.UTC(year, month - 1, day));
+  tempDate.setUTCDate(tempDate.getUTCDate() + days);
   
-  return `${resultYear}-${resultMonth}-${resultDay}`;
+  const resultYear = tempDate.getUTCFullYear();
+  const resultMonth = String(tempDate.getUTCMonth() + 1).padStart(2, '0');
+  const resultDay = String(tempDate.getUTCDate()).padStart(2, '0');
+  
+  const result = `${resultYear}-${resultMonth}-${resultDay}`;
+  
+  console.log("[addDaysToDateString] Added", days, "days to", dateString, "->", result);
+  
+  return result;
 }
 
 // Helper: Get day of week from date string (0 = Sunday, 1 = Monday, etc.)
 export function getDayOfWeekFromString(dateString: string): number {
+  // Use UTC to avoid timezone issues
   const [year, month, day] = dateString.split('-').map(Number);
-  const tempDate = new Date(year, month - 1, day);
-  const dayOfWeek = tempDate.getDay();
   
-  // Add debugging to verify this function works correctly
-  console.log("[getDayOfWeekFromString] Input:", dateString, "-> Year:", year, "Month:", month, "Day:", day, 
-    "-> Date object:", tempDate.toDateString(), "-> Day of week:", dayOfWeek, 
+  // Validate the date components
+  if (!year || !month || !day || month < 1 || month > 12 || day < 1 || day > 31) {
+    console.error("[getDayOfWeekFromString] Invalid date components:", { year, month, day, dateString });
+    return 0; // Default to Sunday
+  }
+  
+  // Create UTC date to avoid timezone shifts
+  const tempDate = new Date(Date.UTC(year, month - 1, day));
+  const dayOfWeek = tempDate.getUTCDay();
+  
+  console.log("[getDayOfWeekFromString] Input:", dateString, "-> Components:", { year, month, day }, 
+    "-> UTC Date:", tempDate.toISOString(), "-> Day of week:", dayOfWeek, 
     "(" + ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek] + ")");
   
   return dayOfWeek;
