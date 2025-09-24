@@ -31,14 +31,15 @@ export function useConsolidatedValidation(branchId?: string) {
     excludeBookingId?: string,
     availableCarers?: Array<{ id: string; name: string; initials: string }>
   ): Promise<ValidationResult> => {
-    console.log("[useConsolidatedValidation] Starting validation:", {
-      carerId,
-      startTime,
-      endTime,
-      date,
-      excludeBookingId,
-      branchId
-    });
+      console.log("[useConsolidatedValidation] Starting validation:", {
+        carerId,
+        startTime,
+        endTime,
+        date,
+        excludeBookingId,
+        branchId,
+        timestamp: new Date().toISOString()
+      });
 
     // Input validation
     if (!branchId || !carerId || !startTime || !endTime || !date) {
@@ -86,7 +87,30 @@ export function useConsolidatedValidation(branchId?: string) {
         throw new Error(`Database validation failed: ${error.message}`);
       }
 
-      console.log("[useConsolidatedValidation] Found existing bookings:", existingBookings?.length || 0);
+      console.log("[useConsolidatedValidation] Database query completed:", {
+        foundBookings: existingBookings?.length || 0,
+        queryParams: {
+          branchId,
+          staffId: carerId,
+          dateFilter: `${date}T00:00:00+00:00 to ${date}T23:59:59+00:00`,
+          excludeBookingId
+        }
+      });
+
+      // Log each booking found for debugging
+      if (existingBookings && existingBookings.length > 0) {
+        console.log("[useConsolidatedValidation] Existing bookings details:");
+        existingBookings.forEach((booking: any, index: number) => {
+          console.log(`  [${index + 1}] Booking ${booking.id}:`, {
+            startTime: booking.start_time,
+            endTime: booking.end_time,
+            staffId: booking.staff_id,
+            branchId: booking.branch_id,
+            clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown',
+            status: booking.status
+          });
+        });
+      }
 
       // Check for time overlaps
       const conflicts = (existingBookings || []).filter((booking: any) => {
@@ -98,14 +122,29 @@ export function useConsolidatedValidation(branchId?: string) {
         // Strict overlap detection: any time intersection is blocked
         const hasOverlap = proposedStart < existingEnd && proposedEnd > existingStart;
         
-        if (hasOverlap) {
-          console.log("[useConsolidatedValidation] Conflict detected:", {
-            bookingId: booking.id,
-            clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown',
-            existing: `${existingStart.toISOString()} - ${existingEnd.toISOString()}`,
-            proposed: `${proposedStart.toISOString()} - ${proposedEnd.toISOString()}`
-          });
-        }
+        console.log("[useConsolidatedValidation] Overlap check for booking:", {
+          bookingId: booking.id,
+          clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : 'Unknown',
+          existing: {
+            start: existingStart.toISOString(),
+            end: existingEnd.toISOString(),
+            startTime: existingStart.getUTCHours() + ':' + existingStart.getUTCMinutes().toString().padStart(2, '0'),
+            endTime: existingEnd.getUTCHours() + ':' + existingEnd.getUTCMinutes().toString().padStart(2, '0')
+          },
+          proposed: {
+            start: proposedStart.toISOString(), 
+            end: proposedEnd.toISOString(),
+            startTime: proposedStart.getUTCHours() + ':' + proposedStart.getUTCMinutes().toString().padStart(2, '0'),
+            endTime: proposedEnd.getUTCHours() + ':' + proposedEnd.getUTCMinutes().toString().padStart(2, '0')
+          },
+          overlapConditions: {
+            condition1: `${proposedStart.toISOString()} < ${existingEnd.toISOString()}`,
+            condition1Result: proposedStart < existingEnd,
+            condition2: `${proposedEnd.toISOString()} > ${existingStart.toISOString()}`,
+            condition2Result: proposedEnd > existingStart
+          },
+          hasOverlap
+        });
 
         return hasOverlap;
       });
@@ -177,11 +216,29 @@ export function useConsolidatedValidation(branchId?: string) {
         result.error = `This carer is already assigned to ${clientName} from ${extractTime(originalBooking?.start_time || '')} to ${extractTime(originalBooking?.end_time || '')} on ${extractDate(originalBooking?.start_time || '')}. Current booking status: ${originalBooking?.status || 'unknown'}`;
       }
 
+      console.log("[useConsolidatedValidation] === FINAL VALIDATION RESULT ===");
       console.log("[useConsolidatedValidation] Validation result:", {
         isValid: result.isValid,
         conflictCount: result.conflictingBookings.length,
-        error: result.error
+        error: result.error,
+        hasAvailableCarers: result.availableCarers ? result.availableCarers.length : 0,
+        timestamp: new Date().toISOString()
       });
+
+      // Log conflict details for debugging
+      if (result.conflictingBookings.length > 0) {
+        console.log("[useConsolidatedValidation] CONFLICT DETAILS:");
+        result.conflictingBookings.forEach((conflict, index) => {
+          console.log(`  Conflict ${index + 1}:`, {
+            id: conflict.id,
+            clientName: conflict.clientName,
+            timeSlot: `${conflict.startTime} - ${conflict.endTime}`,
+            date: conflict.date
+          });
+        });
+      } else {
+        console.log("[useConsolidatedValidation] ✅ NO CONFLICTS FOUND - CARER IS AVAILABLE");
+      }
 
       return result;
 

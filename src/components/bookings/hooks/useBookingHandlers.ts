@@ -10,7 +10,7 @@ import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
 import { createBookingDateTime, formatDateForBooking } from "../utils/dateUtils";
-import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
+import { useConsolidatedValidation } from "./useConsolidatedValidation";
 import { generateRecurringBookings, previewRecurringBookings } from "../utils/recurringBookingLogic";
 import { validateBookingFormData } from "../utils/bookingValidation";
 import { useBookingVerification } from "./useBookingVerification";
@@ -53,7 +53,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const updateBookingMutation = useUpdateBooking(branchId);
   const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
   const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
-  const { validateBooking, isValidating: isEnhancedValidating } = useEnhancedOverlapValidation(branchId);
+  const { validateBooking, isValidating: isEnhancedValidating } = useConsolidatedValidation(branchId);
   const { isVerifying, verifyBookingsAppear, forceRefresh } = useBookingVerification({ branchId });
   const { navigateToBookingDate } = useBookingDateNavigation();
 
@@ -62,6 +62,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       toast.error("Branch ID is required for refresh");
       return;
     }
+
+    // Clear validation cache to prevent false conflicts
+    console.log("[useBookingHandlers] Clearing validation cache for branch:", branchId);
+    queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+    queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    queryClient.removeQueries({ queryKey: ["booking-validation"] });
+    queryClient.removeQueries({ queryKey: ["overlap-check"] });
 
     try {
       toast.info("Refreshing bookings data...", {
@@ -146,10 +153,20 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       );
 
       if (hasChangedSchedule && bookingToUpdate.carerId) {
-        console.log("[useBookingHandlers] SCHEDULE CHANGED - PERFORMING ENHANCED VALIDATION");
+        console.log("[useBookingHandlers] SCHEDULE CHANGED - PERFORMING CONSOLIDATED VALIDATION");
         console.log("[useBookingHandlers] Branch context:", { branchId });
+        console.log("[useBookingHandlers] Validation parameters:", {
+          carerId: bookingToUpdate.carerId,
+          startTime: bookingToUpdate.startTime,
+          endTime: bookingToUpdate.endTime,
+          date: bookingToUpdate.date,
+          excludeBookingId: bookingToUpdate.id
+        });
+
+        // Clear any stale validation data before new validation
+        queryClient.removeQueries({ queryKey: ["booking-validation"] });
         
-        // Use enhanced validation
+        // Use consolidated validation (the single source of truth)
         const validation = await validateBooking(
           bookingToUpdate.carerId,
           bookingToUpdate.startTime,
@@ -159,10 +176,14 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         );
 
         if (!validation.isValid) {
-          console.log("[useBookingHandlers] ENHANCED VALIDATION FAILED");
+          console.log("[useBookingHandlers] CONSOLIDATED VALIDATION FAILED");
+          console.log("[useBookingHandlers] Validation error:", validation.error);
+          console.log("[useBookingHandlers] Conflicting bookings:", validation.conflictingBookings);
           
           const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
-          const availableCarers = findAvailableCarers(
+          
+          // Use available carers from validation result if available
+          const availableCarers = validation.availableCarers || findAvailableCarers(
             carers,
             bookingToUpdate.startTime,
             bookingToUpdate.endTime,

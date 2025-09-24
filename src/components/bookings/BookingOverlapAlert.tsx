@@ -72,29 +72,32 @@ export function BookingOverlapAlert({
                 </p>
               </div>
               
-              <div className="space-y-2">
-                <h4 className="font-medium text-sm flex items-center text-red-700">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Conflicting Bookings:
-                </h4>
-                {conflictingBookings.map((booking) => (
-                  <div key={booking.id} className="border rounded-lg p-3 bg-red-50 border-red-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-red-600" />
-                        <span className="text-sm font-medium text-red-900">{booking.clientName}</span>
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm flex items-center text-red-700">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Conflicting Bookings ({conflictingBookings.length}):
+                  </h4>
+                  {conflictingBookings.map((booking, index) => (
+                    <div key={booking.id || index} className="border rounded-lg p-3 bg-red-50 border-red-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-red-600" />
+                          <span className="text-sm font-medium text-red-900">{booking.clientName}</span>
+                        </div>
+                        <Badge variant="destructive" className="text-xs">
+                          Conflict
+                        </Badge>
                       </div>
-                      <Badge variant="destructive" className="text-xs">
-                        Conflict
-                      </Badge>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-red-700">
+                        <Clock className="h-3 w-3" />
+                        {booking.startTime} - {booking.endTime}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ID: {booking.id} | Date: {booking.date}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 mt-1 text-xs text-red-700">
-                      <Clock className="h-3 w-3" />
-                      {booking.startTime} - {booking.endTime}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
               {availableCarers.length > 0 && (
                 <div className="space-y-2">
