@@ -11,6 +11,7 @@ import { createBookingDateTime } from "../utils/dateUtils";
 import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
 import { generateRecurringBookings, previewRecurringBookings } from "../utils/recurringBookingLogic";
 import { validateBookingFormData } from "../utils/bookingValidation";
+import { useBookingVerification } from "./useBookingVerification";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
@@ -49,6 +50,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
   const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
   const { validateBooking, isValidating: isEnhancedValidating } = useEnhancedOverlapValidation(branchId);
+  const { isVerifying, verifyBookingsAppear, forceRefresh } = useBookingVerification({ branchId });
 
   const handleRefresh = async () => {
     if (!branchId) {
@@ -395,8 +397,12 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           });
         }
       },
-      onSuccess: (data: any) => {
+      onSuccess: async (data: any) => {
         console.log("[useBookingHandlers] ✅ Bookings created successfully:", data);
+        
+        // Close dialog immediately
+        setNewBookingDialogOpen(false);
+        createMultipleBookingsMutation.reset();
         
         // Enhanced success message with details
         const actualCount = data?.length || result.bookings.length;
@@ -412,11 +418,30 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
         toast.success("Bookings Created Successfully! ✅", {
           description: successDescription,
-          duration: 5000
+          duration: 3000
         });
         
-        setNewBookingDialogOpen(false);
-        createMultipleBookingsMutation.reset();
+        // Verify bookings appear in calendar
+        if (data && Array.isArray(data) && data.length > 0) {
+          const createdBookingIds = data.map((booking: any) => booking.id).filter(Boolean);
+          if (createdBookingIds.length > 0) {
+            console.log("[useBookingHandlers] Starting verification for booking IDs:", createdBookingIds);
+            
+            // Start verification process
+            const verificationSuccess = await verifyBookingsAppear(createdBookingIds);
+            
+            if (!verificationSuccess) {
+              toast.warning('Bookings created but may not be visible', {
+                description: 'Click "Force Refresh" if you don\'t see your bookings on the calendar',
+                duration: 8000,
+                action: {
+                  label: 'Force Refresh',
+                  onClick: forceRefresh
+                }
+              });
+            }
+          }
+        }
       },
     });
   };
@@ -465,7 +490,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     setUpdateOverlapData(null);
   };
 
-  const isCheckingOverlap = isChecking || isValidatingUpdate || isEnhancedValidating;
+  const isCheckingOverlap = isChecking || isValidatingUpdate || isEnhancedValidating || isVerifying;
 
   return {
     newBookingDialogOpen,
@@ -495,6 +520,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     handleUpdateOverlapModifyTime,
     handleUpdateOverlapForceUpdate,
     createMultipleBookingsMutation,
-    updateBookingMutation
+    updateBookingMutation,
+    forceRefresh
   };
 }

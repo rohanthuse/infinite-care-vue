@@ -31,31 +31,57 @@ export function useCreateMultipleBookings(branchId?: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createMultipleBookings,
-    onSuccess: (data) => {
-      console.log("[useCreateMultipleBookings] Successfully created bookings:", data?.length || 0);
-      console.log("[useCreateMultipleBookings] Booking details:", data);
+    onSuccess: async (data) => {
+      console.log('[useCreateMultipleBookings] ===== BOOKING CREATION SUCCESS =====');
+      console.log('Successfully created bookings:', data?.length || 0);
       
-      // Force immediate refetch by invalidating queries
-      console.log("[useCreateMultipleBookings] Invalidating queries for branch:", branchId);
-      queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+      if (data && Array.isArray(data)) {
+        console.log('Sample created booking:', data[0]);
+      }
       
-      // Also invalidate any client-specific booking queries
-      data?.forEach((booking: any) => {
-        if (booking.client_id) {
-          console.log("[useCreateMultipleBookings] Invalidating client bookings for:", booking.client_id);
-          queryClient.invalidateQueries({ queryKey: ["client-bookings", booking.client_id] });
+      // Invalidate and refetch all relevant queries with enhanced verification
+      console.log('[useCreateMultipleBookings] Invalidating cache for branch:', branchId);
+      
+      try {
+        // Primary cache invalidation
+        await queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+        console.log('[useCreateMultipleBookings] ✅ Branch bookings cache invalidated');
+        
+        // Secondary cache invalidations
+        if (data && Array.isArray(data)) {
+          const uniqueClientIds = [...new Set(data.map((b: any) => b.client_id).filter(Boolean))];
+          const uniqueStaffIds = [...new Set(data.map((b: any) => b.staff_id).filter(Boolean))];
+          
+          console.log('[useCreateMultipleBookings] Invalidating for clients:', uniqueClientIds.length);
+          console.log('[useCreateMultipleBookings] Invalidating for staff:', uniqueStaffIds.length);
+          
+          await Promise.all([
+            ...uniqueClientIds.map(clientId => 
+              queryClient.invalidateQueries({ queryKey: ["client-bookings", clientId] })
+            ),
+            ...uniqueStaffIds.map(staffId => [
+              queryClient.invalidateQueries({ queryKey: ["carer-bookings", staffId] }),
+              queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", staffId] })
+            ]).flat()
+          ]);
         }
-        if (booking.staff_id) {
-          console.log("[useCreateMultipleBookings] Invalidating carer bookings for:", booking.staff_id); 
-          queryClient.invalidateQueries({ queryKey: ["carer-bookings", booking.staff_id] });
-          queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", booking.staff_id] });
-        }
-      });
-      
-      // Force immediate refetch to ensure staff schedule updates
-      queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
-      
-      console.log("[useCreateMultipleBookings] Query invalidation and refetch completed");
+        
+        console.log('[useCreateMultipleBookings] ✅ All cache invalidations complete');
+        
+        // Force immediate refetch of branch bookings
+        setTimeout(() => {
+          console.log('[useCreateMultipleBookings] Forcing immediate refetch...');
+          queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
+        }, 100);
+        
+      } catch (error) {
+        console.error('[useCreateMultipleBookings] ❌ Cache invalidation failed:', error);
+        // Fallback: force reload of the page as last resort
+        setTimeout(() => {
+          console.warn('[useCreateMultipleBookings] Forcing page refresh due to cache issues');
+          window.location.reload();
+        }, 2000);
+      }
     },
     onError: (error) => {
       console.error("[useCreateMultipleBookings] onError:", error);

@@ -61,10 +61,10 @@ export function useBookingData(branchId?: string) {
   }, [user, authLoading, bookingsError, clientsError, carersError]);
 
   const { clients, carers, bookings } = useMemo(() => {
-    console.log("[useBookingData] Raw data received:");
+    console.log("[useBookingData] ===== PROCESSING RAW DATA =====");
     console.log("- clientsResponse:", clientsResponse);
     console.log("- carersData:", carersData);
-    console.log("- bookingsDB:", bookingsDB);
+    console.log("- bookingsDB count:", bookingsDB?.length || 0);
     console.log("- branchId:", branchId);
 
     // Extract clients from the response - the hook returns { clients: [], count: number }
@@ -79,8 +79,6 @@ export function useBookingData(branchId?: string) {
     console.log("[useBookingData] Extracted raw data:");
     console.log("- clientsRaw length:", clientsRaw.length);
     console.log("- carersRaw length:", carersRaw.length);
-    console.log("- clientsRaw sample:", clientsRaw[0]);
-    console.log("- carersRaw sample:", carersRaw[0]);
 
     // Map to our internal format - only use dummy data if no branchId (demo mode)
     const resolvedClients: Client[] = clientsRaw.length > 0
@@ -91,11 +89,9 @@ export function useBookingData(branchId?: string) {
       ? carersRaw.map(mapDBCarerToCarer)
       : (branchId ? [] : dummyCarers);
 
-    console.log("[useBookingData] Resolved data:");
+    console.log("[useBookingData] Resolved entities:");
     console.log("- resolvedClients length:", resolvedClients.length);
     console.log("- resolvedCarers length:", resolvedCarers.length);
-    console.log("- resolvedClients sample:", resolvedClients[0]);
-    console.log("- resolvedCarers sample:", resolvedCarers[0]);
 
     // Create id-to-object maps for easy lookup
     const clientsMap = Object.fromEntries(resolvedClients.map((cl) => [cl.id, cl]));
@@ -104,54 +100,114 @@ export function useBookingData(branchId?: string) {
     // Compose Booking[] from DB or dummy
     let bookings: Booking[] = [];
     if ((bookingsDB || []).length > 0) {
-      console.log("[useBookingData] Processing bookings from DB:", bookingsDB.length);
-      bookings = (bookingsDB || []).map((bk: any) => {
-        let client = clientsMap[bk.client_id];
-        let carer = carersMap[bk.staff_id];
-        if (!client && bk.client_id)
-          client = getOrCreatePlaceholderClient(bk.client_id);
-        if (!carer && bk.staff_id)
-          carer = getOrCreatePlaceholderCarer(bk.staff_id);
-        // Extract date and time directly from ISO string without timezone conversion
-        const extractDate = (isoString: string) => {
-          if (!isoString) return "";
-          return isoString.split('T')[0] || "";
-        };
+      console.log("[useBookingData] ===== PROCESSING BOOKINGS =====");
+      console.log("Processing", bookingsDB.length, "bookings from database");
+      
+      const processedBookings: Booking[] = [];
+      let failedProcessingCount = 0;
+      
+      (bookingsDB || []).forEach((bk: any, index: number) => {
+        try {
+          let client = clientsMap[bk.client_id];
+          let carer = carersMap[bk.staff_id];
+          if (!client && bk.client_id)
+            client = getOrCreatePlaceholderClient(bk.client_id);
+          if (!carer && bk.staff_id)
+            carer = getOrCreatePlaceholderCarer(bk.staff_id);
 
-        const extractTime = (isoString: string) => {
-          if (!isoString) return "07:00";
-          const timePart = isoString.split('T')[1]?.split(/[+\-Z]/)[0];
-          return timePart?.substring(0, 5) || "07:00"; // HH:MM format
-        };
+          // Enhanced date/time extraction with better error handling
+          const extractDateSafe = (isoString: string) => {
+            if (!isoString) {
+              console.warn(`[useBookingData] Missing date for booking ${bk.id}`);
+              return "";
+            }
+            try {
+              const datePart = isoString.split('T')[0];
+              if (!datePart || !/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+                console.warn(`[useBookingData] Invalid date format for booking ${bk.id}:`, isoString);
+                return "";
+              }
+              return datePart;
+            } catch (error) {
+              console.error(`[useBookingData] Error extracting date for booking ${bk.id}:`, error);
+              return "";
+            }
+          };
 
-        const startDate = extractDate(bk.start_time);
-        const startTime = extractTime(bk.start_time);
-        const endTime = extractTime(bk.end_time);
+          const extractTimeSafe = (isoString: string, defaultTime = "07:00") => {
+            if (!isoString) {
+              console.warn(`[useBookingData] Missing time for booking ${bk.id}`);
+              return defaultTime;
+            }
+            try {
+              const timePart = isoString.split('T')[1]?.split(/[+\-Z]/)[0];
+              const time = timePart?.substring(0, 5);
+              if (!time || !/^\d{2}:\d{2}$/.test(time)) {
+                console.warn(`[useBookingData] Invalid time format for booking ${bk.id}:`, isoString);
+                return defaultTime;
+              }
+              return time;
+            } catch (error) {
+              console.error(`[useBookingData] Error extracting time for booking ${bk.id}:`, error);
+              return defaultTime;
+            }
+          };
 
-        console.log('[BookingDisplay] Database vs Display:', {
-          bookingId: bk.id,
-          storedStartTime: bk.start_time,
-          storedEndTime: bk.end_time,
-          extractedDate: startDate,
-          extractedStartTime: startTime,
-          extractedEndTime: endTime
-        });
+          const startDate = extractDateSafe(bk.start_time);
+          const startTime = extractTimeSafe(bk.start_time);
+          const endTime = extractTimeSafe(bk.end_time, "08:00");
 
-        return {
-          id: bk.id,
-          clientId: bk.client_id,
-          clientName: client?.name || "(Unknown Client)",
-          clientInitials: client?.initials || "??",
-          carerId: bk.staff_id,
-          carerName: carer?.name || "(Unknown Carer)",
-          carerInitials: carer?.initials || "??",
-          startTime: startTime,
-          endTime: endTime,
-          date: startDate,
-          status: bk.status || "assigned",
-          notes: bk.notes || "",
-        };
+          // Skip bookings with invalid data
+          if (!startDate) {
+            console.error(`[useBookingData] Skipping booking ${bk.id} - invalid date`);
+            failedProcessingCount++;
+            return;
+          }
+
+          const processedBooking = {
+            id: bk.id,
+            clientId: bk.client_id,
+            clientName: client?.name || "(Unknown Client)",
+            clientInitials: client?.initials || "??",
+            carerId: bk.staff_id,
+            carerName: carer?.name || "(Unknown Carer)",
+            carerInitials: carer?.initials || "??",
+            startTime: startTime,
+            endTime: endTime,
+            date: startDate,
+            status: bk.status || "assigned",
+            notes: bk.notes || "",
+          };
+
+          processedBookings.push(processedBooking);
+
+          // Log every 10th booking for debugging
+          if ((index + 1) % 10 === 0 || index < 3) {
+            console.log(`[useBookingData] Processed booking ${index + 1}/${bookingsDB.length}:`, {
+              id: processedBooking.id,
+              date: processedBooking.date,
+              time: `${processedBooking.startTime}-${processedBooking.endTime}`,
+              client: processedBooking.clientName,
+              carer: processedBooking.carerName,
+              status: processedBooking.status
+            });
+          }
+        } catch (error) {
+          console.error(`[useBookingData] Failed to process booking ${bk.id}:`, error);
+          failedProcessingCount++;
+        }
       });
+
+      bookings = processedBookings;
+      
+      console.log("[useBookingData] ===== BOOKING PROCESSING COMPLETE =====");
+      console.log("- Successfully processed:", bookings.length);
+      console.log("- Failed to process:", failedProcessingCount);
+      console.log("- Total raw bookings:", bookingsDB.length);
+      
+      if (failedProcessingCount > 0) {
+        console.warn(`[useBookingData] WARNING: ${failedProcessingCount} bookings failed processing`);
+      }
     } else if (!branchId) {
       // Only use dummy bookings if no branchId (for demo purposes)
       bookings = makeDummyBookings(resolvedClients, resolvedCarers);

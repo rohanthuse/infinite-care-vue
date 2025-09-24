@@ -145,7 +145,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     handleUpdateOverlapModifyTime,
     handleUpdateOverlapForceUpdate,
     createMultipleBookingsMutation,
-    updateBookingMutation
+    updateBookingMutation,
+    forceRefresh
   } = useBookingHandlers(branchId, user);
 
   const filteredBookings = useMemo(() => {
@@ -283,6 +284,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             onClick={inspectCache}
           >
             Debug Cache
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={forceRefresh}
+          >
+            Force Refresh
           </Button>
           <Button onClick={handleNewBooking}>
             <Plus className="h-4 w-4 mr-2" />
