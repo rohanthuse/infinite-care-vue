@@ -92,29 +92,29 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
       // Get user IDs to fetch profiles
       const userIds = orgMembers.map(member => member.user_id);
       
-      // Fetch user profiles (join with auth.users via system_users if needed)
-      const { data: systemUsers, error: systemUsersError } = await supabase
-        .from('system_users')
-        .select('id, auth_user_id, email, first_name, last_name')
-        .in('auth_user_id', userIds);
+      // Fetch user profiles from the profiles table
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, email')
+        .in('id', userIds);
 
-      if (systemUsersError) {
-        console.error('Error fetching system users:', systemUsersError);
-        // Continue without profile data
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
       }
 
       console.log('Organization members data:', orgMembers);
-      console.log('System users data:', systemUsers);
+      console.log('Profiles data:', profiles);
 
-      // Combine the data
+      // Combine the data with profiles
       const membersWithProfiles = orgMembers.map(member => {
-        const systemUser = systemUsers?.find(su => su.auth_user_id === member.user_id);
+        const profile = profiles?.find(p => p.id === member.user_id);
+        
         return {
           id: member.id,
           user_id: member.user_id,
-          email: systemUser?.email || 'Unknown',
-          first_name: systemUser?.first_name,
-          last_name: systemUser?.last_name,
+          email: profile?.email || 'Unknown',
+          first_name: profile?.first_name,
+          last_name: profile?.last_name,
           role: member.role,
           status: member.status,
           joined_at: member.joined_at,
