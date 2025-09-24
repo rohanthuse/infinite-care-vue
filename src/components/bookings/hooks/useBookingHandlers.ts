@@ -255,15 +255,61 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     // Extract date as plain string - no Date objects
-    const proposedDate = typeof bookingData.fromDate === 'string' 
+    const fromDateStr = typeof bookingData.fromDate === 'string' 
       ? (bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate)
       : bookingData.fromDate.toISOString().split('T')[0];
+
+    // Build selected days object from the schedule
+    const { days } = firstSchedule;
+    const dayBooleans: Partial<Record<number, boolean>> = {};
+    if (days) {
+      if (days.mon) dayBooleans[1] = true;
+      if (days.tue) dayBooleans[2] = true;
+      if (days.wed) dayBooleans[3] = true;
+      if (days.thu) dayBooleans[4] = true;
+      if (days.fri) dayBooleans[5] = true;
+      if (days.sat) dayBooleans[6] = true;
+      if (days.sun) dayBooleans[0] = true;
+    }
+
+    const anyDaysSelected = Object.values(dayBooleans).some(Boolean);
+    const selectedDays = anyDaysSelected
+      ? dayBooleans
+      : { 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true };
+
+    // Helper function to find the first actual recurring date
+    const findFirstRecurringDate = (fromDateStr: string, selectedDays: Partial<Record<number, boolean>>) => {
+      let currentDate = fromDateStr;
+      const untilDateStr = typeof bookingData.untilDate === 'string' 
+        ? (bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate)
+        : bookingData.untilDate.toISOString().split('T')[0];
+
+      while (currentDate <= untilDateStr) {
+        const dayNum = getDayOfWeekFromString(currentDate);
+        if (selectedDays[dayNum]) {
+          return currentDate;
+        }
+        currentDate = addDaysToDateString(currentDate, 1);
+      }
+      return fromDateStr; // fallback
+    };
+
+    // Find the first actual recurring date instead of using fromDate
+    const firstRecurringDate = findFirstRecurringDate(fromDateStr, selectedDays);
+    
+    console.log("[useBookingHandlers] Conflict check:", {
+      fromDate: fromDateStr,
+      firstRecurringDate,
+      selectedDays,
+      carerId: bookingData.carerId,
+      time: `${firstSchedule.startTime} - ${firstSchedule.endTime}`
+    });
 
     const overlap = checkOverlap(
       bookingData.carerId,
       firstSchedule.startTime,
       firstSchedule.endTime,
-      proposedDate
+      firstRecurringDate
     );
 
     if (overlap.hasOverlap) {
@@ -273,7 +319,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         carers,
         firstSchedule.startTime,
         firstSchedule.endTime,
-        proposedDate
+        firstRecurringDate
       );
 
       // Enhanced error messaging with toast notification
@@ -290,7 +336,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         conflictingBookings: overlap.conflictingBookings,
         carerName,
         proposedTime: `${firstSchedule.startTime} - ${firstSchedule.endTime}`,
-        proposedDate,
+        proposedDate: firstRecurringDate,
         availableCarers,
       });
       setPendingBookingData(bookingData);
