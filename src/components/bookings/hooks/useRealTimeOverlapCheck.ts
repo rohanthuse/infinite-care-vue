@@ -119,21 +119,22 @@ export function useRealTimeOverlapCheck(branchId?: string) {
 
       const result: BookingOverlap = {
         hasOverlap: conflictingBookings.length > 0,
-        conflictingBookings: conflictingBookings.map((booking: any) => ({
-          id: booking.id,
-          clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : "Unknown Client",
-          startTime: new Date(booking.start_time).toLocaleTimeString('en-GB', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }),
-          endTime: new Date(booking.end_time).toLocaleTimeString('en-GB', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }),
-          date: new Date(booking.start_time).toISOString().split('T')[0]
-        }))
+        conflictingBookings: conflictingBookings.map((booking: any) => {
+          // Use SAME direct string extraction as other components
+          const extractDate = (isoString: string) => isoString?.split('T')[0] || "";
+          const extractTime = (isoString: string) => {
+            const timePart = isoString?.split('T')[1]?.split(/[+\-Z]/)[0];
+            return timePart?.substring(0, 5) || "07:00";
+          };
+          
+          return {
+            id: booking.id,
+            clientName: booking.clients ? `${booking.clients.first_name} ${booking.clients.last_name}` : "Unknown Client",
+            startTime: extractTime(booking.start_time),
+            endTime: extractTime(booking.end_time),
+            date: extractDate(booking.start_time)
+          };
+        })
       };
 
       console.log("[useRealTimeOverlapCheck] 🎯 === CRITICAL FINAL RESULT ===");

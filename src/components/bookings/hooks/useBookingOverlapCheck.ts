@@ -1,4 +1,3 @@
-
 import { useMemo } from "react";
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { checkBookingOverlaps, getAvailableCarers, BookingOverlap } from "../utils/bookingOverlapDetection";
@@ -7,38 +6,36 @@ import { Booking } from "../BookingTimeGrid";
 export function useBookingOverlapCheck(branchId?: string) {
   const { data: bookingsDB = [], isLoading } = useBranchBookings(branchId);
 
-  // Convert DB bookings to our Booking format with better date handling
+  // Convert DB bookings to our Booking format - use SAME method as calendar display
   const bookings: Booking[] = useMemo(() => {
     console.log("[useBookingOverlapCheck] Converting DB bookings:", bookingsDB.length, "bookings");
     console.log("[useBookingOverlapCheck] Raw DB bookings:", bookingsDB);
     
+    // Extract date and time directly from ISO string without timezone conversion (SAME as useBookingData.ts)
+    const extractDate = (isoString: string) => {
+      if (!isoString) return "";
+      return isoString.split('T')[0] || "";
+    };
+
+    const extractTime = (isoString: string) => {
+      if (!isoString) return "07:00";
+      const timePart = isoString.split('T')[1]?.split(/[+\-Z]/)[0];
+      return timePart?.substring(0, 5) || "07:00"; // HH:MM format
+    };
+    
     return (bookingsDB || []).map((bk: any) => {
-      // Extract date and time properly from ISO strings
-      const startDateTime = new Date(bk.start_time);
-      const endDateTime = new Date(bk.end_time);
+      const startDate = extractDate(bk.start_time);
+      const startTime = extractTime(bk.start_time);
+      const endTime = extractTime(bk.end_time);
       
-      console.log("[useBookingOverlapCheck] Converting booking:", {
+      console.log("[useBookingOverlapCheck] Converting booking (FIXED):", {
         id: bk.id,
         rawStartTime: bk.start_time,
         rawEndTime: bk.end_time,
-        parsedStartTime: startDateTime.toISOString(),
-        parsedEndTime: endDateTime.toISOString()
+        extractedDate: startDate,
+        extractedStartTime: startTime,
+        extractedEndTime: endTime
       });
-      
-      // Format date as YYYY-MM-DD (using UTC to avoid timezone issues)
-      const year = startDateTime.getUTCFullYear();
-      const month = String(startDateTime.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(startDateTime.getUTCDate()).padStart(2, '0');
-      const date = `${year}-${month}-${day}`;
-      
-      // Format time as HH:MM (using UTC to avoid timezone issues)
-      const startHours = String(startDateTime.getUTCHours()).padStart(2, '0');
-      const startMinutes = String(startDateTime.getUTCMinutes()).padStart(2, '0');
-      const startTime = `${startHours}:${startMinutes}`;
-      
-      const endHours = String(endDateTime.getUTCHours()).padStart(2, '0');
-      const endMinutes = String(endDateTime.getUTCMinutes()).padStart(2, '0');
-      const endTime = `${endHours}:${endMinutes}`;
       
       const booking = {
         id: String(bk.id), // Ensure ID is always a string
@@ -50,12 +47,12 @@ export function useBookingOverlapCheck(branchId?: string) {
         carerInitials: "??",
         startTime,
         endTime,
-        date,
+        date: startDate,
         status: (bk.status || "assigned") as Booking["status"],
         notes: "",
       };
       
-      console.log("[useBookingOverlapCheck] Converted booking result:", {
+      console.log("[useBookingOverlapCheck] Converted booking result (CONSISTENT):", {
         id: booking.id,
         carerId: booking.carerId,
         date: booking.date,

@@ -133,30 +133,36 @@ export function useEnhancedOverlapValidation(branchId?: string) {
 
       const result: ValidationResult = {
         isValid: conflicts.length === 0,
-        conflictingBookings: conflicts.map((booking: any) => ({
-          id: booking.id,
-          clientName: booking.clients ? 
-            `${booking.clients.first_name} ${booking.clients.last_name}` : 
-            "Unknown Client",
-          startTime: new Date(booking.start_time).toLocaleTimeString('en-GB', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }),
-          endTime: new Date(booking.end_time).toLocaleTimeString('en-GB', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          })
-        }))
+        conflictingBookings: conflicts.map((booking: any) => {
+          // Use SAME direct string extraction as other components  
+          const extractTime = (isoString: string) => {
+            const timePart = isoString?.split('T')[1]?.split(/[+\-Z]/)[0];
+            return timePart?.substring(0, 5) || "07:00";
+          };
+          
+          return {
+            id: booking.id,
+            clientName: booking.clients ? 
+              `${booking.clients.first_name} ${booking.clients.last_name}` : 
+              "Unknown Client",
+            startTime: extractTime(booking.start_time),
+            endTime: extractTime(booking.end_time)
+          };
+        })
       };
 
         if (!result.isValid) {
-        // Get the first conflicting booking for specific error message
+        // Get the first conflicting booking for specific error message - use CONSISTENT extraction
         const firstConflict = conflicts[0];
-        const conflictStart = format(new Date(firstConflict?.start_time), 'HH:mm');
-        const conflictEnd = format(new Date(firstConflict?.end_time), 'HH:mm');
-        const conflictDate = format(new Date(firstConflict?.start_time), 'dd/MM/yyyy');
+        const extractTime = (isoString: string) => {
+          const timePart = isoString?.split('T')[1]?.split(/[+\-Z]/)[0];
+          return timePart?.substring(0, 5) || "07:00";
+        };
+        const extractDate = (isoString: string) => isoString?.split('T')[0] || "";
+        
+        const conflictStart = extractTime(firstConflict?.start_time);
+        const conflictEnd = extractTime(firstConflict?.end_time);
+        const conflictDate = extractDate(firstConflict?.start_time);
         
         // Ensure proper client name resolution
         const clientName = firstConflict?.clients ? 
