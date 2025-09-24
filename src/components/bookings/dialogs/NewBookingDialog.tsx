@@ -47,6 +47,7 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { BankHolidayNotification } from "@/components/scheduling/BankHolidayNotification";
+import { getBackdatingPolicy, isDateAllowed, getDateValidationMessage, createDateDisabledFunction } from "../utils/backdatingPolicy";
 
 const scheduleSchema = z.object({
   startTime: z.string().min(5, { message: "Start time required" }),
@@ -70,7 +71,12 @@ const formSchema = z.object({
   assignLater: z.boolean().optional(), // New field for "assign carer later" option
   fromDate: z.date({
     required_error: "Date is required.",
-  }),
+  }).refine((date) => {
+    const policy = getBackdatingPolicy();
+    return isDateAllowed(date, policy);
+  }, (data) => ({
+    message: getDateValidationMessage(data, "From date") || "Invalid date",
+  })),
   untilDate: z.date().optional(), // Made optional for single bookings
   recurrenceFrequency: z.enum(["1", "2", "3", "4"]).optional(), // Made optional for single bookings
   schedules: z.array(scheduleSchema).min(1, { message: "At least one schedule is required" }),
@@ -141,6 +147,9 @@ export function NewBookingDialog({
   const [scheduleCount, setScheduleCount] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [clientSearchQuery, setClientSearchQuery] = useState("");
+  
+  // Get backdating policy for date restrictions
+  const backdatingPolicy = getBackdatingPolicy();
 
   // Fetch clients and staff data
   const { clients, isLoading: isLoadingClients } = useBranchStaffAndClients(branchId || "");
@@ -701,22 +710,23 @@ export function NewBookingDialog({
                       </FormLabel>
                       <FormControl>
                          <EnhancedDatePicker
-                           value={field.value}
-                           onChange={(date) => {
-                             field.onChange(date);
-                             // Auto-adjust untilDate if it's before the new fromDate (recurring mode)
-                             if (bookingMode === "recurring") {
-                               const currentUntilDate = form.getValues("untilDate");
-                               if (date && currentUntilDate && currentUntilDate < date) {
-                                 form.setValue("untilDate", date);
-                               }
-                             }
-                           }}
-                           placeholder={bookingMode === "single" 
-                             ? "Enter or pick booking date (dd/mm/yyyy)"
-                             : "Enter or pick from date (dd/mm/yyyy)"
-                           }
-                         />
+                            value={field.value}
+                            onChange={(date) => {
+                              field.onChange(date);
+                              // Auto-adjust untilDate if it's before the new fromDate (recurring mode)
+                              if (bookingMode === "recurring") {
+                                const currentUntilDate = form.getValues("untilDate");
+                                if (date && currentUntilDate && currentUntilDate < date) {
+                                  form.setValue("untilDate", date);
+                                }
+                              }
+                            }}
+                            placeholder={bookingMode === "single" 
+                              ? "Enter or pick booking date (dd/mm/yyyy)"
+                              : "Enter or pick from date (dd/mm/yyyy)"
+                            }
+                            disabled={createDateDisabledFunction(backdatingPolicy)}
+                          />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -732,14 +742,18 @@ export function NewBookingDialog({
                         <FormLabel>Until Date</FormLabel>
                         <FormControl>
                            <EnhancedDatePicker
-                             value={field.value}
-                             onChange={field.onChange}
-                             placeholder="Enter or pick until date (dd/mm/yyyy)"
-                             disabled={(date) => {
-                               const fromDate = form.getValues("fromDate");
-                               return fromDate && date < fromDate;
-                             }}
-                           />
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Enter or pick until date (dd/mm/yyyy)"
+                              disabled={(date) => {
+                                const fromDate = form.getValues("fromDate");
+                                // Disable dates before fromDate OR dates not allowed by backdating policy
+                                if (fromDate && date < fromDate) {
+                                  return true;
+                                }
+                                return !isDateAllowed(date, backdatingPolicy);
+                              }}
+                            />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -57,18 +57,68 @@ export const createTimeRangeValidation = (startField: string, endField: string) 
   };
 };
 
+// Fixed: This should prevent PAST dates, not future dates
+export const createPastDateValidation = (fieldName: string, allowToday: boolean = true) => {
+  return z.string()
+    .min(1, `${fieldName} is required`)
+    .refine((date) => {
+      const parsedDate = new Date(date);
+      return !isNaN(parsedDate.getTime());
+    }, `${fieldName} must be a valid date`)
+    .refine((date) => {
+      const inputDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (allowToday) {
+        return inputDate >= today;
+      } else {
+        return inputDate > today;
+      }
+    }, `${fieldName} cannot be in the past`);
+};
+
+// Keep the old function name for backward compatibility with a corrected implementation
 export const createFutureDateValidation = (fieldName: string, allowToday: boolean = true) => {
-  return createDateValidation(fieldName).refine((date) => {
-    const inputDate = new Date(date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (allowToday) {
-      return inputDate <= today;
-    } else {
-      return inputDate < today;
-    }
-  }, `${fieldName} cannot be in the future`);
+  return z.string()
+    .min(1, `${fieldName} is required`)
+    .refine((date) => {
+      const parsedDate = new Date(date);
+      return !isNaN(parsedDate.getTime());
+    }, `${fieldName} must be a valid date`)
+    .refine((date) => {
+      const inputDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (allowToday) {
+        return inputDate <= today;
+      } else {
+        return inputDate < today;
+      }
+    }, `${fieldName} cannot be in the future`);
+};
+
+// Configurable backdating policy
+export const createDateValidationWithBackdating = (fieldName: string, allowBackdating: boolean = false, allowToday: boolean = true) => {
+  if (allowBackdating) {
+    return createDateValidation(fieldName); // Allow any valid date
+  }
+  return createPastDateValidation(fieldName, allowToday);
+};
+
+// Enhanced date range validation for bookings
+export const createEnhancedDateRangeValidation = (startField: string, endField: string, allowBackdating: boolean = false) => {
+  return {
+    startDate: createDateValidationWithBackdating(startField, allowBackdating),
+    endDate: createDateValidation(endField),
+    refine: (data: any) => {
+      const start = new Date(data.startDate);
+      const end = new Date(data.endDate);
+      return start <= end;
+    },
+    message: `${endField} must be on or after ${startField}`
+  };
 };
 
 export const createPositiveNumberValidation = (fieldName: string, min: number = 0) => {
