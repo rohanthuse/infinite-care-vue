@@ -434,35 +434,59 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
       // Pure string-based date processing - no Date objects
       console.log("[useBookingHandlers] Date range generation - from:", fromDateStr, "until:", untilDateStr);
-      let currentDateStr = fromDateStr;
-
-      while (currentDateStr <= untilDateStr) {
-        const dayNum = getDayOfWeekFromString(currentDateStr);
-        console.log("[useBookingHandlers] Processing date:", currentDateStr, "dayNum:", dayNum, "selected:", daysSelected[dayNum]);
+      
+      // Get the selected days as an array for easier processing
+      const selectedDayNumbers = Object.keys(daysSelected)
+        .filter(day => daysSelected[parseInt(day)])
+        .map(day => parseInt(day))
+        .sort((a, b) => a - b);
+      
+      console.log("[useBookingHandlers] Selected days:", selectedDayNumbers);
+      
+      // For each selected day of week, find all matching dates in the range
+      for (const targetDayNum of selectedDayNumbers) {
+        // Find the first occurrence of this day of week from the start date
+        let currentDateStr = fromDateStr;
         
-        if (daysSelected[dayNum]) {
-          console.log("[useBookingHandlers] Creating booking for date:", currentDateStr, "time:", startTime, "-", endTime);
+        // If the start date is not the target day, find the next occurrence
+        while (currentDateStr <= untilDateStr) {
+          const dayNum = getDayOfWeekFromString(currentDateStr);
           
-          bookingsToCreate.push({
-            branch_id: branchId,
-            client_id: bookingData.clientId,
-            staff_id: bookingData.carerId,
-            start_time: createBookingDateTime(currentDateStr, startTime),
-            end_time: createBookingDateTime(currentDateStr, endTime),
-            service_id: serviceId,
-            revenue: null,
-            status: "assigned",
-            notes: bookingData.notes || null,
-          });
+          if (dayNum === targetDayNum) {
+            // Found the first occurrence, now create bookings with the recurrence frequency
+            let bookingDateStr = currentDateStr;
+            
+            while (bookingDateStr <= untilDateStr) {
+              console.log("[useBookingHandlers] Creating booking for date:", bookingDateStr, "dayNum:", targetDayNum, "time:", startTime, "-", endTime);
+              
+              bookingsToCreate.push({
+                branch_id: branchId,
+                client_id: bookingData.clientId,
+                staff_id: bookingData.carerId,
+                start_time: createBookingDateTime(bookingDateStr, startTime),
+                end_time: createBookingDateTime(bookingDateStr, endTime),
+                service_id: serviceId,
+                revenue: null,
+                status: "assigned",
+                notes: bookingData.notes || null,
+              });
+              
+              console.log("[useBookingHandlers] Generated booking times:", {
+                date: bookingDateStr,
+                dayOfWeek: targetDayNum,
+                start_time: createBookingDateTime(bookingDateStr, startTime),
+                end_time: createBookingDateTime(bookingDateStr, endTime)
+              });
+              
+              // Increment by the recurrence frequency in weeks (7 days per week)
+              bookingDateStr = addDaysToDateString(bookingDateStr, recurrenceFrequencyWeeks * 7);
+            }
+            break; // Found and processed this day, move to next selected day
+          }
           
-          console.log("[useBookingHandlers] Generated booking times:", {
-            date: currentDateStr,
-            start_time: createBookingDateTime(currentDateStr, startTime),
-            end_time: createBookingDateTime(currentDateStr, endTime)
-          });
+          // Move to next day to find the target day of week
+          currentDateStr = addDaysToDateString(currentDateStr, 1);
         }
-        // Increment by the recurrence frequency in weeks (7 days per week)
-        currentDateStr = addDaysToDateString(currentDateStr, recurrenceFrequencyWeeks * 7);
       }
     }
 
