@@ -89,8 +89,30 @@ export function generateRecurringBookings(
     const selectedDays = days ? convertDaySelectionToNumbers(days) : [0, 1, 2, 3, 4, 5, 6];
     
     if (selectedDays.length === 0) {
-      warnings.push(`Schedule ${scheduleIndex + 1}: No days selected, defaulting to all days`);
-      selectedDays.push(0, 1, 2, 3, 4, 5, 6);
+      console.log(`[generateRecurringBookings] WARNING: Schedule ${scheduleIndex + 1} has no days selected, checking for flat structure...`);
+      
+      // Try to extract days from flat structure as fallback
+      const scheduleAny = schedule as any; // Type assertion for flat day properties
+      const flatDays = {
+        sun: scheduleAny.sun || false,
+        mon: scheduleAny.mon || false,
+        tue: scheduleAny.tue || false,
+        wed: scheduleAny.wed || false,
+        thu: scheduleAny.thu || false,
+        fri: scheduleAny.fri || false,
+        sat: scheduleAny.sat || false,
+      };
+      
+      const flatSelectedDays = convertDaySelectionToNumbers(flatDays);
+      console.log(`[generateRecurringBookings] Extracted ${flatSelectedDays.length} days from flat structure:`, 
+        flatSelectedDays.map(d => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]));
+      
+      if (flatSelectedDays.length > 0) {
+        selectedDays.push(...flatSelectedDays);
+      } else {
+        warnings.push(`Schedule ${scheduleIndex + 1}: No days selected, defaulting to all days`);
+        selectedDays.push(0, 1, 2, 3, 4, 5, 6);
+      }
     }
 
     console.log(`[generateRecurringBookings] Selected days for schedule ${scheduleIndex + 1}:`, selectedDays.map(d => 

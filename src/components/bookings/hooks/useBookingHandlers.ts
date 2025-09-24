@@ -335,6 +335,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
   const proceedWithBookingCreation = (bookingData: any) => {
     console.log("[useBookingHandlers] Starting enhanced booking creation process");
+    console.log("[useBookingHandlers] Raw booking data received:", JSON.stringify(bookingData, null, 2));
     
     if (!user) {
       toast.error("You must be logged in to create bookings");
@@ -345,8 +346,46 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
-    // Use the enhanced recurring booking logic
-    const result = generateRecurringBookings(bookingData, branchId);
+    // CRITICAL FIX: Transform flat day structure to nested structure
+    const transformedBookingData = {
+      ...bookingData,
+      schedules: bookingData.schedules.map((schedule: any, index: number) => {
+        // Check if days are already nested (correct format) or flat (needs transformation)
+        if (schedule.days) {
+          console.log(`[useBookingHandlers] Schedule ${index + 1} already has nested days structure:`, schedule.days);
+          return schedule;
+        }
+
+        // Transform flat day structure to nested
+        const daysObject = {
+          sun: schedule.sun || false,
+          mon: schedule.mon || false,
+          tue: schedule.tue || false,
+          wed: schedule.wed || false,
+          thu: schedule.thu || false,
+          fri: schedule.fri || false,
+          sat: schedule.sat || false,
+        };
+
+        console.log(`[useBookingHandlers] Transforming schedule ${index + 1} flat days to nested:`, {
+          original: { sun: schedule.sun, mon: schedule.mon, tue: schedule.tue, wed: schedule.wed, thu: schedule.thu, fri: schedule.fri, sat: schedule.sat },
+          transformed: daysObject
+        });
+
+        // Remove the flat day properties and add nested days
+        const { sun, mon, tue, wed, thu, fri, sat, ...scheduleWithoutFlatDays } = schedule;
+        
+        return {
+          ...scheduleWithoutFlatDays,
+          days: daysObject
+        };
+      })
+    };
+
+    console.log("[useBookingHandlers] Transformed booking data for processing:", JSON.stringify(transformedBookingData, null, 2));
+
+    // Use the enhanced recurring booking logic with transformed data
+    const result = generateRecurringBookings(transformedBookingData, branchId);
     
     if (!result.success) {
       console.error("[useBookingHandlers] Booking generation failed:", result.errors);

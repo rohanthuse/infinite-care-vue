@@ -141,6 +141,7 @@ export function findDatesForDayOfWeek(
 
 /**
  * Convert day selection object to array of day numbers
+ * Supports both flat structure (sat: true) and nested structure (days: { sat: true })
  */
 export function convertDaySelectionToNumbers(daySelection: {
   sun?: boolean;
@@ -150,16 +151,31 @@ export function convertDaySelectionToNumbers(daySelection: {
   thu?: boolean;
   fri?: boolean;
   sat?: boolean;
-}): number[] {
+} | any): number[] {
+  console.log('[convertDaySelectionToNumbers] Converting day selection:', daySelection);
+  
+  // Handle null/undefined input
+  if (!daySelection || typeof daySelection !== 'object') {
+    console.log('[convertDaySelectionToNumbers] Invalid or empty day selection, returning empty array');
+    return [];
+  }
+
   const selectedDays: number[] = [];
   
-  if (daySelection.sun) selectedDays.push(0);
-  if (daySelection.mon) selectedDays.push(1);
-  if (daySelection.tue) selectedDays.push(2);
-  if (daySelection.wed) selectedDays.push(3);
-  if (daySelection.thu) selectedDays.push(4);
-  if (daySelection.fri) selectedDays.push(5);
-  if (daySelection.sat) selectedDays.push(6);
+  // Robust handling - check both direct properties and nested days object
+  const days = daySelection.days || daySelection; // Support both flat and nested structures
+  
+  if (days.sun) selectedDays.push(0);
+  if (days.mon) selectedDays.push(1);
+  if (days.tue) selectedDays.push(2);
+  if (days.wed) selectedDays.push(3);
+  if (days.thu) selectedDays.push(4);
+  if (days.fri) selectedDays.push(5);
+  if (days.sat) selectedDays.push(6);
+  
+  console.log('[convertDaySelectionToNumbers] Selected day numbers:', selectedDays.map(d => 
+    ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][d]
+  ));
   
   return selectedDays.sort();
 }
