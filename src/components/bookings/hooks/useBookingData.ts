@@ -28,11 +28,14 @@ export function useBookingData(branchId?: string) {
   });
   
   // Only fetch data if user is authenticated OR if branchId is provided (allow demo/unauthenticated access)
-  const shouldFetchData = (!authLoading && !!user) || !!branchId;
+  const shouldFetchData = !!branchId;
   
   console.log("[useBookingData] Fetch Decision:", {
     shouldFetchData,
-    reason: shouldFetchData ? (user ? "authenticated" : "branchId provided") : "no auth or branchId"
+    user: !!user,
+    authLoading,
+    branchId: !!branchId,
+    reason: shouldFetchData ? "branchId provided" : "no branchId"
   });
   
   const { data: bookingsDB = [], isLoading: isLoadingBookings, error: bookingsError } = useBranchBookings(

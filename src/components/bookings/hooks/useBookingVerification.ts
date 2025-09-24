@@ -130,15 +130,27 @@ export function useBookingVerification({ branchId }: BookingVerificationProps) {
     toast.info('Refreshing booking data...', { duration: 2000 });
     
     try {
-      // Clear all booking-related cache
+      // Clear all booking-related cache aggressively
       await queryClient.invalidateQueries({ queryKey: ["branch-bookings"] });
       await queryClient.invalidateQueries({ queryKey: ["client-bookings"] });
       await queryClient.invalidateQueries({ queryKey: ["carer-bookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["carer-appointments-full"] });
+      
+      // Remove all cached data entirely
+      queryClient.removeQueries({ queryKey: ["branch-bookings"] });
+      queryClient.removeQueries({ queryKey: ["client-bookings"] });
+      queryClient.removeQueries({ queryKey: ["carer-bookings"] });
       
       // Force immediate refetch
       await queryClient.refetchQueries({ queryKey: ["branch-bookings", branchId] });
       
       toast.success('Calendar refreshed successfully!');
+      
+      // Additional safety: reload page after a short delay
+      setTimeout(() => {
+        console.log('[useBookingVerification] Performing safety page reload');
+        window.location.reload();
+      }, 2000);
       
     } catch (error) {
       console.error('[useBookingVerification] Force refresh failed:', error);

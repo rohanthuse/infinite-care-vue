@@ -466,6 +466,34 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           if (createdBookingIds.length > 0) {
             console.log("[useBookingHandlers] Starting verification for booking IDs:", createdBookingIds);
             
+            // Navigate to the first booking's date immediately
+            const firstBooking = data[0];
+            if (firstBooking?.start_time) {
+              const bookingDate = new Date(firstBooking.start_time);
+              const dateStr = bookingDate.toISOString().split('T')[0];
+              
+              console.log("[useBookingHandlers] Navigating to booking date:", dateStr);
+              
+              // Update URL to show the booking date and focus on the first booking
+              const params = new URLSearchParams(window.location.search);
+              params.set('date', dateStr);
+              params.set('focusBookingId', createdBookingIds[0]);
+              
+              const newUrl = `${window.location.pathname}?${params.toString()}`;
+              console.log("[useBookingHandlers] New URL:", newUrl);
+              
+              // Use history.pushState to navigate without reloading
+              window.history.pushState({}, '', newUrl);
+              
+              // Trigger a window location change event to notify components
+              window.dispatchEvent(new PopStateEvent('popstate'));
+              
+              toast.success(`Booking created for ${dateStr}!`, {
+                description: 'Navigating to booking date...',
+                duration: 2000
+              });
+            }
+            
             // Start verification process
             const verificationSuccess = await verifyBookingsAppear(createdBookingIds);
             
@@ -478,11 +506,17 @@ export function useBookingHandlers(branchId?: string, user?: any) {
                   onClick: forceRefresh
                 }
               });
-            }
-          }
-        }
-      },
-    });
+             } else {
+               // Force a page reload to ensure fresh data after successful verification
+               setTimeout(() => {
+                 console.log("[useBookingHandlers] Reloading page to ensure fresh data");
+                 window.location.reload();
+               }, 1500);
+             }
+           }
+         }
+       },
+     });
   };
 
   const handleCreateBooking = (bookingData: any, carers: any[] = []) => {

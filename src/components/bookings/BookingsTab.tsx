@@ -94,9 +94,12 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     if (focusBookingId && bookings.length > 0) {
       const targetBooking = bookings.find(b => b.id === focusBookingId);
       if (targetBooking) {
-        // Set the date to match the booking's date
-        const bookingDate = new Date(targetBooking.startTime + ' ' + targetBooking.date);
-        if (bookingDate.toDateString() !== selectedDate.toDateString()) {
+        console.log('[BookingsTab] Found target booking for focus:', targetBooking.id);
+        
+        // Parse the booking date correctly
+        const bookingDate = parseISO(targetBooking.date);
+        if (isValid(bookingDate)) {
+          console.log('[BookingsTab] Setting date to booking date:', bookingDate);
           setSelectedDate(bookingDate);
         }
         
@@ -113,6 +116,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             window.location.pathname;
           window.history.replaceState({}, '', newUrl);
         }, 3000);
+      } else {
+        console.warn('[BookingsTab] Target booking not found:', focusBookingId);
       }
     }
   }, [focusBookingId, bookings, selectedDate]);
