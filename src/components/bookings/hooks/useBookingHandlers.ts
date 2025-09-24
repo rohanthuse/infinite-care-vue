@@ -7,7 +7,7 @@ import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBooking
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
-import { combineDateAndTimeToISO } from "../utils/bookingUtils";
+import { createBookingDateTime, addDaysToDateString, getDayOfWeekFromString } from "../utils/bookingUtils";
 import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
@@ -209,18 +209,10 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     };
     
     if (bookingToUpdate.date && bookingToUpdate.startTime) {
-        // Create date from string components to avoid timezone conversion
-        const dateStr = bookingToUpdate.date.includes('T') ? bookingToUpdate.date.split('T')[0] : bookingToUpdate.date;
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const localDate = new Date(year, month - 1, day);
-        payload.start_time = combineDateAndTimeToISO(localDate, bookingToUpdate.startTime);
+        payload.start_time = createBookingDateTime(bookingToUpdate.date, bookingToUpdate.startTime);
     }
     if (bookingToUpdate.date && bookingToUpdate.endTime) {
-        // Create date from string components to avoid timezone conversion  
-        const dateStr = bookingToUpdate.date.includes('T') ? bookingToUpdate.date.split('T')[0] : bookingToUpdate.date;
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const localDate = new Date(year, month - 1, day);
-        payload.end_time = combineDateAndTimeToISO(localDate, bookingToUpdate.endTime);
+        payload.end_time = createBookingDateTime(bookingToUpdate.date, bookingToUpdate.endTime);
     }
 
     updateBookingMutation.mutate({ bookingId: bookingToUpdate.id, updatedData: payload }, {
@@ -262,12 +254,10 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
-    // Use direct string extraction to avoid timezone conversion issues
-    const proposedDate = bookingData.fromDate instanceof Date 
-      ? bookingData.fromDate.toISOString().split('T')[0]
-      : (typeof bookingData.fromDate === 'string' && bookingData.fromDate.includes('T') 
-         ? bookingData.fromDate.split('T')[0] 
-         : bookingData.fromDate);
+    // Extract date as plain string - no Date objects
+    const proposedDate = typeof bookingData.fromDate === 'string' 
+      ? (bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate)
+      : bookingData.fromDate.toISOString().split('T')[0];
 
     const overlap = checkOverlap(
       bookingData.carerId,
@@ -329,29 +319,21 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
-    // Create dates from components to avoid timezone conversion issues
-    const from = bookingData.fromDate instanceof Date
-      ? bookingData.fromDate
-      : (() => {
-          const dateStr = bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate;
-          const [year, month, day] = dateStr.split('-').map(Number);
-          return new Date(year, month - 1, day);
-        })();
-    const until = bookingData.untilDate instanceof Date
-      ? bookingData.untilDate
-      : (() => {
-          const dateStr = bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate;
-          const [year, month, day] = dateStr.split('-').map(Number);
-          return new Date(year, month - 1, day);
-        })();
+    // Extract date strings - no Date objects needed
+    const fromDateStr = typeof bookingData.fromDate === 'string' 
+      ? (bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate)
+      : bookingData.fromDate.toISOString().split('T')[0];
+    const untilDateStr = typeof bookingData.untilDate === 'string' 
+      ? (bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate)
+      : bookingData.untilDate.toISOString().split('T')[0];
     
-    if (!from || !until) {
+    if (!fromDateStr || !untilDateStr) {
       toast.error("Please select both a start and end date.");
       return;
     }
 
-    // Server-side date validation
-    if (from > until) {
+    // String-based date validation
+    if (fromDateStr > untilDateStr) {
       toast.error("Invalid date range", {
         description: "From date must be before or equal to until date.",
       });
@@ -359,7 +341,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     // Same-day time validation
-    if (from.toDateString() === until.toDateString()) {
+    if (fromDateStr === untilDateStr) {
       const hasInvalidTimes = bookingData.schedules.some((schedule: any) => 
         schedule.startTime && schedule.endTime && schedule.startTime >= schedule.endTime
       );
@@ -404,25 +386,23 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
       const recurrenceFrequencyWeeks = parseInt(bookingData.recurrenceFrequency || "1");
 
-      // Create date objects that maintain day-of-week consistency
-      console.log("[useBookingHandlers] Original dates - from:", from, "until:", until);
-      let curr = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-      const end = new Date(until.getFullYear(), until.getMonth(), until.getDate());
-      console.log("[useBookingHandlers] Date range generation - curr:", curr.toDateString(), "end:", end.toDateString());
+      // Pure string-based date processing - no Date objects
+      console.log("[useBookingHandlers] Date range generation - from:", fromDateStr, "until:", untilDateStr);
+      let currentDateStr = fromDateStr;
 
-      while (curr <= end) {
-        const dayNum = curr.getDay();
-        console.log("[useBookingHandlers] Processing date:", curr.toDateString(), "dayNum:", dayNum, "selected:", daysSelected[dayNum]);
+      while (currentDateStr <= untilDateStr) {
+        const dayNum = getDayOfWeekFromString(currentDateStr);
+        console.log("[useBookingHandlers] Processing date:", currentDateStr, "dayNum:", dayNum, "selected:", daysSelected[dayNum]);
         
         if (daysSelected[dayNum]) {
-          console.log("[useBookingHandlers] Creating booking for date:", curr.toDateString(), "time:", startTime, "-", endTime);
+          console.log("[useBookingHandlers] Creating booking for date:", currentDateStr, "time:", startTime, "-", endTime);
           
           bookingsToCreate.push({
             branch_id: branchId,
             client_id: bookingData.clientId,
             staff_id: bookingData.carerId,
-            start_time: combineDateAndTimeToISO(curr, startTime),
-            end_time: combineDateAndTimeToISO(curr, endTime),
+            start_time: createBookingDateTime(currentDateStr, startTime),
+            end_time: createBookingDateTime(currentDateStr, endTime),
             service_id: serviceId,
             revenue: null,
             status: "assigned",
@@ -430,13 +410,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           });
           
           console.log("[useBookingHandlers] Generated booking times:", {
-            date: curr.toDateString(),
-            start_time: combineDateAndTimeToISO(curr, startTime),
-            end_time: combineDateAndTimeToISO(curr, endTime)
+            date: currentDateStr,
+            start_time: createBookingDateTime(currentDateStr, startTime),
+            end_time: createBookingDateTime(currentDateStr, endTime)
           });
         }
         // Increment by the recurrence frequency in weeks (7 days per week)
-        curr.setDate(curr.getDate() + (recurrenceFrequencyWeeks * 7));
+        currentDateStr = addDaysToDateString(currentDateStr, recurrenceFrequencyWeeks * 7);
       }
     }
 

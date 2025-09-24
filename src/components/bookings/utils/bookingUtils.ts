@@ -1,18 +1,50 @@
 
 import { Booking } from "../BookingTimeGrid";
 
-// Helper: Combine date and time to ISO (preserves user's local time intent)
+// Helper: Pure string-based date-time combination (no Date objects or timezone conversions)
+export function createBookingDateTime(dateString: string, timeString: string): string {
+  // Extract date from string (handle both ISO dates and simple YYYY-MM-DD format)
+  const dateStr = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+  
+  // Ensure time is properly formatted
+  const [h, m] = timeString.split(':');
+  const formattedHour = h.padStart(2, '0');
+  const formattedMinute = m.padStart(2, '0');
+  
+  // Simple string concatenation - no timezone processing
+  return `${dateStr}T${formattedHour}:${formattedMinute}:00`;
+}
+
+// Helper: Add days to a date string without Date objects
+export function addDaysToDateString(dateString: string, days: number): string {
+  // Parse date string manually
+  const [year, month, day] = dateString.split('-').map(Number);
+  
+  // Create date only for arithmetic, then extract result as string
+  const tempDate = new Date(year, month - 1, day);
+  tempDate.setDate(tempDate.getDate() + days);
+  
+  const resultYear = tempDate.getFullYear();
+  const resultMonth = String(tempDate.getMonth() + 1).padStart(2, '0');
+  const resultDay = String(tempDate.getDate()).padStart(2, '0');
+  
+  return `${resultYear}-${resultMonth}-${resultDay}`;
+}
+
+// Helper: Get day of week from date string (0 = Sunday, 1 = Monday, etc.)
+export function getDayOfWeekFromString(dateString: string): number {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const tempDate = new Date(year, month - 1, day);
+  return tempDate.getDay();
+}
+
+// Legacy function - use createBookingDateTime instead
 export function combineDateAndTimeToISO(date: Date, time: string): string {
+  console.warn('combineDateAndTimeToISO is deprecated, use createBookingDateTime with string dates');
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
   const dd = String(date.getDate()).padStart(2, '0');
-  let [h, m] = time.split(':');
-  h = h.padStart(2, '0');
-  m = m.padStart(2, '0');
-  
-  // Create datetime string that preserves the user's local time intent
-  // No timezone conversion - store exactly what user sees (11:00 remains 11:00)
-  return `${yyyy}-${mm}-${dd}T${h}:${m}:00`;
+  return createBookingDateTime(`${yyyy}-${mm}-${dd}`, time);
 }
 
 // Filter bookings by search and status

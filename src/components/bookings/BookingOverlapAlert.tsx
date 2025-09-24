@@ -60,10 +60,10 @@ export function BookingOverlapAlert({
                 <p className="text-red-800 font-medium">
                   <strong>SAVE BLOCKED:</strong> <strong>{carerName}</strong> has conflicting appointments on{" "}
                   <strong>{(() => {
-                    // Format date directly from string to avoid timezone conversion
+                    // Simple date formatting without timezone conversion
                     const dateStr = proposedDate.includes('T') ? proposedDate.split('T')[0] : proposedDate;
                     const [year, month, day] = dateStr.split('-');
-                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString();
+                    return `${month}/${day}/${year}`;
                   })()}</strong> at{" "}
                   <strong>{proposedTime}</strong>.
                 </p>
