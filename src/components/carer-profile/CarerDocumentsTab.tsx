@@ -1,0 +1,437 @@
+import React, { useState } from 'react';
+import { Upload, FileText, Eye, Download, Plus, X, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useCarerDocuments } from '@/hooks/useCarerDocuments';
+
+interface CarerDocumentsTabProps {
+  carerId: string;
+}
+
+// Document upload function
+const uploadStaffDocument = async (file: File, carerId: string, documentType: string) => {
+  console.log('[CarerDocumentsTab] Starting upload for:', file.name, 'Type:', documentType);
+  
+  // Get current session to verify auth
+  const { data: { session }, error: authError } = await supabase.auth.getSession();
+  if (authError || !session) {
+    console.error('[CarerDocumentsTab] Authentication error:', authError);
+    throw new Error('User not authenticated or session expired');
+  }
+  
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const filePath = `${carerId}/${fileName}`;
+  
+  console.log('[CarerDocumentsTab] Uploading to path:', filePath);
+  
+  try {
+    // Upload to staff-documents storage bucket
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('staff-documents')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('[CarerDocumentsTab] Upload error:', uploadError);
+      throw new Error(`Failed to upload file: ${uploadError.message}`);
+    }
+
+    console.log('[CarerDocumentsTab] File uploaded successfully to storage');
+
+    const formattedSize = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+
+    // Use the bypass RLS function to create document record
+    const { data: result, error: docError } = await supabase.rpc('upload_staff_document_bypass_rls', {
+      p_staff_id: carerId,
+      p_document_type: documentType,
+      p_file_path: filePath,
+      p_file_size: formattedSize
+    });
+    
+    if (docError) {
+      console.error('[CarerDocumentsTab] Database function error:', docError);
+      // Clean up uploaded file if database insert fails
+      await supabase.storage.from('staff-documents').remove([filePath]);
+      throw new Error(`Failed to save document: ${docError.message}`);
+    }
+    
+    // Check if the function returned an error result
+    const resultObj = result as { success: boolean; error?: string; document_id?: string };
+    if (resultObj && !resultObj.success) {
+      // Clean up uploaded file if document creation fails
+      await supabase.storage.from('staff-documents').remove([filePath]);
+      throw new Error(resultObj.error || 'Unknown error from upload function');
+    }
+
+    const documentId = resultObj?.document_id || 'unknown';
+    console.log('[CarerDocumentsTab] Document record created with ID:', documentId);
+    return { id: documentId, file_path: filePath, document_type: documentType };
+  } catch (error) {
+    console.error('[CarerDocumentsTab] Upload failed:', error);
+    throw error;
+  }
+};
+
+// Document download function
+const downloadDocument = async (filePath: string, fileName: string) => {
+  try {
+    const { data, error } = await supabase.storage
+      .from('staff-documents')
+      .download(filePath);
+
+    if (error) {
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+
+    // Create download link
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('[CarerDocumentsTab] Download failed:', error);
+    throw error;
+  }
+};
+
+export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId }) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState('');
+
+  // Fetch documents using existing hook
+  const { data: documents = [], isLoading } = useCarerDocuments(carerId);
+
+  // Upload mutation
+  const uploadMutation = useMutation({
+    mutationFn: ({ file, documentType }: { file: File; documentType: string }) => 
+      uploadStaffDocument(file, carerId, documentType),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['carer-documents', carerId] });
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setDocumentType('');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Upload Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Download mutation
+  const downloadMutation = useMutation({
+    mutationFn: ({ filePath, fileName }: { filePath: string; fileName: string }) => 
+      downloadDocument(filePath, fileName),
+    onSuccess: () => {
+      toast({
+        title: "Download Started",
+        description: "File download has begun",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Download Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUploadSubmit = () => {
+    if (!selectedFile || !documentType) {
+      toast({
+        title: "Missing Information",
+        description: "Please select a file and document type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    uploadMutation.mutate({ file: selectedFile, documentType });
+  };
+
+  const handleDownload = (doc: any) => {
+    if (!doc.file_path) {
+      toast({
+        title: "Download Error",
+        description: "File path not available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileName = doc.source_type === 'training_certification' 
+      ? (doc.file_name || `${doc.training_course_name}_certificate.pdf`)
+      : `${doc.document_type}.pdf`;
+
+    downloadMutation.mutate({ 
+      filePath: doc.file_path, 
+      fileName 
+    });
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Not specified";
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'valid':
+      case 'completed':
+      case 'active':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'expired':
+      case 'rejected':
+        return 'bg-red-50 text-red-700 border-red-200';
+      case 'pending':
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+      default:
+        return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
+  };
+
+  const documentTypeOptions = [
+    'DBS Certificate',
+    'Professional Certification',
+    'Training Certificate',
+    'Personal ID',
+    'Reference',
+    'Medical Certificate',
+    'Insurance Document',
+    'Contract',
+    'Other'
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-2 text-muted-foreground">Loading documents...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Upload Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Documents & Certifications</h3>
+          <p className="text-sm text-gray-600">Manage staff documents and certifications</p>
+        </div>
+        <Button 
+          onClick={() => setUploadDialogOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Upload Document
+        </Button>
+      </div>
+
+      {/* Documents List */}
+      <Card>
+        <CardContent className="p-6">
+          {documents.length > 0 ? (
+            <div className="space-y-4">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="h-4 w-4 text-gray-500" />
+                      <p className="font-semibold text-gray-900">
+                        {doc.source_type === 'training_certification' ? doc.file_name : doc.document_type}
+                      </p>
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          doc.source_type === 'training_certification' 
+                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                            : 'bg-gray-50 text-gray-700 border-gray-200'
+                        }
+                      >
+                        {doc.source_type === 'training_certification' ? 'Training Certification' : 'Document'}
+                      </Badge>
+                    </div>
+                    {doc.source_type === 'training_certification' && doc.training_course_name && (
+                      <p className="text-sm text-blue-600 font-medium">
+                        Course: {doc.training_course_name}
+                      </p>
+                    )}
+                    <p className="text-sm text-gray-600">
+                      {doc.source_type === 'training_certification' && doc.completion_date
+                        ? `Completed: ${formatDate(doc.completion_date)}`
+                        : doc.expiry_date 
+                          ? `Expires: ${formatDate(doc.expiry_date)}` 
+                          : `Created: ${formatDate(doc.created_at)}`
+                      }
+                    </p>
+                    {doc.file_size && (
+                      <p className="text-xs text-gray-500">Size: {doc.file_size}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="outline" 
+                      className={getStatusColor(doc.status)}
+                    >
+                      {doc.status}
+                    </Badge>
+                    {doc.file_path && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(doc)}
+                        disabled={downloadMutation.isPending}
+                        className="flex items-center gap-1"
+                      >
+                        <Download className="h-3 w-3" />
+                        Download
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">No documents on file</p>
+              <Button 
+                onClick={() => setUploadDialogOpen(true)}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Upload First Document
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Upload Staff Document</DialogTitle>
+            <DialogDescription>
+              Upload a new document for this staff member's profile.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="document-type">Document Type</Label>
+              <Select value={documentType} onValueChange={setDocumentType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {documentTypeOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="file-upload">File</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                />
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">
+                    {selectedFile ? selectedFile.name : 'Click to select a file or drag and drop'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Supported formats: PDF, DOC, DOCX, JPG, PNG, GIF
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            {selectedFile && (
+              <div className="flex items-center gap-2 p-2 bg-blue-50 rounded border">
+                <FileText className="h-4 w-4 text-blue-600" />
+                <span className="text-sm text-blue-800">{selectedFile.name}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedFile(null)}
+                  className="ml-auto"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUploadSubmit}
+              disabled={!selectedFile || !documentType || uploadMutation.isPending}
+            >
+              {uploadMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Document
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};

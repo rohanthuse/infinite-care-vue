@@ -13,6 +13,7 @@ import { useCarerDocuments } from "@/hooks/useCarerDocuments";
 import { useCarerPerformance } from "@/hooks/useCarerPerformance";
 import { CarerScheduleTab } from "@/components/carer-profile/CarerScheduleTab";
 import { CarerPerformanceTab } from "@/components/carer-profile/CarerPerformanceTab";
+import { CarerDocumentsTab } from "@/components/carer-profile/CarerDocumentsTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 
@@ -374,75 +375,9 @@ const CarerProfilePage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="documents" className="mt-6">
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-teal-50 to-cyan-50">
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-teal-600" />
-                      Documents & Certifications
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    {documentsLoading ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto"></div>
-                        <p className="text-gray-500 mt-2">Loading documents...</p>
-                      </div>
-                    ) : documents.length > 0 ? (
-                      <div className="space-y-4">
-                        {documents.map((doc) => (
-                          <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <p className="font-semibold text-gray-900">
-                                  {doc.source_type === 'training_certification' ? doc.file_name : doc.document_type}
-                                </p>
-                                <Badge 
-                                  variant="outline" 
-                                  className={
-                                    doc.source_type === 'training_certification' 
-                                      ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                                      : 'bg-gray-50 text-gray-700 border-gray-200'
-                                  }
-                                >
-                                  {doc.source_type === 'training_certification' ? 'Training Certification' : 'Document'}
-                                </Badge>
-                              </div>
-                              {doc.source_type === 'training_certification' && doc.training_course_name && (
-                                <p className="text-sm text-blue-600 font-medium">
-                                  Course: {doc.training_course_name}
-                                </p>
-                              )}
-                              <p className="text-sm text-gray-600">
-                                {doc.source_type === 'training_certification' && doc.completion_date
-                                  ? `Completed: ${formatDate(doc.completion_date)}`
-                                  : doc.expiry_date 
-                                    ? `Expires: ${formatDate(doc.expiry_date)}` 
-                                    : `Created: ${formatDate(doc.created_at)}`
-                                }
-                              </p>
-                              {doc.file_size && (
-                                <p className="text-xs text-gray-500">Size: {doc.file_size}</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant="outline" 
-                                className={doc.status === 'valid' || doc.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}
-                              >
-                                {doc.status}
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">No documents on file</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <ErrorBoundary>
+                  <CarerDocumentsTab carerId={carerId || ''} />
+                </ErrorBoundary>
               </TabsContent>
 
               <TabsContent value="performance" className="mt-6">
