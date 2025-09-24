@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { User, Edit, Save, X } from "lucide-react";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CarerPersonalDetailsTabProps {
   carerId: string;
@@ -28,13 +29,39 @@ export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = (
     emergency_contact_phone: carer?.emergency_contact_phone || ''
   });
 
-  const handleSave = () => {
-    // TODO: Implement save functionality with Supabase
-    toast({
-      title: "Personal details updated",
-      description: "Changes have been saved successfully."
-    });
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          date_of_birth: formData.date_of_birth,
+          national_insurance_number: formData.national_insurance_number,
+          emergency_contact_name: formData.emergency_contact_name,
+          emergency_contact_phone: formData.emergency_contact_phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', carerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Personal details updated",
+        description: "Changes have been saved successfully."
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating staff details:', error);
+      toast({
+        title: "Error updating details",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleCancel = () => {

@@ -3,71 +3,59 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Award, Book, Calendar, Plus, CheckCircle, Clock } from "lucide-react";
+import { Award, Book, Calendar, Plus, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { useCarerTraining } from "@/hooks/useCarerTraining";
 
 interface CarerTrainingTabProps {
   carerId: string;
 }
 
 export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) => {
-  const trainingRecords = [
-    {
-      id: 1,
-      title: 'Safeguarding Adults',
-      provider: 'Care Training Academy',
-      completedDate: '2023-12-15',
-      expiryDate: '2025-12-15',
-      status: 'completed',
-      certificateUrl: '#',
-      category: 'Mandatory'
-    },
-    {
-      id: 2,
-      title: 'First Aid Training',
-      provider: 'Red Cross',
-      completedDate: '2023-06-20',
-      expiryDate: '2024-06-20',
-      status: 'expiring',
-      certificateUrl: '#',
-      category: 'Mandatory'
-    },
-    {
-      id: 3,
-      title: 'Dementia Care Specialist',
-      provider: 'Alzheimer Society',
-      completedDate: '2023-08-10',
-      expiryDate: null,
-      status: 'completed',
-      certificateUrl: '#',
-      category: 'Specialist'
-    },
-    {
-      id: 4,
-      title: 'Manual Handling',
-      provider: 'Health & Safety Institute',
-      completedDate: null,
-      expiryDate: null,
-      status: 'pending',
-      certificateUrl: null,
-      category: 'Mandatory'
-    }
-  ];
+  const { trainingRecords = [], stats, isLoading, error } = useCarerTraining();
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
         return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'expiring':
-        return <Badge className="bg-amber-100 text-amber-800">Expiring</Badge>;
-      case 'pending':
-        return <Badge className="bg-red-100 text-red-800">Pending</Badge>;
+      case 'expired':
+        return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
+      case 'in-progress':
+        return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>;
+      case 'not-started':
+        return <Badge className="bg-gray-100 text-gray-800">Not Started</Badge>;
+      case 'renewal-required':
+        return <Badge className="bg-amber-100 text-amber-800">Renewal Required</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
-  const completedCount = trainingRecords.filter(record => record.status === 'completed').length;
-  const trainingProgress = (completedCount / trainingRecords.length) * 100;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading training records...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Error Loading Training Data</h3>
+            <p className="text-muted-foreground">Unable to load training records. Please try again later.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -81,21 +69,17 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{completedCount}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats?.completedCount || 0}</div>
               <div className="text-sm text-muted-foreground">Completed</div>
             </div>
             
             <div className="text-center p-4 bg-amber-50 rounded-lg">
-              <div className="text-2xl font-bold text-amber-600">
-                {trainingRecords.filter(r => r.status === 'expiring').length}
-              </div>
-              <div className="text-sm text-muted-foreground">Expiring Soon</div>
+              <div className="text-2xl font-bold text-amber-600">{stats?.expiredCount || 0}</div>
+              <div className="text-sm text-muted-foreground">Expired</div>
             </div>
             
             <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">
-                {trainingRecords.filter(r => r.status === 'pending').length}
-              </div>
+              <div className="text-2xl font-bold text-red-600">{stats?.pendingCount || 0}</div>
               <div className="text-sm text-muted-foreground">Pending</div>
             </div>
           </div>
@@ -103,9 +87,9 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
           <div className="mb-4">
             <div className="flex justify-between text-sm mb-2">
               <span>Training Completion</span>
-              <span>{Math.round(trainingProgress)}%</span>
+              <span>{stats?.completionPercentage || 0}%</span>
             </div>
-            <Progress value={trainingProgress} className="h-3" />
+            <Progress value={stats?.completionPercentage || 0} className="h-3" />
           </div>
         </CardContent>
       </Card>
@@ -123,49 +107,65 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {trainingRecords.map((record) => (
-              <div key={record.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                    record.status === 'completed' ? 'bg-green-100' :
-                    record.status === 'expiring' ? 'bg-amber-100' : 'bg-red-100'
-                  }`}>
-                    {record.status === 'completed' ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-amber-600" />
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium">{record.title}</h4>
-                    <p className="text-sm text-muted-foreground">{record.provider}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <span>{record.category}</span>
-                      {record.completedDate && (
-                        <>
-                          <span>•</span>
-                          <span>Completed: {new Date(record.completedDate).toLocaleDateString()}</span>
-                        </>
-                      )}
-                      {record.expiryDate && (
-                        <>
-                          <span>•</span>
-                          <span>Expires: {new Date(record.expiryDate).toLocaleDateString()}</span>
-                        </>
+            {trainingRecords.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Book className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No training records found</p>
+              </div>
+            ) : (
+              trainingRecords.map((record) => (
+                <div key={record.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                      record.status === 'completed' ? 'bg-green-100' :
+                      record.status === 'expired' ? 'bg-red-100' :
+                      record.status === 'in-progress' ? 'bg-blue-100' : 'bg-gray-100'
+                    }`}>
+                      {record.status === 'completed' ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      ) : record.status === 'expired' ? (
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-blue-600" />
                       )}
                     </div>
+                    
+                    <div>
+                      <h4 className="font-medium">{record.training_course?.title}</h4>
+                      <p className="text-sm text-muted-foreground">{record.training_course?.category}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        {record.training_course?.is_mandatory && <span>Mandatory</span>}
+                        {record.completion_date && (
+                          <>
+                            <span>•</span>
+                            <span>Completed: {new Date(record.completion_date).toLocaleDateString()}</span>
+                          </>
+                        )}
+                        {record.expiry_date && (
+                          <>
+                            <span>•</span>
+                            <span>Expires: {new Date(record.expiry_date).toLocaleDateString()}</span>
+                          </>
+                        )}
+                        {record.progress_percentage && record.status === 'in-progress' && (
+                          <>
+                            <span>•</span>
+                            <span>Progress: {record.progress_percentage}%</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(record.status)}
+                    {record.evidence_files && record.evidence_files.length > 0 && (
+                      <Button size="sm" variant="outline">View Certificate</Button>
+                    )}
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(record.status)}
-                  {record.certificateUrl && (
-                    <Button size="sm" variant="outline">View Certificate</Button>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -179,21 +179,26 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-              <div>
-                <p className="font-medium">Advanced Dementia Care</p>
-                <p className="text-sm text-muted-foreground">Scheduled for March 25, 2024</p>
+            {trainingRecords.filter(record => record.status === 'not-started').length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No upcoming training scheduled</p>
               </div>
-              <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-              <div>
-                <p className="font-medium">Mental Health First Aid</p>
-                <p className="text-sm text-muted-foreground">Scheduled for April 10, 2024</p>
-              </div>
-              <Badge className="bg-green-100 text-green-800">Enrolled</Badge>
-            </div>
+            ) : (
+              trainingRecords
+                .filter(record => record.status === 'not-started')
+                .map((record) => (
+                  <div key={record.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{record.training_course?.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Assigned: {new Date(record.assigned_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge className="bg-blue-100 text-blue-800">Scheduled</Badge>
+                  </div>
+                ))
+            )}
           </div>
         </CardContent>
       </Card>
