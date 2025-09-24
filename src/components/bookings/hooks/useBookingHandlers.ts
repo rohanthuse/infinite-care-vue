@@ -7,7 +7,7 @@ import { Booking } from "../BookingTimeGrid";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
 import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
-import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
+// Removed deprecated useBookingOverlapCheck - using useConsolidatedValidation instead
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
 import { createBookingDateTime, formatDateForBooking } from "../utils/dateUtils";
 import { useConsolidatedValidation } from "./useConsolidatedValidation";
@@ -51,7 +51,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
   const createBookingMutation = useCreateBooking(branchId);
   const updateBookingMutation = useUpdateBooking(branchId);
-  const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
+  // Removed deprecated useBookingOverlapCheck - using useConsolidatedValidation instead
   const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
   const { validateBooking, isValidating: isEnhancedValidating } = useConsolidatedValidation(branchId);
   const { isVerifying, verifyBookingsAppear, forceRefresh } = useBookingVerification({ branchId });
@@ -182,14 +182,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
           
           const selectedCarer = carers.find(c => c.id === bookingToUpdate.carerId);
           
-          // Use available carers from validation result if available
-          const availableCarers = validation.availableCarers || findAvailableCarers(
-            carers,
-            bookingToUpdate.startTime,
-            bookingToUpdate.endTime,
-            bookingToUpdate.date,
-            bookingToUpdate.id
-          );
+          // Use available carers from validation result (new consolidated validation)
+          const availableCarers = validation.availableCarers || [];
 
           setUpdateOverlapData({
             conflictingBookings: validation.conflictingBookings || [],
@@ -271,8 +265,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     });
   };
 
-  const checkForOverlapsAndCreate = (bookingData: any, carers: any[]) => {
-    console.log("[useBookingHandlers] Starting overlap check and creation process");
+  const checkForOverlapsAndCreate = async (bookingData: any, carers: any[]) => {
+    console.log("[useBookingHandlers] Starting overlap check and creation process with consolidated validation");
     
     // Enhanced validation first
     const validation = validateBookingFormData(bookingData);
@@ -317,45 +311,55 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     const firstBookingDate = preview.dates[0];
-    console.log("[useBookingHandlers] Checking overlap for first booking date:", firstBookingDate);
+    console.log("[useBookingHandlers] Using consolidated validation for first booking date:", firstBookingDate);
 
-    const overlap = checkOverlap(
-      bookingData.carerId,
-      firstSchedule.startTime,
-      firstSchedule.endTime,
-      firstBookingDate
-    );
-
-    if (overlap.hasOverlap) {
-      const selectedCarer = carers.find(c => c.id === bookingData.carerId);
-      const carerName = selectedCarer?.name || "Unknown Carer";
-      const availableCarers = findAvailableCarers(
-        carers,
+    try {
+      // Use the new consolidated validation system instead of deprecated checkOverlap
+      const consolidatedValidation = await validateBooking(
+        bookingData.carerId,
         firstSchedule.startTime,
         firstSchedule.endTime,
         firstBookingDate
       );
 
-      toast.error(`${carerName} Already Assigned`, {
-        description: `This carer has ${overlap.conflictingBookings.length} conflicting appointment${overlap.conflictingBookings.length > 1 ? 's' : ''} at the selected time`,
-        duration: 5000,
-        action: {
-          label: "View Alternatives",
-          onClick: () => setOverlapAlertOpen(true)
-        }
-      });
+      console.log("[useBookingHandlers] Consolidated validation result:", consolidatedValidation);
 
-      setOverlapData({
-        conflictingBookings: overlap.conflictingBookings,
-        carerName,
-        proposedTime: `${firstSchedule.startTime} - ${firstSchedule.endTime}`,
-        proposedDate: firstBookingDate,
-        availableCarers,
-      });
-      setPendingBookingData(bookingData);
-      setOverlapAlertOpen(true);
-    } else {
+      if (!consolidatedValidation.isValid) {
+        const selectedCarer = carers.find(c => c.id === bookingData.carerId);
+        const carerName = selectedCarer?.name || "Unknown Carer";
+        
+        // Use available carers from validation result
+        const availableCarers = consolidatedValidation.availableCarers || [];
+
+        toast.error(`${carerName} Already Assigned`, {
+          description: consolidatedValidation.error || `This carer has conflicting appointments at the selected time`,
+          duration: 5000,
+          action: {
+            label: "View Alternatives",
+            onClick: () => setOverlapAlertOpen(true)
+          }
+        });
+
+        setOverlapData({
+          conflictingBookings: consolidatedValidation.conflictingBookings || [],
+          carerName,
+          proposedTime: `${firstSchedule.startTime} - ${firstSchedule.endTime}`,
+          proposedDate: firstBookingDate,
+          availableCarers,
+        });
+        setPendingBookingData(bookingData);
+        setOverlapAlertOpen(true);
+        return;
+      }
+
+      // If validation passes, proceed with booking creation
       proceedWithBookingCreation(bookingData);
+      
+    } catch (error) {
+      console.error("[useBookingHandlers] Error during consolidated validation:", error);
+      toast.error("Failed to validate booking conflicts", {
+        description: "Please try again or contact support if the issue persists"
+      });
     }
   };
 
