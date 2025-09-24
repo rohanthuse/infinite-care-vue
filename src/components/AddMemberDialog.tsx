@@ -58,22 +58,25 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create user");
 
-      // Create the organization member record with the configured permissions
-      const { data, error } = await supabase
-        .from("organization_members")
-        .insert({
-          organization_id: organization.id,
-          user_id: authData.user.id,
-          role,
-          permissions: permissions as any,
-          invited_by: (await supabase.auth.getUser()).data.user?.id,
-          status: 'active',
-        })
-        .select()
-        .single();
+      // Use the new database function to create organization member with proper role assignment
+      const { data, error } = await supabase.rpc('create_organization_member_with_role', {
+        p_organization_id: organization.id,
+        p_user_id: authData.user.id,
+        p_role: role,
+        p_permissions: permissions as any,
+        p_invited_by: (await supabase.auth.getUser()).data.user?.id,
+      });
 
       if (error) throw error;
-      return data;
+      
+      // Return a mock object for consistency
+      return { 
+        id: data, 
+        organization_id: organization.id, 
+        user_id: authData.user.id, 
+        role,
+        status: 'active'
+      };
     },
     onSuccess: () => {
       toast({

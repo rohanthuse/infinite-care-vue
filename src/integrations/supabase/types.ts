@@ -7225,6 +7225,16 @@ export type Database = {
         Args: { p_branch_id: string; p_carer_data: Json }
         Returns: string
       }
+      create_organization_member_with_role: {
+        Args: {
+          p_invited_by?: string
+          p_organization_id: string
+          p_permissions?: Json
+          p_role: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       create_overdue_booking_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -7670,6 +7680,10 @@ export type Database = {
           role: string
         }[]
       }
+      map_org_role_to_system_role: {
+        Args: { org_role: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       notify_unassigned_bookings: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -7712,6 +7726,16 @@ export type Database = {
       sync_client_message_participants: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      sync_organization_members_with_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          action_taken: string
+          email: string
+          org_role: string
+          system_role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
       }
       sync_system_user_to_organization: {
         Args: {
@@ -7818,6 +7842,16 @@ export type Database = {
       user_is_assigned_to_form: {
         Args: { p_form_id: string }
         Returns: boolean
+      }
+      validate_organization_member_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: string
+          has_org_membership: boolean
+          has_user_role: boolean
+          issue_type: string
+          user_id: string
+        }[]
       }
       verify_staff_auth_context: {
         Args: Record<PropertyKey, never>
