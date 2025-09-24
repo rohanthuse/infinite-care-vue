@@ -14,6 +14,25 @@ import { useCarerPerformance } from "@/hooks/useCarerPerformance";
 import { CarerScheduleTab } from "@/components/carer-profile/CarerScheduleTab";
 import { CarerPerformanceTab } from "@/components/carer-profile/CarerPerformanceTab";
 import { CarerDocumentsTab } from "@/components/carer-profile/CarerDocumentsTab";
+import { CarerOverviewTab } from "@/components/carer-profile/CarerOverviewTab";
+import { CarerPersonalDetailsTab } from "@/components/carer-profile/CarerPersonalDetailsTab";
+import { CarerCommunicationTab } from "@/components/carer-profile/CarerCommunicationTab";
+import { CarerSuspendTab } from "@/components/carer-profile/CarerSuspendTab";
+import { CarerQualityAssuranceTab } from "@/components/carer-profile/CarerQualityAssuranceTab";
+import { CarerAttendanceTab } from "@/components/carer-profile/CarerAttendanceTab";
+import { CarerEssentialsTab } from "@/components/carer-profile/CarerEssentialsTab";
+import { CarerEmploymentHistoryTab } from "@/components/carer-profile/CarerEmploymentHistoryTab";
+import { CarerTrainingTab } from "@/components/carer-profile/CarerTrainingTab";
+import { CarerSupportingStatementTab } from "@/components/carer-profile/CarerSupportingStatementTab";
+import { CarerImportantContactTab } from "@/components/carer-profile/CarerImportantContactTab";
+import { CarerReferFriendTab } from "@/components/carer-profile/CarerReferFriendTab";
+import { CarerFormsTab } from "@/components/carer-profile/CarerFormsTab";
+import { CarerSkillsTab } from "@/components/carer-profile/CarerSkillsTab";
+import { CarerTypeOfWorkTab } from "@/components/carer-profile/CarerTypeOfWorkTab";
+import { CarerHobbiesTab } from "@/components/carer-profile/CarerHobbiesTab";
+import { CarerMeetingsTab } from "@/components/carer-profile/CarerMeetingsTab";
+import { CarerRateTab } from "@/components/carer-profile/CarerRateTab";
+import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 
@@ -226,33 +245,31 @@ const CarerProfilePage: React.FC = () => {
 
           {/* Enhanced Main Content */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 mb-6">
-                <TabsTrigger value="details" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Details
-                </TabsTrigger>
-                <TabsTrigger value="schedule" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Schedule
-                </TabsTrigger>
-                <TabsTrigger value="assignments" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Assignments
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Documents
-                </TabsTrigger>
-                <TabsTrigger value="performance" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Performance
-                </TabsTrigger>
-                <TabsTrigger value="bookings" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Bookings
-                </TabsTrigger>
-              </TabsList>
+            <Tabs defaultValue="overview" className="w-full">
+              <div className="overflow-x-auto mb-6">
+                <TabsList className="flex w-max gap-1 p-1">
+                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                  <TabsTrigger value="personal">Personal</TabsTrigger>
+                  <TabsTrigger value="communication">Communication</TabsTrigger>
+                  <TabsTrigger value="suspend">Suspend</TabsTrigger>
+                  <TabsTrigger value="quality">Quality</TabsTrigger>
+                  <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                  <TabsTrigger value="essentials">Essentials</TabsTrigger>
+                  <TabsTrigger value="employment">Employment</TabsTrigger>
+                  <TabsTrigger value="training">Training</TabsTrigger>
+                  <TabsTrigger value="statement">Statement</TabsTrigger>
+                  <TabsTrigger value="contacts">Contacts</TabsTrigger>
+                  <TabsTrigger value="refer">Refer Friend</TabsTrigger>
+                  <TabsTrigger value="forms">Forms</TabsTrigger>
+                  <TabsTrigger value="skills">Skills</TabsTrigger>
+                  <TabsTrigger value="work-type">Work Type</TabsTrigger>
+                  <TabsTrigger value="hobbies">Hobbies</TabsTrigger>
+                  <TabsTrigger value="meetings">Meetings</TabsTrigger>
+                  <TabsTrigger value="documents">Files</TabsTrigger>
+                  <TabsTrigger value="rate">Rate</TabsTrigger>
+                  <TabsTrigger value="settings">Settings</TabsTrigger>
+                </TabsList>
+              </div>
               
               <TabsContent value="details" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
