@@ -3,21 +3,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, CheckCircle, AlertCircle, Plus } from "lucide-react";
-import { useAttendanceRecords } from "@/data/hooks/useAttendanceRecords";
+import { useAttendanceRecords } from "@/hooks/useAttendanceRecords";
+import { useCarerProfileById } from "@/hooks/useCarerProfile";
 
 interface CarerAttendanceTabProps {
   carerId: string;
 }
 
 export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId }) => {
-  const { data: attendanceRecords = [], isLoading, error } = useAttendanceRecords(carerId);
+  const { data: carerProfile } = useCarerProfileById(carerId);
+  const { data: attendanceRecords = [], isLoading, error } = useAttendanceRecords(
+    carerProfile?.branch_id || "", 
+    {
+      attendanceType: 'staff',
+      dateRange: {
+        from: new Date(new Date().setDate(new Date().getDate() - 30)), // Last 30 days
+        to: new Date()
+      }
+    }
+  );
   
-  // Calculate basic stats from the records
+  // Filter records for this specific carer and calculate stats
+  const carerRecords = attendanceRecords.filter(record => 
+    record.person_name === `${carerProfile?.first_name} ${carerProfile?.last_name}`
+  );
+  
   const stats = {
-    attendanceRate: 95,
-    totalHoursThisMonth: Math.round(attendanceRecords.reduce((sum, record) => sum + (record.hours_worked || 0), 0)),
-    lateArrivals: attendanceRecords.filter(r => r.status === 'late').length,
-    absentDays: attendanceRecords.filter(r => r.status === 'absent').length,
+    attendanceRate: carerRecords.length > 0 ? Math.round((carerRecords.filter(r => r.status === 'present').length / carerRecords.length) * 100) : 0,
+    totalHoursThisMonth: Math.round(carerRecords.reduce((sum, record) => sum + (record.hours_worked || 0), 0)),
+    lateArrivals: carerRecords.filter(r => r.status === 'late').length,
+    absentDays: carerRecords.filter(r => r.status === 'absent').length,
   };
 
   const getStatusBadge = (status: string) => {
@@ -111,7 +126,7 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {attendanceRecords.length === 0 ? (
+            {carerRecords.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No attendance records found</p>
@@ -164,13 +179,13 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {attendanceRecords.filter(r => ['sick', 'holiday'].includes(r.status)).length === 0 ? (
+            {carerRecords.filter(r => ['sick', 'holiday'].includes(r.status)).length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>No recent leave records</p>
               </div>
             ) : (
-              attendanceRecords
+              carerRecords
                 .filter(r => ['sick', 'holiday'].includes(r.status))
                 .slice(0, 5)
                 .map((record) => (
