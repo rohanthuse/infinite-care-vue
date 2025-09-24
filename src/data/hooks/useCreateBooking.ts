@@ -8,7 +8,7 @@ export interface CreateBookingInput {
   staff_id?: string; // Made optional to support unassigned bookings
   start_time: string; // ISO string
   end_time: string;   // ISO string
-  service_id: string; // Required service ID
+  service_id: string | null; // Optional service ID for unassigned bookings
   revenue?: number;
   status?: string; // <-- ADDED
   notes?: string;

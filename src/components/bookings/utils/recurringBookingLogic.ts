@@ -172,7 +172,7 @@ export function generateRecurringBookings(
             staff_id: bookingData.carerId || undefined,
             start_time: startDateTime,
             end_time: endDateTime,
-            service_id: serviceId || '',
+            service_id: serviceId || null,
             revenue: null,
             status: bookingData.carerId ? "assigned" : "unassigned",
             notes: bookingData.notes || null,

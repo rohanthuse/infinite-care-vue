@@ -158,6 +158,14 @@ export function validateBookingFormData(data: BookingFormData): BookingValidatio
   if (!data.carerId) {
     warnings.push('No carer selected - booking will need manual assignment');
   }
+
+  // Add validation for service selection when no staff is assigned
+  const hasServices = data.schedules.some(schedule => 
+    schedule.services && schedule.services.length > 0 && schedule.services[0]
+  );
+  if (!data.carerId && !hasServices) {
+    warnings.push('No service selected - booking will be created without a specific service');
+  }
   
   return {
     isValid: errors.length === 0,
