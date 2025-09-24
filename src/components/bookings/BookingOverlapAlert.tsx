@@ -59,7 +59,12 @@ export function BookingOverlapAlert({
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                 <p className="text-red-800 font-medium">
                   <strong>SAVE BLOCKED:</strong> <strong>{carerName}</strong> has conflicting appointments on{" "}
-                  <strong>{new Date(proposedDate).toLocaleDateString()}</strong> at{" "}
+                  <strong>{(() => {
+                    // Format date directly from string to avoid timezone conversion
+                    const dateStr = proposedDate.includes('T') ? proposedDate.split('T')[0] : proposedDate;
+                    const [year, month, day] = dateStr.split('-');
+                    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString();
+                  })()}</strong> at{" "}
                   <strong>{proposedTime}</strong>.
                 </p>
                 <p className="text-red-700 text-sm mt-2">

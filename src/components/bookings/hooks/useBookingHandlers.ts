@@ -209,10 +209,18 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     };
     
     if (bookingToUpdate.date && bookingToUpdate.startTime) {
-        payload.start_time = combineDateAndTimeToISO(new Date(bookingToUpdate.date), bookingToUpdate.startTime);
+        // Create date from string components to avoid timezone conversion
+        const dateStr = bookingToUpdate.date.includes('T') ? bookingToUpdate.date.split('T')[0] : bookingToUpdate.date;
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const localDate = new Date(year, month - 1, day);
+        payload.start_time = combineDateAndTimeToISO(localDate, bookingToUpdate.startTime);
     }
     if (bookingToUpdate.date && bookingToUpdate.endTime) {
-        payload.end_time = combineDateAndTimeToISO(new Date(bookingToUpdate.date), bookingToUpdate.endTime);
+        // Create date from string components to avoid timezone conversion  
+        const dateStr = bookingToUpdate.date.includes('T') ? bookingToUpdate.date.split('T')[0] : bookingToUpdate.date;
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const localDate = new Date(year, month - 1, day);
+        payload.end_time = combineDateAndTimeToISO(localDate, bookingToUpdate.endTime);
     }
 
     updateBookingMutation.mutate({ bookingId: bookingToUpdate.id, updatedData: payload }, {
@@ -254,9 +262,12 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
+    // Use direct string extraction to avoid timezone conversion issues
     const proposedDate = bookingData.fromDate instanceof Date 
-      ? bookingData.fromDate.toISOString().slice(0, 10)
-      : new Date(bookingData.fromDate).toISOString().slice(0, 10);
+      ? bookingData.fromDate.toISOString().split('T')[0]
+      : (typeof bookingData.fromDate === 'string' && bookingData.fromDate.includes('T') 
+         ? bookingData.fromDate.split('T')[0] 
+         : bookingData.fromDate);
 
     const overlap = checkOverlap(
       bookingData.carerId,
@@ -318,12 +329,21 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
+    // Create dates from components to avoid timezone conversion issues
     const from = bookingData.fromDate instanceof Date
       ? bookingData.fromDate
-      : new Date(bookingData.fromDate);
+      : (() => {
+          const dateStr = bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate;
+          const [year, month, day] = dateStr.split('-').map(Number);
+          return new Date(year, month - 1, day);
+        })();
     const until = bookingData.untilDate instanceof Date
       ? bookingData.untilDate
-      : new Date(bookingData.untilDate);
+      : (() => {
+          const dateStr = bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate;
+          const [year, month, day] = dateStr.split('-').map(Number);
+          return new Date(year, month - 1, day);
+        })();
     
     if (!from || !until) {
       toast.error("Please select both a start and end date.");
@@ -384,11 +404,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
       const recurrenceFrequencyWeeks = parseInt(bookingData.recurrenceFrequency || "1");
 
-      // Safe date cloning that preserves the original date without timezone conversion
+      // Create date objects that maintain day-of-week consistency
       console.log("[useBookingHandlers] Original dates - from:", from, "until:", until);
       let curr = new Date(from.getFullYear(), from.getMonth(), from.getDate());
       const end = new Date(until.getFullYear(), until.getMonth(), until.getDate());
-      console.log("[useBookingHandlers] Safe cloned dates - curr:", curr, "end:", end);
+      console.log("[useBookingHandlers] Date range generation - curr:", curr.toDateString(), "end:", end.toDateString());
 
       while (curr <= end) {
         const dayNum = curr.getDay();
