@@ -379,7 +379,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     // Create single booking directly without recurring logic
+    console.log("[useBookingHandlers] Original fromDate from form data:", bookingData.fromDate);
+    console.log("[useBookingHandlers] Original fromDate type:", typeof bookingData.fromDate);
+    console.log("[useBookingHandlers] Original fromDate toString:", bookingData.fromDate?.toString());
+    
     const bookingDateStr = formatDateForBooking(bookingData.fromDate);
+    console.log("[useBookingHandlers] Formatted booking date string:", bookingDateStr);
+    
     const singleBooking = {
       branch_id: branchId,
       client_id: bookingData.clientId,
@@ -390,6 +396,9 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       status: bookingData.carerId ? "assigned" : "unassigned",
       notes: bookingData.notes || null,
     };
+    
+    console.log("[useBookingHandlers] Final booking object with start_time:", singleBooking.start_time);
+    console.log("[useBookingHandlers] Final booking object with end_time:", singleBooking.end_time);
 
     console.log("[useBookingHandlers] Creating single booking:", singleBooking);
 

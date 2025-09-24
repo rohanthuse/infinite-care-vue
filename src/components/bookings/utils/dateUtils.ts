@@ -45,14 +45,21 @@ export function addDaysToDateString(dateString: string, days: number): string {
 
 /**
  * Create booking datetime string from date and time components
+ * Creates ISO datetime string that preserves the intended date and time
  */
 export function createBookingDateTime(dateString: string, timeString: string): string {
+  console.log('[createBookingDateTime] Input dateString:', dateString);
+  console.log('[createBookingDateTime] Input timeString:', timeString);
+  
   const dateStr = dateString.includes('T') ? dateString.split('T')[0] : dateString;
   const [h, m] = timeString.split(':');
   const formattedHour = h.padStart(2, '0');
   const formattedMinute = m.padStart(2, '0');
   
-  return `${dateStr}T${formattedHour}:${formattedMinute}:00`;
+  const result = `${dateStr}T${formattedHour}:${formattedMinute}:00`;
+  console.log('[createBookingDateTime] Created datetime:', result);
+  
+  return result;
 }
 
 /**
@@ -194,14 +201,24 @@ export function isValidTimeString(timeString: string): boolean {
 
 /**
  * Format date for booking storage (timezone-safe)
- * Converts Date object to YYYY-MM-DD format without timezone conversion issues
+ * Converts Date object to YYYY-MM-DD format using local timezone methods
+ * This preserves the exact date selected by the user without timezone conversion
  */
 export function formatDateForBooking(date: Date): string {
+  console.log('[formatDateForBooking] Input date:', date);
+  console.log('[formatDateForBooking] Input date toString:', date.toString());
+  console.log('[formatDateForBooking] Input date toDateString:', date.toDateString());
+  
+  // Use local timezone methods to preserve the user-selected date
+  // This prevents the common "off by one day" bug when dates cross timezone boundaries
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   
-  return `${year}-${month}-${day}`;
+  const result = `${year}-${month}-${day}`;
+  console.log('[formatDateForBooking] Formatted result:', result);
+  
+  return result;
 }
 
 /**
