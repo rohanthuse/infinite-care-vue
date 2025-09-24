@@ -6,7 +6,7 @@ import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
 import { EditBookingDialog } from "./EditBookingDialog";
-import { BookingDebugPanel } from "./BookingDebugPanel";
+
 import { Maximize2, Minimize2, Calendar, Clock, AlertCircle } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
 import { DragDropContext, Droppable, DropResult } from "react-beautiful-dnd";
@@ -821,9 +821,6 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      {/* Debug Panel - only shown in development */}
-      <BookingDebugPanel branchId={branchId} selectedDate={date} />
     </div>
   );
 };
