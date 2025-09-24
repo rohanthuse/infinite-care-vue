@@ -267,6 +267,14 @@ export function useBookingHandlers(branchId?: string, user?: any) {
 
   const checkForOverlapsAndCreate = async (bookingData: any, carers: any[]) => {
     console.log("[useBookingHandlers] Starting overlap check and creation process with consolidated validation");
+    console.log("[useBookingHandlers] 🎯 RAW BOOKING DATA:", {
+      fromDate: bookingData.fromDate,
+      fromDateType: typeof bookingData.fromDate,
+      fromDateString: bookingData.fromDate?.toString(),
+      untilDate: bookingData.untilDate,
+      carerId: bookingData.carerId,
+      schedules: bookingData.schedules
+    });
     
     // Enhanced validation first
     const validation = validateBookingFormData(bookingData);
@@ -297,7 +305,15 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     // Preview the bookings to find the first occurrence for overlap checking
+    console.log("[useBookingHandlers] 🎯 GENERATING PREVIEW TO GET FIRST BOOKING DATE...");
     const preview = previewRecurringBookings(bookingData, branchId || '');
+    console.log("[useBookingHandlers] 🎯 PREVIEW RESULT:", {
+      dates: preview.dates,
+      totalBookings: preview.totalBookings,
+      errors: preview.errors,
+      dayBreakdown: preview.dayBreakdown
+    });
+    
     if (preview.errors.length > 0) {
       preview.errors.forEach(error => {
         toast.error("Preview Generation Failed", { description: error });
@@ -311,7 +327,14 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
 
     const firstBookingDate = preview.dates[0];
-    console.log("[useBookingHandlers] Using consolidated validation for first booking date:", firstBookingDate);
+    console.log("[useBookingHandlers] 🎯 FIRST BOOKING DATE FOR VALIDATION:", firstBookingDate);
+    console.log("[useBookingHandlers] 🎯 VALIDATION PARAMETERS:", {
+      carerId: bookingData.carerId,
+      startTime: firstSchedule.startTime,
+      endTime: firstSchedule.endTime,
+      date: firstBookingDate,
+      branchId: branchId
+    });
 
     try {
       // Use the new consolidated validation system instead of deprecated checkOverlap
@@ -322,18 +345,24 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         firstBookingDate
       );
 
-      console.log("[useBookingHandlers] Consolidated validation result:", consolidatedValidation);
+      console.log("[useBookingHandlers] 🎯 CONSOLIDATED VALIDATION RESULT:", consolidatedValidation);
 
       if (!consolidatedValidation.isValid) {
         const selectedCarer = carers.find(c => c.id === bookingData.carerId);
         const carerName = selectedCarer?.name || "Unknown Carer";
         
+        console.log("[useBookingHandlers] ❌ VALIDATION FAILED FOR:", {
+          carerName,
+          requestedDate: firstBookingDate,
+          conflictingBookings: consolidatedValidation.conflictingBookings
+        });
+        
         // Use available carers from validation result
         const availableCarers = consolidatedValidation.availableCarers || [];
 
-        toast.error(`${carerName} Already Assigned`, {
-          description: consolidatedValidation.error || `This carer has conflicting appointments at the selected time`,
-          duration: 5000,
+        toast.error(`SAVE BLOCKED: ${carerName} has conflicting appointments on ${firstBookingDate} at ${firstSchedule.startTime} - ${firstSchedule.endTime}.`, {
+          description: `${consolidatedValidation.error || 'Scheduling conflict detected'}\n\nEven 1-minute overlaps are blocked to ensure proper scheduling and prevent conflicts.\n\nConflicting Bookings (${consolidatedValidation.conflictingBookings?.length || 0}):\n${consolidatedValidation.conflictingBookings?.map(b => `${b.clientName}\nConflict\n${b.startTime} - ${b.endTime}\nID: ${b.id} | Date: ${firstBookingDate}`).join('\n\n') || 'No details available'}`,
+          duration: 8000,
           action: {
             label: "View Alternatives",
             onClick: () => setOverlapAlertOpen(true)
@@ -353,6 +382,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       }
 
       // If validation passes, proceed with booking creation
+      console.log("[useBookingHandlers] ✅ VALIDATION PASSED - PROCEEDING WITH BOOKING CREATION");
       proceedWithBookingCreation(bookingData);
       
     } catch (error) {

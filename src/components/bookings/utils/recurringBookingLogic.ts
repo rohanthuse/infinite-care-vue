@@ -7,7 +7,8 @@ import {
   convertDaySelectionToNumbers, 
   createBookingDateTime,
   isValidDateString,
-  isValidTimeString 
+  isValidTimeString,
+  formatDateForBooking 
 } from './dateUtils';
 import { validateBookingFormData, type BookingFormData } from './bookingValidation';
 import { CreateBookingInput } from '@/data/hooks/useCreateBooking';
@@ -51,14 +52,24 @@ export function generateRecurringBookings(
     };
   }
 
-  // Convert dates to strings
+  // CRITICAL FIX: Use timezone-safe date conversion to prevent September 11th -> September 10th bug
+  console.log('[generateRecurringBookings] ⚠️  DEBUGGING DATE CONVERSION BUG');
+  console.log('[generateRecurringBookings] Raw fromDate input:', bookingData.fromDate);
+  console.log('[generateRecurringBookings] Raw fromDate type:', typeof bookingData.fromDate);
+  console.log('[generateRecurringBookings] Raw untilDate input:', bookingData.untilDate);
+  console.log('[generateRecurringBookings] Raw untilDate type:', typeof bookingData.untilDate);
+  
+  // Use timezone-safe formatDateForBooking function instead of toISOString() to prevent date shifts
   const fromDateStr = typeof bookingData.fromDate === 'string' 
     ? (bookingData.fromDate.includes('T') ? bookingData.fromDate.split('T')[0] : bookingData.fromDate)
-    : bookingData.fromDate.toISOString().split('T')[0];
+    : formatDateForBooking(bookingData.fromDate);
     
   const untilDateStr = typeof bookingData.untilDate === 'string' 
     ? (bookingData.untilDate.includes('T') ? bookingData.untilDate.split('T')[0] : bookingData.untilDate)
-    : bookingData.untilDate.toISOString().split('T')[0];
+    : formatDateForBooking(bookingData.untilDate);
+    
+  console.log('[generateRecurringBookings] ✅ TIMEZONE-SAFE fromDateStr:', fromDateStr);
+  console.log('[generateRecurringBookings] ✅ TIMEZONE-SAFE untilDateStr:', untilDateStr);
 
   const recurrenceWeeks = parseInt(bookingData.recurrenceFrequency || "1");
   const bookingsToCreate: CreateBookingInput[] = [];
@@ -137,13 +148,23 @@ export function generateRecurringBookings(
           const startDateTime = createBookingDateTime(date, startTime);
           const endDateTime = createBookingDateTime(date, endTime);
 
-          console.log(`[generateRecurringBookings] Creating booking for ${date} (${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]}):`, {
-            date,
+          console.log(`[generateRecurringBookings] 🎯 CREATING BOOKING FOR DATE: ${date} (${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]})`);
+          console.log(`[generateRecurringBookings] 🎯 BOOKING DETAILS:`, {
+            originalDate: date,
+            dayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek],
             startTime,
             endTime,
             startDateTime,
             endDateTime
           });
+          
+          // Validate that the created booking is actually for the intended date
+          const bookingDateCheck = startDateTime.split('T')[0];
+          if (bookingDateCheck !== date) {
+            console.error(`[generateRecurringBookings] ❌ DATE MISMATCH! Expected ${date}, got ${bookingDateCheck}`);
+          } else {
+            console.log(`[generateRecurringBookings] ✅ DATE CONSISTENCY VERIFIED: ${date} matches ${bookingDateCheck}`);
+          }
 
           bookingsToCreate.push({
             branch_id: branchId,
