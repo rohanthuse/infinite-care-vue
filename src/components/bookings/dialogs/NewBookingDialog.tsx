@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,28 +62,44 @@ const scheduleSchema = z.object({
 });
 
 const formSchema = z.object({
+  bookingMode: z.enum(["single", "recurring"], {
+    required_error: "Please select booking mode",
+  }),
   clientId: z.string().min(1, { message: "Client ID required" }),
   carerIds: z.array(z.string()).optional(), // Made optional to support unassigned bookings
   assignLater: z.boolean().optional(), // New field for "assign carer later" option
   fromDate: z.date({
-    required_error: "From date is required.",
+    required_error: "Date is required.",
   }),
-  untilDate: z.date({
-    required_error: "Until date is required.",
-  }),
-  recurrenceFrequency: z.enum(["1", "2", "3", "4"], {
-    required_error: "Recurrence frequency is required.",
-  }),
+  untilDate: z.date().optional(), // Made optional for single bookings
+  recurrenceFrequency: z.enum(["1", "2", "3", "4"]).optional(), // Made optional for single bookings
   schedules: z.array(scheduleSchema).min(1, { message: "At least one schedule is required" }),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // Ensure untilDate is not before fromDate
-  if (data.fromDate && data.untilDate && data.untilDate < data.fromDate) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Until date must be on or after the from date",
-      path: ["untilDate"],
-    });
+  // For recurring bookings, require untilDate and recurrenceFrequency
+  if (data.bookingMode === "recurring") {
+    if (!data.untilDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Until date is required for recurring bookings",
+        path: ["untilDate"],
+      });
+    }
+    if (!data.recurrenceFrequency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Recurrence frequency is required for recurring bookings",
+        path: ["recurrenceFrequency"],
+      });
+    }
+    // Ensure untilDate is not before fromDate
+    if (data.fromDate && data.untilDate && data.untilDate < data.fromDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Until date must be on or after the from date",
+        path: ["untilDate"],
+      });
+    }
   }
   // If not assigning later, require at least one carer
   if (!data.assignLater && (!data.carerIds || data.carerIds.length === 0)) {
@@ -182,6 +199,7 @@ export function NewBookingDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      bookingMode: "single", // Default to single booking mode
       clientId: "",
       carerIds: prefilledData?.carerId ? [prefilledData.carerId] : [],
       assignLater: false,
@@ -203,42 +221,97 @@ export function NewBookingDialog({
     },
   });
 
+  // Watch booking mode to update form behavior
+  const bookingMode = form.watch("bookingMode");
+
   useEffect(() => {
     if (open && preSelectedClientId) {
       form.setValue("clientId", preSelectedClientId);
     }
   }, [open, preSelectedClientId, form]);
 
+  // Auto-update days selection and untilDate when booking mode or fromDate changes
+  useEffect(() => {
+    const fromDate = form.getValues("fromDate");
+    
+    if (bookingMode === "single" && fromDate) {
+      // For single bookings, set untilDate to fromDate and auto-select the correct day
+      form.setValue("untilDate", fromDate);
+      form.setValue("recurrenceFrequency", "1");
+      
+      // Auto-select the correct day for single bookings
+      const dayOfWeek = fromDate.getDay();
+      const dayMap = {
+        0: { sun: true }, // Sunday
+        1: { mon: true }, // Monday  
+        2: { tue: true }, // Tuesday
+        3: { wed: true }, // Wednesday
+        4: { thu: true }, // Thursday
+        5: { fri: true }, // Friday
+        6: { sat: true }, // Saturday
+      };
+      
+      const defaultDays = { mon: false, tue: false, wed: false, thu: false, fri: false, sat: false, sun: false };
+      const updatedDays = { ...defaultDays, ...dayMap[dayOfWeek] };
+      
+      // Update the first schedule's days
+      const schedules = form.getValues("schedules");
+      if (schedules.length > 0) {
+        form.setValue(`schedules.0`, { 
+          ...schedules[0], 
+          ...updatedDays 
+        });
+      }
+    }
+  }, [bookingMode, form.watch("fromDate"), form]);
+
   function onSubmit(data: z.infer<typeof formSchema>) {
+    // Prepare booking data based on mode
+    const bookingData = {
+      ...data,
+      // For single bookings, ensure untilDate equals fromDate
+      untilDate: data.bookingMode === "single" ? data.fromDate : data.untilDate,
+      // For single bookings, ensure recurrence is 1
+      recurrenceFrequency: data.bookingMode === "single" ? "1" : data.recurrenceFrequency,
+    };
+
     if (data.assignLater || !data.carerIds || data.carerIds.length === 0) {
       // Create unassigned booking
       const unassignedBooking = {
-        ...data,
+        ...bookingData,
         carerId: null, // No carer assigned
       };
       onCreateBooking(unassignedBooking, carers);
       
       form.reset();
       onOpenChange(false);
-      toast("Unassigned booking created", {
-        description: "Booking created without carer assignment. Remember to assign a carer before the scheduled time.",
+      
+      const bookingType = data.bookingMode === "single" ? "Single booking" : "Unassigned bookings";
+      toast(`${bookingType} created`, {
+        description: data.bookingMode === "single" 
+          ? "Single booking created without carer assignment." 
+          : "Booking created without carer assignment. Remember to assign a carer before the scheduled time.",
       });
     } else {
       // Create bookings for each selected carer
       const bookingsToCreate = data.carerIds.map(carerId => ({
-        ...data,
+        ...bookingData,
         carerId, // Convert back to single carerId for each booking
       }));
       
       // Create bookings sequentially for each carer
-      bookingsToCreate.forEach(bookingData => {
-        onCreateBooking(bookingData, carers);
+      bookingsToCreate.forEach(bookingDataForCarer => {
+        onCreateBooking(bookingDataForCarer, carers);
       });
       
       form.reset();
       onOpenChange(false);
-      toast("Bookings submitted", {
-        description: `Created bookings for ${data.carerIds.length} carer(s)`,
+      
+      const bookingType = data.bookingMode === "single" ? "Single booking" : "Recurring bookings";
+      toast(`${bookingType} submitted`, {
+        description: data.bookingMode === "single"
+          ? `Created single booking for ${data.carerIds.length} carer(s)`
+          : `Created recurring bookings for ${data.carerIds.length} carer(s)`,
       });
     }
   }
@@ -275,10 +348,13 @@ export function NewBookingDialog({
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Clock className="h-5 w-5" />
-            Schedule Booking
+            {bookingMode === "single" ? "Create Single Booking" : "Schedule Recurring Booking"}
           </DialogTitle>
           <DialogDescription>
-            Schedule a new booking for a client with a carer. Choose from weekly, bi-weekly, tri-weekly, or monthly recurrence.
+            {bookingMode === "single" 
+              ? "Create a one-time booking for a specific date and time."
+              : "Schedule recurring bookings for a client with a carer. Choose from weekly, bi-weekly, tri-weekly, or monthly recurrence."
+            }
           </DialogDescription>
           
           {/* Prefilled Data Banner */}
@@ -316,6 +392,44 @@ export function NewBookingDialog({
         <div className="flex-1 overflow-y-auto pr-2">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Booking Mode Selection */}
+              <FormField
+                control={form.control}
+                name="bookingMode"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel className="text-base font-semibold">Booking Type</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        className="flex flex-row space-x-6"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="single" id="single" />
+                          <label htmlFor="single" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Single Booking
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="recurring" id="recurring" />
+                          <label htmlFor="recurring" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            Recurring Booking
+                          </label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {field.value === "single" 
+                        ? "Create a one-time booking for a specific date."
+                        : "Create repeating bookings over a date range."
+                      }
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -582,19 +696,26 @@ export function NewBookingDialog({
                   name="fromDate"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>From Date</FormLabel>
+                      <FormLabel>
+                        {bookingMode === "single" ? "Booking Date" : "From Date"}
+                      </FormLabel>
                       <FormControl>
                          <EnhancedDatePicker
                            value={field.value}
                            onChange={(date) => {
                              field.onChange(date);
-                             // Auto-adjust untilDate if it's before the new fromDate
-                             const currentUntilDate = form.getValues("untilDate");
-                             if (date && currentUntilDate && currentUntilDate < date) {
-                               form.setValue("untilDate", date);
+                             // Auto-adjust untilDate if it's before the new fromDate (recurring mode)
+                             if (bookingMode === "recurring") {
+                               const currentUntilDate = form.getValues("untilDate");
+                               if (date && currentUntilDate && currentUntilDate < date) {
+                                 form.setValue("untilDate", date);
+                               }
                              }
                            }}
-                           placeholder="Enter or pick from date (dd/mm/yyyy)"
+                           placeholder={bookingMode === "single" 
+                             ? "Enter or pick booking date (dd/mm/yyyy)"
+                             : "Enter or pick from date (dd/mm/yyyy)"
+                           }
                          />
                       </FormControl>
                       <FormMessage />
@@ -602,56 +723,60 @@ export function NewBookingDialog({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="untilDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Until Date</FormLabel>
-                      <FormControl>
-                         <EnhancedDatePicker
-                           value={field.value}
-                           onChange={field.onChange}
-                           placeholder="Enter or pick until date (dd/mm/yyyy)"
-                           disabled={(date) => {
-                             const fromDate = form.getValues("fromDate");
-                             return fromDate && date < fromDate;
-                           }}
-                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {bookingMode === "recurring" && (
+                  <FormField
+                    control={form.control}
+                    name="untilDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Until Date</FormLabel>
+                        <FormControl>
+                           <EnhancedDatePicker
+                             value={field.value}
+                             onChange={field.onChange}
+                             placeholder="Enter or pick until date (dd/mm/yyyy)"
+                             disabled={(date) => {
+                               const fromDate = form.getValues("fromDate");
+                               return fromDate && date < fromDate;
+                             }}
+                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               {/* Recurrence Frequency */}
-              <FormField
-                control={form.control}
-                name="recurrenceFrequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recurrence Frequency</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="1">Every week</SelectItem>
-                        <SelectItem value="2">Every 2 weeks</SelectItem>
-                        <SelectItem value="3">Every 3 weeks</SelectItem>
-                        <SelectItem value="4">Every 4 weeks (monthly)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      How often should this booking repeat on the selected days?
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {bookingMode === "recurring" && (
+                <FormField
+                  control={form.control}
+                  name="recurrenceFrequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recurrence Frequency</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1">Every week</SelectItem>
+                          <SelectItem value="2">Every 2 weeks</SelectItem>
+                          <SelectItem value="3">Every 3 weeks</SelectItem>
+                          <SelectItem value="4">Every 4 weeks (monthly)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        How often should this booking repeat on the selected days?
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Bank Holiday Notifications */}
               {form.watch("fromDate") && (
@@ -734,9 +859,10 @@ export function NewBookingDialog({
                         </FormItem>
                       )}
                     />
-                    <div className="mt-2">
-                      <FormLabel>Days</FormLabel>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                    {bookingMode === "recurring" && (
+                      <div className="mt-2">
+                        <FormLabel>Days</FormLabel>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                         <FormField
                           control={form.control}
                           name={`schedules.${index}.mon` as const}
@@ -842,8 +968,9 @@ export function NewBookingDialog({
                             </FormItem>
                           )}
                         />
-                      </div>
-                    </div>
+                       </div>
+                     </div>
+                   )}
                   </div>
                 ))}
                 <Button type="button" onClick={addSchedule} variant="outline" size="sm">
@@ -878,7 +1005,7 @@ export function NewBookingDialog({
             Cancel
           </Button>
           <Button type="submit" onClick={form.handleSubmit(onSubmit)}>
-            Create Booking
+            {bookingMode === "single" ? "Create Single Booking" : "Create Recurring Bookings"}
           </Button>
         </DialogFooter>
       </DialogContent>

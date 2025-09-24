@@ -2,8 +2,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient, useIsFetching } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { Booking } from "../BookingTimeGrid";
 import { useCreateMultipleBookings } from "@/data/hooks/useCreateMultipleBookings";
+import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useBookingOverlapCheck } from "./useBookingOverlapCheck";
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
@@ -12,6 +14,7 @@ import { useEnhancedOverlapValidation } from "./useEnhancedOverlapValidation";
 import { generateRecurringBookings, previewRecurringBookings } from "../utils/recurringBookingLogic";
 import { validateBookingFormData } from "../utils/bookingValidation";
 import { useBookingVerification } from "./useBookingVerification";
+import { useBookingDateNavigation } from "./useBookingDateNavigation";
 
 export function useBookingHandlers(branchId?: string, user?: any) {
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
@@ -46,11 +49,13 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   }) > 0;
 
   const createMultipleBookingsMutation = useCreateMultipleBookings(branchId);
+  const createBookingMutation = useCreateBooking(branchId);
   const updateBookingMutation = useUpdateBooking(branchId);
   const { checkOverlap, findAvailableCarers } = useBookingOverlapCheck(branchId);
   const { checkOverlapRealTime, isChecking } = useRealTimeOverlapCheck(branchId);
   const { validateBooking, isValidating: isEnhancedValidating } = useEnhancedOverlapValidation(branchId);
   const { isVerifying, verifyBookingsAppear, forceRefresh } = useBookingVerification({ branchId });
+  const { navigateToBookingDate } = useBookingDateNavigation();
 
   const handleRefresh = async () => {
     if (!branchId) {
@@ -333,9 +338,91 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     }
   };
 
+  const proceedWithSingleBookingCreation = (bookingData: any) => {
+    console.log("[useBookingHandlers] Creating single booking");
+    console.log("[useBookingHandlers] Single booking data:", JSON.stringify(bookingData, null, 2));
+    
+    if (!user) {
+      toast.error("You must be logged in to create bookings");
+      return;
+    }
+    if (!branchId) {
+      toast.error("Branch ID is required");
+      return;
+    }
+
+    const schedule = bookingData.schedules[0];
+    if (!schedule) {
+      toast.error("No schedule data found");
+      return;
+    }
+
+    // Create single booking directly without recurring logic
+    const singleBooking = {
+      branch_id: branchId,
+      client_id: bookingData.clientId,
+      staff_id: bookingData.carerId || null,
+      start_time: createBookingDateTime(
+        bookingData.fromDate.toISOString().split('T')[0], 
+        schedule.startTime
+      ),
+      end_time: createBookingDateTime(
+        bookingData.fromDate.toISOString().split('T')[0], 
+        schedule.endTime
+      ),
+      service_id: schedule.services[0],
+      status: bookingData.carerId ? "assigned" : "unassigned",
+      notes: bookingData.notes || null,
+    };
+
+    console.log("[useBookingHandlers] Creating single booking:", singleBooking);
+
+    toast.info("Creating Single Booking...", {
+      description: `Creating booking for ${format(bookingData.fromDate, "PPP")}`,
+      duration: 2000
+    });
+
+    // Use the single booking creation hook
+    createBookingMutation.mutateAsync(singleBooking).then((createdBooking) => {
+      console.log("[useBookingHandlers] ✅ Single booking created successfully:", createdBooking);
+      
+      setNewBookingDialogOpen(false);
+      
+      toast.success("Single Booking Created! ✅", {
+        description: `Booking created for ${format(bookingData.fromDate, "PPP")} at ${schedule.startTime}-${schedule.endTime}`,
+        duration: 3000
+      });
+
+      // Navigate to the booking date
+      const bookingDateStr = bookingData.fromDate.toISOString().split('T')[0];
+      navigateToBookingDate(bookingDateStr, createdBooking.id);
+
+      // Verify booking appears
+      setTimeout(() => {
+        verifyBookingsAppear([createdBooking.id]);
+      }, 500);
+    }).catch((error) => {
+      console.error("[useBookingHandlers] Single booking creation error:", error);
+      if (error.message?.includes("row-level security")) {
+        toast.error("Access denied. You may not be authorized for this branch.", {
+          description: "Contact your administrator or create an admin user for this branch.",
+        });
+      } else {
+        toast.error("Failed to create single booking", {
+          description: error?.message || "Unknown error on booking creation. Please check all fields.",
+        });
+      }
+    });
+  };
+
   const proceedWithBookingCreation = (bookingData: any) => {
     console.log("[useBookingHandlers] Starting enhanced booking creation process");
     console.log("[useBookingHandlers] Raw booking data received:", JSON.stringify(bookingData, null, 2));
+    
+    // Check if this is a single booking
+    if (bookingData.bookingMode === "single") {
+      return proceedWithSingleBookingCreation(bookingData);
+    }
     
     if (!user) {
       toast.error("You must be logged in to create bookings");
