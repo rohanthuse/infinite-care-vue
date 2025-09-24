@@ -15,6 +15,9 @@ export interface CreateBookingInput {
 }
 
 export async function createBooking(input: CreateBookingInput) {
+  console.log('[createBooking] ========== BOOKING CREATION START ==========');
+  console.log('[createBooking] Input data:', JSON.stringify(input, null, 2));
+  
   const { data, error } = await supabase
     .from("bookings")
     .insert([
@@ -33,7 +36,16 @@ export async function createBooking(input: CreateBookingInput) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[createBooking] ❌ DATABASE ERROR:', error);
+    console.error('[createBooking] ❌ Error message:', error.message);
+    console.error('[createBooking] ❌ Error details:', error.details);
+    throw error;
+  }
+  
+  console.log('[createBooking] ✅ SUCCESS - Booking saved to database:', data);
+  console.log('[createBooking] ✅ New booking ID:', data?.id);
+  console.log('[createBooking] ========== BOOKING CREATION END ==========');
   return data;
 }
 
@@ -67,10 +79,12 @@ export function useCreateBooking(branchId?: string) {
           }
         };
 
-        // Invalidate all relevant queries
+        // Invalidate all relevant queries - CRITICAL: Include organization calendar
         const invalidationPromises = [
           invalidateWithRetry(["branch-bookings", bookingBranchId]),
-          invalidateWithRetry(["client-bookings", data.client_id])
+          invalidateWithRetry(["client-bookings", data.client_id]),
+          invalidateWithRetry(["organization-calendar"]), // FIX: Add organization calendar invalidation
+          invalidateWithRetry(["organization-bookings"]) // FIX: Add organization bookings invalidation
         ];
 
         // Only invalidate carer-related queries if staff_id exists (not unassigned booking)

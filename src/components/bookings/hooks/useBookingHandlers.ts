@@ -411,35 +411,47 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       duration: 2000
     });
 
-    // Use the single booking creation hook
-    createBookingMutation.mutateAsync(singleBooking).then((createdBooking) => {
-      console.log("[useBookingHandlers] ✅ Single booking created successfully:", createdBooking);
-      
-      setNewBookingDialogOpen(false);
-      
-      toast.success("Single Booking Created! ✅", {
-        description: `Booking created for ${format(bookingData.fromDate, "PPP")} at ${schedule.startTime}-${schedule.endTime}`,
-        duration: 3000
-      });
-
-      // Navigate to the booking date
-      const navigationDateStr = formatDateForBooking(bookingData.fromDate);
-      navigateToBookingDate(navigationDateStr, createdBooking.id);
-
-      // Verify booking appears
-      setTimeout(() => {
-        verifyBookingsAppear([createdBooking.id]);
-      }, 500);
-    }).catch((error) => {
-      console.error("[useBookingHandlers] Single booking creation error:", error);
-      if (error.message?.includes("row-level security")) {
-        toast.error("Access denied. You may not be authorized for this branch.", {
-          description: "Contact your administrator or create an admin user for this branch.",
+    // Use the single booking creation hook with proper error handling
+    createBookingMutation.mutate(singleBooking, {
+      onSuccess: (createdBooking) => {
+        console.log("[useBookingHandlers] ✅ Single booking created successfully:", createdBooking);
+        console.log("[useBookingHandlers] ✅ Booking ID:", createdBooking?.id);
+        console.log("[useBookingHandlers] ✅ Booking saved to database successfully");
+        
+        setNewBookingDialogOpen(false);
+        
+        toast.success("Single Booking Created! ✅", {
+          description: `Booking created for ${format(bookingData.fromDate, "PPP")} at ${schedule.startTime}-${schedule.endTime}`,
+          duration: 3000
         });
-      } else {
-        toast.error("Failed to create single booking", {
-          description: error?.message || "Unknown error on booking creation. Please check all fields.",
-        });
+
+        // Force immediate calendar refresh
+        queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+        queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
+        
+        // Navigate to the booking date
+        const navigationDateStr = formatDateForBooking(bookingData.fromDate);
+        navigateToBookingDate(navigationDateStr, createdBooking.id);
+
+        // Verify booking appears
+        setTimeout(() => {
+          verifyBookingsAppear([createdBooking.id]);
+        }, 500);
+      },
+      onError: (error) => {
+        console.error("[useBookingHandlers] ❌ CRITICAL: Single booking creation FAILED:", error);
+        console.error("[useBookingHandlers] ❌ Error details:", error?.message || 'Unknown error');
+        console.error("[useBookingHandlers] ❌ Booking was NOT saved to database");
+        
+        if (error.message?.includes("row-level security")) {
+          toast.error("Access denied. You may not be authorized for this branch.", {
+            description: "Contact your administrator or create an admin user for this branch.",
+          });
+        } else {
+          toast.error("Failed to create single booking", {
+            description: error?.message || "Unknown error on booking creation. Please check all fields.",
+          });
+        }
       }
     });
   };
