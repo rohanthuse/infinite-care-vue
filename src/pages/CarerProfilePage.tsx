@@ -271,207 +271,26 @@ const CarerProfilePage: React.FC = () => {
                 </TabsList>
               </div>
               
-              <TabsContent value="details" className="mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="shadow-md">
-                    <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <User className="h-5 w-5 text-blue-600" />
-                        Personal Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Full Name</label>
-                        <p className="text-base font-medium text-gray-900">{carer.first_name} {carer.last_name}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Email</label>
-                        <p className="text-base text-gray-700">{carer.email || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Phone</label>
-                        <p className="text-base text-gray-700">{carer.phone || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Address</label>
-                        <p className="text-base text-gray-700">{carer.address || "Not provided"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Date of Birth</label>
-                        <p className="text-base text-gray-700">{formatDate(carer.date_of_birth)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-md">
-                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Briefcase className="h-5 w-5 text-green-600" />
-                        Professional Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Specialization</label>
-                        <p className="text-base text-gray-700">{carer.specialization || "General Care"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Experience</label>
-                        <p className="text-base text-gray-700">{carer.experience || "Not specified"}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Availability</label>
-                        <p className="text-base text-gray-700">{carer.availability}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Status</label>
-                        <Badge 
-                          variant="outline" 
-                          className={`${getStatusColor(carer.status)} px-3 py-1`}
-                        >
-                          {carer.status}
-                        </Badge>
-                      </div>
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600">Hire Date</label>
-                        <p className="text-base text-gray-700">{formatDate(carer.hire_date)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="schedule" className="mt-6">
-                <ErrorBoundary>
-                  <CarerScheduleTab carerId={carerId || ''} />
-                </ErrorBoundary>
-              </TabsContent>
-              
-              <TabsContent value="assignments" className="mt-6">
-                <Card className="shadow-md">
-                  <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50">
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-orange-600" />
-                      Client Assignments
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    {bookingsLoading ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
-                        <p className="text-gray-500 mt-2">Loading assignments...</p>
-                      </div>
-                    ) : uniqueClients > 0 ? (
-                      <div>
-                        <p className="text-lg font-semibold text-gray-900 mb-4">
-                          Currently serving {uniqueClients} client{uniqueClients !== 1 ? 's' : ''}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Array.from(new Set(bookings.map(b => b.client_id))).map((clientId) => {
-                            const clientBookings = bookings.filter(b => b.client_id === clientId);
-                            const latestBooking = clientBookings[0];
-                            return (
-                              <div key={clientId} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <h4 className="font-semibold text-gray-900">{latestBooking.client_name}</h4>
-                                <p className="text-sm text-gray-600">{clientBookings.length} appointment{clientBookings.length !== 1 ? 's' : ''}</p>
-                                <p className="text-xs text-gray-500">Last visit: {formatDate(latestBooking.start_time)}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">No client assignments</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="documents" className="mt-6">
-                <ErrorBoundary>
-                  <CarerDocumentsTab carerId={carerId || ''} />
-                </ErrorBoundary>
-              </TabsContent>
-
-              <TabsContent value="performance" className="mt-6">
-                <ErrorBoundary>
-                  <CarerPerformanceTab carerId={carerId || ''} />
-                </ErrorBoundary>
-              </TabsContent>
-
-              <TabsContent value="bookings" className="mt-6">
-                <div className="space-y-6">
-                  <Card className="shadow-md">
-                    <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-                      <CardTitle className="flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-purple-600" />
-                        Upcoming Appointments
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      {bookingsLoading ? (
-                        <div className="text-center py-8">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-                          <p className="text-gray-500 mt-2">Loading appointments...</p>
-                        </div>
-                      ) : upcomingBookings.length > 0 ? (
-                        <div className="space-y-4">
-                          {upcomingBookings.map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                              <div>
-                                <p className="font-semibold text-gray-900">{booking.client_name}</p>
-                                <p className="text-sm text-gray-600">{booking.service_name}</p>
-                                <p className="text-sm text-gray-500">{formatDateTime(booking.start_time)}</p>
-                              </div>
-                              <Badge className={`${getBookingStatusColor(booking.status)} px-3 py-1`}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <p className="text-gray-500">No upcoming appointments</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-md">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-blue-600" />
-                        Recent Activity
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      {recentBookings.length > 0 ? (
-                        <div className="space-y-3">
-                          {recentBookings.map((booking) => (
-                            <div key={booking.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-100">
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-900">{booking.client_name}</p>
-                                <p className="text-sm text-gray-600">{booking.service_name}</p>
-                                <p className="text-xs text-gray-500">{formatDate(booking.start_time)}</p>
-                              </div>
-                              <Badge className={`${getBookingStatusColor(booking.status)} text-xs px-2 py-1`}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500 text-center py-4">No recent activity</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
+              <TabsContent value="overview"><CarerOverviewTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="personal"><CarerPersonalDetailsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="communication"><CarerCommunicationTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="suspend"><CarerSuspendTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="quality"><CarerQualityAssuranceTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="attendance"><CarerAttendanceTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="essentials"><CarerEssentialsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="employment"><CarerEmploymentHistoryTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="training"><CarerTrainingTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="statement"><CarerSupportingStatementTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="contacts"><CarerImportantContactTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="refer"><CarerReferFriendTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="forms"><CarerFormsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="skills"><CarerSkillsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="work-type"><CarerTypeOfWorkTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="hobbies"><CarerHobbiesTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="meetings"><CarerMeetingsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="documents"><CarerDocumentsTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="rate"><CarerRateTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="settings"><CarerSettingsTab carerId={carerId || ''} /></TabsContent>
             </Tabs>
           </div>
         </div>

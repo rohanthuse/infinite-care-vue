@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Pound, TrendingUp, Clock, Award } from "lucide-react";
+import { DollarSign, TrendingUp, Clock, Award } from "lucide-react";
 
 interface CarerRateTabProps {
   carerId: string;
@@ -13,7 +13,7 @@ export const CarerRateTab: React.FC<CarerRateTabProps> = ({ carerId }) => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Pound className="h-5 w-5" />
+            <DollarSign className="h-5 w-5" />
             Pay Rates
           </CardTitle>
         </CardHeader>
