@@ -65,6 +65,7 @@ export function useConsolidatedValidation(branchId?: string) {
           end_time,
           branch_id,
           staff_id,
+          status,
           clients!inner(first_name, last_name)
         `)
         .eq("branch_id", branchId)
@@ -167,11 +168,13 @@ export function useConsolidatedValidation(branchId?: string) {
 
       if (!result.isValid && conflicts.length > 0) {
         const firstConflict = conflicts[0];
+        // Find the original booking to get status information
+        const originalBooking = existingBookings?.find(b => b.id === firstConflict.id);
         const clientName = firstConflict.clients ? 
           `${firstConflict.clients.first_name} ${firstConflict.clients.last_name}` : 
           'another client';
         
-        result.error = `This carer is already assigned to ${clientName} from ${extractTime(firstConflict.start_time)} to ${extractTime(firstConflict.end_time)} on ${extractDate(firstConflict.start_time)}`;
+        result.error = `This carer is already assigned to ${clientName} from ${extractTime(originalBooking?.start_time || '')} to ${extractTime(originalBooking?.end_time || '')} on ${extractDate(originalBooking?.start_time || '')}. Current booking status: ${originalBooking?.status || 'unknown'}`;
       }
 
       console.log("[useConsolidatedValidation] Validation result:", {

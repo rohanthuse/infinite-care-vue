@@ -39,7 +39,7 @@ export function BookingValidationAlert({
             </span>
           )}
           <div className="mt-2 text-xs text-muted-foreground">
-            Please select a different carer or modify the appointment time.
+            <strong>Note:</strong> This includes bookings with any status (assigned, in-progress, etc.). Please check your calendar view to see existing appointments, or select a different carer/time.
           </div>
         </AlertDescription>
       </Alert>

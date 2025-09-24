@@ -107,7 +107,8 @@ export function checkBookingOverlaps(
       condition1: proposedStart < existingEnd,
       condition2: proposedEnd > existingStart,
       hasOverlap,
-      clientName: booking.clientName
+      clientName: booking.clientName,
+      bookingStatus: booking.status || 'unknown'
     });
 
     return hasOverlap;
