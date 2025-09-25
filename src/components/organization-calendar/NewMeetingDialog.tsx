@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ControlledDialog } from '@/components/ui/controlled-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -128,14 +128,12 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   };
 
   return (
-    <ControlledDialog 
-      id="new-meeting-dialog"
-      open={open} 
-      onOpenChange={onOpenChange}
-      title="Schedule New Meeting"
-      description="Create a new client appointment"
-      className="sm:max-w-[500px]"
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Schedule New Meeting</DialogTitle>
+          <DialogDescription>Create a new client appointment</DialogDescription>
+        </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -244,6 +242,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
             {createAppointment.isPending ? 'Scheduling...' : 'Schedule Meeting'}
           </Button>
         </div>
-    </ControlledDialog>
+      </DialogContent>
+    </Dialog>
   );
 };

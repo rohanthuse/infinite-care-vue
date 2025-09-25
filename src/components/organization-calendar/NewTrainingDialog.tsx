@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ControlledDialog } from '@/components/ui/controlled-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -101,14 +101,12 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   };
 
   return (
-    <ControlledDialog 
-      id="new-training-dialog"
-      open={open} 
-      onOpenChange={onOpenChange}
-      title="Schedule Training"
-      description="Create a new training session"
-      className="sm:max-w-[500px]"
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Schedule Training</DialogTitle>
+          <DialogDescription>Create a new training session</DialogDescription>
+        </DialogHeader>
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -206,6 +204,7 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
             {scheduleTraining.isPending ? 'Scheduling...' : 'Schedule Training'}
           </Button>
         </div>
-    </ControlledDialog>
+      </DialogContent>
+    </Dialog>
   );
 };
