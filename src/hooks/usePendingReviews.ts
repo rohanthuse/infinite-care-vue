@@ -9,7 +9,6 @@ export interface PendingReviewAppointment {
   provider: string;
   date: string;
   time: string;
-  staff_id?: string;
   client_id?: string;
   completed_at?: string;
 }
@@ -47,7 +46,6 @@ export const usePendingReviews = (clientId: string) => {
         provider: appointment.provider_name,
         date: appointment.appointment_date,
         time: appointment.appointment_time,
-        staff_id: appointment.staff_id,
         client_id: appointment.client_id,
         completed_at: appointment.appointment_date // Using appointment_date as completed_at fallback
       }));

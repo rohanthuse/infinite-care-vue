@@ -34,6 +34,10 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useScheduledAgreements, useCreateScheduledAgreement } from '@/data/hooks/agreements';
 import { useAnnualLeave, useCreateAnnualLeave } from '@/hooks/useLeaveManagement';
+import { ScheduleAgreementDialog } from '@/components/agreements/ScheduleAgreementDialog';
+import { NewMeetingDialog } from './NewMeetingDialog';
+import { NewLeaveDialog } from './NewLeaveDialog';
+import { NewTrainingDialog } from './NewTrainingDialog';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -47,6 +51,10 @@ export const OrganizationCalendarView = () => {
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
   const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
+  const [meetingDialogOpen, setMeetingDialogOpen] = useState(false);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
   
   const { organization } = useTenant();
 
@@ -153,20 +161,16 @@ export const OrganizationCalendarView = () => {
         setNewBookingDialogOpen(true);
         break;
       case 'agreement':
-        // Handle agreement creation
-        toast.info('Agreement scheduling will be available soon');
+        setAgreementDialogOpen(true);
         break;
       case 'training':
-        // Handle training creation
-        toast.info('Training scheduling will be available soon');
+        setTrainingDialogOpen(true);
         break;
       case 'leave':
-        // Handle leave creation
-        toast.info('Leave scheduling will be available soon');
+        setLeaveDialogOpen(true);
         break;
       case 'meeting':
-        // Handle meeting creation
-        toast.info('Meeting scheduling will be available soon');
+        setMeetingDialogOpen(true);
         break;
     }
   };
@@ -487,6 +491,37 @@ export const OrganizationCalendarView = () => {
           branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
         />
       )}
+
+      {/* Agreement Dialog */}
+      <ScheduleAgreementDialog
+        open={agreementDialogOpen}
+        onOpenChange={setAgreementDialogOpen}
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id || ''}
+      />
+
+      {/* Meeting Dialog */}
+      <NewMeetingDialog
+        open={meetingDialogOpen}
+        onOpenChange={setMeetingDialogOpen}
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+        prefilledDate={currentDate}
+      />
+
+      {/* Leave Dialog */}
+      <NewLeaveDialog
+        open={leaveDialogOpen}
+        onOpenChange={setLeaveDialogOpen}
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+        prefilledDate={currentDate}
+      />
+
+      {/* Training Dialog */}
+      <NewTrainingDialog
+        open={trainingDialogOpen}
+        onOpenChange={setTrainingDialogOpen}
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+        prefilledDate={currentDate}
+      />
     </div>
   );
 };
