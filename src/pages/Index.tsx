@@ -26,10 +26,34 @@ const Index = () => {
     }
 
     if (user && userRole) {
-      console.log('[Index] User authenticated, redirecting based on role:', userRole.role);
+      console.log('[Index] User authenticated with role:', userRole.role, '- redirecting immediately');
       
-      // Don't redirect authenticated users from Index page - let login pages handle routing
-      console.log('[Index] User is authenticated with role:', userRole.role, '- letting login components handle navigation');
+      // Determine redirect path based on role and organization
+      let redirectPath = '/dashboard'; // Default fallback
+      
+      if (userRole.role === 'super_admin' && userRole.organizationSlug) {
+        redirectPath = `/${userRole.organizationSlug}/dashboard`;
+      } else if (userRole.role === 'app_admin') {
+        redirectPath = '/system-dashboard';
+      } else if (userRole.organizationSlug) {
+        // For other roles with organization context
+        switch (userRole.role) {
+          case 'branch_admin':
+            redirectPath = `/${userRole.organizationSlug}/dashboard`;
+            break;
+          case 'carer':
+            redirectPath = `/${userRole.organizationSlug}/carer-dashboard`;
+            break;
+          case 'client':
+            redirectPath = `/${userRole.organizationSlug}/client-dashboard`;
+            break;
+          default:
+            redirectPath = `/${userRole.organizationSlug}/dashboard`;
+        }
+      }
+      
+      console.log('[Index] Redirecting authenticated user to:', redirectPath);
+      window.location.href = redirectPath;
       return;
     } else if (user && !userRole) {
       console.log('[Index] User authenticated but no role found - redirecting to login');
