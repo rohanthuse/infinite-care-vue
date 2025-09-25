@@ -22,16 +22,29 @@ export const useUserRole = () => {
     queryFn: async (): Promise<UserWithRole | null> => {
       // Add timeout to prevent infinite loading
       const timeout = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('User role query timed out')), 8000)
+        setTimeout(() => reject(new Error('User role query timed out')), 10000)
       );
 
       const queryPromise = async (): Promise<UserWithRole | null> => {
-        // Use auth.uid() which is the standard way to get current user in RLS
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.error('[useUserRole] No authenticated user found');
-          return null; // Return null instead of throwing
+        // First verify we have an active session - critical for preventing race conditions
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('[useUserRole] Session verification failed:', sessionError);
+          return null;
         }
+        
+        if (!session?.user) {
+          console.warn('[useUserRole] No active session found, user needs to authenticate');
+          return null;
+        }
+
+        const user = session.user;
+        console.log('[useUserRole] Session verified, checking role for user:', { 
+          id: user.id, 
+          email: user.email,
+          sessionValid: !!session.access_token
+        });
 
         console.log('[useUserRole] Checking role for user:', { id: user.id, email: user.email });
 
@@ -157,8 +170,10 @@ export const useUserRole = () => {
       }
     },
     enabled: true,
-    retry: 1,
+    retry: 2, // Increase retry count for better reliability
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 };
 

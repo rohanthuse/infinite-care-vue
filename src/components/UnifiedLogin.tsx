@@ -328,13 +328,7 @@ const UnifiedLogin = () => {
         const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
         if (redeemResult) {
           toast.success("Third-party access activated successfully!");
-          navigate('/third-party/workspace', { replace: true });
-          // Emergency fallback
-          setTimeout(() => {
-            if (window.location.pathname === '/login') {
-              window.location.replace('/third-party/workspace');
-            }
-          }, 100);
+          window.location.href = '/third-party/workspace';
           return;
         } else {
           // If redemption failed, continue with normal login flow
@@ -366,22 +360,10 @@ const UnifiedLogin = () => {
         
         if (orgSlug) {
           console.log('[LOGIN DEBUG] Redirecting super admin to tenant dashboard:', `/${orgSlug}/dashboard`);
-          navigate(`/${orgSlug}/dashboard`, { replace: true });
-          // Emergency fallback
-          setTimeout(() => {
-            if (window.location.pathname === '/login') {
-              window.location.replace(`/${orgSlug}/dashboard`);
-            }
-          }, 100);
+          window.location.href = `/${orgSlug}/dashboard`;
         } else {
           console.log('[LOGIN DEBUG] No organization found for super admin, redirecting to global dashboard');
-          navigate('/dashboard', { replace: true });
-          // Emergency fallback
-          setTimeout(() => {
-            if (window.location.pathname === '/login') {
-              window.location.replace('/dashboard');
-            }
-          }, 100);
+          window.location.href = '/dashboard';
         }
         return;
       }
@@ -390,13 +372,7 @@ const UnifiedLogin = () => {
       if (userRole === 'app_admin') {
         console.log('[LOGIN DEBUG] App admin detected, redirecting to system dashboard');
         toast.success("Welcome back, System Administrator!");
-        navigate('/system-dashboard', { replace: true });
-        // Emergency fallback
-        setTimeout(() => {
-          if (window.location.pathname === '/login') {
-            window.location.replace('/system-dashboard');
-          }
-        }, 100);
+        window.location.href = '/system-dashboard';
         return;
       }
 
@@ -435,17 +411,11 @@ const UnifiedLogin = () => {
 
       console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
       
-      // Immediate navigation with verification - no delay to prevent conflicts
-      console.log('[LOGIN DEBUG] Executing immediate navigation to:', dashboardPath);
-      navigate(dashboardPath, { replace: true });
+      // Single, coordinated navigation - no conflicting emergency fallbacks
+      console.log('[LOGIN DEBUG] Executing navigation to:', dashboardPath);
       
-      // Emergency fallback navigation if first attempt fails
-      setTimeout(() => {
-        if (window.location.pathname === '/login') {
-          console.warn('[LOGIN DEBUG] Navigation failed, executing fallback');
-          window.location.replace(dashboardPath);
-        }
-      }, 100);
+      // Use window.location.href for more reliable navigation after authentication
+      window.location.href = dashboardPath;
 
     } catch (error: any) {
       console.error('[LOGIN DEBUG] Login error occurred:', error);

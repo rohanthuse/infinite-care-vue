@@ -68,17 +68,26 @@ export const UnifiedAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('[UnifiedAuth] Auth state change:', event, session?.user?.email || 'no user');
         
         if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          setError(null);
+          // Atomic state updates to prevent race conditions
+          const newUser = session?.user ?? null;
+          const hasStateChanged = (user?.id !== newUser?.id) || (!!session !== !!session);
           
-          // Only set loading to false after initial session check
-          if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (hasStateChanged || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+            setSession(session);
+            setUser(newUser);
+            setError(null);
             setLoading(false);
+            
+            console.log('[UnifiedAuth] State updated:', {
+              event,
+              hasUser: !!newUser,
+              userId: newUser?.id,
+              sessionValid: !!session?.access_token
+            });
           }
         }
       }
