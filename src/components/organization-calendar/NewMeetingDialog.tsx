@@ -88,21 +88,39 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   };
 
   const handleScheduleMeeting = async () => {
-    if (!title || !clientId || !date || !time || !branchId) return;
+    if (!title || !clientId || !date || !time || !branchId) {
+      console.log('Missing required fields:', { title, clientId, date, time, branchId });
+      return;
+    }
 
-    await createAppointment.mutateAsync({
-      client_id: clientId,
-      appointment_date: date,
-      appointment_time: time,
-      appointment_type: title,
-      provider_name: staffId ? staff?.find(s => s.id === staffId)?.name || 'Staff Member' : 'Team Meeting',
-      location: location || 'Office',
-      status: 'scheduled',
-      notes
-    });
+    try {
+      console.log('Creating appointment with data:', {
+        client_id: clientId,
+        appointment_date: date,
+        appointment_time: time,
+        appointment_type: title,
+        provider_name: staffId ? staff?.find(s => s.id === staffId)?.name || 'Staff Member' : 'Team Meeting',
+        location: location || 'Office',
+        status: 'scheduled',
+        notes
+      });
 
-    resetForm();
-    onOpenChange(false);
+      await createAppointment.mutateAsync({
+        client_id: clientId,
+        appointment_date: date,
+        appointment_time: time,
+        appointment_type: title,
+        provider_name: staffId ? staff?.find(s => s.id === staffId)?.name || 'Staff Member' : 'Team Meeting',
+        location: location || 'Office',
+        status: 'scheduled',
+        notes
+      });
+
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error scheduling meeting:', error);
+    }
   };
 
   const handleClose = () => {

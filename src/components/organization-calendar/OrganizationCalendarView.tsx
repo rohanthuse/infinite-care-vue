@@ -154,24 +154,31 @@ export const OrganizationCalendarView = () => {
   };
 
   const handleNewEvent = (eventType: 'booking' | 'agreement' | 'training' | 'leave' | 'meeting') => {
+    console.log('handleNewEvent called with:', eventType);
     setNewEventType(eventType);
     
-    switch (eventType) {
-      case 'booking':
-        setNewBookingDialogOpen(true);
-        break;
-      case 'agreement':
-        setAgreementDialogOpen(true);
-        break;
-      case 'training':
-        setTrainingDialogOpen(true);
-        break;
-      case 'leave':
-        setLeaveDialogOpen(true);
-        break;
-      case 'meeting':
-        setMeetingDialogOpen(true);
-        break;
+    try {
+      switch (eventType) {
+        case 'booking':
+          setNewBookingDialogOpen(true);
+          break;
+        case 'agreement':
+          setAgreementDialogOpen(true);
+          break;
+        case 'training':
+          setTrainingDialogOpen(true);
+          break;
+        case 'leave':
+          setLeaveDialogOpen(true);
+          break;
+        case 'meeting':
+          console.log('Opening meeting dialog');
+          setMeetingDialogOpen(true);
+          break;
+      }
+    } catch (error) {
+      console.error('Error in handleNewEvent:', error);
+      toast.error('Failed to open dialog');
     }
   };
 
@@ -279,23 +286,44 @@ export const OrganizationCalendarView = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleNewEvent('booking')}>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNewEvent('booking');
+              }}>
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 New Booking
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleNewEvent('meeting')}>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('New Meeting clicked');
+                handleNewEvent('meeting');
+              }}>
                 <Users className="h-4 w-4 mr-2" />
                 New Meeting
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleNewEvent('training')}>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNewEvent('training');
+              }}>
                 <Clock className="h-4 w-4 mr-2" />
                 Schedule Training
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleNewEvent('agreement')}>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNewEvent('agreement');
+              }}>
                 <FileText className="h-4 w-4 mr-2" />
                 Schedule Agreement
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleNewEvent('leave')}>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNewEvent('leave');
+              }}>
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 Add Leave/Holiday
               </DropdownMenuItem>
@@ -502,7 +530,10 @@ export const OrganizationCalendarView = () => {
       {/* Meeting Dialog */}
       <NewMeetingDialog
         open={meetingDialogOpen}
-        onOpenChange={setMeetingDialogOpen}
+        onOpenChange={(open) => {
+          console.log('Meeting dialog onOpenChange:', open);
+          setMeetingDialogOpen(open);
+        }}
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
         prefilledDate={currentDate}
       />
