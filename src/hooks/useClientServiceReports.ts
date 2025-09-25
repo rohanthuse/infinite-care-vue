@@ -1,9 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useClientAppointments } from './useClientAppointments';
-import { useClientServiceActions } from './useClientServiceActions';
-import { useCompletedAppointments } from './useClientAppointments';
+import { useClientAppointments, useCompletedAppointments } from '@/hooks/useClientAppointments';
+import { useClientServiceActions } from '@/hooks/useClientServiceActions';
 
 export interface ServiceReportData {
   serviceUtilization: Array<{
