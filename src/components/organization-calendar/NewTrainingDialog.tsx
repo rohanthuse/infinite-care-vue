@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ControlledDialog } from '@/components/ui/controlled-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -98,15 +98,17 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
 
   const handleClose = () => {
     resetForm();
-    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Schedule Training</DialogTitle>
-        </DialogHeader>
+    <ControlledDialog 
+      id="new-training-dialog"
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Schedule Training"
+      description="Create a new training session"
+      className="sm:max-w-[500px]"
+    >
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -193,8 +195,8 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button 
@@ -203,8 +205,7 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
           >
             {scheduleTraining.isPending ? 'Scheduling...' : 'Schedule Training'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ControlledDialog>
   );
 };

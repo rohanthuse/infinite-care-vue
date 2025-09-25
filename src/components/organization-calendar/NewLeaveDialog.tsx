@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ControlledDialog } from '@/components/ui/controlled-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,15 +63,17 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
 
   const handleClose = () => {
     resetForm();
-    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Add Leave/Holiday</DialogTitle>
-        </DialogHeader>
+    <ControlledDialog 
+      id="new-leave-dialog"
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Add Leave/Holiday"
+      description="Create a new leave or holiday period"
+      className="sm:max-w-[500px]"
+    >
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -133,8 +135,8 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button 
@@ -143,8 +145,7 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
           >
             {createAnnualLeave.isPending ? 'Adding...' : 'Add Leave'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ControlledDialog>
   );
 };

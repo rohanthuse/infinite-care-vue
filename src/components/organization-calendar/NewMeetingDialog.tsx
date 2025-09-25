@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ControlledDialog } from '@/components/ui/controlled-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -125,15 +125,17 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 
   const handleClose = () => {
     resetForm();
-    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Schedule New Meeting</DialogTitle>
-        </DialogHeader>
+    <ControlledDialog 
+      id="new-meeting-dialog"
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Schedule New Meeting"
+      description="Create a new client appointment"
+      className="sm:max-w-[500px]"
+    >
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -231,8 +233,8 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button 
@@ -241,8 +243,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
           >
             {createAppointment.isPending ? 'Scheduling...' : 'Schedule Meeting'}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+    </ControlledDialog>
   );
 };
