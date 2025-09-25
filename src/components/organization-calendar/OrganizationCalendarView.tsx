@@ -202,11 +202,11 @@ export const OrganizationCalendarView = () => {
   };
 
   const eventTypeColors = {
-    booking: 'bg-primary',
-    meeting: 'bg-secondary', 
-    leave: 'bg-accent',
-    training: 'bg-muted',
-    agreement: 'bg-card'
+    booking: 'bg-blue-500',
+    meeting: 'bg-purple-500', 
+    leave: 'bg-orange-500',
+    training: 'bg-green-500',
+    agreement: 'bg-yellow-500'
   };
 
   const renderCalendarView = () => {
