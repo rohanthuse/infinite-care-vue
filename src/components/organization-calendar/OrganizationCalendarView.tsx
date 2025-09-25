@@ -155,31 +155,47 @@ export const OrganizationCalendarView = () => {
 
   const handleNewEvent = (eventType: 'booking' | 'agreement' | 'training' | 'leave' | 'meeting') => {
     console.log('handleNewEvent called with:', eventType);
+    
+    // Ensure user is properly authenticated and in correct context
+    if (!organization?.id) {
+      toast.error('Please ensure you are logged in and have access to this organization');
+      return;
+    }
+    
     setNewEventType(eventType);
     
-    try {
-      switch (eventType) {
-        case 'booking':
-          setNewBookingDialogOpen(true);
-          break;
-        case 'agreement':
-          setAgreementDialogOpen(true);
-          break;
-        case 'training':
-          setTrainingDialogOpen(true);
-          break;
-        case 'leave':
-          setLeaveDialogOpen(true);
-          break;
-        case 'meeting':
-          console.log('Opening meeting dialog');
-          setMeetingDialogOpen(true);
-          break;
+    // Add small delay to ensure dropdown closes before dialog opens
+    setTimeout(() => {
+      try {
+        switch (eventType) {
+          case 'booking':
+            console.log('Opening booking dialog');
+            setNewBookingDialogOpen(true);
+            break;
+          case 'agreement':
+            console.log('Opening agreement dialog');
+            setAgreementDialogOpen(true);
+            break;
+          case 'training':
+            console.log('Opening training dialog');
+            setTrainingDialogOpen(true);
+            break;
+          case 'leave':
+            console.log('Opening leave dialog');
+            setLeaveDialogOpen(true);
+            break;
+          case 'meeting':
+            console.log('Opening meeting dialog');
+            setMeetingDialogOpen(true);
+            break;
+          default:
+            console.warn('Unknown event type:', eventType);
+        }
+      } catch (error) {
+        console.error('Error in handleNewEvent:', error);
+        toast.error('Failed to open dialog');
       }
-    } catch (error) {
-      console.error('Error in handleNewEvent:', error);
-      toast.error('Failed to open dialog');
-    }
+    }, 100);
   };
 
   const handleNewBooking = () => {
@@ -285,45 +301,64 @@ export const OrganizationCalendarView = () => {
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleNewEvent('booking');
-              }}>
+            <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg">
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('New Booking clicked');
+                  handleNewEvent('booking');
+                }}
+              >
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 New Booking
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('New Meeting clicked');
-                handleNewEvent('meeting');
-              }}>
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('New Meeting clicked');
+                  handleNewEvent('meeting');
+                }}
+              >
                 <Users className="h-4 w-4 mr-2" />
                 New Meeting
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleNewEvent('training');
-              }}>
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Schedule Training clicked');
+                  handleNewEvent('training');
+                }}
+              >
                 <Clock className="h-4 w-4 mr-2" />
                 Schedule Training
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleNewEvent('agreement');
-              }}>
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Schedule Agreement clicked');
+                  handleNewEvent('agreement');
+                }}
+              >
                 <FileText className="h-4 w-4 mr-2" />
                 Schedule Agreement
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleNewEvent('leave');
-              }}>
+              <DropdownMenuItem 
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Add Leave/Holiday clicked');
+                  handleNewEvent('leave');
+                }}
+              >
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 Add Leave/Holiday
               </DropdownMenuItem>
