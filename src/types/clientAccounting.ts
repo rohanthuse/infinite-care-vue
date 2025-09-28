@@ -18,6 +18,11 @@ export interface ClientAccountingSettings {
   updated_at: string;
   branch_id: string;
   organization_id: string;
+  // Authority-specific fields
+  authority_invoice_config?: string;
+  consolidation_preference?: 'single' | 'split_by_client';
+  contract_reference?: string;
+  contract_notes?: string;
 }
 
 export interface ClientPrivateAccounting {
