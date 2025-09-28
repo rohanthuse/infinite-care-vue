@@ -224,6 +224,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               onViewInvoice={handleViewInvoice}
               onRecordPayment={handleRecordPayment}
               onCreateInvoice={handleCreateInvoice}
+              onDeleteInvoice={(invoiceId) => {
+                // Callback to refresh data after deletion if needed
+                console.log(`Invoice ${invoiceId} deleted successfully`);
+              }}
             />
           </div>
         </TabsContent>
