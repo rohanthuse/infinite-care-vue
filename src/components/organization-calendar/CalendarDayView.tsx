@@ -11,19 +11,13 @@ interface CalendarDayViewProps {
   events?: CalendarEvent[];
   isLoading?: boolean;
   onEventClick?: (event: CalendarEvent) => void;
-  onEditEvent?: (event: CalendarEvent) => void;
-  onDeleteEvent?: (event: CalendarEvent) => void;
-  onDuplicateEvent?: (event: CalendarEvent) => void;
 }
 
 export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   date,
   events = [],
   isLoading = false,
-  onEventClick,
-  onEditEvent,
-  onDeleteEvent,
-  onDuplicateEvent
+  onEventClick
 }) => {
   // Generate time slots from 7 AM to 10 PM (15 hours * 2 = 30 slots of 30 minutes)
   const timeSlots = Array.from({ length: 30 }, (_, index) => {
@@ -89,15 +83,12 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                   {timeSlotEvents.length > 0 ? (
                     <div className="p-1 space-y-1">
                       {timeSlotEvents.map((event, eventIndex) => (
-                         <CalendarEventCard
-                           key={`${event.id}-${eventIndex}`}
-                           event={event}
-                           compact
-                           onClick={onEventClick}
-                           onEdit={onEditEvent}
-                           onDelete={onDeleteEvent}
-                           onDuplicate={onDuplicateEvent}
-                         />
+                        <CalendarEventCard
+                          key={`${event.id}-${eventIndex}`}
+                          event={event}
+                          compact
+                          onClick={onEventClick}
+                        />
                       ))}
                     </div>
                   ) : (

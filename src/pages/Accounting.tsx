@@ -1,14 +1,15 @@
 
 import React from "react";
+import { useParams } from "react-router-dom";
 import { BranchLayout } from "@/components/branch-dashboard/BranchLayout";
 import AccountingTab from "@/components/accounting/AccountingTab";
 
 const Accounting = () => {
-  console.log('[Accounting] Component rendered successfully');
+  const { id, name } = useParams<{ id: string; name: string }>();
   
   return (
     <BranchLayout>
-      <AccountingTab />
+      <AccountingTab branchId={id} branchName={decodeURIComponent(name || "")} />
     </BranchLayout>
   );
 };

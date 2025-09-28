@@ -122,45 +122,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [isInitializing, setIsInitializing] = useState(true);
   const [showFallbackUI, setShowFallbackUI] = useState(false);
 
-  // Helper function to check if user can access a specific tab content
-  const canAccessTab = (tabValue: string): boolean => {
-    console.log('[BranchDashboard] canAccessTab called:', {
-      tabValue,
-      userRole: userRole?.role,
-      permissions,
-      permissionsLoading,
-      hasTabPermissionResult: permissions ? hasTabPermission(permissions, tabValue) : null
-    });
-    
-    // Super admins can access everything
-    if (userRole?.role === 'super_admin') {
-      console.log('[BranchDashboard] Super admin access granted for:', tabValue);
-      return true;
-    }
-    
-    // If permissions are still loading or failed to load, allow access to prevent blocking
-    if (permissionsLoading || !permissions) {
-      console.log('[BranchDashboard] Permissions loading or unavailable, allowing access to:', tabValue);
-      return true;
-    }
-    
-    // Branch admins need permissions
-    if (userRole?.role === 'branch_admin') {
-      const hasAccess = hasTabPermission(permissions || null, tabValue);
-      console.log('[BranchDashboard] Branch admin permission check for', tabValue, ':', hasAccess);
-      // If permission check fails but it's for finance, allow it for now (debug)
-      if (!hasAccess && tabValue === 'finance') {
-        console.warn('[BranchDashboard] Finance access denied but allowing for debug');
-        return true;
-      }
-      return hasAccess;
-    }
-    
-    // Other roles can access everything (for now)
-    console.log('[BranchDashboard] Default access granted for role:', userRole?.role, 'tab:', tabValue);
-    return true;
-  };
-
   // Handle access control logic with timeout protection
   useEffect(() => {
     console.log('[BranchDashboard] Access Control Check:', {
@@ -468,6 +429,22 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     setIsClientEditModeOpen(true);
   };
 
+  // Helper function to check if user can access a specific tab content
+  const canAccessTab = (tabValue: string): boolean => {
+    // Super admins can access everything
+    if (userRole?.role === 'super_admin') {
+      return true;
+    }
+    
+    // Branch admins need permissions
+    if (userRole?.role === 'branch_admin') {
+      return hasTabPermission(permissions || null, tabValue);
+    }
+    
+    // Other roles can access everything (for now)
+    return true;
+  };
+
   // Component to show access denied for restricted content
   const AccessDeniedTab = ({ tabName }: { tabName: string }) => (
     <div className="bg-card rounded-lg border border-border shadow-sm p-8 text-center">
@@ -663,7 +640,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             
             {activeTab === "finance" && (
               canAccessTab("finance") ? (
-                <AccountingTab />
+                <AccountingTab branchId={id} branchName={branchName} />
               ) : (
                 <AccessDeniedTab tabName="Finance" />
               )

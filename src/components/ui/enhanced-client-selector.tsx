@@ -228,11 +228,11 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                       <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="all">All</SelectItem>
-                         <SelectItem value="active">Active</SelectItem>  
-                         <SelectItem value="former">Former</SelectItem>
-                       </SelectContent>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>  
+                        <SelectItem value="former">Former</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
                 </div>

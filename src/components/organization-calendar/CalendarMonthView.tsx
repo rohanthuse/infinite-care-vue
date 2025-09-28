@@ -20,19 +20,13 @@ interface CalendarMonthViewProps {
   events?: CalendarEvent[];
   isLoading?: boolean;
   onEventClick?: (event: CalendarEvent) => void;
-  onEditEvent?: (event: CalendarEvent) => void;
-  onDeleteEvent?: (event: CalendarEvent) => void;
-  onDuplicateEvent?: (event: CalendarEvent) => void;
 }
 
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   date,
   events = [],
   isLoading = false,
-  onEventClick,
-  onEditEvent,
-  onDeleteEvent,
-  onDuplicateEvent
+  onEventClick
 }) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);

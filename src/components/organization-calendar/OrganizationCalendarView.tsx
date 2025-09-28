@@ -38,11 +38,6 @@ import { ScheduleAgreementDialog } from '@/components/agreements/ScheduleAgreeme
 import { NewMeetingDialog } from './NewMeetingDialog';
 import { NewLeaveDialog } from './NewLeaveDialog';
 import { NewTrainingDialog } from './NewTrainingDialog';
-import { BranchCombobox } from './BranchCombobox';
-import { CalendarExportDialog } from './CalendarExportDialog';
-import { DeleteEventDialog } from './DeleteEventDialog';
-import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalendarEvents';
-import { ErrorBoundary } from './ErrorBoundary';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -60,9 +55,6 @@ export const OrganizationCalendarView = () => {
   const [meetingDialogOpen, setMeetingDialogOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [deleteEventDialogOpen, setDeleteEventDialogOpen] = useState(false);
-  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   
   const { organization } = useTenant();
 
@@ -130,8 +122,6 @@ export const OrganizationCalendarView = () => {
   );
 
   const createBookingMutation = useCreateBooking();
-  const updateEventMutation = useUpdateCalendarEvent();
-  const deleteEventMutation = useDeleteCalendarEvent();
 
   const handleDateChange = (date: Date) => {
     setCurrentDate(date);
@@ -168,43 +158,44 @@ export const OrganizationCalendarView = () => {
     
     // Ensure user is properly authenticated and in correct context
     if (!organization?.id) {
-      console.error('No organization found:', organization);
       toast.error('Please ensure you are logged in and have access to this organization');
       return;
     }
     
-    console.log('Organization found:', organization?.id);
     setNewEventType(eventType);
     
-    try {
-      switch (eventType) {
-        case 'booking':
-          console.log('Opening booking dialog');
-          setNewBookingDialogOpen(true);
-          break;
-        case 'agreement':
-          console.log('Opening agreement dialog');
-          setAgreementDialogOpen(true);
-          break;
-        case 'training':
-          console.log('Opening training dialog');
-          setTrainingDialogOpen(true);
-          break;
-        case 'leave':
-          console.log('Opening leave dialog');
-          setLeaveDialogOpen(true);
-          break;
-        case 'meeting':
-          console.log('Opening meeting dialog, branch selected:', selectedBranch);
-          setMeetingDialogOpen(true);
-          break;
-        default:
-          console.warn('Unknown event type:', eventType);
+    // Add small delay to ensure dropdown closes before dialog opens
+    setTimeout(() => {
+      try {
+        switch (eventType) {
+          case 'booking':
+            console.log('Opening booking dialog');
+            setNewBookingDialogOpen(true);
+            break;
+          case 'agreement':
+            console.log('Opening agreement dialog');
+            setAgreementDialogOpen(true);
+            break;
+          case 'training':
+            console.log('Opening training dialog');
+            setTrainingDialogOpen(true);
+            break;
+          case 'leave':
+            console.log('Opening leave dialog');
+            setLeaveDialogOpen(true);
+            break;
+          case 'meeting':
+            console.log('Opening meeting dialog');
+            setMeetingDialogOpen(true);
+            break;
+          default:
+            console.warn('Unknown event type:', eventType);
+        }
+      } catch (error) {
+        console.error('Error in handleNewEvent:', error);
+        toast.error('Failed to open dialog');
       }
-    } catch (error) {
-      console.error('Error in handleNewEvent:', error);
-      toast.error('Failed to open dialog');
-    }
+    }, 100);
   };
 
   const handleNewBooking = () => {
@@ -233,37 +224,8 @@ export const OrganizationCalendarView = () => {
   };
 
   const handleExportCalendar = () => {
-    setExportDialogOpen(true);
-  };
-
-  const handleEditEvent = (event: CalendarEvent) => {
-    console.log('Edit event:', event);
-    // TODO: Implement edit functionality for different event types
-    toast.info('Edit functionality will be implemented for each event type');
-  };
-
-  const handleDeleteEvent = (event: CalendarEvent) => {
-    setEventToDelete(event);
-    setDeleteEventDialogOpen(true);
-  };
-
-  const handleConfirmDeleteEvent = async (event: CalendarEvent) => {
-    try {
-      await deleteEventMutation.mutateAsync({
-        id: event.id,
-        type: event.type,
-      });
-      setDeleteEventDialogOpen(false);
-      setEventToDelete(null);
-    } catch (error) {
-      console.error('Error deleting event:', error);
-    }
-  };
-
-  const handleDuplicateEvent = (event: CalendarEvent) => {
-    console.log('Duplicate event:', event);
-    // TODO: Implement duplicate functionality
-    toast.info('Duplicate functionality will be implemented');
+    // Export calendar functionality
+    console.log('Exporting calendar data...');
   };
 
   const eventTypeColors = {
@@ -278,39 +240,30 @@ export const OrganizationCalendarView = () => {
     switch (viewType) {
       case 'daily':
         return (
-            <CalendarDayView 
-              date={currentDate}
-              events={calendarEvents}
-              isLoading={isLoading}
-              onEventClick={handleEventClick}
-              onEditEvent={handleEditEvent}
-              onDeleteEvent={handleDeleteEvent}
-              onDuplicateEvent={handleDuplicateEvent}
-            />
+          <CalendarDayView 
+            date={currentDate}
+            events={calendarEvents}
+            isLoading={isLoading}
+            onEventClick={handleEventClick}
+          />
         );
       case 'weekly':
         return (
-            <CalendarWeekView 
-              date={currentDate}
-              events={calendarEvents}
-              isLoading={isLoading}
-              onEventClick={handleEventClick}
-              onEditEvent={handleEditEvent}
-              onDeleteEvent={handleDeleteEvent}
-              onDuplicateEvent={handleDuplicateEvent}
-            />
+          <CalendarWeekView 
+            date={currentDate}
+            events={calendarEvents}
+            isLoading={isLoading}
+            onEventClick={handleEventClick}
+          />
         );
       case 'monthly':
         return (
-            <CalendarMonthView 
-              date={currentDate}
-              events={calendarEvents}
-              isLoading={isLoading}
-              onEventClick={handleEventClick}
-              onEditEvent={handleEditEvent}
-              onDeleteEvent={handleDeleteEvent}
-              onDuplicateEvent={handleDuplicateEvent}
-            />
+          <CalendarMonthView 
+            date={currentDate}
+            events={calendarEvents}
+            isLoading={isLoading}
+            onEventClick={handleEventClick}
+          />
         );
       default:
         return null;
@@ -318,8 +271,7 @@ export const OrganizationCalendarView = () => {
   };
 
   return (
-    <ErrorBoundary>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -341,21 +293,14 @@ export const OrganizationCalendarView = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <div className="flex items-center">
-            <Button 
-              size="sm" 
-              onClick={handleNewBooking}
-              className="rounded-r-none"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Event
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="rounded-l-none border-l-0 px-2">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                New Event
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg">
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
@@ -418,8 +363,7 @@ export const OrganizationCalendarView = () => {
                 Add Leave/Holiday
               </DropdownMenuItem>
             </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -451,15 +395,19 @@ export const OrganizationCalendarView = () => {
               </div>
 
               {/* Branch Filter */}
-              <BranchCombobox
-                branches={branches?.map(branch => ({
-                  value: branch.id,
-                  label: branch.name
-                })) || []}
-                value={selectedBranch}
-                onValueChange={setSelectedBranch}
-                placeholder="All Branches"
-              />
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="All Branches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {branches?.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               {/* Event Type Filter */}
               <Select value={selectedEventType} onValueChange={setSelectedEventType}>
@@ -589,7 +537,6 @@ export const OrganizationCalendarView = () => {
         <ViewBookingDialog
           open={viewBookingDialogOpen}
           onOpenChange={setViewBookingDialogOpen}
-          services={services || []}
           booking={{
             id: selectedEvent.id,
             date: format(selectedEvent.startTime, 'yyyy-MM-dd'),
@@ -603,6 +550,8 @@ export const OrganizationCalendarView = () => {
             service_id: null,
             notes: ''
           }}
+          services={services || []}
+          branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
         />
       )}
 
@@ -610,14 +559,14 @@ export const OrganizationCalendarView = () => {
       <ScheduleAgreementDialog
         open={agreementDialogOpen}
         onOpenChange={setAgreementDialogOpen}
-        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id || ''}
       />
 
       {/* Meeting Dialog */}
       <NewMeetingDialog
         open={meetingDialogOpen}
         onOpenChange={(open) => {
-          console.log('Meeting dialog onOpenChange called with:', open);
+          console.log('Meeting dialog onOpenChange:', open);
           setMeetingDialogOpen(open);
         }}
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
@@ -639,25 +588,6 @@ export const OrganizationCalendarView = () => {
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
         prefilledDate={currentDate}
       />
-
-      {/* Export Dialog */}
-      <CalendarExportDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
-        events={calendarEvents || []}
-        currentDate={currentDate}
-        branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'}
-      />
-
-      {/* Delete Event Dialog */}
-      <DeleteEventDialog
-        open={deleteEventDialogOpen}
-        onOpenChange={setDeleteEventDialogOpen}
-        event={eventToDelete}
-        onConfirm={handleConfirmDeleteEvent}
-        isDeleting={deleteEventMutation.isPending}
-      />
-      </div>
-    </ErrorBoundary>
+    </div>
   );
 };
