@@ -11,8 +11,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useStaffByBranch } from '@/hooks/useStaff';
+import { useBranchStaff } from '@/hooks/useBranchStaff';
 import { useClientAccountingSettings, useCreateOrUpdateClientAccountingSettings } from '@/hooks/useClientAccounting';
+import { useTenant } from '@/contexts/TenantContext';
 import { 
   InvoiceMethod, 
   RateCategory, 
@@ -49,8 +50,9 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
   clientId,
   branchId
 }) => {
+  const { organization } = useTenant();
   const { data: settings, isLoading: settingsLoading } = useClientAccountingSettings(clientId);
-  const { data: staff } = useStaffByBranch(branchId);
+  const { data: staff } = useBranchStaff(branchId);
   const updateSettings = useCreateOrUpdateClientAccountingSettings();
 
   const form = useForm<GeneralSettingsFormData>({
@@ -96,6 +98,16 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
     updateSettings.mutate({
       client_id: clientId,
       branch_id: branchId,
+      organization_id: organization?.id || '',
+      show_in_task_matrix: data.show_in_task_matrix || false,
+      show_in_form_matrix: data.show_in_form_matrix || false,
+      enable_geo_fencing: data.enable_geo_fencing || false,
+      invoice_method: data.invoice_method || 'per_visit',
+      invoice_display_type: data.invoice_display_type || 'per_visit',
+      billing_address_same_as_personal: data.billing_address_same_as_personal ?? true,
+      rate_type: data.rate_type || 'standard',
+      mileage_rule_no_payment: data.mileage_rule_no_payment || false,
+      service_payer: data.service_payer || 'authorities',
       ...data
     });
   };

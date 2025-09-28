@@ -29,7 +29,7 @@ export const useCreateOrUpdateClientAccountingSettings = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (settings: Partial<ClientAccountingSettings>) => {
+    mutationFn: async (settings: Omit<ClientAccountingSettings, 'id' | 'created_at' | 'updated_at'>) => {
       const { data: existing } = await supabase
         .from('client_accounting_settings')
         .select('id')
@@ -49,7 +49,7 @@ export const useCreateOrUpdateClientAccountingSettings = () => {
       } else {
         const { data, error } = await supabase
           .from('client_accounting_settings')
-          .insert(settings)
+          .insert([settings])
           .select('*')
           .single();
         
@@ -100,7 +100,7 @@ export const useCreateOrUpdateClientPrivateAccounting = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (settings: Partial<ClientPrivateAccounting>) => {
+    mutationFn: async (settings: Omit<ClientPrivateAccounting, 'id' | 'created_at' | 'updated_at'>) => {
       const { data: existing } = await supabase
         .from('client_private_accounting')
         .select('id')
@@ -120,7 +120,7 @@ export const useCreateOrUpdateClientPrivateAccounting = () => {
       } else {
         const { data, error } = await supabase
           .from('client_private_accounting')
-          .insert(settings)
+          .insert([settings])
           .select('*')
           .single();
         
@@ -193,10 +193,10 @@ export const useCreateClientRateSchedule = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (schedule: Partial<ClientRateSchedule>) => {
+    mutationFn: async (schedule: Omit<ClientRateSchedule, 'id' | 'created_at' | 'updated_at' | 'is_active'>) => {
       const { data, error } = await supabase
         .from('client_rate_schedules')
-        .insert(schedule)
+        .insert([schedule])
         .select('*')
         .single();
       

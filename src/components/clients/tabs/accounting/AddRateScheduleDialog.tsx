@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
 import { useServiceTypes, useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useTenant } from '@/contexts/TenantContext';
 import { 
   RateCategory, 
   PayBasedOn, 
@@ -70,6 +71,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   clientId,
   branchId
 }) => {
+  const { organization } = useTenant();
   const { data: serviceTypes } = useServiceTypes();
   const createSchedule = useCreateClientRateSchedule();
 
@@ -103,6 +105,17 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
     createSchedule.mutate({
       client_id: clientId,
       branch_id: branchId,
+      organization_id: organization?.id || '',
+      authority_type: data.authority_type || 'private',
+      start_date: data.start_date || '',
+      days_covered: data.days_covered || [],
+      time_from: data.time_from || '09:00',
+      time_until: data.time_until || '17:00',
+      rate_category: data.rate_category || 'standard',
+      pay_based_on: data.pay_based_on || 'hours_minutes',
+      charge_type: data.charge_type || 'hourly_rate',
+      base_rate: data.base_rate || 0,
+      bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
       ...data
     }, {
       onSuccess: () => {

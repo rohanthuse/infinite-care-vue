@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useClientPrivateAccounting, useCreateOrUpdateClientPrivateAccounting } from '@/hooks/useClientAccounting';
 import { useTravelRates } from '@/hooks/useTravelRates';
+import { useTenant } from '@/contexts/TenantContext';
 import { ChargeBasedOn, chargeBasedOnLabels } from '@/types/clientAccounting';
 
 const privateAccountingSchema = z.object({
@@ -32,6 +33,7 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
   clientId,
   branchId
 }) => {
+  const { organization } = useTenant();
   const { data: settings, isLoading: settingsLoading } = useClientPrivateAccounting(clientId);
   const { data: travelRates } = useTravelRates(branchId);
   const updateSettings = useCreateOrUpdateClientPrivateAccounting();
@@ -63,6 +65,10 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
     updateSettings.mutate({
       client_id: clientId,
       branch_id: branchId,
+      organization_id: organization?.id || '',
+      charge_based_on: data.charge_based_on || 'planned_time',
+      extra_time_calculation: data.extra_time_calculation || false,
+      credit_period_days: data.credit_period_days || 0,
       ...data
     });
   };
@@ -122,7 +128,7 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
                       <SelectContent>
                         {travelRates?.map((rate) => (
                           <SelectItem key={rate.id} value={rate.id}>
-                            {rate.name} - £{rate.rate_per_mile}/mile
+                            {rate.title} - £{rate.rate_per_mile}/mile
                           </SelectItem>
                         ))}
                       </SelectContent>
