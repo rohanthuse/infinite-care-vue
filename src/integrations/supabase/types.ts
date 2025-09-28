@@ -1010,6 +1010,94 @@ export type Database = {
           },
         ]
       }
+      client_accounting_settings: {
+        Row: {
+          agreement_type: string | null
+          billing_address_same_as_personal: boolean | null
+          branch_id: string | null
+          care_lead_id: string | null
+          client_id: string
+          created_at: string | null
+          enable_geo_fencing: boolean | null
+          expiry_date: string | null
+          id: string
+          invoice_display_type: string | null
+          invoice_method: string | null
+          mileage_rule_no_payment: boolean | null
+          organization_id: string | null
+          pay_method: string | null
+          rate_type: string | null
+          service_payer: string | null
+          show_in_form_matrix: boolean | null
+          show_in_task_matrix: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreement_type?: string | null
+          billing_address_same_as_personal?: boolean | null
+          branch_id?: string | null
+          care_lead_id?: string | null
+          client_id: string
+          created_at?: string | null
+          enable_geo_fencing?: boolean | null
+          expiry_date?: string | null
+          id?: string
+          invoice_display_type?: string | null
+          invoice_method?: string | null
+          mileage_rule_no_payment?: boolean | null
+          organization_id?: string | null
+          pay_method?: string | null
+          rate_type?: string | null
+          service_payer?: string | null
+          show_in_form_matrix?: boolean | null
+          show_in_task_matrix?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreement_type?: string | null
+          billing_address_same_as_personal?: boolean | null
+          branch_id?: string | null
+          care_lead_id?: string | null
+          client_id?: string
+          created_at?: string | null
+          enable_geo_fencing?: boolean | null
+          expiry_date?: string | null
+          id?: string
+          invoice_display_type?: string | null
+          invoice_method?: string | null
+          mileage_rule_no_payment?: boolean | null
+          organization_id?: string | null
+          pay_method?: string | null
+          rate_type?: string | null
+          service_payer?: string | null
+          show_in_form_matrix?: boolean | null
+          show_in_task_matrix?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_accounting_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_accounting_settings_care_lead_id_fkey"
+            columns: ["care_lead_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_accounting_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_activities: {
         Row: {
           care_plan_id: string
@@ -2429,6 +2517,176 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_private_accounting: {
+        Row: {
+          branch_id: string | null
+          charge_based_on: string | null
+          client_id: string
+          created_at: string | null
+          credit_period_days: number | null
+          extra_time_calculation: boolean | null
+          id: string
+          organization_id: string | null
+          private_invoice_config: string | null
+          travel_rate_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          charge_based_on?: string | null
+          client_id: string
+          created_at?: string | null
+          credit_period_days?: number | null
+          extra_time_calculation?: boolean | null
+          id?: string
+          organization_id?: string | null
+          private_invoice_config?: string | null
+          travel_rate_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          charge_based_on?: string | null
+          client_id?: string
+          created_at?: string | null
+          credit_period_days?: number | null
+          extra_time_calculation?: boolean | null
+          id?: string
+          organization_id?: string | null
+          private_invoice_config?: string | null
+          travel_rate_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_private_accounting_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_private_accounting_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_private_accounting_travel_rate_id_fkey"
+            columns: ["travel_rate_id"]
+            isOneToOne: false
+            referencedRelation: "travel_rates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_rate_schedules: {
+        Row: {
+          authority_type: string
+          bank_holiday_multiplier: number | null
+          base_rate: number
+          branch_id: string | null
+          charge_type: string | null
+          client_id: string
+          consecutive_hours_rate: number | null
+          created_at: string | null
+          created_by: string | null
+          days_covered: string[]
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          organization_id: string | null
+          pay_based_on: string | null
+          rate_15_minutes: number | null
+          rate_30_minutes: number | null
+          rate_45_minutes: number | null
+          rate_60_minutes: number | null
+          rate_category: string | null
+          service_type_code: string | null
+          start_date: string
+          time_from: string
+          time_until: string
+          updated_at: string | null
+        }
+        Insert: {
+          authority_type: string
+          bank_holiday_multiplier?: number | null
+          base_rate: number
+          branch_id?: string | null
+          charge_type?: string | null
+          client_id: string
+          consecutive_hours_rate?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          days_covered?: string[]
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          pay_based_on?: string | null
+          rate_15_minutes?: number | null
+          rate_30_minutes?: number | null
+          rate_45_minutes?: number | null
+          rate_60_minutes?: number | null
+          rate_category?: string | null
+          service_type_code?: string | null
+          start_date: string
+          time_from: string
+          time_until: string
+          updated_at?: string | null
+        }
+        Update: {
+          authority_type?: string
+          bank_holiday_multiplier?: number | null
+          base_rate?: number
+          branch_id?: string | null
+          charge_type?: string | null
+          client_id?: string
+          consecutive_hours_rate?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          days_covered?: string[]
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string | null
+          pay_based_on?: string | null
+          rate_15_minutes?: number | null
+          rate_30_minutes?: number | null
+          rate_45_minutes?: number | null
+          rate_60_minutes?: number | null
+          rate_category?: string | null
+          service_type_code?: string | null
+          start_date?: string
+          time_from?: string
+          time_until?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_rate_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rate_schedules_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rate_schedules_service_type_code_fkey"
+            columns: ["service_type_code"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -5211,8 +5469,11 @@ export type Database = {
         Row: {
           amount: number
           applicable_days: string[]
+          bank_holiday_multiplier: number | null
           branch_id: string
+          charge_type: string | null
           client_type: string
+          consecutive_hours: number | null
           created_at: string
           created_by: string
           currency: string
@@ -5222,18 +5483,31 @@ export type Database = {
           funding_source: string
           id: string
           is_default: boolean
+          mileage_excluded: boolean | null
+          pay_based_on: string | null
+          rate_15_minutes: number | null
+          rate_30_minutes: number | null
+          rate_45_minutes: number | null
+          rate_60_minutes: number | null
+          rate_category: string | null
           rate_type: string
           service_code: string
           service_id: string | null
           service_name: string
+          service_type: string | null
           status: string
+          time_from: string | null
+          time_until: string | null
           updated_at: string
         }
         Insert: {
           amount: number
           applicable_days?: string[]
+          bank_holiday_multiplier?: number | null
           branch_id: string
+          charge_type?: string | null
           client_type?: string
+          consecutive_hours?: number | null
           created_at?: string
           created_by: string
           currency?: string
@@ -5243,18 +5517,31 @@ export type Database = {
           funding_source?: string
           id?: string
           is_default?: boolean
+          mileage_excluded?: boolean | null
+          pay_based_on?: string | null
+          rate_15_minutes?: number | null
+          rate_30_minutes?: number | null
+          rate_45_minutes?: number | null
+          rate_60_minutes?: number | null
+          rate_category?: string | null
           rate_type?: string
           service_code: string
           service_id?: string | null
           service_name: string
+          service_type?: string | null
           status?: string
+          time_from?: string | null
+          time_until?: string | null
           updated_at?: string
         }
         Update: {
           amount?: number
           applicable_days?: string[]
+          bank_holiday_multiplier?: number | null
           branch_id?: string
+          charge_type?: string | null
           client_type?: string
+          consecutive_hours?: number | null
           created_at?: string
           created_by?: string
           currency?: string
@@ -5264,11 +5551,21 @@ export type Database = {
           funding_source?: string
           id?: string
           is_default?: boolean
+          mileage_excluded?: boolean | null
+          pay_based_on?: string | null
+          rate_15_minutes?: number | null
+          rate_30_minutes?: number | null
+          rate_45_minutes?: number | null
+          rate_60_minutes?: number | null
+          rate_category?: string | null
           rate_type?: string
           service_code?: string
           service_id?: string | null
           service_name?: string
+          service_type?: string | null
           status?: string
+          time_from?: string | null
+          time_until?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -5294,6 +5591,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      service_types: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       services: {
         Row: {
@@ -7807,7 +8134,7 @@ export type Database = {
               p_file_size: string
               p_staff_id: string
             }
-        Returns: Json
+        Returns: string
       }
       upload_staff_document_bypass_rls: {
         Args: {

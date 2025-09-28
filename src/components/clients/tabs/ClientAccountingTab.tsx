@@ -1,0 +1,50 @@
+import React from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { GeneralAccountingSettings } from './accounting/GeneralAccountingSettings';
+import { PrivateAccountingSettings } from './accounting/PrivateAccountingSettings';
+import { RateManagement } from './accounting/RateManagement';
+
+interface ClientAccountingTabProps {
+  clientId: string;
+  branchId: string;
+}
+
+export const ClientAccountingTab: React.FC<ClientAccountingTabProps> = ({
+  clientId,
+  branchId
+}) => {
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Rate & Accounting Configuration</CardTitle>
+          <CardDescription>
+            Configure client-specific accounting settings, rate schedules, and billing preferences
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="general">General Settings</TabsTrigger>
+              <TabsTrigger value="private">Private Accounting</TabsTrigger>
+              <TabsTrigger value="rates">Rate Management</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="general" className="space-y-4">
+              <GeneralAccountingSettings clientId={clientId} branchId={branchId} />
+            </TabsContent>
+            
+            <TabsContent value="private" className="space-y-4">
+              <PrivateAccountingSettings clientId={clientId} branchId={branchId} />
+            </TabsContent>
+            
+            <TabsContent value="rates" className="space-y-4">
+              <RateManagement clientId={clientId} branchId={branchId} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
