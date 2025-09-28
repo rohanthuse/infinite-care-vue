@@ -64,6 +64,7 @@ export interface ClientRateSchedule {
   rate_60_minutes?: number;
   consecutive_hours_rate?: number;
   bank_holiday_multiplier: number;
+  is_vatable: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -140,5 +141,6 @@ export const dayLabels: Record<string, string> = {
   thu: 'Thursday',
   fri: 'Friday',
   sat: 'Saturday',
-  sun: 'Sunday'
+  sun: 'Sunday',
+  bank_holiday: 'Bank Holiday'
 };

@@ -144,6 +144,15 @@ export const ViewRateScheduleDialog: React.FC<ViewRateScheduleDialogProps> = ({
                 <label className="text-sm font-medium text-muted-foreground">Bank Holiday Multiplier</label>
                 <p className="text-sm">{schedule.bank_holiday_multiplier}x</p>
               </div>
+              
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">VAT Applicable</label>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={schedule.is_vatable ? "default" : "secondary"}>
+                    {schedule.is_vatable ? "Yes" : "No"}
+                  </Badge>
+                </div>
+              </div>
             </div>
 
             {/* Incremental Rates */}

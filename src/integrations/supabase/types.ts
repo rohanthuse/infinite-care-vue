@@ -2599,6 +2599,7 @@ export type Database = {
           end_date: string | null
           id: string
           is_active: boolean | null
+          is_vatable: boolean
           organization_id: string | null
           pay_based_on: string | null
           rate_15_minutes: number | null
@@ -2626,6 +2627,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean | null
+          is_vatable?: boolean
           organization_id?: string | null
           pay_based_on?: string | null
           rate_15_minutes?: number | null
@@ -2653,6 +2655,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean | null
+          is_vatable?: boolean
           organization_id?: string | null
           pay_based_on?: string | null
           rate_15_minutes?: number | null

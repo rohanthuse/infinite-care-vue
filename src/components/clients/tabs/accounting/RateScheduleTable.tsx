@@ -92,6 +92,7 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
             <TableHead>Authority</TableHead>
             <TableHead>Rate Category</TableHead>
             <TableHead>Base Rate</TableHead>
+            <TableHead>VAT</TableHead>
             <TableHead>Days</TableHead>
             <TableHead>Time Period</TableHead>
             <TableHead>Status</TableHead>
@@ -107,6 +108,11 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
               <TableCell>{schedule.authority_type}</TableCell>
               <TableCell className="capitalize">{schedule.rate_category}</TableCell>
               <TableCell>{formatCurrency(schedule.base_rate)}</TableCell>
+              <TableCell>
+                <Badge variant={schedule.is_vatable ? "default" : "secondary"}>
+                  {schedule.is_vatable ? "Yes" : "No"}
+                </Badge>
+              </TableCell>
               <TableCell className="max-w-[150px] truncate">
                 {formatDays(schedule.days_covered)}
               </TableCell>

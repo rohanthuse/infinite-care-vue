@@ -43,7 +43,8 @@ const rateScheduleSchema = z.object({
   rate_45_minutes: z.number().optional(),
   rate_60_minutes: z.number().optional(),
   consecutive_hours_rate: z.number().optional(),
-  bank_holiday_multiplier: z.number().min(1).max(3).default(1)
+  bank_holiday_multiplier: z.number().min(1).max(3).default(1),
+  is_vatable: z.boolean()
 }).refine((data) => {
   if (data.time_from && data.time_until) {
     const start = new Date(`2000-01-01T${data.time_from}`);
@@ -94,7 +95,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       rate_45_minutes: undefined,
       rate_60_minutes: undefined,
       consecutive_hours_rate: undefined,
-      bank_holiday_multiplier: 1
+      bank_holiday_multiplier: 1,
+      is_vatable: false
     }
   });
 
@@ -116,6 +118,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       charge_type: data.charge_type || 'hourly_rate',
       base_rate: data.base_rate || 0,
       bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
+      is_vatable: data.is_vatable || false,
       ...data
     }, {
       onSuccess: () => {
@@ -123,6 +126,52 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
         onOpenChange(false);
       }
     });
+  };
+
+  const onSaveAndAdd = () => {
+    form.handleSubmit((data) => {
+      createSchedule.mutate({
+        client_id: clientId,
+        branch_id: branchId,
+        organization_id: organization?.id || '',
+        authority_type: data.authority_type || 'private',
+        start_date: data.start_date || '',
+        days_covered: data.days_covered || [],
+        time_from: data.time_from || '09:00',
+        time_until: data.time_until || '17:00',
+        rate_category: data.rate_category || 'standard',
+        pay_based_on: data.pay_based_on || 'hours_minutes',
+        charge_type: data.charge_type || 'hourly_rate',
+        base_rate: data.base_rate || 0,
+        bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
+        is_vatable: data.is_vatable || false,
+        ...data
+      }, {
+        onSuccess: () => {
+          // Reset form but keep some values for easier multiple entry
+          form.reset({
+            authority_type: data.authority_type,
+            service_type_code: data.service_type_code,
+            start_date: data.start_date,
+            end_date: data.end_date,
+            days_covered: [],
+            time_from: '',
+            time_until: '',
+            rate_category: 'standard',
+            pay_based_on: 'service',
+            charge_type: 'hourly_rate',
+            base_rate: 0,
+            rate_15_minutes: undefined,
+            rate_30_minutes: undefined,
+            rate_45_minutes: undefined,
+            rate_60_minutes: undefined,
+            consecutive_hours_rate: undefined,
+            bank_holiday_multiplier: 1,
+            is_vatable: false
+          });
+        }
+      });
+    })();
   };
 
   const toggleDay = (day: string, checked: boolean) => {
@@ -548,6 +597,51 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
               )}
             </div>
 
+            <Separator />
+
+            {/* VAT Configuration */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">VAT Configuration</h3>
+              
+              <FormField
+                control={form.control}
+                name="is_vatable"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Is this rate VATable? *
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Select whether VAT should be applied to this rate schedule
+                      </div>
+                    </div>
+                    <FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          type="button"
+                          variant={field.value === false ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(false)}
+                        >
+                          No
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={field.value === true ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => field.onChange(true)}
+                        >
+                          Yes
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="flex justify-end space-x-2">
               <Button 
                 type="button" 
@@ -557,11 +651,20 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                 Cancel
               </Button>
               <Button 
+                type="button" 
+                variant="default"
+                onClick={onSaveAndAdd}
+                disabled={createSchedule.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {createSchedule.isPending ? 'Adding...' : 'Add Another'}
+              </Button>
+              <Button 
                 type="submit" 
                 disabled={createSchedule.isPending}
-                className="bg-primary text-primary-foreground"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
-                {createSchedule.isPending ? 'Adding...' : 'Add'}
+                {createSchedule.isPending ? 'Saving...' : 'Save'}
               </Button>
             </div>
           </form>
