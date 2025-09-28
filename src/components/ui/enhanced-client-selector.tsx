@@ -80,6 +80,21 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
     }
   }, [open]);
 
+  // Clean up when component unmounts or client changes
+  useEffect(() => {
+    return () => {
+      setSearchInput('');
+      setOpen(false);
+    };
+  }, [selectedClientId]);
+
+  // Close selector when component is about to unmount or parent dialog closes
+  useEffect(() => {
+    return () => {
+      setOpen(false);
+    };
+  }, []);
+
   // Find selected client for display
   const selectedClient = clients.find(c => c.id === selectedClientId) || 
     recentClients?.find(c => c.id === selectedClientId);

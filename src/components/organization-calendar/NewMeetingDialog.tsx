@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,9 +92,14 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
     }
   };
 
-  const handleClose = () => {
-    resetForm();
-  };
+  const handleClose = useCallback(() => {
+    try {
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error closing dialog:', error);
+    }
+  }, [onOpenChange, resetForm]);
 
   const getProviderName = () => {
     switch (meetingType) {

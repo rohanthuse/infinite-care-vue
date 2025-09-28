@@ -95,6 +95,21 @@ export const EnhancedStaffSelector: React.FC<EnhancedStaffSelectorProps> = ({
     onStaffSelect('', {} as EnhancedStaff);
   }, [onStaffSelect]);
 
+  // Clean up when component unmounts or staff changes
+  useEffect(() => {
+    return () => {
+      setSearchInput('');
+      setOpen(false);
+    };
+  }, [selectedStaffId]);
+
+  // Close selector when component is about to unmount or parent dialog closes
+  useEffect(() => {
+    return () => {
+      setOpen(false);
+    };
+  }, []);
+
   const getStatusBadge = (status?: string) => {
     if (!status) return null;
     

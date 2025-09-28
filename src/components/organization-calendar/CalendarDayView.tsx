@@ -74,7 +74,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
             const isOnTheHour = timeSlot.getMinutes() === 0;
             
             return (
-              <React.Fragment key={index}>
+              <div key={index} className="contents">
                 {/* Time Label */}
                 <div className={`p-2 text-right border-r border-border ${isOnTheHour ? 'border-t' : ''}`}>
                   {isOnTheHour && (
@@ -108,7 +108,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                     </div>
                   )}
                 </div>
-              </React.Fragment>
+              </div>
             );
           })}
         </div>
