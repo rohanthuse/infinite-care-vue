@@ -451,6 +451,49 @@ export const useUpdateInvoiceStatus = () => {
   });
 };
 
+// Delete invoice with proper cascade handling
+const deleteInvoice = async (invoiceId: string) => {
+  console.log('[deleteInvoice] Deleting invoice:', invoiceId);
+  
+  // First delete line items (foreign key constraint)
+  const { error: lineItemsError } = await supabase
+    .from('invoice_line_items')
+    .delete()
+    .eq('invoice_id', invoiceId);
+
+  if (lineItemsError) {
+    console.error('[deleteInvoice] Error deleting line items:', lineItemsError);
+    throw lineItemsError;
+  }
+
+  // Then delete payment records
+  const { error: paymentsError } = await supabase
+    .from('payment_records')
+    .delete()
+    .eq('invoice_id', invoiceId);
+
+  if (paymentsError) {
+    console.error('[deleteInvoice] Error deleting payment records:', paymentsError);
+    throw paymentsError;
+  }
+
+  // Finally delete the main invoice
+  const { data, error } = await supabase
+    .from('client_billing')
+    .delete()
+    .eq('id', invoiceId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[deleteInvoice] Error deleting invoice:', error);
+    throw error;
+  }
+
+  console.log('[deleteInvoice] Invoice deleted successfully');
+  return data;
+};
+
 export const useAddPaymentRecord = () => {
   const queryClient = useQueryClient();
 
@@ -463,6 +506,25 @@ export const useAddPaymentRecord = () => {
     onError: (error: any) => {
       console.error('[useAddPaymentRecord] Error:', error);
       toast.error('Failed to record payment', {
+        description: error.message || 'Please try again later'
+      });
+    },
+  });
+};
+
+export const useDeleteInvoice = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteInvoice,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['enhanced-client-billing'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      toast.success('Invoice deleted successfully');
+    },
+    onError: (error: any) => {
+      console.error('[useDeleteInvoice] Error:', error);
+      toast.error('Failed to delete invoice', {
         description: error.message || 'Please try again later'
       });
     },

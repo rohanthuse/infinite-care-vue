@@ -17,9 +17,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, ArrowUpDown, Eye, PoundSterling } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Eye, PoundSterling, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useBranchInvoices, BranchInvoiceFilters, BranchInvoiceSorting } from '@/hooks/useBranchInvoices';
+import { useDeleteInvoice } from '@/hooks/useEnhancedClientBilling';
+import { DeleteInvoiceDialog } from '@/components/clients/tabs/DeleteInvoiceDialog';
 
 interface InvoicesDataTableProps {
   branchId: string;
@@ -36,8 +38,27 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
   const [sorting, setSorting] = useState<BranchInvoiceSorting>({ field: 'due_date', direction: 'desc' });
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deleteInvoice, setDeleteInvoice] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const { data: invoices, isLoading } = useBranchInvoices(branchId, { ...filters, search: searchTerm }, sorting);
+  const deleteInvoiceMutation = useDeleteInvoice();
+
+  const handleDeleteInvoice = (invoice: any) => {
+    setDeleteInvoice(invoice);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteInvoice) {
+      deleteInvoiceMutation.mutate(deleteInvoice.id, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setDeleteInvoice(null);
+        }
+      });
+    }
+  };
 
   const getStatusBadge = (status: string, isOverdue: boolean) => {
     if (isOverdue) {
@@ -190,21 +211,33 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onViewInvoice?.(invoice.id)}
-              title="View Ledger"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewInvoice?.(invoice.id)}
+                      title="View Ledger"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     {invoice.remaining_amount > 0 && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onRecordPayment?.(invoice.id)}
+                        title="Record Payment"
                       >
                         <PoundSterling className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {(invoice.status === 'draft' || invoice.status === 'cancelled') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteInvoice(invoice)}
+                        title="Delete Invoice"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
@@ -220,6 +253,14 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
           No invoices found matching your criteria.
         </div>
       )}
+
+      <DeleteInvoiceDialog
+        invoice={deleteInvoice}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        isLoading={deleteInvoiceMutation.isPending}
+      />
     </div>
   );
 };
