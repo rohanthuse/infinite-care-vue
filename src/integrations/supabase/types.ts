@@ -1339,10 +1339,12 @@ export type Database = {
           invoice_number: string
           invoice_type: string | null
           is_former_client: boolean | null
+          is_ledger_locked: boolean | null
           is_locked: boolean | null
           is_ready_to_send: boolean | null
           locked_at: string | null
           locked_by: string | null
+          net_amount: number | null
           notes: string | null
           organization_id: string
           overdue_date: string | null
@@ -1355,7 +1357,9 @@ export type Database = {
           status: string
           tax_amount: number | null
           total_amount: number | null
+          total_invoiced_hours_minutes: number | null
           updated_at: string
+          vat_amount: number | null
         }
         Insert: {
           actual_time_minutes?: number | null
@@ -1377,10 +1381,12 @@ export type Database = {
           invoice_number: string
           invoice_type?: string | null
           is_former_client?: boolean | null
+          is_ledger_locked?: boolean | null
           is_locked?: boolean | null
           is_ready_to_send?: boolean | null
           locked_at?: string | null
           locked_by?: string | null
+          net_amount?: number | null
           notes?: string | null
           organization_id: string
           overdue_date?: string | null
@@ -1393,7 +1399,9 @@ export type Database = {
           status?: string
           tax_amount?: number | null
           total_amount?: number | null
+          total_invoiced_hours_minutes?: number | null
           updated_at?: string
+          vat_amount?: number | null
         }
         Update: {
           actual_time_minutes?: number | null
@@ -1415,10 +1423,12 @@ export type Database = {
           invoice_number?: string
           invoice_type?: string | null
           is_former_client?: boolean | null
+          is_ledger_locked?: boolean | null
           is_locked?: boolean | null
           is_ready_to_send?: boolean | null
           locked_at?: string | null
           locked_by?: string | null
+          net_amount?: number | null
           notes?: string | null
           organization_id?: string
           overdue_date?: string | null
@@ -1431,7 +1441,9 @@ export type Database = {
           status?: string
           tax_amount?: number | null
           total_amount?: number | null
+          total_invoiced_hours_minutes?: number | null
           updated_at?: string
+          vat_amount?: number | null
         }
         Relationships: [
           {
@@ -4183,43 +4195,73 @@ export type Database = {
       }
       invoice_line_items: {
         Row: {
+          bank_holiday_multiplier_applied: number | null
+          booking_id: string | null
           created_at: string
+          day_type: string | null
           description: string
           discount_amount: number | null
+          duration_minutes: number | null
           id: string
           invoice_id: string
           line_total: number
           organization_id: string
           quantity: number | null
+          rate_per_unit: number | null
+          rate_type_applied: string | null
+          service_end_time: string | null
           service_id: string | null
+          service_start_time: string | null
           unit_price: number
           updated_at: string
+          visit_date: string | null
+          visit_record_id: string | null
         }
         Insert: {
+          bank_holiday_multiplier_applied?: number | null
+          booking_id?: string | null
           created_at?: string
+          day_type?: string | null
           description: string
           discount_amount?: number | null
+          duration_minutes?: number | null
           id?: string
           invoice_id: string
           line_total: number
           organization_id: string
           quantity?: number | null
+          rate_per_unit?: number | null
+          rate_type_applied?: string | null
+          service_end_time?: string | null
           service_id?: string | null
+          service_start_time?: string | null
           unit_price: number
           updated_at?: string
+          visit_date?: string | null
+          visit_record_id?: string | null
         }
         Update: {
+          bank_holiday_multiplier_applied?: number | null
+          booking_id?: string | null
           created_at?: string
+          day_type?: string | null
           description?: string
           discount_amount?: number | null
+          duration_minutes?: number | null
           id?: string
           invoice_id?: string
           line_total?: number
           organization_id?: string
           quantity?: number | null
+          rate_per_unit?: number | null
+          rate_type_applied?: string | null
+          service_end_time?: string | null
           service_id?: string | null
+          service_start_time?: string | null
           unit_price?: number
           updated_at?: string
+          visit_date?: string | null
+          visit_record_id?: string | null
         }
         Relationships: [
           {
@@ -7584,6 +7626,10 @@ export type Database = {
         Args: { invoice_id: string }
         Returns: number
       }
+      calculate_invoice_totals: {
+        Args: { invoice_id_param: string }
+        Returns: undefined
+      }
       calculate_leave_days: {
         Args: { p_end_date: string; p_start_date: string }
         Returns: number
@@ -7790,6 +7836,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      generate_invoice_ledger: {
+        Args: {
+          client_id_param: string
+          end_date_param: string
+          invoice_id_param: string
+          start_date_param: string
+        }
+        Returns: undefined
+      }
       generate_temporary_password: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -7827,6 +7882,20 @@ export type Database = {
           user_id: string
           user_name: string
           user_type: string
+        }[]
+      }
+      get_client_rate: {
+        Args: {
+          client_id_param: string
+          day_type_param: string
+          duration_minutes_param: number
+          service_date: string
+        }
+        Returns: {
+          bank_holiday_multiplier: number
+          is_vatable: boolean
+          rate_amount: number
+          rate_type: string
         }[]
       }
       get_client_reports_data: {
@@ -7867,6 +7936,10 @@ export type Database = {
       }
       get_current_user_organization_id: {
         Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_day_type: {
+        Args: { branch_id_param: string; check_date: string }
         Returns: string
       }
       get_demo_request_stats: {

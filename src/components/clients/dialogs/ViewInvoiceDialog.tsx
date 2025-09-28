@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Eye, Download, Loader2 } from "lucide-react";
+import { Eye, Download, Loader2, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import { generateInvoicePDF } from "@/utils/invoicePdfGenerator";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useToast } from "@/hooks/use-toast";
+import { InvoiceLedgerView } from "@/components/accounting/InvoiceLedgerView";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ const formatDateSafe = (dateValue: any): string => {
 export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDialogProps) {
   const { data: clientData } = useAdminClientDetail(invoice?.client_id || '');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showLedgerView, setShowLedgerView] = useState(false);
   const { toast } = useToast();
 
   const handleDownload = async () => {
@@ -102,6 +104,49 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
 
   if (!invoice) return null;
 
+  // Check if this is a ledger-based invoice
+  const isLedgerInvoice = invoice.invoice_type === 'ledger_based' || 
+                         invoice.start_date || 
+                         invoice.end_date ||
+                         invoice.total_invoiced_hours_minutes;
+
+  if (showLedgerView && invoice && isLedgerInvoice) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowLedgerView(false)}
+                  size="sm"
+                >
+                  ← Back to Summary
+                </Button>
+                <span>Invoice #{invoice.invoice_number} - Ledger View</span>
+              </div>
+              <Button
+                onClick={handleDownload}
+                disabled={isDownloading}
+                variant="outline"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {isDownloading ? "Downloading..." : "Download PDF"}
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <InvoiceLedgerView 
+            invoiceId={invoice.id} 
+            onClose={() => onOpenChange(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   const subtotal = invoice.line_items?.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0) || invoice.amount;
   const totalDiscounts = invoice.line_items?.reduce((sum, item) => sum + item.discount_amount, 0) || 0;
   const taxPercentage = invoice.tax_amount || 0;
@@ -122,19 +167,31 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
                 View detailed invoice information and download PDF
               </DialogDescription>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleDownload}
-              disabled={isDownloading}
-            >
-              {isDownloading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4 mr-2" />
+            <div className="flex items-center gap-2">
+              {isLedgerInvoice && (
+                <Button
+                  onClick={() => setShowLedgerView(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Ledger
+                </Button>
               )}
-              {isDownloading ? 'Generating...' : 'Download PDF'}
-            </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDownload}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {isDownloading ? 'Generating...' : 'Download PDF'}
+              </Button>
+            </div>
           </div>
         </DialogHeader>
         

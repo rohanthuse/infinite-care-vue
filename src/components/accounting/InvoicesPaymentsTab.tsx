@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FileText, PoundSterling } from 'lucide-react';
+import { PlusCircle, FileText, PoundSterling, Calculator } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FinancialSummaryCards from './FinancialSummaryCards';
 import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
-import { CreateEnhancedInvoiceDialog } from '@/components/clients/dialogs/CreateEnhancedInvoiceDialog';
-import { ViewInvoiceDialog } from '@/components/clients/dialogs/ViewInvoiceDialog';
+import { CreateEnhancedInvoiceDialog } from '../clients/dialogs/CreateEnhancedInvoiceDialog';
+import { CreateLedgerInvoiceDialog } from './CreateLedgerInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
+import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
 import { useClientsList } from '@/hooks/useAccountingData';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
@@ -25,6 +26,7 @@ interface InvoicesPaymentsTabProps {
 const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, branchName }) => {
   const [activeSubTab, setActiveSubTab] = useState('invoices');
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
+  const [isCreateLedgerInvoiceOpen, setIsCreateLedgerInvoiceOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isViewInvoiceOpen, setIsViewInvoiceOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
@@ -169,7 +171,16 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               disabled={!selectedClientId}
             >
               <PlusCircle className="h-4 w-4" />
-              Create Invoice
+              Manual Invoice
+            </Button>
+            <Button
+              onClick={() => setIsCreateLedgerInvoiceOpen(true)}
+              disabled={!selectedClientId}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Calculator className="w-4 h-4" />
+              Ledger Invoice
             </Button>
             <Button 
               variant="outline" 
@@ -246,6 +257,18 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         onOpenChange={setIsCreateInvoiceOpen}
         clientId={selectedClientId}
         uninvoicedBookings={uninvoicedBookings?.filter(booking => booking.client_id === selectedClientId) || []}
+      />
+
+      {/* Ledger Invoice Creation Dialog */}
+      <CreateLedgerInvoiceDialog
+        open={isCreateLedgerInvoiceOpen}
+        onOpenChange={setIsCreateLedgerInvoiceOpen}
+        branchId={branchId!}
+        clientId={selectedClientId}
+        onInvoiceCreated={(invoiceId) => {
+          // Auto-open the invoice view to show the generated ledger
+          handleViewInvoice(invoiceId);
+        }}
       />
 
       {/* Record Payment Dialog */}

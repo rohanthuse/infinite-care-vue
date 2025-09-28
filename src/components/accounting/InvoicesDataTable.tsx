@@ -190,13 +190,14 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onViewInvoice?.(invoice.id)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onViewInvoice?.(invoice.id)}
+              title="View Ledger"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
                     {invoice.remaining_amount > 0 && (
                       <Button
                         variant="ghost"

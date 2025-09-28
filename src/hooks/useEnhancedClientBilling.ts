@@ -46,10 +46,20 @@ export interface EnhancedClientBilling {
   currency: string;
   payment_terms: string;
   notes?: string;
-  invoice_type: 'manual' | 'automatic';
+  invoice_type: 'manual' | 'automatic' | 'ledger_based';
   generated_from_booking: boolean;
   sent_date?: string;
   overdue_date?: string;
+  // Ledger-specific fields
+  start_date?: string;
+  end_date?: string;
+  net_amount?: number;
+  vat_amount?: number;
+  total_invoiced_hours_minutes?: number;
+  is_ledger_locked?: boolean;
+  locked_at?: string;
+  locked_by?: string;
+  authority_type?: string;
   created_at: string;
   updated_at: string;
   line_items?: InvoiceLineItem[];
