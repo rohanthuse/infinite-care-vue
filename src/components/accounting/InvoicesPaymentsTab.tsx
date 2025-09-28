@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileText, PoundSterling, Calculator } from 'lucide-react';
 import FinancialSummaryCards from './FinancialSummaryCards';
 import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
-import { CreateInvoiceDialog } from './CreateInvoiceDialog';
+import { EnhancedCreateInvoiceDialog } from './EnhancedCreateInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
@@ -22,6 +22,8 @@ interface InvoicesPaymentsTabProps {
 }
 
 const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, branchName }) => {
+  const [organizationId] = useState<string>('temp-org-id'); // Temporary for now
+
   const [activeSubTab, setActiveSubTab] = useState('invoices');
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
@@ -97,16 +99,13 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     setIsViewPaymentOpen(true);
   };
 
-  // Handler for creating invoice (with client selection check)
+  // Handler for creating invoice - now opens enhanced flow
   const handleCreateInvoice = () => {
-    if (selectedClientId) {
-      setIsCreateInvoiceOpen(true);
-    } else {
-      setShowClientSelectionForInvoice(true);
-    }
+    // Always show client selection for the enhanced billing flow
+    setShowClientSelectionForInvoice(true);
   };
 
-  // Handler for when client is selected from the modal
+  // Handler for when client is selected from the modal - now opens enhanced flow
   const handleClientSelectedForInvoice = (clientId: string) => {
     setSelectedClientId(clientId);
     setShowClientSelectionForInvoice(false);
@@ -172,7 +171,6 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
             <Button 
               className="flex items-center gap-2"
               onClick={handleCreateInvoice}
-              disabled={!selectedClientId}
             >
               <PlusCircle className="h-4 w-4" />
               Create Invoice
@@ -247,12 +245,15 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
       </Tabs>
 
       {/* Invoice Creation Dialog */}
-      <CreateInvoiceDialog
-        open={isCreateInvoiceOpen}
-        onOpenChange={setIsCreateInvoiceOpen}
+      <EnhancedCreateInvoiceDialog
+        isOpen={isCreateInvoiceOpen}
+        onClose={() => {
+          setIsCreateInvoiceOpen(false);
+          setSelectedClientId('');
+        }}
         branchId={branchId!}
-        clientId={selectedClientId}
-        onInvoiceCreated={handleViewInvoice}
+        organizationId={organizationId || ''}  // Use empty string as fallback
+        preSelectedClientId={selectedClientId}
       />
 
       {/* Record Payment Dialog */}
