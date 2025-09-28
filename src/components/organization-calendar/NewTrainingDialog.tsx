@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect, SafeSelectContent, SafeSelectItem, SafeSelectTrigger, SafeSelectValue } from '@/components/ui/safe-select';
+import { ControlledDialog } from '@/components/ui/controlled-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -110,44 +110,46 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Schedule Training</DialogTitle>
-          <DialogDescription>Create a new training session</DialogDescription>
-        </DialogHeader>
+    <ControlledDialog 
+      id="new-training-dialog"
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Schedule Training"
+      description="Create a new training session"
+      className="sm:max-w-[500px]"
+    >
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="trainingCourse">Training Course</Label>
-            <Select value={trainingCourseId} onValueChange={setTrainingCourseId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select training course" />
-              </SelectTrigger>
-              <SelectContent>
+            <SafeSelect value={trainingCourseId} onValueChange={setTrainingCourseId}>
+              <SafeSelectTrigger>
+                <SafeSelectValue placeholder="Select training course" />
+              </SafeSelectTrigger>
+              <SafeSelectContent>
                 {trainingCourses?.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
+                  <SafeSelectItem key={course.id} value={course.id}>
                     {course.title}
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
-              </SelectContent>
-            </Select>
+              </SafeSelectContent>
+            </SafeSelect>
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="staff">Staff Member</Label>
-            <Select value={staffId} onValueChange={setStaffId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select staff member" />
-              </SelectTrigger>
-              <SelectContent>
+            <SafeSelect value={staffId} onValueChange={setStaffId}>
+              <SafeSelectTrigger>
+                <SafeSelectValue placeholder="Select staff member" />
+              </SafeSelectTrigger>
+              <SafeSelectContent>
                 {staff?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
+                  <SafeSelectItem key={member.id} value={member.id}>
                     {member.name}
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
-              </SelectContent>
-            </Select>
+              </SafeSelectContent>
+            </SafeSelect>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -213,7 +215,6 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
             {scheduleTraining.isPending ? 'Scheduling...' : 'Schedule Training'}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ControlledDialog>
   );
 };

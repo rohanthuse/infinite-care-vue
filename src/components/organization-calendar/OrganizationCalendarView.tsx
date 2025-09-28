@@ -43,6 +43,7 @@ import { CalendarExportDialog } from './CalendarExportDialog';
 import { DeleteEventDialog } from './DeleteEventDialog';
 import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalendarEvents';
 import { ErrorBoundary } from './ErrorBoundary';
+import { useDialogManager } from '@/hooks/useDialogManager';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -65,6 +66,7 @@ export const OrganizationCalendarView = () => {
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   
   const { organization } = useTenant();
+  const { closeAllDropdowns } = useDialogManager();
 
   // Fetch branches for the current organization
   const { data: branches } = useTenantAwareQuery(
@@ -174,37 +176,44 @@ export const OrganizationCalendarView = () => {
     }
     
     console.log('Organization found:', organization?.id);
-    setNewEventType(eventType);
     
-    try {
-      switch (eventType) {
-        case 'booking':
-          console.log('Opening booking dialog');
-          setNewBookingDialogOpen(true);
-          break;
-        case 'agreement':
-          console.log('Opening agreement dialog');
-          setAgreementDialogOpen(true);
-          break;
-        case 'training':
-          console.log('Opening training dialog');
-          setTrainingDialogOpen(true);
-          break;
-        case 'leave':
-          console.log('Opening leave dialog');
-          setLeaveDialogOpen(true);
-          break;
-        case 'meeting':
-          console.log('Opening meeting dialog, branch selected:', selectedBranch);
-          setMeetingDialogOpen(true);
-          break;
-        default:
-          console.warn('Unknown event type:', eventType);
+    // Close any open dropdowns first to prevent conflicts
+    closeAllDropdowns();
+    
+    // Use a small delay to ensure dropdowns are closed before opening dialogs
+    setTimeout(() => {
+      setNewEventType(eventType);
+      
+      try {
+        switch (eventType) {
+          case 'booking':
+            console.log('Opening booking dialog');
+            setNewBookingDialogOpen(true);
+            break;
+          case 'agreement':
+            console.log('Opening agreement dialog');
+            setAgreementDialogOpen(true);
+            break;
+          case 'training':
+            console.log('Opening training dialog');
+            setTrainingDialogOpen(true);
+            break;
+          case 'leave':
+            console.log('Opening leave dialog');
+            setLeaveDialogOpen(true);
+            break;
+          case 'meeting':
+            console.log('Opening meeting dialog, branch selected:', selectedBranch);
+            setMeetingDialogOpen(true);
+            break;
+          default:
+            console.warn('Unknown event type:', eventType);
+        }
+      } catch (error) {
+        console.error('Error in handleNewEvent:', error);
+        toast.error('Failed to open dialog');
       }
-    } catch (error) {
-      console.error('Error in handleNewEvent:', error);
-      toast.error('Failed to open dialog');
-    }
+    }, 100);
   };
 
   const handleNewBooking = () => {
@@ -618,7 +627,12 @@ export const OrganizationCalendarView = () => {
         open={meetingDialogOpen}
         onOpenChange={(open) => {
           console.log('Meeting dialog onOpenChange called with:', open);
-          setMeetingDialogOpen(open);
+          if (!open) {
+            // Add small delay to prevent rapid state changes
+            setTimeout(() => setMeetingDialogOpen(false), 50);
+          } else {
+            setMeetingDialogOpen(true);
+          }
         }}
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
         prefilledDate={currentDate}
@@ -635,7 +649,14 @@ export const OrganizationCalendarView = () => {
       {/* Training Dialog */}
       <NewTrainingDialog
         open={trainingDialogOpen}
-        onOpenChange={setTrainingDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            // Add small delay to prevent rapid state changes
+            setTimeout(() => setTrainingDialogOpen(false), 50);
+          } else {
+            setTrainingDialogOpen(true);
+          }
+        }}
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
         prefilledDate={currentDate}
       />

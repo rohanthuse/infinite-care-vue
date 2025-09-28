@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect, SafeSelectContent, SafeSelectItem, SafeSelectTrigger, SafeSelectValue } from '@/components/ui/safe-select';
+import { ControlledDialog } from '@/components/ui/controlled-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { useTenantAwareQuery } from '@/hooks/useTenantAware';
@@ -25,7 +25,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [clientId, setClientId] = useState('');
-  const [staffId, setStaffId] = useState('');
+  const [staffId, setStaffId] = useState<string | undefined>(undefined);
   const [date, setDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
   const [time, setTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
@@ -79,7 +79,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setClientId('');
-    setStaffId('');
+    setStaffId(undefined);
     setDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
     setTime('09:00');
     setEndTime('10:00');
@@ -128,12 +128,14 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Schedule New Meeting</DialogTitle>
-          <DialogDescription>Create a new client appointment</DialogDescription>
-        </DialogHeader>
+    <ControlledDialog 
+      id="new-meeting-dialog"
+      open={open} 
+      onOpenChange={onOpenChange}
+      title="Schedule New Meeting"
+      description="Create a new client appointment"
+      className="sm:max-w-[500px]"
+    >
         
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
@@ -148,35 +150,34 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 
           <div className="grid gap-2">
             <Label htmlFor="client">Client</Label>
-            <Select value={clientId} onValueChange={setClientId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select client" />
-              </SelectTrigger>
-              <SelectContent>
+            <SafeSelect value={clientId} onValueChange={setClientId}>
+              <SafeSelectTrigger>
+                <SafeSelectValue placeholder="Select client" />
+              </SafeSelectTrigger>
+              <SafeSelectContent>
                 {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
+                  <SafeSelectItem key={client.id} value={client.id}>
                     {client.name}
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
-              </SelectContent>
-            </Select>
+              </SafeSelectContent>
+            </SafeSelect>
           </div>
 
           <div className="grid gap-2">
             <Label htmlFor="staff">Staff Member (Optional)</Label>
-            <Select value={staffId} onValueChange={setStaffId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select staff member" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">No specific staff</SelectItem>
+            <SafeSelect value={staffId} onValueChange={setStaffId}>
+              <SafeSelectTrigger>
+                <SafeSelectValue placeholder="No specific staff" />
+              </SafeSelectTrigger>
+              <SafeSelectContent>
                 {staff?.map((member) => (
-                  <SelectItem key={member.id} value={member.id}>
+                  <SafeSelectItem key={member.id} value={member.id}>
                     {member.name}
-                  </SelectItem>
+                  </SafeSelectItem>
                 ))}
-              </SelectContent>
-            </Select>
+              </SafeSelectContent>
+            </SafeSelect>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -242,7 +243,6 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
             {createAppointment.isPending ? 'Scheduling...' : 'Schedule Meeting'}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </ControlledDialog>
   );
 };
