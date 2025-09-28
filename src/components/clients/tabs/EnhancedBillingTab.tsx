@@ -77,7 +77,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
   };
 
   const handleStatusChange = async (invoiceId: string, newStatus: string) => {
-    await updateStatusMutation.mutateAsync({ invoiceId, status: newStatus });
+    await updateStatusMutation.mutateAsync({ id: invoiceId, status: newStatus });
   };
 
   const handleViewInvoice = (invoice: EnhancedClientBilling) => {
