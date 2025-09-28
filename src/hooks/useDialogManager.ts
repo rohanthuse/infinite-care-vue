@@ -25,17 +25,15 @@ export function useDialogManager() {
     previousLocation.current = location.pathname;
   }, [location.pathname, dialogs]);
 
-  // Close any open dropdowns before opening dialogs
+  // Close any open dropdowns before opening dialogs - but don't interfere with dialogs
   const closeAllDropdowns = useCallback(() => {
-    // Close all radix dropdown menus by pressing escape
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    
-    // Additional cleanup - find any open dropdowns and close them
-    const openDropdowns = document.querySelectorAll('[data-state="open"][data-radix-collection-item]');
+    // Find and close radix dropdown menus specifically (not dialogs)
+    const openDropdowns = document.querySelectorAll('[data-radix-dropdown-menu-content][data-state="open"]');
     openDropdowns.forEach(dropdown => {
-      const closeButton = dropdown.querySelector('[data-radix-dropdown-menu-trigger]');
-      if (closeButton) {
-        (closeButton as HTMLElement).click();
+      // Find the trigger for this dropdown
+      const trigger = document.querySelector(`[data-radix-dropdown-menu-trigger][aria-expanded="true"]`);
+      if (trigger) {
+        (trigger as HTMLElement).click();
       }
     });
   }, []);
@@ -57,19 +55,11 @@ export function useDialogManager() {
   const openDialog = useCallback((id: string, closeDropdownsFirst = true) => {
     if (closeDropdownsFirst) {
       closeAllDropdowns();
-      // Small delay to ensure dropdown closes completely before opening dialog
-      setTimeout(() => {
-        setDialogs(prev => prev.map(d => ({ 
-          ...d, 
-          isOpen: d.id === id ? true : false 
-        })));
-      }, 100);
-    } else {
-      setDialogs(prev => prev.map(d => ({ 
-        ...d, 
-        isOpen: d.id === id ? true : false 
-      })));
     }
+    setDialogs(prev => prev.map(d => ({ 
+      ...d, 
+      isOpen: d.id === id ? true : false 
+    })));
   }, [closeAllDropdowns]);
 
   const closeDialog = useCallback((id: string) => {
