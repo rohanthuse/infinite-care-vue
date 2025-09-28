@@ -16,7 +16,6 @@ import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
 import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
-import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;
@@ -215,10 +214,12 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
                 <p className="text-sm text-gray-500">Manage and track all client invoices</p>
               </div>
             </div>
-            <InvoicesDataTable 
-              branchId={branchId}
+            <EnhancedInvoicesDataTable 
+              branchId={branchId!}
+              branchName={branchName}
               onViewInvoice={handleViewInvoice}
               onRecordPayment={handleRecordPayment}
+              onCreateInvoice={() => setIsCreateInvoiceOpen(true)}
             />
           </div>
         </TabsContent>
