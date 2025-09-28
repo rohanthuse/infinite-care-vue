@@ -69,12 +69,31 @@ export function useDialogManager() {
   }, []);
 
   const closeAllDialogs = useCallback(() => {
-    dialogs.forEach(dialog => {
-      if (dialog.isOpen) {
-        dialog.onClose();
-      }
-    });
-    setDialogs(prev => prev.map(d => ({ ...d, isOpen: false })));
+    try {
+      dialogs.forEach(dialog => {
+        if (dialog.isOpen) {
+          dialog.onClose();
+        }
+      });
+      setDialogs(prev => prev.map(d => ({ ...d, isOpen: false })));
+      
+      // Additional cleanup for any lingering UI states
+      setTimeout(() => {
+        // Remove any lingering overlay or focus trap attributes
+        const appRoot = document.getElementById('root');
+        if (appRoot) {
+          appRoot.removeAttribute('aria-hidden');
+          appRoot.removeAttribute('inert');
+        }
+        
+        // Ensure body can scroll and interact
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('pointer-events');
+        document.documentElement.style.removeProperty('overflow');
+      }, 50);
+    } catch (error) {
+      console.error('Error closing all dialogs:', error);
+    }
   }, [dialogs]);
 
   const isDialogOpen = useCallback((id: string) => {

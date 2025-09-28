@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,9 +70,14 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
     }
   };
 
-  const handleClose = () => {
-    resetForm();
-  };
+  const handleClose = useCallback(() => {
+    try {
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error closing leave dialog:', error);
+    }
+  }, [onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -143,7 +148,7 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
         </div>
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button 

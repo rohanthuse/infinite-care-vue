@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,9 +105,14 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
     }
   };
 
-  const handleClose = () => {
-    resetForm();
-  };
+  const handleClose = useCallback(() => {
+    try {
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error closing training dialog:', error);
+    }
+  }, [onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -203,7 +208,7 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
         </div>
 
         <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button 

@@ -182,35 +182,38 @@ export const OrganizationCalendarView = () => {
     
     setNewEventType(eventType);
     
-    try {
-      switch (eventType) {
-        case 'booking':
-          console.log('Opening booking dialog');
-          setNewBookingDialogOpen(true);
-          break;
-        case 'agreement':
-          console.log('Opening agreement dialog');
-          setAgreementDialogOpen(true);
-          break;
-        case 'training':
-          console.log('Opening training dialog');
-          setTrainingDialogOpen(true);
-          break;
-        case 'leave':
-          console.log('Opening leave dialog');
-          setLeaveDialogOpen(true);
-          break;
-        case 'meeting':
-          console.log('Opening meeting dialog, branch selected:', selectedBranch);
-          setMeetingDialogOpen(true);
-          break;
-        default:
-          console.warn('Unknown event type:', eventType);
+    // Add small delay to ensure dropdown closes completely before dialog opens
+    setTimeout(() => {
+      try {
+        switch (eventType) {
+          case 'booking':
+            console.log('Opening booking dialog');
+            setNewBookingDialogOpen(true);
+            break;
+          case 'agreement':
+            console.log('Opening agreement dialog');
+            setAgreementDialogOpen(true);
+            break;
+          case 'training':
+            console.log('Opening training dialog');
+            setTrainingDialogOpen(true);
+            break;
+          case 'leave':
+            console.log('Opening leave dialog');
+            setLeaveDialogOpen(true);
+            break;
+          case 'meeting':
+            console.log('Opening meeting dialog, branch selected:', selectedBranch);
+            setMeetingDialogOpen(true);
+            break;
+          default:
+            console.warn('Unknown event type:', eventType);
+        }
+      } catch (error) {
+        console.error('Error in handleNewEvent:', error);
+        toast.error('Failed to open dialog');
       }
-    } catch (error) {
-      console.error('Error in handleNewEvent:', error);
-      toast.error('Failed to open dialog');
-    }
+    }, 100);
   };
 
   const handleNewBooking = () => {
