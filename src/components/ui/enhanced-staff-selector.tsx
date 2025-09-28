@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -85,15 +85,15 @@ export const EnhancedStaffSelector: React.FC<EnhancedStaffSelectorProps> = ({
   const selectedStaff = staff.find(s => s.id === selectedStaffId) || 
     recentStaff?.find(s => s.id === selectedStaffId);
 
-  const handleStaffSelect = (staffMember: EnhancedStaff) => {
+  const handleStaffSelect = useCallback((staffMember: EnhancedStaff) => {
     onStaffSelect(staffMember.id, staffMember);
     setOpen(false);
     setSearchInput('');
-  };
+  }, [onStaffSelect]);
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     onStaffSelect('', {} as EnhancedStaff);
-  };
+  }, [onStaffSelect]);
 
   const getStatusBadge = (status?: string) => {
     if (!status) return null;

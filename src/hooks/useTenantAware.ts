@@ -114,15 +114,39 @@ export const createTenantQuery = (organizationId: string) => ({
 });
 
 /**
- * Helper function to validate branch belongs to organization
+ * Helper function to validate branch belongs to organization with caching
  */
-export const validateBranchInOrganization = async (branchId: string, organizationId: string): Promise<boolean> => {
-  const { data: branch } = await supabase
-    .from('branches')
-    .select('id')
-    .eq('id', branchId)
-    .eq('organization_id', organizationId)
-    .single();
+const validationCache = new Map<string, Promise<boolean>>();
 
-  return !!branch;
+export const validateBranchInOrganization = async (branchId: string, organizationId: string): Promise<boolean> => {
+  const cacheKey = `${branchId}-${organizationId}`;
+  
+  if (validationCache.has(cacheKey)) {
+    return validationCache.get(cacheKey)!;
+  }
+
+  const validationPromise = (async () => {
+    try {
+      const { data: branch } = await supabase
+        .from('branches')
+        .select('id')
+        .eq('id', branchId)
+        .eq('organization_id', organizationId)
+        .single();
+      
+      return !!branch;
+    } catch (error) {
+      console.error('Branch validation error:', error);
+      return false;
+    }
+  })();
+
+  validationCache.set(cacheKey, validationPromise);
+  
+  // Clear cache after 5 minutes to prevent memory leaks
+  setTimeout(() => {
+    validationCache.delete(cacheKey);
+  }, 5 * 60 * 1000);
+
+  return validationPromise;
 };

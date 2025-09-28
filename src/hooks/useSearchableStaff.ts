@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { validateBranchInOrganization } from './useTenantAware';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 export interface EnhancedStaff {
   id: string;
@@ -81,13 +81,21 @@ export const useSearchableStaff = (branchId: string) => {
   const [page, setPage] = useState(0);
   const limit = 20;
 
+  const queryParams = useMemo(() => ({
+    branchId,
+    searchTerm: searchTerm.trim(),
+    staffStatus,
+    limit,
+    offset: page * limit
+  }), [branchId, searchTerm, staffStatus, page, limit]);
+
   const {
     data,
     isLoading,
     error,
     refetch
   } = useQuery({
-    queryKey: ['searchable-staff', branchId, organization?.id, searchTerm, staffStatus, page],
+    queryKey: ['searchable-staff', queryParams, organization?.id],
     queryFn: async () => {
       if (!organization?.id) {
         throw new Error('Organization context required');
@@ -99,15 +107,11 @@ export const useSearchableStaff = (branchId: string) => {
         throw new Error('Branch does not belong to current organization');
       }
 
-      return fetchSearchableStaff({
-        branchId,
-        searchTerm,
-        staffStatus,
-        limit,
-        offset: page * limit
-      });
+      return fetchSearchableStaff(queryParams);
     },
     enabled: Boolean(branchId) && Boolean(organization?.id),
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Client-side filtering for immediate feedback

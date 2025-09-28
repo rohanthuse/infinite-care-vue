@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -84,15 +84,15 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
   const selectedClient = clients.find(c => c.id === selectedClientId) || 
     recentClients?.find(c => c.id === selectedClientId);
 
-  const handleClientSelect = (client: EnhancedClient) => {
+  const handleClientSelect = useCallback((client: EnhancedClient) => {
     onClientSelect(client.id, client);
     setOpen(false);
     setSearchInput('');
-  };
+  }, [onClientSelect]);
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     onClientSelect('', {} as EnhancedClient);
-  };
+  }, [onClientSelect]);
 
   const getStatusBadge = (status?: string) => {
     if (!status) return null;

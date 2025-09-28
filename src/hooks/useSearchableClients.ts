@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 
 export interface EnhancedClient {
   id: string;
@@ -86,23 +86,25 @@ export const useSearchableClients = (branchId: string) => {
   const [page, setPage] = useState(0);
   const limit = 20;
 
+  const queryParams = useMemo(() => ({
+    branchId,
+    searchTerm: searchTerm.trim(),
+    clientStatus,
+    limit,
+    offset: page * limit
+  }), [branchId, searchTerm, clientStatus, page, limit]);
+
   const {
     data,
     isLoading,
     error,
     refetch
   } = useQuery({
-    queryKey: ['searchable-clients', branchId, searchTerm, clientStatus, page],
-    queryFn: () => fetchSearchableClients({
-      branchId,
-      searchTerm,
-      clientStatus,
-      limit,
-      offset: page * limit
-    }),
+    queryKey: ['searchable-clients', queryParams],
+    queryFn: () => fetchSearchableClients(queryParams),
     enabled: Boolean(branchId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Client-side filtering for instant response on fast typing
@@ -122,15 +124,17 @@ export const useSearchableClients = (branchId: string) => {
   const hasNextPage = data ? (page + 1) * limit < data.totalCount : false;
   const hasPreviousPage = page > 0;
 
-  const nextPage = () => {
-    if (hasNextPage) setPage(page + 1);
-  };
+  const nextPage = useCallback(() => {
+    if (hasNextPage) setPage(prev => prev + 1);
+  }, [hasNextPage]);
 
-  const previousPage = () => {
-    if (hasPreviousPage) setPage(page - 1);
-  };
+  const previousPage = useCallback(() => {
+    if (hasPreviousPage) setPage(prev => prev - 1);
+  }, [hasPreviousPage]);
 
-  const resetPage = () => setPage(0);
+  const resetPage = useCallback(() => {
+    setPage(0);
+  }, []);
 
   return {
     clients: filteredClients,
