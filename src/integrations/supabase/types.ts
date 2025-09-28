@@ -1322,11 +1322,15 @@ export type Database = {
         Row: {
           actual_time_minutes: number | null
           amount: number
+          authority_id: string | null
           authority_type: string | null
+          bill_to_address: Json | null
+          bill_to_type: string | null
           booked_time_minutes: number | null
           booking_id: string | null
           client_group_id: string | null
           client_id: string
+          consolidation_type: string | null
           created_at: string
           currency: string | null
           description: string
@@ -1353,6 +1357,7 @@ export type Database = {
           payment_terms: string | null
           sent_date: string | null
           service_provided_date: string | null
+          service_to_address: Json | null
           start_date: string | null
           status: string
           tax_amount: number | null
@@ -1364,11 +1369,15 @@ export type Database = {
         Insert: {
           actual_time_minutes?: number | null
           amount: number
+          authority_id?: string | null
           authority_type?: string | null
+          bill_to_address?: Json | null
+          bill_to_type?: string | null
           booked_time_minutes?: number | null
           booking_id?: string | null
           client_group_id?: string | null
           client_id: string
+          consolidation_type?: string | null
           created_at?: string
           currency?: string | null
           description: string
@@ -1395,6 +1404,7 @@ export type Database = {
           payment_terms?: string | null
           sent_date?: string | null
           service_provided_date?: string | null
+          service_to_address?: Json | null
           start_date?: string | null
           status?: string
           tax_amount?: number | null
@@ -1406,11 +1416,15 @@ export type Database = {
         Update: {
           actual_time_minutes?: number | null
           amount?: number
+          authority_id?: string | null
           authority_type?: string | null
+          bill_to_address?: Json | null
+          bill_to_type?: string | null
           booked_time_minutes?: number | null
           booking_id?: string | null
           client_group_id?: string | null
           client_id?: string
+          consolidation_type?: string | null
           created_at?: string
           currency?: string | null
           description?: string
@@ -1437,6 +1451,7 @@ export type Database = {
           payment_terms?: string | null
           sent_date?: string | null
           service_provided_date?: string | null
+          service_to_address?: Json | null
           start_date?: string | null
           status?: string
           tax_amount?: number | null
@@ -1446,6 +1461,13 @@ export type Database = {
           vat_amount?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "client_billing_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_billing_booking_id_fkey"
             columns: ["booking_id"]
@@ -2123,6 +2145,57 @@ export type Database = {
             columns: ["recorded_by_staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_funding_periods: {
+        Row: {
+          authority_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          funding_type: string
+          id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          authority_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          funding_type: string
+          id?: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          authority_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          funding_type?: string
+          id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_funding_periods_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_funding_periods_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -3230,6 +3303,7 @@ export type Database = {
           address: string | null
           age_group: Database["public"]["Enums"]["age_group"]
           auth_user_id: string | null
+          authority_id: string | null
           avatar_initials: string | null
           branch_id: string | null
           communication_preferences: string | null
@@ -3240,6 +3314,7 @@ export type Database = {
           emergency_contact: string | null
           emergency_phone: string | null
           first_name: string
+          funding_type: string | null
           gender: string | null
           gp_details: string | null
           id: string
@@ -3269,6 +3344,7 @@ export type Database = {
           address?: string | null
           age_group?: Database["public"]["Enums"]["age_group"]
           auth_user_id?: string | null
+          authority_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
           communication_preferences?: string | null
@@ -3279,6 +3355,7 @@ export type Database = {
           emergency_contact?: string | null
           emergency_phone?: string | null
           first_name: string
+          funding_type?: string | null
           gender?: string | null
           gp_details?: string | null
           id?: string
@@ -3308,6 +3385,7 @@ export type Database = {
           address?: string | null
           age_group?: Database["public"]["Enums"]["age_group"]
           auth_user_id?: string | null
+          authority_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
           communication_preferences?: string | null
@@ -3318,6 +3396,7 @@ export type Database = {
           emergency_contact?: string | null
           emergency_phone?: string | null
           first_name?: string
+          funding_type?: string | null
           gender?: string | null
           gp_details?: string | null
           id?: string
@@ -3343,6 +3422,13 @@ export type Database = {
           title?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_authority_id_fkey"
+            columns: ["authority_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_branch_id_fkey"
             columns: ["branch_id"]
@@ -7882,6 +7968,14 @@ export type Database = {
           user_id: string
           user_name: string
           user_type: string
+        }[]
+      }
+      get_client_funding_info: {
+        Args: { p_client_id: string; p_date?: string }
+        Returns: {
+          authority_id: string
+          authority_name: string
+          funding_type: string
         }[]
       }
       get_client_rate: {
