@@ -31,6 +31,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [selectedInvoiceIdForPayment, setSelectedInvoiceIdForPayment] = useState<string>('');
   const [selectedPaymentForView, setSelectedPaymentForView] = useState<string | null>(null);
   const [isViewPaymentOpen, setIsViewPaymentOpen] = useState(false);
+  const [showClientSelectionForInvoice, setShowClientSelectionForInvoice] = useState(false);
   
   const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
   
@@ -96,6 +97,22 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     setIsViewPaymentOpen(true);
   };
 
+  // Handler for creating invoice (with client selection check)
+  const handleCreateInvoice = () => {
+    if (selectedClientId) {
+      setIsCreateInvoiceOpen(true);
+    } else {
+      setShowClientSelectionForInvoice(true);
+    }
+  };
+
+  // Handler for when client is selected from the modal
+  const handleClientSelectedForInvoice = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setShowClientSelectionForInvoice(false);
+    setIsCreateInvoiceOpen(true);
+  };
+
   // Handler for generating reports
   const handleGenerateReport = () => {
     if (activeSubTab === 'invoices' && allInvoices?.length) {
@@ -154,11 +171,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           <div className="flex flex-wrap gap-3">
             <Button 
               className="flex items-center gap-2"
-              onClick={() => {
-                if (selectedClientId) {
-                  setIsCreateInvoiceOpen(true);
-                }
-              }}
+              onClick={handleCreateInvoice}
               disabled={!selectedClientId}
             >
               <PlusCircle className="h-4 w-4" />
@@ -212,7 +225,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               branchName={branchName}
               onViewInvoice={handleViewInvoice}
               onRecordPayment={handleRecordPayment}
-              onCreateInvoice={() => setIsCreateInvoiceOpen(true)}
+              onCreateInvoice={handleCreateInvoice}
             />
           </div>
         </TabsContent>
@@ -266,6 +279,30 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         }}
         paymentId={selectedPaymentForView}
       />
+
+      {/* Client Selection Modal for Invoice Creation */}
+      {showClientSelectionForInvoice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Select Client for Invoice</h3>
+            <EnhancedClientSelector
+              branchId={branchId!}
+              selectedClientId=""
+              onClientSelect={handleClientSelectedForInvoice}
+              placeholder="Search and select a client..."
+              className="w-full mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowClientSelectionForInvoice(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
