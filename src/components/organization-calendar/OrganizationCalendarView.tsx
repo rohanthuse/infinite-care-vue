@@ -167,44 +167,43 @@ export const OrganizationCalendarView = () => {
     
     // Ensure user is properly authenticated and in correct context
     if (!organization?.id) {
+      console.error('No organization found:', organization);
       toast.error('Please ensure you are logged in and have access to this organization');
       return;
     }
     
+    console.log('Organization found:', organization?.id);
     setNewEventType(eventType);
     
-    // Add small delay to ensure dropdown closes before dialog opens
-    setTimeout(() => {
-      try {
-        switch (eventType) {
-          case 'booking':
-            console.log('Opening booking dialog');
-            setNewBookingDialogOpen(true);
-            break;
-          case 'agreement':
-            console.log('Opening agreement dialog');
-            setAgreementDialogOpen(true);
-            break;
-          case 'training':
-            console.log('Opening training dialog');
-            setTrainingDialogOpen(true);
-            break;
-          case 'leave':
-            console.log('Opening leave dialog');
-            setLeaveDialogOpen(true);
-            break;
-          case 'meeting':
-            console.log('Opening meeting dialog');
-            setMeetingDialogOpen(true);
-            break;
-          default:
-            console.warn('Unknown event type:', eventType);
-        }
-      } catch (error) {
-        console.error('Error in handleNewEvent:', error);
-        toast.error('Failed to open dialog');
+    try {
+      switch (eventType) {
+        case 'booking':
+          console.log('Opening booking dialog');
+          setNewBookingDialogOpen(true);
+          break;
+        case 'agreement':
+          console.log('Opening agreement dialog');
+          setAgreementDialogOpen(true);
+          break;
+        case 'training':
+          console.log('Opening training dialog');
+          setTrainingDialogOpen(true);
+          break;
+        case 'leave':
+          console.log('Opening leave dialog');
+          setLeaveDialogOpen(true);
+          break;
+        case 'meeting':
+          console.log('Opening meeting dialog, branch selected:', selectedBranch);
+          setMeetingDialogOpen(true);
+          break;
+        default:
+          console.warn('Unknown event type:', eventType);
       }
-    }, 100);
+    } catch (error) {
+      console.error('Error in handleNewEvent:', error);
+      toast.error('Failed to open dialog');
+    }
   };
 
   const handleNewBooking = () => {
@@ -615,7 +614,10 @@ export const OrganizationCalendarView = () => {
       {/* Meeting Dialog */}
       <NewMeetingDialog
         open={meetingDialogOpen}
-        onOpenChange={setMeetingDialogOpen}
+        onOpenChange={(open) => {
+          console.log('Meeting dialog onOpenChange called with:', open);
+          setMeetingDialogOpen(open);
+        }}
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
         prefilledDate={currentDate}
       />

@@ -18,22 +18,29 @@ export const useCreateClientAppointment = () => {
 
   return useMutation({
     mutationFn: async (appointment: CreateClientAppointment) => {
+      console.log('Creating appointment with data:', appointment);
+      
       const { data, error } = await supabase
         .from('client_appointments')
         .insert([appointment])
-        .select()
-        .single();
+        .select();
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Appointment created successfully:', data);
+      return data?.[0] || data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Appointment creation successful:', data);
       toast.success('Meeting scheduled successfully');
       queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
     },
     onError: (error) => {
       console.error('Error creating appointment:', error);
-      toast.error('Failed to schedule meeting');
+      toast.error(`Failed to schedule meeting: ${error.message}`);
     }
   });
 };
