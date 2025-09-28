@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { useTenantAwareQuery } from '@/hooks/useTenantAware';
 import { supabase } from '@/integrations/supabase/client';
 import { useScheduleTraining } from '@/hooks/useTrainingCalendar';
@@ -79,21 +80,29 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   };
 
   const handleScheduleTraining = async () => {
-    if (!trainingCourseId || !staffId || !date || !branchId) return;
+    if (!trainingCourseId || !staffId || !date || !branchId) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
 
-    await scheduleTraining.mutateAsync({
-      training_course_id: trainingCourseId,
-      staff_id: staffId,
-      branch_id: branchId,
-      scheduled_date: date,
-      scheduled_time: time,
-      end_time: endTime,
-      location,
-      notes
-    });
+    try {
+      await scheduleTraining.mutateAsync({
+        training_course_id: trainingCourseId,
+        staff_id: staffId,
+        branch_id: branchId,
+        scheduled_date: date,
+        scheduled_time: time,
+        end_time: endTime,
+        location,
+        notes
+      });
 
-    resetForm();
-    onOpenChange(false);
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error scheduling training:', error);
+      // Error toast is handled by the mutation
+    }
   };
 
   const handleClose = () => {

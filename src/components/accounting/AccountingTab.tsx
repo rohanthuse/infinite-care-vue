@@ -11,6 +11,7 @@ import {
   Percent,
   Receipt
 } from "lucide-react";
+import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 import InvoicesPaymentsTab from "./InvoicesPaymentsTab";
 import ExtraTimeTab from "./ExtraTimeTab";
 import ExpensesTab from "./ExpensesTab";
@@ -18,15 +19,12 @@ import TravelTab from "./TravelTab";
 import PayrollTab from "./PayrollTab";
 import RateManagementTab from "./RateManagementTab";
 
-interface AccountingTabProps {
-  branchId?: string;
-  branchName?: string;
-}
-
-const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) => {
-  console.log('[AccountingTab] Received props:', { branchId, branchName });
+const AccountingTab: React.FC = () => {
+  const { id: branchId, branchName } = useBranchDashboardNavigation();
   const [activeTab, setActiveTab] = useState("invoices-payments");
   const [isExporting, setIsExporting] = useState(false);
+
+  const displayBranchName = branchName ? decodeURIComponent(branchName) : "Med-Infinite Branch";
 
   const getExportButtonText = () => {
     switch (activeTab) {
@@ -133,27 +131,27 @@ const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) =
           </TabsList>
           
           <TabsContent value="invoices-payments" className="mt-0">
-            <InvoicesPaymentsTab branchId={branchId} branchName={branchName} />
+            <InvoicesPaymentsTab branchId={branchId} branchName={displayBranchName} />
           </TabsContent>
           
           <TabsContent value="extra-time" className="mt-0">
-            <ExtraTimeTab branchId={branchId} branchName={branchName} />
+            <ExtraTimeTab branchId={branchId} branchName={displayBranchName} />
           </TabsContent>
           
           <TabsContent value="expenses" className="mt-0">
-            <ExpensesTab branchId={branchId} branchName={branchName} />
+            <ExpensesTab branchId={branchId} branchName={displayBranchName} />
           </TabsContent>
           
           <TabsContent value="travel" className="mt-0">
-            <TravelTab branchId={branchId} branchName={branchName} />
+            <TravelTab branchId={branchId} branchName={displayBranchName} />
           </TabsContent>
           
           <TabsContent value="payroll" className="mt-0">
-            <PayrollTab branchId={branchId} branchName={branchName} />
+            <PayrollTab branchId={branchId} branchName={displayBranchName} />
           </TabsContent>
           
           <TabsContent value="rates" className="mt-0">
-            <RateManagementTab branchId={branchId} branchName={branchName} />
+            <RateManagementTab branchId={branchId} branchName={displayBranchName} />
           </TabsContent>
         </Tabs>
       </div>

@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { useCreateAnnualLeave } from '@/hooks/useLeaveManagement';
 
 interface NewLeaveDialogProps {
@@ -47,18 +48,26 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
   };
 
   const handleScheduleLeave = async () => {
-    if (!title || !leaveType || !startDate || !endDate || !branchId) return;
+    if (!title || !leaveType || !startDate || !endDate || !branchId) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
 
-    await createAnnualLeave.mutateAsync({
-      branch_id: branchId,
-      leave_name: title,
-      leave_date: startDate,
-      is_company_wide: true,
-      is_recurring: false
-    });
+    try {
+      await createAnnualLeave.mutateAsync({
+        branch_id: branchId,
+        leave_name: title,
+        leave_date: startDate,
+        is_company_wide: true,
+        is_recurring: false
+      });
 
-    resetForm();
-    onOpenChange(false);
+      resetForm();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error scheduling leave:', error);
+      // Error toast is handled by the mutation
+    }
   };
 
   const handleClose = () => {

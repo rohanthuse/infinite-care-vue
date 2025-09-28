@@ -11,13 +11,19 @@ interface CalendarWeekViewProps {
   events?: CalendarEvent[];
   isLoading?: boolean;
   onEventClick?: (event: CalendarEvent) => void;
+  onEditEvent?: (event: CalendarEvent) => void;
+  onDeleteEvent?: (event: CalendarEvent) => void;
+  onDuplicateEvent?: (event: CalendarEvent) => void;
 }
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   date,
   events = [],
   isLoading = false,
-  onEventClick
+  onEventClick,
+  onEditEvent,
+  onDeleteEvent,
+  onDuplicateEvent
 }) => {
   const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Start week on Monday
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
@@ -93,13 +99,16 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     {dayEvents.length > 0 ? (
                       <div className="p-1 space-y-1">
                         {dayEvents.map((event, eventIndex) => (
-                          <CalendarEventCard
-                            key={`${event.id}-${eventIndex}`}
-                            event={event}
-                            compact
-                            showTime={false}
-                            onClick={onEventClick}
-                          />
+                        <CalendarEventCard
+                          key={`${event.id}-${eventIndex}`}
+                          event={event}
+                          compact
+                          showTime={false}
+                          onClick={onEventClick}
+                          onEdit={onEditEvent}
+                          onDelete={onDeleteEvent}
+                          onDuplicate={onDuplicateEvent}
+                        />
                         ))}
                       </div>
                     ) : (
