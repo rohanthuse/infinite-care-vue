@@ -154,13 +154,21 @@ export function RecordPaymentDialog({
                           <SelectValue placeholder="Select an invoice" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {availableInvoices.map((invoice) => (
-                          <SelectItem key={invoice.id} value={invoice.id}>
-                            {invoice.invoice_number} - {invoice.client_name} (£{invoice.remaining_amount.toFixed(2)} remaining)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                       <SelectContent>
+                         {availableInvoices.length > 0 ? (
+                           availableInvoices
+                             .filter(invoice => invoice.id && invoice.id.trim() !== '')
+                             .map((invoice) => (
+                               <SelectItem key={invoice.id} value={invoice.id}>
+                                 {invoice.invoice_number} - {invoice.client_name} (£{invoice.remaining_amount.toFixed(2)} remaining)
+                               </SelectItem>
+                             ))
+                         ) : (
+                           <div className="p-2 text-sm text-muted-foreground text-center">
+                             No unpaid invoices available
+                           </div>
+                         )}
+                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>

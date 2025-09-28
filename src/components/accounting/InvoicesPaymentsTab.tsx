@@ -40,7 +40,13 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   // Fetch unpaid invoices for payment recording
   const { data: allInvoices } = useBranchInvoices(branchId);
   const { data: allPayments } = useBranchPayments(branchId);
-  const unpaidInvoices = allInvoices?.filter(invoice => invoice.remaining_amount > 0).map(invoice => ({
+  const unpaidInvoices = allInvoices?.filter(invoice => 
+    invoice.remaining_amount > 0 && 
+    invoice.id && 
+    invoice.id.trim() !== '' &&
+    invoice.invoice_number &&
+    invoice.client_name
+  ).map(invoice => ({
     id: invoice.id,
     invoice_number: invoice.invoice_number,
     client_name: invoice.client_name,
