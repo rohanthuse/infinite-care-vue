@@ -295,6 +295,9 @@ export const OrganizationCalendarView = () => {
               events={calendarEvents}
               isLoading={isLoading}
               onEventClick={handleEventClick}
+              onEditEvent={handleEditEvent}
+              onDeleteEvent={handleDeleteEvent}
+              onDuplicateEvent={handleDuplicateEvent}
             />
         );
       case 'monthly':
@@ -304,6 +307,9 @@ export const OrganizationCalendarView = () => {
               events={calendarEvents}
               isLoading={isLoading}
               onEventClick={handleEventClick}
+              onEditEvent={handleEditEvent}
+              onDeleteEvent={handleDeleteEvent}
+              onDuplicateEvent={handleDuplicateEvent}
             />
         );
       default:
@@ -334,14 +340,21 @@ export const OrganizationCalendarView = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                New Event
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
+          <div className="flex items-center">
+            <Button 
+              size="sm" 
+              onClick={handleNewBooking}
+              className="rounded-r-none"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Event
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="rounded-l-none border-l-0 px-2">
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg">
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
@@ -404,7 +417,8 @@ export const OrganizationCalendarView = () => {
                 Add Leave/Holiday
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
