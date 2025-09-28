@@ -289,36 +289,41 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
               <FormField
                 control={form.control}
                 name="days_covered"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Days Covered *</FormLabel>
-                    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-                      {Object.entries(dayLabels).map(([key, label]) => (
-                        <FormField
-                          key={key}
-                          control={form.control}
-                          name="days_covered"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-2 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value?.includes(key)}
-                                  onCheckedChange={(checked) => toggleDay(key, checked as boolean)}
-                                />
-                              </FormControl>
-                              <FormLabel className="text-sm font-normal">
-                                {label.slice(0, 3)}
-                              </FormLabel>
-                            </FormItem>
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={() => {
+                  // Debug logging to verify Bank Holiday is present
+                  console.log('Day Labels Available:', dayLabels);
+                  console.log('Bank Holiday present:', 'bank_holiday' in dayLabels);
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Days Covered *</FormLabel>
+                      <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                        {Object.entries(dayLabels).map(([key, label]) => (
+                          <FormField
+                            key={key}
+                            control={form.control}
+                            name="days_covered"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(key)}
+                                    onCheckedChange={(checked) => toggleDay(key, checked as boolean)}
+                                  />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">
+                                  {key === 'bank_holiday' ? 'Bank Hol' : label.slice(0, 3)}
+                                </FormLabel>
+                              </FormItem>
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
