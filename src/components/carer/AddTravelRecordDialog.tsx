@@ -11,12 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  SafeSelectWrapper as Select,
+  SafeSelectContent as SelectContent,
+  SafeSelectItem as SelectItem,
+  SafeSelectTrigger as SelectTrigger,
+  SafeSelectValue as SelectValue,
+} from '@/components/ui/safe-select';
 import { useCarerTravelManagement } from '@/hooks/useCarerTravelManagement';
 import { useToast } from '@/hooks/use-toast';
 import { useTravelRateOptions } from '@/hooks/useParameterOptions';
@@ -40,7 +40,7 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
     vehicle_type: 'personal_car',
     purpose: '',
     notes: '',
-    travel_rate_type: '', // Selected travel rate type
+    travel_rate_type: undefined, // Selected travel rate type
     mileage_rate: '0.45', // Will be updated based on selected rate
   });
 
@@ -70,7 +70,7 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
         vehicle_type: 'personal_car',
         purpose: '',
         notes: '',
-        travel_rate_type: '',
+        travel_rate_type: undefined,
         mileage_rate: '0.45',
       });
     } catch (error) {

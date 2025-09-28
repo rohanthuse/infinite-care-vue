@@ -25,12 +25,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  SafeSelectWrapper as Select,
+  SafeSelectContent as SelectContent,
+  SafeSelectItem as SelectItem,
+  SafeSelectTrigger as SelectTrigger,
+  SafeSelectValue as SelectValue,
+} from '@/components/ui/safe-select';
 import { Textarea } from '@/components/ui/textarea';
 
 const formSchema = z.object({
@@ -68,7 +68,7 @@ export function RecordPaymentDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      invoice_id: preselectedInvoiceId || '',
+      invoice_id: preselectedInvoiceId || undefined,
       payment_amount: 0,
       payment_date: new Date().toISOString().split('T')[0],
       payment_method: 'bank_transfer',

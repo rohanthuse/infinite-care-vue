@@ -5,7 +5,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  SafeSelectWrapper as Select,
+  SafeSelectContent as SelectContent,
+  SafeSelectItem as SelectItem,
+  SafeSelectTrigger as SelectTrigger,
+  SafeSelectValue as SelectValue,
+} from '@/components/ui/safe-select';
 import { useSearchableClients, useRecentClients, EnhancedClient } from '@/hooks/useSearchableClients';
 import { useDebounce } from '@/hooks/useDebounce';
 import { 

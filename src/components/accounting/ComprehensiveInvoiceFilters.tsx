@@ -1,7 +1,13 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  SafeSelectWrapper as Select,
+  SafeSelectContent as SelectContent,
+  SafeSelectItem as SelectItem,
+  SafeSelectTrigger as SelectTrigger,
+  SafeSelectValue as SelectValue,
+} from '@/components/ui/safe-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -27,7 +33,7 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
   };
 
   const statusOptions = [
-    { value: '', label: 'All Statuses' },
+    { value: '__ALL__', label: 'All Statuses' },
     { value: 'draft', label: 'Draft' },
     { value: 'ready_to_charge', label: 'Ready to Send' },
     { value: 'confirmed', label: 'Confirmed' },
@@ -38,7 +44,7 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
   ];
 
   const authorityTypeOptions = [
-    { value: '', label: 'All Types' },
+    { value: '__ALL__', label: 'All Types' },
     { value: 'private', label: 'Private (Client)' },
     { value: 'local_authority', label: 'Local Authority' },
     { value: 'nhs', label: 'NHS' },
@@ -48,7 +54,7 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
   ];
 
   const invoiceMethodOptions = [
-    { value: '', label: 'All Methods' },
+    { value: '__ALL__', label: 'All Methods' },
     { value: 'per_visit', label: 'Per Visit' },
     { value: 'weekly', label: 'Weekly' },
     { value: 'monthly', label: 'Monthly' },
@@ -59,14 +65,14 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
 
   // Handle single status selection by converting to/from array
   const handleStatusChange = (value: string) => {
-    if (value === '') {
+    if (value === '__ALL__') {
       handleFilterChange('status', undefined);
     } else {
       handleFilterChange('status', [value as any]);
     }
   };
 
-  const currentStatus = filters.status && filters.status.length > 0 ? filters.status[0] : '';
+  const currentStatus = filters.status && filters.status.length > 0 ? filters.status[0] : '__ALL__';
 
   return (
     <Card>
@@ -111,8 +117,8 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
           <div className="space-y-2">
             <Label>Authority Type</Label>
             <Select
-              value={filters.authorityType || ''}
-              onValueChange={(value) => handleFilterChange('authorityType', value || undefined)}
+              value={filters.authorityType || '__ALL__'}
+              onValueChange={(value) => handleFilterChange('authorityType', value === '__ALL__' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
@@ -131,8 +137,8 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
           <div className="space-y-2">
             <Label>Invoice Method</Label>
             <Select
-              value={filters.invoiceMethod || ''}
-              onValueChange={(value) => handleFilterChange('invoiceMethod', value || undefined)}
+              value={filters.invoiceMethod || '__ALL__'}
+              onValueChange={(value) => handleFilterChange('invoiceMethod', value === '__ALL__' ? undefined : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select method" />
