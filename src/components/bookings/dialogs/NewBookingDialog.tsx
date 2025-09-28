@@ -230,6 +230,26 @@ export function NewBookingDialog({
     },
   });
 
+  // Reset form and close dialog safely
+  const handleClose = () => {
+    try {
+      // Clear search queries to prevent selector re-renders
+      setSearchQuery("");
+      setClientSearchQuery("");
+      setScheduleCount(1);
+      
+      // Reset form to default values
+      form.reset();
+      
+      // Call parent close handler
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error closing NewBookingDialog:', error);
+      // Ensure dialog closes even if there's an error
+      onOpenChange(false);
+    }
+  };
+
   // Watch booking mode to update form behavior
   const bookingMode = form.watch("bookingMode");
 
@@ -292,8 +312,7 @@ export function NewBookingDialog({
       };
       onCreateBooking(unassignedBooking, carers);
       
-      form.reset();
-      onOpenChange(false);
+      handleClose();
       
       const bookingType = data.bookingMode === "single" ? "Single booking" : "Unassigned bookings";
       toast(`${bookingType} created`, {
@@ -313,8 +332,7 @@ export function NewBookingDialog({
         onCreateBooking(bookingDataForCarer, carers);
       });
       
-      form.reset();
-      onOpenChange(false);
+      handleClose();
       
       const bookingType = data.bookingMode === "single" ? "Single booking" : "Recurring bookings";
       toast(`${bookingType} submitted`, {
@@ -351,8 +369,23 @@ export function NewBookingDialog({
     setScheduleCount(scheduleCount - 1);
   };
 
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!open) {
+      // Small delay to ensure smooth close animation
+      const timeoutId = setTimeout(() => {
+        setSearchQuery("");
+        setClientSearchQuery("");
+        setScheduleCount(1);
+        form.reset();
+      }, 150);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [open, form]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-[95vw] sm:max-w-[600px] lg:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-blue-600">
@@ -1015,7 +1048,7 @@ export function NewBookingDialog({
           </Form>
         </div>
         <DialogFooter className="flex-shrink-0 mt-4">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button type="submit" onClick={form.handleSubmit(onSubmit)}>

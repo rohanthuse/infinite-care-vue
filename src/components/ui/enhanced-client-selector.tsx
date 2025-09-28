@@ -73,10 +73,14 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
     resetPage();
   }, [debouncedSearch, setSearchTerm, resetPage]);
 
-  // Focus input when popover opens
+  // Focus input when popover opens and cleanup when parent dialog closes
   useEffect(() => {
     if (open && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
+    } else if (!open) {
+      // Clean up search state when selector closes to prevent re-renders
+      setSearchInput('');
+      setShowFilters(false);
     }
   }, [open]);
 
@@ -84,6 +88,7 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
   useEffect(() => {
     return () => {
       setSearchInput('');
+      setShowFilters(false);
       setOpen(false);
     };
   }, [selectedClientId]);

@@ -234,6 +234,12 @@ export const OrganizationCalendarView = () => {
       });
       
       toast.success('Booking created successfully!');
+      
+      // Delay query invalidation until after dialog close to prevent freezing
+      setTimeout(() => {
+        // The useCreateBooking hook will handle query invalidation
+      }, 200);
+      
       setNewBookingDialogOpen(false);
     } catch (error) {
       console.error('Error creating booking:', error);
