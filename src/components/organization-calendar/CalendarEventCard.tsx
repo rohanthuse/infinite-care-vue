@@ -12,19 +12,26 @@ import {
   FileText
 } from 'lucide-react';
 import { CalendarEvent } from '@/types/calendar';
+import { EventContextMenu } from './EventContextMenu';
 
 interface CalendarEventCardProps {
   event: CalendarEvent;
   compact?: boolean;
   showTime?: boolean;
   onClick?: (event: CalendarEvent) => void;
+  onEdit?: (event: CalendarEvent) => void;
+  onDelete?: (event: CalendarEvent) => void;
+  onDuplicate?: (event: CalendarEvent) => void;
 }
 
 export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
   event,
   compact = false,
   showTime = true,
-  onClick
+  onClick,
+  onEdit,
+  onDelete,
+  onDuplicate
 }) => {
   const handleClick = () => {
     if (onClick) {
@@ -124,6 +131,12 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
             {event.priority === 'high' && (
               <AlertCircle className="h-4 w-4 text-red-500" />
             )}
+            <EventContextMenu
+              event={event}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onDuplicate={onDuplicate}
+            />
           </div>
         </div>
 
