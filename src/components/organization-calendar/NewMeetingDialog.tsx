@@ -97,12 +97,14 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
       resetForm();
       onOpenChange(false);
       
-      // Enhanced cleanup to prevent UI freezing
+      // Comprehensive cleanup to prevent UI freezing
       setTimeout(() => {
+        // Remove all aria-hidden and inert attributes
         const elementsToCleanup = [
           document.getElementById('root'),
-          document.querySelector('[data-radix-popper-content-wrapper]'),
-          document.querySelector('.group\\/sidebar-wrapper')
+          document.querySelector('.group\\/sidebar-wrapper'),
+          ...document.querySelectorAll('[data-radix-popper-content-wrapper]'),
+          ...document.querySelectorAll('[aria-hidden="true"]')
         ];
         
         elementsToCleanup.forEach(element => {
@@ -112,9 +114,11 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
           }
         });
         
-        // Restore scroll
+        // Remove orphaned portals and restore document state
+        document.querySelectorAll('[data-radix-popper-content-wrapper]:empty').forEach(el => el.remove());
         document.body.style.removeProperty('overflow');
         document.documentElement.style.removeProperty('overflow');
+        document.body.style.removeProperty('pointer-events');
       }, 50);
     } catch (error) {
       console.error('Error closing dialog:', error);
@@ -170,11 +174,11 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Schedule New Meeting</DialogTitle>
-          <DialogDescription>Create a new meeting or appointment</DialogDescription>
+          <DialogDescription>Create a new meeting or appointment with clients or staff members.</DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">

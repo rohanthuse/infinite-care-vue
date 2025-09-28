@@ -110,12 +110,14 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
       resetForm();
       onOpenChange(false);
       
-      // Enhanced cleanup to prevent UI freezing
+      // Comprehensive cleanup to prevent UI freezing
       setTimeout(() => {
+        // Remove all aria-hidden and inert attributes
         const elementsToCleanup = [
           document.getElementById('root'),
-          document.querySelector('[data-radix-popper-content-wrapper]'),
-          document.querySelector('.group\\/sidebar-wrapper')
+          document.querySelector('.group\\/sidebar-wrapper'),
+          ...document.querySelectorAll('[data-radix-popper-content-wrapper]'),
+          ...document.querySelectorAll('[aria-hidden="true"]')
         ];
         
         elementsToCleanup.forEach(element => {
@@ -125,9 +127,11 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
           }
         });
         
-        // Restore scroll
+        // Remove orphaned portals and restore document state
+        document.querySelectorAll('[data-radix-popper-content-wrapper]:empty').forEach(el => el.remove());
         document.body.style.removeProperty('overflow');
         document.documentElement.style.removeProperty('overflow');
+        document.body.style.removeProperty('pointer-events');
       }, 50);
     } catch (error) {
       console.error('Error closing training dialog:', error);
@@ -144,11 +148,11 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Schedule Training</DialogTitle>
-          <DialogDescription>Create a new training session</DialogDescription>
+          <DialogDescription>Schedule a new training session for staff members with available courses.</DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">

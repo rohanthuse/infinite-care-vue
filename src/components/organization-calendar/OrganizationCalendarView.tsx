@@ -64,6 +64,7 @@ export const OrganizationCalendarView = () => {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [deleteEventDialogOpen, setDeleteEventDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const { organization } = useTenant();
   const { closeAllDropdowns } = useDialogManager();
@@ -165,15 +166,17 @@ export const OrganizationCalendarView = () => {
     }
   };
 
-  // Enhanced cleanup function to remove lingering UI elements
-  const enhancedCleanup = () => {
+  // Comprehensive cleanup function to handle all potential UI state conflicts
+  const comprehensiveCleanup = () => {
     try {
-      // Remove aria-hidden from key containers
+      // Remove all aria-hidden and inert attributes from key containers
       const elementsToCleanup = [
         document.getElementById('root'),
-        document.querySelector('[data-radix-popper-content-wrapper]'),
         document.querySelector('.group\\/sidebar-wrapper'),
-        document.querySelector('[data-radix-dropdown-menu-content]')
+        ...document.querySelectorAll('[data-radix-popper-content-wrapper]'),
+        ...document.querySelectorAll('[data-radix-dropdown-menu-content]'),
+        ...document.querySelectorAll('[data-radix-dialog-overlay]'),
+        ...document.querySelectorAll('[aria-hidden="true"]')
       ];
       
       elementsToCleanup.forEach(element => {
@@ -183,83 +186,73 @@ export const OrganizationCalendarView = () => {
         }
       });
       
-      // Ensure body scroll is restored
+      // Remove any orphaned popper portals
+      const orphanedPortals = document.querySelectorAll('[data-radix-popper-content-wrapper]:empty');
+      orphanedPortals.forEach(portal => portal.remove());
+      
+      // Restore document scroll
       document.body.style.removeProperty('overflow');
       document.documentElement.style.removeProperty('overflow');
+      document.body.style.removeProperty('pointer-events');
       
-      // Find and return focus to New Event trigger
-      const trigger = document.querySelector('[data-radix-dropdown-menu-trigger]') as HTMLElement;
-      if (trigger && trigger.offsetParent !== null) {
-        trigger.focus();
-      }
+      // Return focus to the original trigger
+      setTimeout(() => {
+        const trigger = document.querySelector('[data-radix-dropdown-menu-trigger]') as HTMLElement;
+        if (trigger && trigger.offsetParent !== null && !trigger.hasAttribute('aria-hidden')) {
+          trigger.focus();
+        }
+      }, 0);
+      
     } catch (error) {
-      console.error('Error in enhanced cleanup:', error);
+      console.error('Error in comprehensive cleanup:', error);
     }
   };
 
+  // Proper event handler that manages dropdown and dialog state transitions
   const handleNewEvent = (eventType: 'booking' | 'agreement' | 'training' | 'leave' | 'meeting') => {
-    console.log('handleNewEvent called with:', eventType);
-    
-    // Ensure user is properly authenticated and in correct context
+    // Ensure user is properly authenticated
     if (!organization?.id) {
       console.error('No organization found:', organization);
       toast.error('Please ensure you are logged in and have access to this organization');
       return;
     }
     
+    console.log('handleNewEvent called with:', eventType);
     console.log('Organization found:', organization?.id);
     
-    // Close dropdown COMPLETELY before opening dialog
-    closeAllDropdowns();
-    
+    // Close dropdown first - this happens synchronously
+    setDropdownOpen(false);
     setNewEventType(eventType);
     
-    // Wait for dropdown to fully close, then open dialog
-    const waitForDropdownClose = () => {
-      return new Promise<void>((resolve) => {
-        const checkClosed = () => {
-          const dropdown = document.querySelector('[data-radix-dropdown-menu-content][data-state="open"]');
-          if (!dropdown) {
-            resolve();
-          } else {
-            setTimeout(checkClosed, 10);
-          }
-        };
-        checkClosed();
-      });
-    };
-    
-    waitForDropdownClose().then(() => {
-      try {
-        switch (eventType) {
-          case 'booking':
-            console.log('Opening booking dialog');
-            setNewBookingDialogOpen(true);
-            break;
-          case 'agreement':
-            console.log('Opening agreement dialog');
-            setAgreementDialogOpen(true);
-            break;
-          case 'training':
-            console.log('Opening training dialog');
-            setTrainingDialogOpen(true);
-            break;
-          case 'leave':
-            console.log('Opening leave dialog');
-            setLeaveDialogOpen(true);
-            break;
-          case 'meeting':
-            console.log('Opening meeting dialog, branch selected:', selectedBranch);
-            setMeetingDialogOpen(true);
-            break;
-          default:
-            console.warn('Unknown event type:', eventType);
-        }
-      } catch (error) {
-        console.error('Error in handleNewEvent:', error);
-        toast.error('Failed to open dialog');
+    // Open the appropriate dialog after dropdown closes
+    setTimeout(() => {
+      comprehensiveCleanup();
+      
+      switch (eventType) {
+        case 'booking':
+          console.log('Opening booking dialog');
+          setNewBookingDialogOpen(true);
+          break;
+        case 'agreement':
+          console.log('Opening agreement dialog');
+          setAgreementDialogOpen(true);
+          break;
+        case 'training':
+          console.log('Opening training dialog');
+          setTrainingDialogOpen(true);
+          break;
+        case 'leave':
+          console.log('Opening leave dialog');
+          setLeaveDialogOpen(true);
+          break;
+        case 'meeting':
+          console.log('Opening meeting dialog, branch selected:', selectedBranch);
+          setMeetingDialogOpen(true);
+          break;
+        default:
+          console.warn('Unknown event type:', eventType);
       }
-    });
+    }, 50);
   };
 
   const handleNewBooking = () => {
@@ -411,7 +404,7 @@ export const OrganizationCalendarView = () => {
               <Plus className="h-4 w-4 mr-2" />
               New Event
             </Button>
-            <DropdownMenu>
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="outline" className="rounded-l-none border-l-0 px-2" data-radix-dropdown-menu-trigger>
                   <ChevronDown className="h-4 w-4" />
@@ -420,50 +413,35 @@ export const OrganizationCalendarView = () => {
             <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleNewEvent('booking');
-                }}
+                onSelect={() => handleNewEvent('booking')}
               >
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 New Booking
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleNewEvent('meeting');
-                }}
+                onSelect={() => handleNewEvent('meeting')}
               >
                 <Users className="h-4 w-4 mr-2" />
                 New Meeting
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleNewEvent('training');
-                }}
+                onSelect={() => handleNewEvent('training')}
               >
                 <Clock className="h-4 w-4 mr-2" />
                 Schedule Training
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleNewEvent('agreement');
-                }}
+                onSelect={() => handleNewEvent('agreement')}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Schedule Agreement
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  handleNewEvent('leave');
-                }}
+                onSelect={() => handleNewEvent('leave')}
               >
                 <CalendarIcon className="h-4 w-4 mr-2" />
                 Add Leave/Holiday

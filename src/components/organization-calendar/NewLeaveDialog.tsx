@@ -75,12 +75,14 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
       resetForm();
       onOpenChange(false);
       
-      // Enhanced cleanup to prevent UI freezing
+      // Comprehensive cleanup to prevent UI freezing
       setTimeout(() => {
+        // Remove all aria-hidden and inert attributes
         const elementsToCleanup = [
           document.getElementById('root'),
-          document.querySelector('[data-radix-popper-content-wrapper]'),
-          document.querySelector('.group\\/sidebar-wrapper')
+          document.querySelector('.group\\/sidebar-wrapper'),
+          ...document.querySelectorAll('[data-radix-popper-content-wrapper]'),
+          ...document.querySelectorAll('[aria-hidden="true"]')
         ];
         
         elementsToCleanup.forEach(element => {
@@ -90,9 +92,11 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
           }
         });
         
-        // Restore scroll
+        // Remove orphaned portals and restore document state
+        document.querySelectorAll('[data-radix-popper-content-wrapper]:empty').forEach(el => el.remove());
         document.body.style.removeProperty('overflow');
         document.documentElement.style.removeProperty('overflow');
+        document.body.style.removeProperty('pointer-events');
       }, 50);
     } catch (error) {
       console.error('Error closing leave dialog:', error);
@@ -109,11 +113,11 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Leave/Holiday</DialogTitle>
-          <DialogDescription>Create a new leave or holiday period</DialogDescription>
+          <DialogDescription>Add a new leave entry or holiday to the organization calendar.</DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">
