@@ -21,6 +21,7 @@ import ViewPayrollDialog from "./ViewPayrollDialog";
 import FilterPayrollDialog from "./FilterPayrollDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import PayrollBookingIntegration from "./PayrollBookingIntegration";
 
 interface PayrollTabProps {
   branchId?: string;
@@ -356,6 +357,16 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           </Button>
         </div>
       </div>
+
+      {/* Payroll Integration Component */}
+      <PayrollBookingIntegration 
+        branchId={branchId!}
+        branchName={branchName}
+        onPayrollCreated={() => {
+          // Refresh payroll records after creation
+          // The query will auto-invalidate from the mutation
+        }}
+      />
       
       <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">

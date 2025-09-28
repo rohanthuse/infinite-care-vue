@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Clock, Zap } from "lucide-react";
 import { PayrollRecord, useStaffList } from "@/hooks/useAccountingData";
+import { usePayrollBookingIntegration } from "@/hooks/usePayrollBookingIntegration";
 import { toast } from "sonner";
 import { createDateValidation, createPositiveNumberValidation } from "@/utils/validationUtils";
 
@@ -89,7 +91,7 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
 }) => {
   // Fetch staff list for the dropdown
   const { data: staffList = [], isLoading: isLoadingStaff } = useStaffList(branchId);
-
+  
   const {
     register,
     handleSubmit,
@@ -142,6 +144,17 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
 
   const watchedValues = watch();
   const [calculatedTotals, setCalculatedTotals] = useState({ grossPay: 0, netPay: 0 });
+
+  // Payroll booking integration
+  const { usePayrollCalculationData } = usePayrollBookingIntegration();
+  
+  // Get calculation data for auto-population
+  const { data: calculationData } = usePayrollCalculationData(
+    branchId,
+    watchedValues.staff_id,
+    watchedValues.pay_period_start,
+    watchedValues.pay_period_end
+  );
 
   // Reset form when dialog opens with new data
   useEffect(() => {
@@ -220,6 +233,40 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
     const netPay = grossPay - totalDeductions;
     
     setCalculatedTotals({ grossPay, netPay });
+  };
+
+  // Auto-populate from booking data
+  const autoPopulateFromBookings = () => {
+    if (!calculationData) {
+      toast.error('No calculation data available for this period');
+      return;
+    }
+
+    const basicSalary = calculationData.regularHours * calculationData.basHourlyRate;
+    const overtimePay = (calculationData.overtimeHours + calculationData.extraTimeHours) * calculationData.overtimeRate;
+    const grossPay = basicSalary + overtimePay;
+    
+    // Calculate deductions (basic estimates)
+    const taxRate = 0.20;
+    const niRate = 0.12;
+    const pensionRate = 0.03;
+    
+    const taxDeduction = grossPay * taxRate;
+    const niDeduction = grossPay * niRate;
+    const pensionDeduction = grossPay * pensionRate;
+
+    // Update form values
+    setValue('regular_hours', calculationData.regularHours);
+    setValue('overtime_hours', calculationData.overtimeHours + calculationData.extraTimeHours);
+    setValue('hourly_rate', calculationData.basHourlyRate);
+    setValue('overtime_rate', calculationData.overtimeRate);
+    setValue('basic_salary', basicSalary);
+    setValue('overtime_pay', overtimePay);
+    setValue('tax_deduction', taxDeduction);
+    setValue('ni_deduction', niDeduction);
+    setValue('pension_deduction', pensionDeduction);
+
+    toast.success(`Auto-populated from ${calculationData.bookings.length} bookings`);
   };
 
   const onSubmit = async (data: PayrollFormData) => {
@@ -331,6 +378,37 @@ const AddPayrollDialog: React.FC<AddPayrollDialogProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Auto-populate from bookings */}
+          {calculationData && calculationData.bookings.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-blue-900">
+                      Booking Data Available
+                    </div>
+                    <div className="text-xs text-blue-700">
+                      {calculationData.bookings.length} bookings, {calculationData.totalActualHours.toFixed(1)} total hours
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={autoPopulateFromBookings}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                >
+                  <Zap className="h-4 w-4 mr-1" />
+                  Auto-populate
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-4 border-t pt-4">
             <h3 className="font-medium text-sm">Hours and Pay</h3>
