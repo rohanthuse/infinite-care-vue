@@ -7,9 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
-import { useTenantAwareQuery } from '@/hooks/useTenantAware';
-import { supabase } from '@/integrations/supabase/client';
 import { useCreateClientAppointment } from '@/hooks/useClientAppointments';
+import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
+import { EnhancedStaffSelector } from '@/components/ui/enhanced-staff-selector';
 
 interface NewMeetingDialogProps {
   open: boolean;
@@ -27,7 +27,9 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   const [title, setTitle] = useState('');
   const [meetingType, setMeetingType] = useState('client');
   const [clientId, setClientId] = useState('');
+  const [clientData, setClientData] = useState<any>(null);
   const [staffId, setStaffId] = useState<string | undefined>(undefined);
+  const [staffData, setStaffData] = useState<any>(null);
   const [date, setDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
   const [time, setTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
@@ -36,53 +38,13 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 
   const createAppointment = useCreateClientAppointment();
 
-  // Fetch clients
-  const { data: clients } = useTenantAwareQuery(
-    ['branch-clients', branchId],
-    async () => {
-      if (!branchId) return [];
-      
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name')
-        .eq('branch_id', branchId)
-        .eq('status', 'Active');
-      
-      if (error) throw error;
-      return data?.map(client => ({
-        ...client,
-        name: `${client.first_name} ${client.last_name}`
-      })) || [];
-    },
-    { enabled: !!branchId }
-  );
-
-  // Fetch staff
-  const { data: staff } = useTenantAwareQuery(
-    ['branch-staff', branchId],
-    async () => {
-      if (!branchId) return [];
-      
-      const { data, error } = await supabase
-        .from('staff')
-        .select('id, first_name, last_name')
-        .eq('branch_id', branchId)
-        .eq('status', 'Active');
-      
-      if (error) throw error;
-      return data?.map(member => ({
-        ...member,
-        name: `${member.first_name} ${member.last_name}`
-      })) || [];
-    },
-    { enabled: !!branchId }
-  );
-
   const resetForm = () => {
     setTitle('');
     setMeetingType('client');
     setClientId('');
+    setClientData(null);
     setStaffId(undefined);
+    setStaffData(null);
     setDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
     setTime('09:00');
     setEndTime('10:00');
@@ -106,7 +68,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
         appointment_date: date,
         appointment_time: time,
         appointment_type: title,
-        provider_name: staffId ? staff?.find(s => s.id === staffId)?.name || 'Staff Member' : 'Team Meeting',
+        provider_name: staffId ? staffData?.full_name || 'Staff Member' : 'Team Meeting',
         location: location || 'Office',
         status: 'scheduled',
         notes
@@ -117,7 +79,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
         appointment_date: date,
         appointment_time: time,
         appointment_type: `${meetingType.charAt(0).toUpperCase() + meetingType.slice(1)} Meeting: ${title}`,
-        provider_name: staffId ? staff?.find(s => s.id === staffId)?.name || 'Staff Member' : getProviderName(),
+        provider_name: staffId ? staffData?.full_name || 'Staff Member' : getProviderName(),
         location: location || getDefaultLocation(),
         status: 'scheduled',
         notes: `Meeting Type: ${meetingType}\n${notes}`
@@ -211,36 +173,34 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
             {meetingType === 'client' && (
               <div className="grid gap-2">
                 <Label htmlFor="client">Client *</Label>
-                <SafeSelect value={clientId} onValueChange={setClientId}>
-                  <SafeSelectTrigger>
-                    <SafeSelectValue placeholder="Select client" />
-                  </SafeSelectTrigger>
-                  <SafeSelectContent>
-                    {clients?.map((client) => (
-                      <SafeSelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SafeSelectItem>
-                    ))}
-                  </SafeSelectContent>
-                </SafeSelect>
+                <EnhancedClientSelector
+                  branchId={branchId || ''}
+                  selectedClientId={clientId}
+                  onClientSelect={(id, data) => {
+                    setClientId(id);
+                    setClientData(data);
+                  }}
+                  placeholder="Search and select a client"
+                />
               </div>
             )}
 
             {(meetingType === 'client' || meetingType === 'internal') && (
               <div className="grid gap-2">
                 <Label htmlFor="staff">Staff Member (Optional)</Label>
-                <SafeSelect value={staffId} onValueChange={setStaffId}>
-                  <SafeSelectTrigger>
-                    <SafeSelectValue placeholder="No specific staff" />
-                  </SafeSelectTrigger>
-                  <SafeSelectContent>
-                    {staff?.map((member) => (
-                      <SafeSelectItem key={member.id} value={member.id}>
-                        {member.name}
-                      </SafeSelectItem>
-                    ))}
-                  </SafeSelectContent>
-                </SafeSelect>
+                <EnhancedStaffSelector
+                  branchId={branchId || ''}
+                  selectedStaffId={staffId}
+                  onStaffSelect={(id, data) => {
+                    setStaffId(id);
+                    setStaffData(data);
+                  }}
+                  placeholder={
+                    meetingType === 'client' 
+                      ? "Search staff member (optional)" 
+                      : "Search and select staff member"
+                  }
+                />
               </div>
             )}
 
