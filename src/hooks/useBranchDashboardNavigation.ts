@@ -11,6 +11,11 @@ export const useBranchDashboardNavigation = () => {
   const location = useLocation();
   const { tenantSlug } = useTenant();
 
+  // Debug logging
+  console.log('[useBranchDashboardNavigation] Raw params:', { id, branchName });
+  console.log('[useBranchDashboardNavigation] Location:', location.pathname);
+  console.log('[useBranchDashboardNavigation] Tenant slug:', tenantSlug);
+
   // Define valid tab names - Updated to include all menu items
   const validTabs = [
     'dashboard', 'key-parameters', 'workflow', 'task-matrix', 'training-matrix',
