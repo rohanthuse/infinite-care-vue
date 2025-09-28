@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FileText, PoundSterling, Calculator } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FinancialSummaryCards from './FinancialSummaryCards';
 import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
@@ -10,7 +9,7 @@ import { CreateInvoiceDialog } from './CreateInvoiceDialog';
 import { RecordPaymentDialog } from './RecordPaymentDialog';
 import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
-import { useClientsList } from '@/hooks/useAccountingData';
+import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
@@ -33,8 +32,6 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [selectedPaymentForView, setSelectedPaymentForView] = useState<string | null>(null);
   const [isViewPaymentOpen, setIsViewPaymentOpen] = useState(false);
   
-  // Fetch clients for the dropdown
-  const { data: clients } = useClientsList(branchId);
   const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
   
   // Fetch unpaid invoices for payment recording
@@ -143,19 +140,15 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select Client for Invoice
             </label>
-            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-              <SelectTrigger className="w-full lg:w-64">
-                <SelectValue placeholder="Choose a client..." />
-              </SelectTrigger>
-              <SelectContent>
-                {clients?.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.first_name} {client.last_name}
-                    {client.pin_code && ` (${client.pin_code})`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <EnhancedClientSelector
+              branchId={branchId!}
+              selectedClientId={selectedClientId}
+              onClientSelect={(clientId, clientData) => {
+                setSelectedClientId(clientId);
+              }}
+              placeholder="Search and select a client..."
+              className="w-full lg:w-96"
+            />
           </div>
           
           <div className="flex flex-wrap gap-3">
