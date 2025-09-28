@@ -1320,75 +1320,114 @@ export type Database = {
       }
       client_billing: {
         Row: {
+          actual_time_minutes: number | null
           amount: number
+          authority_type: string | null
+          booked_time_minutes: number | null
           booking_id: string | null
+          client_group_id: string | null
           client_id: string
           created_at: string
           currency: string | null
           description: string
           due_date: string
+          end_date: string | null
           generated_from_booking: boolean | null
           id: string
           invoice_date: string
+          invoice_method: string | null
           invoice_number: string
           invoice_type: string | null
+          is_former_client: boolean | null
+          is_locked: boolean | null
+          is_ready_to_send: boolean | null
+          locked_at: string | null
+          locked_by: string | null
           notes: string | null
           organization_id: string
           overdue_date: string | null
           paid_date: string | null
+          pay_method: string | null
           payment_terms: string | null
           sent_date: string | null
           service_provided_date: string | null
+          start_date: string | null
           status: string
           tax_amount: number | null
           total_amount: number | null
           updated_at: string
         }
         Insert: {
+          actual_time_minutes?: number | null
           amount: number
+          authority_type?: string | null
+          booked_time_minutes?: number | null
           booking_id?: string | null
+          client_group_id?: string | null
           client_id: string
           created_at?: string
           currency?: string | null
           description: string
           due_date: string
+          end_date?: string | null
           generated_from_booking?: boolean | null
           id?: string
           invoice_date: string
+          invoice_method?: string | null
           invoice_number: string
           invoice_type?: string | null
+          is_former_client?: boolean | null
+          is_locked?: boolean | null
+          is_ready_to_send?: boolean | null
+          locked_at?: string | null
+          locked_by?: string | null
           notes?: string | null
           organization_id: string
           overdue_date?: string | null
           paid_date?: string | null
+          pay_method?: string | null
           payment_terms?: string | null
           sent_date?: string | null
           service_provided_date?: string | null
+          start_date?: string | null
           status?: string
           tax_amount?: number | null
           total_amount?: number | null
           updated_at?: string
         }
         Update: {
+          actual_time_minutes?: number | null
           amount?: number
+          authority_type?: string | null
+          booked_time_minutes?: number | null
           booking_id?: string | null
+          client_group_id?: string | null
           client_id?: string
           created_at?: string
           currency?: string | null
           description?: string
           due_date?: string
+          end_date?: string | null
           generated_from_booking?: boolean | null
           id?: string
           invoice_date?: string
+          invoice_method?: string | null
           invoice_number?: string
           invoice_type?: string | null
+          is_former_client?: boolean | null
+          is_locked?: boolean | null
+          is_ready_to_send?: boolean | null
+          locked_at?: string | null
+          locked_by?: string | null
           notes?: string | null
           organization_id?: string
           overdue_date?: string | null
           paid_date?: string | null
+          pay_method?: string | null
           payment_terms?: string | null
           sent_date?: string | null
           service_provided_date?: string | null
+          start_date?: string | null
           status?: string
           tax_amount?: number | null
           total_amount?: number | null
@@ -2075,6 +2114,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      client_groups: {
+        Row: {
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          organization_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       client_hobbies: {
         Row: {
@@ -4159,6 +4234,50 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_periods: {
+        Row: {
+          created_at: string
+          id: string
+          invoice_id: string
+          is_bank_holiday: boolean | null
+          multiplier: number | null
+          period_end: string
+          period_start: string
+          rate_applied: number | null
+          service_hours: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invoice_id: string
+          is_bank_holiday?: boolean | null
+          multiplier?: number | null
+          period_end: string
+          period_start: string
+          rate_applied?: number | null
+          service_hours?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          is_bank_holiday?: boolean | null
+          multiplier?: number | null
+          period_end?: string
+          period_start?: string
+          rate_applied?: number | null
+          service_hours?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_periods_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_billing"
             referencedColumns: ["id"]
           },
         ]

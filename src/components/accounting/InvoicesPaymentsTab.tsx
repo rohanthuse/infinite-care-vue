@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, FileText, PoundSterling } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import FinancialSummaryCards from './FinancialSummaryCards';
-import InvoicesDataTable from './InvoicesDataTable';
+import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 import PaymentsDataTable from './PaymentsDataTable';
 import { CreateEnhancedInvoiceDialog } from '@/components/clients/dialogs/CreateEnhancedInvoiceDialog';
 import { ViewInvoiceDialog } from '@/components/clients/dialogs/ViewInvoiceDialog';
@@ -16,6 +16,7 @@ import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
 import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
+import EnhancedInvoicesDataTable from './EnhancedInvoicesDataTable';
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;

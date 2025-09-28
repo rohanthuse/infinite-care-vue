@@ -35,6 +35,7 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
   const [filters, setFilters] = useState<BranchInvoiceFilters>({});
   const [sorting, setSorting] = useState<BranchInvoiceSorting>({ field: 'due_date', direction: 'desc' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: invoices, isLoading } = useBranchInvoices(branchId, { ...filters, search: searchTerm }, sorting);
 
@@ -87,11 +88,14 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
         </div>
         
         <Select
-          value={filters.status || 'all'}
-          onValueChange={(value) => setFilters(prev => ({ 
-            ...prev, 
-            status: value === 'all' ? undefined : value as any 
-          }))}
+          value={statusFilter}
+          onValueChange={(value) => {
+            setStatusFilter(value);
+            setFilters(prev => ({ 
+              ...prev, 
+              status: value === 'all' ? undefined : [value as any]
+            }));
+          }}
         >
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Status" />
@@ -99,7 +103,9 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="ready_to_charge">Ready to Charge</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="future_invoice">Future Invoice</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="paid">Paid</SelectItem>
             <SelectItem value="overdue">Overdue</SelectItem>

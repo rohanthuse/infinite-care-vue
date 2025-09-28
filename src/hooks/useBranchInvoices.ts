@@ -2,17 +2,25 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface BranchInvoiceFilters {
-  status?: 'pending' | 'paid' | 'overdue' | 'draft' | 'sent' | 'cancelled';
-  dateFrom?: string;
-  dateTo?: string;
-  clientId?: string;
+  status?: ('draft' | 'ready_to_charge' | 'confirmed' | 'future_invoice' | 'deleted' | 'pending' | 'paid' | 'overdue' | 'cancelled')[];
+  startDate?: string;
+  endDate?: string;
+  clientIds?: string[];
+  authorityType?: 'private' | 'local_authority' | 'nhs' | 'ccg' | 'continuing_care' | 'other';
+  invoiceMethod?: 'per_visit' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'adhoc';
+  payMethod?: 'bank_transfer' | 'direct_debit' | 'cash' | 'card' | 'cheque' | 'bacs' | 'faster_payment';
+  paidStatus?: ('unpaid' | 'partially_paid' | 'paid' | 'refunded' | 'written_off')[];
+  invoiceNumber?: string;
+  clientGroupId?: string;
+  isReadyToSend?: boolean;
+  isFormerClient?: boolean;
   minAmount?: number;
   maxAmount?: number;
   search?: string;
 }
 
 export interface BranchInvoiceSorting {
-  field: 'due_date' | 'invoice_date' | 'amount' | 'total_amount' | 'client_name' | 'status';
+  field: 'due_date' | 'invoice_date' | 'amount' | 'total_amount' | 'client_name' | 'status' | 'start_date' | 'end_date' | 'invoice_number';
   direction: 'asc' | 'desc';
 }
 
@@ -38,29 +46,57 @@ const fetchBranchInvoices = async (
     `)
     .eq('clients.branch_id', branchId);
 
-  // Apply filters
-  if (filters.status) {
-    query = query.eq('status', filters.status);
+  // Apply enhanced filters
+  if (filters.status && filters.status.length > 0) {
+    query = query.in('status', filters.status);
   }
 
-  if (filters.dateFrom) {
-    query = query.gte('invoice_date', filters.dateFrom);
+  if (filters.startDate) {
+    query = query.gte('start_date', filters.startDate);
   }
 
-  if (filters.dateTo) {
-    query = query.lte('invoice_date', filters.dateTo);
+  if (filters.endDate) {
+    query = query.lte('end_date', filters.endDate);
   }
 
-  if (filters.clientId) {
-    query = query.eq('client_id', filters.clientId);
+  if (filters.clientIds && filters.clientIds.length > 0) {
+    query = query.in('client_id', filters.clientIds);
+  }
+
+  if (filters.authorityType) {
+    query = query.eq('authority_type', filters.authorityType);
+  }
+
+  if (filters.invoiceMethod) {
+    query = query.eq('invoice_method', filters.invoiceMethod);
+  }
+
+  if (filters.payMethod) {
+    query = query.eq('pay_method', filters.payMethod);
+  }
+
+  if (filters.clientGroupId) {
+    query = query.eq('client_group_id', filters.clientGroupId);
+  }
+
+  if (filters.isReadyToSend !== undefined) {
+    query = query.eq('is_ready_to_send', filters.isReadyToSend);
+  }
+
+  if (filters.isFormerClient !== undefined) {
+    query = query.eq('is_former_client', filters.isFormerClient);
+  }
+
+  if (filters.invoiceNumber) {
+    query = query.ilike('invoice_number', `%${filters.invoiceNumber}%`);
   }
 
   if (filters.minAmount) {
-    query = query.gte('amount', filters.minAmount);
+    query = query.gte('total_amount', filters.minAmount);
   }
 
   if (filters.maxAmount) {
-    query = query.lte('amount', filters.maxAmount);
+    query = query.lte('total_amount', filters.maxAmount);
   }
 
   if (filters.search) {
@@ -74,12 +110,22 @@ const fetchBranchInvoices = async (
 
   if (error) throw error;
 
-  // Calculate derived fields
+  // Calculate derived fields with enhanced data
   return (data || []).map(invoice => {
     const totalPaid = invoice.payment_records?.reduce((sum, payment) => sum + payment.payment_amount, 0) || 0;
     const remainingAmount = (invoice.total_amount || invoice.amount) - totalPaid;
     const isOverdue = new Date(invoice.due_date) < new Date() && invoice.status !== 'paid' && remainingAmount > 0;
     
+    // Determine paid status for filtering
+    let paidStatus: string;
+    if (remainingAmount <= 0) {
+      paidStatus = 'paid';
+    } else if (totalPaid > 0) {
+      paidStatus = 'partially_paid';
+    } else {
+      paidStatus = 'unpaid';
+    }
+
     return {
       ...invoice,
       client_name: `${invoice.clients.first_name} ${invoice.clients.last_name}`,
@@ -87,7 +133,10 @@ const fetchBranchInvoices = async (
       total_paid: totalPaid,
       remaining_amount: remainingAmount,
       is_overdue: isOverdue,
-      computed_status: isOverdue ? 'overdue' : invoice.status
+      computed_status: isOverdue ? 'overdue' : invoice.status,
+      paid_status: paidStatus,
+      booked_time_display: `${Math.floor((invoice.booked_time_minutes || 0) / 60)}h ${(invoice.booked_time_minutes || 0) % 60}m`,
+      actual_time_display: `${Math.floor((invoice.actual_time_minutes || 0) / 60)}h ${(invoice.actual_time_minutes || 0) % 60}m`
     };
   });
 };
