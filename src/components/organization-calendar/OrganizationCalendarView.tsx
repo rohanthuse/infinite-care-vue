@@ -42,6 +42,7 @@ import { BranchCombobox } from './BranchCombobox';
 import { CalendarExportDialog } from './CalendarExportDialog';
 import { DeleteEventDialog } from './DeleteEventDialog';
 import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalendarEvents';
+import { ErrorBoundary } from './ErrorBoundary';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
@@ -317,7 +318,8 @@ export const OrganizationCalendarView = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <ErrorBoundary>
+      <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -655,6 +657,7 @@ export const OrganizationCalendarView = () => {
         onConfirm={handleConfirmDeleteEvent}
         isDeleting={deleteEventMutation.isPending}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
