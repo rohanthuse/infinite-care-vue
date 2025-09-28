@@ -165,6 +165,38 @@ export const OrganizationCalendarView = () => {
     }
   };
 
+  // Enhanced cleanup function to remove lingering UI elements
+  const enhancedCleanup = () => {
+    try {
+      // Remove aria-hidden from key containers
+      const elementsToCleanup = [
+        document.getElementById('root'),
+        document.querySelector('[data-radix-popper-content-wrapper]'),
+        document.querySelector('.group\\/sidebar-wrapper'),
+        document.querySelector('[data-radix-dropdown-menu-content]')
+      ];
+      
+      elementsToCleanup.forEach(element => {
+        if (element) {
+          element.removeAttribute('aria-hidden');
+          element.removeAttribute('inert');
+        }
+      });
+      
+      // Ensure body scroll is restored
+      document.body.style.removeProperty('overflow');
+      document.documentElement.style.removeProperty('overflow');
+      
+      // Find and return focus to New Event trigger
+      const trigger = document.querySelector('[data-radix-dropdown-menu-trigger]') as HTMLElement;
+      if (trigger && trigger.offsetParent !== null) {
+        trigger.focus();
+      }
+    } catch (error) {
+      console.error('Error in enhanced cleanup:', error);
+    }
+  };
+
   const handleNewEvent = (eventType: 'booking' | 'agreement' | 'training' | 'leave' | 'meeting') => {
     console.log('handleNewEvent called with:', eventType);
     
@@ -177,13 +209,27 @@ export const OrganizationCalendarView = () => {
     
     console.log('Organization found:', organization?.id);
     
-    // Close any open dropdowns first to prevent conflicts
+    // Close dropdown COMPLETELY before opening dialog
     closeAllDropdowns();
     
     setNewEventType(eventType);
     
-    // Add small delay to ensure dropdown closes completely before dialog opens
-    setTimeout(() => {
+    // Wait for dropdown to fully close, then open dialog
+    const waitForDropdownClose = () => {
+      return new Promise<void>((resolve) => {
+        const checkClosed = () => {
+          const dropdown = document.querySelector('[data-radix-dropdown-menu-content][data-state="open"]');
+          if (!dropdown) {
+            resolve();
+          } else {
+            setTimeout(checkClosed, 10);
+          }
+        };
+        checkClosed();
+      });
+    };
+    
+    waitForDropdownClose().then(() => {
       try {
         switch (eventType) {
           case 'booking':
@@ -213,7 +259,7 @@ export const OrganizationCalendarView = () => {
         console.error('Error in handleNewEvent:', error);
         toast.error('Failed to open dialog');
       }
-    }, 100);
+    });
   };
 
   const handleNewBooking = () => {
@@ -367,17 +413,15 @@ export const OrganizationCalendarView = () => {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="rounded-l-none border-l-0 px-2">
+                <Button size="sm" variant="outline" className="rounded-l-none border-l-0 px-2" data-radix-dropdown-menu-trigger>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg">
+            <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onClick={(e) => {
+                onSelect={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  console.log('New Booking clicked');
                   handleNewEvent('booking');
                 }}
               >
@@ -386,10 +430,8 @@ export const OrganizationCalendarView = () => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onClick={(e) => {
+                onSelect={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  console.log('New Meeting clicked');
                   handleNewEvent('meeting');
                 }}
               >
@@ -398,10 +440,8 @@ export const OrganizationCalendarView = () => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onClick={(e) => {
+                onSelect={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  console.log('Schedule Training clicked');
                   handleNewEvent('training');
                 }}
               >
@@ -410,10 +450,8 @@ export const OrganizationCalendarView = () => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onClick={(e) => {
+                onSelect={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  console.log('Schedule Agreement clicked');
                   handleNewEvent('agreement');
                 }}
               >
@@ -422,10 +460,8 @@ export const OrganizationCalendarView = () => {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-                onClick={(e) => {
+                onSelect={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  console.log('Add Leave/Holiday clicked');
                   handleNewEvent('leave');
                 }}
               >

@@ -96,10 +96,39 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
     try {
       resetForm();
       onOpenChange(false);
+      
+      // Enhanced cleanup to prevent UI freezing
+      setTimeout(() => {
+        const elementsToCleanup = [
+          document.getElementById('root'),
+          document.querySelector('[data-radix-popper-content-wrapper]'),
+          document.querySelector('.group\\/sidebar-wrapper')
+        ];
+        
+        elementsToCleanup.forEach(element => {
+          if (element) {
+            element.removeAttribute('aria-hidden');
+            element.removeAttribute('inert');
+          }
+        });
+        
+        // Restore scroll
+        document.body.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('overflow');
+      }, 50);
     } catch (error) {
       console.error('Error closing dialog:', error);
+      onOpenChange(false);
     }
-  }, [onOpenChange, resetForm]);
+  }, [onOpenChange]);
+
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      const timeoutId = setTimeout(resetForm, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [open]);
 
   const getProviderName = () => {
     switch (meetingType) {
@@ -141,7 +170,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Schedule New Meeting</DialogTitle>
@@ -263,7 +292,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
         </ScrollArea>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
           <Button 

@@ -109,13 +109,42 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
     try {
       resetForm();
       onOpenChange(false);
+      
+      // Enhanced cleanup to prevent UI freezing
+      setTimeout(() => {
+        const elementsToCleanup = [
+          document.getElementById('root'),
+          document.querySelector('[data-radix-popper-content-wrapper]'),
+          document.querySelector('.group\\/sidebar-wrapper')
+        ];
+        
+        elementsToCleanup.forEach(element => {
+          if (element) {
+            element.removeAttribute('aria-hidden');
+            element.removeAttribute('inert');
+          }
+        });
+        
+        // Restore scroll
+        document.body.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('overflow');
+      }, 50);
     } catch (error) {
       console.error('Error closing training dialog:', error);
+      onOpenChange(false);
     }
   }, [onOpenChange]);
 
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      const timeoutId = setTimeout(resetForm, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Schedule Training</DialogTitle>
