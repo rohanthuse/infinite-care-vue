@@ -662,19 +662,11 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             )}
             
             {activeTab === "finance" && (
-              <>
-                {console.log('[BranchDashboard] Rendering finance tab:', {
-                  activeTab,
-                  canAccess: canAccessTab("finance"),
-                  branchId: id,
-                  branchName
-                })}
-                {canAccessTab("finance") ? (
-                  <AccountingTab branchId={id} branchName={branchName} />
-                ) : (
-                  <AccessDeniedTab tabName="Finance" />
-                )}
-              </>
+              canAccessTab("finance") ? (
+                <AccountingTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Finance" />
+              )
             )}
           </main>
           

@@ -38,14 +38,6 @@ export const useBranchDashboardNavigation = () => {
     }
   }
 
-  console.log('[useBranchDashboardNavigation] Route analysis:', {
-    pathname: location.pathname,
-    pathParts,
-    branchDashboardIndex,
-    potentialTab: pathParts[branchDashboardIndex + 3],
-    activeTab,
-    validTabs: validTabs.slice(0, 10) // Show first 10 for debugging
-  });
 
   const handleTabChange = (tab: string) => {
     if (id && branchName && tenantSlug) {
