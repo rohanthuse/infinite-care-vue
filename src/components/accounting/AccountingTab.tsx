@@ -24,9 +24,11 @@ interface AccountingTabProps {
 }
 
 const AccountingTab: React.FC<AccountingTabProps> = ({ branchId, branchName }) => {
-  console.log('[AccountingTab] Received props:', { branchId, branchName });
+  console.log('[AccountingTab] Component mounting with props:', { branchId, branchName });
   const [activeTab, setActiveTab] = useState("invoices-payments");
   const [isExporting, setIsExporting] = useState(false);
+
+  console.log('[AccountingTab] Component rendered with activeTab:', activeTab);
 
   const getExportButtonText = () => {
     switch (activeTab) {
