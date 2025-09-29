@@ -65,6 +65,7 @@ export const OrganizationCalendarView = () => {
   const [deleteEventDialogOpen, setDeleteEventDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [prefilledDate, setPrefilledDate] = useState<Date | null>(null);
   
   const { organization } = useTenant();
   const { closeAllDropdowns } = useDialogManager();
@@ -252,6 +253,9 @@ export const OrganizationCalendarView = () => {
         default:
           console.warn('Unknown event type:', eventType);
       }
+      
+      // Clear prefilled date after dialog opens
+      setPrefilledDate(null);
     }, 50);
   };
 
@@ -325,9 +329,9 @@ export const OrganizationCalendarView = () => {
     const eventDate = timeSlot || date || new Date();
     console.log('Add event clicked for date:', eventDate);
     
-    // For now, default to opening the meeting dialog
-    // In the future, this could show a type selection dropdown
-    handleNewEvent('meeting');
+    // Store the prefilled date and open the dropdown
+    setPrefilledDate(eventDate);
+    setDropdownOpen(true);
   };
 
   const eventTypeColors = {
@@ -673,29 +677,29 @@ export const OrganizationCalendarView = () => {
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
       />
 
-      {/* Meeting Dialog */}
-      <NewMeetingDialog
-        open={meetingDialogOpen}
-        onOpenChange={setMeetingDialogOpen}
-        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
-        prefilledDate={currentDate}
-      />
+       {/* Meeting Dialog */}
+       <NewMeetingDialog
+         open={meetingDialogOpen}
+         onOpenChange={setMeetingDialogOpen}
+         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+         prefilledDate={prefilledDate || currentDate}
+       />
 
-      {/* Leave Dialog */}
-      <NewLeaveDialog
-        open={leaveDialogOpen}
-        onOpenChange={setLeaveDialogOpen}
-        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
-        prefilledDate={currentDate}
-      />
+       {/* Leave Dialog */}
+       <NewLeaveDialog
+         open={leaveDialogOpen}
+         onOpenChange={setLeaveDialogOpen}
+         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+         prefilledDate={prefilledDate || currentDate}
+       />
 
-      {/* Training Dialog */}
-      <NewTrainingDialog
-        open={trainingDialogOpen}
-        onOpenChange={setTrainingDialogOpen}
-        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
-        prefilledDate={currentDate}
-      />
+       {/* Training Dialog */}
+       <NewTrainingDialog
+         open={trainingDialogOpen}
+         onOpenChange={setTrainingDialogOpen}
+         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+         prefilledDate={prefilledDate || currentDate}
+       />
 
       {/* Export Dialog */}
       <CalendarExportDialog
