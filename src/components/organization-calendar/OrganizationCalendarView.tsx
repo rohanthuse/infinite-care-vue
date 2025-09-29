@@ -516,11 +516,29 @@ export const OrganizationCalendarView = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
+            {/* All Events Button */}
+            <Button
+              variant={selectedEventType === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedEventType('all')}
+              className="flex items-center gap-2 h-8"
+            >
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-primary/70" />
+              <span className="text-sm">All Events</span>
+            </Button>
+            
+            {/* Individual Event Type Buttons */}
             {Object.entries(eventTypeColors).map(([type, color]) => (
-              <div key={type} className="flex items-center gap-2">
+              <Button
+                key={type}
+                variant={selectedEventType === type ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedEventType(type)}
+                className="flex items-center gap-2 h-8"
+              >
                 <div className={`w-3 h-3 rounded-full ${color}`} />
-                <span className="text-sm capitalize text-foreground">{type}</span>
-              </div>
+                <span className="text-sm capitalize">{type}</span>
+              </Button>
             ))}
           </div>
         </CardContent>
