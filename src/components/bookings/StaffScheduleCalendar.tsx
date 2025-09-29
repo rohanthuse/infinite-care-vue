@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { format, isToday, startOfDay, addHours, isSameHour } from "date-fns";
-import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download } from "lucide-react";
+import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests } from "@/hooks/useLeaveManagement";
+import { useStaffUtilizationAnalytics, useEnhancedStaffSchedule } from "@/hooks/useStaffUtilizationAnalytics";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
+import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface StaffScheduleCalendarProps {
   date: Date;
@@ -105,6 +108,12 @@ export function StaffScheduleCalendar({
   // Fetch staff and leave data
   const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
   const { data: leaveRequests = [], isLoading: isLoadingLeave } = useLeaveRequests(branchId);
+  
+  // Fetch enhanced utilization data
+  const { data: utilizationData = [], isLoading: isLoadingUtilization } = useStaffUtilizationAnalytics(branchId, date);
+  
+  // Enhanced staff schedule with utilization metrics
+  const enhancedStaffData = useEnhancedStaffSchedule(staff, bookings, date);
   
   // Safe helper to get initials from a name
   const getInitials = (fullName?: string): string => {
@@ -351,7 +360,14 @@ export function StaffScheduleCalendar({
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
+      <Tabs defaultValue="schedule" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="schedule">Staff Schedule</TabsTrigger>
+          <TabsTrigger value="utilization">Utilization Analysis</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="schedule" className="mt-6">
+          <div className="space-y-4">
         {/* Date Navigation */}
         {onDateChange && (
           <DateNavigation
@@ -541,32 +557,74 @@ export function StaffScheduleCalendar({
         </div>
       </div>
 
-      {/* Summary footer */}
+      {/* Enhanced Summary footer with utilization metrics */}
       {staffSchedule.length > 0 && (
         <Card>
           <CardContent className="pt-4">
-            <div className="grid grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span>{staffSchedule.length} Staff Members</span>
+                <div>
+                  <p className="font-medium">{staffSchedule.length} Staff</p>
+                  <p className="text-xs text-muted-foreground">Active today</p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{staffSchedule.reduce((acc, staff) => acc + staff.totalHours, 0)} Total Hours</span>
+                <div>
+                  <p className="font-medium">{staffSchedule.reduce((acc, staff) => acc + staff.totalHours, 0)} Hours</p>
+                  <p className="text-xs text-muted-foreground">Scheduled</p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span>{bookings.length} Bookings</span>
+                <div>
+                  <p className="font-medium">{bookings.length} Bookings</p>
+                  <p className="text-xs text-muted-foreground">Total visits</p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <PoundSterling className="h-4 w-4 text-muted-foreground" />
-                <span>Revenue: £{(bookings.length * 25).toFixed(2)}</span>
+                <div>
+                  <p className="font-medium">£{(bookings.length * 25).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Expected revenue</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">
+                    {enhancedStaffData.length > 0 ? 
+                      (enhancedStaffData.reduce((acc, staff) => acc + staff.utilizationRate, 0) / enhancedStaffData.length).toFixed(1) 
+                      : '0'}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">Avg utilization</p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
       </div>
+        </TabsContent>
+
+        <TabsContent value="utilization" className="mt-6">
+          {isLoadingUtilization ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center space-y-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground">Loading utilization data...</p>
+              </div>
+            </div>
+          ) : (
+            <StaffUtilizationMetrics 
+              staffData={utilizationData} 
+              date={date} 
+              branchId={branchId} 
+            />
+          )}
+        </TabsContent>
+      </Tabs>
     </TooltipProvider>
   );
 }
