@@ -324,14 +324,20 @@ export const OrganizationCalendarView = () => {
     toast.info('Duplicate functionality will be implemented');
   };
 
-  const handleAddEvent = (date?: Date, timeSlot?: Date) => {
+  const handleAddEvent = (date?: Date, timeSlot?: Date, eventType?: 'agreement' | 'booking' | 'leave' | 'meeting' | 'training') => {
     // Set the prefilled date/time based on what was clicked
     const eventDate = timeSlot || date || new Date();
-    console.log('Add event clicked for date:', eventDate);
+    console.log('Add event clicked for date:', eventDate, 'type:', eventType);
     
-    // Store the prefilled date and open the dropdown
-    setPrefilledDate(eventDate);
-    setDropdownOpen(true);
+    // If eventType is provided (from popover), directly open the dialog
+    if (eventType) {
+      setPrefilledDate(eventDate);
+      handleNewEvent(eventType);
+    } else {
+      // Fallback for header dropdown usage
+      setPrefilledDate(eventDate);
+      setDropdownOpen(true);
+    }
   };
 
   const eventTypeColors = {

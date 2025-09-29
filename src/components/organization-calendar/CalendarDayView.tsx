@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarEventCard } from './CalendarEventCard';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddEventPopover } from './AddEventPopover';
 
 interface CalendarDayViewProps {
   date: Date;
@@ -14,7 +15,7 @@ interface CalendarDayViewProps {
   onEditEvent?: (event: CalendarEvent) => void;
   onDeleteEvent?: (event: CalendarEvent) => void;
   onDuplicateEvent?: (event: CalendarEvent) => void;
-  onAddEvent?: (date?: Date, timeSlot?: Date) => void;
+  onAddEvent?: (date?: Date, timeSlot?: Date, eventType?: string) => void;
 }
 
 export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
@@ -102,16 +103,19 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                          />
                       ))}
                     </div>
-                  ) : (
-                    <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary"
-                        onClick={() => onAddEvent?.(date, timeSlot)}
-                      >
-                        + Add Event
-                      </button>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <AddEventPopover
+                          date={date}
+                          timeSlot={timeSlot}
+                          onEventTypeSelect={(eventType) => onAddEvent?.(date, timeSlot, eventType)}
+                        >
+                          <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                            + Add Event
+                          </button>
+                        </AddEventPopover>
+                      </div>
+                    )}
                 </div>
               </div>
             );

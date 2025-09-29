@@ -5,6 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarEventCard } from './CalendarEventCard';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddEventPopover } from './AddEventPopover';
 
 interface CalendarWeekViewProps {
   date: Date;
@@ -14,7 +15,7 @@ interface CalendarWeekViewProps {
   onEditEvent?: (event: CalendarEvent) => void;
   onDeleteEvent?: (event: CalendarEvent) => void;
   onDuplicateEvent?: (event: CalendarEvent) => void;
-  onAddEvent?: (date?: Date, timeSlot?: Date) => void;
+  onAddEvent?: (date?: Date, timeSlot?: Date, eventType?: string) => void;
 }
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
@@ -115,16 +116,23 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                       </div>
                     ) : (
                       <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary"
-                          onClick={() => {
+                        <AddEventPopover
+                          date={day}
+                          timeSlot={(() => {
                             const timeSlot = new Date(day);
                             timeSlot.setHours(hour, 0, 0, 0);
-                            onAddEvent?.(day, timeSlot);
+                            return timeSlot;
+                          })()}
+                          onEventTypeSelect={(eventType) => {
+                            const timeSlot = new Date(day);
+                            timeSlot.setHours(hour, 0, 0, 0);
+                            onAddEvent?.(day, timeSlot, eventType);
                           }}
                         >
-                          +
-                        </button>
+                          <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                            +
+                          </button>
+                        </AddEventPopover>
                       </div>
                     )}
                   </div>

@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AddEventPopover } from './AddEventPopover';
 
 interface CalendarMonthViewProps {
   date: Date;
@@ -23,7 +24,7 @@ interface CalendarMonthViewProps {
   onEditEvent?: (event: CalendarEvent) => void;
   onDeleteEvent?: (event: CalendarEvent) => void;
   onDuplicateEvent?: (event: CalendarEvent) => void;
-  onAddEvent?: (date?: Date, timeSlot?: Date) => void;
+  onAddEvent?: (date?: Date, timeSlot?: Date, eventType?: string) => void;
 }
 
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
@@ -152,12 +153,14 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                 {/* Add Event Button */}
                 {dayEvents.length === 0 && isCurrentMonth && (
                   <div className="flex items-center justify-center h-full opacity-0 hover:opacity-100 transition-opacity">
-                    <button 
-                      className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary"
-                      onClick={() => onAddEvent?.(day)}
+                    <AddEventPopover
+                      date={day}
+                      onEventTypeSelect={(eventType) => onAddEvent?.(day, undefined, eventType)}
                     >
-                      + Add Event
-                    </button>
+                      <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                        + Add Event
+                      </button>
+                    </AddEventPopover>
                   </div>
                 )}
               </CardContent>
