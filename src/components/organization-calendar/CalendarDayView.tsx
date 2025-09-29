@@ -14,6 +14,7 @@ interface CalendarDayViewProps {
   onEditEvent?: (event: CalendarEvent) => void;
   onDeleteEvent?: (event: CalendarEvent) => void;
   onDuplicateEvent?: (event: CalendarEvent) => void;
+  onAddEvent?: (date?: Date, timeSlot?: Date) => void;
 }
 
 export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
@@ -23,7 +24,8 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
   onEventClick,
   onEditEvent,
   onDeleteEvent,
-  onDuplicateEvent
+  onDuplicateEvent,
+  onAddEvent
 }) => {
   // Generate time slots from 7 AM to 10 PM (15 hours * 2 = 30 slots of 30 minutes)
   const timeSlots = Array.from({ length: 30 }, (_, index) => {
@@ -102,7 +104,10 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                     </div>
                   ) : (
                     <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                      <button 
+                        className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary"
+                        onClick={() => onAddEvent?.(date, timeSlot)}
+                      >
                         + Add Event
                       </button>
                     </div>

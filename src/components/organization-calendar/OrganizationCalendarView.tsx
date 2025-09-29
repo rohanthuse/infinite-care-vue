@@ -320,6 +320,16 @@ export const OrganizationCalendarView = () => {
     toast.info('Duplicate functionality will be implemented');
   };
 
+  const handleAddEvent = (date?: Date, timeSlot?: Date) => {
+    // Set the prefilled date/time based on what was clicked
+    const eventDate = timeSlot || date || new Date();
+    console.log('Add event clicked for date:', eventDate);
+    
+    // For now, default to opening the meeting dialog
+    // In the future, this could show a type selection dropdown
+    handleNewEvent('meeting');
+  };
+
   const eventTypeColors = {
     booking: 'bg-blue-500',
     meeting: 'bg-purple-500', 
@@ -340,6 +350,7 @@ export const OrganizationCalendarView = () => {
               onEditEvent={handleEditEvent}
               onDeleteEvent={handleDeleteEvent}
               onDuplicateEvent={handleDuplicateEvent}
+              onAddEvent={handleAddEvent}
             />
         );
       case 'weekly':
@@ -352,6 +363,7 @@ export const OrganizationCalendarView = () => {
               onEditEvent={handleEditEvent}
               onDeleteEvent={handleDeleteEvent}
               onDuplicateEvent={handleDuplicateEvent}
+              onAddEvent={handleAddEvent}
             />
         );
       case 'monthly':
@@ -364,6 +376,7 @@ export const OrganizationCalendarView = () => {
               onEditEvent={handleEditEvent}
               onDeleteEvent={handleDeleteEvent}
               onDuplicateEvent={handleDuplicateEvent}
+              onAddEvent={handleAddEvent}
             />
         );
       default:

@@ -23,6 +23,7 @@ interface CalendarMonthViewProps {
   onEditEvent?: (event: CalendarEvent) => void;
   onDeleteEvent?: (event: CalendarEvent) => void;
   onDuplicateEvent?: (event: CalendarEvent) => void;
+  onAddEvent?: (date?: Date, timeSlot?: Date) => void;
 }
 
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
@@ -32,7 +33,8 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   onEventClick,
   onEditEvent,
   onDeleteEvent,
-  onDuplicateEvent
+  onDuplicateEvent,
+  onAddEvent
 }) => {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
@@ -150,7 +152,10 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                 {/* Add Event Button */}
                 {dayEvents.length === 0 && isCurrentMonth && (
                   <div className="flex items-center justify-center h-full opacity-0 hover:opacity-100 transition-opacity">
-                    <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                    <button 
+                      className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary"
+                      onClick={() => onAddEvent?.(day)}
+                    >
                       + Add Event
                     </button>
                   </div>

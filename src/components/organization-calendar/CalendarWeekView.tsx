@@ -14,6 +14,7 @@ interface CalendarWeekViewProps {
   onEditEvent?: (event: CalendarEvent) => void;
   onDeleteEvent?: (event: CalendarEvent) => void;
   onDuplicateEvent?: (event: CalendarEvent) => void;
+  onAddEvent?: (date?: Date, timeSlot?: Date) => void;
 }
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
@@ -23,7 +24,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   onEventClick,
   onEditEvent,
   onDeleteEvent,
-  onDuplicateEvent
+  onDuplicateEvent,
+  onAddEvent
 }) => {
   const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Start week on Monday
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
@@ -113,7 +115,14 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                       </div>
                     ) : (
                       <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                        <button 
+                          className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary"
+                          onClick={() => {
+                            const timeSlot = new Date(day);
+                            timeSlot.setHours(hour, 0, 0, 0);
+                            onAddEvent?.(day, timeSlot);
+                          }}
+                        >
                           +
                         </button>
                       </div>
