@@ -28,7 +28,7 @@ export type ClientType =
   | 'private'
   | 'local_authority'
   | 'nhs'
-  | 'insurance'
+  | 'school'
   | 'charity'
   | 'other';
 
@@ -36,7 +36,7 @@ export type FundingSource =
   | 'self_funded'
   | 'local_authority'
   | 'nhs'
-  | 'insurance'
+  | 'school'
   | 'combined'
   | 'other';
 
@@ -58,7 +58,7 @@ export const clientTypeLabels: Record<ClientType, string> = {
   private: 'Private Client',
   local_authority: 'Local Authority',
   nhs: 'NHS',
-  insurance: 'Insurance',
+  school: 'School',
   charity: 'Charity',
   other: 'Other'
 };
@@ -67,7 +67,7 @@ export const fundingSourceLabels: Record<FundingSource, string> = {
   self_funded: 'Self-Funded',
   local_authority: 'Local Authority',
   nhs: 'NHS',
-  insurance: 'Insurance',
+  school: 'School',
   combined: 'Combined',
   other: 'Other'
 };

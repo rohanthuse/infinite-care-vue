@@ -302,7 +302,7 @@ const EditRateDialog: React.FC<EditRateDialogProps> = ({
                   <SelectItem value="private">{clientTypeLabels.private}</SelectItem>
                   <SelectItem value="local_authority">{clientTypeLabels.local_authority}</SelectItem>
                   <SelectItem value="nhs">{clientTypeLabels.nhs}</SelectItem>
-                  <SelectItem value="insurance">{clientTypeLabels.insurance}</SelectItem>
+                  <SelectItem value="school">{clientTypeLabels.school}</SelectItem>
                   <SelectItem value="charity">{clientTypeLabels.charity}</SelectItem>
                   <SelectItem value="other">{clientTypeLabels.other}</SelectItem>
                 </SelectContent>
@@ -323,7 +323,7 @@ const EditRateDialog: React.FC<EditRateDialogProps> = ({
                   <SelectItem value="self_funded">{fundingSourceLabels.self_funded}</SelectItem>
                   <SelectItem value="local_authority">{fundingSourceLabels.local_authority}</SelectItem>
                   <SelectItem value="nhs">{fundingSourceLabels.nhs}</SelectItem>
-                  <SelectItem value="insurance">{fundingSourceLabels.insurance}</SelectItem>
+                  <SelectItem value="school">{fundingSourceLabels.school}</SelectItem>
                   <SelectItem value="combined">{fundingSourceLabels.combined}</SelectItem>
                   <SelectItem value="other">{fundingSourceLabels.other}</SelectItem>
                 </SelectContent>

@@ -29,8 +29,8 @@ const rateSchema = z.object({
   amount: createPositiveNumberValidation("Amount", 0.01),
   effective_from: createDateValidation("Effective from date"),
   effective_to: z.string().optional(),
-  client_type: z.enum(["private", "local_authority", "nhs", "insurance", "other"]),
-  funding_source: z.enum(["self_funded", "direct_payment", "local_authority", "nhs", "insurance", "other"]),
+  client_type: z.enum(["private", "local_authority", "nhs", "school", "other"]),
+  funding_source: z.enum(["self_funded", "direct_payment", "local_authority", "nhs", "school", "other"]),
   applicable_days: z.array(z.string()).min(1, "At least one day must be selected"),
   status: z.enum(["active", "pending", "expired", "discontinued"]),
   description: z.string().optional(),
@@ -79,7 +79,7 @@ const clientTypeLabels = {
   private: "Private",
   local_authority: "Local Authority",
   nhs: "NHS",
-  insurance: "Insurance",
+  school: "School",
   other: "Other"
 };
 
@@ -88,7 +88,7 @@ const fundingSourceLabels = {
   direct_payment: "Direct Payment",
   local_authority: "Local Authority",
   nhs: "NHS",
-  insurance: "Insurance",
+  school: "School",
   other: "Other"
 };
 
