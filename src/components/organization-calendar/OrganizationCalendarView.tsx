@@ -45,10 +45,12 @@ import { DeleteEventDialog } from './DeleteEventDialog';
 import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalendarEvents';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useDialogManager } from '@/hooks/useDialogManager';
+import { useQueryClient } from '@tanstack/react-query';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
 export const OrganizationCalendarView = () => {
+  const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<ViewType>('daily');
   const [searchTerm, setSearchTerm] = useState('');
@@ -311,6 +313,26 @@ export const OrganizationCalendarView = () => {
     setTimeout(() => {
       setEditBookingDialogOpen(true);
     }, 100);
+  };
+
+  const handleEditSuccess = async (bookingId: string) => {
+    setEditBookingDialogOpen(false);
+    
+    // Wait for queries to refetch
+    await queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
+    await queryClient.refetchQueries({ queryKey: ["organization-calendar"] });
+    
+    // Get fresh data and update selectedEvent
+    const updatedEvents = queryClient.getQueryData(["organization-calendar"]) as CalendarEvent[] | undefined;
+    if (updatedEvents) {
+      const updatedEvent = updatedEvents.find(e => e.id === bookingId);
+      if (updatedEvent) {
+        setSelectedEvent(updatedEvent);
+        setViewBookingDialogOpen(true);
+      }
+    }
+    
+    toast.success("Booking updated successfully!");
   };
 
   const handleDeleteEvent = (event: CalendarEvent) => {
@@ -714,6 +736,7 @@ export const OrganizationCalendarView = () => {
               start_time: selectedEvent.startTime.toISOString(),
               end_time: selectedEvent.endTime.toISOString(),
             }}
+            onSuccess={handleEditSuccess}
           />
         </>
       )}

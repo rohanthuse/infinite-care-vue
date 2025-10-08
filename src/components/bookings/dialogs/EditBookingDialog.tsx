@@ -73,6 +73,7 @@ interface EditBookingDialogProps {
   services: Array<{ id: string; title: string }>;
   branchId?: string;
   carers?: Array<{ id: string; name: string }>;
+  onSuccess?: (bookingId: string) => void;
 }
 
 export function EditBookingDialog({
@@ -82,6 +83,7 @@ export function EditBookingDialog({
   services,
   branchId,
   carers = [],
+  onSuccess,
 }: EditBookingDialogProps) {
   const updateBooking = useUpdateBooking(branchId);
   const deleteBooking = useDeleteBooking(branchId);
@@ -204,8 +206,12 @@ export function EditBookingDialog({
         },
       });
       
-      onOpenChange(false);
-      toast.success("Appointment updated successfully");
+      if (onSuccess) {
+        onSuccess(booking.id);
+      } else {
+        onOpenChange(false);
+        toast.success("Appointment updated successfully");
+      }
     } catch (error) {
       console.error("Error updating booking:", error);
       toast.error("Failed to update appointment");
