@@ -7,6 +7,7 @@ import { Plus, Eye, Edit, Trash2, Calendar, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { ServiceRate as AccountingServiceRate, useServiceRates, useCreateServiceRate, useDeleteServiceRate, useUpdateServiceRate } from "@/hooks/useAccountingData";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import AddRateDialog from "@/components/accounting/AddRateDialog";
 import EditRateDialog from "@/components/accounting/EditRateDialog";
 import ViewRateDialog from "@/components/accounting/ViewRateDialog";
@@ -20,6 +21,7 @@ interface ClientRatesTabProps {
 }
 
 export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branchId }) => {
+  const queryClient = useQueryClient();
   const [isAddRateDialogOpen, setIsAddRateDialogOpen] = useState(false);
   const [isEditRateDialogOpen, setIsEditRateDialogOpen] = useState(false);
   const [isViewRateDialogOpen, setIsViewRateDialogOpen] = useState(false);
@@ -145,6 +147,15 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
     
     try {
       await deleteServiceRate.mutateAsync(rateId);
+      
+      // Optimistically update the UI by removing the deleted rate from cache
+      queryClient.setQueryData(['service-rates', branchId], (oldData: any) => {
+        if (Array.isArray(oldData)) {
+          return oldData.filter(r => r.id !== rateId);
+        }
+        return oldData;
+      });
+      
       console.log('[ClientRatesTab] Rate deleted successfully:', rateId);
       toast.success('Service rate deleted successfully');
       setIsDeleteDialogOpen(false);
@@ -338,7 +349,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
             <AlertDialogAction type="button" onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
