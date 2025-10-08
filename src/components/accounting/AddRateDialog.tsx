@@ -198,7 +198,8 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
         is_default: data.is_default,
         status: data.status,
         description: data.description || undefined,
-        // Branch ID and created_by will be set by RateManagementTab
+        branch_id: branchId,
+        created_by: currentUser?.id,
       };
 
       onAddRate(newRate);

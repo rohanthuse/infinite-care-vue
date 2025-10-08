@@ -726,13 +726,28 @@ export function useCreateServiceRate() {
 
   return useMutation({
     mutationFn: async (rateData: Omit<ServiceRate, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('[useCreateServiceRate] Creating rate with data:', rateData);
+      
+      if (!rateData.branch_id) {
+        throw new Error('branch_id is required to create a service rate');
+      }
+      
+      if (!rateData.created_by) {
+        throw new Error('created_by is required to create a service rate');
+      }
+      
       const { data, error } = await supabase
         .from('service_rates')
         .insert(rateData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useCreateServiceRate] Error creating rate:', error);
+        throw error;
+      }
+      
+      console.log('[useCreateServiceRate] Rate created successfully:', data);
       return data;
     },
     onSuccess: () => {

@@ -12,6 +12,7 @@ import EditRateDialog from "@/components/accounting/EditRateDialog";
 import ViewRateDialog from "@/components/accounting/ViewRateDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientRatesTabProps {
   clientId: string;
@@ -32,6 +33,19 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
 
   const handleAddRate = async (rateData: any) => {
     try {
+      // Get authenticated user ID from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user?.id) {
+        toast.error("Authentication required to create service rate");
+        return;
+      }
+
+      if (!branchId) {
+        toast.error("Branch ID is required to create service rate");
+        return;
+      }
+
       // Map from dialog format to AccountingServiceRate format
       const newRateData: Partial<AccountingServiceRate> = {
         branch_id: branchId,
@@ -48,7 +62,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
         is_default: rateData.is_default || rateData.isDefault || false,
         status: rateData.status || 'active',
         description: rateData.description,
-        created_by: 'current-user-id' // This should come from auth context
+        created_by: user.id
       };
 
       await createServiceRate.mutateAsync(newRateData as Omit<AccountingServiceRate, 'id' | 'created_at' | 'updated_at'>);
