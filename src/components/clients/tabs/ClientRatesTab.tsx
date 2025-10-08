@@ -24,12 +24,50 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   const [isEditRateDialogOpen, setIsEditRateDialogOpen] = useState(false);
   const [isViewRateDialogOpen, setIsViewRateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedRate, setSelectedRate] = useState<AccountingServiceRate | null>(null);
+  const [selectedRate, setSelectedRate] = useState<any | null>(null);
 
   const { data: rates = [], isLoading } = useServiceRates(branchId);
   const createServiceRate = useCreateServiceRate();
   const deleteServiceRate = useDeleteServiceRate();
   const updateServiceRate = useUpdateServiceRate();
+
+  // Data mapper functions to convert between DB format (snake_case) and UI format (camelCase)
+  const mapDbRateToUiRate = (dbRate: AccountingServiceRate): any => {
+    return {
+      id: dbRate.id,
+      serviceName: dbRate.service_name,
+      serviceCode: dbRate.service_code,
+      rateType: dbRate.rate_type,
+      amount: dbRate.amount,
+      effectiveFrom: dbRate.effective_from,
+      effectiveTo: dbRate.effective_to,
+      description: dbRate.description,
+      applicableDays: dbRate.applicable_days,
+      clientType: dbRate.client_type,
+      fundingSource: dbRate.funding_source,
+      status: dbRate.status,
+      lastUpdated: dbRate.updated_at,
+      createdBy: dbRate.created_by,
+      isDefault: dbRate.is_default,
+    };
+  };
+
+  const mapUiRateToDbRate = (uiRate: any): Partial<AccountingServiceRate> => {
+    return {
+      service_name: uiRate.serviceName,
+      service_code: uiRate.serviceCode,
+      rate_type: uiRate.rateType,
+      amount: uiRate.amount,
+      effective_from: uiRate.effectiveFrom,
+      effective_to: uiRate.effectiveTo,
+      description: uiRate.description,
+      applicable_days: uiRate.applicableDays,
+      client_type: uiRate.clientType,
+      funding_source: uiRate.fundingSource,
+      status: uiRate.status,
+      is_default: uiRate.isDefault,
+    };
+  };
 
   const handleAddRate = async (rateData: any) => {
     try {
@@ -76,12 +114,12 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   };
 
   const handleViewRate = (rate: AccountingServiceRate) => {
-    setSelectedRate(rate);
+    setSelectedRate(mapDbRateToUiRate(rate));
     setIsViewRateDialogOpen(true);
   };
 
   const handleEditRate = (rate: AccountingServiceRate) => {
-    setSelectedRate(rate);
+    setSelectedRate(mapDbRateToUiRate(rate));
     setIsEditRateDialogOpen(true);
   };
 
@@ -106,9 +144,11 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
 
   const handleUpdateRate = async (rateId: string, rateData: any) => {
     try {
-      await updateServiceRate.mutateAsync({ rateId, updates: rateData });
+      const dbFormatData = mapUiRateToDbRate(rateData);
+      await updateServiceRate.mutateAsync({ rateId, updates: dbFormatData });
       toast.success('Service rate updated successfully');
       setIsEditRateDialogOpen(false);
+      setSelectedRate(null);
     } catch (error) {
       console.error('Error updating service rate:', error);
       toast.error('Failed to update service rate');
@@ -257,14 +297,18 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
         open={isEditRateDialogOpen}
         onClose={() => setIsEditRateDialogOpen(false)}
         onUpdateRate={handleUpdateRate}
-        rate={selectedRate as any}
+        rate={selectedRate}
       />
 
       <ViewRateDialog
         open={isViewRateDialogOpen}
         onClose={() => setIsViewRateDialogOpen(false)}
-        onEdit={(rate) => handleEditRate(rate as any)}
-        rate={selectedRate as any}
+        onEdit={(rate) => {
+          setSelectedRate(rate);
+          setIsViewRateDialogOpen(false);
+          setIsEditRateDialogOpen(true);
+        }}
+        rate={selectedRate}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
