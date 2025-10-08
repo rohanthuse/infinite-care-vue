@@ -5,15 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Plus, Eye, Edit, Trash2, Calendar, DollarSign } from "lucide-react";
 import { format } from "date-fns";
-import { ServiceRate as AccountingServiceRate, useServiceRates, useCreateServiceRate, useDeleteServiceRate, useUpdateServiceRate } from "@/hooks/useAccountingData";
+import { useClientRateSchedules, useDeleteClientRateSchedule } from "@/hooks/useClientAccounting";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import AddRateDialog from "@/components/accounting/AddRateDialog";
-import EditRateDialog from "@/components/accounting/EditRateDialog";
-import ViewRateDialog from "@/components/accounting/ViewRateDialog";
+import { AddRateScheduleDialog } from "@/components/clients/tabs/accounting/AddRateScheduleDialog";
+import { EditRateScheduleDialog } from "@/components/clients/tabs/accounting/EditRateScheduleDialog";
+import { ViewRateScheduleDialog } from "@/components/clients/tabs/accounting/ViewRateScheduleDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { ClientRateSchedule } from "@/types/clientAccounting";
 
 interface ClientRatesTabProps {
   clientId: string;
@@ -26,177 +26,89 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   const [isEditRateDialogOpen, setIsEditRateDialogOpen] = useState(false);
   const [isViewRateDialogOpen, setIsViewRateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedRate, setSelectedRate] = useState<any | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<ClientRateSchedule | null>(null);
 
-  const { data: rates = [], isLoading } = useServiceRates(branchId);
-  const createServiceRate = useCreateServiceRate();
-  const deleteServiceRate = useDeleteServiceRate();
-  const updateServiceRate = useUpdateServiceRate();
+  const { data: rateSchedules = [], isLoading } = useClientRateSchedules(clientId);
+  const deleteRateSchedule = useDeleteClientRateSchedule();
 
-  // Data mapper functions to convert between DB format (snake_case) and UI format (camelCase)
-  const mapDbRateToUiRate = (dbRate: AccountingServiceRate): any => {
-    return {
-      id: dbRate.id,
-      serviceName: dbRate.service_name,
-      serviceCode: dbRate.service_code,
-      rateType: dbRate.rate_type,
-      amount: dbRate.amount,
-      effectiveFrom: dbRate.effective_from,
-      effectiveTo: dbRate.effective_to,
-      description: dbRate.description,
-      applicableDays: dbRate.applicable_days,
-      clientType: dbRate.client_type,
-      fundingSource: dbRate.funding_source,
-      status: dbRate.status,
-      lastUpdated: dbRate.updated_at,
-      createdBy: dbRate.created_by,
-      isDefault: dbRate.is_default,
-    };
-  };
+  console.log('[ClientRatesTab] Client-specific rate schedules:', rateSchedules.length);
 
-  const mapUiRateToDbRate = (uiRate: any): Partial<AccountingServiceRate> => {
-    return {
-      service_name: uiRate.serviceName,
-      service_code: uiRate.serviceCode,
-      rate_type: uiRate.rateType,
-      amount: uiRate.amount,
-      effective_from: uiRate.effectiveFrom,
-      effective_to: uiRate.effectiveTo,
-      description: uiRate.description,
-      applicable_days: uiRate.applicableDays,
-      client_type: uiRate.clientType,
-      funding_source: uiRate.fundingSource,
-      status: uiRate.status,
-      is_default: uiRate.isDefault,
-    };
-  };
-
-  const handleAddRate = async (rateData: any) => {
-    try {
-      // Get authenticated user ID from Supabase
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user?.id) {
-        toast.error("Authentication required to create service rate");
-        return;
-      }
-
-      if (!branchId) {
-        toast.error("Branch ID is required to create service rate");
-        return;
-      }
-
-      // Map from dialog format to AccountingServiceRate format
-      const newRateData: Partial<AccountingServiceRate> = {
-        branch_id: branchId,
-        service_name: rateData.service_name || rateData.serviceName,
-        service_code: rateData.service_code || rateData.serviceCode,
-        rate_type: rateData.rate_type || rateData.rateType,
-        amount: rateData.amount,
-        currency: 'GBP',
-        effective_from: rateData.effective_from || rateData.effectiveFrom,
-        effective_to: rateData.effective_to || rateData.effectiveTo,
-        client_type: rateData.client_type || rateData.clientType,
-        funding_source: rateData.funding_source || rateData.fundingSource,
-        applicable_days: rateData.applicable_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
-        is_default: rateData.is_default || rateData.isDefault || false,
-        status: rateData.status || 'active',
-        description: rateData.description,
-        created_by: user.id
-      };
-
-      await createServiceRate.mutateAsync(newRateData as Omit<AccountingServiceRate, 'id' | 'created_at' | 'updated_at'>);
-      setIsAddRateDialogOpen(false);
-      toast.success('Service rate created successfully');
-    } catch (error) {
-      console.error('Error creating service rate:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create service rate';
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleViewRate = (rate: AccountingServiceRate) => {
-    setSelectedRate(mapDbRateToUiRate(rate));
+  const handleViewRate = (schedule: ClientRateSchedule) => {
+    setSelectedSchedule(schedule);
     setIsViewRateDialogOpen(true);
   };
 
-  const handleEditRate = (rate: AccountingServiceRate) => {
-    setSelectedRate(mapDbRateToUiRate(rate));
+  const handleEditRate = (schedule: ClientRateSchedule) => {
+    setSelectedSchedule(schedule);
     setIsEditRateDialogOpen(true);
   };
 
-  const handleDeleteRate = (rate: AccountingServiceRate) => {
-    setSelectedRate(rate);
+  const handleDeleteRate = (schedule: ClientRateSchedule) => {
+    setSelectedSchedule(schedule);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (!selectedRate) {
-      console.error('[ClientRatesTab] No rate selected for deletion');
+    if (!selectedSchedule) {
+      console.error('[ClientRatesTab] No schedule selected for deletion');
       return;
     }
     
-    const rateId = selectedRate.id;
-    if (!rateId) {
-      console.error('[ClientRatesTab] Selected rate has no ID:', selectedRate);
-      toast.error('Cannot delete rate: Invalid rate ID');
+    const scheduleId = selectedSchedule.id;
+    if (!scheduleId) {
+      console.error('[ClientRatesTab] Selected schedule has no ID:', selectedSchedule);
+      toast.error('Cannot delete schedule: Invalid schedule ID');
       return;
     }
     
-    console.log('[ClientRatesTab] Attempting to delete rate:', rateId);
+    console.log('[ClientRatesTab] Attempting to delete schedule:', scheduleId);
     
     try {
-      await deleteServiceRate.mutateAsync(rateId);
+      await deleteRateSchedule.mutateAsync(scheduleId);
       
-      // Optimistically update the UI by removing the deleted rate from cache
-      queryClient.setQueryData(['service-rates', branchId], (oldData: any) => {
+      // Optimistically update the UI by removing the deleted schedule from cache
+      queryClient.setQueryData(['client-rate-schedules', clientId], (oldData: any) => {
         if (Array.isArray(oldData)) {
-          return oldData.filter(r => r.id !== rateId);
+          return oldData.filter(r => r.id !== scheduleId);
         }
         return oldData;
       });
       
-      console.log('[ClientRatesTab] Rate deleted successfully:', rateId);
-      toast.success('Service rate deleted successfully');
+      console.log('[ClientRatesTab] Schedule deleted successfully:', scheduleId);
       setIsDeleteDialogOpen(false);
-      setSelectedRate(null);
+      setSelectedSchedule(null);
     } catch (error) {
-      console.error('[ClientRatesTab] Error deleting service rate:', error);
-      toast.error(`Failed to delete service rate: ${error.message || 'Unknown error'}`);
+      console.error('[ClientRatesTab] Error deleting schedule:', error);
+      toast.error(`Failed to delete schedule: ${error.message || 'Unknown error'}`);
     }
   };
 
-  const handleUpdateRate = async (rateId: string, rateData: any) => {
-    try {
-      const dbFormatData = mapUiRateToDbRate(rateData);
-      await updateServiceRate.mutateAsync({ rateId, updates: dbFormatData });
-      toast.success('Service rate updated successfully');
-      setIsEditRateDialogOpen(false);
-      setSelectedRate(null);
-    } catch (error) {
-      console.error('Error updating service rate:', error);
-      toast.error('Failed to update service rate');
-    }
-  };
+  const getStatusBadge = (isActive: boolean, startDate: string, endDate?: string) => {
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : null;
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'expired':
-        return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
-      case 'discontinued':
-        return <Badge className="bg-gray-100 text-gray-800">Discontinued</Badge>;
-      default:
-        return <Badge>{status}</Badge>;
+    if (!isActive) {
+      return <Badge className="bg-gray-100 text-gray-800">Inactive</Badge>;
     }
+    if (now < start) {
+      return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+    }
+    if (end && now > end) {
+      return <Badge className="bg-red-100 text-red-800">Expired</Badge>;
+    }
+    return <Badge className="bg-green-100 text-green-800">Active</Badge>;
   };
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "Ongoing";
     return format(new Date(dateString), "dd/MM/yyyy");
+  };
+
+  const formatDays = (days: string[]) => {
+    if (!days || days.length === 0) return "None";
+    if (days.length === 7) return "All Days";
+    return days.join(", ");
   };
 
   if (isLoading) {
@@ -212,27 +124,27 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold">Service Rates</CardTitle>
-            <CardDescription>Manage service rates for this client</CardDescription>
+            <CardTitle className="text-lg font-semibold">Service Rate Schedules</CardTitle>
+            <CardDescription>Manage rate schedules specific to this client</CardDescription>
           </div>
           <Button onClick={() => setIsAddRateDialogOpen(true)} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
-            Add Rate
+            Add Rate Schedule
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {rates.length === 0 ? (
+        {rateSchedules.length === 0 ? (
           <div className="text-center py-12">
             <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-1">No Service Rates</h3>
-            <p className="text-muted-foreground">Start by adding a service rate for this client.</p>
+            <h3 className="text-lg font-medium text-foreground mb-1">No Rate Schedules</h3>
+            <p className="text-muted-foreground">Start by adding a rate schedule for this client.</p>
             <Button 
               onClick={() => setIsAddRateDialogOpen(true)} 
               className="mt-4"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add First Rate
+              Add First Rate Schedule
             </Button>
           </div>
         ) : (
@@ -240,45 +152,62 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
             <TableHeader>
               <TableRow>
                 <TableHead>Service</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Amount</TableHead>
+                <TableHead>Authority</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Base Rate</TableHead>
+                <TableHead>Days</TableHead>
                 <TableHead>Effective Period</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rates.map((rate) => (
-                <TableRow key={rate.id}>
+              {rateSchedules.map((schedule) => (
+                <TableRow key={schedule.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{rate.service_name}</p>
-                      <p className="text-sm text-muted-foreground">{rate.service_code}</p>
+                      <p className="font-medium">
+                        {schedule.service_types?.name || schedule.service_type_code || 'General Service'}
+                      </p>
+                      {schedule.service_types?.code && (
+                        <p className="text-sm text-muted-foreground">{schedule.service_types.code}</p>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
-                      {rate.rate_type}
+                    <Badge variant="outline" className="capitalize">
+                      {schedule.authority_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="capitalize">
+                      {schedule.rate_category}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">
-                    {formatCurrency(rate.amount)}
+                    {formatCurrency(schedule.base_rate)}
+                    {schedule.is_vatable && (
+                      <span className="text-xs text-muted-foreground ml-1">(+VAT)</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {formatDays(schedule.days_covered)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm">
                       <Calendar className="h-3 w-3" />
-                      {formatDate(rate.effective_from)} - {formatDate(rate.effective_to)}
+                      {formatDate(schedule.start_date)} - {formatDate(schedule.end_date)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(rate.status)}
+                    {getStatusBadge(schedule.is_active, schedule.start_date, schedule.end_date)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleViewRate(rate)}
+                        onClick={() => handleViewRate(schedule)}
                         className="h-8 w-8 p-0"
                       >
                         <Eye className="h-4 w-4" />
@@ -286,7 +215,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditRate(rate)}
+                        onClick={() => handleEditRate(schedule)}
                         className="h-8 w-8 p-0"
                       >
                         <Edit className="h-4 w-4" />
@@ -298,7 +227,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          handleDeleteRate(rate);
+                          handleDeleteRate(schedule);
                         }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >
@@ -314,38 +243,43 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
       </CardContent>
 
       {/* Dialogs */}
-      <AddRateDialog
+      <AddRateScheduleDialog
         open={isAddRateDialogOpen}
-        onClose={() => setIsAddRateDialogOpen(false)}
-        onAddRate={handleAddRate}
+        onOpenChange={setIsAddRateDialogOpen}
+        clientId={clientId}
         branchId={branchId}
-        variant="optionsOnly"
       />
 
-      <EditRateDialog
-        open={isEditRateDialogOpen}
-        onClose={() => setIsEditRateDialogOpen(false)}
-        onUpdateRate={handleUpdateRate}
-        rate={selectedRate}
-      />
+      {selectedSchedule && (
+        <>
+          <EditRateScheduleDialog
+            open={isEditRateDialogOpen}
+            onOpenChange={(open) => {
+              setIsEditRateDialogOpen(open);
+              if (!open) setSelectedSchedule(null);
+            }}
+            schedule={selectedSchedule}
+            clientId={clientId}
+            branchId={branchId}
+          />
 
-      <ViewRateDialog
-        open={isViewRateDialogOpen}
-        onClose={() => setIsViewRateDialogOpen(false)}
-        onEdit={(rate) => {
-          setSelectedRate(rate);
-          setIsViewRateDialogOpen(false);
-          setIsEditRateDialogOpen(true);
-        }}
-        rate={selectedRate}
-      />
+          <ViewRateScheduleDialog
+            open={isViewRateDialogOpen}
+            onOpenChange={(open) => {
+              setIsViewRateDialogOpen(open);
+              if (!open) setSelectedSchedule(null);
+            }}
+            schedule={selectedSchedule}
+          />
+        </>
+      )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Service Rate</AlertDialogTitle>
+            <AlertDialogTitle>Delete Rate Schedule</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this service rate? This action cannot be undone.
+              Are you sure you want to deactivate this rate schedule? This action will mark it as inactive.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
