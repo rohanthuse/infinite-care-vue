@@ -312,17 +312,31 @@ const AddRateDialog: React.FC<AddRateDialogProps> = ({
     const handleAddRate = () => {
       if (!validateForm()) return;
 
+      if (!branchId) {
+        toast.error("Branch ID is required to create service rate");
+        return;
+      }
+
+      if (!currentUser?.id) {
+        toast.error("Authentication required to create service rate");
+        return;
+      }
+
       const rateData = availableRates.find(rate => rate.id === selectedRate);
       if (!rateData) {
         toast.error('Selected rate not found');
         return;
       }
 
-      // Create new rate with overridden dates
+      // Create new rate with configuration from selected rate but new ID and dates
+      const { id, created_at, updated_at, ...rateConfig } = rateData;
+      
       const newRate: Partial<ServiceRate> = {
-        ...rateData,
+        ...rateConfig,
         effective_from: startDate!.toISOString().split('T')[0],
         effective_to: endDate?.toISOString().split('T')[0],
+        branch_id: branchId,
+        created_by: currentUser.id,
       };
 
       onAddRate(newRate);
