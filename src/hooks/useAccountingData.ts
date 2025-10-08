@@ -784,12 +784,24 @@ export function useDeleteServiceRate() {
 
   return useMutation({
     mutationFn: async (rateId: string) => {
+      if (!rateId) {
+        console.error('[useDeleteServiceRate] No rateId provided');
+        throw new Error('Rate ID is required for deletion');
+      }
+      
+      console.log('[useDeleteServiceRate] Deleting rate:', rateId);
+      
       const { error } = await supabase
         .from('service_rates')
         .delete()
         .eq('id', rateId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useDeleteServiceRate] Delete failed:', error);
+        throw error;
+      }
+      
+      console.log('[useDeleteServiceRate] Rate deleted successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-rates'] });

@@ -129,16 +129,29 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   };
 
   const confirmDelete = async () => {
-    if (!selectedRate) return;
+    if (!selectedRate) {
+      console.error('[ClientRatesTab] No rate selected for deletion');
+      return;
+    }
+    
+    const rateId = selectedRate.id;
+    if (!rateId) {
+      console.error('[ClientRatesTab] Selected rate has no ID:', selectedRate);
+      toast.error('Cannot delete rate: Invalid rate ID');
+      return;
+    }
+    
+    console.log('[ClientRatesTab] Attempting to delete rate:', rateId);
     
     try {
-      await deleteServiceRate.mutateAsync(selectedRate.id);
+      await deleteServiceRate.mutateAsync(rateId);
+      console.log('[ClientRatesTab] Rate deleted successfully:', rateId);
       toast.success('Service rate deleted successfully');
       setIsDeleteDialogOpen(false);
       setSelectedRate(null);
     } catch (error) {
-      console.error('Error deleting service rate:', error);
-      toast.error('Failed to delete service rate');
+      console.error('[ClientRatesTab] Error deleting service rate:', error);
+      toast.error(`Failed to delete service rate: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -268,9 +281,14 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteRate(rate)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteRate(rate);
+                        }}
                         className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -321,7 +339,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction type="button" onClick={confirmDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
