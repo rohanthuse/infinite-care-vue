@@ -1,6 +1,16 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { Check, ArrowUpDown, MoreHorizontal, Edit, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Table, 
   TableBody, 
@@ -34,6 +44,7 @@ interface Service {
   double_handed: boolean;
   category: string;
   description: string | null;
+  status: string;
 }
 
 interface ServicesTableProps {
@@ -53,6 +64,8 @@ export function ServicesTable({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -60,7 +73,11 @@ export function ServicesTable({
   const { data: services, isLoading, error } = useQuery<Service[]>({
     queryKey: ['services'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('services').select('*').order('title', { ascending: true });
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('status', 'active')
+        .order('title', { ascending: true });
       if (error) throw new Error(error.message);
       return data;
     },
@@ -68,20 +85,78 @@ export function ServicesTable({
 
   const deleteMutation = useMutation({
     mutationFn: async (serviceId: string) => {
-      const { error } = await supabase.from('services').delete().eq('id', serviceId);
+      // Check if service has any dependencies
+      const { data: bookings, error: bookingError } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('service_id', serviceId)
+        .limit(1);
+      
+      if (bookingError) {
+        console.error('Error checking bookings:', bookingError);
+      }
+      
+      const { data: invoiceItems, error: invoiceError } = await supabase
+        .from('invoice_line_items')
+        .select('id')
+        .eq('service_id', serviceId)
+        .limit(1);
+      
+      if (invoiceError) {
+        console.error('Error checking invoice items:', invoiceError);
+      }
+      
+      const hasBookings = bookings && bookings.length > 0;
+      const hasInvoices = invoiceItems && invoiceItems.length > 0;
+      
+      // Soft delete by updating status to 'inactive'
+      const { error } = await supabase
+        .from('services')
+        .update({ status: 'inactive', updated_at: new Date().toISOString() })
+        .eq('id', serviceId);
+        
       if (error) throw new Error(error.message);
+      
+      return { hasBookings, hasInvoices };
     },
-    onSuccess: () => {
-      toast({ title: "Success", description: "Service deleted successfully." });
+    onSuccess: (data) => {
+      if (data.hasBookings || data.hasInvoices) {
+        toast({ 
+          title: "Service Deactivated", 
+          description: `Service has been deactivated. It has existing ${data.hasBookings ? 'bookings' : ''}${data.hasBookings && data.hasInvoices ? ' and ' : ''}${data.hasInvoices ? 'invoices' : ''} and cannot be permanently deleted.`,
+          duration: 6000
+        });
+      } else {
+        toast({ 
+          title: "Success", 
+          description: "Service has been successfully deactivated and removed from the active list." 
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['services'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-services'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-services'] });
     },
     onError: (error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      console.error('Delete service error:', error);
+      toast({ 
+        title: "Error", 
+        description: `Failed to delete service: ${error.message}`, 
+        variant: "destructive" 
+      });
     },
   });
 
-  const handleDelete = (serviceId: string) => {
-    deleteMutation.mutate(serviceId);
+  const handleDeleteClick = (service: Service) => {
+    setServiceToDelete(service);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (serviceToDelete) {
+      deleteMutation.mutate(serviceToDelete.id);
+    }
+    setIsDeleteDialogOpen(false);
+    setServiceToDelete(null);
   };
 
   const handleEdit = (service: Service) => {
@@ -233,7 +308,7 @@ export function ServicesTable({
                         <DropdownMenuItem className="cursor-pointer flex items-center gap-2" onClick={() => handleEdit(service)}>
                           <Edit className="h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer text-destructive flex items-center gap-2" onClick={() => handleDelete(service.id)}>
+                        <DropdownMenuItem className="cursor-pointer text-destructive flex items-center gap-2" onClick={() => handleDeleteClick(service)}>
                           <Trash2 className="h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -338,6 +413,47 @@ export function ServicesTable({
           service={selectedService}
         />
       )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Service</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>"{serviceToDelete?.title}"</strong>?
+              <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
+                <p className="text-sm text-amber-800 dark:text-amber-200 font-medium mb-2">
+                  ⚠️ Important Note
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  This service will be <strong>deactivated</strong> (not permanently deleted) to preserve existing bookings and invoice records. 
+                  It will no longer appear in the active services list.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteDialogOpen(false);
+              setServiceToDelete(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete Service'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

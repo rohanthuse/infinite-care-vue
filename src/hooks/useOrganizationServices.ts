@@ -7,6 +7,7 @@ export interface OrganizationService {
   description?: string;
   double_handed: boolean;
   organization_id?: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -17,6 +18,7 @@ export const useOrganizationServices = () => {
     async (organizationId: string) => {
       const { data, error } = await createTenantQuery(organizationId)
         .services()
+        .eq('status', 'active')
         .order('title');
       
       if (error) throw error;

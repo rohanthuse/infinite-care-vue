@@ -5880,6 +5880,7 @@ export type Database = {
           double_handed: boolean
           id: string
           organization_id: string | null
+          status: string | null
           title: string
           updated_at: string
         }
@@ -5890,6 +5891,7 @@ export type Database = {
           double_handed?: boolean
           id?: string
           organization_id?: string | null
+          status?: string | null
           title: string
           updated_at?: string
         }
@@ -5900,6 +5902,7 @@ export type Database = {
           double_handed?: boolean
           id?: string
           organization_id?: string | null
+          status?: string | null
           title?: string
           updated_at?: string
         }

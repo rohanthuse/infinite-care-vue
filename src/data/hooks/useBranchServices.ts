@@ -8,6 +8,7 @@ export interface BranchService {
   description?: string;
   category: string;
   double_handed: boolean;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +24,7 @@ export async function fetchBranchServices(branchId?: string) {
   const { data, error } = await supabase
     .from("services")
     .select("*")
+    .eq("status", "active")
     .order("title", { ascending: true });
 
   if (error) {
