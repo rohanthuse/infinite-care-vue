@@ -660,6 +660,39 @@ export const useDeleteTravelRecord = () => {
   });
 };
 
+export const useDeletePayrollRecord = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, branchId }: { id: string; branchId: string }) => {
+      console.log('Deleting payroll record:', id);
+      
+      const { error } = await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting payroll record:', error);
+        throw error;
+      }
+      
+      return { id, branchId };
+    },
+    onSuccess: (data) => {
+      // Invalidate the payroll records cache to refresh the table
+      queryClient.invalidateQueries({ queryKey: ['payroll-records', data.branchId] });
+      queryClient.invalidateQueries({ queryKey: ['payroll-records'] });
+      
+      toast.success('Payroll record deleted successfully');
+    },
+    onError: (error: any) => {
+      console.error('Failed to delete payroll record:', error);
+      toast.error('Failed to delete payroll record. Please try again.');
+    },
+  });
+};
+
 // Hook to get staff list for dropdowns
 export function useStaffList(branchId?: string) {
   return useQuery({

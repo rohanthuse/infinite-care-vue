@@ -13,7 +13,7 @@ import {
   CalendarDays,
   SlidersHorizontal
 } from "lucide-react";
-import { usePayrollRecords, useCreatePayrollRecord, PayrollRecord } from "@/hooks/useAccountingData";
+import { usePayrollRecords, useCreatePayrollRecord, useDeletePayrollRecord, PayrollRecord } from "@/hooks/useAccountingData";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
 import PayrollTable from "./PayrollTable";
 import AddPayrollDialog from "./AddPayrollDialog";
@@ -43,6 +43,7 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
   const { user } = useAuthSafe();
   const { data: payrollRecords = [], isLoading, error } = usePayrollRecords(branchId);
   const createPayrollMutation = useCreatePayrollRecord();
+  const deletePayrollMutation = useDeletePayrollRecord();
 
   const [filteredRecords, setFilteredRecords] = useState<PayrollRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -253,10 +254,24 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
     }
   };
 
-  const handleDeleteConfirm = () => {
-    // TODO: Implement delete mutation
-    setDeleteDialogOpen(false);
-    setSelectedRecord(null);
+  const handleDeleteConfirm = async () => {
+    if (!selectedRecord || !branchId) {
+      toast.error('Unable to delete record. Missing required information.');
+      return;
+    }
+
+    try {
+      await deletePayrollMutation.mutateAsync({
+        id: selectedRecord.id,
+        branchId: branchId
+      });
+      
+      setDeleteDialogOpen(false);
+      setSelectedRecord(null);
+    } catch (error) {
+      console.error('Error deleting payroll record:', error);
+      // Toast error is already shown by the mutation
+    }
   };
 
   // Handle filter application
@@ -499,7 +514,13 @@ const PayrollTab: React.FC<PayrollTabProps> = ({ branchId, branchName }) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deletePayrollMutation.isPending}
+            >
+              {deletePayrollMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
