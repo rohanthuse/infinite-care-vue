@@ -48,6 +48,7 @@ export function useUpdateBooking(branchId?: string) {
       queryClient.invalidateQueries({ queryKey: ["client-bookings", data.client_id] });
       queryClient.invalidateQueries({ queryKey: ["carer-bookings", data.staff_id] });
       queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", data.staff_id] });
+      queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
       
       toast.success("Booking updated successfully!");
     },

@@ -133,7 +133,11 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
             id: booking.staff.id,
             name: `${booking.staff.first_name} ${booking.staff.last_name}`,
             role: 'staff'
-          }] : [])
+          }] : [{
+            id: 'unassigned',
+            name: 'Needs Carer Assignment',
+            role: 'staff'
+          }])
         ],
         location: booking.branches?.name,
         priority: 'medium' as const,

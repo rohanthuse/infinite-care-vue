@@ -23,6 +23,7 @@ import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarMonthView } from './CalendarMonthView';
 import { ViewBookingDialog } from '@/components/bookings/dialogs/ViewBookingDialog';
 import { NewBookingDialog } from '@/components/bookings/dialogs/NewBookingDialog';
+import { EditBookingDialog } from '@/components/bookings/dialogs/EditBookingDialog';
 import { useOrganizationCalendar } from '@/hooks/useOrganizationCalendar';
 import { useOrganizationCalendarStats } from '@/hooks/useOrganizationCalendarStats';
 import { useTenantAwareQuery } from '@/hooks/useTenantAware';
@@ -55,6 +56,7 @@ export const OrganizationCalendarView = () => {
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
+  const [editBookingDialogOpen, setEditBookingDialogOpen] = useState(false);
   const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
@@ -296,8 +298,19 @@ export const OrganizationCalendarView = () => {
 
   const handleEditEvent = (event: CalendarEvent) => {
     console.log('Edit event:', event);
-    // TODO: Implement edit functionality for different event types
-    toast.info('Edit functionality will be implemented for each event type');
+    if (event.type === 'booking') {
+      setSelectedEvent(event);
+      setEditBookingDialogOpen(true);
+    } else {
+      toast.info('Edit functionality will be implemented for each event type');
+    }
+  };
+
+  const handleEditBooking = () => {
+    setViewBookingDialogOpen(false);
+    setTimeout(() => {
+      setEditBookingDialogOpen(true);
+    }, 100);
   };
 
   const handleDeleteEvent = (event: CalendarEvent) => {
@@ -656,24 +669,53 @@ export const OrganizationCalendarView = () => {
 
       {/* Booking Details Dialog */}
       {selectedEvent && (
-        <ViewBookingDialog
-          open={viewBookingDialogOpen}
-          onOpenChange={setViewBookingDialogOpen}
-          services={services || []}
-          booking={{
-            id: selectedEvent.id,
-            date: format(selectedEvent.startTime, 'yyyy-MM-dd'),
-            startTime: format(selectedEvent.startTime, 'HH:mm'),
-            endTime: format(selectedEvent.endTime, 'HH:mm'),
-            status: selectedEvent.status,
-            clientName: selectedEvent.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
-            carerName: selectedEvent.participants?.find(p => p.role === 'staff')?.name || 'Unknown Staff',
-            clientId: selectedEvent.clientId,
-            carerId: selectedEvent.staffIds?.[0],
-            service_id: null,
-            notes: ''
-          }}
-        />
+        <>
+          <ViewBookingDialog
+            open={viewBookingDialogOpen}
+            onOpenChange={setViewBookingDialogOpen}
+            services={services || []}
+            onEdit={handleEditBooking}
+            branchId={selectedEvent.branchId}
+            booking={{
+              id: selectedEvent.id,
+              date: format(selectedEvent.startTime, 'yyyy-MM-dd'),
+              startTime: format(selectedEvent.startTime, 'HH:mm'),
+              endTime: format(selectedEvent.endTime, 'HH:mm'),
+              status: selectedEvent.status,
+              clientName: selectedEvent.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
+              carerName: selectedEvent.participants?.find(p => p.role === 'staff')?.name || 'Needs Carer Assignment',
+              clientId: selectedEvent.clientId,
+              carerId: selectedEvent.staffIds?.[0],
+              service_id: null,
+              notes: '',
+              start_time: selectedEvent.startTime.toISOString(),
+              end_time: selectedEvent.endTime.toISOString(),
+            }}
+          />
+          
+          <EditBookingDialog
+            open={editBookingDialogOpen}
+            onOpenChange={setEditBookingDialogOpen}
+            services={services || []}
+            carers={carers || []}
+            branchId={selectedEvent.branchId}
+            booking={{
+              id: selectedEvent.id,
+              date: format(selectedEvent.startTime, 'yyyy-MM-dd'),
+              startTime: format(selectedEvent.startTime, 'HH:mm'),
+              endTime: format(selectedEvent.endTime, 'HH:mm'),
+              status: selectedEvent.status,
+              clientName: selectedEvent.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
+              carerName: selectedEvent.participants?.find(p => p.role === 'staff')?.name || 'Needs Carer Assignment',
+              clientId: selectedEvent.clientId,
+              carerId: selectedEvent.staffIds?.[0],
+              service_id: null,
+              notes: '',
+              start_time: selectedEvent.startTime.toISOString(),
+              end_time: selectedEvent.endTime.toISOString(),
+            }}
+          />
+        </>
       )}
 
       {/* Agreement Dialog */}

@@ -60,6 +60,7 @@ const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
   service_id: z.string().optional(),
+  staff_id: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -71,6 +72,7 @@ interface EditBookingDialogProps {
   booking: any;
   services: Array<{ id: string; title: string }>;
   branchId?: string;
+  carers?: Array<{ id: string; name: string }>;
 }
 
 export function EditBookingDialog({
@@ -79,6 +81,7 @@ export function EditBookingDialog({
   booking,
   services,
   branchId,
+  carers = [],
 }: EditBookingDialogProps) {
   const updateBooking = useUpdateBooking(branchId);
   const deleteBooking = useDeleteBooking(branchId);
@@ -101,6 +104,7 @@ export function EditBookingDialog({
       start_time: "",
       end_time: "",
       service_id: "",
+      staff_id: "",
       notes: "",
     },
   });
@@ -132,6 +136,7 @@ export function EditBookingDialog({
       form.setValue("start_time", format(startDate, "yyyy-MM-dd'T'HH:mm"));
       form.setValue("end_time", format(endDate, "yyyy-MM-dd'T'HH:mm"));
       form.setValue("service_id", booking.service_id || "");
+      form.setValue("staff_id", booking.carerId || "");
       form.setValue("notes", booking.notes || "");
       
       // Reset validation state when dialog opens
@@ -193,6 +198,8 @@ export function EditBookingDialog({
           start_time: new Date(data.start_time).toISOString(),
           end_time: new Date(data.end_time).toISOString(),
           service_id: data.service_id,
+          staff_id: data.staff_id || null,
+          status: data.staff_id ? 'assigned' : 'unassigned',
           notes: data.notes,
         },
       });
@@ -257,6 +264,32 @@ export function EditBookingDialog({
                         {services.map((service) => (
                           <SelectItem key={service.id} value={service.id}>
                             {service.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="staff_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned Carer</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a carer (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Assign Carer Later</SelectItem>
+                        {carers.map((carer) => (
+                          <SelectItem key={carer.id} value={carer.id}>
+                            {carer.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
