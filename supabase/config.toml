@@ -66,3 +66,6 @@ verify_jwt = false
 
 [functions.assign-user-to-organization]
 verify_jwt = false
+
+[functions.create-branch-admin]
+verify_jwt = false
