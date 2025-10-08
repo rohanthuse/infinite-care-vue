@@ -24,9 +24,9 @@ import {
 
 const rateScheduleSchema = z.object({
   authority_type: z.string().min(1, 'Authority type is required'),
-  service_type_code: z.string().optional(),
+  service_type_code: z.string().transform(val => val === '' ? undefined : val).optional(),
   start_date: createDateValidation('Start date'),
-  end_date: z.string().optional(),
+  end_date: z.string().transform(val => val === '' ? undefined : val).optional(),
   days_covered: z.array(z.string()).min(1, 'At least one day must be selected'),
   time_from: createTimeValidation('Time from'),
   time_until: createTimeValidation('Time until'),
@@ -104,23 +104,31 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   const selectedChargeType = form.watch('charge_type');
 
   const onSubmit = (data: RateScheduleFormData) => {
-    createSchedule.mutate({
+    const scheduleData = {
       client_id: clientId,
       branch_id: branchId,
       organization_id: organization?.id || '',
-      authority_type: data.authority_type || 'private',
-      start_date: data.start_date || '',
-      days_covered: data.days_covered || [],
-      time_from: data.time_from || '09:00',
-      time_until: data.time_until || '17:00',
-      rate_category: data.rate_category || 'standard',
-      pay_based_on: data.pay_based_on || 'hours_minutes',
-      charge_type: data.charge_type || 'hourly_rate',
-      base_rate: data.base_rate || 0,
-      bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
-      is_vatable: data.is_vatable || false,
-      ...data
-    }, {
+      authority_type: data.authority_type,
+      service_type_code: data.service_type_code || null,
+      start_date: data.start_date,
+      end_date: data.end_date || null,
+      days_covered: data.days_covered,
+      time_from: data.time_from,
+      time_until: data.time_until,
+      rate_category: data.rate_category,
+      pay_based_on: data.pay_based_on,
+      charge_type: data.charge_type,
+      base_rate: data.base_rate,
+      rate_15_minutes: data.rate_15_minutes || null,
+      rate_30_minutes: data.rate_30_minutes || null,
+      rate_45_minutes: data.rate_45_minutes || null,
+      rate_60_minutes: data.rate_60_minutes || null,
+      consecutive_hours_rate: data.consecutive_hours_rate || null,
+      bank_holiday_multiplier: data.bank_holiday_multiplier,
+      is_vatable: data.is_vatable
+    };
+
+    createSchedule.mutate(scheduleData, {
       onSuccess: () => {
         form.reset();
         onOpenChange(false);
@@ -130,25 +138,32 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
 
   const onSaveAndAdd = () => {
     form.handleSubmit((data) => {
-      createSchedule.mutate({
+      const scheduleData = {
         client_id: clientId,
         branch_id: branchId,
         organization_id: organization?.id || '',
-        authority_type: data.authority_type || 'private',
-        start_date: data.start_date || '',
-        days_covered: data.days_covered || [],
-        time_from: data.time_from || '09:00',
-        time_until: data.time_until || '17:00',
-        rate_category: data.rate_category || 'standard',
-        pay_based_on: data.pay_based_on || 'hours_minutes',
-        charge_type: data.charge_type || 'hourly_rate',
-        base_rate: data.base_rate || 0,
-        bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
-        is_vatable: data.is_vatable || false,
-        ...data
-      }, {
+        authority_type: data.authority_type,
+        service_type_code: data.service_type_code || null,
+        start_date: data.start_date,
+        end_date: data.end_date || null,
+        days_covered: data.days_covered,
+        time_from: data.time_from,
+        time_until: data.time_until,
+        rate_category: data.rate_category,
+        pay_based_on: data.pay_based_on,
+        charge_type: data.charge_type,
+        base_rate: data.base_rate,
+        rate_15_minutes: data.rate_15_minutes || null,
+        rate_30_minutes: data.rate_30_minutes || null,
+        rate_45_minutes: data.rate_45_minutes || null,
+        rate_60_minutes: data.rate_60_minutes || null,
+        consecutive_hours_rate: data.consecutive_hours_rate || null,
+        bank_holiday_multiplier: data.bank_holiday_multiplier,
+        is_vatable: data.is_vatable
+      };
+
+      createSchedule.mutate(scheduleData, {
         onSuccess: () => {
-          // Reset form but keep some values for easier multiple entry
           form.reset({
             authority_type: data.authority_type,
             service_type_code: data.service_type_code,
