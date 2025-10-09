@@ -28,7 +28,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   
   const { data: bookings = [], isLoading, refetch } = useClientBookings(clientId);
   const params = useParams();
-  const branchId = params.id;
+  const branchId = params.id || '';
   const branchName = params.branchName;
   const queryClient = useQueryClient();
   const { navigateToBookings } = useBookingNavigation();
@@ -45,7 +45,14 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   };
 
   const handleEditAppointment = (booking: any) => {
-    setSelectedBooking(booking);
+    // Transform booking to match EditBookingDialog's expected structure
+    const transformedBooking = {
+      ...booking,
+      carerId: booking.staff_id,  // Map staff_id to carerId
+      clientId: booking.client_id, // Map client_id to clientId
+      carerName: booking.staff_name, // Already available from useClientBookings
+    };
+    setSelectedBooking(transformedBooking);
     setIsEditDialogOpen(true);
   };
 
@@ -329,6 +336,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
         booking={selectedBooking}
         services={services}
         branchId={branchId}
+        carers={carers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` }))}
       />
     </div>
   );
