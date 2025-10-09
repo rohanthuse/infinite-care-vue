@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useClientEvents, useUpdateClientEventStatus, useCreateClientEvent } from "@/hooks/useClientEvents";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useClientEvents, useUpdateClientEventStatus } from "@/hooks/useClientEvents";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
-import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
+import { EventLogForm } from "@/components/events-logs/EventLogForm";
 
 interface EventsLogsTabProps {
   clientId: string;
@@ -27,7 +28,6 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
 }) => {
   const { data: events = [], isLoading } = useClientEvents(clientId);
   const updateStatusMutation = useUpdateClientEventStatus();
-  const createEventMutation = useCreateClientEvent();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -63,15 +63,6 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
     } catch (error) {
       console.error('Error updating status:', error);
     }
-  };
-
-  const handleCreateEvent = async (eventData: any) => {
-    await createEventMutation.mutateAsync({
-      ...eventData,
-      client_id: clientId,
-      branch_id: branchId,
-    });
-    setIsAddDialogOpen(false);
   };
 
   if (isLoading) {
@@ -187,14 +178,15 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
       />
 
       {/* Add Event Dialog */}
-      <AddEventDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSave={handleCreateEvent}
-        carePlanId={carePlanId}
-        patientName={patientName}
-        isLoading={createEventMutation.isPending}
-      />
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <EventLogForm
+            branchId={branchId || ''}
+            defaultClientId={clientId}
+            onSuccess={() => setIsAddDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

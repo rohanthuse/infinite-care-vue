@@ -55,9 +55,11 @@ type EventLogFormData = z.infer<typeof eventLogSchema>;
 
 interface EventLogFormProps {
   branchId: string;
+  defaultClientId?: string;
+  onSuccess?: () => void;
 }
 
-export function EventLogForm({ branchId }: EventLogFormProps) {
+export function EventLogForm({ branchId, defaultClientId, onSuccess }: EventLogFormProps) {
   const [bodyMapPoints, setBodyMapPoints] = useState<any[]>([]);
   const createEventLogMutation = useCreateEventLog();
   const { data: clients = [], isLoading: clientsLoading } = useEventClients(branchId);
@@ -67,7 +69,7 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
   const form = useForm<EventLogFormData>({
     resolver: zodResolver(eventLogSchema),
     defaultValues: {
-      client_id: '',
+      client_id: defaultClientId || '',
       title: '',
       event_type: '',
       category: 'other',
@@ -131,6 +133,9 @@ export function EventLogForm({ branchId }: EventLogFormProps) {
       };
 
       await createEventLogMutation.mutateAsync(eventData);
+      
+      // Call success callback before reset
+      onSuccess?.();
       
       // Reset form and body map
       form.reset();
