@@ -30,6 +30,14 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
   // For now, assuming all users are super admins - this should be replaced with proper role checking
   const canManageNotes = true;
 
+  const handleDeleteDialogChange = React.useCallback((open: boolean) => {
+    setIsDeleteDialogOpen(open);
+    if (!open) {
+      // Small delay to allow dialog close animation
+      setTimeout(() => setSelectedNote(null), 150);
+    }
+  }, []);
+
   const handleAddNote = async (noteData: { title: string; content: string }) => {
     await createNoteMutation.mutateAsync({
       client_id: clientId,
@@ -53,17 +61,18 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
     setSelectedNote(null);
   };
 
-  const handleDeleteNote = (note: ClientNote) => {
+  const handleDeleteNote = React.useCallback((note: ClientNote) => {
     setSelectedNote(note);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = React.useCallback(async () => {
     if (selectedNote) {
       await deleteNoteMutation.mutateAsync(selectedNote.id);
+      setIsDeleteDialogOpen(false);
       setSelectedNote(null);
     }
-  };
+  }, [selectedNote, deleteNoteMutation]);
 
   if (isLoading) {
     return (
@@ -168,7 +177,7 @@ export const NotesTab: React.FC<NotesTabProps> = ({ clientId }) => {
 
       <DeleteNoteDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
+        onOpenChange={handleDeleteDialogChange}
         onConfirm={handleConfirmDelete}
         note={selectedNote}
       />
