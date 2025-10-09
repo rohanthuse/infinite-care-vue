@@ -453,21 +453,25 @@ export const OrganizationCalendarView = () => {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <div className="flex items-center">
-            <Button 
-              size="sm" 
-              onClick={handleNewBooking}
-              className="rounded-r-none"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Event
-            </Button>
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="outline" className="rounded-l-none border-l-0 px-2" data-radix-dropdown-menu-trigger>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
+          
+          {/* New Booking Button - directly opens Create Single Booking dialog */}
+          <Button 
+            size="sm" 
+            onClick={handleNewBooking}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Booking
+          </Button>
+          
+          {/* New Event Dropdown - shows all event type options */}
+          <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" data-radix-dropdown-menu-trigger>
+                <Plus className="h-4 w-4 mr-2" />
+                New Event
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 bg-background border border-border shadow-lg z-50">
               <DropdownMenuItem 
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
@@ -505,8 +509,7 @@ export const OrganizationCalendarView = () => {
                 Add Leave/Holiday
               </DropdownMenuItem>
             </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          </DropdownMenu>
         </div>
       </div>
 
