@@ -39,6 +39,14 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
   // For now, assuming all users are super admins - this should be replaced with proper role checking
   const canManageDocuments = true;
 
+  const handleDeleteDialogChange = React.useCallback((open: boolean) => {
+    setIsDeleteDialogOpen(open);
+    if (!open) {
+      // Small delay to allow dialog close animation
+      setTimeout(() => setSelectedDocument(null), 150);
+    }
+  }, []);
+
   const handleUploadDocument = async (documentData: { name: string; type: string; uploaded_by: string; file: File }) => {
     try {
       await uploadDocumentMutation.mutateAsync({
@@ -94,22 +102,23 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
     }
   };
 
-  const handleDeleteDocument = (document: ClientDocument) => {
+  const handleDeleteDocument = React.useCallback((document: ClientDocument) => {
     setSelectedDocument(document);
     setIsDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = React.useCallback(async () => {
     if (selectedDocument) {
       try {
         await deleteDocumentMutation.mutateAsync(selectedDocument.id);
+        setIsDeleteDialogOpen(false);
         setSelectedDocument(null);
       } catch (error) {
         console.error('Delete failed:', error);
         // Error handling is done in the mutation
       }
     }
-  };
+  }, [selectedDocument, deleteDocumentMutation]);
 
   const getDocIcon = (type: string) => {
     switch(type.toLowerCase()) {
@@ -244,7 +253,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
 
       <DeleteDocumentDialog
         open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
+        onOpenChange={handleDeleteDialogChange}
         onConfirm={handleConfirmDelete}
         document={selectedDocument}
       />
