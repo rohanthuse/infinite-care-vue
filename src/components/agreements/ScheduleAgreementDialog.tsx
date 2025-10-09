@@ -36,12 +36,16 @@ interface ScheduleAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   branchId: string;
+  prefilledDate?: Date;
+  prefilledTime?: string;
 }
 
 export function ScheduleAgreementDialog({
   open,
   onOpenChange,
-  branchId
+  branchId,
+  prefilledDate,
+  prefilledTime
 }: ScheduleAgreementDialogProps) {
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -50,8 +54,8 @@ export function ScheduleAgreementDialog({
   const [selectedStaff, setSelectedStaff] = useState("");
   const [schedulingWith, setSchedulingWith] = useState<"client" | "staff" | "other">("client");
   const [otherPersonName, setOtherPersonName] = useState("");
-  const [scheduledDate, setScheduledDate] = useState<Date | undefined>();
-  const [scheduledTime, setScheduledTime] = useState("");
+  const [scheduledDate, setScheduledDate] = useState<Date | undefined>(prefilledDate);
+  const [scheduledTime, setScheduledTime] = useState(prefilledTime || "");
   const [notes, setNotes] = useState("");
   
   // Fetch data
@@ -122,8 +126,8 @@ export function ScheduleAgreementDialog({
     setSelectedStaff("");
     setSchedulingWith("client");
     setOtherPersonName("");
-    setScheduledDate(undefined);
-    setScheduledTime("");
+    setScheduledDate(prefilledDate);
+    setScheduledTime(prefilledTime || "");
     setNotes("");
   };
 

@@ -211,6 +211,7 @@ export const useCreateAnnualLeave = () => {
     onSuccess: () => {
       toast.success('Annual leave date added');
       queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
     },
     onError: (error) => {
       console.error('Error creating annual leave:', error);

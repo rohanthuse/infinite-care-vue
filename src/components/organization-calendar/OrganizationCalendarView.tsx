@@ -339,6 +339,12 @@ export const OrganizationCalendarView = () => {
       setDropdownOpen(true);
     }
   };
+  
+  // Helper to extract time from Date object
+  const getTimeFromDate = (date: Date | null) => {
+    if (!date) return undefined;
+    return format(date, 'HH:mm');
+  };
   const eventTypeColors = {
     booking: 'bg-blue-500',
     meeting: 'bg-purple-500',
@@ -595,16 +601,34 @@ export const OrganizationCalendarView = () => {
         </>}
 
       {/* Agreement Dialog */}
-      <ScheduleAgreementDialog open={agreementDialogOpen} onOpenChange={setAgreementDialogOpen} branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} />
+      <ScheduleAgreementDialog 
+        open={agreementDialogOpen} 
+        onOpenChange={setAgreementDialogOpen} 
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id}
+        prefilledDate={prefilledDate || undefined}
+        prefilledTime={getTimeFromDate(prefilledDate)}
+      />
 
        {/* Meeting Dialog */}
-       <NewMeetingDialog open={meetingDialogOpen} onOpenChange={setMeetingDialogOpen} branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} prefilledDate={prefilledDate || currentDate} />
+       <NewMeetingDialog 
+         open={meetingDialogOpen} 
+         onOpenChange={setMeetingDialogOpen} 
+         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
+         prefilledDate={prefilledDate || currentDate}
+         prefilledTime={getTimeFromDate(prefilledDate)}
+       />
 
        {/* Leave Dialog */}
        <NewLeaveDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen} branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} prefilledDate={prefilledDate || currentDate} />
 
-       {/* Training Dialog */}
-       <NewTrainingDialog open={trainingDialogOpen} onOpenChange={setTrainingDialogOpen} branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} prefilledDate={prefilledDate || currentDate} />
+      {/* Training Dialog */}
+      <NewTrainingDialog 
+        open={trainingDialogOpen} 
+        onOpenChange={setTrainingDialogOpen} 
+        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
+        prefilledDate={prefilledDate || currentDate}
+        prefilledTime={getTimeFromDate(prefilledDate)}
+      />
 
       {/* Export Dialog */}
       <CalendarExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} events={calendarEvents || []} currentDate={currentDate} branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'} />

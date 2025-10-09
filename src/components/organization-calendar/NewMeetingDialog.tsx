@@ -16,14 +16,23 @@ interface NewMeetingDialogProps {
   onOpenChange: (open: boolean) => void;
   branchId?: string;
   prefilledDate?: Date;
+  prefilledTime?: string;
 }
 
 export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   open,
   onOpenChange,
   branchId,
-  prefilledDate
+  prefilledDate,
+  prefilledTime
 }) => {
+  // Calculate initial end time (1 hour after start)
+  const getInitialEndTime = (startTime?: string) => {
+    if (!startTime) return '10:00';
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const endHours = (hours + 1) % 24;
+    return `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  };
   const [title, setTitle] = useState('');
   const [meetingType, setMeetingType] = useState('client');
   const [clientId, setClientId] = useState('');
@@ -31,8 +40,8 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   const [staffId, setStaffId] = useState<string | undefined>(undefined);
   const [staffData, setStaffData] = useState<any>(null);
   const [date, setDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
-  const [time, setTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
+  const [time, setTime] = useState(prefilledTime || '09:00');
+  const [endTime, setEndTime] = useState(getInitialEndTime(prefilledTime));
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -46,8 +55,8 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
     setStaffId(undefined);
     setStaffData(null);
     setDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
-    setTime('09:00');
-    setEndTime('10:00');
+    setTime(prefilledTime || '09:00');
+    setEndTime(getInitialEndTime(prefilledTime));
     setLocation('');
     setNotes('');
   };

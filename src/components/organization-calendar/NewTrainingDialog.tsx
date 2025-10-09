@@ -16,19 +16,29 @@ interface NewTrainingDialogProps {
   onOpenChange: (open: boolean) => void;
   branchId?: string;
   prefilledDate?: Date;
+  prefilledTime?: string;
 }
 
 export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   open,
   onOpenChange,
   branchId,
-  prefilledDate
+  prefilledDate,
+  prefilledTime
 }) => {
+  // Calculate initial end time (8 hours after start for full-day training)
+  const getInitialEndTime = (startTime?: string) => {
+    if (!startTime) return '17:00';
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const endHours = (hours + 8) % 24;
+    return `${String(endHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  };
+  
   const [trainingCourseId, setTrainingCourseId] = useState('');
   const [staffId, setStaffId] = useState('');
   const [date, setDate] = useState(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
-  const [time, setTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('17:00');
+  const [time, setTime] = useState(prefilledTime || '09:00');
+  const [endTime, setEndTime] = useState(getInitialEndTime(prefilledTime));
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -73,8 +83,8 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
     setTrainingCourseId('');
     setStaffId('');
     setDate(prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : '');
-    setTime('09:00');
-    setEndTime('17:00');
+    setTime(prefilledTime || '09:00');
+    setEndTime(getInitialEndTime(prefilledTime));
     setLocation('');
     setNotes('');
   };

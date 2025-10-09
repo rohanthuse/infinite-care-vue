@@ -162,6 +162,7 @@ export const useCreateScheduledAgreement = () => {
         mutationFn: createScheduledAgreement,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['scheduled_agreements'] });
+            queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
             toast.success("Agreement scheduled successfully");
         },
         onError: (error) => toast.error(`Failed to schedule agreement: ${error.message}`),
