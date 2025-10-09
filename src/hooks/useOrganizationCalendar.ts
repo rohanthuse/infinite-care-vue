@@ -320,6 +320,7 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
             location,
             status,
             client_id,
+            branch_id,
             clients (
               first_name,
               last_name,
@@ -328,32 +329,33 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           `)
           .gte('appointment_date', startDate.toISOString().split('T')[0])
           .lte('appointment_date', endDate.toISOString().split('T')[0])
+          .in('branch_id', targetBranchIds)
           .order('appointment_date', { ascending: true });
 
         if (appointmentsError) {
           console.error('[fetchOrganizationCalendarEvents] Appointments error:', appointmentsError);
         } else if (appointments) {
-          const appointmentEvents = appointments
-            .filter(appointment => appointment.clients && targetBranchIds.includes(appointment.clients.branch_id))
-            .map(appointment => ({
-              id: appointment.id,
-              type: 'meeting' as const,
-              title: `${appointment.appointment_type} - ${appointment.provider_name}`,
-              startTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
-              endTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
-              status: (appointment.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
-              branchId: appointment.clients?.branch_id || targetBranchIds[0],
-              branchName: 'External Appointment',
-              participants: appointment.clients ? [{
-                id: appointment.client_id,
-                name: `${appointment.clients.first_name} ${appointment.clients.last_name}`,
-                role: 'client'
-              }] : [],
-              location: appointment.location || 'External',
-              priority: 'medium' as const,
-              clientId: appointment.client_id,
-              staffIds: []
-            }));
+          const appointmentEvents = appointments.map(appointment => ({
+            id: appointment.id,
+            type: 'meeting' as const,
+            title: appointment.clients 
+              ? `${appointment.appointment_type} - ${appointment.clients.first_name} ${appointment.clients.last_name}`
+              : appointment.appointment_type,
+            startTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
+            endTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
+            status: (appointment.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
+            branchId: appointment.branch_id || targetBranchIds[0],
+            branchName: 'Meeting',
+            participants: appointment.clients ? [{
+              id: appointment.client_id,
+              name: `${appointment.clients.first_name} ${appointment.clients.last_name}`,
+              role: 'client'
+            }] : [],
+            location: appointment.location || 'External',
+            priority: 'medium' as const,
+            clientId: appointment.client_id,
+            staffIds: []
+          }));
           
           events.push(...appointmentEvents);
         }

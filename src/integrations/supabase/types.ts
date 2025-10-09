@@ -1144,6 +1144,7 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           appointment_type: string
+          branch_id: string | null
           client_id: string
           created_at: string
           id: string
@@ -1157,6 +1158,7 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           appointment_type: string
+          branch_id?: string | null
           client_id: string
           created_at?: string
           id?: string
@@ -1170,6 +1172,7 @@ export type Database = {
           appointment_date?: string
           appointment_time?: string
           appointment_type?: string
+          branch_id?: string | null
           client_id?: string
           created_at?: string
           id?: string
@@ -1180,6 +1183,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "client_appointments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_appointments_client_id_fkey"
             columns: ["client_id"]

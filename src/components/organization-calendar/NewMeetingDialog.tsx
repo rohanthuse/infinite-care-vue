@@ -76,6 +76,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
 
       await createAppointment.mutateAsync({
         client_id: meetingType === 'client' ? clientId : null,
+        branch_id: branchId!,
         appointment_date: date,
         appointment_time: time,
         appointment_type: `${meetingType.charAt(0).toUpperCase() + meetingType.slice(1)} Meeting: ${title}`,

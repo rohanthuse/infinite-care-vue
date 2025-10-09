@@ -3,7 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export interface CreateClientAppointment {
-  client_id: string;
+  client_id: string | null;
+  branch_id: string;
   appointment_date: string;
   appointment_time: string;
   appointment_type: string;
