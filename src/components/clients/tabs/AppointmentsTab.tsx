@@ -300,6 +300,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                       </div>
                       {canEdit && (
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
                           className="shrink-0"

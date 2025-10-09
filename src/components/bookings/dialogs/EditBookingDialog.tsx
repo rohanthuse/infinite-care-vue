@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock, Save, X } from "lucide-react";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
 import { BookingValidationAlert } from "../BookingValidationAlert";
@@ -55,6 +55,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+const toLocalInput = (value?: string | Date) => {
+  if (!value) return "";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (isNaN(d.getTime())) return "";
+  try {
+    return format(d, "yyyy-MM-dd'T'HH:mm");
+  } catch {
+    return "";
+  }
+};
+
+const isValidDate = (d: Date) => !isNaN(d.getTime());
 
 const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
@@ -120,8 +133,8 @@ export function EditBookingDialog({
     try {
       await deleteBooking.mutateAsync({
         bookingId: booking.id,
-        clientId: booking.clientId,
-        staffId: booking.carerId,
+        clientId: booking.clientId || booking.client_id,
+        staffId: booking.carerId || booking.staff_id,
       });
       onOpenChange(false);
     } catch (error) {
@@ -132,13 +145,13 @@ export function EditBookingDialog({
   // Update form when booking changes and reset validation state
   useEffect(() => {
     if (booking && open) {
-      const startDate = parseISO(booking.start_time);
-      const endDate = parseISO(booking.end_time);
+      const startStr = toLocalInput(booking.start_time);
+      const endStr = toLocalInput(booking.end_time);
       
-      form.setValue("start_time", format(startDate, "yyyy-MM-dd'T'HH:mm"));
-      form.setValue("end_time", format(endDate, "yyyy-MM-dd'T'HH:mm"));
+      form.setValue("start_time", startStr);
+      form.setValue("end_time", endStr);
       form.setValue("service_id", booking.service_id || "");
-      form.setValue("staff_id", booking.carerId || "");
+      form.setValue("staff_id", booking.carerId || booking.staff_id || "");
       form.setValue("notes", booking.notes || "");
       
       // Reset validation state when dialog opens
@@ -149,18 +162,27 @@ export function EditBookingDialog({
 
   // Validate booking when time fields change
   const validateCurrentBooking = async () => {
-    if (!booking) return;
+    if (!booking) return true;
     
     const formValues = form.getValues();
     const startDateTime = new Date(formValues.start_time);
     const endDateTime = new Date(formValues.end_time);
-    
+
+    if (!isValidDate(startDateTime) || !isValidDate(endDateTime)) {
+      return true; // Skip validation if times are not set/invalid yet
+    }
+
     const date = format(startDateTime, "yyyy-MM-dd");
     const startTime = format(startDateTime, "HH:mm");
     const endTime = format(endDateTime, "HH:mm");
+
+    const carerId = booking.carerId || booking.staff_id;
+    if (!carerId) {
+      return true; // No carer assigned; skip overlap validation
+    }
     
     console.log("[EditBookingDialog] Validating booking:", {
-      carerId: booking.carerId,
+      carerId,
       date,
       startTime,
       endTime,
@@ -168,7 +190,7 @@ export function EditBookingDialog({
     });
     
     const result = await validateBooking(
-      booking.carerId,
+      carerId,
       startTime,
       endTime,
       date,
@@ -192,13 +214,20 @@ export function EditBookingDialog({
       console.log("[EditBookingDialog] Validation failed, not submitting");
       return;
     }
+
+    const start = new Date(data.start_time);
+    const end = new Date(data.end_time);
+    if (!isValidDate(start) || !isValidDate(end)) {
+      toast.error("Please provide valid start and end times");
+      return;
+    }
     
     try {
       await updateBooking.mutateAsync({
         bookingId: booking.id,
         updatedData: {
-          start_time: new Date(data.start_time).toISOString(),
-          end_time: new Date(data.end_time).toISOString(),
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
           service_id: data.service_id,
           staff_id: data.staff_id || null,
           status: data.staff_id ? 'assigned' : 'unassigned',
@@ -219,7 +248,11 @@ export function EditBookingDialog({
   };
 
   // Check if appointment has already started
-  const hasStarted = booking ? new Date(booking.start_time) <= new Date() : false;
+  const hasStarted = (() => {
+    if (!booking?.start_time) return false;
+    const d = new Date(booking.start_time);
+    return isValidDate(d) && d <= new Date();
+  })();
 
   if (!booking) return null;
 
@@ -380,8 +413,8 @@ export function EditBookingDialog({
           onOpenChange={setShowOverlapAlert}
           conflictingBookings={validationResult?.conflictingBookings || []}
           carerName={booking?.carerName || "Unknown Carer"}
-          proposedTime={form.getValues().start_time ? format(new Date(form.getValues().start_time), "HH:mm") : ""}
-          proposedDate={form.getValues().start_time ? format(new Date(form.getValues().start_time), "yyyy-MM-dd") : ""}
+          proposedTime={(form.getValues().start_time && isValidDate(new Date(form.getValues().start_time))) ? format(new Date(form.getValues().start_time), "HH:mm") : ""}
+          proposedDate={(form.getValues().start_time && isValidDate(new Date(form.getValues().start_time))) ? format(new Date(form.getValues().start_time), "yyyy-MM-dd") : ""}
           availableCarers={[]} // Not applicable for editing
           onChooseDifferentCarer={() => {
             setShowOverlapAlert(false);
