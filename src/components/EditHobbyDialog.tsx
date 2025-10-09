@@ -53,14 +53,21 @@ export function EditHobbyDialog({ isOpen, onClose, hobby }: EditHobbyDialogProps
       if (error) throw error;
     },
     onSuccess: () => {
+      // Close dialog first to remove overlay
+      onClose();
+      
       toast({
         title: "Hobby updated",
         description: `${title} has been updated successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['hobbies'] });
-      onClose();
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+      }, 100);
     },
     onError: (error) => {
+      onClose();
       toast({
         title: "Update failed",
         description: error.message,
@@ -87,7 +94,7 @@ export function EditHobbyDialog({ isOpen, onClose, hobby }: EditHobbyDialogProps
   if (!hobby) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Hobby</DialogTitle>

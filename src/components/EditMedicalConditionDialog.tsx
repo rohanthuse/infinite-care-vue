@@ -60,11 +60,18 @@ export function EditMedicalConditionDialog({ isOpen, onClose, condition }: EditM
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Condition updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      // Close dialog first to remove overlay
       onClose();
+      
+      toast({ title: "Condition updated successfully" });
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      }, 100);
     },
     onError: (error: any) => {
+      onClose();
       toast({ title: "Failed to update condition", description: error.message, variant: "destructive" });
     },
   });
@@ -79,7 +86,7 @@ export function EditMedicalConditionDialog({ isOpen, onClose, condition }: EditM
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Condition</DialogTitle>

@@ -45,11 +45,18 @@ export function EditMedicalCategoryDialog({ isOpen, onClose, category }: EditMed
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Category updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
+      // Close dialog first to remove overlay
       onClose();
+      
+      toast({ title: "Category updated successfully" });
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
+      }, 100);
     },
     onError: (error: any) => {
+      onClose();
       toast({ title: "Failed to update category", description: error.message, variant: "destructive" });
     },
   });
@@ -64,7 +71,7 @@ export function EditMedicalCategoryDialog({ isOpen, onClose, category }: EditMed
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Category</DialogTitle>

@@ -57,14 +57,21 @@ export function EditSkillDialog({ isOpen, onClose, skill }: EditSkillDialogProps
       if (error) throw error;
     },
     onSuccess: () => {
+      // Close dialog first to remove overlay
+      onClose();
+      
       toast({
         title: "Skill updated",
         description: `${name} has been updated successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['skills'] });
-      onClose();
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['skills'] });
+      }, 100);
     },
     onError: (error: any) => {
+      onClose();
       toast({
         title: "Update failed",
         description: error.message,
@@ -91,7 +98,7 @@ export function EditSkillDialog({ isOpen, onClose, skill }: EditSkillDialogProps
   if (!skill) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Skill</DialogTitle>

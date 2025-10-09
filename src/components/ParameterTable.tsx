@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, ArrowUpDown, Plus, Filter, Search, Download, List, Check, Edit, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowUpDown, Plus, Filter, Search, Download, List, Check, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface ColumnDef {
   header: string;
   accessorKey?: string; // Made optional
@@ -177,7 +178,35 @@ export function ParameterTable({
                   backgroundColor: item[column.accessorKey]
                 }}></div> : column.accessorKey ? item[column.accessorKey] : null}
                       </TableCell>)}
-                    {showActions}
+                    {showActions && onEdit && onDelete && (
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreHorizontal className="h-5 w-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              className="cursor-pointer flex items-center gap-2" 
+                              onSelect={() => onEdit(item)}
+                            >
+                              <Edit className="h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="cursor-pointer text-destructive flex items-center gap-2" 
+                              onSelect={() => onDelete(item)}
+                            >
+                              <Trash2 className="h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
                   </TableRow>) : <TableRow>
                   <TableCell colSpan={columns.length + (showActions ? 1 : 0)} className="text-center py-8 text-gray-500">
                     No data found

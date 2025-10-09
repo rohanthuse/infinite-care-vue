@@ -47,11 +47,18 @@ export function EditWorkTypeDialog({ isOpen, onClose, workType }: EditWorkTypeDi
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Work Type updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      // Close dialog first to remove overlay
       onClose();
+      
+      toast({ title: "Work Type updated successfully" });
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      }, 100);
     },
     onError: (error: any) => {
+      onClose();
       toast({ title: "Failed to update work type", description: error.message, variant: "destructive" });
     },
   });
@@ -66,7 +73,7 @@ export function EditWorkTypeDialog({ isOpen, onClose, workType }: EditWorkTypeDi
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Work Type</DialogTitle>

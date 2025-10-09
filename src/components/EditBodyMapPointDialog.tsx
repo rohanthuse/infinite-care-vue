@@ -65,11 +65,18 @@ export function EditBodyMapPointDialog({ isOpen, onClose, point }: EditBodyMapPo
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Body Map Point updated successfully" });
-      queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
+      // Close dialog first to remove overlay
       onClose();
+      
+      toast({ title: "Body Map Point updated successfully" });
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
+      }, 100);
     },
     onError: (error: any) => {
+      onClose();
       toast({ title: "Failed to update point", description: error.message, variant: "destructive" });
     },
   });
@@ -88,7 +95,7 @@ export function EditBodyMapPointDialog({ isOpen, onClose, point }: EditBodyMapPo
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Body Map Point</DialogTitle>
