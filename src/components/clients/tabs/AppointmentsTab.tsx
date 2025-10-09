@@ -257,10 +257,7 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                 return (
                   <div 
                     key={booking.id} 
-                    className={`border rounded-lg p-4 transition-all ${
-                      canEdit ? 'hover:shadow-md cursor-pointer hover:bg-gray-50' : 'hover:shadow-sm'
-                    }`}
-                    onClick={() => canEdit && handleEditAppointment(booking)}
+                    className="border rounded-lg p-4 transition-all hover:shadow-sm"
                   >
                     <div className="flex items-start justify-between">
                       <div className="space-y-2 flex-1">
@@ -270,11 +267,6 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                             {currentStatus === 'in-progress' ? 'In Progress' : 
                              currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
                           </Badge>
-                          {canEdit && (
-                            <Badge variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">
-                              Click to Edit
-                            </Badge>
-                          )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                           <div className="flex items-center gap-1">

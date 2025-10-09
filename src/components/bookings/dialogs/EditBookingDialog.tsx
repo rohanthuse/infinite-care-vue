@@ -98,6 +98,11 @@ export function EditBookingDialog({
   carers = [],
   onSuccess,
 }: EditBookingDialogProps) {
+  // Guard against invalid booking data
+  if (!booking || !booking.id) {
+    return null;
+  }
+
   const updateBooking = useUpdateBooking(branchId);
   const deleteBooking = useDeleteBooking(branchId);
   const { data: userRole } = useUserRole();
@@ -144,12 +149,13 @@ export function EditBookingDialog({
 
   // Update form when booking changes and reset validation state
   useEffect(() => {
-    if (booking && open) {
+    if (booking && booking.id && open) {
       const startStr = toLocalInput(booking.start_time);
       const endStr = toLocalInput(booking.end_time);
       
-      form.setValue("start_time", startStr);
-      form.setValue("end_time", endStr);
+      // Only set values if we have valid data
+      if (startStr) form.setValue("start_time", startStr);
+      if (endStr) form.setValue("end_time", endStr);
       form.setValue("service_id", booking.service_id || "");
       form.setValue("staff_id", booking.carerId || booking.staff_id || "");
       form.setValue("notes", booking.notes || "");
