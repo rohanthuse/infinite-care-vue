@@ -173,6 +173,11 @@ export function ServicesTable({
     setSelectedService(service);
     setIsEditDialogOpen(true);
   };
+
+  const handleEditDialogClose = () => {
+    setIsEditDialogOpen(false);
+    setSelectedService(null);
+  };
   
   const filteredAndSortedServices = useMemo(() => {
     if (!services) return [];
@@ -315,10 +320,10 @@ export function ServicesTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="cursor-pointer flex items-center gap-2" onClick={() => handleEdit(service)}>
+                        <DropdownMenuItem className="cursor-pointer flex items-center gap-2" onSelect={() => handleEdit(service)}>
                           <Edit className="h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="cursor-pointer text-destructive flex items-center gap-2" onClick={() => handleDeleteClick(service)}>
+                        <DropdownMenuItem className="cursor-pointer text-destructive flex items-center gap-2" onSelect={() => handleDeleteClick(service)}>
                           <Trash2 className="h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -417,11 +422,11 @@ export function ServicesTable({
       )}
 
       {isEditDialogOpen && (
-        <EditServiceDialog
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          service={selectedService}
-        />
+      <EditServiceDialog
+        isOpen={isEditDialogOpen}
+        onClose={handleEditDialogClose}
+        service={selectedService}
+      />
       )}
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

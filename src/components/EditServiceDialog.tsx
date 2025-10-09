@@ -74,12 +74,20 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
       if (error) throw error;
     },
     onSuccess: () => {
+      // Close dialog first to remove overlay
+      onClose();
+      
       toast({
         title: "Service updated",
         description: `${title} has been updated successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-      onClose();
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['services'] });
+        queryClient.invalidateQueries({ queryKey: ['branch-services'] });
+        queryClient.invalidateQueries({ queryKey: ['organization-services'] });
+      }, 100);
     },
     onError: (error) => {
       toast({
@@ -108,7 +116,7 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
   if (!service) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md rounded-xl p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-2 border-b">
           <DialogTitle className="text-xl font-semibold text-gray-800">Edit Service</DialogTitle>
