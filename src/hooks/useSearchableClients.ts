@@ -26,7 +26,7 @@ const fetchSearchableClients = async ({
   branchId,
   searchTerm = '',
   clientStatus = 'all',
-  limit = 20,
+  limit = 100,
   offset = 0
 }: SearchableClientsParams): Promise<{ clients: EnhancedClient[]; totalCount: number }> => {
   console.log('[fetchSearchableClients] Fetching clients:', { branchId, searchTerm, clientStatus, limit, offset });
@@ -84,7 +84,7 @@ export const useSearchableClients = (branchId: string) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [clientStatus, setClientStatus] = useState<'all' | 'active' | 'former'>('all');
   const [page, setPage] = useState(0);
-  const limit = 20;
+  const limit = 100;
 
   const queryParams = useMemo(() => ({
     branchId,

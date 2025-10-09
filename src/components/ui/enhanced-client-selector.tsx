@@ -51,6 +51,7 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const debouncedSearch = useDebounce(searchInput, 300);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   const {
     clients,
@@ -113,6 +114,17 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
   const handleClearSelection = useCallback(() => {
     onClientSelect('', {} as EnhancedClient);
   }, [onClientSelect]);
+
+  // Auto-load more clients on scroll
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    const scrollThreshold = 0.8; // Trigger at 80% scroll
+    const scrollPercentage = (target.scrollTop + target.clientHeight) / target.scrollHeight;
+    
+    if (scrollPercentage > scrollThreshold && hasNextPage && !isLoading) {
+      nextPage();
+    }
+  }, [hasNextPage, isLoading, nextPage]);
 
   const getStatusBadge = (status?: string) => {
     if (!status) return null;
@@ -265,8 +277,24 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
               )}
             </div>
 
+            {/* Total Count Indicator */}
+            {!isLoading && totalCount > 0 && (
+              <div className="px-3 py-2 border-b bg-muted/50">
+                <div className="text-xs text-muted-foreground">
+                  Showing {clients.length} of {totalCount} client{totalCount !== 1 ? 's' : ''}
+                  {!searchInput && totalCount > clients.length && (
+                    <span className="ml-1">- scroll to load more</span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Results */}
-            <ScrollArea className="max-h-80">
+            <ScrollArea 
+              className="max-h-80"
+              onScrollCapture={handleScroll}
+            >
+              <div ref={scrollViewportRef}>
               {isLoading ? (
                 <div className="p-3 space-y-2">
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -297,24 +325,20 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                   {/* Search Results */}
                   {clients.length > 0 ? (
                     <div className="p-2">
-                      {searchInput && (
-                        <div className="text-xs text-muted-foreground mb-2">
-                          {totalCount} client{totalCount !== 1 ? 's' : ''} found
-                        </div>
-                      )}
                       {clients.map(client => 
                         renderClientItem(client, client.id === selectedClientId)
                       )}
                       
-                      {/* Load More */}
+                      {/* Load More Button (backup for manual loading) */}
                       {hasNextPage && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={nextPage}
                           className="w-full mt-2"
+                          disabled={isLoading}
                         >
-                          Load more clients...
+                          {isLoading ? 'Loading...' : 'Load more clients...'}
                         </Button>
                       )}
                     </div>
@@ -324,11 +348,13 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                     </div>
                   ) : (
                     <div className="p-4 text-center text-sm text-muted-foreground">
-                      Start typing to search for clients
+                      <div className="mb-1">Showing first {totalCount > 100 ? '100' : totalCount} clients</div>
+                      <div className="text-xs">Type to search for a specific client</div>
                     </div>
                   )}
                 </>
               )}
+              </div>
             </ScrollArea>
           </div>
         </PopoverContent>
