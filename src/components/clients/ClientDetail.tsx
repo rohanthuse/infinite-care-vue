@@ -253,7 +253,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 </TabsContent>
                 
                 <TabsContent value="eventslogs" className="p-6 m-0">
-                  <EventsLogsTab clientId={client.id} />
+                  <EventsLogsTab clientId={client.id} branchId={branchId} />
                 </TabsContent>
                 
                 <TabsContent value="rates" className="p-6 m-0">

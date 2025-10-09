@@ -6,26 +6,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useClientEvents, useUpdateClientEventStatus } from "@/hooks/useClientEvents";
+import { useClientEvents, useUpdateClientEventStatus, useCreateClientEvent } from "@/hooks/useClientEvents";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
+import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 
 interface EventsLogsTabProps {
   clientId: string;
   carePlanId?: string;
   patientName?: string;
   onAddEvent?: () => void;
+  branchId?: string;
 }
 
 export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ 
   clientId, 
   carePlanId, 
   patientName, 
-  onAddEvent 
+  onAddEvent,
+  branchId
 }) => {
   const { data: events = [], isLoading } = useClientEvents(clientId);
   const updateStatusMutation = useUpdateClientEventStatus();
+  const createEventMutation = useCreateClientEvent();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -60,6 +65,15 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
     }
   };
 
+  const handleCreateEvent = async (eventData: any) => {
+    await createEventMutation.mutateAsync({
+      ...eventData,
+      client_id: clientId,
+      branch_id: branchId,
+    });
+    setIsAddDialogOpen(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -77,7 +91,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
               <AlertTriangle className="h-5 w-5 text-blue-600" />
               <CardTitle className="text-lg">Events & Logs</CardTitle>
             </div>
-            <Button size="sm" className="gap-1" onClick={onAddEvent}>
+            <Button size="sm" className="gap-1" onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4" />
               <span>Add Event</span>
             </Button>
@@ -91,12 +105,10 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
             <div className="text-center py-8 text-gray-500">
               <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
               <p className="text-sm">No events logged for this client</p>
-              {onAddEvent && (
-                <Button variant="outline" className="mt-3" onClick={onAddEvent}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Event
-                </Button>
-              )}
+              <Button variant="outline" className="mt-3" onClick={() => setIsAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add First Event
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -172,6 +184,16 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
         event={selectedEvent}
         open={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
+      />
+
+      {/* Add Event Dialog */}
+      <AddEventDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSave={handleCreateEvent}
+        carePlanId={carePlanId}
+        patientName={patientName}
+        isLoading={createEventMutation.isPending}
       />
     </div>
   );
