@@ -45,13 +45,20 @@ const Skills = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Skill deleted successfully" });
-      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      // Close confirmation first
       setDeletingSkill(null);
+
+      toast({ title: "Skill deleted successfully" });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['skills'] });
+      }, 100);
     },
     onError: (error: any) => {
-      toast({ title: "Failed to delete skill", description: error.message, variant: "destructive" });
+      // Ensure dialog closes on error as well
       setDeletingSkill(null);
+      toast({ title: "Failed to delete skill", description: error.message, variant: "destructive" });
     }
   });
 
@@ -146,7 +153,7 @@ const Skills = () => {
       )}
 
       {deletingSkill && (
-        <AlertDialog open={!!deletingSkill} onOpenChange={() => setDeletingSkill(null)}>
+        <AlertDialog open={!!deletingSkill} onOpenChange={(open) => { if (!open) setDeletingSkill(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this skill?</AlertDialogTitle>

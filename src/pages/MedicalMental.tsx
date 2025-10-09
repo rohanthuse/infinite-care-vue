@@ -81,13 +81,20 @@ const MedicalMental = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Condition deleted successfully" });
-      queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      // Close confirmation first
       setDeletingCondition(null);
+
+      toast({ title: "Condition deleted successfully" });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      }, 100);
     },
     onError: (error: any) => {
-      toast({ title: "Failed to delete condition", description: error.message, variant: "destructive" });
+      // Ensure dialog closes on error as well
       setDeletingCondition(null);
+      toast({ title: "Failed to delete condition", description: error.message, variant: "destructive" });
     }
   });
 
@@ -97,14 +104,21 @@ const MedicalMental = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Category deleted successfully" });
-      queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
-      queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      // Close confirmation first
       setDeletingCategory(null);
+
+      toast({ title: "Category deleted successfully" });
+
+      // Delay invalidations to avoid race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
+        queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+      }, 100);
     },
     onError: (error: any) => {
-      toast({ title: "Failed to delete category", description: "Make sure no conditions are using this category. " + error.message, variant: "destructive" });
+      // Ensure dialog closes on error as well
       setDeletingCategory(null);
+      toast({ title: "Failed to delete category", description: "Make sure no conditions are using this category. " + error.message, variant: "destructive" });
     }
   });
 
@@ -304,7 +318,7 @@ const MedicalMental = () => {
         )}
 
         {deletingCondition && (
-          <AlertDialog open={!!deletingCondition} onOpenChange={() => setDeletingCondition(null)}>
+          <AlertDialog open={!!deletingCondition} onOpenChange={(open) => { if (!open) setDeletingCondition(null); }}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure you want to delete this condition?</AlertDialogTitle>
@@ -323,7 +337,7 @@ const MedicalMental = () => {
         )}
         
         {deletingCategory && (
-          <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
+          <AlertDialog open={!!deletingCategory} onOpenChange={(open) => { if (!open) setDeletingCategory(null); }}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure you want to delete this category?</AlertDialogTitle>

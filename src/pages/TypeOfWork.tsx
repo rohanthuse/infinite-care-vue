@@ -48,12 +48,21 @@ const TypeOfWork = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Work Type deleted successfully" });
-      queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      // Close confirmation first
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
+
+      toast({ title: "Work Type deleted successfully" });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      }, 100);
     },
     onError: (error: any) => {
+      // Ensure dialog closes on error as well
+      setIsDeleteDialogOpen(false);
+      setItemToDelete(null);
       toast({ title: "Failed to delete Work Type", description: error.message, variant: "destructive" });
     },
   });
@@ -154,7 +163,7 @@ const TypeOfWork = () => {
         workType={selectedWorkType}
       />
       
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => { setIsDeleteDialogOpen(open); if (!open) setItemToDelete(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>

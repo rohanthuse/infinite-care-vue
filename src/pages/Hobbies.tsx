@@ -45,13 +45,20 @@ const Hobbies = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Hobby deleted successfully" });
-      queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+      // Close confirmation first
       setDeletingHobby(null);
+
+      toast({ title: "Hobby deleted successfully" });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+      }, 100);
     },
     onError: (error: Error) => {
-      toast({ title: "Failed to delete hobby", description: error.message, variant: "destructive" });
+      // Ensure dialog closes on error as well
       setDeletingHobby(null);
+      toast({ title: "Failed to delete hobby", description: error.message, variant: "destructive" });
     }
   });
   
@@ -140,7 +147,7 @@ const Hobbies = () => {
       )}
 
       {deletingHobby && (
-        <AlertDialog open={!!deletingHobby} onOpenChange={() => setDeletingHobby(null)}>
+        <AlertDialog open={!!deletingHobby} onOpenChange={(open) => { if (!open) setDeletingHobby(null); }}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure you want to delete this hobby?</AlertDialogTitle>
