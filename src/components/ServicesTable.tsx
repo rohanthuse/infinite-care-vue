@@ -120,6 +120,10 @@ export function ServicesTable({
       return { hasBookings, hasInvoices };
     },
     onSuccess: (data) => {
+      // Close dialog and reset state first
+      setIsDeleteDialogOpen(false);
+      setServiceToDelete(null);
+      
       if (data.hasBookings || data.hasInvoices) {
         toast({ 
           title: "Service Deactivated", 
@@ -132,11 +136,19 @@ export function ServicesTable({
           description: "Service has been successfully deactivated and removed from the active list." 
         });
       }
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-      queryClient.invalidateQueries({ queryKey: ['branch-services'] });
-      queryClient.invalidateQueries({ queryKey: ['organization-services'] });
+      
+      // Delay query invalidations to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['services'] });
+        queryClient.invalidateQueries({ queryKey: ['branch-services'] });
+        queryClient.invalidateQueries({ queryKey: ['organization-services'] });
+      }, 100);
     },
     onError: (error) => {
+      // Close dialog on error as well
+      setIsDeleteDialogOpen(false);
+      setServiceToDelete(null);
+      
       console.error('Delete service error:', error);
       toast({ 
         title: "Error", 
@@ -155,8 +167,6 @@ export function ServicesTable({
     if (serviceToDelete) {
       deleteMutation.mutate(serviceToDelete.id);
     }
-    setIsDeleteDialogOpen(false);
-    setServiceToDelete(null);
   };
 
   const handleEdit = (service: Service) => {
@@ -432,13 +442,17 @@ export function ServicesTable({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setIsDeleteDialogOpen(false);
-              setServiceToDelete(null);
-            }}>
+            <AlertDialogCancel 
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setServiceToDelete(null);
+              }}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
+              disabled={deleteMutation.isPending}
               onClick={confirmDelete} 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
