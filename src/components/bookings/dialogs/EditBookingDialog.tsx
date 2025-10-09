@@ -264,7 +264,7 @@ export function EditBookingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] flex flex-col max-h-[90vh]">
+      <DialogContent className="sm:max-w-[550px] flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Clock className="h-5 w-5" />
@@ -434,17 +434,13 @@ export function EditBookingDialog({
           }}
         />
 
-        <DialogFooter className="gap-2 sm:gap-0 flex-shrink-0 pt-4 border-t mt-4">
-          <div className="flex justify-between w-full">
-            <div className="flex gap-2">
-              {canDelete && !hasStarted && (
+        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            {canDelete && !hasStarted && (
+              <div className="flex justify-start w-full sm:w-auto">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
-                      disabled={deleteBooking.isPending}
-                    >
+                    <Button type="button" variant="danger" size="sm">
                       Delete Booking
                     </Button>
                   </AlertDialogTrigger>
@@ -453,23 +449,23 @@ export function EditBookingDialog({
                       <AlertDialogTitle>Delete Booking</AlertDialogTitle>
                       <AlertDialogDescription>
                         Are you sure you want to delete this booking? This action cannot be undone.
-                        The booking will be permanently removed from the system.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="bg-red-600 hover:bg-red-700"
                       >
-                        {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
+                        {deleteBooking.isPending ? "Deleting..." : "Delete"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              )}
-            </div>
-            <div className="flex gap-2">
+              </div>
+            )}
+            
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:ml-auto">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
@@ -480,6 +476,7 @@ export function EditBookingDialog({
                     variant="outline"
                     disabled={isValidating}
                     onClick={validateCurrentBooking}
+                    className="whitespace-nowrap"
                   >
                     {isValidating ? "Validating..." : "Check for Conflicts"}
                   </Button>
@@ -487,6 +484,7 @@ export function EditBookingDialog({
                     type="submit" 
                     disabled={updateBooking.isPending || isValidating || (validationResult && !validationResult.isValid)}
                     onClick={form.handleSubmit(onSubmit)}
+                    className="whitespace-nowrap"
                   >
                     {updateBooking.isPending ? "Saving..." : "Save Changes"}
                   </Button>
