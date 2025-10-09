@@ -137,56 +137,27 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   };
 
   const onSaveAndAdd = () => {
-    form.handleSubmit((data) => {
-      const scheduleData = {
-        client_id: clientId,
-        branch_id: branchId,
-        organization_id: organization?.id || '',
-        authority_type: data.authority_type,
-        service_type_code: data.service_type_code || null,
-        start_date: data.start_date,
-        end_date: data.end_date || null,
-        days_covered: data.days_covered,
-        time_from: data.time_from,
-        time_until: data.time_until,
-        rate_category: data.rate_category,
-        pay_based_on: data.pay_based_on,
-        charge_type: data.charge_type,
-        base_rate: data.base_rate,
-        rate_15_minutes: data.rate_15_minutes || null,
-        rate_30_minutes: data.rate_30_minutes || null,
-        rate_45_minutes: data.rate_45_minutes || null,
-        rate_60_minutes: data.rate_60_minutes || null,
-        consecutive_hours_rate: data.consecutive_hours_rate || null,
-        bank_holiday_multiplier: data.bank_holiday_multiplier,
-        is_vatable: data.is_vatable
-      };
-
-      createSchedule.mutate(scheduleData, {
-        onSuccess: () => {
-          form.reset({
-            authority_type: data.authority_type,
-            service_type_code: data.service_type_code,
-            start_date: data.start_date,
-            end_date: data.end_date,
-            days_covered: [],
-            time_from: '',
-            time_until: '',
-            rate_category: 'standard',
-            pay_based_on: 'service',
-            charge_type: 'hourly_rate',
-            base_rate: 0,
-            rate_15_minutes: undefined,
-            rate_30_minutes: undefined,
-            rate_45_minutes: undefined,
-            rate_60_minutes: undefined,
-            consecutive_hours_rate: undefined,
-            bank_holiday_multiplier: 1,
-            is_vatable: false
-          });
-        }
-      });
-    })();
+    // Simply reset the form without saving
+    form.reset({
+      authority_type: '',
+      service_type_code: '',
+      start_date: '',
+      end_date: '',
+      days_covered: [],
+      time_from: '',
+      time_until: '',
+      rate_category: 'standard',
+      pay_based_on: 'service',
+      charge_type: 'hourly_rate',
+      base_rate: 0,
+      rate_15_minutes: undefined,
+      rate_30_minutes: undefined,
+      rate_45_minutes: undefined,
+      rate_60_minutes: undefined,
+      consecutive_hours_rate: undefined,
+      bank_holiday_multiplier: 1,
+      is_vatable: false
+    });
   };
 
   const toggleDay = (day: string, checked: boolean) => {
@@ -674,10 +645,9 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                 type="button" 
                 variant="default"
                 onClick={onSaveAndAdd}
-                disabled={createSchedule.isPending}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {createSchedule.isPending ? 'Adding...' : 'Add Another'}
+                Add Another
               </Button>
               <Button 
                 type="submit" 
