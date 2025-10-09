@@ -23,7 +23,8 @@ import {
   X, 
   Clock,
   Filter,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -238,11 +239,14 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={inputRef}
-                    placeholder="Search by name, ID, address..."
+                    placeholder="Search by name, PIN, email, or address..."
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
-                    className="pl-8"
+                    className="pl-8 pr-8"
                   />
+                  {searchInput && searchInput !== debouncedSearch && (
+                    <Loader2 className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground animate-spin" />
+                  )}
                 </div>
                 <Button
                   variant="outline"
@@ -290,10 +294,19 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
             )}
 
             {/* Results */}
-            <ScrollArea 
-              className="max-h-80"
-              onScrollCapture={handleScroll}
-            >
+            <div className="relative">
+              {/* Scroll gradient indicators */}
+              {clients.length > 5 && (
+                <>
+                  <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
+                  <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+                </>
+              )}
+              
+              <ScrollArea 
+                className="max-h-96"
+                onScrollCapture={handleScroll}
+              >
               <div ref={scrollViewportRef}>
               {isLoading ? (
                 <div className="p-3 space-y-2">
@@ -347,15 +360,30 @@ export const EnhancedClientSelector: React.FC<EnhancedClientSelectorProps> = ({
                       No clients found matching "{searchInput}"
                     </div>
                   ) : (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      <div className="mb-1">Showing first {totalCount > 100 ? '100' : totalCount} clients</div>
-                      <div className="text-xs">Type to search for a specific client</div>
+                    <div className="p-6 text-center space-y-2">
+                      <div className="text-sm font-medium text-foreground">
+                        {totalCount} client{totalCount !== 1 ? 's' : ''} available
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Type to search by name, PIN, email, or address
+                      </div>
+                      <div className="text-xs text-muted-foreground italic">
+                        Example: "John", "12345", or "London"
+                      </div>
                     </div>
                   )}
                 </>
               )}
               </div>
-            </ScrollArea>
+              </ScrollArea>
+              
+              {/* Scroll hint for large lists */}
+              {clients.length > 10 && hasNextPage && (
+                <div className="absolute bottom-0 left-0 right-0 text-center pb-2 text-xs text-muted-foreground bg-gradient-to-t from-background via-background to-transparent pt-8 pointer-events-none">
+                  Scroll for more clients
+                </div>
+              )}
+            </div>
           </div>
         </PopoverContent>
       </Popover>
