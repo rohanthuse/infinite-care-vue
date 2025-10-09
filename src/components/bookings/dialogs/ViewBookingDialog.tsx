@@ -49,15 +49,15 @@ export function ViewBookingDialog({
 
   const service = services.find((s) => s.id === booking.service_id);
   
-  // Construct proper Date objects from booking date and time strings
-  const startTime = new Date(`${booking.date}T${booking.startTime}:00`);
-  const endTime = new Date(`${booking.date}T${booking.endTime}:00`);
+  // Parse ISO datetime strings
+  const startTime = booking.start_time ? parseISO(booking.start_time) : null;
+  const endTime = booking.end_time ? parseISO(booking.end_time) : null;
   
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
   
   // Determine if the appointment has already started
-  const hasStarted = booking && new Date(`${booking.date}T${booking.startTime}`) <= new Date();
+  const hasStarted = startTime && startTime <= new Date();
 
   const handleDelete = async () => {
     if (!booking) return;
@@ -121,12 +121,10 @@ export function ViewBookingDialog({
             </div>
             <div className="pl-6 space-y-1">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Client:</span>
-                <span className="text-sm font-medium">{booking.clientName}</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Assigned Carer:</span>
-                <span className="text-sm font-medium">{booking.carerName}</span>
+                <span className="text-sm font-medium">
+                  {booking.carerName || booking.staff_name || 'Not assigned'}
+                </span>
               </div>
             </div>
           </div>
@@ -143,27 +141,29 @@ export function ViewBookingDialog({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Date:</span>
                 <span className="text-sm font-medium">
-                  {format(startTime, "EEEE, MMMM d, yyyy")}
+                  {startTime ? format(startTime, "EEEE, MMMM d, yyyy") : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Start Time:</span>
                 <span className="text-sm font-medium">
-                  {format(startTime, "h:mm a")}
+                  {startTime ? format(startTime, "h:mm a") : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">End Time:</span>
                 <span className="text-sm font-medium">
-                  {format(endTime, "h:mm a")}
+                  {endTime ? format(endTime, "h:mm a") : 'N/A'}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Duration:</span>
-                <span className="text-sm font-medium">
-                  {Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))} minutes
-                </span>
-              </div>
+              {startTime && endTime && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Duration:</span>
+                  <span className="text-sm font-medium">
+                    {Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))} minutes
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -219,10 +219,6 @@ export function ViewBookingDialog({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Booking ID:</span>
                 <span className="text-sm font-medium font-mono">{booking.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Date:</span>
-                <span className="text-sm font-medium">{booking.date}</span>
               </div>
             </div>
           </div>

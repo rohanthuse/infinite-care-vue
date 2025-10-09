@@ -1,12 +1,13 @@
 
 import React, { useState } from "react";
 import { format, parseISO } from "date-fns";
-import { Calendar, Clock, MapPin, Plus, User, Edit } from "lucide-react";
+import { Calendar, Clock, MapPin, Plus, User, Edit, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { EditBookingDialog } from "@/components/bookings/dialogs/EditBookingDialog";
+import { ViewBookingDialog } from "@/components/bookings/dialogs/ViewBookingDialog";
 import { useClientBookings } from "@/hooks/useClientBookings";
 import { useBranchCarers } from "@/data/hooks/useBranchCarers";
 import { useBranchServices } from "@/data/hooks/useBranchServices";
@@ -25,6 +26,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [viewBooking, setViewBooking] = useState<any>(null);
   
   const { data: bookings = [], isLoading, refetch } = useClientBookings(clientId);
   const params = useParams();
@@ -54,6 +57,17 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
     };
     setSelectedBooking(transformedBooking);
     setIsEditDialogOpen(true);
+  };
+
+  const handleViewAppointment = (booking: any) => {
+    const transformedBooking = {
+      ...booking,
+      carerId: booking.staff_id,
+      clientId: booking.client_id,
+      carerName: booking.staff_name,
+    };
+    setViewBooking(transformedBooking);
+    setIsViewDialogOpen(true);
   };
 
   const handleCreateBooking = async (bookingData: any, selectedCarers: any[]) => {
@@ -291,18 +305,34 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
                         </div>
                       </div>
                       {canEdit && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditAppointment(booking);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewAppointment(booking);
+                            }}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditAppointment(booking);
+                            }}
+                            title="Edit Booking"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -330,6 +360,22 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
         services={services}
         branchId={branchId}
         carers={carers.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` }))}
+      />
+
+      <ViewBookingDialog
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        booking={viewBooking}
+        services={services}
+        branchId={branchId}
+        onEdit={() => {
+          setIsViewDialogOpen(false);
+          setTimeout(() => {
+            if (viewBooking) {
+              handleEditAppointment(viewBooking);
+            }
+          }, 100);
+        }}
       />
     </div>
   );

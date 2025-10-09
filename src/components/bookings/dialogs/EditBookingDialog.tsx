@@ -331,7 +331,6 @@ export function EditBookingDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Assign Carer Later</SelectItem>
                         {carers.map((carer) => (
                           <SelectItem key={carer.id} value={carer.id}>
                             {carer.name}
