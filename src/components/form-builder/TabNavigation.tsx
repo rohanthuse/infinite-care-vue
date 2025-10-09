@@ -75,18 +75,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="submissions" className="flex items-center gap-1">
-                  <Inbox className="h-4 w-4" />
-                  <span className="hidden md:inline">Submissions</span>
-                </TabsTrigger>
-              </TooltipTrigger>
-              <TooltipContent className="md:hidden">
-                <p>View Form Submissions</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
                 <TabsTrigger value="publish" className="flex items-center gap-1">
                   <Upload className="h-4 w-4" />
                   <span className="hidden md:inline">Publish</span>
@@ -94,6 +82,18 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
               </TooltipTrigger>
               <TooltipContent className="md:hidden">
                 <p>Publish Form</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="submissions" className="flex items-center gap-1">
+                  <Inbox className="h-4 w-4" />
+                  <span className="hidden md:inline">Submissions</span>
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent className="md:hidden">
+                <p>View Form Submissions</p>
               </TooltipContent>
             </Tooltip>
           </TabsList>

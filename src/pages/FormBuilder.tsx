@@ -652,19 +652,19 @@ const FormBuilder = () => {
           />
         </TabsContent>
 
-        <TabsContent value="submissions" className="p-4 bg-white rounded-lg border shadow-sm">
-          <FormSubmissionsTab 
-            formId={form.id}
-            branchId={branchId || ''}
-          />
-        </TabsContent>
-        
         <TabsContent value="publish" className="p-4 bg-white rounded-lg border shadow-sm">
           <FormBuilderPublish 
             form={form}
             onPublish={handlePublishForm}
             branchId={branchId || ''}
             onUpdatePermissions={handleUpdatePermissions}
+          />
+        </TabsContent>
+        
+        <TabsContent value="submissions" className="p-4 bg-white rounded-lg border shadow-sm">
+          <FormSubmissionsTab 
+            formId={form.id}
+            branchId={branchId || ''}
           />
         </TabsContent>
       </Tabs>
