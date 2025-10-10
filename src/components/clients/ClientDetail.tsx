@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { X, FileEdit, Download, Share2, Save, XCircle } from "lucide-react";
+import { X, Download, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -28,7 +28,6 @@ import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { ServiceReportsTab } from "../service-reports/ServiceReportsTab";
 import { ServiceReportsErrorBoundary } from "../service-reports/ServiceReportsErrorBoundary";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
-import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ClientProfileSharingDialog } from "./ClientProfileSharingDialog";
 import { toast } from "sonner";
 
@@ -48,22 +47,17 @@ interface ClientDetailProps {
   onAddNote?: () => void;
   onUploadDocument?: () => void;
   onAddEvent?: () => void;
-  startInEditMode?: boolean;
 }
 
 export const ClientDetail: React.FC<ClientDetailProps> = ({ 
   client, 
   onClose,
-  startInEditMode = false,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [sharingDialogOpen, setSharingDialogOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(startInEditMode);
   const navigate = useNavigate();
   const params = useParams();
   const { tenantSlug } = useTenant();
-  
-  const updateClientMutation = useUpdateClient();
   
   const branchId = params.id || '';
   const branchName = params.branchName || '';
@@ -78,34 +72,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   const displayName = realClientData ? 
     `${realClientData.preferred_name || realClientData.first_name || ''} ${realClientData.last_name || ''}`.trim() : 
     client.name;
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = (updatedData: any) => {
-    updateClientMutation.mutate(
-      { 
-        clientId: client!.id, 
-        updates: updatedData 
-      },
-      {
-        onSuccess: () => {
-          toast.success("Client information updated successfully");
-          setIsEditing(false);
-        },
-        onError: (error: any) => {
-          const errorMessage = error?.message || "Unknown error occurred";
-          toast.error(`Failed to update client information: ${errorMessage}`);
-          console.error('Error updating client:', error);
-        }
-      }
-    );
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
 
   const handlePrintClientProfile = () => {
     generatePDF({
@@ -155,24 +121,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
               <Download className="h-4 w-4" />
               <span>Export</span>
             </Button>
-            {isEditing ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={handleCancel} 
-                  className="flex items-center gap-2"
-                  disabled={updateClientMutation.isPending}
-                >
-                  <XCircle className="h-4 w-4" />
-                  <span>Cancel</span>
-                </Button>
-              </>
-            ) : (
-              <Button variant="outline" onClick={handleEdit} className="flex items-center gap-2">
-                <FileEdit className="h-4 w-4" />
-                <span>Edit</span>
-              </Button>
-            )}
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
@@ -196,9 +144,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 <TabsContent value="personal" className="p-6 m-0">
                   <PersonalInfoTab 
                     client={realClientData || client} 
-                    isEditing={isEditing}
-                    onSave={handleSave}
-                    isSaving={updateClientMutation.isPending}
                   />
                 </TabsContent>
                 

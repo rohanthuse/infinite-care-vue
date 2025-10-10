@@ -706,7 +706,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             onClose={handleCloseClientDetail}
             onAddNote={() => setIsAddNoteDialogOpen(true)}
             onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
-            startInEditMode={isClientEditModeOpen}
           />
         )}
 
