@@ -67,8 +67,20 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   const branchName = params.branchName || '';
   
   // Fetch real client data
-  const { data: realClientData, isLoading } = useAdminClientDetail(client?.id || '');
+  const { data: realClientData, isLoading, refetch } = useAdminClientDetail(client?.id || '');
   const updateClientMutation = useAdminUpdateClient();
+
+  // Sync isEditMode prop with internal isEditing state
+  React.useEffect(() => {
+    setIsEditing(isEditMode);
+  }, [isEditMode]);
+
+  // Refetch data when the modal opens
+  React.useEffect(() => {
+    if (client?.id) {
+      refetch();
+    }
+  }, [client?.id, refetch]);
 
   if (!client) return null;
 
@@ -106,7 +118,6 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
       });
       
       setIsEditing(false);
-      onClose();
     } catch (error: any) {
       console.error('[ClientDetail] Update error:', error);
       
