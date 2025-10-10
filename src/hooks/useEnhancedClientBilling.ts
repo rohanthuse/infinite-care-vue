@@ -290,22 +290,70 @@ export const useDeleteInvoice = () => {
 
   return useMutation({
     mutationFn: async (invoiceId: string) => {
-      const { error } = await supabase
+      console.log('[useDeleteInvoice] Attempting to delete invoice:', invoiceId);
+      
+      // First, check if we can SELECT the invoice (RLS check)
+      const { data: invoice, error: selectError } = await supabase
         .from('client_billing')
-        .delete()
+        .select('id, invoice_number, status, client_id, organization_id')
+        .eq('id', invoiceId)
+        .single();
+
+      if (selectError) {
+        console.error('[useDeleteInvoice] Cannot SELECT invoice - RLS issue:', selectError);
+        throw new Error(`Cannot access invoice: ${selectError.message}`);
+      }
+
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+
+      console.log('[useDeleteInvoice] Invoice details:', invoice);
+
+      // Attempt deletion
+      const { error: deleteError, count } = await supabase
+        .from('client_billing')
+        .delete({ count: 'exact' })
         .eq('id', invoiceId);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('[useDeleteInvoice] Delete failed:', {
+          error: deleteError,
+          code: deleteError.code,
+          message: deleteError.message,
+          details: deleteError.details,
+          hint: deleteError.hint
+        });
+        throw deleteError;
+      }
+
+      console.log('[useDeleteInvoice] Delete successful, rows affected:', count);
       return invoiceId;
     },
-    onSuccess: () => {
+    onSuccess: (invoiceId) => {
+      console.log('[useDeleteInvoice] Success callback, invalidating queries');
       toast.success('Invoice deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['client-billing'] });
       queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-invoice-stats'] });
     },
-    onError: (error) => {
-      console.error('Error deleting invoice:', error);
-      toast.error('Failed to delete invoice');
+    onError: (error: any) => {
+      console.error('[useDeleteInvoice] Error callback:', error);
+      
+      // More user-friendly error messages
+      let errorMessage = 'Failed to delete invoice';
+      
+      if (error.message?.includes('Cannot access invoice')) {
+        errorMessage = 'You do not have permission to delete this invoice';
+      } else if (error.code === '42501') {
+        errorMessage = 'Permission denied: You cannot delete this invoice';
+      } else if (error.code === '23503') {
+        errorMessage = 'Cannot delete: Invoice has related records that must be removed first';
+      } else if (error.message) {
+        errorMessage = `Failed to delete invoice: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
     },
   });
 };
