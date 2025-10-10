@@ -15,6 +15,8 @@ import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
 import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
+import { generateInvoicePDF } from '@/utils/invoicePdfGenerator';
+import { toast } from 'sonner';
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;
@@ -26,14 +28,17 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
 
   const [activeSubTab, setActiveSubTab] = useState('invoices');
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
+  const [isEditInvoiceOpen, setIsEditInvoiceOpen] = useState(false);
   const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
   const [isViewInvoiceOpen, setIsViewInvoiceOpen] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedInvoiceForView, setSelectedInvoiceForView] = useState<EnhancedClientBilling | null>(null);
+  const [selectedInvoiceForEdit, setSelectedInvoiceForEdit] = useState<string>('');
   const [selectedInvoiceIdForPayment, setSelectedInvoiceIdForPayment] = useState<string>('');
   const [selectedPaymentForView, setSelectedPaymentForView] = useState<string | null>(null);
   const [isViewPaymentOpen, setIsViewPaymentOpen] = useState(false);
   const [showClientSelectionForInvoice, setShowClientSelectionForInvoice] = useState(false);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   
   const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
   
@@ -116,6 +121,75 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     setSelectedClientId(clientId);
     setShowClientSelectionForInvoice(false);
     setIsCreateInvoiceOpen(true);
+  };
+
+  // Handler for downloading invoice as PDF
+  const handleDownloadInvoice = async (invoiceId: string) => {
+    setDownloadingInvoiceId(invoiceId);
+    try {
+      const { data: invoiceData, error } = await supabase
+        .from('client_billing')
+        .select(`
+          *,
+          invoice_line_items(*),
+          payment_records(*),
+          clients(first_name, last_name, preferred_name, email, address)
+        `)
+        .eq('id', invoiceId)
+        .single();
+
+      if (error) throw error;
+
+      const client = invoiceData.clients;
+      const clientName = `${client?.preferred_name || client?.first_name || ''} ${client?.last_name || ''}`.trim();
+
+      await generateInvoicePDF({
+        invoice: {
+          ...invoiceData,
+          line_items: invoiceData.invoice_line_items || [],
+          payment_records: (invoiceData.payment_records || []).map(record => ({
+            ...record,
+            payment_method: record.payment_method as any
+          }))
+        } as any,
+        clientName,
+        clientAddress: client?.address || '',
+        clientEmail: client?.email || '',
+        companyInfo: {
+          name: 'Care Service Provider',
+          address: '123 Care Street, City, Country',
+          phone: '+1 (555) 123-4567',
+          email: 'billing@careservice.com'
+        }
+      });
+
+      toast.success(`Invoice ${invoiceData.invoice_number} downloaded successfully.`);
+    } catch (error) {
+      console.error('Invoice download error:', error);
+      toast.error(error instanceof Error ? error.message : "Unable to download invoice. Please try again.");
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
+  };
+
+  // Handler for editing invoice
+  const handleEditInvoice = async (invoiceId: string) => {
+    try {
+      const { data: invoiceData, error } = await supabase
+        .from('client_billing')
+        .select('client_id')
+        .eq('id', invoiceId)
+        .single();
+
+      if (error) throw error;
+
+      setSelectedClientId(invoiceData.client_id);
+      setSelectedInvoiceForEdit(invoiceId);
+      setIsEditInvoiceOpen(true);
+    } catch (error) {
+      console.error('Error loading invoice for edit:', error);
+      toast.error("Unable to load invoice for editing. Please try again.");
+    }
   };
 
   // Handler for generating reports
@@ -228,10 +302,11 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               branchId={branchId!}
               branchName={branchName}
               onViewInvoice={handleViewInvoice}
+              onEditInvoice={handleEditInvoice}
               onRecordPayment={handleRecordPayment}
               onCreateInvoice={handleCreateInvoice}
+              onExportInvoice={handleDownloadInvoice}
               onDeleteInvoice={(invoiceId) => {
-                // Callback to refresh data after deletion if needed
                 console.log(`Invoice ${invoiceId} deleted successfully`);
               }}
             />
@@ -254,16 +329,19 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         </TabsContent>
       </Tabs>
 
-      {/* Invoice Creation Dialog */}
+      {/* Invoice Creation/Edit Dialog */}
       <EnhancedCreateInvoiceDialog
-        isOpen={isCreateInvoiceOpen}
+        isOpen={isCreateInvoiceOpen || isEditInvoiceOpen}
         onClose={() => {
           setIsCreateInvoiceOpen(false);
+          setIsEditInvoiceOpen(false);
           setSelectedClientId('');
+          setSelectedInvoiceForEdit('');
         }}
         branchId={branchId!}
-        organizationId={organizationId || ''}  // Use empty string as fallback
+        organizationId={organizationId || ''}
         preSelectedClientId={selectedClientId}
+        invoiceId={selectedInvoiceForEdit || undefined}
       />
 
       {/* Record Payment Dialog */}

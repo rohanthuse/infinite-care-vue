@@ -16,6 +16,7 @@ import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EnhancedCreateInvoiceDialogProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface EnhancedCreateInvoiceDialogProps {
   branchId: string;
   organizationId: string;
   preSelectedClientId?: string;
+  invoiceId?: string;
 }
 
 export const EnhancedCreateInvoiceDialog = ({
@@ -30,7 +32,8 @@ export const EnhancedCreateInvoiceDialog = ({
   onClose,
   branchId,
   organizationId,
-  preSelectedClientId
+  preSelectedClientId,
+  invoiceId
 }: EnhancedCreateInvoiceDialogProps) => {
   const [billToType, setBillToType] = useState<'authority' | 'private'>('private');
   const [selectedClientId, setSelectedClientId] = useState(preSelectedClientId || '');
@@ -50,6 +53,46 @@ export const EnhancedCreateInvoiceDialog = ({
   const { data: clientFunding } = useClientFundingInfo(selectedClientId);
   const { data: authorityClients = [] } = useClientsByAuthority(selectedAuthorityId, branchId);
   const createInvoice = useCreateEnhancedInvoice();
+
+  // Load existing invoice data for edit mode
+  useEffect(() => {
+    if (isOpen && invoiceId) {
+      const loadInvoiceData = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('client_billing')
+            .select('*')
+            .eq('id', invoiceId)
+            .single();
+
+          if (error) throw error;
+
+          if (data) {
+            const billType = (data.bill_to_type === 'authority' ? 'authority' : 'private') as 'authority' | 'private';
+            const consolidation = (data.consolidation_type === 'split_by_client' ? 'split_by_client' : 'single') as 'single' | 'split_by_client';
+            
+            setBillToType(billType);
+            setSelectedClientId(data.client_id || '');
+            setSelectedAuthorityId(data.authority_id || '');
+            setConsolidationType(consolidation);
+            setFormData({
+              description: data.description || '',
+              amount: data.amount?.toString() || '',
+              invoice_date: data.invoice_date || new Date().toISOString().split('T')[0],
+              due_date: data.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              notes: data.notes || ''
+            });
+            setStep('invoice_details');
+          }
+        } catch (error) {
+          console.error('Error loading invoice:', error);
+          toast.error('Failed to load invoice data');
+        }
+      };
+
+      loadInvoiceData();
+    }
+  }, [isOpen, invoiceId]);
 
   // Auto-advance through steps based on selections
   useEffect(() => {
@@ -161,7 +204,7 @@ export const EnhancedCreateInvoiceDialog = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Create Invoice
+            {invoiceId ? 'Edit Invoice' : 'Create Invoice'}
             <Badge variant="outline">{step.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</Badge>
           </DialogTitle>
         </DialogHeader>
