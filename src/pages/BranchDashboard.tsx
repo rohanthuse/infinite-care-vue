@@ -456,12 +456,17 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleEditClient = (client: any) => {
-    // Navigate to the dedicated ClientEdit page
-    if (tenantSlug) {
-      navigate(`/${tenantSlug}/branch-dashboard/${id}/${encodeURIComponent(branchName)}/clients/${client.id}/edit`);
-    } else {
-      navigate(`/branch-dashboard/${id}/${encodeURIComponent(branchName)}/clients/${client.id}/edit`);
-    }
+    // Open the ClientDetail modal in edit mode
+    const clientForDetails = {
+      ...client,
+      name: `${client.first_name} ${client.last_name}`,
+      location: client.address,
+      avatar: client.avatar_initials,
+      registeredOn: client.registered_on ? format(new Date(client.registered_on), 'dd/MM/yyyy') : 'N/A'
+    };
+    setSelectedClient(clientForDetails);
+    setIsClientEditModeOpen(true);
+    setClientDetailOpen(true);
   };
 
   // Component to show access denied for restricted content
@@ -700,6 +705,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           <ClientDetail
             client={selectedClient}
             onClose={handleCloseClientDetail}
+            isEditMode={isClientEditModeOpen}
             onAddNote={() => setIsAddNoteDialogOpen(true)}
             onUploadDocument={() => setIsUploadDocumentDialogOpen(true)}
           />

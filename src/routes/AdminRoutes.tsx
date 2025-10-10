@@ -35,7 +35,6 @@ import Reports from "@/pages/Reports";
 import BookingApprovals from "@/pages/BookingApprovals";
 import Accounting from "@/pages/Accounting";
 import OrganizationCalendar from "@/pages/OrganizationCalendar";
-import ClientEdit from "@/pages/client/ClientEdit";
 import TenantLogin from "@/pages/TenantLogin";
 import { BranchSidebarProvider } from "@/components/branch-dashboard/BranchSidebarProvider";
 
@@ -159,7 +158,6 @@ const AdminRoutes = () => [
           <Route path="recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
           <Route path="recruitment/post-job" element={<PostJobPage />} />
           <Route path="care-plan/:carePlanId" element={<CarePlanView />} />
-          <Route path="clients/:clientId/edit" element={<ClientEdit />} />
           <Route path="organization-calendar" element={<OrganizationCalendar />} />
           <Route path="events-logs" element={<EventsLogs />} />
           <Route path="attendance" element={<Attendance />} />

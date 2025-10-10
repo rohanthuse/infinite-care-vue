@@ -27,9 +27,9 @@ import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { ServiceReportsTab } from "../service-reports/ServiceReportsTab";
 import { ServiceReportsErrorBoundary } from "../service-reports/ServiceReportsErrorBoundary";
-import { useAdminClientDetail } from "@/hooks/useAdminClientData";
+import { useAdminClientDetail, useAdminUpdateClient } from "@/hooks/useAdminClientData";
 import { ClientProfileSharingDialog } from "./ClientProfileSharingDialog";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 interface ClientDetailProps {
   client: {
@@ -44,6 +44,7 @@ interface ClientDetailProps {
     registeredOn: string;
   } | null;
   onClose: () => void;
+  isEditMode?: boolean;
   onAddNote?: () => void;
   onUploadDocument?: () => void;
   onAddEvent?: () => void;
@@ -52,18 +53,22 @@ interface ClientDetailProps {
 export const ClientDetail: React.FC<ClientDetailProps> = ({ 
   client, 
   onClose,
+  isEditMode = false,
 }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [sharingDialogOpen, setSharingDialogOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(isEditMode);
   const navigate = useNavigate();
   const params = useParams();
   const { tenantSlug } = useTenant();
+  const { toast } = useToast();
   
   const branchId = params.id || '';
   const branchName = params.branchName || '';
   
   // Fetch real client data
   const { data: realClientData, isLoading } = useAdminClientDetail(client?.id || '');
+  const updateClientMutation = useAdminUpdateClient();
 
   if (!client) return null;
 
@@ -81,6 +86,36 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
       status: client.status,
       signedBy: "System Generated"
     });
+  };
+
+  const handleSave = async (updatedData: any) => {
+    try {
+      await updateClientMutation.mutateAsync({
+        clientId: client?.id || '',
+        updates: updatedData
+      });
+      
+      toast({
+        title: "Success",
+        description: "Client information has been updated successfully.",
+      });
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Update error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update client information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    if (isEditMode) {
+      onClose();
+    }
   };
 
   if (isLoading) {
@@ -113,14 +148,28 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={() => setSharingDialogOpen(true)} className="flex items-center gap-2">
-              <Share2 className="h-4 w-4" />
-              <span>Share</span>
-            </Button>
-            <Button variant="outline" onClick={handlePrintClientProfile} className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              <span>Export</span>
-            </Button>
+            {isEditing ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={updateClientMutation.isPending}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setSharingDialogOpen(true)} className="flex items-center gap-2">
+                  <Share2 className="h-4 w-4" />
+                  <span>Share</span>
+                </Button>
+                <Button variant="outline" onClick={handlePrintClientProfile} className="flex items-center gap-2">
+                  <Download className="h-4 w-4" />
+                  <span>Export</span>
+                </Button>
+              </>
+            )}
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
@@ -143,7 +192,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="personal" className="p-6 m-0">
                   <PersonalInfoTab 
-                    client={realClientData || client} 
+                    client={realClientData || client}
+                    isEditing={isEditing}
+                    onSave={handleSave}
+                    isSaving={updateClientMutation.isPending}
                   />
                 </TabsContent>
                 
