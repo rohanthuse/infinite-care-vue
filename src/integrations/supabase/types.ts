@@ -7726,7 +7726,7 @@ export type Database = {
         Returns: number
       }
       calculate_invoice_totals: {
-        Args: { invoice_id_param: string }
+        Args: { p_invoice_id: string }
         Returns: undefined
       }
       calculate_leave_days: {
