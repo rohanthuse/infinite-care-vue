@@ -80,7 +80,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
     client.name;
 
   const handleEdit = () => {
-    setIsEditing(true);
+    // Close the detail modal
+    onClose();
+    
+    // Navigate to the dedicated edit page
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/clients/${client.id}/edit`);
+    } else {
+      navigate(`/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/clients/${client.id}/edit`);
+    }
   };
 
   const handleSave = (updatedData: any) => {
