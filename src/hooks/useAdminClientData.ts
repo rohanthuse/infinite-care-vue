@@ -58,6 +58,8 @@ export const useAdminUpdateClient = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
       queryClient.invalidateQueries({ queryKey: ['admin-client-detail', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
     },
   });
 };

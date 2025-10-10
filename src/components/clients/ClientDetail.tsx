@@ -90,6 +90,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
 
   const handleSave = async (updatedData: any) => {
     try {
+      console.log('[ClientDetail] Saving client data:', {
+        clientId: client?.id,
+        updates: updatedData
+      });
+      
       await updateClientMutation.mutateAsync({
         clientId: client?.id || '',
         updates: updatedData
@@ -101,11 +106,17 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
       });
       
       setIsEditing(false);
-    } catch (error) {
-      console.error('Update error:', error);
+      onClose();
+    } catch (error: any) {
+      console.error('[ClientDetail] Update error:', error);
+      
+      const errorMessage = error?.message || 
+                          error?.details || 
+                          'Failed to update client information. Please try again.';
+      
       toast({
         title: "Error",
-        description: "Failed to update client information. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }

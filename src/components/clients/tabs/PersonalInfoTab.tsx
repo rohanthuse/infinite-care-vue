@@ -47,7 +47,9 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     status: client?.status || '',
     referral_route: client?.referral_route || '',
     avatar_initials: client?.avatar_initials || client?.avatar || '',
-    additional_information: client?.additional_information || ''
+    additional_information: client?.additional_information || '',
+    age_group: client?.age_group || 'adult',
+    branch_id: client?.branch_id
   });
   useEffect(() => {
     if (client) {
@@ -72,7 +74,9 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         status: client?.status || '',
         referral_route: client?.referral_route || '',
         avatar_initials: client?.avatar_initials || client?.avatar || '',
-        additional_information: client?.additional_information || ''
+        additional_information: client?.additional_information || '',
+        age_group: client?.age_group || 'adult',
+        branch_id: client?.branch_id
       });
     }
   }, [client]);
@@ -180,6 +184,19 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             <div>
               <Label htmlFor="other_identifier">Other Identifier</Label>
               <Input id="other_identifier" value={formData.other_identifier} onChange={e => handleInputChange('other_identifier', e.target.value)} placeholder="Other identifier" />
+            </div>
+            <div>
+              <Label htmlFor="age_group">Age Group</Label>
+              <Select value={formData.age_group} onValueChange={value => handleInputChange('age_group', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select age group" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="adult">Adult</SelectItem>
+                  <SelectItem value="child">Child</SelectItem>
+                  <SelectItem value="young_person">Young Person</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </Card>
