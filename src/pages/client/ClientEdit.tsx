@@ -11,11 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminClientDetail, useAdminUpdateClient } from "@/hooks/useAdminClientData";
+import { useTenant } from "@/contexts/TenantContext";
 
 const ClientEdit = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const params = useParams();
+  const { tenantSlug } = useTenant();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const clientId = params.clientId || '';
@@ -123,7 +125,11 @@ const ClientEdit = () => {
         description: "Client profile has been saved successfully.",
       });
       
-      navigate(`/branch-dashboard/${branchId}/${branchName}/clients`);
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/clients`);
+      } else {
+        navigate(`/branch-dashboard/${branchId}/${branchName}/clients`);
+      }
     } catch (error) {
       console.error('Profile update error:', error);
       toast({
@@ -135,7 +141,11 @@ const ClientEdit = () => {
   };
 
   const handleBack = () => {
-    navigate(`/branch-dashboard/${branchId}/${branchName}/clients`);
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/clients`);
+    } else {
+      navigate(`/branch-dashboard/${branchId}/${branchName}/clients`);
+    }
   };
 
   if (isLoading) {
