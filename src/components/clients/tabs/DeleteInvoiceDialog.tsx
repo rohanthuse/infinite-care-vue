@@ -33,18 +33,22 @@ export const DeleteInvoiceDialog: React.FC<DeleteInvoiceDialogProps> = ({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete invoice <strong>{invoice.invoice_number}</strong>?
-            <br />
-            <br />
-            <div className="space-y-1 text-sm">
-              <div>Amount: {formatCurrency(invoice.amount || 0)}</div>
-              <div>Status: <span className="capitalize">{invoice.status}</span></div>
-              <div>Due Date: {new Date(invoice.due_date).toLocaleDateString()}</div>
-            </div>
-            <br />
-            This action cannot be undone.
-          </AlertDialogDescription>
+        <AlertDialogDescription>
+          Are you sure you want to delete invoice <strong>{invoice.invoice_number}</strong>?
+          <br />
+          <br />
+          <div className="space-y-1 text-sm">
+            <div>Amount: {formatCurrency(invoice.amount || 0)}</div>
+            <div>Status: <span className="capitalize">{invoice.status}</span></div>
+            <div>Due Date: {new Date(invoice.due_date).toLocaleDateString()}</div>
+          </div>
+          <br />
+          <div className="text-amber-600 font-medium">
+            ⚠️ This will also delete all related line items, payment records, and invoice periods.
+          </div>
+          <br />
+          This action cannot be undone.
+        </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>

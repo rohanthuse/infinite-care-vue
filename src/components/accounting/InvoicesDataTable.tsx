@@ -49,14 +49,24 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
     setDeleteDialogOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteInvoice) {
-      deleteInvoiceMutation.mutate(deleteInvoice.id, {
-        onSuccess: () => {
-          setDeleteDialogOpen(false);
-          setDeleteInvoice(null);
-        }
+      console.log('[InvoicesDataTable] Initiating delete for invoice:', {
+        id: deleteInvoice.id,
+        invoice_number: deleteInvoice.invoice_number,
+        status: deleteInvoice.status,
+        client_id: deleteInvoice.client_id
       });
+      
+      try {
+        await deleteInvoiceMutation.mutateAsync(deleteInvoice.id);
+        console.log('[InvoicesDataTable] Delete mutation completed successfully');
+        setDeleteDialogOpen(false);
+        setDeleteInvoice(null);
+      } catch (error) {
+        console.error('[InvoicesDataTable] Delete mutation failed:', error);
+        // Error is already handled by the mutation's onError
+      }
     }
   };
 
@@ -233,7 +243,10 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteInvoice(invoice)}
+                        onClick={() => {
+                          console.log('[InvoicesDataTable] Delete button clicked for invoice:', invoice.id);
+                          handleDeleteInvoice(invoice);
+                        }}
                         title="Delete Invoice"
                         className="text-destructive hover:text-destructive"
                       >
