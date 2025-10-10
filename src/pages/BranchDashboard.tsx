@@ -456,16 +456,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleEditClient = (client: any) => {
-    const clientForDetails = {
-      ...client,
-      name: `${client.first_name} ${client.last_name}`,
-      location: client.address,
-      avatar: client.avatar_initials,
-      registeredOn: client.registered_on ? format(new Date(client.registered_on), 'dd/MM/yyyy') : 'N/A'
-    };
-    setSelectedClient(clientForDetails);
-    setClientDetailOpen(true);
-    setIsClientEditModeOpen(true);
+    // Navigate to the dedicated ClientEdit page
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/branch-dashboard/${id}/${encodeURIComponent(branchName)}/clients/${client.id}/edit`);
+    } else {
+      navigate(`/branch-dashboard/${id}/${encodeURIComponent(branchName)}/clients/${client.id}/edit`);
+    }
   };
 
   // Component to show access denied for restricted content
