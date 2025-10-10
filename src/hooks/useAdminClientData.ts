@@ -50,15 +50,19 @@ export const useAdminUpdateClient = () => {
         .update(updates)
         .eq('id', clientId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-client-detail', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
+      
+      if (data?.id) {
+        queryClient.invalidateQueries({ queryKey: ['admin-client-detail', data.id] });
+        queryClient.invalidateQueries({ queryKey: ['client-profile', data.id] });
+      }
+      
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
     },
   });
