@@ -65,13 +65,22 @@ export function EditMedicalConditionDialog({ isOpen, onClose, condition }: EditM
       
       toast({ title: "Condition updated successfully" });
       
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       onClose();
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to update condition", description: error.message, variant: "destructive" });
     },
   });

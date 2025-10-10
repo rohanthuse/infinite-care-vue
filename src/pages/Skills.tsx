@@ -50,14 +50,23 @@ const Skills = () => {
 
       toast({ title: "Skill deleted successfully" });
 
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['skills'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       // Ensure dialog closes on error as well
       setDeletingSkill(null);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to delete skill", description: error.message, variant: "destructive" });
     }
   });

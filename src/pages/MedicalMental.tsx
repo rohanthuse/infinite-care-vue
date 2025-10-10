@@ -86,14 +86,23 @@ const MedicalMental = () => {
 
       toast({ title: "Condition deleted successfully" });
 
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       // Ensure dialog closes on error as well
       setDeletingCondition(null);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to delete condition", description: error.message, variant: "destructive" });
     }
   });
@@ -109,15 +118,24 @@ const MedicalMental = () => {
 
       toast({ title: "Category deleted successfully" });
 
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       // Delay invalidations to avoid race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
         queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       // Ensure dialog closes on error as well
       setDeletingCategory(null);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to delete category", description: "Make sure no conditions are using this category. " + error.message, variant: "destructive" });
     }
   });

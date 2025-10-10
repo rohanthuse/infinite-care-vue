@@ -50,13 +50,22 @@ export function EditMedicalCategoryDialog({ isOpen, onClose, category }: EditMed
       
       toast({ title: "Category updated successfully" });
       
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       onClose();
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to update category", description: error.message, variant: "destructive" });
     },
   });

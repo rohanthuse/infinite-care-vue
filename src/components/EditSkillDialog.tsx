@@ -65,13 +65,22 @@ export function EditSkillDialog({ isOpen, onClose, skill }: EditSkillDialogProps
         description: `${name} has been updated successfully`,
       });
       
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['skills'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       onClose();
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Update failed",
         description: error.message,

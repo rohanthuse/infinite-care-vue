@@ -54,15 +54,24 @@ const BodyMapPoints = () => {
 
       toast({ title: "Body Map Point deleted successfully" });
 
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       // Ensure dialog closes on error as well
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to delete point", description: error.message, variant: "destructive" });
     },
   });

@@ -50,14 +50,23 @@ const Hobbies = () => {
 
       toast({ title: "Hobby deleted successfully" });
 
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['hobbies'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: Error) => {
       // Ensure dialog closes on error as well
       setDeletingHobby(null);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to delete hobby", description: error.message, variant: "destructive" });
     }
   });

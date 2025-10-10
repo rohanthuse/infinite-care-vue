@@ -52,13 +52,22 @@ export function EditWorkTypeDialog({ isOpen, onClose, workType }: EditWorkTypeDi
       
       toast({ title: "Work Type updated successfully" });
       
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['work_types'] });
-      }, 100);
+      }, 300);
     },
     onError: (error: any) => {
       onClose();
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({ title: "Failed to update work type", description: error.message, variant: "destructive" });
     },
   });
