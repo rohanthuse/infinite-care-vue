@@ -33,6 +33,11 @@ interface UpdateClientParams {
 const updateClient = async ({ clientId, updates }: UpdateClientParams) => {
   console.log('[updateClient] Updating client:', clientId, updates);
   
+  // Validate inputs
+  if (!clientId) {
+    throw new Error('Client ID is required');
+  }
+  
   // Sanitize updates object
   const sanitizedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
     if (typeof value === 'string') {
@@ -44,22 +49,26 @@ const updateClient = async ({ clientId, updates }: UpdateClientParams) => {
     return acc;
   }, {} as any);
   
+  // Validate that we have at least one field to update
+  if (Object.keys(sanitizedUpdates).length === 0) {
+    throw new Error('No fields to update');
+  }
+  
   console.log('[updateClient] Sanitized updates:', sanitizedUpdates);
   
-  const { data, error } = await supabase
+  // Perform update without trying to return data (prevents 406 error)
+  const { error } = await supabase
     .from('clients')
     .update(sanitizedUpdates)
-    .eq('id', clientId)
-    .select()
-    .maybeSingle();
+    .eq('id', clientId);
 
   if (error) {
     console.error('[updateClient] Error:', error);
     throw error;
   }
 
-  console.log('[updateClient] Success:', data);
-  return data;
+  console.log('[updateClient] Success - updated client:', clientId);
+  return { id: clientId };
 };
 
 export const useUpdateClient = () => {
@@ -97,7 +106,7 @@ export const useUpdateClient = () => {
       return { previousClient, clientId };
     },
     onSuccess: (data, variables) => {
-      // Use clientId from variables as fallback if data is null
+      // Use clientId from returned data or variables
       const clientId = data?.id || variables.clientId;
       
       console.log('[useUpdateClient] Success - invalidating queries for client:', clientId);
@@ -105,8 +114,8 @@ export const useUpdateClient = () => {
       // Invalidate all relevant queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
       queryClient.invalidateQueries({ queryKey: ['client-profile', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['admin-client-detail', clientId] });
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
-      // Don't invalidate admin-client-detail to prevent null refetch due to RLS
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
       queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
