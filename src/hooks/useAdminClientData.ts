@@ -45,15 +45,16 @@ export const useAdminUpdateClient = () => {
 
   return useMutation({
     mutationFn: async ({ clientId, updates }: { clientId: string; updates: Partial<ClientProfile> }) => {
-      const { data, error } = await supabase
+      // Perform update without trying to return data
+      const { error } = await supabase
         .from('clients')
         .update(updates)
-        .eq('id', clientId)
-        .select()
-        .maybeSingle();
+        .eq('id', clientId);
 
       if (error) throw error;
-      return data;
+      
+      // Return the clientId so we can use it in onSuccess
+      return { id: clientId };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
