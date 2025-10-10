@@ -133,7 +133,16 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           *,
           invoice_line_items(*),
           payment_records(*),
-          clients(first_name, last_name, preferred_name, email, address)
+          clients(
+            first_name, 
+            last_name, 
+            preferred_name, 
+            email, 
+            address,
+            phone,
+            branch_id,
+            branches(organization_id)
+          )
         `)
         .eq('id', invoiceId)
         .single();
@@ -142,6 +151,18 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
 
       const client = invoiceData.clients;
       const clientName = `${client?.preferred_name || client?.first_name || ''} ${client?.last_name || ''}`.trim();
+
+      // Fetch organization details
+      const orgId = client?.branches?.organization_id || organizationId;
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('name, address, contact_email, contact_phone')
+        .eq('id', orgId)
+        .maybeSingle();
+
+      if (orgError) {
+        console.error('Error fetching organization:', orgError);
+      }
 
       await generateInvoicePDF({
         invoice: {
@@ -155,11 +176,12 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         clientName,
         clientAddress: client?.address || '',
         clientEmail: client?.email || '',
-        companyInfo: {
-          name: 'Care Service Provider',
-          address: '123 Care Street, City, Country',
-          phone: '+1 (555) 123-4567',
-          email: 'billing@careservice.com'
+        clientPhone: client?.phone || '',
+        organizationInfo: {
+          name: orgData?.name || 'Care Service Provider',
+          address: orgData?.address || 'Organization Address',
+          email: orgData?.contact_email || 'contact@organization.com',
+          phone: orgData?.contact_phone
         }
       });
 

@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { AddPaymentDialog } from "@/components/clients/dialogs/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const ClientPayments = () => {
   const [activeTab, setActiveTab] = useState("invoices");
@@ -62,18 +63,33 @@ const ClientPayments = () => {
     }
   };
 
-  const handleDownloadInvoice = (invoice: any) => {
+  const handleDownloadInvoice = async (invoice: any) => {
     try {
+      // Fetch organization details if possible
+      let orgData = null;
+      if (invoice.organization_id) {
+        const { data, error: orgError } = await supabase
+          .from('organizations')
+          .select('name, address, contact_email, contact_phone')
+          .eq('id', invoice.organization_id)
+          .maybeSingle();
+        
+        if (!orgError) {
+          orgData = data;
+        }
+      }
+
       generateInvoicePDF({
         invoice,
         clientName: clientName || "Client",
         clientAddress: "", // Address not available in current auth data
         clientEmail: clientEmail || "",
-        companyInfo: {
-          name: "Care Service Provider",
-          address: "123 Care Street, City, Country",
-          phone: "+1 (555) 123-4567",
-          email: "billing@careservice.com"
+        clientPhone: "",
+        organizationInfo: {
+          name: orgData?.name || "Care Service Provider",
+          address: orgData?.address || "Organization Address",
+          email: orgData?.contact_email || "contact@organization.com",
+          phone: orgData?.contact_phone
         }
       });
       toast({

@@ -22,6 +22,7 @@ import {
   EnhancedClientBilling 
 } from "@/hooks/useEnhancedClientBilling";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EnhancedBillingTabProps {
   clientId: string;
@@ -102,21 +103,44 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
     setIsPaymentDialogOpen(true);
   };
 
-  const handleDownloadInvoice = (invoice: EnhancedClientBilling) => {
+  const handleDownloadInvoice = async (invoice: EnhancedClientBilling) => {
     const clientName = clientData ? 
       `${clientData.preferred_name || clientData.first_name || ''} ${clientData.last_name || ''}`.trim() : 
       'Client';
     
+    // Fetch organization details via branch
+    let orgData = null;
+    if (clientData?.branch_id) {
+      const { data: branchData, error: branchError } = await supabase
+        .from('branches')
+        .select('organization_id')
+        .eq('id', clientData.branch_id)
+        .maybeSingle();
+      
+      if (!branchError && branchData?.organization_id) {
+        const { data, error: orgError } = await supabase
+          .from('organizations')
+          .select('name, address, contact_email, contact_phone')
+          .eq('id', branchData.organization_id)
+          .maybeSingle();
+        
+        if (!orgError) {
+          orgData = data;
+        }
+      }
+    }
+
     generateInvoicePDF({
       invoice,
       clientName,
       clientAddress: clientData?.address,
       clientEmail: clientData?.email,
-      companyInfo: {
-        name: 'Your Company Name',
-        address: 'Company Address',
-        phone: 'Company Phone',
-        email: 'Company Email'
+      clientPhone: clientData?.phone,
+      organizationInfo: {
+        name: orgData?.name || 'Care Service Provider',
+        address: orgData?.address || 'Organization Address',
+        email: orgData?.contact_email || 'contact@organization.com',
+        phone: orgData?.contact_phone
       }
     });
   };

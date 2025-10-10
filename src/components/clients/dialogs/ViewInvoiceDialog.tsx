@@ -18,6 +18,7 @@ import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { useToast } from "@/hooks/use-toast";
 import { InvoiceLedgerView } from "@/components/accounting/InvoiceLedgerView";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ViewInvoiceDialogProps {
   open: boolean;
@@ -60,16 +61,39 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         `${clientData.preferred_name || clientData.first_name || ''} ${clientData.last_name || ''}`.trim() : 
         'Client';
       
+      // Fetch organization details via branch
+      let orgData = null;
+      if (clientData?.branch_id) {
+        const { data: branchData, error: branchError } = await supabase
+          .from('branches')
+          .select('organization_id')
+          .eq('id', clientData.branch_id)
+          .maybeSingle();
+        
+        if (!branchError && branchData?.organization_id) {
+          const { data, error: orgError } = await supabase
+            .from('organizations')
+            .select('name, address, contact_email, contact_phone')
+            .eq('id', branchData.organization_id)
+            .maybeSingle();
+          
+          if (!orgError) {
+            orgData = data;
+          }
+        }
+      }
+
       await generateInvoicePDF({
         invoice,
         clientName,
         clientAddress: clientData?.address || '',
         clientEmail: clientData?.email || '',
-        companyInfo: {
-          name: 'Care Service Provider',
-          address: '123 Care Street, City, Country',
-          phone: '+1 (555) 123-4567',
-          email: 'billing@careservice.com'
+        clientPhone: clientData?.phone || '',
+        organizationInfo: {
+          name: orgData?.name || 'Care Service Provider',
+          address: orgData?.address || 'Organization Address',
+          email: orgData?.contact_email || 'contact@organization.com',
+          phone: orgData?.contact_phone
         }
       });
       
