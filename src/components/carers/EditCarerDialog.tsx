@@ -26,26 +26,18 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
   const dialogId = `edit-carer-${carer?.id || 'new'}`;
   const controlledDialog = useControlledDialog(dialogId, open);
   
-  // Sync external open state with controlled dialog
-  React.useEffect(() => {
-    if (open !== controlledDialog.open) {
-      controlledDialog.onOpenChange(open);
-    }
-  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
-  
-  // Notify parent when controlled dialog state changes
-  React.useEffect(() => {
-    onOpenChange(controlledDialog.open);
-  }, [controlledDialog.open, onOpenChange]);
+  // Handle dialog state changes - call parent's onOpenChange
+  const handleOpenChange = React.useCallback((newOpen: boolean) => {
+    controlledDialog.onOpenChange(newOpen);
+    onOpenChange(newOpen);
+  }, [controlledDialog, onOpenChange]);
   
   // Cleanup on unmount
   React.useEffect(() => {
     return () => {
-      if (controlledDialog.open) {
-        controlledDialog.onOpenChange(false);
-      }
+      controlledDialog.onOpenChange(false);
     };
-  }, []);
+  }, [controlledDialog]);
   
   const [formData, setFormData] = useState({
     first_name: "",
@@ -108,7 +100,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
         id: carer.id,
         ...formData
       });
-      controlledDialog.onOpenChange(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error("Error updating carer:", error);
     }
@@ -120,7 +112,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
   }
 
   return (
-    <Dialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -314,12 +306,12 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
 
           <div className="flex justify-end gap-2 pt-4">
             {isView ? (
-              <Button type="button" onClick={() => controlledDialog.onOpenChange(false)}>
+              <Button type="button" onClick={() => handleOpenChange(false)}>
                 Close
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={() => controlledDialog.onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={updateCarerMutation.isPending}>
