@@ -98,6 +98,34 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
     };
   }, []);
 
+  // Global cleanup safeguard - remove stuck overlays when dialogs close
+  useEffect(() => {
+    // Cleanup function to remove any stuck overlays
+    const cleanupStuckOverlays = () => {
+      // Check if there are any dialog overlays but no open dialogs
+      const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+      const openDialogs = document.querySelectorAll('[data-radix-dialog-content][data-state="open"], [data-radix-alert-dialog-content][data-state="open"]');
+      
+      if (overlays.length > 0 && openDialogs.length === 0) {
+        console.log('Cleaning up stuck overlays...');
+        overlays.forEach(overlay => overlay.remove());
+        
+        const appRoot = document.getElementById('root');
+        if (appRoot) {
+          appRoot.removeAttribute('aria-hidden');
+          appRoot.removeAttribute('inert');
+        }
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('pointer-events');
+      }
+    };
+
+    // Run cleanup check after state changes
+    const timeoutId = setTimeout(cleanupStuckOverlays, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [editingCarer, viewingCarer, settingPasswordCarer, deletingCarer, showStatusChangeDialog]);
+
 
   const filteredCarers = useMemo(() => {
     return carers.filter(carer => {
@@ -483,7 +511,13 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
 
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent onCloseAutoFocus={() => {
+          // Ensure cleanup on close
+          setTimeout(() => {
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('pointer-events');
+          }, 50);
+        }}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
             <AlertDialogDescription>

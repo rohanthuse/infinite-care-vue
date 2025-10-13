@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { useControlledDialog } from '@/hooks/useDialogManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,10 @@ interface SetCarerPasswordDialogProps {
 }
 
 export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPasswordDialogProps) {
+  // Add controlled dialog integration
+  const dialogId = `set-password-${carer?.id || 'new'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -61,6 +66,18 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
     }
   };
 
+  // Sync with parent state and ensure proper cleanup
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (isSubmitting && newOpen === false) return; // Prevent closing while submitting
+    
+    controlledDialog.onOpenChange(newOpen);
+    onOpenChange(newOpen);
+    
+    if (!newOpen) {
+      resetForm();
+    }
+  }, [isSubmitting, controlledDialog, onOpenChange, resetForm]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -84,19 +101,13 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
       });
       
       resetForm();
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch (error) {
       // Error is handled by the mutation
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const handleClose = useCallback(() => {
-    if (isSubmitting) return; // Prevent closing while submitting
-    resetForm();
-    onOpenChange(false);
-  }, [isSubmitting, resetForm, onOpenChange]);
 
   const getPasswordStrength = (pwd: string) => {
     let strength = 0;
@@ -113,7 +124,7 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
   const strengthText = passwordStrength < 2 ? 'Weak' : passwordStrength < 4 ? 'Medium' : 'Strong';
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent ref={dialogRef} className="sm:max-w-md" onPointerDownOutside={(e) => {
         if (isSubmitting) e.preventDefault(); // Prevent closing while submitting
       }}>
@@ -207,7 +218,7 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
           </div>
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button 

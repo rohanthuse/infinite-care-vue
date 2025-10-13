@@ -32,12 +32,12 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
     onOpenChange(newOpen);
   }, [controlledDialog, onOpenChange]);
   
-  // Cleanup on unmount
+  // Cleanup on unmount - use empty dependency array to prevent infinite loop
   React.useEffect(() => {
     return () => {
-      controlledDialog.onOpenChange(false);
+      handleOpenChange(false);
     };
-  }, [controlledDialog]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   const [formData, setFormData] = useState({
     first_name: "",

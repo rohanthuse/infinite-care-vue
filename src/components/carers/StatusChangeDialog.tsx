@@ -1,6 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -25,8 +26,18 @@ const statusOptions = [
 ];
 
 export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange }: StatusChangeDialogProps) => {
+  // Add controlled dialog integration
+  const dialogId = `status-change-${carers.map(c => c.id).join('-')}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
   const [newStatus, setNewStatus] = useState("");
   const [reason, setReason] = useState("");
+
+  // Sync with parent state and ensure proper cleanup
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    controlledDialog.onOpenChange(newOpen);
+    onOpenChange(newOpen);
+  }, [controlledDialog, onOpenChange]);
 
   const handleSubmit = () => {
     if (!newStatus) return;
@@ -37,13 +48,13 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
     // Reset form
     setNewStatus("");
     setReason("");
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   const selectedStatusOption = statusOptions.find(option => option.value === newStatus);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -119,7 +130,7 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
             <Button 
