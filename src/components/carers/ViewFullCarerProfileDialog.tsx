@@ -286,8 +286,41 @@ export function ViewFullCarerProfileDialog({
               </CardContent>
             </Card>
 
+            {/* Vertical Tab Sidebar */}
+            <div className="lg:col-span-2 order-1 lg:order-1">
+              <Card className="shadow-lg sticky top-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Navigation</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  <nav className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.value;
+                      return (
+                        <button
+                          key={tab.value}
+                          onClick={() => setActiveTab(tab.value)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-md scale-105"
+                              : "text-foreground hover:bg-muted hover:text-primary"
+                          )}
+                        >
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate text-left">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Content Area */}
-            <div className="lg:col-span-7 order-2 lg:order-1">
+            <div className="lg:col-span-7 order-2 lg:order-2">
               <Card className="shadow-lg">
                 <CardHeader className="border-b">
                   <CardTitle className="text-xl font-semibold flex items-center gap-2">
@@ -320,39 +353,6 @@ export function ViewFullCarerProfileDialog({
                     {activeTab === "rate" && <CarerRateTab carerId={carerId} />}
                     {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Vertical Tab Sidebar */}
-            <div className="lg:col-span-2 order-1 lg:order-2">
-              <Card className="shadow-lg sticky top-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold">Navigation</CardTitle>
-                </CardHeader>
-                <CardContent className="p-2">
-                  <nav className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      const isActive = activeTab === tab.value;
-                      return (
-                        <button
-                          key={tab.value}
-                          onClick={() => setActiveTab(tab.value)}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                            isActive
-                              ? "bg-primary text-primary-foreground shadow-md scale-105"
-                              : "text-foreground hover:bg-muted hover:text-primary"
-                          )}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate text-left">{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </nav>
                 </CardContent>
               </Card>
             </div>
