@@ -1,5 +1,10 @@
 import React, { useState, useCallback } from "react";
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Share2 } from "lucide-react";
+import { 
+  User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Share2,
+  AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
+  Award, Heart, DollarSign, Settings
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +53,30 @@ export function ViewFullCarerProfileDialog({
   onClose
 }: ViewFullCarerProfileDialogProps) {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const tabs = [
+    { value: "overview", label: "Overview", icon: User },
+    { value: "personal", label: "Personal", icon: User },
+    { value: "communication", label: "Communication", icon: Mail },
+    { value: "suspend", label: "Suspend", icon: AlertTriangle },
+    { value: "quality", label: "Quality", icon: Star },
+    { value: "attendance", label: "Attendance", icon: Calendar },
+    { value: "essentials", label: "Essentials", icon: CheckCircle },
+    { value: "employment", label: "Employment", icon: Briefcase },
+    { value: "training", label: "Training", icon: GraduationCap },
+    { value: "statement", label: "Statement", icon: FileText },
+    { value: "contacts", label: "Contacts", icon: Phone },
+    { value: "refer", label: "Refer Friend", icon: UserPlus },
+    { value: "forms", label: "Forms", icon: ClipboardList },
+    { value: "skills", label: "Skills", icon: Award },
+    { value: "work-type", label: "Work Type", icon: Briefcase },
+    { value: "hobbies", label: "Hobbies", icon: Heart },
+    { value: "meetings", label: "Meetings", icon: Calendar },
+    { value: "documents", label: "Files", icon: FileText },
+    { value: "rate", label: "Rate", icon: DollarSign },
+    { value: "settings", label: "Settings", icon: Settings },
+  ];
   
   const { data: carer, isLoading, error } = useCarerProfileById(carerId);
   const { data: bookings = [] } = useCarerBookings(carerId);
@@ -185,9 +214,9 @@ export function ViewFullCarerProfileDialog({
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Profile Summary Card */}
-            <Card className="lg:col-span-1 shadow-lg">
+            <Card className="lg:col-span-3 shadow-lg">
               <CardHeader className="text-center pb-4">
                 <Avatar className="w-28 h-28 mx-auto mb-4 shadow-lg">
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-3xl font-bold">
@@ -257,55 +286,75 @@ export function ViewFullCarerProfileDialog({
               </CardContent>
             </Card>
 
-            {/* Main Content with Tabs */}
-            <div className="lg:col-span-3">
-              <Tabs defaultValue="overview" className="w-full">
-                <div className="overflow-x-auto mb-6">
-                  <TabsList className="flex w-max gap-1 p-1">
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="personal">Personal</TabsTrigger>
-                    <TabsTrigger value="communication">Communication</TabsTrigger>
-                    <TabsTrigger value="suspend">Suspend</TabsTrigger>
-                    <TabsTrigger value="quality">Quality</TabsTrigger>
-                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                    <TabsTrigger value="essentials">Essentials</TabsTrigger>
-                    <TabsTrigger value="employment">Employment</TabsTrigger>
-                    <TabsTrigger value="training">Training</TabsTrigger>
-                    <TabsTrigger value="statement">Statement</TabsTrigger>
-                    <TabsTrigger value="contacts">Contacts</TabsTrigger>
-                    <TabsTrigger value="refer">Refer Friend</TabsTrigger>
-                    <TabsTrigger value="forms">Forms</TabsTrigger>
-                    <TabsTrigger value="skills">Skills</TabsTrigger>
-                    <TabsTrigger value="work-type">Work Type</TabsTrigger>
-                    <TabsTrigger value="hobbies">Hobbies</TabsTrigger>
-                    <TabsTrigger value="meetings">Meetings</TabsTrigger>
-                    <TabsTrigger value="documents">Files</TabsTrigger>
-                    <TabsTrigger value="rate">Rate</TabsTrigger>
-                    <TabsTrigger value="settings">Settings</TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                <TabsContent value="overview"><CarerOverviewTab carerId={carerId} /></TabsContent>
-                <TabsContent value="personal"><CarerPersonalDetailsTab carerId={carerId} /></TabsContent>
-                <TabsContent value="communication"><CarerCommunicationTab carerId={carerId} /></TabsContent>
-                <TabsContent value="suspend"><CarerSuspendTab carerId={carerId} /></TabsContent>
-                <TabsContent value="quality"><CarerQualityAssuranceTab carerId={carerId} /></TabsContent>
-                <TabsContent value="attendance"><CarerAttendanceTab carerId={carerId} /></TabsContent>
-                <TabsContent value="essentials"><CarerEssentialsTab carerId={carerId} /></TabsContent>
-                <TabsContent value="employment"><CarerEmploymentHistoryTab carerId={carerId} /></TabsContent>
-                <TabsContent value="training"><CarerTrainingTab carerId={carerId} /></TabsContent>
-                <TabsContent value="statement"><CarerSupportingStatementTab carerId={carerId} /></TabsContent>
-                <TabsContent value="contacts"><CarerImportantContactTab carerId={carerId} /></TabsContent>
-                <TabsContent value="refer"><CarerReferFriendTab carerId={carerId} /></TabsContent>
-                <TabsContent value="forms"><CarerFormsTab carerId={carerId} /></TabsContent>
-                <TabsContent value="skills"><CarerSkillsTab carerId={carerId} /></TabsContent>
-                <TabsContent value="work-type"><CarerTypeOfWorkTab carerId={carerId} /></TabsContent>
-                <TabsContent value="hobbies"><CarerHobbiesTab carerId={carerId} /></TabsContent>
-                <TabsContent value="meetings"><CarerMeetingsTab carerId={carerId} /></TabsContent>
-                <TabsContent value="documents"><CarerDocumentsTab carerId={carerId} /></TabsContent>
-                <TabsContent value="rate"><CarerRateTab carerId={carerId} /></TabsContent>
-                <TabsContent value="settings"><CarerSettingsTab carerId={carerId} /></TabsContent>
-              </Tabs>
+            {/* Content Area */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
+              <Card className="shadow-lg">
+                <CardHeader className="border-b">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
+                    {React.createElement(tabs.find(t => t.value === activeTab)?.icon || User, { 
+                      className: "h-5 w-5 text-primary" 
+                    })}
+                    {tabs.find(t => t.value === activeTab)?.label || "Overview"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="animate-in fade-in-50 duration-300">
+                    {activeTab === "overview" && <CarerOverviewTab carerId={carerId} />}
+                    {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
+                    {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
+                    {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
+                    {activeTab === "quality" && <CarerQualityAssuranceTab carerId={carerId} />}
+                    {activeTab === "attendance" && <CarerAttendanceTab carerId={carerId} />}
+                    {activeTab === "essentials" && <CarerEssentialsTab carerId={carerId} />}
+                    {activeTab === "employment" && <CarerEmploymentHistoryTab carerId={carerId} />}
+                    {activeTab === "training" && <CarerTrainingTab carerId={carerId} />}
+                    {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
+                    {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
+                    {activeTab === "refer" && <CarerReferFriendTab carerId={carerId} />}
+                    {activeTab === "forms" && <CarerFormsTab carerId={carerId} />}
+                    {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
+                    {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}
+                    {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}
+                    {activeTab === "meetings" && <CarerMeetingsTab carerId={carerId} />}
+                    {activeTab === "documents" && <CarerDocumentsTab carerId={carerId} />}
+                    {activeTab === "rate" && <CarerRateTab carerId={carerId} />}
+                    {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Vertical Tab Sidebar */}
+            <div className="lg:col-span-2 order-1 lg:order-2">
+              <Card className="shadow-lg sticky top-4">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-semibold">Navigation</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2">
+                  <nav className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.value;
+                      return (
+                        <button
+                          key={tab.value}
+                          onClick={() => setActiveTab(tab.value)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-md scale-105"
+                              : "text-foreground hover:bg-muted hover:text-primary"
+                          )}
+                        >
+                          <Icon className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate text-left">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
