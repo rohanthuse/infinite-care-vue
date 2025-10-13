@@ -53,9 +53,42 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
 
   const selectedStatusOption = statusOptions.find(option => option.value === newStatus);
 
+  // Force UI unlock function for comprehensive cleanup
+  const forceUIUnlock = useCallback(() => {
+    // Remove any stuck overlays
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+    overlays.forEach(overlay => overlay.remove());
+    
+    // Remove aria-hidden and inert from any elements
+    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    });
+    
+    // Aggressive body/html cleanup
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('overflow');
+    document.body.classList.remove('overflow-hidden');
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.removeAttribute('data-scroll-locked');
+    document.documentElement.removeAttribute('data-scroll-locked');
+  }, []);
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent 
+        className="max-w-md"
+        onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
+        onEscapeKeyDown={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+        onPointerDownOutside={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             Change Status for {carers.length} Carer{carers.length > 1 ? 's' : ''}

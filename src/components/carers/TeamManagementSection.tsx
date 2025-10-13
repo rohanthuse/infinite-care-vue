@@ -110,13 +110,20 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         console.log('Cleaning up stuck overlays...');
         overlays.forEach(overlay => overlay.remove());
         
-        const appRoot = document.getElementById('root');
-        if (appRoot) {
-          appRoot.removeAttribute('aria-hidden');
-          appRoot.removeAttribute('inert');
-        }
+        // Remove aria-hidden and inert from any elements
+        document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+          el.removeAttribute('aria-hidden');
+          el.removeAttribute('inert');
+        });
+        
+        // Aggressive body/html cleanup
         document.body.style.removeProperty('overflow');
         document.body.style.removeProperty('pointer-events');
+        document.documentElement.style.removeProperty('overflow');
+        document.body.classList.remove('overflow-hidden');
+        document.documentElement.classList.remove('overflow-hidden');
+        document.body.removeAttribute('data-scroll-locked');
+        document.documentElement.removeAttribute('data-scroll-locked');
       }
     };
 
@@ -387,25 +394,37 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setEditingCarer(carer)}>
+                      <DropdownMenuItem onClick={() => {
+                        closeAllDropdowns();
+                        setTimeout(() => setEditingCarer(carer), 50);
+                      }}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Details
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={() => {
-                          setSelectedCarers([carer]);
-                          setShowStatusChangeDialog(true);
+                          closeAllDropdowns();
+                          setTimeout(() => {
+                            setSelectedCarers([carer]);
+                            setShowStatusChangeDialog(true);
+                          }, 50);
                         }}
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Change Status
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setSettingPasswordCarer(carer)}>
+                      <DropdownMenuItem onClick={() => {
+                        closeAllDropdowns();
+                        setTimeout(() => setSettingPasswordCarer(carer), 50);
+                      }}>
                         <Shield className="h-4 w-4 mr-2" />
                         Set Password
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => setDeletingCarer(carer)}
+                        onClick={() => {
+                          closeAllDropdowns();
+                          setTimeout(() => setDeletingCarer(carer), 50);
+                        }}
                         className="text-red-600 focus:text-red-600"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -512,10 +531,26 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
         <AlertDialogContent onCloseAutoFocus={() => {
-          // Ensure cleanup on close
+          // Comprehensive cleanup on close
           setTimeout(() => {
+            // Remove any stuck overlays
+            const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+            overlays.forEach(overlay => overlay.remove());
+            
+            // Remove aria-hidden and inert from any elements
+            document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+              el.removeAttribute('aria-hidden');
+              el.removeAttribute('inert');
+            });
+            
+            // Aggressive body/html cleanup
             document.body.style.removeProperty('overflow');
             document.body.style.removeProperty('pointer-events');
+            document.documentElement.style.removeProperty('overflow');
+            document.body.classList.remove('overflow-hidden');
+            document.documentElement.classList.remove('overflow-hidden');
+            document.body.removeAttribute('data-scroll-locked');
+            document.documentElement.removeAttribute('data-scroll-locked');
           }, 50);
         }}>
           <AlertDialogHeader>

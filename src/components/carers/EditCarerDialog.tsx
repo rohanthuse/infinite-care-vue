@@ -38,6 +38,28 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
       handleOpenChange(false);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Force UI unlock function for comprehensive cleanup
+  const forceUIUnlock = React.useCallback(() => {
+    // Remove any stuck overlays
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+    overlays.forEach(overlay => overlay.remove());
+    
+    // Remove aria-hidden and inert from any elements
+    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    });
+    
+    // Aggressive body/html cleanup
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('overflow');
+    document.body.classList.remove('overflow-hidden');
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.removeAttribute('data-scroll-locked');
+    document.documentElement.removeAttribute('data-scroll-locked');
+  }, []);
   
   const [formData, setFormData] = useState({
     first_name: "",
@@ -120,7 +142,18 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
+        onEscapeKeyDown={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+        onPointerDownOutside={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {isView ? `Staff Details - ${carer.first_name} ${carer.last_name}` : `Edit Carer - ${carer.first_name} ${carer.last_name}`}

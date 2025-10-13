@@ -119,15 +119,51 @@ export function SetCarerPasswordDialog({ open, onOpenChange, carer }: SetCarerPa
     return strength;
   };
 
+  // Force UI unlock function for comprehensive cleanup
+  const forceUIUnlock = useCallback(() => {
+    // Remove any stuck overlays
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+    overlays.forEach(overlay => overlay.remove());
+    
+    // Remove aria-hidden and inert from any elements
+    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    });
+    
+    // Aggressive body/html cleanup
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('overflow');
+    document.body.classList.remove('overflow-hidden');
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.removeAttribute('data-scroll-locked');
+    document.documentElement.removeAttribute('data-scroll-locked');
+  }, []);
+
   const passwordStrength = getPasswordStrength(password);
   const strengthColor = passwordStrength < 2 ? 'bg-red-500' : passwordStrength < 4 ? 'bg-yellow-500' : 'bg-green-500';
   const strengthText = passwordStrength < 2 ? 'Weak' : passwordStrength < 4 ? 'Medium' : 'Strong';
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent ref={dialogRef} className="sm:max-w-md" onPointerDownOutside={(e) => {
-        if (isSubmitting) e.preventDefault(); // Prevent closing while submitting
-      }}>
+      <DialogContent 
+        ref={dialogRef} 
+        className="sm:max-w-md" 
+        onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
+        onEscapeKeyDown={() => {
+          handleOpenChange(false);
+          setTimeout(forceUIUnlock, 50);
+        }}
+        onPointerDownOutside={(e) => {
+          if (isSubmitting) {
+            e.preventDefault(); // Prevent closing while submitting
+          } else {
+            handleOpenChange(false);
+            setTimeout(forceUIUnlock, 50);
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-600" />
