@@ -1,13 +1,11 @@
-import React from "react";
-import { Eye, Mail, Phone, MapPin, Calendar, Clock, ExternalLink } from "lucide-react";
+import React, { useState } from "react";
+import { Eye, Mail, Phone, MapPin, Calendar } from "lucide-react";
 import { ControlledDialog } from "@/components/ui/controlled-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useNavigate } from "react-router-dom";
-import { useTenant } from "@/contexts/TenantContext";
 import { CarerDB } from "@/data/hooks/useBranchCarers";
+import { ViewFullCarerProfileDialog } from "./ViewFullCarerProfileDialog";
 
 interface ViewStaffDetailsDialogProps {
   carer: CarerDB | null;
@@ -24,18 +22,7 @@ export function ViewStaffDetailsDialog({
   branchId,
   branchName,
 }: ViewStaffDetailsDialogProps) {
-  const navigate = useNavigate();
-  const { tenantSlug } = useTenant();
-
-  const handleViewFullProfile = () => {
-    if (!carer) return;
-    
-    const path = tenantSlug 
-      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`
-      : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName || '')}/carers/${carer.id}`;
-    navigate(path);
-    onClose();
-  };
+  const [showFullProfile, setShowFullProfile] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -67,14 +54,15 @@ export function ViewStaffDetailsDialog({
   if (!carer) return null;
 
   return (
-    <ControlledDialog
-      id="view-staff-details"
-      open={isOpen}
-      onOpenChange={(open) => !open && onClose()}
-      title={`Staff Details - ${carer.first_name} ${carer.last_name}`}
-      description="View detailed information about this carer including contact details, employment information, and current status."
-      className="max-w-2xl max-h-[90vh] overflow-y-auto"
-    >
+    <>
+      <ControlledDialog
+        id="view-staff-details"
+        open={isOpen}
+        onOpenChange={(open) => !open && onClose()}
+        title={`Staff Details - ${carer.first_name} ${carer.last_name}`}
+        description="View detailed information about this carer including contact details, employment information, and current status."
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+      >
 
         <div className="space-y-6">
           {/* Basic Information */}
@@ -151,12 +139,24 @@ export function ViewStaffDetailsDialog({
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-            <Button onClick={handleViewFullProfile} className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4" />
+            <Button onClick={() => setShowFullProfile(true)} className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
               View Full Profile
             </Button>
           </div>
         </div>
-    </ControlledDialog>
+      </ControlledDialog>
+
+      {/* Full Profile Modal */}
+      {showFullProfile && carer && (
+        <ViewFullCarerProfileDialog
+          carerId={carer.id}
+          branchId={branchId}
+          branchName={branchName}
+          isOpen={showFullProfile}
+          onClose={() => setShowFullProfile(false)}
+        />
+      )}
+    </>
   );
 }
