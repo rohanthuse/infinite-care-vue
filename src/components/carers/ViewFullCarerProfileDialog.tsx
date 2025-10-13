@@ -215,77 +215,6 @@ export function ViewFullCarerProfileDialog({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Profile Summary Card */}
-            <Card className="lg:col-span-3 shadow-lg">
-              <CardHeader className="text-center pb-4">
-                <Avatar className="w-28 h-28 mx-auto mb-4 shadow-lg">
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-3xl font-bold">
-                    {getAvatarInitials(carer.first_name, carer.last_name)}
-                  </AvatarFallback>
-                </Avatar>
-                <CardTitle className="text-2xl font-bold text-gray-900">
-                  {carer.first_name} {carer.last_name}
-                </CardTitle>
-                <p className="text-gray-600 font-medium">{carer.specialization || "General Care"}</p>
-                <Badge 
-                  variant="outline" 
-                  className={`mt-3 px-4 py-1 ${getStatusColor(carer.status)}`}
-                >
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  {carer.status}
-                </Badge>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span className="text-gray-700">{carer.email || "Not provided"}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone className="h-4 w-4 text-green-500" />
-                  <span className="text-gray-700">{carer.phone || "Not provided"}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <MapPin className="h-4 w-4 text-red-500" />
-                  <span className="text-gray-700">{carer.address || "Not provided"}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Briefcase className="h-4 w-4 text-purple-500" />
-                  <span className="text-gray-700">{carer.experience || "Not specified"}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Calendar className="h-4 w-4 text-orange-500" />
-                  <span className="text-gray-700">Hired: {formatDate(carer.hire_date)}</span>
-                </div>
-                
-                {/* Quick Stats */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Quick Stats</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="text-center p-2 bg-blue-50 rounded-lg">
-                      <div className="text-xl font-bold text-blue-600">{uniqueClients}</div>
-                      <div className="text-xs text-blue-700">Clients</div>
-                    </div>
-                    <div className="text-center p-2 bg-green-50 rounded-lg">
-                      <div className="text-xl font-bold text-green-600">{Math.round(totalHoursThisMonth)}</div>
-                      <div className="text-xs text-green-700">Hours/Month</div>
-                    </div>
-                    {performanceData && (
-                      <>
-                        <div className="text-center p-2 bg-yellow-50 rounded-lg">
-                          <div className="text-xl font-bold text-yellow-600">{performanceData.averageRating.toFixed(1)}</div>
-                          <div className="text-xs text-yellow-700">Rating</div>
-                        </div>
-                        <div className="text-center p-2 bg-purple-50 rounded-lg">
-                          <div className="text-xl font-bold text-purple-600">{performanceData.completionRate.toFixed(0)}%</div>
-                          <div className="text-xs text-purple-700">Success</div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Vertical Tab Sidebar */}
             <div className="lg:col-span-2 order-1 lg:order-1">
               <Card className="shadow-lg sticky top-4">
@@ -320,7 +249,76 @@ export function ViewFullCarerProfileDialog({
             </div>
 
             {/* Content Area */}
-            <div className="lg:col-span-7 order-2 lg:order-2">
+            <div className="lg:col-span-10 order-2 lg:order-2">
+              {/* Horizontal Profile Card - Top of Content Area */}
+              <Card className="shadow-lg mb-6">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                    {/* Avatar Section */}
+                    <div className="flex-shrink-0">
+                      <Avatar className="w-24 h-24 shadow-lg">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
+                          {getAvatarInitials(carer.first_name, carer.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+
+                    {/* Name & Status Section */}
+                    <div className="flex-grow space-y-2">
+                      <h2 className="text-2xl font-bold text-gray-900">{carer.first_name} {carer.last_name}</h2>
+                      <p className="text-gray-600 font-medium">{carer.specialization || "General Care"}</p>
+                      <Badge variant="outline" className={getStatusColor(carer.status)}>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        {carer.status}
+                      </Badge>
+                    </div>
+
+                    {/* Contact Info Section */}
+                    <div className="flex-shrink-0 space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-blue-500" />
+                        <span className="text-gray-700">{carer.email || "Not provided"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-700">{carer.phone || "Not provided"}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-red-500" />
+                        <span className="text-gray-700">{carer.address || "Not provided"}</span>
+                      </div>
+                    </div>
+
+                    {/* Quick Stats Section */}
+                    <div className="flex-shrink-0">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-xl font-bold text-blue-600">{uniqueClients}</div>
+                          <div className="text-xs text-blue-700">Clients</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-xl font-bold text-green-600">{Math.round(totalHoursThisMonth)}</div>
+                          <div className="text-xs text-green-700">Hours</div>
+                        </div>
+                        {performanceData && (
+                          <>
+                            <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                              <div className="text-xl font-bold text-yellow-600">{performanceData.averageRating.toFixed(1)}</div>
+                              <div className="text-xs text-yellow-700">Rating</div>
+                            </div>
+                            <div className="text-center p-3 bg-purple-50 rounded-lg">
+                              <div className="text-xl font-bold text-purple-600">{performanceData.completionRate.toFixed(0)}%</div>
+                              <div className="text-xs text-purple-700">Success</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tab Content Card */}
               <Card className="shadow-lg">
                 <CardHeader className="border-b">
                   <CardTitle className="text-xl font-semibold flex items-center gap-2">
