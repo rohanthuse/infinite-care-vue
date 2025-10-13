@@ -1,20 +1,14 @@
 import React, { useState, useCallback } from "react";
 import { 
-  User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Share2,
+  User, Mail, Phone, Briefcase, Calendar, CheckCircle, Share2,
   AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
   Award, Heart, DollarSign, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ControlledDialog } from "@/components/ui/controlled-dialog";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
-import { useCarerBookings } from "@/hooks/useCarerBookings";
-import { useCarerDocuments } from "@/hooks/useCarerDocuments";
-import { useCarerPerformance } from "@/hooks/useCarerPerformance";
 import { CarerOverviewTab } from "@/components/carer-profile/CarerOverviewTab";
 import { CarerPersonalDetailsTab } from "@/components/carer-profile/CarerPersonalDetailsTab";
 import { CarerCommunicationTab } from "@/components/carer-profile/CarerCommunicationTab";
@@ -79,9 +73,6 @@ export function ViewFullCarerProfileDialog({
   ];
   
   const { data: carer, isLoading, error } = useCarerProfileById(carerId);
-  const { data: bookings = [] } = useCarerBookings(carerId);
-  const { data: documents = [] } = useCarerDocuments(carerId);
-  const { data: performanceData } = useCarerPerformance(carerId);
 
   const forceUIUnlock = useCallback(() => {
     const overlays = document.querySelectorAll(
@@ -107,46 +98,6 @@ export function ViewFullCarerProfileDialog({
     onClose();
     setTimeout(forceUIUnlock, 50);
   }, [onClose, forceUIUnlock]);
-
-  const getAvatarInitials = (firstName?: string, lastName?: string) => {
-    if (!firstName || !lastName) return "?";
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Not specified";
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return "bg-green-50 text-green-700 border-green-200";
-      case 'inactive':
-        return "bg-red-50 text-red-700 border-red-200";
-      case 'on leave':
-        return "bg-amber-50 text-amber-700 border-amber-200";
-      case 'training':
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
-  const totalHoursThisMonth = bookings
-    .filter(booking => {
-      const bookingDate = new Date(booking.start_time);
-      const now = new Date();
-      return bookingDate.getMonth() === now.getMonth() && 
-             bookingDate.getFullYear() === now.getFullYear();
-    })
-    .reduce((total, booking) => {
-      const start = new Date(booking.start_time);
-      const end = new Date(booking.end_time);
-      return total + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    }, 0);
-
-  const uniqueClients = new Set(bookings.map(b => b.client_id)).size;
 
   if (isLoading) {
     return (
@@ -250,74 +201,6 @@ export function ViewFullCarerProfileDialog({
 
             {/* Content Area */}
             <div className="lg:col-span-10 order-2 lg:order-2">
-              {/* Horizontal Profile Card - Top of Content Area */}
-              <Card className="shadow-lg mb-6">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                    {/* Avatar Section */}
-                    <div className="flex-shrink-0">
-                      <Avatar className="w-24 h-24 shadow-lg">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-2xl font-bold">
-                          {getAvatarInitials(carer.first_name, carer.last_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-
-                    {/* Name & Status Section */}
-                    <div className="flex-grow space-y-2">
-                      <h2 className="text-2xl font-bold text-gray-900">{carer.first_name} {carer.last_name}</h2>
-                      <p className="text-gray-600 font-medium">{carer.specialization || "General Care"}</p>
-                      <Badge variant="outline" className={getStatusColor(carer.status)}>
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {carer.status}
-                      </Badge>
-                    </div>
-
-                    {/* Contact Info Section */}
-                    <div className="flex-shrink-0 space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-blue-500" />
-                        <span className="text-gray-700">{carer.email || "Not provided"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-green-500" />
-                        <span className="text-gray-700">{carer.phone || "Not provided"}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-red-500" />
-                        <span className="text-gray-700">{carer.address || "Not provided"}</span>
-                      </div>
-                    </div>
-
-                    {/* Quick Stats Section */}
-                    <div className="flex-shrink-0">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                          <div className="text-xl font-bold text-blue-600">{uniqueClients}</div>
-                          <div className="text-xs text-blue-700">Clients</div>
-                        </div>
-                        <div className="text-center p-3 bg-green-50 rounded-lg">
-                          <div className="text-xl font-bold text-green-600">{Math.round(totalHoursThisMonth)}</div>
-                          <div className="text-xs text-green-700">Hours</div>
-                        </div>
-                        {performanceData && (
-                          <>
-                            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                              <div className="text-xl font-bold text-yellow-600">{performanceData.averageRating.toFixed(1)}</div>
-                              <div className="text-xs text-yellow-700">Rating</div>
-                            </div>
-                            <div className="text-center p-3 bg-purple-50 rounded-lg">
-                              <div className="text-xl font-bold text-purple-600">{performanceData.completionRate.toFixed(0)}%</div>
-                              <div className="text-xs text-purple-700">Success</div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Tab Content Card */}
               <Card className="shadow-lg">
                 <CardHeader className="border-b">
