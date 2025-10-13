@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Edit } from "lucide-react";
 import { useUpdateCarer, CarerDB } from "@/data/hooks/useBranchCarers";
 import { toast } from "sonner";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 
 interface EditCarerDialogProps {
   open: boolean;
@@ -20,6 +21,32 @@ interface EditCarerDialogProps {
 
 export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'edit' }: EditCarerDialogProps) => {
   const isView = mode === 'view';
+  
+  // Use controlled dialog for proper cleanup and route change handling
+  const dialogId = `edit-carer-${carer?.id || 'new'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+  
+  // Sync external open state with controlled dialog
+  React.useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
+  
+  // Notify parent when controlled dialog state changes
+  React.useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
+  
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (controlledDialog.open) {
+        controlledDialog.onOpenChange(false);
+      }
+    };
+  }, []);
+  
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -81,7 +108,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
         id: carer.id,
         ...formData
       });
-      onOpenChange(false);
+      controlledDialog.onOpenChange(false);
     } catch (error) {
       console.error("Error updating carer:", error);
     }
@@ -93,7 +120,7 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={controlledDialog.open} onOpenChange={controlledDialog.onOpenChange}>
       <DialogTrigger asChild>
         {trigger || (
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -287,12 +314,12 @@ export const EditCarerDialog = ({ open, onOpenChange, carer, trigger, mode = 'ed
 
           <div className="flex justify-end gap-2 pt-4">
             {isView ? (
-              <Button type="button" onClick={() => onOpenChange(false)}>
+              <Button type="button" onClick={() => controlledDialog.onOpenChange(false)}>
                 Close
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button type="button" variant="outline" onClick={() => controlledDialog.onOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={updateCarerMutation.isPending}>
