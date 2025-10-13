@@ -53,10 +53,23 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
   const { 
     usePayrollCalculationData, 
     useBookingTimeData, 
-    useAutoGeneratePayroll 
+    useAutoGeneratePayroll,
+    useExistingPayrollRecord 
   } = usePayrollBookingIntegration();
 
   const autoGeneratePayrollMutation = useAutoGeneratePayroll();
+
+  // Fetch existing payroll record first
+  const {
+    data: existingPayroll,
+    isLoading: isLoadingExisting,
+    error: existingPayrollError
+  } = useExistingPayrollRecord(
+    branchId,
+    selectedStaffId,
+    payPeriodStart,
+    payPeriodEnd
+  );
 
   // Get calculation data when all parameters are available
   const { 
@@ -118,6 +131,56 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
   };
 
   const selectedStaff = staffList.find(s => s.id === selectedStaffId);
+
+  // Determine display data: prioritize existing payroll record
+  const displayData = React.useMemo(() => {
+    if (existingPayroll) {
+      // Map existing payroll record to display format
+      return {
+        totalActualHours: (existingPayroll.regular_hours || 0) + (existingPayroll.overtime_hours || 0),
+        regularHours: existingPayroll.regular_hours || 0,
+        overtimeHours: existingPayroll.overtime_hours || 0,
+        basHourlyRate: existingPayroll.hourly_rate || 0,
+        overtimeRate: existingPayroll.overtime_rate || (existingPayroll.hourly_rate * 1.5),
+        extraTimeHours: 0,
+        bookings: [],
+        grossPay: existingPayroll.gross_pay || 0,
+        basicSalary: existingPayroll.basic_salary || 0,
+        overtimePay: existingPayroll.overtime_pay || 0,
+        bonus: existingPayroll.bonus || 0,
+        taxDeduction: existingPayroll.tax_deduction || 0,
+        niDeduction: existingPayroll.ni_deduction || 0,
+        pensionDeduction: existingPayroll.pension_deduction || 0,
+        otherDeductions: existingPayroll.other_deductions || 0,
+        netPay: existingPayroll.net_pay || 0,
+        isExisting: true,
+        recordId: existingPayroll.id,
+        paymentStatus: existingPayroll.payment_status,
+        paymentMethod: existingPayroll.payment_method,
+        notes: existingPayroll.notes
+      };
+    } else if (calculationData) {
+      // Fall back to calculated data from bookings
+      const grossPay = (calculationData.regularHours * calculationData.basHourlyRate) + 
+                       (calculationData.overtimeHours * calculationData.overtimeRate) +
+                       (calculationData.extraTimeHours * calculationData.overtimeRate);
+      return {
+        ...calculationData,
+        grossPay,
+        basicSalary: calculationData.regularHours * calculationData.basHourlyRate,
+        overtimePay: (calculationData.overtimeHours * calculationData.overtimeRate) +
+                     (calculationData.extraTimeHours * calculationData.overtimeRate),
+        bonus: 0,
+        taxDeduction: 0,
+        niDeduction: 0,
+        pensionDeduction: 0,
+        otherDeductions: 0,
+        netPay: 0,
+        isExisting: false
+      };
+    }
+    return null;
+  }, [existingPayroll, calculationData]);
 
   return (
     <>
@@ -205,13 +268,29 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
             </div>
 
             {/* Calculation Preview */}
-            {calculationData && (
+            {displayData && (
               <div className="space-y-4">
                 <Separator />
                 <h3 className="font-semibold flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Payroll Calculation Preview
                 </h3>
+
+                {displayData.isExisting && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                      <div>
+                        <span className="text-sm text-blue-700 font-medium">
+                          Displaying Existing Payroll Record
+                        </span>
+                        <p className="text-xs text-blue-600 mt-1">
+                          This payroll has already been created. Status: {displayData.paymentStatus}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -220,7 +299,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                       <div className="text-center">
                         <Clock className="h-8 w-8 text-blue-500 mx-auto mb-2" />
                         <div className="text-2xl font-bold text-blue-600">
-                          {calculationData.totalActualHours.toFixed(1)}h
+                          {displayData.totalActualHours.toFixed(1)}h
                         </div>
                         <div className="text-sm text-gray-500">Total Hours</div>
                       </div>
@@ -232,7 +311,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                       <div className="text-center">
                         <Calendar className="h-8 w-8 text-green-500 mx-auto mb-2" />
                         <div className="text-2xl font-bold text-green-600">
-                          {calculationData.bookings.length}
+                          {displayData.bookings?.length || 0}
                         </div>
                         <div className="text-sm text-gray-500">Bookings</div>
                       </div>
@@ -244,7 +323,7 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                       <div className="text-center">
                         <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                         <div className="text-2xl font-bold text-amber-600">
-                          {calculationData.overtimeHours.toFixed(1)}h
+                          {displayData.overtimeHours.toFixed(1)}h
                         </div>
                         <div className="text-sm text-gray-500">Overtime</div>
                       </div>
@@ -256,11 +335,9 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                       <div className="text-center">
                         <DollarSign className="h-8 w-8 text-purple-500 mx-auto mb-2" />
                         <div className="text-2xl font-bold text-purple-600">
-                          £{((calculationData.regularHours * calculationData.basHourlyRate) + 
-                             (calculationData.overtimeHours * calculationData.overtimeRate) +
-                             (calculationData.extraTimeHours * calculationData.overtimeRate)).toFixed(2)}
+                          £{displayData.grossPay.toFixed(2)}
                         </div>
-                        <div className="text-sm text-gray-500">Est. Gross Pay</div>
+                        <div className="text-sm text-gray-500">{displayData.isExisting ? 'Gross Pay' : 'Est. Gross Pay'}</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -272,40 +349,101 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
                     <CardTitle className="text-sm">Pay Breakdown</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
+                    {/* Basic Pay */}
                     <div className="flex justify-between">
-                      <span>Regular Hours ({calculationData.regularHours.toFixed(1)}h @ £{calculationData.basHourlyRate}/h)</span>
-                      <span>£{(calculationData.regularHours * calculationData.basHourlyRate).toFixed(2)}</span>
+                      <span className="text-sm">
+                        Regular Hours ({displayData.regularHours.toFixed(1)}h @ £{displayData.basHourlyRate.toFixed(2)}/h)
+                      </span>
+                      <span className="font-medium">£{displayData.basicSalary.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Overtime Hours ({calculationData.overtimeHours.toFixed(1)}h @ £{calculationData.overtimeRate}/h)</span>
-                      <span>£{(calculationData.overtimeHours * calculationData.overtimeRate).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Extra Time ({calculationData.extraTimeHours.toFixed(1)}h @ £{calculationData.overtimeRate}/h)</span>
-                      <span>£{(calculationData.extraTimeHours * calculationData.overtimeRate).toFixed(2)}</span>
-                    </div>
+                    
+                    {/* Overtime */}
+                    {displayData.overtimeHours > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-sm">
+                          Overtime Hours ({displayData.overtimeHours.toFixed(1)}h @ £{displayData.overtimeRate.toFixed(2)}/h)
+                        </span>
+                        <span className="font-medium">£{displayData.overtimePay.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {/* Extra Time */}
+                    {displayData.extraTimeHours > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-sm">
+                          Extra Time ({displayData.extraTimeHours.toFixed(1)}h @ £{displayData.overtimeRate.toFixed(2)}/h)
+                        </span>
+                        <span className="font-medium">£{(displayData.extraTimeHours * displayData.overtimeRate).toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {/* Bonuses/Allowances */}
+                    {displayData.bonus > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span className="text-sm">Bonuses / Allowances</span>
+                        <span className="font-medium">£{displayData.bonus.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
                     <Separator />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total Gross Pay</span>
-                      <span>£{((calculationData.regularHours * calculationData.basHourlyRate) + 
-                               (calculationData.overtimeHours * calculationData.overtimeRate) +
-                               (calculationData.extraTimeHours * calculationData.overtimeRate)).toFixed(2)}</span>
+                    
+                    {/* Gross Pay */}
+                    <div className="flex justify-between font-semibold text-base">
+                      <span>Gross Pay</span>
+                      <span className="text-green-600">£{displayData.grossPay.toFixed(2)}</span>
                     </div>
+                    
+                    {/* Deductions (only for existing payroll records) */}
+                    {displayData.isExisting && (
+                      <>
+                        <Separator className="my-3" />
+                        <div className="text-sm font-medium text-gray-700 mb-2">Deductions:</div>
+                        
+                        <div className="space-y-1.5 pl-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Tax Deduction</span>
+                            <span className="text-red-600 font-medium">-£{displayData.taxDeduction.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">National Insurance</span>
+                            <span className="text-red-600 font-medium">-£{displayData.niDeduction.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Pension Contribution</span>
+                            <span className="text-red-600 font-medium">-£{displayData.pensionDeduction.toFixed(2)}</span>
+                          </div>
+                          {displayData.otherDeductions > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-600">Other Deductions</span>
+                              <span className="text-red-600 font-medium">-£{displayData.otherDeductions.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <Separator className="my-3" />
+                        
+                        {/* Net Pay */}
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Net Pay</span>
+                          <span className="text-green-600">£{displayData.netPay.toFixed(2)}</span>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 
                 {/* Bookings List */}
-                {calculationData.bookings.length > 0 && (
+                {displayData.bookings && displayData.bookings.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-sm flex items-center gap-2">
                         <FileText className="h-4 w-4" />
-                        Included Bookings ({calculationData.bookings.length})
+                        Included Bookings ({displayData.bookings.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {calculationData.bookings.map((booking) => (
+                        {displayData.bookings.map((booking) => (
                           <div key={booking.bookingId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                             <div>
                               <div className="font-medium text-sm">{booking.clientName}</div>
@@ -334,16 +472,31 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
               </div>
             )}
 
-            {isLoadingCalculation && (
+            {(isLoadingCalculation || isLoadingExisting) && (
               <div className="flex items-center justify-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
-                <span>Calculating payroll data...</span>
+                <span>
+                  {isLoadingExisting ? 'Checking for existing payroll...' : 'Calculating payroll data...'}
+                </span>
               </div>
             )}
 
-            {calculationError && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-600">Error loading calculation data. Please try again.</p>
+            {!displayData && !isLoadingCalculation && !isLoadingExisting && selectedStaffId && payPeriodStart && payPeriodEnd && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <span className="font-medium text-amber-700">No Payroll Data Found</span>
+                </div>
+                <p className="text-sm text-amber-700">
+                  No existing payroll record found for <strong>{selectedStaff?.first_name} {selectedStaff?.last_name}</strong> 
+                  {' '}for the selected date range.
+                  {calculationError && ' Unable to calculate from bookings and attendance records.'}
+                </p>
+                {!calculationError && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    Try adjusting the date range or create a new payroll record manually.
+                  </p>
+                )}
               </div>
             )}
 
@@ -354,10 +507,15 @@ const PayrollBookingIntegration: React.FC<PayrollBookingIntegrationProps> = ({
               </Button>
               <Button 
                 onClick={handleAutoGenerate}
-                disabled={!calculationData || autoGeneratePayrollMutation.isPending}
+                disabled={!displayData || autoGeneratePayrollMutation.isPending || displayData?.isExisting}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {autoGeneratePayrollMutation.isPending ? (
+                {displayData?.isExisting ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Payroll Already Exists
+                  </>
+                ) : autoGeneratePayrollMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Generating...

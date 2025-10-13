@@ -39,6 +39,40 @@ interface PayrollCalculationData {
   overtimeRate: number;
 }
 
+// Get existing payroll record from database
+const getExistingPayrollRecord = async (
+  branchId: string,
+  staffId: string,
+  payPeriodStart: string,
+  payPeriodEnd: string
+): Promise<any | null> => {
+  console.log('Fetching existing payroll record:', { branchId, staffId, payPeriodStart, payPeriodEnd });
+  
+  const { data, error } = await supabase
+    .from('payroll_records')
+    .select(`
+      *,
+      staff (
+        id,
+        first_name,
+        last_name,
+        email
+      )
+    `)
+    .eq('branch_id', branchId)
+    .eq('staff_id', staffId)
+    .eq('pay_period_start', payPeriodStart.split('T')[0])
+    .eq('pay_period_end', payPeriodEnd.split('T')[0])
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching existing payroll:', error);
+    return null;
+  }
+
+  return data;
+};
+
 export const usePayrollBookingIntegration = () => {
   const queryClient = useQueryClient();
 
@@ -249,6 +283,21 @@ export const usePayrollBookingIntegration = () => {
     });
   };
 
+  // Hook to get existing payroll record
+  const useExistingPayrollRecord = (
+    branchId?: string,
+    staffId?: string,
+    payPeriodStart?: string,
+    payPeriodEnd?: string
+  ) => {
+    return useQuery({
+      queryKey: ['existing-payroll-record', branchId, staffId, payPeriodStart, payPeriodEnd],
+      queryFn: () => getExistingPayrollRecord(branchId!, staffId!, payPeriodStart!, payPeriodEnd!),
+      enabled: !!(branchId && staffId && payPeriodStart && payPeriodEnd),
+      staleTime: 5 * 60 * 1000, // 5 minutes cache
+    });
+  };
+
   // Hook to get booking time data for a period
   const useBookingTimeData = (branchId?: string, startDate?: string, endDate?: string, staffId?: string) => {
     return useQuery({
@@ -348,6 +397,7 @@ export const usePayrollBookingIntegration = () => {
     usePayrollCalculationData,
     useBookingTimeData,
     useAutoGeneratePayroll,
+    useExistingPayrollRecord,
     getBookingTimeData,
     calculatePayrollFromBookings
   };
