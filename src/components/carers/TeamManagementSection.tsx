@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AddCarerDialog } from "./AddCarerDialog";
 import { EditCarerDialog } from "./EditCarerDialog";
-import { ViewStaffDetailsDialog } from "./ViewStaffDetailsDialog";
+import { ViewFullCarerProfileDialog } from "./ViewFullCarerProfileDialog";
 import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
 import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
@@ -70,7 +70,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCarer, setEditingCarer] = useState<CarerDB | null>(null);
-  const [viewingCarer, setViewingCarer] = useState<CarerDB | null>(null);
+  const [viewingFullProfile, setViewingFullProfile] = useState<{ carerId: string } | null>(null);
   const [settingPasswordCarer, setSettingPasswordCarer] = useState<CarerDB | null>(null);
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
@@ -131,7 +131,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
     const timeoutId = setTimeout(cleanupStuckOverlays, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [editingCarer, viewingCarer, settingPasswordCarer, deletingCarer, showStatusChangeDialog]);
+  }, [editingCarer, viewingFullProfile, settingPasswordCarer, deletingCarer, showStatusChangeDialog]);
 
 
   const filteredCarers = useMemo(() => {
@@ -389,7 +389,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => {
                         closeAllDropdowns();
-                        setTimeout(() => setViewingCarer(carer), 100);
+                        setTimeout(() => setViewingFullProfile({ carerId: carer.id }), 100);
                       }}>
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
@@ -501,13 +501,15 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         branchId={branchId}
       />
 
-      <ViewStaffDetailsDialog
-        carer={viewingCarer}
-        isOpen={!!viewingCarer}
-        onClose={() => setViewingCarer(null)}
-        branchId={branchId}
-        branchName={branchName}
-      />
+      {viewingFullProfile && (
+        <ViewFullCarerProfileDialog
+          carerId={viewingFullProfile.carerId}
+          branchId={branchId}
+          branchName={branchName}
+          isOpen={!!viewingFullProfile}
+          onClose={() => setViewingFullProfile(null)}
+        />
+      )}
 
       <EditCarerDialog
         open={!!editingCarer}
