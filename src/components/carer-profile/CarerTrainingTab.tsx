@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Award, Book, Calendar, Plus, CheckCircle, Clock, AlertCircle, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import TrainingRecordDetailsDialog from "@/components/training/TrainingRecordDetailsDialog";
 import { useStaffTrainingById } from "@/hooks/useStaffTrainingById";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { AssignTrainingDialog } from "@/components/training/AssignTrainingDialog";
@@ -26,6 +27,8 @@ interface CarerTrainingTabProps {
 
 export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) => {
   const [assignTrainingOpen, setAssignTrainingOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<typeof trainingRecords[0] | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -81,6 +84,11 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
     if (confirm('Are you sure you want to remove this training record?')) {
       deleteTrainingMutation.mutate(recordId);
     }
+  };
+
+  const handleViewCertificate = (record: typeof trainingRecords[0]) => {
+    setSelectedRecord(record);
+    setDetailsDialogOpen(true);
   };
 
   const getStatusBadge = (status: string) => {
@@ -241,7 +249,13 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
                   <div className="flex items-center gap-2">
                     {getStatusBadge(record.status)}
                     {record.evidence_files && record.evidence_files.length > 0 && (
-                      <Button size="sm" variant="outline">View Certificate</Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleViewCertificate(record)}
+                      >
+                        View Certificate
+                      </Button>
                     )}
                     
                     {/* Actions Dropdown */}
@@ -252,7 +266,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewCertificate(record)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
@@ -326,6 +340,17 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
             specialization: carerProfile?.specialization || ''
           }]}
           existingRecords={existingRecords.filter(r => r.staff_id === carerId)}
+        />
+      )}
+
+      {/* Training Record Details Dialog */}
+      {selectedRecord && (
+        <TrainingRecordDetailsDialog
+          open={detailsDialogOpen}
+          onOpenChange={setDetailsDialogOpen}
+          record={selectedRecord as any}
+          staffName={`${carerProfile?.first_name || ''} ${carerProfile?.last_name || ''}`.trim()}
+          trainingTitle={selectedRecord.training_course?.title || 'Training'}
         />
       )}
     </div>

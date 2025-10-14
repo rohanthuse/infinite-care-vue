@@ -15,6 +15,7 @@ export interface StaffTrainingRecord {
   progress_percentage: number | null;
   time_spent_minutes: number | null;
   last_accessed: string | null;
+  notes: string | null;
   training_notes: string | null;
   reflection_notes: string | null;
   evidence_files: any[] | null;
