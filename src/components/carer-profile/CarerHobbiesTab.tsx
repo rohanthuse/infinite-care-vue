@@ -25,6 +25,15 @@ export const CarerHobbiesTab: React.FC<CarerHobbiesTabProps> = ({ carerId }) => 
   
   const [showAddHobby, setShowAddHobby] = useState(false);
   const [editingHobby, setEditingHobby] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<{
+    proficiencyLevel: 'beginner' | 'intermediate' | 'advanced';
+    notes: string;
+    enjoys_teaching: boolean;
+  }>({
+    proficiencyLevel: 'beginner',
+    notes: '',
+    enjoys_teaching: false
+  });
 
   const [newHobby, setNewHobby] = useState({
     hobby_id: '',
@@ -97,6 +106,39 @@ export const CarerHobbiesTab: React.FC<CarerHobbiesTabProps> = ({ carerId }) => 
       toast({
         title: "Error removing hobby",
         description: "Failed to remove hobby. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUpdateHobby = async () => {
+    if (!editingHobby) return;
+    
+    try {
+      await updateHobbyMutation.mutateAsync({
+        id: editingHobby,
+        updates: {
+          proficiency_level: editFormData.proficiencyLevel,
+          enjoys_teaching: editFormData.enjoys_teaching,
+          notes: editFormData.notes || null
+        }
+      });
+      
+      setEditingHobby(null);
+      setEditFormData({
+        proficiencyLevel: 'beginner' as const,
+        notes: '',
+        enjoys_teaching: false
+      });
+      
+      toast({
+        title: "Hobby updated",
+        description: "Hobby has been updated successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Error updating hobby",
+        description: "Failed to update hobby. Please try again.",
         variant: "destructive"
       });
     }
@@ -192,7 +234,14 @@ export const CarerHobbiesTab: React.FC<CarerHobbiesTabProps> = ({ carerId }) => 
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setEditingHobby(hobby.id)}
+                        onClick={() => {
+                          setEditingHobby(hobby.id);
+                          setEditFormData({
+                            proficiencyLevel: hobby.proficiency_level,
+                            notes: hobby.notes || '',
+                            enjoys_teaching: hobby.enjoys_teaching
+                          });
+                        }}
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
@@ -291,6 +340,98 @@ export const CarerHobbiesTab: React.FC<CarerHobbiesTabProps> = ({ carerId }) => 
           </CardContent>
         </Card>
       )}
+
+      {editingHobby && (() => {
+        const currentHobby = staffHobbies.find(h => h.id === editingHobby);
+        if (!currentHobby) return null;
+        
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Edit Hobby: {currentHobby.hobby?.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-hobby-name">Hobby Name</Label>
+                  <Input
+                    id="edit-hobby-name"
+                    value={currentHobby.hobby?.title || ''}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hobby name cannot be changed. Delete and add a new hobby if needed.
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="edit-proficiency">Proficiency Level</Label>
+                  <Select 
+                    value={editFormData.proficiencyLevel} 
+                    onValueChange={(value: any) => setEditFormData({...editFormData, proficiencyLevel: value})}
+                  >
+                    <SelectTrigger id="edit-proficiency">
+                      <SelectValue placeholder="Select level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {proficiencyLevels.map(level => (
+                        <SelectItem key={level} value={level}>
+                          {level.charAt(0).toUpperCase() + level.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Textarea
+                  id="edit-notes"
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({...editFormData, notes: e.target.value})}
+                  placeholder="Tell us about your experience with this hobby..."
+                  rows={3}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="edit-enjoys-teaching"
+                  checked={editFormData.enjoys_teaching}
+                  onChange={(e) => setEditFormData({...editFormData, enjoys_teaching: e.target.checked})}
+                  className="h-4 w-4"
+                />
+                <Label htmlFor="edit-enjoys-teaching">I enjoy teaching this hobby to others</Label>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handleUpdateHobby}
+                  disabled={updateHobbyMutation.isPending}
+                >
+                  {updateHobbyMutation.isPending ? 'Updating...' : 'Update Hobby'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditingHobby(null);
+                    setEditFormData({
+                      proficiencyLevel: 'beginner' as const,
+                      notes: '',
+                      enjoys_teaching: false
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <Card>
         <CardHeader>
