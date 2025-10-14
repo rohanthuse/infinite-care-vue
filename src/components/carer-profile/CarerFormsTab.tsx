@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { useStaffAuthInfo } from "@/hooks/useStaffAuthInfo";
 import { useMyAssignedForms } from "@/hooks/useMyAssignedForms";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormSubmissionDetail } from "@/components/form-builder/FormSubmissionDetail";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -39,7 +40,14 @@ export const CarerFormsTab: React.FC<CarerFormsTabProps> = ({ carerId, branchId 
       
       const { data, error } = await supabase
         .from('form_submissions')
-        .select('*')
+        .select(`
+          *,
+          forms (
+            id,
+            title,
+            branch_id
+          )
+        `)
         .eq('form_id', selectedSubmission.formId)
         .eq('submitted_by', staffInfo.auth_user_id)
         .order('submitted_at', { ascending: false })
@@ -226,41 +234,17 @@ export const CarerFormsTab: React.FC<CarerFormsTabProps> = ({ carerId, branchId 
 
       {/* Submission Detail Dialog */}
       <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Form Submission: {selectedSubmission?.formTitle}</DialogTitle>
           </DialogHeader>
           {submissionData && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                <div>
-                  <div className="text-sm text-muted-foreground">Status</div>
-                  <div className="font-medium">{submissionData.status}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Submitted</div>
-                  <div className="font-medium">
-                    {submissionData.submitted_at 
-                      ? format(new Date(submissionData.submitted_at), 'MMM dd, yyyy HH:mm')
-                      : 'Not submitted'}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border border-border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Submission Data</h4>
-                <pre className="text-sm bg-muted p-4 rounded overflow-auto max-h-96">
-                  {JSON.stringify(submissionData.submission_data, null, 2)}
-                </pre>
-              </div>
-
-              {submissionData.review_notes && (
-                <div className="border border-border rounded-lg p-4">
-                  <h4 className="font-medium mb-2">Review Notes</h4>
-                  <p className="text-sm text-muted-foreground">{submissionData.review_notes}</p>
-                </div>
-              )}
-            </div>
+            <FormSubmissionDetail
+              submission={submissionData as any}
+              branchId={branchId || submissionData.forms?.branch_id || ''}
+              formId={selectedSubmission.formId}
+              allowManageReviews={true}
+            />
           )}
         </DialogContent>
       </Dialog>
