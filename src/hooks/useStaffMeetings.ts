@@ -24,12 +24,13 @@ export const useStaffMeetings = (staffId: string) => {
       }
 
       // Query for meetings where:
-      // 1. The notes field contains the staff ID (our storage strategy)
-      // 2. OR appointment_type contains "Staff Meeting"
+      // 1. client_id is NULL (staff-only meetings)
+      // 2. The notes field contains the staff ID OR appointment type matches
       const { data, error } = await supabase
         .from('client_appointments')
         .select('*')
-        .or(`notes.ilike.%Staff ID: ${staffId}%,appointment_type.ilike.%Staff Meeting%`)
+        .is('client_id', null)
+        .or(`notes.ilike.%Staff ID: ${staffId}%,appointment_type.ilike.%Staff Meeting%,appointment_type.ilike.%Internal Meeting%`)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 

@@ -1145,7 +1145,7 @@ export type Database = {
           appointment_time: string
           appointment_type: string
           branch_id: string | null
-          client_id: string
+          client_id: string | null
           created_at: string
           id: string
           location: string
@@ -1159,7 +1159,7 @@ export type Database = {
           appointment_time: string
           appointment_type: string
           branch_id?: string | null
-          client_id: string
+          client_id?: string | null
           created_at?: string
           id?: string
           location: string
@@ -1173,7 +1173,7 @@ export type Database = {
           appointment_time?: string
           appointment_type?: string
           branch_id?: string | null
-          client_id?: string
+          client_id?: string | null
           created_at?: string
           id?: string
           location?: string
