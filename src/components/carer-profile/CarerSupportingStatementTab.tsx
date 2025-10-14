@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Edit, Save, X, Plus, Star, Loader2 } from "lucide-react";
+import { FileText, Edit, Save, X, Plus, Star, Loader2, Trash2 } from "lucide-react";
 import { useStaffStatement } from "@/hooks/useStaffStatement";
 import { useStaffReferences } from "@/hooks/useStaffReferences";
 import { useStaffCareerHighlights } from "@/hooks/useStaffCareerHighlights";
+import { AddReferenceDialog } from "./AddReferenceDialog";
+import type { StaffReference } from "@/hooks/useStaffReferences";
 
 interface CarerSupportingStatementTabProps {
   carerId: string;
@@ -37,9 +39,10 @@ const getDotColorClasses = (color: string) => {
 export const CarerSupportingStatementTab: React.FC<CarerSupportingStatementTabProps> = ({ carerId }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [statementText, setStatementText] = useState("");
+  const [isAddReferenceDialogOpen, setIsAddReferenceDialogOpen] = useState(false);
 
   const { statement, isLoading: isLoadingStatement, updateStatement, isUpdating } = useStaffStatement(carerId);
-  const { references, isLoading: isLoadingReferences } = useStaffReferences(carerId);
+  const { references, isLoading: isLoadingReferences, addReference, deleteReference, isAdding, isDeleting } = useStaffReferences(carerId);
   const { highlights, isLoading: isLoadingHighlights } = useStaffCareerHighlights(carerId);
 
   // Initialize statement text when data loads
@@ -57,6 +60,11 @@ export const CarerSupportingStatementTab: React.FC<CarerSupportingStatementTabPr
   const handleCancelEdit = () => {
     setStatementText(statement?.statement || "");
     setIsEditing(false);
+  };
+
+  const handleAddReference = (referenceData: Omit<StaffReference, 'id' | 'staff_id' | 'created_at' | 'updated_at'>) => {
+    addReference(referenceData);
+    setIsAddReferenceDialogOpen(false);
   };
 
   if (isLoadingStatement || isLoadingReferences || isLoadingHighlights) {
@@ -133,7 +141,11 @@ export const CarerSupportingStatementTab: React.FC<CarerSupportingStatementTabPr
             <Star className="h-5 w-5" />
             Professional References
           </CardTitle>
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => setIsAddReferenceDialogOpen(true)}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Reference
           </Button>
@@ -165,6 +177,15 @@ export const CarerSupportingStatementTab: React.FC<CarerSupportingStatementTabPr
                   
                   <div className="flex justify-between items-center mt-3 text-xs text-muted-foreground">
                     <span>Reference obtained: {new Date(reference.contact_date).toLocaleDateString()}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive h-auto p-1"
+                      onClick={() => deleteReference(reference.id)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -203,6 +224,13 @@ export const CarerSupportingStatementTab: React.FC<CarerSupportingStatementTabPr
           )}
         </CardContent>
       </Card>
+
+      <AddReferenceDialog
+        open={isAddReferenceDialogOpen}
+        onOpenChange={setIsAddReferenceDialogOpen}
+        onSubmit={handleAddReference}
+        isLoading={isAdding}
+      />
     </div>
   );
 };
