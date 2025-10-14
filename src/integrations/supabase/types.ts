@@ -6150,6 +6150,75 @@ export type Database = {
           },
         ]
       }
+      staff_contacts: {
+        Row: {
+          address: string | null
+          branch_id: string | null
+          contact_type: string
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          id: string
+          is_primary: boolean | null
+          name: string
+          notes: string | null
+          phone: string
+          relationship: string
+          staff_id: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          branch_id?: string | null
+          contact_type: string
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name: string
+          notes?: string | null
+          phone: string
+          relationship: string
+          staff_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          branch_id?: string | null
+          contact_type?: string
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_primary?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          relationship?: string
+          staff_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_contacts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_contacts_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_documents: {
         Row: {
           created_at: string | null

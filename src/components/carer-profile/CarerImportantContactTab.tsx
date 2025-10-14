@@ -1,52 +1,49 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Mail, User, Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Phone, Mail, User, Plus, Edit, Trash2, AlertTriangle, MapPin } from "lucide-react";
+import { useStaffContacts, CreateStaffContactData } from "@/hooks/useStaffContacts";
+import { AddStaffContactDialog } from "./AddStaffContactDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CarerImportantContactTabProps {
   carerId: string;
 }
 
 export const CarerImportantContactTab: React.FC<CarerImportantContactTabProps> = ({ carerId }) => {
-  const [isAddingContact, setIsAddingContact] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<any | null>(null);
+  const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
 
-  const [contacts, setContacts] = useState([
-    {
-      id: 1,
-      name: 'Mary Johnson',
-      relationship: 'Mother',
-      phone: '+44 7123 456789',
-      email: 'mary.johnson@email.com',
-      address: '123 Oak Street, London, SW1A 1AA',
-      isPrimary: true,
-      contactType: 'emergency'
+  // Fetch staff branch_id
+  const { data: staffInfo } = useQuery({
+    queryKey: ['staff-info', carerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff')
+        .select('branch_id')
+        .eq('id', carerId)
+        .single();
+      
+      if (error) throw error;
+      return data;
     },
-    {
-      id: 2,
-      name: 'David Smith',
-      relationship: 'Brother',
-      phone: '+44 7987 654321',
-      email: 'david.smith@email.com',
-      address: '456 Pine Avenue, Birmingham, B1 1AB',
-      isPrimary: false,
-      contactType: 'emergency'
-    },
-    {
-      id: 3,
-      name: 'Dr. Sarah Wilson',
-      relationship: 'GP',
-      phone: '+44 20 1234 5678',
-      email: 'reception@wilsonpractice.nhs.uk',
-      address: 'Wilson Medical Practice, 789 High Street, London, W1A 0AX',
-      isPrimary: false,
-      contactType: 'medical'
-    }
-  ]);
+    enabled: !!carerId,
+  });
+
+  const {
+    contacts,
+    isLoading,
+    createContact,
+    updateContact,
+    deleteContact,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = useStaffContacts(carerId);
 
   const getContactIcon = (type: string) => {
     switch (type) {
@@ -54,6 +51,10 @@ export const CarerImportantContactTab: React.FC<CarerImportantContactTabProps> =
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       case 'medical':
         return <User className="h-4 w-4 text-blue-500" />;
+      case 'personal':
+        return <User className="h-4 w-4 text-green-500" />;
+      case 'professional':
+        return <User className="h-4 w-4 text-purple-500" />;
       default:
         return <User className="h-4 w-4 text-gray-500" />;
     }
@@ -65,10 +66,60 @@ export const CarerImportantContactTab: React.FC<CarerImportantContactTabProps> =
         return <Badge className="bg-red-100 text-red-800">Emergency</Badge>;
       case 'medical':
         return <Badge className="bg-blue-100 text-blue-800">Medical</Badge>;
+      case 'personal':
+        return <Badge className="bg-green-100 text-green-800">Personal</Badge>;
+      case 'professional':
+        return <Badge className="bg-purple-100 text-purple-800">Professional</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }
   };
+
+  const handleAddContact = (formData: any) => {
+    const data: CreateStaffContactData = {
+      ...formData,
+      staff_id: carerId,
+      branch_id: staffInfo?.branch_id || '',
+    };
+    createContact(data, {
+      onSuccess: () => {
+        setIsAddDialogOpen(false);
+      },
+    });
+  };
+
+  const handleEditContact = (formData: any) => {
+    if (editingContact) {
+      updateContact(
+        { id: editingContact.id, ...formData },
+        {
+          onSuccess: () => {
+            setEditingContact(null);
+          },
+        }
+      );
+    }
+  };
+
+  const handleDeleteContact = () => {
+    if (deletingContactId) {
+      deleteContact(deletingContactId, {
+        onSuccess: () => {
+          setDeletingContactId(null);
+        },
+      });
+    }
+  };
+
+  const primaryContact = contacts.find(c => c.is_primary);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <p className="text-muted-foreground">Loading contacts...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -76,164 +127,177 @@ export const CarerImportantContactTab: React.FC<CarerImportantContactTabProps> =
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Phone className="h-5 w-5" />
-            Important Contacts
+            Important Contacts ({contacts.length})
           </CardTitle>
-          <Button size="sm" onClick={() => setIsAddingContact(true)}>
+          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Contact
           </Button>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {contacts.map((contact) => (
-              <Card key={contact.id} className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-3">
-                    {getContactIcon(contact.contactType)}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{contact.name}</h4>
-                        {contact.isPrimary && (
-                          <Badge variant="default" className="text-xs">Primary</Badge>
-                        )}
+          {contacts.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <User className="h-12 w-12 mx-auto mb-2 opacity-20" />
+              <p>No contacts added yet</p>
+              <p className="text-sm">Click "Add Contact" to add an important contact</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {contacts.map((contact) => (
+                <Card key={contact.id} className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-3">
+                      {getContactIcon(contact.contact_type)}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold">{contact.name}</h4>
+                          {contact.is_primary && (
+                            <Badge variant="default" className="text-xs">Primary</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{contact.relationship}</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{contact.relationship}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      {getContactTypeBadge(contact.contact_type)}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingContact(contact)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => setDeletingContactId(contact.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {getContactTypeBadge(contact.contactType)}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingId(contact.id)}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{contact.phone}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{contact.phone}</span>
+                    </div>
+                    
+                    {contact.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{contact.email}</span>
+                      </div>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{contact.email}</span>
-                  </div>
-                </div>
 
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>{contact.address}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
+                  {contact.address && (
+                    <div className="mt-2 text-sm text-muted-foreground flex items-start gap-2">
+                      <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <p>{contact.address}</p>
+                    </div>
+                  )}
+
+                  {contact.notes && (
+                    <div className="mt-3 pt-3 border-t text-sm">
+                      <p className="text-muted-foreground"><strong>Notes:</strong> {contact.notes}</p>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {isAddingContact && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Contact</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="Enter full name" />
-              </div>
-              
-              <div>
-                <Label htmlFor="relationship">Relationship</Label>
-                <Input id="relationship" placeholder="e.g., Mother, Brother, GP" />
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" placeholder="+44 7xxx xxx xxx" />
-              </div>
-              
-              <div>
-                <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="email@example.com" />
-              </div>
-              
-              <div>
-                <Label htmlFor="contact-type">Contact Type</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select contact type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="emergency">Emergency Contact</SelectItem>
-                    <SelectItem value="medical">Medical Contact</SelectItem>
-                    <SelectItem value="personal">Personal Contact</SelectItem>
-                    <SelectItem value="professional">Professional Contact</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id="primary" />
-                <Label htmlFor="primary">Set as primary contact</Label>
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="address">Address</Label>
-              <Input id="address" placeholder="Full address" />
-            </div>
-            
-            <div className="flex gap-2 pt-4">
-              <Button onClick={() => setIsAddingContact(false)}>
-                Add Contact
-              </Button>
-              <Button variant="outline" onClick={() => setIsAddingContact(false)}>
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Quick Actions Card */}
       <Card>
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Button variant="outline" className="justify-start">
+            <Button 
+              variant="outline" 
+              className="justify-start"
+              disabled={!primaryContact}
+              onClick={() => {
+                if (primaryContact) {
+                  window.location.href = `tel:${primaryContact.phone}`;
+                }
+              }}
+            >
               <Phone className="h-4 w-4 mr-2" />
-              Call Primary Emergency Contact
+              Call Primary Contact
             </Button>
             
-            <Button variant="outline" className="justify-start">
+            <Button 
+              variant="outline" 
+              className="justify-start"
+              disabled={contacts.filter(c => c.contact_type === 'emergency').length === 0}
+            >
               <Mail className="h-4 w-4 mr-2" />
-              Email All Emergency Contacts
+              Email Emergency Contacts
             </Button>
             
-            <Button variant="outline" className="justify-start">
+            <Button 
+              variant="outline" 
+              className="justify-start"
+              disabled={contacts.filter(c => c.contact_type === 'medical').length === 0}
+            >
               <Phone className="h-4 w-4 mr-2" />
-              Contact GP Practice
+              Contact Medical Contacts
             </Button>
             
-            <Button variant="outline" className="justify-start">
+            <Button 
+              variant="outline" 
+              className="justify-start"
+              onClick={() => setIsAddDialogOpen(true)}
+            >
               <User className="h-4 w-4 mr-2" />
-              Update Contact Details
+              Add New Contact
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Add/Edit Dialog */}
+      <AddStaffContactDialog
+        open={isAddDialogOpen || !!editingContact}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddDialogOpen(false);
+            setEditingContact(null);
+          }
+        }}
+        onSubmit={editingContact ? handleEditContact : handleAddContact}
+        isLoading={isCreating || isUpdating}
+        editContact={editingContact}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingContactId} onOpenChange={(open) => !open && setDeletingContactId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Contact?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this contact? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteContact}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
