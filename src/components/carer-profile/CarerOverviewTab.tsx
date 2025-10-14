@@ -99,6 +99,16 @@ export const CarerOverviewTab: React.FC<CarerOverviewTabProps> = ({ carerId, bra
                 </Badge>
               </div>
             </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Availability:</p>
+              <p className="text-base mt-1">{carer?.availability || 'N/A'}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Experience:</p>
+              <p className="text-base mt-1">{carer?.experience || 'N/A'}</p>
+            </div>
           </div>
         </CardContent>
       </Card>
