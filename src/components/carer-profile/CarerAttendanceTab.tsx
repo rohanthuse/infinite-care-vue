@@ -11,8 +11,8 @@ interface CarerAttendanceTabProps {
 }
 
 export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId }) => {
-  const { data: carerProfile } = useCarerProfileById(carerId);
-  const { data: attendanceRecords = [], isLoading, error } = useAttendanceRecords(
+  const { data: carerProfile, isLoading: isProfileLoading } = useCarerProfileById(carerId);
+  const { data: attendanceRecords = [], isLoading: isAttendanceLoading, error } = useAttendanceRecords(
     carerProfile?.branch_id || "", 
     {
       attendanceType: 'staff',
@@ -22,6 +22,9 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
       }
     }
   );
+  
+  // Combine loading states
+  const isLoading = isProfileLoading || isAttendanceLoading;
   
   // Filter records for this specific carer and calculate stats
   const carerRecords = attendanceRecords.filter(record => 
@@ -52,7 +55,7 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !carerProfile?.branch_id) {
     return (
       <div className="space-y-6">
         <Card>
