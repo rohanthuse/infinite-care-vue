@@ -3717,6 +3717,48 @@ export type Database = {
           },
         ]
       }
+      essential_types_master: {
+        Row: {
+          category: string
+          created_at: string | null
+          default_validity_months: number | null
+          description: string | null
+          display_name: string
+          essential_type: string
+          id: string
+          is_mandatory: boolean | null
+          sort_order: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          default_validity_months?: number | null
+          description?: string | null
+          display_name: string
+          essential_type: string
+          id?: string
+          is_mandatory?: boolean | null
+          sort_order?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          default_validity_months?: number | null
+          description?: string | null
+          display_name?: string
+          essential_type?: string
+          id?: string
+          is_mandatory?: boolean | null
+          sort_order?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       expense_types: {
         Row: {
           amount: number
@@ -6363,6 +6405,88 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_essentials_checklist: {
+        Row: {
+          category: string
+          completion_date: string | null
+          created_at: string | null
+          display_name: string
+          document_id: string | null
+          essential_type: string
+          expiry_date: string | null
+          id: string
+          notes: string | null
+          reminder_sent_at: string | null
+          required: boolean | null
+          staff_id: string
+          status: Database["public"]["Enums"]["essential_status"] | null
+          training_record_id: string | null
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          category: string
+          completion_date?: string | null
+          created_at?: string | null
+          display_name: string
+          document_id?: string | null
+          essential_type: string
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          reminder_sent_at?: string | null
+          required?: boolean | null
+          staff_id: string
+          status?: Database["public"]["Enums"]["essential_status"] | null
+          training_record_id?: string | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          category?: string
+          completion_date?: string | null
+          created_at?: string | null
+          display_name?: string
+          document_id?: string | null
+          essential_type?: string
+          expiry_date?: string | null
+          id?: string
+          notes?: string | null
+          reminder_sent_at?: string | null
+          required?: boolean | null
+          staff_id?: string
+          status?: Database["public"]["Enums"]["essential_status"] | null
+          training_record_id?: string | null
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_essentials_checklist_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "staff_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_essentials_checklist_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_essentials_checklist_training_record_id_fkey"
+            columns: ["training_record_id"]
+            isOneToOne: false
+            referencedRelation: "staff_training_records"
             referencedColumns: ["id"]
           },
         ]
@@ -9213,6 +9337,12 @@ export type Database = {
         | "carer"
         | "client"
         | "app_admin"
+      essential_status:
+        | "pending"
+        | "complete"
+        | "expiring"
+        | "expired"
+        | "not_required"
       scheduled_agreement_status:
         | "Upcoming"
         | "Pending Approval"
@@ -9377,6 +9507,13 @@ export const Constants = {
         "carer",
         "client",
         "app_admin",
+      ],
+      essential_status: [
+        "pending",
+        "complete",
+        "expiring",
+        "expired",
+        "not_required",
       ],
       scheduled_agreement_status: [
         "Upcoming",
