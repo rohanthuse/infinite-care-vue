@@ -94,7 +94,7 @@ const CarerOverview: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -112,49 +112,8 @@ const CarerOverview: React.FC = () => {
       {/* Ready to Start Section */}
       <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />
 
-      {/* Improvement Areas Card */}
-      {improvementAreasError ? (
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              Error Loading Improvement Areas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Unable to load improvement areas. Please refresh the page or contact support if the issue persists.
-            </p>
-            <details className="mt-2 text-xs text-gray-500">
-              <summary className="cursor-pointer">Technical Details</summary>
-              <pre className="mt-2 p-2 bg-gray-50 rounded overflow-auto">
-                {JSON.stringify(improvementAreasError, null, 2)}
-              </pre>
-            </details>
-          </CardContent>
-        </Card>
-      ) : improvementAreas && improvementAreas.length > 0 ? (
-        <ImprovementAreasCard improvementAreas={improvementAreas} />
-      ) : (
-        !isLoading && (
-          <Card className="border-l-4 border-l-green-500">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="h-5 w-5" />
-                No Improvement Areas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Great work! You don't have any improvement areas at the moment. Keep up the excellent performance!
-              </p>
-            </CardContent>
-          </Card>
-        )
-      )}
-
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
@@ -204,10 +163,53 @@ const CarerOverview: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Active Visits */}
         <div className="lg:col-span-1">
           <ActiveVisitsSection />
+        </div>
+
+        {/* Improvement Areas Card */}
+        <div className="lg:col-span-1">
+          {improvementAreasError ? (
+            <Card className="border-l-4 border-l-red-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <AlertCircle className="h-5 w-5" />
+                  Error Loading Improvement Areas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600">
+                  Unable to load improvement areas. Please refresh the page or contact support if the issue persists.
+                </p>
+                <details className="mt-2 text-xs text-gray-500">
+                  <summary className="cursor-pointer">Technical Details</summary>
+                  <pre className="mt-2 p-2 bg-gray-50 rounded overflow-auto">
+                    {JSON.stringify(improvementAreasError, null, 2)}
+                  </pre>
+                </details>
+              </CardContent>
+            </Card>
+          ) : improvementAreas && improvementAreas.length > 0 ? (
+            <ImprovementAreasCard improvementAreas={improvementAreas} />
+          ) : (
+            !isLoading && (
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                    No Improvement Areas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">
+                    Great work! You don't have any improvement areas at the moment. Keep up the excellent performance!
+                  </p>
+                </CardContent>
+              </Card>
+            )
+          )}
         </div>
 
         {/* Service Reports Widget */}
