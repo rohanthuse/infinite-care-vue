@@ -1,10 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, TrendingUp, AlertCircle, MoreHorizontal, Eye, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
-import { useAttendanceRecords } from "@/hooks/useAttendanceRecords";
+import { useAttendanceRecords, useDeleteAttendanceRecord } from "@/hooks/useAttendanceRecords";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface CarerViewAttendanceTabProps {
   carerId: string;
@@ -20,9 +28,11 @@ export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ 
         from: new Date(new Date().setMonth(new Date().getMonth() - 6)),
         to: new Date()
       }
-    }
+    },
+    { enabled: !!carerProfile?.branch_id }
   );
   
+  const deleteAttendance = useDeleteAttendanceRecord();
   const isLoading = isProfileLoading || isAttendanceLoading;
   
   // Filter records for this specific carer
@@ -70,7 +80,27 @@ export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ 
     }
   };
 
-  if (isLoading || !carerProfile?.branch_id) {
+  const handleViewDetails = (record: any) => {
+    toast.info("View details functionality coming soon");
+    console.log('View details:', record);
+  };
+
+  const handleEdit = (record: any) => {
+    toast.info("Edit functionality coming soon");
+    console.log('Edit record:', record);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this attendance record?')) {
+      try {
+        await deleteAttendance.mutateAsync(id);
+      } catch (error) {
+        console.error('Delete failed:', error);
+      }
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <Card>
@@ -155,7 +185,7 @@ export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ 
           ) : (
             <div className="border rounded-lg overflow-hidden">
               {/* Table Header */}
-              <div className="bg-muted/50 grid grid-cols-7 gap-4 p-4 font-medium text-sm border-b">
+              <div className="bg-muted/50 grid grid-cols-8 gap-4 p-4 font-medium text-sm border-b">
                 <div>Date</div>
                 <div>Day</div>
                 <div>Check-in</div>
@@ -163,6 +193,7 @@ export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ 
                 <div>Hours</div>
                 <div>Status</div>
                 <div>Notes</div>
+                <div>Actions</div>
               </div>
 
               {/* Table Body */}
@@ -172,7 +203,7 @@ export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ 
                   .map((record) => (
                     <div
                       key={record.id}
-                      className="grid grid-cols-7 gap-4 p-4 hover:bg-muted/50 transition-colors text-sm"
+                      className="grid grid-cols-8 gap-4 p-4 hover:bg-muted/50 transition-colors text-sm"
                     >
                       <div className="font-medium">
                         {format(new Date(record.attendance_date), 'MMM dd, yyyy')}
@@ -188,6 +219,32 @@ export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ 
                       <div>{getStatusBadge(record.status)}</div>
                       <div className="text-muted-foreground truncate" title={record.notes || ''}>
                         {record.notes || '-'}
+                      </div>
+                      <div className="flex items-center justify-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewDetails(record)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(record)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(record.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}

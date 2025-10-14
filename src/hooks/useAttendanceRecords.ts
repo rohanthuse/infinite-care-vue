@@ -44,9 +44,10 @@ export interface AttendanceFilters {
   };
 }
 
-export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilters) => {
+export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilters, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['attendance-records', branchId, filters],
+    enabled: options?.enabled !== false && !!branchId,
     queryFn: async () => {
       console.log('Fetching attendance records with filters:', { branchId, filters });
       
