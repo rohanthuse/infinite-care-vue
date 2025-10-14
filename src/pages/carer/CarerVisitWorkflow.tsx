@@ -560,9 +560,7 @@ const CarerVisitWorkflow = () => {
       case "check-in":
         return visitStarted;
       case "tasks":
-        return tasks ? 
-          tasks.filter(task => task.priority === 'high' || task.priority === 'urgent')
-            .every(task => task.is_completed) : false;
+        return true; // Allow progression regardless of task completion status
       case "medication":
         return medications ? 
           medications.length === 0 || medications.every(med => med.is_administered || med.missed_reason) : true;
@@ -1239,7 +1237,6 @@ const CarerVisitWorkflow = () => {
                     </Button>
                     <Button 
                       onClick={handleNextStep}
-                      disabled={!isTabCompleted("tasks")}
                     >
                       Next Step
                       <ArrowRight className="w-4 h-4 ml-2" />
