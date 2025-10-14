@@ -23,14 +23,12 @@ export const useStaffMeetings = (staffId: string) => {
         return [];
       }
 
-      // Query for meetings where:
-      // 1. client_id is NULL (staff-only meetings)
-      // 2. The notes field contains the staff ID OR appointment type matches
+      // Query for ALL meetings where this staff is involved (via notes)
+      // This includes both staff-only meetings (client_id = null) AND client meetings where staff is assigned
       const { data, error } = await supabase
         .from('client_appointments')
         .select('*')
-        .is('client_id', null)
-        .or(`notes.ilike.%Staff ID: ${staffId}%,appointment_type.ilike.%Staff Meeting%,appointment_type.ilike.%Internal Meeting%`)
+        .or(`notes.ilike.%Staff ID: ${staffId}%,appointment_type.ilike.%Staff Meeting%,appointment_type.ilike.%Internal Meeting%,appointment_type.ilike.%Client Meeting%,appointment_type.ilike.%Personal Meeting%,appointment_type.ilike.%Third Party Meeting%`)
         .order('appointment_date', { ascending: false })
         .order('appointment_time', { ascending: false });
 
@@ -39,16 +37,9 @@ export const useStaffMeetings = (staffId: string) => {
         throw error;
       }
 
-      // Filter to only include meetings that truly belong to this staff member
+      // Filter to only include meetings where this specific staff member is referenced in notes
       const staffMeetings = (data || []).filter(meeting => {
-        // Check if notes contain this staff's ID
-        const notesContainStaffId = meeting.notes?.includes(`Staff ID: ${staffId}`);
-        
-        // For now, include all staff meetings, but in future we can be more strict
-        const isStaffMeeting = meeting.appointment_type?.includes('Staff Meeting') || 
-                               meeting.appointment_type?.includes('Internal Meeting');
-        
-        return notesContainStaffId || isStaffMeeting;
+        return meeting.notes?.includes(`Staff ID: ${staffId}`);
       });
 
       console.log('Staff meetings fetched:', staffMeetings);

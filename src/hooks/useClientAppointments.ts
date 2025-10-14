@@ -34,10 +34,26 @@ export const useCreateClientAppointment = () => {
       console.log('Appointment created successfully:', data);
       return data?.[0] || data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       console.log('Appointment creation successful:', data);
       toast.success('Meeting scheduled successfully');
+      
+      // Invalidate all relevant caches for real-time sync across all views
       queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      
+      // Invalidate client appointments if this was a client meeting
+      if (variables.client_id) {
+        queryClient.invalidateQueries({ queryKey: ['client-appointments', variables.client_id] });
+      }
+      
+      // Invalidate staff meetings if staff ID is in notes
+      const staffIdMatch = variables.notes?.match(/Staff ID: ([a-f0-9-]+)/);
+      if (staffIdMatch && staffIdMatch[1]) {
+        queryClient.invalidateQueries({ queryKey: ['staff-meetings', staffIdMatch[1]] });
+      }
+      
+      // Also invalidate all staff meetings cache to ensure comprehensive sync
+      queryClient.invalidateQueries({ queryKey: ['staff-meetings'] });
     },
     onError: (error) => {
       console.error('Error creating appointment:', error);

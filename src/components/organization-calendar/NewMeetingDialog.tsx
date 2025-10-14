@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { useCreateClientAppointment } from '@/hooks/useClientAppointments';
 import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
 import { EnhancedStaffSelector } from '@/components/ui/enhanced-staff-selector';
+import { toast } from 'sonner';
 
 interface NewMeetingDialogProps {
   open: boolean;
@@ -19,6 +20,18 @@ interface NewMeetingDialogProps {
   prefilledTime?: string;
   prefilledStaffId?: string;
 }
+
+// Helper function to format meeting type names consistently with database constraints
+const formatMeetingType = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    'client': 'Client',
+    'internal': 'Internal',
+    'personal': 'Personal',
+    'third-party': 'Third Party',  // Convert hyphen to space
+    'external': 'External'
+  };
+  return typeMap[type] || type.charAt(0).toUpperCase() + type.slice(1);
+};
 
 export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   open,
@@ -72,12 +85,30 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   };
 
   const handleScheduleMeeting = async () => {
-    // Validation based on meeting type
-    const isClientMeeting = meetingType === 'client';
-    const requiresClient = isClientMeeting;
+    // Comprehensive validation with specific user feedback
+    if (!title || title.trim().length === 0) {
+      toast.error("Please enter a meeting title");
+      return;
+    }
     
-    if (!title || !date || !time || !branchId || (requiresClient && !clientId)) {
-      console.log('Missing required fields:', { title, meetingType, clientId, date, time, branchId });
+    if (!date) {
+      toast.error("Please select a meeting date");
+      return;
+    }
+    
+    if (!time) {
+      toast.error("Please select a meeting time");
+      return;
+    }
+    
+    if (!branchId) {
+      toast.error("Branch information is missing. Please try again.");
+      return;
+    }
+    
+    // Meeting type specific validation
+    if (meetingType === 'client' && !clientId) {
+      toast.error("Please select a client for client meetings");
       return;
     }
 
@@ -98,7 +129,7 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
         branch_id: branchId!,
         appointment_date: date,
         appointment_time: time,
-        appointment_type: `${meetingType.charAt(0).toUpperCase() + meetingType.slice(1)} Meeting: ${title}`,
+        appointment_type: `${formatMeetingType(meetingType)} Meeting: ${title}`,
         provider_name: staffId ? staffData?.full_name || 'Staff Member' : getProviderName(),
         location: location || getDefaultLocation(),
         status: 'scheduled',
