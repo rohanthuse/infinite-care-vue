@@ -242,7 +242,7 @@ export function ViewFullCarerProfileDialog({
                     {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
                     {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
                     {activeTab === "refer" && <CarerReferFriendTab carerId={carerId} />}
-                    {activeTab === "forms" && <CarerFormsTab carerId={carerId} />}
+                    {activeTab === "forms" && <CarerFormsTab carerId={carerId} branchId={branchId} />}
                     {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
                     {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}
                     {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}

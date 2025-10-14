@@ -1,266 +1,269 @@
-import React from "react";
+import React, { useState } from "react";
+import { FileText, Clock, CheckCircle, AlertCircle, Eye, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Clock, CheckCircle, AlertCircle, Plus, Eye } from "lucide-react";
+import { useStaffAuthInfo } from "@/hooks/useStaffAuthInfo";
+import { useMyAssignedForms } from "@/hooks/useMyAssignedForms";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface CarerFormsTabProps {
   carerId: string;
+  branchId?: string;
 }
 
-export const CarerFormsTab: React.FC<CarerFormsTabProps> = ({ carerId }) => {
-  const assignedForms = [
-    {
-      id: 1,
-      title: 'Health & Safety Assessment',
-      description: 'Annual health and safety knowledge assessment',
-      assignedDate: '2024-01-15',
-      dueDate: '2024-02-15',
-      status: 'completed',
-      completedDate: '2024-01-20',
-      priority: 'high',
-      category: 'mandatory'
+export const CarerFormsTab: React.FC<CarerFormsTabProps> = ({ carerId, branchId }) => {
+  const [selectedSubmission, setSelectedSubmission] = useState<{
+    formId: string;
+    formTitle: string;
+  } | null>(null);
+
+  // Get staff auth info to retrieve auth_user_id
+  const { data: staffInfo, isLoading: isLoadingStaff } = useStaffAuthInfo(carerId);
+  
+  // Fetch assigned forms using the auth_user_id
+  const { data: assignedForms, isLoading: isLoadingForms } = useMyAssignedForms(
+    staffInfo?.auth_user_id || '',
+    'carer'
+  );
+
+  // Fetch form submission details when a form is selected
+  const { data: submissionData } = useQuery({
+    queryKey: ['form-submission', selectedSubmission?.formId, staffInfo?.auth_user_id],
+    queryFn: async () => {
+      if (!selectedSubmission?.formId || !staffInfo?.auth_user_id) return null;
+      
+      const { data, error } = await supabase
+        .from('form_submissions')
+        .select('*')
+        .eq('form_id', selectedSubmission.formId)
+        .eq('submitted_by', staffInfo.auth_user_id)
+        .order('submitted_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
     },
-    {
-      id: 2,
-      title: 'Personal Development Plan',
-      description: 'Set goals and development objectives for the year',
-      assignedDate: '2024-01-10',
-      dueDate: '2024-02-10',
-      status: 'in_progress',
-      completedDate: null,
-      priority: 'medium',
-      category: 'development'
-    },
-    {
-      id: 3,
-      title: 'Client Feedback Survey',
-      description: 'Quarterly feedback collection from assigned clients',
-      assignedDate: '2024-01-05',
-      dueDate: '2024-03-05',
-      status: 'pending',
-      completedDate: null,
-      priority: 'low',
-      category: 'feedback'
-    },
-    {
-      id: 4,
-      title: 'Medication Administration Record',
-      description: 'Monthly medication administration compliance form',
-      assignedDate: '2024-01-01',
-      dueDate: '2024-01-31',
-      status: 'overdue',
-      completedDate: null,
-      priority: 'high',
-      category: 'mandatory'
-    }
-  ];
+    enabled: !!selectedSubmission && !!staffInfo?.auth_user_id,
+  });
+
+  const isLoading = isLoadingStaff || isLoadingForms;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading forms...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!staffInfo?.auth_user_id) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <p>This staff member does not have an account set up yet.</p>
+            <p className="text-sm mt-2">They need to accept their invitation to view assigned forms.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const forms = assignedForms || [];
+  
+  // Calculate statistics
+  const totalForms = forms.length;
+  const completedForms = forms.filter(f => f.submission_status === 'completed').length;
+  const inProgressForms = forms.filter(f => f.submission_status === 'not_submitted').length;
+  const underReviewForms = forms.filter(f => f.submission_status === 'under_review').length;
+  const completionRate = totalForms > 0 ? (completedForms / totalForms) * 100 : 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'in_progress':
-        return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>;
-      case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800">Pending</Badge>;
-      case 'overdue':
-        return <Badge className="bg-red-100 text-red-800">Overdue</Badge>;
+        return <Badge variant="default" className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
+      case 'under_review':
+        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Under Review</Badge>;
+      case 'not_submitted':
+        return <Badge variant="outline"><AlertCircle className="h-3 w-3 mr-1" />Not Started</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const getPriorityBadge = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return <Badge variant="destructive" className="text-xs">High</Badge>;
-      case 'medium':
-        return <Badge variant="secondary" className="text-xs">Medium</Badge>;
-      case 'low':
-        return <Badge variant="outline" className="text-xs">Low</Badge>;
-      default:
-        return <Badge variant="secondary" className="text-xs">{priority}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'in_progress':
-        return <Clock className="h-5 w-5 text-blue-600" />;
-      case 'overdue':
-        return <AlertCircle className="h-5 w-5 text-red-600" />;
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'under_review':
+        return <Clock className="h-5 w-5 text-blue-500" />;
       default:
-        return <FileText className="h-5 w-5 text-gray-600" />;
+        return <AlertCircle className="h-5 w-5 text-orange-500" />;
     }
-  };
-
-  const completedCount = assignedForms.filter(form => form.status === 'completed').length;
-  const completionRate = (completedCount / assignedForms.length) * 100;
-
-  const getDaysRemaining = (dueDate: string) => {
-    const due = new Date(dueDate);
-    const now = new Date();
-    const diffTime = due.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
   };
 
   return (
     <div className="space-y-6">
+      {/* Overview Statistics */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+            <FileText className="h-5 w-5 text-primary" />
             Forms Overview
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{assignedForms.length}</div>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-primary">{totalForms}</div>
               <div className="text-sm text-muted-foreground">Total Assigned</div>
             </div>
-            
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{completedCount}</div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{completedForms}</div>
               <div className="text-sm text-muted-foreground">Completed</div>
             </div>
-            
-            <div className="text-center p-4 bg-amber-50 rounded-lg">
-              <div className="text-2xl font-bold text-amber-600">
-                {assignedForms.filter(f => f.status === 'in_progress').length}
-              </div>
-              <div className="text-sm text-muted-foreground">In Progress</div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">{inProgressForms}</div>
+              <div className="text-sm text-muted-foreground">Not Started</div>
             </div>
-            
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">
-                {assignedForms.filter(f => f.status === 'overdue').length}
-              </div>
-              <div className="text-sm text-muted-foreground">Overdue</div>
+            <div className="text-center p-4 bg-muted rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{underReviewForms}</div>
+              <div className="text-sm text-muted-foreground">Under Review</div>
             </div>
           </div>
-
-          <div className="mb-4">
+          
+          <div>
             <div className="flex justify-between text-sm mb-2">
-              <span>Completion Rate</span>
-              <span>{Math.round(completionRate)}%</span>
+              <span className="text-muted-foreground">Completion Rate</span>
+              <span className="font-medium">{completionRate.toFixed(0)}%</span>
             </div>
-            <Progress value={completionRate} className="h-3" />
+            <Progress value={completionRate} className="h-2" />
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Assigned Forms</CardTitle>
-          <Button size="sm" variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Request Form
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {assignedForms.map((form) => {
-              const daysRemaining = getDaysRemaining(form.dueDate);
-              
-              return (
-                <Card key={form.id} className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-start gap-3">
-                      {getStatusIcon(form.status)}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold">{form.title}</h4>
-                          {getPriorityBadge(form.priority)}
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{form.description}</p>
-                        
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          <span>Assigned: {new Date(form.assignedDate).toLocaleDateString()}</span>
-                          <span>Due: {new Date(form.dueDate).toLocaleDateString()}</span>
-                          {form.completedDate && (
-                            <span>Completed: {new Date(form.completedDate).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                        
-                        {form.status !== 'completed' && (
-                          <div className="mt-2">
-                            {daysRemaining > 0 ? (
-                              <span className="text-xs text-muted-foreground">
-                                {daysRemaining} days remaining
-                              </span>
-                            ) : (
-                              <span className="text-xs text-red-600 font-medium">
-                                {Math.abs(daysRemaining)} days overdue
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(form.status)}
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
+      {/* Assigned Forms List */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            Action Required
+            <FileText className="h-5 w-5 text-primary" />
+            Assigned Forms
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {assignedForms
-              .filter(form => form.status === 'overdue' || (form.status === 'pending' && getDaysRemaining(form.dueDate) <= 7))
-              .map((form) => (
-                <div key={form.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="h-5 w-5 text-red-600" />
-                    <div>
-                      <p className="font-medium">{form.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {form.status === 'overdue' 
-                          ? `${Math.abs(getDaysRemaining(form.dueDate))} days overdue` 
-                          : `Due in ${getDaysRemaining(form.dueDate)} days`
-                        }
-                      </p>
+          {forms.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-lg font-medium">No Forms Assigned</p>
+              <p className="text-sm mt-2">This staff member has not been assigned any forms yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {forms.map((form) => (
+                <div
+                  key={form.id}
+                  className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      {getStatusIcon(form.submission_status || 'not_submitted')}
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-1">{form.title}</h4>
+                        {form.description && (
+                          <p className="text-sm text-muted-foreground mb-3">{form.description}</p>
+                        )}
+                        
+                        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Assigned: {format(new Date(form.assigned_at), 'MMM dd, yyyy')}
+                          </div>
+                          {form.submitted_at && (
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Submitted: {format(new Date(form.submitted_at), 'MMM dd, yyyy')}
+                            </div>
+                          )}
+                          {form.reviewed_at && (
+                            <div className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              Reviewed: {format(new Date(form.reviewed_at), 'MMM dd, yyyy')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      {getStatusBadge(form.submission_status || 'not_submitted')}
+                      {form.submission_status === 'completed' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedSubmission({ formId: form.id, formTitle: form.title })}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Submission
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <Button size="sm" variant="destructive">
-                    Complete Now
-                  </Button>
                 </div>
               ))}
-            
-            {assignedForms.filter(form => 
-              form.status === 'overdue' || (form.status === 'pending' && getDaysRemaining(form.dueDate) <= 7)
-            ).length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>All forms are up to date!</p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Submission Detail Dialog */}
+      <Dialog open={!!selectedSubmission} onOpenChange={() => setSelectedSubmission(null)}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Form Submission: {selectedSubmission?.formTitle}</DialogTitle>
+          </DialogHeader>
+          {submissionData && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                <div>
+                  <div className="text-sm text-muted-foreground">Status</div>
+                  <div className="font-medium">{submissionData.status}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground">Submitted</div>
+                  <div className="font-medium">
+                    {submissionData.submitted_at 
+                      ? format(new Date(submissionData.submitted_at), 'MMM dd, yyyy HH:mm')
+                      : 'Not submitted'}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="border border-border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Submission Data</h4>
+                <pre className="text-sm bg-muted p-4 rounded overflow-auto max-h-96">
+                  {JSON.stringify(submissionData.submission_data, null, 2)}
+                </pre>
+              </div>
+
+              {submissionData.review_notes && (
+                <div className="border border-border rounded-lg p-4">
+                  <h4 className="font-medium mb-2">Review Notes</h4>
+                  <p className="text-sm text-muted-foreground">{submissionData.review_notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
