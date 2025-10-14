@@ -7,7 +7,14 @@ import {
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ControlledDialog } from "@/components/ui/controlled-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { CarerOverviewTab } from "@/components/carer-profile/CarerOverviewTab";
 import { CarerPersonalDetailsTab } from "@/components/carer-profile/CarerPersonalDetailsTab";
@@ -101,117 +108,127 @@ export function ViewFullCarerProfileDialog({
 
   if (isLoading) {
     return (
-      <ControlledDialog
-        id="view-full-carer-profile"
-        open={isOpen}
-        onOpenChange={(open) => !open && handleClose()}
-        title="Loading Profile..."
-        description="Please wait while we load the carer profile"
-        className="max-w-[95vw] max-h-[95vh] z-[60]"
-      >
-        <div className="flex items-center justify-center p-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading full profile...</p>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-border">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <User className="h-5 w-5 text-primary" />
+              Loading Profile...
+            </DialogTitle>
+            <DialogDescription>
+              Please wait while we load the carer profile
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading full profile...</p>
+            </div>
           </div>
-        </div>
-      </ControlledDialog>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   if (error || !carer) {
     return (
-      <ControlledDialog
-        id="view-full-carer-profile"
-        open={isOpen}
-        onOpenChange={(open) => !open && handleClose()}
-        title="Error Loading Profile"
-        description="Unable to load carer profile"
-        className="max-w-[95vw] max-h-[95vh] z-[60]"
-      >
-        <div className="flex items-center justify-center p-12">
-          <div className="text-center">
-            <p className="text-red-600 mb-4">Failed to load carer profile</p>
-            <Button onClick={handleClose} variant="outline">Close</Button>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent className="max-w-7xl max-h-[95vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-border">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <AlertTriangle className="h-5 w-5 text-primary" />
+              Error Loading Profile
+            </DialogTitle>
+            <DialogDescription>
+              Unable to load carer profile
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-12">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">Failed to load carer profile</p>
+              <Button onClick={handleClose} variant="outline">Close</Button>
+            </div>
           </div>
-        </div>
-      </ControlledDialog>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
     <>
-      <ControlledDialog
-        id="view-full-carer-profile"
-        open={isOpen}
-        onOpenChange={(open) => !open && handleClose()}
-        title={`${carer.first_name} ${carer.last_name} - Full Profile`}
-        description="Comprehensive view of carer information, performance, and details"
-        className="max-w-[95vw] max-h-[95vh] overflow-hidden z-[60]"
-        onEscapeKeyDown={handleClose}
-        onPointerDownOutside={handleClose}
-      >
-        <div className="overflow-y-auto max-h-[80vh] px-2">
-          {/* Header with Share Button */}
-          <div className="flex items-center justify-end mb-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowSharingDialog(true)}
-              className="flex items-center gap-2"
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-          </div>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+        <DialogContent 
+          className="max-w-7xl max-h-[95vh] p-0 overflow-hidden"
+          onEscapeKeyDown={handleClose}
+          onPointerDownOutside={handleClose}
+        >
+          <DialogHeader className="px-6 py-4 border-b border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                <DialogTitle className="text-xl">
+                  {carer.first_name} {carer.last_name} - Full Profile
+                </DialogTitle>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowSharingDialog(true)}
+                className="flex items-center gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
+            </div>
+            <DialogDescription>
+              Comprehensive view of carer information, performance, and details
+            </DialogDescription>
+          </DialogHeader>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Vertical Tab Sidebar */}
-            <div className="lg:col-span-2 order-1 lg:order-1">
-              <Card className="shadow-lg sticky top-4">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold">Navigation</CardTitle>
-                </CardHeader>
-                <CardContent className="p-2">
-                  <nav className="space-y-1 max-h-[60vh] overflow-y-auto pr-2">
-                    {tabs.map((tab) => {
-                      const Icon = tab.icon;
-                      const isActive = activeTab === tab.value;
-                      return (
-                        <button
-                          key={tab.value}
-                          onClick={() => setActiveTab(tab.value)}
-                          className={cn(
-                            "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
-                            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                            isActive
-                              ? "bg-primary text-primary-foreground shadow-md scale-105"
-                              : "text-foreground hover:bg-muted hover:text-primary"
-                          )}
-                        >
-                          <Icon className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate text-left">{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </nav>
-                </CardContent>
-              </Card>
+          <div className="flex h-[calc(95vh-80px)]">
+            {/* Left Sidebar - Navigation */}
+            <div className="w-80 border-r border-border bg-muted/30 flex flex-col">
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="p-6 space-y-1">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.value;
+                    return (
+                      <button
+                        key={tab.value}
+                        onClick={() => setActiveTab(tab.value)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground hover:bg-muted hover:text-primary"
+                        )}
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate text-left">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
 
-            {/* Content Area */}
-            <div className="lg:col-span-10 order-2 lg:order-2">
-              {/* Tab Content Card */}
-              <Card className="shadow-lg">
-                <CardHeader className="border-b">
-                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                    {React.createElement(tabs.find(t => t.value === activeTab)?.icon || User, { 
-                      className: "h-5 w-5 text-primary" 
-                    })}
-                    {tabs.find(t => t.value === activeTab)?.label || "Overview"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6">
+            {/* Right Panel - Content */}
+            <div className="flex-1 flex flex-col">
+              {/* Tab Title Header */}
+              <div className="border-b border-border px-6 py-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  {React.createElement(tabs.find(t => t.value === activeTab)?.icon || User, { 
+                    className: "h-4 w-4" 
+                  })}
+                  {tabs.find(t => t.value === activeTab)?.label || "Overview"}
+                </h3>
+              </div>
+
+              {/* Scrollable Content Area */}
+              <ScrollArea className="flex-1 min-h-0">
+                <div className="min-h-full p-6">
                   <div className="animate-in fade-in-50 duration-300">
                     {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
                     {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
@@ -234,12 +251,12 @@ export function ViewFullCarerProfileDialog({
                     {activeTab === "rate" && <CarerRateTab carerId={carerId} />}
                     {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </ScrollArea>
             </div>
           </div>
-        </div>
-      </ControlledDialog>
+        </DialogContent>
+      </Dialog>
 
       {/* Sharing Dialog */}
       {carer && showSharingDialog && (
