@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,14 +20,22 @@ interface CarerViewAttendanceTabProps {
 
 export const CarerViewAttendanceTab: React.FC<CarerViewAttendanceTabProps> = ({ carerId }) => {
   const { data: carerProfile, isLoading: isProfileLoading } = useCarerProfileById(carerId);
+  
+  // Memoize the date range to prevent infinite refetch loop
+  const dateRangeFilter = useMemo(() => {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    return {
+      from: sixMonthsAgo,
+      to: new Date()
+    };
+  }, []); // Empty dependency array - only create once on mount
+
   const { data: attendanceRecords = [], isLoading: isAttendanceLoading } = useAttendanceRecords(
     carerProfile?.branch_id || "", 
     {
       attendanceType: 'staff',
-      dateRange: {
-        from: new Date(new Date().setMonth(new Date().getMonth() - 6)),
-        to: new Date()
-      }
+      dateRange: dateRangeFilter
     },
     { enabled: !!carerProfile?.branch_id }
   );
