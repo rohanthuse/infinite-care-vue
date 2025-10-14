@@ -1,17 +1,87 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Award, Book, Calendar, Plus, CheckCircle, Clock, AlertCircle } from "lucide-react";
-import { useCarerTraining } from "@/hooks/useCarerTraining";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Award, Book, Calendar, Plus, CheckCircle, Clock, AlertCircle, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { useStaffTrainingById } from "@/hooks/useStaffTrainingById";
+import { useCarerProfileById } from "@/hooks/useCarerProfile";
+import { AssignTrainingDialog } from "@/components/training/AssignTrainingDialog";
+import { useTrainingCourses } from "@/hooks/useTrainingCourses";
+import { useTrainingManagement } from "@/hooks/useTrainingManagement";
+import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface CarerTrainingTabProps {
   carerId: string;
 }
 
 export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) => {
-  const { trainingRecords = [], stats, isLoading, error } = useCarerTraining();
+  const [assignTrainingOpen, setAssignTrainingOpen] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: carerProfile } = useCarerProfileById(carerId);
+  const branchId = carerProfile?.branch_id || "";
+
+  const { trainingRecords = [], stats, isLoading, error } = useStaffTrainingById(
+    carerId, 
+    branchId
+  );
+
+  // Fetch training courses and existing records for the assign dialog
+  const { data: trainingCourses = [] } = useTrainingCourses(branchId);
+  const { records: existingRecords = [] } = useStaffTrainingRecords(branchId);
+  const { assignTraining, isAssigning } = useTrainingManagement(branchId);
+
+  // Handler for assigning training
+  const handleAssignTraining = (courseId: string, staffIds: string[]) => {
+    assignTraining({ courseId, staffIds });
+    setAssignTrainingOpen(false);
+  };
+
+  // Delete training mutation
+  const deleteTrainingMutation = useMutation({
+    mutationFn: async (recordId: string) => {
+      const { error } = await supabase
+        .from('staff_training_records')
+        .delete()
+        .eq('id', recordId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // Invalidate both query keys to sync all views
+      queryClient.invalidateQueries({ queryKey: ['staff-training-by-id', carerId] });
+      queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      toast({
+        title: "Training removed",
+        description: "Training record has been removed successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to remove training: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteTraining = (recordId: string) => {
+    if (confirm('Are you sure you want to remove this training record?')) {
+      deleteTrainingMutation.mutate(recordId);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -100,7 +170,12 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
             <Book className="h-5 w-5" />
             Training Records
           </CardTitle>
-          <Button size="sm" variant="outline">
+          <Button 
+            size="sm" 
+            variant="outline"
+            onClick={() => setAssignTrainingOpen(true)}
+            disabled={!branchId}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Training
           </Button>
@@ -114,8 +189,8 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
               </div>
             ) : (
               trainingRecords.map((record) => (
-                <div key={record.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-4">
+                <div key={record.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                  <div className="flex items-center gap-4 flex-1">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
                       record.status === 'completed' ? 'bg-green-100' :
                       record.status === 'expired' ? 'bg-red-100' :
@@ -130,11 +205,17 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
                       )}
                     </div>
                     
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-medium">{record.training_course?.title}</h4>
                       <p className="text-sm text-muted-foreground">{record.training_course?.category}</p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        {record.training_course?.is_mandatory && <span>Mandatory</span>}
+                        {record.training_course?.is_mandatory && <span className="font-medium">Mandatory</span>}
+                        {record.assigned_date && (
+                          <>
+                            <span>•</span>
+                            <span>Assigned: {new Date(record.assigned_date).toLocaleDateString()}</span>
+                          </>
+                        )}
                         {record.completion_date && (
                           <>
                             <span>•</span>
@@ -162,6 +243,32 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
                     {record.evidence_files && record.evidence_files.length > 0 && (
                       <Button size="sm" variant="outline">View Certificate</Button>
                     )}
+                    
+                    {/* Actions Dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Status
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteTraining(record.id)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Remove Training
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))
@@ -202,6 +309,25 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
           </div>
         </CardContent>
       </Card>
+
+      {/* Assign Training Dialog */}
+      {branchId && (
+        <AssignTrainingDialog
+          open={assignTrainingOpen}
+          onOpenChange={setAssignTrainingOpen}
+          onAssign={(courseId, staffIds) => handleAssignTraining(courseId, staffIds)}
+          isAssigning={isAssigning}
+          trainingCourses={trainingCourses}
+          staff={[{
+            id: carerId,
+            first_name: carerProfile?.first_name || '',
+            last_name: carerProfile?.last_name || '',
+            email: carerProfile?.email || '',
+            specialization: carerProfile?.specialization || ''
+          }]}
+          existingRecords={existingRecords.filter(r => r.staff_id === carerId)}
+        />
+      )}
     </div>
   );
 };
