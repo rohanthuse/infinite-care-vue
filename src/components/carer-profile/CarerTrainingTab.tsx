@@ -11,12 +11,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Award, Book, Calendar, Plus, CheckCircle, Clock, AlertCircle, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
 import TrainingRecordDetailsDialog from "@/components/training/TrainingRecordDetailsDialog";
+import { EditTrainingStatusDialog } from "@/components/training/EditTrainingStatusDialog";
 import { useStaffTrainingById } from "@/hooks/useStaffTrainingById";
+import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { AssignTrainingDialog } from "@/components/training/AssignTrainingDialog";
 import { useTrainingCourses } from "@/hooks/useTrainingCourses";
 import { useTrainingManagement } from "@/hooks/useTrainingManagement";
-import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,8 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
   const [assignTrainingOpen, setAssignTrainingOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<typeof trainingRecords[0] | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [editStatusDialogOpen, setEditStatusDialogOpen] = useState(false);
+  const [recordToEdit, setRecordToEdit] = useState<typeof trainingRecords[0] | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -42,7 +45,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
 
   // Fetch training courses and existing records for the assign dialog
   const { data: trainingCourses = [] } = useTrainingCourses(branchId);
-  const { records: existingRecords = [] } = useStaffTrainingRecords(branchId);
+  const { records: existingRecords = [], updateRecord, isUpdating } = useStaffTrainingRecords(branchId);
   const { assignTraining, isAssigning } = useTrainingManagement(branchId);
 
   // Handler for assigning training
@@ -89,6 +92,17 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
   const handleViewCertificate = (record: typeof trainingRecords[0]) => {
     setSelectedRecord(record);
     setDetailsDialogOpen(true);
+  };
+
+  const handleEditStatus = (record: typeof trainingRecords[0]) => {
+    setRecordToEdit(record);
+    setEditStatusDialogOpen(true);
+  };
+
+  const handleUpdateTrainingStatus = (recordId: string, updates: any) => {
+    updateRecord({ id: recordId, ...updates });
+    setEditStatusDialogOpen(false);
+    setRecordToEdit(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -270,7 +284,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditStatus(record)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Status
                         </DropdownMenuItem>
@@ -351,6 +365,17 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
           record={selectedRecord as any}
           staffName={`${carerProfile?.first_name || ''} ${carerProfile?.last_name || ''}`.trim()}
           trainingTitle={selectedRecord.training_course?.title || 'Training'}
+        />
+      )}
+
+      {/* Edit Training Status Dialog */}
+      {recordToEdit && (
+        <EditTrainingStatusDialog
+          open={editStatusDialogOpen}
+          onOpenChange={setEditStatusDialogOpen}
+          record={recordToEdit as any}
+          onUpdate={handleUpdateTrainingStatus}
+          isUpdating={isUpdating}
         />
       )}
     </div>
