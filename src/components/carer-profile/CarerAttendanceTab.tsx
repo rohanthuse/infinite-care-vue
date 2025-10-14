@@ -17,7 +17,7 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
     {
       attendanceType: 'staff',
       dateRange: {
-        from: new Date(new Date().setDate(new Date().getDate() - 30)), // Last 30 days
+        from: new Date(new Date().setMonth(new Date().getMonth() - 6)), // Last 6 months
         to: new Date()
       }
     }
@@ -25,7 +25,7 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
   
   // Filter records for this specific carer and calculate stats
   const carerRecords = attendanceRecords.filter(record => 
-    record.person_name === `${carerProfile?.first_name} ${carerProfile?.last_name}`
+    record.person_id === carerId
   );
   
   const stats = {
@@ -132,7 +132,7 @@ export const CarerAttendanceTab: React.FC<CarerAttendanceTabProps> = ({ carerId 
                 <p>No attendance records found</p>
               </div>
             ) : (
-              attendanceRecords.map((record) => (
+              carerRecords.map((record) => (
                 <div key={record.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-4">
                     <div className="text-center">
