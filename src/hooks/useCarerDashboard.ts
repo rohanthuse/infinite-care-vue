@@ -140,10 +140,15 @@ export const useCarerDashboard = () => {
   });
 
   // Get improvement areas for the carer
-  const { data: improvementAreas = [], isLoading: improvementAreasLoading } = useQuery({
+  const { data: improvementAreas = [], isLoading: improvementAreasLoading, error: improvementAreasError } = useQuery({
     queryKey: ['carer-improvement-areas', carerContext?.staffId],
     queryFn: async () => {
-      if (!carerContext?.staffId) return [];
+      if (!carerContext?.staffId) {
+        console.warn('[useCarerDashboard] Cannot fetch improvement areas - staffId not available');
+        return [];
+      }
+      
+      console.log('[useCarerDashboard] Fetching improvement areas for staffId:', carerContext.staffId);
       
       const { data, error } = await supabase
         .from('staff_improvement_areas')
@@ -155,14 +160,23 @@ export const useCarerDashboard = () => {
         .limit(5);
 
       if (error) {
-        console.error('Improvement areas query error:', error);
-        return [];
+        console.error('[useCarerDashboard] Improvement areas query error:', error);
+        console.error('[useCarerDashboard] Query details:', {
+          staffId: carerContext.staffId,
+          status: ['open', 'in_progress'],
+        });
+        throw error;
       }
+      
+      console.log('[useCarerDashboard] Improvement areas fetched:', data?.length || 0, 'records');
+      console.log('[useCarerDashboard] Improvement areas data:', data);
+      
       return data || [];
     },
     enabled: !!carerContext?.staffId,
-    staleTime: 3 * 60 * 1000, // 3 minutes
+    staleTime: 3 * 60 * 1000,
     refetchOnWindowFocus: true,
+    retry: 1,
   });
 
   // Check if appointment can be started
@@ -218,6 +232,7 @@ export const useCarerDashboard = () => {
     clientCount,
     weeklyHours,
     improvementAreas,
+    improvementAreasError,
     isLoading,
     // New unified context
     carerContext,

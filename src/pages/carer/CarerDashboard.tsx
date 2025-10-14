@@ -23,10 +23,15 @@ const CarerDashboard: React.FC = () => {
     clientCount,
     weeklyHours,
     improvementAreas,
+    improvementAreasError,
     isLoading,
     user,
     carerBranch,
   } = useCarerDashboard();
+
+  // Debug logging
+  console.log('[CarerDashboard] Improvement areas count:', improvementAreas?.length || 0);
+  console.log('[CarerDashboard] Improvement areas error:', improvementAreasError);
 
   const handleMobileMenuToggle = () => {
     setSidebarOpen(!sidebarOpen);
@@ -160,9 +165,43 @@ const CarerDashboard: React.FC = () => {
             </div>
 
             {/* Improvement Areas Card */}
-            {improvementAreas && improvementAreas.length > 0 && (
+            {improvementAreasError ? (
+              <Card className="border-l-4 border-l-red-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-red-600">
+                    <AlertCircle className="h-5 w-5" />
+                    Error Loading Improvement Areas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">
+                    Unable to load improvement areas. Please refresh the page or contact support if the issue persists.
+                  </p>
+                  <details className="mt-2 text-xs text-gray-500">
+                    <summary className="cursor-pointer">Technical Details</summary>
+                    <pre className="mt-2 p-2 bg-gray-50 rounded overflow-auto">
+                      {JSON.stringify(improvementAreasError, null, 2)}
+                    </pre>
+                  </details>
+                </CardContent>
+              </Card>
+            ) : improvementAreas && improvementAreas.length > 0 ? (
               <ImprovementAreasCard improvementAreas={improvementAreas} />
-            )}
+            ) : !isLoading ? (
+              <Card className="border-l-4 border-l-green-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-5 w-5" />
+                    No Improvement Areas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600">
+                    Great work! You don't have any improvement areas at the moment. Keep up the excellent performance!
+                  </p>
+                </CardContent>
+              </Card>
+            ) : null}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Attendance Widget */}

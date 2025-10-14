@@ -61,6 +61,12 @@ export const useCarerContext = () => {
         console.warn('[useCarerContext] No branch found for ID:', staffProfile.branch_id);
       }
 
+      console.log('[useCarerContext] Returning context:', {
+        staffId: staffProfile.id,
+        authUserId: user.id,
+        branchId: staffProfile.branch_id
+      });
+
       return {
         staffId: staffProfile.id,
         staffProfile,
