@@ -213,7 +213,7 @@ export function ViewFullCarerProfileDialog({
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="animate-in fade-in-50 duration-300">
-                    {activeTab === "overview" && <CarerOverviewTab carerId={carerId} />}
+                    {activeTab === "overview" && <CarerOverviewTab carerId={carerId} branchName={branchName} />}
                     {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
                     {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
                     {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}

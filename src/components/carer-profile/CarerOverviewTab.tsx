@@ -7,9 +7,23 @@ import { useCarerBookings } from "@/hooks/useCarerBookings";
 
 interface CarerOverviewTabProps {
   carerId: string;
+  branchName?: string;
 }
 
-export const CarerOverviewTab: React.FC<CarerOverviewTabProps> = ({ carerId }) => {
+const formatDate = (dateString?: string) => {
+  if (!dateString) return 'Not available';
+  try {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  } catch {
+    return 'Invalid date';
+  }
+}
+
+export const CarerOverviewTab: React.FC<CarerOverviewTabProps> = ({ carerId, branchName }) => {
   const { data: carer } = useCarerProfileById(carerId);
   const { data: bookings = [] } = useCarerBookings(carerId);
 
@@ -33,6 +47,62 @@ export const CarerOverviewTab: React.FC<CarerOverviewTabProps> = ({ carerId }) =
 
   return (
     <div className="space-y-6">
+      {/* Staff Details Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-bold">Staff Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Staff Name:</p>
+              <p className="text-base mt-1">
+                {carer?.first_name} {carer?.last_name}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Email Address:</p>
+              <p className="text-base mt-1">{carer?.email || 'Not available'}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Employee ID / Staff Code:</p>
+              <p className="text-base mt-1 font-mono text-sm">{carer?.id}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Phone Number:</p>
+              <p className="text-base mt-1">{carer?.phone || 'Not provided'}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Designation / Role:</p>
+              <p className="text-base mt-1">{carer?.specialization || 'Not specified'}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Joining Date:</p>
+              <p className="text-base mt-1">{formatDate(carer?.hire_date)}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Department / Team:</p>
+              <p className="text-base mt-1">{branchName || 'Not available'}</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Status:</p>
+              <div className="mt-1">
+                <Badge variant={carer?.status === 'Active' ? 'default' : 'secondary'}>
+                  {carer?.status || 'Unknown'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
