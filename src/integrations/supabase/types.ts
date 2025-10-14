@@ -6318,6 +6318,108 @@ export type Database = {
           },
         ]
       }
+      staff_improvement_areas: {
+        Row: {
+          action_plan: string | null
+          area_title: string
+          branch_id: string | null
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          identified_at: string | null
+          identified_by: string | null
+          last_review_date: string | null
+          next_review_date: string | null
+          priority: string
+          progress_notes: string | null
+          progress_percentage: number | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source_reference_id: string | null
+          source_type: string | null
+          staff_id: string
+          status: string
+          support_required: string | null
+          target_completion_date: string | null
+          training_recommended: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_plan?: string | null
+          area_title: string
+          branch_id?: string | null
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          identified_at?: string | null
+          identified_by?: string | null
+          last_review_date?: string | null
+          next_review_date?: string | null
+          priority: string
+          progress_notes?: string | null
+          progress_percentage?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          source_reference_id?: string | null
+          source_type?: string | null
+          staff_id: string
+          status?: string
+          support_required?: string | null
+          target_completion_date?: string | null
+          training_recommended?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_plan?: string | null
+          area_title?: string
+          branch_id?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          identified_at?: string | null
+          identified_by?: string | null
+          last_review_date?: string | null
+          next_review_date?: string | null
+          priority?: string
+          progress_notes?: string | null
+          progress_percentage?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_reference_id?: string | null
+          source_type?: string | null
+          staff_id?: string
+          status?: string
+          support_required?: string | null
+          target_completion_date?: string | null
+          training_recommended?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_improvement_areas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_improvement_areas_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_leave_requests: {
         Row: {
           branch_id: string
@@ -6387,6 +6489,207 @@ export type Database = {
           },
           {
             foreignKeyName: "staff_leave_requests_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_performance_reviews: {
+        Row: {
+          action_items: Json | null
+          areas_for_improvement: string | null
+          branch_id: string | null
+          communication_rating: number | null
+          created_at: string | null
+          development_goals: string | null
+          follow_up_date: string | null
+          id: string
+          initiative_rating: number | null
+          overall_rating: number | null
+          performance_summary: string
+          professionalism_rating: number | null
+          punctuality_rating: number | null
+          quality_of_work_rating: number | null
+          review_date: string
+          review_period_end: string
+          review_period_start: string
+          review_type: string
+          reviewer_id: string
+          reviewer_name: string
+          staff_acknowledged_at: string | null
+          staff_comments: string | null
+          staff_id: string
+          status: string
+          strengths: string | null
+          teamwork_rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_items?: Json | null
+          areas_for_improvement?: string | null
+          branch_id?: string | null
+          communication_rating?: number | null
+          created_at?: string | null
+          development_goals?: string | null
+          follow_up_date?: string | null
+          id?: string
+          initiative_rating?: number | null
+          overall_rating?: number | null
+          performance_summary: string
+          professionalism_rating?: number | null
+          punctuality_rating?: number | null
+          quality_of_work_rating?: number | null
+          review_date: string
+          review_period_end: string
+          review_period_start: string
+          review_type: string
+          reviewer_id: string
+          reviewer_name: string
+          staff_acknowledged_at?: string | null
+          staff_comments?: string | null
+          staff_id: string
+          status?: string
+          strengths?: string | null
+          teamwork_rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_items?: Json | null
+          areas_for_improvement?: string | null
+          branch_id?: string | null
+          communication_rating?: number | null
+          created_at?: string | null
+          development_goals?: string | null
+          follow_up_date?: string | null
+          id?: string
+          initiative_rating?: number | null
+          overall_rating?: number | null
+          performance_summary?: string
+          professionalism_rating?: number | null
+          punctuality_rating?: number | null
+          quality_of_work_rating?: number | null
+          review_date?: string
+          review_period_end?: string
+          review_period_start?: string
+          review_type?: string
+          reviewer_id?: string
+          reviewer_name?: string
+          staff_acknowledged_at?: string | null
+          staff_comments?: string | null
+          staff_id?: string
+          status?: string
+          strengths?: string | null
+          teamwork_rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_performance_reviews_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_performance_reviews_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_quality_metrics: {
+        Row: {
+          average_rating: number | null
+          branch_id: string | null
+          calculated_at: string | null
+          calculated_by: string | null
+          calculation_period: string
+          cancelled_bookings: number | null
+          client_satisfaction_score: number | null
+          communication_skills_score: number | null
+          completed_bookings: number | null
+          created_at: string | null
+          documentation_quality_score: number | null
+          id: string
+          incidents_reported: number | null
+          incidents_resolved: number | null
+          late_arrivals: number | null
+          period_end_date: string
+          period_start_date: string
+          professionalism_score: number | null
+          punctuality_score: number | null
+          staff_id: string
+          task_completion_rate: number | null
+          total_bookings: number | null
+          total_reviews: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          average_rating?: number | null
+          branch_id?: string | null
+          calculated_at?: string | null
+          calculated_by?: string | null
+          calculation_period: string
+          cancelled_bookings?: number | null
+          client_satisfaction_score?: number | null
+          communication_skills_score?: number | null
+          completed_bookings?: number | null
+          created_at?: string | null
+          documentation_quality_score?: number | null
+          id?: string
+          incidents_reported?: number | null
+          incidents_resolved?: number | null
+          late_arrivals?: number | null
+          period_end_date: string
+          period_start_date: string
+          professionalism_score?: number | null
+          punctuality_score?: number | null
+          staff_id: string
+          task_completion_rate?: number | null
+          total_bookings?: number | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          average_rating?: number | null
+          branch_id?: string | null
+          calculated_at?: string | null
+          calculated_by?: string | null
+          calculation_period?: string
+          cancelled_bookings?: number | null
+          client_satisfaction_score?: number | null
+          communication_skills_score?: number | null
+          completed_bookings?: number | null
+          created_at?: string | null
+          documentation_quality_score?: number | null
+          id?: string
+          incidents_reported?: number | null
+          incidents_resolved?: number | null
+          late_arrivals?: number | null
+          period_end_date?: string
+          period_start_date?: string
+          professionalism_score?: number | null
+          punctuality_score?: number | null
+          staff_id?: string
+          task_completion_rate?: number | null
+          total_bookings?: number | null
+          total_reviews?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_quality_metrics_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_quality_metrics_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
