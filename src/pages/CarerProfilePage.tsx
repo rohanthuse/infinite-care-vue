@@ -289,7 +289,7 @@ const CarerProfilePage: React.FC = () => {
               <TabsContent value="hobbies"><CarerHobbiesTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="meetings"><CarerMeetingsTab carerId={carerId || ''} branchId={branchId} /></TabsContent>
               <TabsContent value="documents"><CarerDocumentsTab carerId={carerId || ''} /></TabsContent>
-              <TabsContent value="rate"><CarerRateTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="rate"><CarerRateTab carerId={carerId || ''} branchId={branchId} /></TabsContent>
               <TabsContent value="settings"><CarerSettingsTab carerId={carerId || ''} /></TabsContent>
             </Tabs>
           </div>

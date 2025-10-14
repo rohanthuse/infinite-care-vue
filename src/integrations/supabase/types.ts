@@ -6325,6 +6325,122 @@ export type Database = {
           },
         ]
       }
+      staff_rate_schedules: {
+        Row: {
+          authority_type: string
+          bank_holiday_multiplier: number | null
+          base_rate: number
+          branch_id: string | null
+          charge_type: string | null
+          consecutive_hours_rate: number | null
+          created_at: string | null
+          created_by: string | null
+          days_covered: string[]
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          is_vatable: boolean
+          organization_id: string | null
+          pay_based_on: string | null
+          rate_15_minutes: number | null
+          rate_30_minutes: number | null
+          rate_45_minutes: number | null
+          rate_60_minutes: number | null
+          rate_category: string | null
+          service_type_code: string | null
+          staff_id: string
+          start_date: string
+          time_from: string
+          time_until: string
+          updated_at: string | null
+        }
+        Insert: {
+          authority_type: string
+          bank_holiday_multiplier?: number | null
+          base_rate: number
+          branch_id?: string | null
+          charge_type?: string | null
+          consecutive_hours_rate?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          days_covered?: string[]
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_vatable?: boolean
+          organization_id?: string | null
+          pay_based_on?: string | null
+          rate_15_minutes?: number | null
+          rate_30_minutes?: number | null
+          rate_45_minutes?: number | null
+          rate_60_minutes?: number | null
+          rate_category?: string | null
+          service_type_code?: string | null
+          staff_id: string
+          start_date: string
+          time_from: string
+          time_until: string
+          updated_at?: string | null
+        }
+        Update: {
+          authority_type?: string
+          bank_holiday_multiplier?: number | null
+          base_rate?: number
+          branch_id?: string | null
+          charge_type?: string | null
+          consecutive_hours_rate?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          days_covered?: string[]
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_vatable?: boolean
+          organization_id?: string | null
+          pay_based_on?: string | null
+          rate_15_minutes?: number | null
+          rate_30_minutes?: number | null
+          rate_45_minutes?: number | null
+          rate_60_minutes?: number | null
+          rate_category?: string | null
+          service_type_code?: string | null
+          staff_id?: string
+          start_date?: string
+          time_from?: string
+          time_until?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_rate_schedules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_rate_schedules_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_rate_schedules_service_type_code_fkey"
+            columns: ["service_type_code"]
+            isOneToOne: false
+            referencedRelation: "service_types"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "staff_rate_schedules_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_training_records: {
         Row: {
           assigned_by: string | null

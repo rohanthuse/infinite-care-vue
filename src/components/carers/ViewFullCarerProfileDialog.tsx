@@ -248,7 +248,7 @@ export function ViewFullCarerProfileDialog({
                     {activeTab === "hobbies" && <CarerHobbiesTab carerId={carerId} />}
                     {activeTab === "meetings" && <CarerMeetingsTab carerId={carerId} branchId={branchId} />}
                     {activeTab === "documents" && <CarerDocumentsTab carerId={carerId} />}
-                    {activeTab === "rate" && <CarerRateTab carerId={carerId} />}
+                    {activeTab === "rate" && <CarerRateTab carerId={carerId} branchId={branchId} />}
                     {activeTab === "settings" && <CarerSettingsTab carerId={carerId} />}
                   </div>
                 </div>
