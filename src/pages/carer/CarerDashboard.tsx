@@ -11,6 +11,7 @@ import { AttendanceStatusWidget } from "@/components/attendance/AttendanceStatus
 import { useCarerDashboard } from "@/hooks/useCarerDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { ImprovementAreasCard } from "@/components/carer/ImprovementAreasCard";
 
 const CarerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const CarerDashboard: React.FC = () => {
     tasks,
     clientCount,
     weeklyHours,
+    improvementAreas,
     isLoading,
     user,
     carerBranch,
@@ -156,6 +158,11 @@ const CarerDashboard: React.FC = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Improvement Areas Card */}
+            {improvementAreas && improvementAreas.length > 0 && (
+              <ImprovementAreasCard improvementAreas={improvementAreas} />
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Attendance Widget */}

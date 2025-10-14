@@ -139,6 +139,32 @@ export const useCarerDashboard = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Get improvement areas for the carer
+  const { data: improvementAreas = [], isLoading: improvementAreasLoading } = useQuery({
+    queryKey: ['carer-improvement-areas', carerContext?.staffId],
+    queryFn: async () => {
+      if (!carerContext?.staffId) return [];
+      
+      const { data, error } = await supabase
+        .from('staff_improvement_areas')
+        .select('*')
+        .eq('staff_id', carerContext.staffId)
+        .in('status', ['open', 'in_progress'])
+        .order('severity', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Improvement areas query error:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!carerContext?.staffId,
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    refetchOnWindowFocus: true,
+  });
+
   // Check if appointment can be started
   const canStartAppointment = (appointment: any) => {
     const now = new Date();
@@ -182,7 +208,7 @@ export const useCarerDashboard = () => {
     category: task.category || 'General',
   }));
 
-  const isLoading = contextLoading || appointmentsLoading || upcomingLoading || tasksLoading || clientCountLoading || hoursLoading;
+  const isLoading = contextLoading || appointmentsLoading || upcomingLoading || tasksLoading || clientCountLoading || hoursLoading || improvementAreasLoading;
 
   return {
     todayAppointments,
@@ -191,6 +217,7 @@ export const useCarerDashboard = () => {
     tasks: formattedTasks,
     clientCount,
     weeklyHours,
+    improvementAreas,
     isLoading,
     // New unified context
     carerContext,
