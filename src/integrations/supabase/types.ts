@@ -6317,6 +6317,56 @@ export type Database = {
           },
         ]
       }
+      staff_employment_history: {
+        Row: {
+          created_at: string
+          employer: string
+          end_date: string | null
+          id: string
+          location: string
+          position: string
+          responsibilities: string[] | null
+          staff_id: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employer: string
+          end_date?: string | null
+          id?: string
+          location: string
+          position: string
+          responsibilities?: string[] | null
+          staff_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employer?: string
+          end_date?: string | null
+          id?: string
+          location?: string
+          position?: string
+          responsibilities?: string[] | null
+          staff_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_employment_history_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_hobbies: {
         Row: {
           created_at: string
