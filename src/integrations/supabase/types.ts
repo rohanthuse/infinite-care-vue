@@ -6150,6 +6150,50 @@ export type Database = {
           },
         ]
       }
+      staff_career_highlights: {
+        Row: {
+          achieved_date: string
+          color: string
+          created_at: string
+          description: string
+          highlight_type: string
+          id: string
+          staff_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          achieved_date: string
+          color?: string
+          created_at?: string
+          description: string
+          highlight_type: string
+          id?: string
+          staff_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          achieved_date?: string
+          color?: string
+          created_at?: string
+          description?: string
+          highlight_type?: string
+          id?: string
+          staff_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_career_highlights_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_contacts: {
         Row: {
           address: string | null
@@ -6813,6 +6857,56 @@ export type Database = {
           },
         ]
       }
+      staff_references: {
+        Row: {
+          company: string
+          contact_date: string
+          created_at: string
+          id: string
+          name: string
+          position: string
+          rating: number
+          relationship: string
+          staff_id: string
+          statement: string
+          updated_at: string
+        }
+        Insert: {
+          company: string
+          contact_date: string
+          created_at?: string
+          id?: string
+          name: string
+          position: string
+          rating: number
+          relationship: string
+          staff_id: string
+          statement: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string
+          contact_date?: string
+          created_at?: string
+          id?: string
+          name?: string
+          position?: string
+          rating?: number
+          relationship?: string
+          staff_id?: string
+          statement?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_references_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_skills: {
         Row: {
           created_at: string | null
@@ -6859,6 +6953,38 @@ export type Database = {
             foreignKeyName: "staff_skills_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_statements: {
+        Row: {
+          created_at: string
+          id: string
+          staff_id: string
+          statement: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          staff_id: string
+          statement: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          staff_id?: string
+          statement?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_statements_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
             referencedRelation: "staff"
             referencedColumns: ["id"]
           },
