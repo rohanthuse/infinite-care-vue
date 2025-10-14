@@ -17,6 +17,7 @@ import { ActiveVisitBanner } from "@/components/carer/ActiveVisitBanner";
 import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
 import { ReadyToStartSection } from "@/components/carer/ReadyToStartSection";
 import { ServiceReportsDashboardWidget } from "@/components/carer/ServiceReportsDashboardWidget";
+import { ImprovementAreasCard } from "@/components/carer/ImprovementAreasCard";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -30,9 +31,16 @@ const CarerOverview: React.FC = () => {
     tasks,
     clientCount,
     weeklyHours,
+    improvementAreas,
+    improvementAreasError,
     isLoading,
     carerBranch,
   } = useCarerDashboard();
+
+  // Debug logging for improvement areas
+  console.log('[CarerOverview] Improvement areas count:', improvementAreas?.length || 0);
+  console.log('[CarerOverview] Improvement areas error:', improvementAreasError);
+  console.log('[CarerOverview] Improvement areas data:', improvementAreas);
 
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
@@ -103,6 +111,47 @@ const CarerOverview: React.FC = () => {
 
       {/* Ready to Start Section */}
       <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />
+
+      {/* Improvement Areas Card */}
+      {improvementAreasError ? (
+        <Card className="border-l-4 border-l-red-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Error Loading Improvement Areas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600">
+              Unable to load improvement areas. Please refresh the page or contact support if the issue persists.
+            </p>
+            <details className="mt-2 text-xs text-gray-500">
+              <summary className="cursor-pointer">Technical Details</summary>
+              <pre className="mt-2 p-2 bg-gray-50 rounded overflow-auto">
+                {JSON.stringify(improvementAreasError, null, 2)}
+              </pre>
+            </details>
+          </CardContent>
+        </Card>
+      ) : improvementAreas && improvementAreas.length > 0 ? (
+        <ImprovementAreasCard improvementAreas={improvementAreas} />
+      ) : (
+        !isLoading && (
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-600">
+                <CheckCircle className="h-5 w-5" />
+                No Improvement Areas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">
+                Great work! You don't have any improvement areas at the moment. Keep up the excellent performance!
+              </p>
+            </CardContent>
+          </Card>
+        )
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
