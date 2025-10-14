@@ -2,9 +2,21 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Award, Plus, Star, TrendingUp, Search, Edit } from "lucide-react";
+import { Award, Plus, Star, Search, Edit, Trash2, Loader2 } from "lucide-react";
+import { useStaffSkills, useDeleteStaffSkill } from "@/hooks/useStaffSkills";
+import { AddStaffSkillDialog } from "./AddStaffSkillDialog";
+import { EditStaffSkillDialog } from "./EditStaffSkillDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CarerSkillsTabProps {
   carerId: string;
@@ -13,83 +25,66 @@ interface CarerSkillsTabProps {
 export const CarerSkillsTab: React.FC<CarerSkillsTabProps> = ({ carerId }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddSkill, setShowAddSkill] = useState(false);
+  const [editingSkill, setEditingSkill] = useState<any>(null);
+  const [deletingSkill, setDeletingSkill] = useState<any>(null);
 
-  const skillCategories = [
-    {
-      category: "Clinical Skills",
-      skills: [
-        { name: "Medication Administration", level: 4, verified: true, lastAssessed: "2023-12-01" },
-        { name: "Vital Signs Monitoring", level: 5, verified: true, lastAssessed: "2023-11-15" },
-        { name: "First Aid & CPR", level: 4, verified: true, lastAssessed: "2023-10-20" },
-        { name: "Wound Care", level: 3, verified: false, lastAssessed: "2023-09-10" },
-        { name: "Catheter Care", level: 2, verified: false, lastAssessed: null }
-      ]
-    },
-    {
-      category: "Personal Care",
-      skills: [
-        { name: "Mobility Assistance", level: 5, verified: true, lastAssessed: "2023-12-05" },
-        { name: "Personal Hygiene Support", level: 5, verified: true, lastAssessed: "2023-11-30" },
-        { name: "Meal Preparation", level: 4, verified: true, lastAssessed: "2023-10-15" },
-        { name: "Household Management", level: 3, verified: false, lastAssessed: "2023-08-20" }
-      ]
-    },
-    {
-      category: "Communication",
-      skills: [
-        { name: "Client Communication", level: 5, verified: true, lastAssessed: "2023-12-10" },
-        { name: "Family Liaison", level: 4, verified: true, lastAssessed: "2023-11-25" },
-        { name: "Documentation", level: 4, verified: true, lastAssessed: "2023-12-01" },
-        { name: "Conflict Resolution", level: 3, verified: false, lastAssessed: "2023-09-05" }
-      ]
-    },
-    {
-      category: "Specialized Care",
-      skills: [
-        { name: "Dementia Care", level: 4, verified: true, lastAssessed: "2023-11-20" },
-        { name: "Mental Health Support", level: 3, verified: false, lastAssessed: "2023-10-01" },
-        { name: "End of Life Care", level: 2, verified: false, lastAssessed: null },
-        { name: "Learning Disabilities", level: 3, verified: true, lastAssessed: "2023-09-15" }
-      ]
-    }
-  ];
+  const { data: staffSkills = [], isLoading } = useStaffSkills(carerId);
+  const deleteSkillMutation = useDeleteStaffSkill();
 
-  const getSkillLevelColor = (level: number) => {
+  const getSkillLevelColor = (level: string) => {
     switch (level) {
-      case 5: return "text-green-600 bg-green-50";
-      case 4: return "text-blue-600 bg-blue-50";
-      case 3: return "text-yellow-600 bg-yellow-50";
-      case 2: return "text-orange-600 bg-orange-50";
-      case 1: return "text-red-600 bg-red-50";
+      case 'expert': return "text-green-600 bg-green-50";
+      case 'advanced': return "text-blue-600 bg-blue-50";
+      case 'intermediate': return "text-yellow-600 bg-yellow-50";
+      case 'basic': return "text-orange-600 bg-orange-50";
+      case 'beginner': return "text-red-600 bg-red-50";
       default: return "text-gray-600 bg-gray-50";
     }
   };
 
-  const getSkillLevelText = (level: number) => {
-    switch (level) {
-      case 5: return "Expert";
-      case 4: return "Advanced";
-      case 3: return "Intermediate";
-      case 2: return "Basic";
-      case 1: return "Beginner";
-      default: return "Not Rated";
+  const getSkillLevelText = (level: string) => {
+    return level.charAt(0).toUpperCase() + level.slice(1);
+  };
+
+  const getLevelNumber = (level: string) => {
+    const mapping: { [key: string]: number } = {
+      'beginner': 1,
+      'basic': 2,
+      'intermediate': 3,
+      'advanced': 4,
+      'expert': 5
+    };
+    return mapping[level] || 3;
+  };
+
+  const filteredSkills = staffSkills.filter(skill =>
+    skill.skills?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalSkills = staffSkills.length;
+  const verifiedSkills = staffSkills.filter(skill => skill.verified).length;
+  const averageLevel = staffSkills.length > 0
+    ? staffSkills.reduce((acc, skill) => acc + getLevelNumber(skill.proficiency_level), 0) / staffSkills.length
+    : 0;
+
+  const handleDeleteSkill = async () => {
+    if (!deletingSkill) return;
+
+    try {
+      await deleteSkillMutation.mutateAsync(deletingSkill.id);
+      setDeletingSkill(null);
+    } catch (error) {
+      // Error handled in mutation
     }
   };
 
-  const filteredCategories = skillCategories.map(category => ({
-    ...category,
-    skills: category.skills.filter(skill =>
-      skill.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  })).filter(category => category.skills.length > 0);
-
-  const totalSkills = skillCategories.reduce((acc, cat) => acc + cat.skills.length, 0);
-  const verifiedSkills = skillCategories.reduce((acc, cat) => 
-    acc + cat.skills.filter(skill => skill.verified).length, 0
-  );
-  const averageLevel = skillCategories.reduce((acc, cat) => 
-    acc + cat.skills.reduce((sum, skill) => sum + skill.level, 0), 0
-  ) / totalSkills;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -119,7 +114,7 @@ export const CarerSkillsTab: React.FC<CarerSkillsTabProps> = ({ carerId }) => {
             
             <div className="text-center p-4 bg-amber-50 rounded-lg">
               <div className="text-2xl font-bold text-amber-600">
-                {Math.round((verifiedSkills / totalSkills) * 100)}%
+                {totalSkills > 0 ? Math.round((verifiedSkills / totalSkills) * 100) : 0}%
               </div>
               <div className="text-sm text-muted-foreground">Verified Rate</div>
             </div>
@@ -140,94 +135,158 @@ export const CarerSkillsTab: React.FC<CarerSkillsTabProps> = ({ carerId }) => {
               Add Skill
             </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {filteredCategories.map((category) => (
-        <Card key={category.category}>
-          <CardHeader>
-            <CardTitle className="text-lg">{category.category}</CardTitle>
-          </CardHeader>
-          <CardContent>
+          {filteredSkills.length === 0 ? (
+            <div className="text-center py-12">
+              <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-1">
+                {searchTerm ? 'No skills found' : 'No skills yet'}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm 
+                  ? 'Try adjusting your search term'
+                  : 'Start by adding your first skill'}
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => setShowAddSkill(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Skill
+                </Button>
+              )}
+            </div>
+          ) : (
             <div className="space-y-4">
-              {category.skills.map((skill, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getSkillLevelColor(skill.level)}`}>
-                      <Award className="h-5 w-5" />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium">{skill.name}</h4>
-                        {skill.verified && (
-                          <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
-                        )}
+              {filteredSkills.map((staffSkill) => {
+                const levelNum = getLevelNumber(staffSkill.proficiency_level);
+                
+                return (
+                  <div
+                    key={staffSkill.id}
+                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getSkillLevelColor(staffSkill.proficiency_level)}`}>
+                        <Award className="h-5 w-5" />
                       </div>
                       
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <span>Level:</span>
-                          <div className="flex">
-                            {[1,2,3,4,5].map(star => (
-                              <Star key={star} className={`h-3 w-3 ${star <= skill.level ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
-                            ))}
-                          </div>
-                          <span className={`px-2 py-1 rounded text-xs ${getSkillLevelColor(skill.level)}`}>
-                            {getSkillLevelText(skill.level)}
-                          </span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-medium">{staffSkill.skills?.name}</h4>
+                          {staffSkill.verified && (
+                            <Badge className="bg-green-100 text-green-800 text-xs">Verified</Badge>
+                          )}
                         </div>
                         
-                        {skill.lastAssessed && (
-                          <span>Last assessed: {new Date(skill.lastAssessed).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <span>Level:</span>
+                            <div className="flex">
+                              {[1,2,3,4,5].map(star => (
+                                <Star
+                                  key={star}
+                                  className={`h-3 w-3 ${
+                                    star <= levelNum
+                                      ? 'text-yellow-400 fill-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className={`px-2 py-1 rounded text-xs ${getSkillLevelColor(staffSkill.proficiency_level)}`}>
+                              {getSkillLevelText(staffSkill.proficiency_level)}
+                            </span>
+                          </div>
+                          
+                          {staffSkill.last_assessed && (
+                            <span>
+                              Last assessed: {new Date(staffSkill.last_assessed).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+
+                        {staffSkill.notes && (
+                          <p className="text-sm text-muted-foreground mt-1">{staffSkill.notes}</p>
                         )}
                       </div>
                     </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingSkill(staffSkill)}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Update
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => setDeletingSkill(staffSkill)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <Button size="sm" variant="outline">
-                    <Edit className="h-3 w-3 mr-1" />
-                    Update
-                  </Button>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </CardContent>
-        </Card>
-      ))}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Skill Development Goals
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Advanced Wound Care</h4>
-                <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm text-muted-foreground">Progress:</span>
-                <Progress value={60} className="flex-1 h-2" />
-                <span className="text-sm font-medium">60%</span>
-              </div>
-              <p className="text-sm text-muted-foreground">Target completion: March 2024</p>
-            </div>
-            
-            <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Mental Health First Aid</h4>
-                <Badge className="bg-green-100 text-green-800">Planned</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">Training scheduled for April 2024</p>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
+
+      <AddStaffSkillDialog
+        open={showAddSkill}
+        onOpenChange={setShowAddSkill}
+        staffId={carerId}
+      />
+
+      {editingSkill && (
+        <EditStaffSkillDialog
+          open={!!editingSkill}
+          onOpenChange={(open) => {
+            if (!open) setEditingSkill(null);
+          }}
+          skill={editingSkill}
+        />
+      )}
+
+      <AlertDialog
+        open={!!deletingSkill}
+        onOpenChange={(open) => {
+          if (!open) setDeletingSkill(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Skill</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove "{deletingSkill?.skills?.name}" from the profile?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteSkillMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSkill}
+              disabled={deleteSkillMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteSkillMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Removing...
+                </>
+              ) : (
+                'Remove Skill'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

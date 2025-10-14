@@ -6441,6 +6441,57 @@ export type Database = {
           },
         ]
       }
+      staff_skills: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_assessed: string | null
+          notes: string | null
+          proficiency_level: string
+          skill_id: string
+          staff_id: string
+          updated_at: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_assessed?: string | null
+          notes?: string | null
+          proficiency_level?: string
+          skill_id: string
+          staff_id: string
+          updated_at?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_assessed?: string | null
+          notes?: string | null
+          proficiency_level?: string
+          skill_id?: string
+          staff_id?: string
+          updated_at?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_skills_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_skills_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_training_records: {
         Row: {
           assigned_by: string | null
