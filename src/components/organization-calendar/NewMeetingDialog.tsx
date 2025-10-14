@@ -17,6 +17,7 @@ interface NewMeetingDialogProps {
   branchId?: string;
   prefilledDate?: Date;
   prefilledTime?: string;
+  prefilledStaffId?: string;
 }
 
 export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
@@ -24,7 +25,8 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   onOpenChange,
   branchId,
   prefilledDate,
-  prefilledTime
+  prefilledTime,
+  prefilledStaffId
 }) => {
   // Calculate initial end time (1 hour after start)
   const getInitialEndTime = (startTime?: string) => {
@@ -46,6 +48,14 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
   const [notes, setNotes] = useState('');
 
   const createAppointment = useCreateClientAppointment();
+
+  // Auto-select staff when opening from staff profile
+  React.useEffect(() => {
+    if (prefilledStaffId && open) {
+      setStaffId(prefilledStaffId);
+      setMeetingType('internal'); // Auto-select internal meeting type for staff
+    }
+  }, [prefilledStaffId, open]);
 
   const resetForm = () => {
     setTitle('');
@@ -92,8 +102,14 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
         provider_name: staffId ? staffData?.full_name || 'Staff Member' : getProviderName(),
         location: location || getDefaultLocation(),
         status: 'scheduled',
-        notes: `Meeting Type: ${meetingType}\n${notes}`
+        notes: `Meeting Type: ${meetingType}\n${staffId ? `Staff ID: ${staffId}\n` : ''}${notes}`
       });
+
+      // Invalidate staff meetings cache for real-time sync
+      if (staffId) {
+        const { queryClient } = await import('@/lib/queryClient');
+        queryClient.invalidateQueries({ queryKey: ['staff-meetings', staffId] });
+      }
 
       resetForm();
       onOpenChange(false);
