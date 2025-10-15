@@ -6,14 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Save, Edit, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { useClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
+import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientServiceActions, useCreateClientServiceAction } from "@/hooks/useClientServiceActions";
 import { useClientVaccinations } from "@/hooks/useClientVaccinations";
+import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { ServiceActionsTab } from "@/components/care/tabs/ServiceActionsTab";
 import { VaccinationDialog } from "@/components/care/dialogs/VaccinationDialog";
 import { AddServiceActionV2Dialog } from "@/components/care/dialogs/AddServiceActionV2Dialog";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 interface PersonalInfoTabProps {
   client: any;
   isEditing?: boolean;
@@ -274,11 +278,120 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       </div>;
   }
   const [isAddServiceActionOpen, setIsAddServiceActionOpen] = useState(false);
+  const [editingTab, setEditingTab] = useState<string | null>(null);
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [isSavingRelatedInfo, setIsSavingRelatedInfo] = useState(false);
   
-  const { data: personalInfo, isLoading: isPersonalInfoLoading } = useClientPersonalInfo(client?.id);
+  const { data: personalInfo, isLoading: isPersonalInfoLoading, refetch: refetchPersonalInfo } = useClientPersonalInfo(client?.id);
   const { data: serviceActions, isLoading: isServiceActionsLoading } = useClientServiceActions(client?.id);
   const { data: vaccinations, isLoading: isVaccinationsLoading } = useClientVaccinations(client?.id);
   const createServiceActionMutation = useCreateClientServiceAction();
+  const updateClientMutation = useUpdateClient();
+  const updatePersonalInfoMutation = useUpdateClientPersonalInfo();
+
+  // Address form state
+  const [addressFormData, setAddressFormData] = useState({
+    houseNo: addressComponents.houseNo || '',
+    street: addressComponents.street || '',
+    city: addressComponents.city || '',
+    county: addressComponents.county || '',
+    postcode: addressComponents.postcode || client.pin_code || '',
+    country: addressComponents.country || 'United Kingdom'
+  });
+
+  // Related Info form state
+  const [relatedInfoFormData, setRelatedInfoFormData] = useState({
+    ethnicity: personalInfo?.ethnicity || '',
+    sexual_orientation: personalInfo?.sexual_orientation || '',
+    gender_identity: personalInfo?.gender_identity || '',
+    nationality: personalInfo?.nationality || '',
+    primary_language: personalInfo?.primary_language || '',
+    interpreter_required: personalInfo?.interpreter_required || false,
+    preferred_interpreter_language: personalInfo?.preferred_interpreter_language || '',
+    religion: personalInfo?.religion || '',
+    property_type: personalInfo?.property_type || '',
+    living_arrangement: personalInfo?.living_arrangement || '',
+    home_accessibility: personalInfo?.home_accessibility || '',
+    pets: personalInfo?.pets || '',
+    key_safe_location: personalInfo?.key_safe_location || '',
+    parking_availability: personalInfo?.parking_availability || '',
+    emergency_access: personalInfo?.emergency_access || '',
+    sensory_impairment: personalInfo?.sensory_impairment || '',
+    communication_aids: personalInfo?.communication_aids || '',
+    preferred_communication_method: personalInfo?.preferred_communication_method || '',
+    hearing_difficulties: personalInfo?.hearing_difficulties || false,
+    vision_difficulties: personalInfo?.vision_difficulties || false,
+    speech_difficulties: personalInfo?.speech_difficulties || false,
+    cognitive_impairment: personalInfo?.cognitive_impairment || false,
+    mobility_aids: personalInfo?.mobility_aids || '',
+    likes_preferences: personalInfo?.likes_preferences || '',
+    dislikes_restrictions: personalInfo?.dislikes_restrictions || '',
+    dos: personalInfo?.dos || '',
+    donts: personalInfo?.donts || '',
+    gp_name: personalInfo?.gp_name || '',
+    gp_surgery_name: personalInfo?.gp_surgery_name || '',
+    gp_surgery_address: personalInfo?.gp_surgery_address || '',
+    gp_surgery_phone: personalInfo?.gp_surgery_phone || '',
+    gp_surgery_ods_code: personalInfo?.gp_surgery_ods_code || '',
+    gp_practice: personalInfo?.gp_practice || '',
+    pharmacy_name: personalInfo?.pharmacy_name || '',
+    pharmacy_address: personalInfo?.pharmacy_address || '',
+    pharmacy_phone: personalInfo?.pharmacy_phone || '',
+    pharmacy_ods_code: personalInfo?.pharmacy_ods_code || '',
+    personal_goals: personalInfo?.personal_goals || '',
+    desired_outcomes: personalInfo?.desired_outcomes || '',
+    success_measures: personalInfo?.success_measures || '',
+    priority_areas: personalInfo?.priority_areas || ''
+  });
+
+  // Update form data when personalInfo changes
+  useEffect(() => {
+    if (personalInfo) {
+      setRelatedInfoFormData({
+        ethnicity: personalInfo.ethnicity || '',
+        sexual_orientation: personalInfo.sexual_orientation || '',
+        gender_identity: personalInfo.gender_identity || '',
+        nationality: personalInfo.nationality || '',
+        primary_language: personalInfo.primary_language || '',
+        interpreter_required: personalInfo.interpreter_required || false,
+        preferred_interpreter_language: personalInfo.preferred_interpreter_language || '',
+        religion: personalInfo.religion || '',
+        property_type: personalInfo.property_type || '',
+        living_arrangement: personalInfo.living_arrangement || '',
+        home_accessibility: personalInfo.home_accessibility || '',
+        pets: personalInfo.pets || '',
+        key_safe_location: personalInfo.key_safe_location || '',
+        parking_availability: personalInfo.parking_availability || '',
+        emergency_access: personalInfo.emergency_access || '',
+        sensory_impairment: personalInfo.sensory_impairment || '',
+        communication_aids: personalInfo.communication_aids || '',
+        preferred_communication_method: personalInfo.preferred_communication_method || '',
+        hearing_difficulties: personalInfo.hearing_difficulties || false,
+        vision_difficulties: personalInfo.vision_difficulties || false,
+        speech_difficulties: personalInfo.speech_difficulties || false,
+        cognitive_impairment: personalInfo.cognitive_impairment || false,
+        mobility_aids: personalInfo.mobility_aids || '',
+        likes_preferences: personalInfo.likes_preferences || '',
+        dislikes_restrictions: personalInfo.dislikes_restrictions || '',
+        dos: personalInfo.dos || '',
+        donts: personalInfo.donts || '',
+        gp_name: personalInfo.gp_name || '',
+        gp_surgery_name: personalInfo.gp_surgery_name || '',
+        gp_surgery_address: personalInfo.gp_surgery_address || '',
+        gp_surgery_phone: personalInfo.gp_surgery_phone || '',
+        gp_surgery_ods_code: personalInfo.gp_surgery_ods_code || '',
+        gp_practice: personalInfo.gp_practice || '',
+        pharmacy_name: personalInfo.pharmacy_name || '',
+        pharmacy_address: personalInfo.pharmacy_address || '',
+        pharmacy_phone: personalInfo.pharmacy_phone || '',
+        pharmacy_ods_code: personalInfo.pharmacy_ods_code || '',
+        personal_goals: personalInfo.personal_goals || '',
+        desired_outcomes: personalInfo.desired_outcomes || '',
+        success_measures: personalInfo.success_measures || '',
+        priority_areas: personalInfo.priority_areas || ''
+      });
+    }
+  }, [personalInfo]);
   const handleSaveServiceAction = (data: any) => {
     createServiceActionMutation.mutate(data, {
       onSuccess: () => {
@@ -288,6 +401,139 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         console.error('Error creating service action:', error);
       }
     });
+  };
+
+  // Address handlers
+  const handleEditAddress = () => {
+    const components = parseAddress(client.address || client.location || '');
+    setAddressFormData({
+      houseNo: components.houseNo || '',
+      street: components.street || '',
+      city: components.city || '',
+      county: components.county || '',
+      postcode: components.postcode || client.pin_code || '',
+      country: components.country || 'United Kingdom'
+    });
+    setEditingTab('address');
+  };
+
+  const handleCancelAddress = () => {
+    setEditingTab(null);
+  };
+
+  const handleSaveAddress = async () => {
+    // Validate required fields
+    if (!addressFormData.houseNo || !addressFormData.street || !addressFormData.country || 
+        !addressFormData.county || !addressFormData.city || !addressFormData.postcode) {
+      toast.error('Please fill in all required address fields');
+      return;
+    }
+
+    setIsSavingAddress(true);
+    
+    try {
+      const minDelay = new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Reconstruct address string
+      const fullAddress = `${addressFormData.houseNo}, ${addressFormData.street}, ${addressFormData.city}, ${addressFormData.county}, ${addressFormData.postcode}`;
+      
+      const saveOperation = updateClientMutation.mutateAsync({
+        clientId: client.id,
+        updates: {
+          address: fullAddress,
+          pin_code: addressFormData.postcode
+        }
+      });
+
+      await Promise.all([saveOperation, minDelay]);
+      
+      toast.success('Address updated successfully');
+      setEditingTab(null);
+    } catch (error) {
+      console.error('Error saving address:', error);
+      toast.error('Failed to save address');
+    } finally {
+      setIsSavingAddress(false);
+    }
+  };
+
+  // Related Info handlers
+  const handleEditRelatedInfo = () => {
+    setEditingTab('related-info');
+  };
+
+  const handleCancelRelatedInfo = () => {
+    setEditingTab(null);
+    // Reset form data to current personalInfo
+    if (personalInfo) {
+      setRelatedInfoFormData({
+        ethnicity: personalInfo.ethnicity || '',
+        sexual_orientation: personalInfo.sexual_orientation || '',
+        gender_identity: personalInfo.gender_identity || '',
+        nationality: personalInfo.nationality || '',
+        primary_language: personalInfo.primary_language || '',
+        interpreter_required: personalInfo.interpreter_required || false,
+        preferred_interpreter_language: personalInfo.preferred_interpreter_language || '',
+        religion: personalInfo.religion || '',
+        property_type: personalInfo.property_type || '',
+        living_arrangement: personalInfo.living_arrangement || '',
+        home_accessibility: personalInfo.home_accessibility || '',
+        pets: personalInfo.pets || '',
+        key_safe_location: personalInfo.key_safe_location || '',
+        parking_availability: personalInfo.parking_availability || '',
+        emergency_access: personalInfo.emergency_access || '',
+        sensory_impairment: personalInfo.sensory_impairment || '',
+        communication_aids: personalInfo.communication_aids || '',
+        preferred_communication_method: personalInfo.preferred_communication_method || '',
+        hearing_difficulties: personalInfo.hearing_difficulties || false,
+        vision_difficulties: personalInfo.vision_difficulties || false,
+        speech_difficulties: personalInfo.speech_difficulties || false,
+        cognitive_impairment: personalInfo.cognitive_impairment || false,
+        mobility_aids: personalInfo.mobility_aids || '',
+        likes_preferences: personalInfo.likes_preferences || '',
+        dislikes_restrictions: personalInfo.dislikes_restrictions || '',
+        dos: personalInfo.dos || '',
+        donts: personalInfo.donts || '',
+        gp_name: personalInfo.gp_name || '',
+        gp_surgery_name: personalInfo.gp_surgery_name || '',
+        gp_surgery_address: personalInfo.gp_surgery_address || '',
+        gp_surgery_phone: personalInfo.gp_surgery_phone || '',
+        gp_surgery_ods_code: personalInfo.gp_surgery_ods_code || '',
+        gp_practice: personalInfo.gp_practice || '',
+        pharmacy_name: personalInfo.pharmacy_name || '',
+        pharmacy_address: personalInfo.pharmacy_address || '',
+        pharmacy_phone: personalInfo.pharmacy_phone || '',
+        pharmacy_ods_code: personalInfo.pharmacy_ods_code || '',
+        personal_goals: personalInfo.personal_goals || '',
+        desired_outcomes: personalInfo.desired_outcomes || '',
+        success_measures: personalInfo.success_measures || '',
+        priority_areas: personalInfo.priority_areas || ''
+      });
+    }
+  };
+
+  const handleSaveRelatedInfo = async () => {
+    setIsSavingRelatedInfo(true);
+    
+    try {
+      const minDelay = new Promise(resolve => setTimeout(resolve, 400));
+      
+      const saveOperation = updatePersonalInfoMutation.mutateAsync({
+        client_id: client.id,
+        ...relatedInfoFormData
+      });
+
+      await Promise.all([saveOperation, minDelay]);
+      
+      toast.success('Personal information updated successfully');
+      setEditingTab(null);
+      await refetchPersonalInfo();
+    } catch (error) {
+      console.error('Error saving personal info:', error);
+      toast.error('Failed to save personal information');
+    } finally {
+      setIsSavingRelatedInfo(false);
+    }
   };
 
   return <div className="space-y-6">
@@ -395,45 +641,146 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
         <TabsContent value="address" className="mt-6">
           <Card className="p-4 border border-border shadow-sm">
-            <h3 className="text-lg font-medium mb-4">Address Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  House No/Name <span className="text-red-500">*</span>
-                </h4>
-                <p className="mt-1">{addressComponents.houseNo || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Street <span className="text-red-500">*</span>
-                </h4>
-                <p className="mt-1">{addressComponents.street || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Country <span className="text-red-500">*</span>
-                </h4>
-                <p className="mt-1">{addressComponents.country || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  County <span className="text-red-500">*</span>
-                </h4>
-                <p className="mt-1">{addressComponents.county || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  City <span className="text-red-500">*</span>
-                </h4>
-                <p className="mt-1">{addressComponents.city || 'Not provided'}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Postcode <span className="text-red-500">*</span>
-                </h4>
-                <p className="mt-1">{addressComponents.postcode || client.pin_code || 'Not provided'}</p>
-              </div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium">Address Information</h3>
+              {editingTab !== 'address' && (
+                <Button size="sm" variant="outline" onClick={handleEditAddress}>
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+              )}
             </div>
+            
+            {editingTab === 'address' ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="houseNo">House No/Name <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="houseNo"
+                      value={addressFormData.houseNo}
+                      onChange={(e) => setAddressFormData(prev => ({ ...prev, houseNo: e.target.value }))}
+                      placeholder="e.g., 123 or Apartment 4B"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="street">Street <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="street"
+                      value={addressFormData.street}
+                      onChange={(e) => setAddressFormData(prev => ({ ...prev, street: e.target.value }))}
+                      placeholder="e.g., Main Street"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="city">City <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="city"
+                      value={addressFormData.city}
+                      onChange={(e) => setAddressFormData(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="e.g., London"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="county">County <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="county"
+                      value={addressFormData.county}
+                      onChange={(e) => setAddressFormData(prev => ({ ...prev, county: e.target.value }))}
+                      placeholder="e.g., Greater London"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="postcode">Postcode <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="postcode"
+                      value={addressFormData.postcode}
+                      onChange={(e) => setAddressFormData(prev => ({ ...prev, postcode: e.target.value }))}
+                      placeholder="e.g., SW1A 1AA"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country <span className="text-red-500">*</span></Label>
+                    <Input 
+                      id="country"
+                      value={addressFormData.country}
+                      onChange={(e) => setAddressFormData(prev => ({ ...prev, country: e.target.value }))}
+                      placeholder="e.g., United Kingdom"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelAddress}
+                    disabled={isSavingAddress}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveAddress}
+                    disabled={isSavingAddress}
+                    className={cn(
+                      "transition-all duration-150",
+                      isSavingAddress && "opacity-70"
+                    )}
+                  >
+                    {isSavingAddress ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-1" />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    House No/Name <span className="text-red-500">*</span>
+                  </h4>
+                  <p className="mt-1">{addressComponents.houseNo || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Street <span className="text-red-500">*</span>
+                  </h4>
+                  <p className="mt-1">{addressComponents.street || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    City <span className="text-red-500">*</span>
+                  </h4>
+                  <p className="mt-1">{addressComponents.city || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    County <span className="text-red-500">*</span>
+                  </h4>
+                  <p className="mt-1">{addressComponents.county || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Postcode <span className="text-red-500">*</span>
+                  </h4>
+                  <p className="mt-1">{addressComponents.postcode || client.pin_code || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">
+                    Country <span className="text-red-500">*</span>
+                  </h4>
+                  <p className="mt-1">{addressComponents.country || 'Not provided'}</p>
+                </div>
+              </div>
+            )}
           </Card>
         </TabsContent>
 
@@ -444,182 +791,539 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             </Card>
           ) : (
             <div className="space-y-4">
+              {/* Edit/Save buttons */}
+              {editingTab !== 'related-info' && (
+                <div className="flex justify-end">
+                  <Button size="sm" variant="outline" onClick={handleEditRelatedInfo}>
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit All Sections
+                  </Button>
+                </div>
+              )}
+
+              {editingTab === 'related-info' && (
+                <div className="flex justify-end gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelRelatedInfo}
+                    disabled={isSavingRelatedInfo}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveRelatedInfo}
+                    disabled={isSavingRelatedInfo}
+                    className={cn(
+                      "transition-all duration-150",
+                      isSavingRelatedInfo && "opacity-70"
+                    )}
+                  >
+                    {isSavingRelatedInfo ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-1" />
+                        Save All
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
               {/* Background & Identity Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">Background & Identity</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Ethnicity</h4>
-                    <p className="mt-1">{personalInfo?.ethnicity || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="ethnicity">Ethnicity</Label>
+                      <Input 
+                        id="ethnicity"
+                        value={relatedInfoFormData.ethnicity}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, ethnicity: e.target.value }))}
+                        placeholder="Enter ethnicity"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="sexual_orientation">Sexual Orientation</Label>
+                      <Input 
+                        id="sexual_orientation"
+                        value={relatedInfoFormData.sexual_orientation}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, sexual_orientation: e.target.value }))}
+                        placeholder="Enter sexual orientation"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gender_identity">Gender Identity</Label>
+                      <Input 
+                        id="gender_identity"
+                        value={relatedInfoFormData.gender_identity}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gender_identity: e.target.value }))}
+                        placeholder="Enter gender identity"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="nationality">Nationality</Label>
+                      <Input 
+                        id="nationality"
+                        value={relatedInfoFormData.nationality}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, nationality: e.target.value }))}
+                        placeholder="Enter nationality"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="primary_language">Primary Language</Label>
+                      <Input 
+                        id="primary_language"
+                        value={relatedInfoFormData.primary_language}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, primary_language: e.target.value }))}
+                        placeholder="Enter primary language"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                      <Checkbox 
+                        id="interpreter_required"
+                        checked={relatedInfoFormData.interpreter_required}
+                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, interpreter_required: checked as boolean }))}
+                      />
+                      <Label htmlFor="interpreter_required" className="font-normal">Interpreter Required</Label>
+                    </div>
+                    <div>
+                      <Label htmlFor="preferred_interpreter_language">Preferred Interpreter Language</Label>
+                      <Input 
+                        id="preferred_interpreter_language"
+                        value={relatedInfoFormData.preferred_interpreter_language}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, preferred_interpreter_language: e.target.value }))}
+                        placeholder="Enter preferred interpreter language"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="religion">Religion</Label>
+                      <Input 
+                        id="religion"
+                        value={relatedInfoFormData.religion}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, religion: e.target.value }))}
+                        placeholder="Enter religion"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Sexual Orientation</h4>
-                    <p className="mt-1">{personalInfo?.sexual_orientation || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Ethnicity</h4>
+                      <p className="mt-1">{personalInfo?.ethnicity || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Sexual Orientation</h4>
+                      <p className="mt-1">{personalInfo?.sexual_orientation || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Gender Identity</h4>
+                      <p className="mt-1">{personalInfo?.gender_identity || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Nationality</h4>
+                      <p className="mt-1">{personalInfo?.nationality || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Primary Language</h4>
+                      <p className="mt-1">{personalInfo?.primary_language || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Interpreter Required</h4>
+                      <p className="mt-1">{personalInfo?.interpreter_required ? 'Yes' : 'No'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Preferred Interpreter Language</h4>
+                      <p className="mt-1">{personalInfo?.preferred_interpreter_language || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
+                      <p className="mt-1">{personalInfo?.religion || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Gender Identity</h4>
-                    <p className="mt-1">{personalInfo?.gender_identity || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Nationality</h4>
-                    <p className="mt-1">{personalInfo?.nationality || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Primary Language</h4>
-                    <p className="mt-1">{personalInfo?.primary_language || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Interpreter Required</h4>
-                    <p className="mt-1">{personalInfo?.interpreter_required ? 'Yes' : 'No'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Interpreter Language</h4>
-                    <p className="mt-1">{personalInfo?.preferred_interpreter_language || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Religion</h4>
-                    <p className="mt-1">{personalInfo?.religion || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* My Home Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">My Home</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Property Type</h4>
-                    <p className="mt-1">{personalInfo?.property_type || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="property_type">Property Type</Label>
+                      <Input 
+                        id="property_type"
+                        value={relatedInfoFormData.property_type}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, property_type: e.target.value }))}
+                        placeholder="e.g., House, Flat, Bungalow"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="living_arrangement">Living Arrangement</Label>
+                      <Input 
+                        id="living_arrangement"
+                        value={relatedInfoFormData.living_arrangement}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, living_arrangement: e.target.value }))}
+                        placeholder="e.g., Lives alone, With family"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="home_accessibility">Home Accessibility</Label>
+                      <Textarea 
+                        id="home_accessibility"
+                        value={relatedInfoFormData.home_accessibility}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, home_accessibility: e.target.value }))}
+                        placeholder="Describe any accessibility features or needs"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pets_home">Pets</Label>
+                      <Textarea 
+                        id="pets_home"
+                        value={relatedInfoFormData.pets}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pets: e.target.value }))}
+                        placeholder="Describe any pets"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="key_safe_location">Key Safe Location</Label>
+                      <Input 
+                        id="key_safe_location"
+                        value={relatedInfoFormData.key_safe_location}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, key_safe_location: e.target.value }))}
+                        placeholder="Location of key safe"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="parking_availability">Parking Availability</Label>
+                      <Input 
+                        id="parking_availability"
+                        value={relatedInfoFormData.parking_availability}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, parking_availability: e.target.value }))}
+                        placeholder="Parking information"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="emergency_access">Emergency Access</Label>
+                      <Textarea 
+                        id="emergency_access"
+                        value={relatedInfoFormData.emergency_access}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, emergency_access: e.target.value }))}
+                        placeholder="Emergency access information"
+                        rows={3}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Living Arrangement</h4>
-                    <p className="mt-1">{personalInfo?.living_arrangement || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Property Type</h4>
+                      <p className="mt-1">{personalInfo?.property_type || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Living Arrangement</h4>
+                      <p className="mt-1">{personalInfo?.living_arrangement || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Home Accessibility</h4>
+                      <p className="mt-1">{personalInfo?.home_accessibility || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Pets</h4>
+                      <p className="mt-1">{personalInfo?.pets || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Key Safe Location</h4>
+                      <p className="mt-1">{personalInfo?.key_safe_location || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Parking Availability</h4>
+                      <p className="mt-1">{personalInfo?.parking_availability || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Emergency Access</h4>
+                      <p className="mt-1">{personalInfo?.emergency_access || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Home Accessibility</h4>
-                    <p className="mt-1">{personalInfo?.home_accessibility || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Pets</h4>
-                    <p className="mt-1">{personalInfo?.pets || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Key Safe Location</h4>
-                    <p className="mt-1">{personalInfo?.key_safe_location || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Parking Availability</h4>
-                    <p className="mt-1">{personalInfo?.parking_availability || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Emergency Access</h4>
-                    <p className="mt-1">{personalInfo?.emergency_access || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* My Accessibility and Communication Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">My Accessibility and Communication</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Sensory Impairment</h4>
-                    <p className="mt-1">{personalInfo?.sensory_impairment || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="sensory_impairment">Sensory Impairment</Label>
+                      <Input 
+                        id="sensory_impairment"
+                        value={relatedInfoFormData.sensory_impairment}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, sensory_impairment: e.target.value }))}
+                        placeholder="Describe any sensory impairment"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="communication_aids">Communication Aids</Label>
+                      <Input 
+                        id="communication_aids"
+                        value={relatedInfoFormData.communication_aids}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, communication_aids: e.target.value }))}
+                        placeholder="Communication aids used"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="preferred_communication_method">Preferred Communication Method</Label>
+                      <Input 
+                        id="preferred_communication_method"
+                        value={relatedInfoFormData.preferred_communication_method}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, preferred_communication_method: e.target.value }))}
+                        placeholder="Preferred communication method"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                      <Checkbox 
+                        id="hearing_difficulties"
+                        checked={relatedInfoFormData.hearing_difficulties}
+                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, hearing_difficulties: checked as boolean }))}
+                      />
+                      <Label htmlFor="hearing_difficulties" className="font-normal">Hearing Difficulties</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                      <Checkbox 
+                        id="vision_difficulties"
+                        checked={relatedInfoFormData.vision_difficulties}
+                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, vision_difficulties: checked as boolean }))}
+                      />
+                      <Label htmlFor="vision_difficulties" className="font-normal">Vision Difficulties</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                      <Checkbox 
+                        id="speech_difficulties"
+                        checked={relatedInfoFormData.speech_difficulties}
+                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, speech_difficulties: checked as boolean }))}
+                      />
+                      <Label htmlFor="speech_difficulties" className="font-normal">Speech Difficulties</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 pt-6">
+                      <Checkbox 
+                        id="cognitive_impairment"
+                        checked={relatedInfoFormData.cognitive_impairment}
+                        onCheckedChange={(checked) => setRelatedInfoFormData(prev => ({ ...prev, cognitive_impairment: checked as boolean }))}
+                      />
+                      <Label htmlFor="cognitive_impairment" className="font-normal">Cognitive Impairment</Label>
+                    </div>
+                    <div>
+                      <Label htmlFor="mobility_aids">Mobility Aids</Label>
+                      <Input 
+                        id="mobility_aids"
+                        value={relatedInfoFormData.mobility_aids}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, mobility_aids: e.target.value }))}
+                        placeholder="Mobility aids used"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Communication Aids</h4>
-                    <p className="mt-1">{personalInfo?.communication_aids || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Sensory Impairment</h4>
+                      <p className="mt-1">{personalInfo?.sensory_impairment || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Communication Aids</h4>
+                      <p className="mt-1">{personalInfo?.communication_aids || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication Method</h4>
+                      <p className="mt-1">{personalInfo?.preferred_communication_method || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Hearing Difficulties</h4>
+                      <p className="mt-1">{personalInfo?.hearing_difficulties === null ? 'Not provided' : personalInfo?.hearing_difficulties ? 'Yes' : 'No'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Vision Difficulties</h4>
+                      <p className="mt-1">{personalInfo?.vision_difficulties === null ? 'Not provided' : personalInfo?.vision_difficulties ? 'Yes' : 'No'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Speech Difficulties</h4>
+                      <p className="mt-1">{personalInfo?.speech_difficulties === null ? 'Not provided' : personalInfo?.speech_difficulties ? 'Yes' : 'No'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Cognitive Impairment</h4>
+                      <p className="mt-1">{personalInfo?.cognitive_impairment === null ? 'Not provided' : personalInfo?.cognitive_impairment ? 'Yes' : 'No'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Mobility Aids</h4>
+                      <p className="mt-1">{personalInfo?.mobility_aids || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Preferred Communication Method</h4>
-                    <p className="mt-1">{personalInfo?.preferred_communication_method || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Hearing Difficulties</h4>
-                    <p className="mt-1">{personalInfo?.hearing_difficulties === null ? 'Not provided' : personalInfo?.hearing_difficulties ? 'Yes' : 'No'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Vision Difficulties</h4>
-                    <p className="mt-1">{personalInfo?.vision_difficulties === null ? 'Not provided' : personalInfo?.vision_difficulties ? 'Yes' : 'No'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Speech Difficulties</h4>
-                    <p className="mt-1">{personalInfo?.speech_difficulties === null ? 'Not provided' : personalInfo?.speech_difficulties ? 'Yes' : 'No'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Cognitive Impairment</h4>
-                    <p className="mt-1">{personalInfo?.cognitive_impairment === null ? 'Not provided' : personalInfo?.cognitive_impairment ? 'Yes' : 'No'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Mobility Aids</h4>
-                    <p className="mt-1">{personalInfo?.mobility_aids || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* Do's & Don'ts Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">Do's & Don'ts</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Likes/Preferences</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.likes_preferences || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="likes_preferences">Likes/Preferences</Label>
+                      <Textarea 
+                        id="likes_preferences"
+                        value={relatedInfoFormData.likes_preferences}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, likes_preferences: e.target.value }))}
+                        placeholder="Things the client likes or prefers"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dislikes_restrictions">Dislikes/Restrictions</Label>
+                      <Textarea 
+                        id="dislikes_restrictions"
+                        value={relatedInfoFormData.dislikes_restrictions}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dislikes_restrictions: e.target.value }))}
+                        placeholder="Things the client dislikes or restrictions"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dos">Do's</Label>
+                      <Textarea 
+                        id="dos"
+                        value={relatedInfoFormData.dos}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, dos: e.target.value }))}
+                        placeholder="Things that should be done"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="donts">Don'ts</Label>
+                      <Textarea 
+                        id="donts"
+                        value={relatedInfoFormData.donts}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, donts: e.target.value }))}
+                        placeholder="Things that should not be done"
+                        rows={4}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Dislikes/Restrictions</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dislikes_restrictions || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Likes/Preferences</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.likes_preferences || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Dislikes/Restrictions</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dislikes_restrictions || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Do's</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dos || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Don'ts</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.donts || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Do's</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.dos || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Don'ts</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.donts || 'Not provided'}</p>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Pets Section */}
-              <Card className="p-4 border border-border shadow-sm">
-                <h3 className="text-lg font-medium mb-4">Pets</h3>
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Pet Information</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.pets || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* My GP Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">My GP</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
-                    <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="gp_name">GP Name</Label>
+                      <Input 
+                        id="gp_name"
+                        value={relatedInfoFormData.gp_name}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_name: e.target.value }))}
+                        placeholder="GP name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gp_surgery_name">Surgery Name</Label>
+                      <Input 
+                        id="gp_surgery_name"
+                        value={relatedInfoFormData.gp_surgery_name}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_name: e.target.value }))}
+                        placeholder="Surgery name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gp_surgery_address">Surgery Address</Label>
+                      <Textarea 
+                        id="gp_surgery_address"
+                        value={relatedInfoFormData.gp_surgery_address}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_address: e.target.value }))}
+                        placeholder="Surgery address"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gp_surgery_phone">Surgery Phone</Label>
+                      <Input 
+                        id="gp_surgery_phone"
+                        value={relatedInfoFormData.gp_surgery_phone}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_phone: e.target.value }))}
+                        placeholder="Surgery phone"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gp_surgery_ods_code">ODS Code</Label>
+                      <Input 
+                        id="gp_surgery_ods_code"
+                        value={relatedInfoFormData.gp_surgery_ods_code}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_surgery_ods_code: e.target.value }))}
+                        placeholder="ODS code"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="gp_practice">Practice</Label>
+                      <Input 
+                        id="gp_practice"
+                        value={relatedInfoFormData.gp_practice}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, gp_practice: e.target.value }))}
+                        placeholder="Practice name"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
-                    <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">GP Name</h4>
+                      <p className="mt-1">{personalInfo?.gp_name || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Surgery Name</h4>
+                      <p className="mt-1">{personalInfo?.gp_surgery_name || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
+                      <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
+                      <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
+                      <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
+                      <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Surgery Address</h4>
-                    <p className="mt-1">{personalInfo?.gp_surgery_address || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Surgery Phone</h4>
-                    <p className="mt-1">{personalInfo?.gp_surgery_phone || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
-                    <p className="mt-1">{personalInfo?.gp_surgery_ods_code || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Practice</h4>
-                    <p className="mt-1">{personalInfo?.gp_practice || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
                 <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">
                     Find NHS services and healthcare providers at{' '}
@@ -638,47 +1342,134 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               {/* Pharmacy Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">Pharmacy</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Name</h4>
-                    <p className="mt-1">{personalInfo?.pharmacy_name || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="pharmacy_name">Pharmacy Name</Label>
+                      <Input 
+                        id="pharmacy_name"
+                        value={relatedInfoFormData.pharmacy_name}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_name: e.target.value }))}
+                        placeholder="Pharmacy name"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pharmacy_address">Pharmacy Address</Label>
+                      <Textarea 
+                        id="pharmacy_address"
+                        value={relatedInfoFormData.pharmacy_address}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_address: e.target.value }))}
+                        placeholder="Pharmacy address"
+                        rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pharmacy_phone">Pharmacy Phone</Label>
+                      <Input 
+                        id="pharmacy_phone"
+                        value={relatedInfoFormData.pharmacy_phone}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_phone: e.target.value }))}
+                        placeholder="Pharmacy phone"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pharmacy_ods_code">ODS Code</Label>
+                      <Input 
+                        id="pharmacy_ods_code"
+                        value={relatedInfoFormData.pharmacy_ods_code}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, pharmacy_ods_code: e.target.value }))}
+                        placeholder="ODS code"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Address</h4>
-                    <p className="mt-1">{personalInfo?.pharmacy_address || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Name</h4>
+                      <p className="mt-1">{personalInfo?.pharmacy_name || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Address</h4>
+                      <p className="mt-1">{personalInfo?.pharmacy_address || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Phone</h4>
+                      <p className="mt-1">{personalInfo?.pharmacy_phone || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
+                      <p className="mt-1">{personalInfo?.pharmacy_ods_code || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Pharmacy Phone</h4>
-                    <p className="mt-1">{personalInfo?.pharmacy_phone || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">ODS Code</h4>
-                    <p className="mt-1">{personalInfo?.pharmacy_ods_code || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* Desired outcomes Section */}
               <Card className="p-4 border border-border shadow-sm">
                 <h3 className="text-lg font-medium mb-4">Desired outcomes</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Personal Goals</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.personal_goals || 'Not provided'}</p>
+                {editingTab === 'related-info' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="personal_goals">Personal Goals</Label>
+                      <Textarea 
+                        id="personal_goals"
+                        value={relatedInfoFormData.personal_goals}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, personal_goals: e.target.value }))}
+                        placeholder="Personal goals"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="desired_outcomes">Desired Outcomes</Label>
+                      <Textarea 
+                        id="desired_outcomes"
+                        value={relatedInfoFormData.desired_outcomes}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, desired_outcomes: e.target.value }))}
+                        placeholder="Desired outcomes"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="success_measures">Success Measures</Label>
+                      <Textarea 
+                        id="success_measures"
+                        value={relatedInfoFormData.success_measures}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, success_measures: e.target.value }))}
+                        placeholder="Success measures"
+                        rows={4}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="priority_areas">Priority Areas</Label>
+                      <Textarea 
+                        id="priority_areas"
+                        value={relatedInfoFormData.priority_areas}
+                        onChange={(e) => setRelatedInfoFormData(prev => ({ ...prev, priority_areas: e.target.value }))}
+                        placeholder="Priority areas"
+                        rows={4}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Desired Outcomes</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.desired_outcomes || 'Not provided'}</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Personal Goals</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.personal_goals || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Desired Outcomes</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.desired_outcomes || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Success Measures</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.success_measures || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground">Priority Areas</h4>
+                      <p className="mt-1 whitespace-pre-wrap">{personalInfo?.priority_areas || 'Not provided'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Success Measures</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.success_measures || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Priority Areas</h4>
-                    <p className="mt-1 whitespace-pre-wrap">{personalInfo?.priority_areas || 'Not provided'}</p>
-                  </div>
-                </div>
+                )}
               </Card>
 
               {/* Vaccination Section */}
