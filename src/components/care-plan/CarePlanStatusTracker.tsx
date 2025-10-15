@@ -29,18 +29,11 @@ export function CarePlanStatusTracker({ carePlan, viewerType }: CarePlanStatusTr
         status: 'completed'
       },
       {
-        id: 'pending_approval',
-        title: 'Staff Review',
-        description: 'Care plan under staff review and approval',
-        icon: UserCheck,
-        status: carePlan.status === 'draft' ? 'pending' : 'completed'
-      },
-      {
         id: 'pending_client_approval',
         title: 'Client Review',
         description: 'Awaiting client review and approval',
         icon: CheckCircle,
-        status: ['draft', 'pending_approval'].includes(carePlan.status) ? 'pending' : 
+        status: carePlan.status === 'draft' ? 'pending' : 
                carePlan.status === 'pending_client_approval' ? 'current' : 'completed'
       },
       {
@@ -65,9 +58,6 @@ export function CarePlanStatusTracker({ carePlan, viewerType }: CarePlanStatusTr
       // Insert rejected step after the appropriate stage
       if ((carePlan as any).approved_at) {
         // Rejected after staff approval, before client approval
-        steps.splice(2, 0, rejectedStep);
-      } else {
-        // Rejected during staff review
         steps.splice(1, 0, rejectedStep);
       }
     }
@@ -77,11 +67,10 @@ export function CarePlanStatusTracker({ carePlan, viewerType }: CarePlanStatusTr
 
   const getProgressPercentage = () => {
     switch (carePlan.status) {
-      case 'draft': return 25;
-      case 'pending_approval': return 50;
-      case 'pending_client_approval': return 75;
+      case 'draft': return 33;
+      case 'pending_client_approval': return 66;
       case 'active': return 100;
-      case 'rejected': return (carePlan as any).approved_at ? 60 : 40; // Rejected after/before staff approval
+      case 'rejected': return 50; // Rejected during review
       default: return 0;
     }
   };
@@ -118,7 +107,6 @@ export function CarePlanStatusTracker({ carePlan, viewerType }: CarePlanStatusTr
           <span>Care Plan Status</span>
           <Badge variant={carePlan.status === 'active' ? 'default' : 'secondary'}>
             {carePlan.status === 'pending_client_approval' ? 'Pending Your Approval' : 
-             carePlan.status === 'pending_approval' ? 'Under Review' :
              carePlan.status === 'active' ? 'Active' : 
              carePlan.status}
           </Badge>
@@ -204,8 +192,7 @@ export function CarePlanStatusTracker({ carePlan, viewerType }: CarePlanStatusTr
               <div>
                 <h4 className="font-medium text-blue-900 text-sm">Next Steps</h4>
                 <p className="text-sm text-blue-800 mt-1">
-                  {carePlan.status === 'draft' && 'Waiting for staff to review and approve the care plan.'}
-                  {carePlan.status === 'pending_approval' && 'Staff are reviewing the care plan details.'}
+                  {carePlan.status === 'draft' && 'Finalizing care plan to send to client for review.'}
                   {carePlan.status === 'pending_client_approval' && 
                     (viewerType === 'client' ? 
                       'Please review and approve your care plan to activate it.' :

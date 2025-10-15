@@ -52,10 +52,9 @@ export const CarePlanStatusWidget: React.FC = () => {
     );
   }
 
-  // Categorize care plans by status
+  // Categorize care plans by status (removed pending_approval)
   const activePlans = carePlans.filter(plan => plan.status === 'active');
   const pendingClientApproval = carePlans.filter(plan => plan.status === 'pending_client_approval');
-  const pendingApproval = carePlans.filter(plan => plan.status === 'pending_approval');
   const recentlyApproved = carePlans.filter(plan => 
     plan.status === 'active' && 
     plan.client_acknowledged_at && 
@@ -81,8 +80,6 @@ export const CarePlanStatusWidget: React.FC = () => {
         return 'Active';
       case 'pending_client_approval':
         return 'Client Review';
-      case 'pending_approval':
-        return 'Staff Review';
       default:
         return status;
     }
@@ -94,8 +91,6 @@ export const CarePlanStatusWidget: React.FC = () => {
         return 'default' as const;
       case 'pending_client_approval':
         return 'secondary' as const;
-      case 'pending_approval':
-        return 'outline' as const;
       default:
         return 'secondary' as const;
     }

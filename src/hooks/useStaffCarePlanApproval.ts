@@ -1,3 +1,8 @@
+/**
+ * @deprecated Staff approval workflow has been removed.
+ * Care plans now go directly to client approval.
+ * This file is kept for backward compatibility but should not be used in new code.
+ */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,113 +19,25 @@ interface StaffRejectCarePlanData {
   reason: string;
 }
 
-// Staff approve care plan
+/**
+ * @deprecated This function is no longer used. Care plans skip staff approval.
+ */
 const staffApproveCarePlan = async ({ carePlanId, comments }: StaffApproveCarePlanData) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-
-  console.log(`[staffApproveCarePlan] Approving care plan ${carePlanId} by user ${user.id}`);
-
-  // Check if user exists in staff table  
-  const { data: staffData } = await supabase
-    .from('staff')
-    .select('id, auth_user_id')
-    .eq('auth_user_id', user.id)
-    .single();
-
-  if (!staffData) {
-    throw new Error('Staff record not found for authenticated user');
-  }
-
-  // Update care plan status to pending_client_approval (two-stage approval process)
-  const { error: updateError } = await supabase
-    .from('client_care_plans')
-    .update({
-      status: 'pending_client_approval',
-      approved_by: staffData.id,
-      approved_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', carePlanId);
-
-  if (updateError) {
-    console.error('Error approving care plan:', updateError);
-    if (updateError.code === '23503') {
-      throw new Error('Foreign key constraint error: User not found in staff table');
-    }
-    throw updateError;
-  }
-
-  // Notifications are now handled automatically by database triggers
-
-  // Create approval record
-  const { error: approvalError } = await supabase
-    .from('client_care_plan_approvals')
-    .insert({
-      care_plan_id: carePlanId,
-      action: 'approved',
-      performed_by: user.id,
-      performed_at: new Date().toISOString(),
-      comments: comments || 'Care plan approved by staff',
-      previous_status: 'pending_approval',
-      new_status: 'approved'
-    });
-
-  if (approvalError) {
-    console.error('Error creating approval record:', approvalError);
-    // Don't fail the operation for this
-  }
-
-  return { success: true };
+  console.warn('[staffApproveCarePlan] DEPRECATED: Staff approval workflow has been removed');
+  throw new Error('Staff approval workflow has been removed. Care plans go directly to client approval.');
 };
 
-// Staff reject care plan
+/**
+ * @deprecated This function is no longer used. Care plans skip staff approval.
+ */
 const staffRejectCarePlan = async ({ carePlanId, comments, reason }: StaffRejectCarePlanData) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    throw new Error('User not authenticated');
-  }
-
-  console.log(`[staffRejectCarePlan] Rejecting care plan ${carePlanId}`);
-
-  // Update care plan status to rejected
-  const { error: updateError } = await supabase
-    .from('client_care_plans')
-    .update({
-      status: 'rejected',
-      rejection_reason: reason,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', carePlanId);
-
-  if (updateError) {
-    console.error('Error rejecting care plan:', updateError);
-    throw updateError;
-  }
-
-  // Create approval record
-  const { error: approvalError } = await supabase
-    .from('client_care_plan_approvals')
-    .insert({
-      care_plan_id: carePlanId,
-      action: 'rejected',
-      performed_by: user.id,
-      performed_at: new Date().toISOString(),
-      comments: comments,
-      previous_status: 'pending_approval',
-      new_status: 'rejected'
-    });
-
-  if (approvalError) {
-    console.error('Error creating approval record:', approvalError);
-    // Don't fail the operation for this
-  }
-
-  return { success: true };
+  console.warn('[staffRejectCarePlan] DEPRECATED: Staff approval workflow has been removed');
+  throw new Error('Staff approval workflow has been removed.');
 };
 
+/**
+ * @deprecated This hook is no longer used. Care plans skip staff approval.
+ */
 export const useStaffApproveCarePlan = () => {
   const queryClient = useQueryClient();
 
@@ -130,29 +47,18 @@ export const useStaffApproveCarePlan = () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
       queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
       queryClient.invalidateQueries({ queryKey: ['care-plan'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('Care plan approved successfully! The client will be notified.');
+      toast.error('Staff approval workflow has been removed. Care plans go directly to client approval.');
     },
     onError: (error: any) => {
       console.error('Failed to approve care plan:', error);
-      
-      let errorMessage = 'Failed to approve care plan. Please try again.';
-      
-      if (error.message?.includes('Foreign key constraint')) {
-        errorMessage = 'Unable to approve: User permissions issue. Please contact your administrator.';
-      } else if (error.message?.includes('not authenticated')) {
-        errorMessage = 'You must be logged in to approve care plans.';
-      } else if (error.code === '23503') {
-        errorMessage = 'Unable to approve: User not found in staff records.';
-      } else if (error.message?.includes('Staff record not found')) {
-        errorMessage = 'Unable to approve: Staff account not properly configured.';
-      }
-      
-      toast.error(errorMessage);
+      toast.error('Staff approval workflow has been removed.');
     },
   });
 };
 
+/**
+ * @deprecated This hook is no longer used. Care plans skip staff approval.
+ */
 export const useStaffRejectCarePlan = () => {
   const queryClient = useQueryClient();
 
@@ -160,26 +66,18 @@ export const useStaffRejectCarePlan = () => {
     mutationFn: staffRejectCarePlan,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-care-plans-with-details'] });
-      queryClient.invalidateQueries({ queryKey: ['carer-assigned-care-plans'] });
-      queryClient.invalidateQueries({ queryKey: ['care-plan'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('Care plan rejected. The client will be notified of the requested changes.');
+      toast.error('Staff approval workflow has been removed.');
     },
     onError: (error: any) => {
       console.error('Failed to reject care plan:', error);
-      
-      let errorMessage = 'Failed to reject care plan. Please try again.';
-      
-      if (error.message?.includes('not authenticated')) {
-        errorMessage = 'You must be logged in to reject care plans.';
-      }
-      
-      toast.error(errorMessage);
+      toast.error('Staff approval workflow has been removed.');
     },
   });
 };
 
-// Hook to get care plan status info for staff
+/**
+ * @deprecated Hook to get care plan status info for staff - no longer relevant
+ */
 export const useStaffCarePlanStatus = (carePlan: any) => {
   if (!carePlan) return { status: 'unknown', label: 'Unknown', variant: 'secondary' as const };
 
@@ -187,14 +85,8 @@ export const useStaffCarePlanStatus = (carePlan: any) => {
     case 'draft':
       return { 
         status: 'draft', 
-        label: 'Awaiting Staff Approval', 
-        variant: 'destructive' as const 
-      };
-    case 'pending_approval':
-      return { 
-        status: 'pending_approval', 
-        label: 'Pending Staff Review', 
-        variant: 'destructive' as const 
+        label: 'Draft', 
+        variant: 'secondary' as const 
       };
     case 'pending_client_approval':
       return { 
@@ -202,10 +94,10 @@ export const useStaffCarePlanStatus = (carePlan: any) => {
         label: 'Pending Client Review', 
         variant: 'outline' as const 
       };
-    case 'approved':
+    case 'active':
       return { 
-        status: 'approved', 
-        label: 'Approved by Staff', 
+        status: 'active', 
+        label: 'Active', 
         variant: 'default' as const 
       };
     case 'rejected':
@@ -213,12 +105,6 @@ export const useStaffCarePlanStatus = (carePlan: any) => {
         status: 'rejected', 
         label: 'Changes Requested', 
         variant: 'secondary' as const 
-      };
-    case 'active':
-      return { 
-        status: 'active', 
-        label: 'Active', 
-        variant: 'default' as const 
       };
     default:
       return { 

@@ -15,7 +15,6 @@ import { Edit, Download, CheckCircle2, UserX, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
-import { useStaffApproveCarePlan, useStaffRejectCarePlan } from '@/hooks/useStaffCarePlanApproval';
 import { useToast } from '@/hooks/use-toast';
 import { generateCarePlanDetailPDF } from '@/services/enhancedPdfGenerator';
 
@@ -236,15 +235,8 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   const { id: branchId, branchName } = useParams();
   const { tenantSlug } = useTenant();
   const [currentStep, setCurrentStep] = useState(1);
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject'>('approve');
-  const [approvalComments, setApprovalComments] = useState('');
-  const [rejectionReason, setRejectionReason] = useState('');
   const { data: carePlan, isLoading } = useCarePlanData(carePlanId);
   const { toast } = useToast();
-  
-  const approveMutation = useStaffApproveCarePlan();
-  const rejectMutation = useStaffRejectCarePlan();
   
   const carePlanWithDetails = carePlan as CarePlanWithDetails;
 
@@ -307,42 +299,6 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
         description: "Failed to export care plan. Please try again.",
         variant: "destructive",
       });
-    }
-  };
-
-  const handleApprovalAction = (action: 'approve' | 'reject') => {
-    setApprovalAction(action);
-    setShowApprovalDialog(true);
-    setApprovalComments('');
-    setRejectionReason('');
-  };
-
-  const handleConfirmApproval = async () => {
-    try {
-      if (approvalAction === 'approve') {
-        await approveMutation.mutateAsync({
-          carePlanId,
-          comments: approvalComments
-        });
-        toast({
-          title: "Care plan approved",
-          description: "The care plan has been approved and sent to the client for review.",
-        });
-      } else {
-        await rejectMutation.mutateAsync({
-          carePlanId,
-          comments: approvalComments,
-          reason: rejectionReason
-        });
-        toast({
-          title: "Care plan rejected",
-          description: "The care plan has been rejected and returned for changes.",
-        });
-      }
-      setShowApprovalDialog(false);
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Error processing approval:', error);
     }
   };
 
@@ -439,27 +395,6 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
                   <Edit className="h-4 w-4 mr-2" />
                   Edit Plan
                 </Button>
-                {carePlan.status === 'pending_approval' && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleApprovalAction('reject')}
-                      className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                      <UserX className="h-4 w-4 mr-2" />
-                      Request Changes
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleApprovalAction('approve')}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Approve
-                    </Button>
-                  </>
-                )}
               </div>
             )}
           </div>
@@ -540,65 +475,6 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
           </div>
         </div>
       </DialogContent>
-
-      <Dialog open={showApprovalDialog} onOpenChange={setShowApprovalDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {approvalAction === 'approve' ? 'Approve Care Plan' : 'Request Changes'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {approvalAction === 'reject' && (
-              <div>
-                <label className="text-sm font-medium">Reason for rejection</label>
-                <Select value={rejectionReason} onValueChange={setRejectionReason}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a reason" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="incomplete_information">Incomplete Information</SelectItem>
-                    <SelectItem value="inaccurate_details">Inaccurate Details</SelectItem>
-                    <SelectItem value="missing_signatures">Missing Signatures</SelectItem>
-                    <SelectItem value="policy_violation">Policy Violation</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div>
-              <label className="text-sm font-medium">
-                {approvalAction === 'approve' ? 'Approval comments (optional)' : 'Additional comments'}
-              </label>
-              <Textarea
-                value={approvalComments}
-                onChange={(e) => setApprovalComments(e.target.value)}
-                placeholder={
-                  approvalAction === 'approve' 
-                    ? 'Add any comments about the approval...' 
-                    : 'Provide specific details about what needs to be changed...'
-                }
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApprovalDialog(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmApproval}
-              disabled={approveMutation.isPending || rejectMutation.isPending}
-              className={approvalAction === 'approve' ? 'bg-green-600 hover:bg-green-700' : ''}
-            >
-              {(approveMutation.isPending || rejectMutation.isPending) && (
-                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-              )}
-              {approvalAction === 'approve' ? 'Approve Plan' : 'Request Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 }

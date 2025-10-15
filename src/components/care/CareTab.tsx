@@ -236,7 +236,7 @@ const useCarePlans = (branchId: string | undefined) => {
                    plan.status === 'under_review' ? 'Under Review' : 
                    plan.status === 'archived' ? 'Archived' :
                    plan.status === 'draft' ? 'Draft' : 
-                   plan.status === 'pending_approval' ? 'Pending Client Approval' :
+                   plan.status === 'pending_client_approval' ? 'Pending Client Approval' :
                    plan.status === 'approved' ? 'Client Approved' :
                    plan.status === 'rejected' ? 'Changes Requested' : 'Active',
             assignedTo: assignedTo,

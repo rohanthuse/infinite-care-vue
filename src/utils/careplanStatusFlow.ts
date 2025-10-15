@@ -3,13 +3,13 @@ import { CARE_PLAN_STATUSES } from "./statusHelpers";
 // Care Plan Status Flow and Descriptions
 export const CARE_PLAN_STATUS_DESCRIPTIONS = {
   [CARE_PLAN_STATUSES.DRAFT]: {
-    description: "Initial stage where the care plan is being created and refined. Not yet ready for client review.",
-    nextSteps: ["Submit for Review", "Continue Editing"],
+    description: "Initial stage where the care plan is being created and refined. Ready to be sent to client for review.",
+    nextSteps: ["Send to Client", "Continue Editing"],
     allowedTransitions: [CARE_PLAN_STATUSES.UNDER_REVIEW, CARE_PLAN_STATUSES.ARCHIVED]
   },
   [CARE_PLAN_STATUSES.UNDER_REVIEW]: {
-    description: "Care plan is being reviewed by supervisors or healthcare professionals before activation.",
-    nextSteps: ["Approve and Activate", "Request Changes", "Reject"],
+    description: "Care plan is being reviewed by client for approval.",
+    nextSteps: ["Client Approval", "Request Changes"],
     allowedTransitions: [CARE_PLAN_STATUSES.ACTIVE, CARE_PLAN_STATUSES.DRAFT, CARE_PLAN_STATUSES.ARCHIVED]
   },
   [CARE_PLAN_STATUSES.ACTIVE]: {
@@ -34,10 +34,10 @@ export const CARE_PLAN_STATUS_DESCRIPTIONS = {
   }
 };
 
-// Recommended Care Plan Lifecycle Flow
+// Recommended Care Plan Lifecycle Flow (Updated: Direct to Client)
 export const RECOMMENDED_CARE_PLAN_FLOW = [
   CARE_PLAN_STATUSES.DRAFT,
-  CARE_PLAN_STATUSES.UNDER_REVIEW,
+  CARE_PLAN_STATUSES.UNDER_REVIEW, // Now represents client review (pending_client_approval)
   CARE_PLAN_STATUSES.ACTIVE,
   CARE_PLAN_STATUSES.COMPLETED,
   CARE_PLAN_STATUSES.ARCHIVED

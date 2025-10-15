@@ -81,7 +81,6 @@ const CarerCarePlans: React.FC = () => {
       activeTab === "all" || 
       (activeTab === "direct" && carePlan.isDirectlyAssigned) ||
       (activeTab === "branch" && !carePlan.isDirectlyAssigned) ||
-      (activeTab === "approvals" && carePlan.status === "pending_approval") ||
       (activeTab === "alerts" && carePlan.alerts > 0);
     
     return searchMatches && tabMatches;
@@ -113,14 +112,6 @@ const CarerCarePlans: React.FC = () => {
             <TabsTrigger value="all">All Care Plans ({transformedCarePlans.length})</TabsTrigger>
             <TabsTrigger value="direct">My Assigned ({transformedCarePlans.filter(plan => plan.isDirectlyAssigned).length})</TabsTrigger>
             <TabsTrigger value="branch">Branch Plans ({transformedCarePlans.filter(plan => !plan.isDirectlyAssigned).length})</TabsTrigger>
-            <TabsTrigger value="approvals" className="relative">
-              Pending Approval ({transformedCarePlans.filter(plan => plan.status === "pending_approval").length})
-              {transformedCarePlans.filter(plan => plan.status === "pending_approval").length > 0 && (
-                <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-orange-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                  {transformedCarePlans.filter(plan => plan.status === "pending_approval").length}
-                </span>
-              )}
-            </TabsTrigger>
             <TabsTrigger value="alerts" className="relative">
               Requires Attention
               {transformedCarePlans.filter(plan => plan.alerts > 0).length > 0 && (

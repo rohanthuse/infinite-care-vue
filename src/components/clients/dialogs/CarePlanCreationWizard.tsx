@@ -596,8 +596,8 @@ export function CarePlanCreationWizard({
       // First save as draft to get the latest data
       await saveDraft(formData, currentStep);
       
-      // Determine the appropriate status based on whether this is editing a change request
-      const status = isEditingChangeRequest ? 'pending_client_approval' : 'pending_approval';
+        // Set care plan status - always go directly to client approval (no staff approval step)
+        const status = 'pending_client_approval';
       
       // Then finalize the care plan
       await createCarePlan({
