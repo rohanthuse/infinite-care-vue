@@ -38,7 +38,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     pronouns: "",
     email: "",
     phone: "",
-    address: "",
+    house_no: "",
+    street: "",
+    city: "",
+    county: "",
     pin_code: "",
     status: "New Enquiries",
     region: "North",
@@ -57,10 +60,29 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   
   const [formData, setFormData] = useState(defaultFormData);
   
+  // Helper function to parse address string into components
+  const parseAddress = (address: string) => {
+    if (!address) return { house_no: '', street: '', city: '', county: '' };
+    const parts = address.split(',').map(part => part.trim());
+    
+    if (parts.length >= 4) {
+      return {
+        house_no: parts[0] || '',
+        street: parts[1] || '',
+        city: parts[parts.length - 2] || '',
+        county: parts[parts.length - 1] || ''
+      };
+    }
+    
+    return { house_no: '', street: '', city: '', county: '' };
+  };
+  
   // Prefill form data when editing - only trigger on dialog open
   useEffect(() => {
     if (open && clientToEdit && mode === 'edit') {
       // Only prefill when dialog is OPENING with edit mode
+      const addressParts = parseAddress(clientToEdit.address || '');
+      
       setFormData({
         title: clientToEdit.title || "",
         first_name: clientToEdit.first_name || "",
@@ -70,7 +92,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         pronouns: clientToEdit.pronouns || "",
         email: clientToEdit.email || "",
         phone: clientToEdit.phone || clientToEdit.mobile_number || "",
-        address: clientToEdit.address || "",
+        house_no: addressParts.house_no,
+        street: addressParts.street,
+        city: addressParts.city,
+        county: addressParts.county,
         pin_code: clientToEdit.pin_code || "",
         status: clientToEdit.status || "New Enquiries",
         region: clientToEdit.region || "North",
@@ -133,13 +158,27 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         return;
       }
 
+      // Reconstruct full address from components
+      const fullAddress = [
+        formData.house_no,
+        formData.street,
+        formData.city,
+        formData.county
+      ].filter(part => part && part.trim()).join(', ');
+
       // Prepare client data
       const clientData = {
         ...formData,
+        address: fullAddress, // Store reconstructed address
         branch_id: branchId,
         avatar_initials: generateAvatarInitials(formData.first_name, formData.last_name),
         date_of_birth: formData.date_of_birth || null,
-        age_group: formData.age_group as "adult" | "child" | "young_person"
+        age_group: formData.age_group as "adult" | "child" | "young_person",
+        // Remove individual address components (they don't exist in DB)
+        house_no: undefined,
+        street: undefined,
+        city: undefined,
+        county: undefined
       };
 
       if (mode === 'edit' && clientToEdit) {
@@ -250,234 +289,325 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="title">Title</Label>
-              <Combobox
-                options={[
-                  { value: "Lord", label: "Lord" },
-                  { value: "Professor", label: "Professor" },
-                  { value: "Dr", label: "Dr" },
-                  { value: "Sir", label: "Sir" },
-                  { value: "Mr", label: "Mr" },
-                  { value: "Lady", label: "Lady" },
-                  { value: "Dame", label: "Dame" },
-                  { value: "Miss", label: "Miss" },
-                  { value: "Mrs", label: "Mrs" },
-                  { value: "Ms", label: "Ms" },
-                  { value: "Mx", label: "Mx" }
-                ]}
-                value={formData.title}
-                onValueChange={(value) => handleInputChange("title", value)}
-                placeholder="Select title..."
-                searchPlaceholder="Search titles..."
-                emptyText="No title found."
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          {/* SECTION 1: Personal Information */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Personal Information</h3>
             </div>
-            <div>
-              <Label htmlFor="first_name">First Name *</Label>
-              <Input id="first_name" value={formData.first_name} onChange={e => handleInputChange("first_name", e.target.value)} required />
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Combobox
+                  options={[
+                    { value: "Lord", label: "Lord" },
+                    { value: "Professor", label: "Professor" },
+                    { value: "Dr", label: "Dr" },
+                    { value: "Sir", label: "Sir" },
+                    { value: "Mr", label: "Mr" },
+                    { value: "Lady", label: "Lady" },
+                    { value: "Dame", label: "Dame" },
+                    { value: "Miss", label: "Miss" },
+                    { value: "Mrs", label: "Mrs" },
+                    { value: "Ms", label: "Ms" },
+                    { value: "Mx", label: "Mx" }
+                  ]}
+                  value={formData.title}
+                  onValueChange={(value) => handleInputChange("title", value)}
+                  placeholder="Select title..."
+                  searchPlaceholder="Search titles..."
+                  emptyText="No title found."
+                />
+              </div>
+              <div>
+                <Label htmlFor="first_name">First Name <span className="text-red-500">*</span></Label>
+                <Input id="first_name" value={formData.first_name} onChange={e => handleInputChange("first_name", e.target.value)} required />
+              </div>
+              <div>
+                <Label htmlFor="last_name">Last Name <span className="text-red-500">*</span></Label>
+                <Input id="last_name" value={formData.last_name} onChange={e => handleInputChange("last_name", e.target.value)} required />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="last_name">Last Name *</Label>
-              <Input id="last_name" value={formData.last_name} onChange={e => handleInputChange("last_name", e.target.value)} required />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="middle_name">Middle Name</Label>
+                <Input 
+                  id="middle_name" 
+                  value={formData.middle_name} 
+                  onChange={e => handleInputChange("middle_name", e.target.value)}
+                  placeholder="Middle name (optional)"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pronouns">Pronouns</Label>
+                <Input 
+                  id="pronouns" 
+                  value={formData.pronouns} 
+                  onChange={e => handleInputChange("pronouns", e.target.value)}
+                  placeholder="e.g., he/him, she/her, they/them"
+                />
+              </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+            
             <div>
-              <Label htmlFor="middle_name">Middle Name</Label>
+              <Label htmlFor="preferred_name">Preferred Name</Label>
               <Input 
-                id="middle_name" 
-                value={formData.middle_name} 
-                onChange={e => handleInputChange("middle_name", e.target.value)}
-                placeholder="Middle name (optional)"
-              />
-            </div>
-            <div>
-              <Label htmlFor="pronouns">Pronouns</Label>
-              <Input 
-                id="pronouns" 
-                value={formData.pronouns} 
-                onChange={e => handleInputChange("pronouns", e.target.value)}
-                placeholder="e.g., he/him, she/her, they/them"
+                id="preferred_name" 
+                value={formData.preferred_name} 
+                onChange={e => handleInputChange("preferred_name", e.target.value)}
+                placeholder="How would you like to be addressed?" 
               />
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="preferred_name">Preferred Name</Label>
-            <Input 
-              id="preferred_name" 
-              value={formData.preferred_name} 
-              onChange={e => handleInputChange("preferred_name", e.target.value)}
-              placeholder="How would you like to be addressed?" 
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={formData.email} onChange={e => handleInputChange("email", e.target.value)} />
+          {/* SECTION 2: Contact Information */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Contact Information</h3>
             </div>
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" value={formData.phone} onChange={e => handleInputChange("phone", e.target.value)} />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={formData.email} onChange={e => handleInputChange("email", e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" value={formData.phone} onChange={e => handleInputChange("phone", e.target.value)} />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="address">Address</Label>
-              <Input id="address" value={formData.address} onChange={e => handleInputChange("address", e.target.value)} />
+          {/* SECTION 3: Address Information */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Address Information</h3>
             </div>
-            <div>
-              <Label htmlFor="pin_code">Post Code</Label>
-              <Input id="pin_code" value={formData.pin_code} onChange={e => handleInputChange("pin_code", e.target.value)} placeholder="e.g., MK9 1AA" />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="house_no">House No/Name</Label>
+                <Input 
+                  id="house_no" 
+                  value={formData.house_no} 
+                  onChange={e => handleInputChange("house_no", e.target.value)}
+                  placeholder="e.g., 123 or Apartment 4B"
+                />
+              </div>
+              <div>
+                <Label htmlFor="street">Street</Label>
+                <Input 
+                  id="street" 
+                  value={formData.street} 
+                  onChange={e => handleInputChange("street", e.target.value)}
+                  placeholder="e.g., High Street"
+                />
+              </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select value={formData.status} onValueChange={value => handleInputChange("status", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="New Enquiries">New Enquiries</SelectItem>
-                  <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
-                  <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
-                  <SelectItem value="Former">Former</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="region">Region</Label>
-              <Select value={formData.region} onValueChange={value => handleInputChange("region", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="North">North</SelectItem>
-                  <SelectItem value="South">South</SelectItem>
-                  <SelectItem value="East">East</SelectItem>
-                  <SelectItem value="West">West</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="date_of_birth">Date of Birth</Label>
-              <Input id="date_of_birth" type="date" value={formData.date_of_birth} onChange={e => handleInputChange("date_of_birth", e.target.value)} />
-            </div>
-            <div>
-              <Label htmlFor="gender">Gender</Label>
-              <Select value={formData.gender} onValueChange={value => handleInputChange("gender", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                  <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="age_group">Age Group *</Label>
-              <Select value={formData.age_group} onValueChange={value => handleInputChange("age_group", value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="adult">Adult (18+ years)</SelectItem>
-                  <SelectItem value="young_person">Young Person (16-17 years)</SelectItem>
-                  <SelectItem value="child">Child (0-15 years)</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input 
+                  id="city" 
+                  value={formData.city} 
+                  onChange={e => handleInputChange("city", e.target.value)}
+                  placeholder="e.g., London"
+                />
+              </div>
+              <div>
+                <Label htmlFor="county">County</Label>
+                <Input 
+                  id="county" 
+                  value={formData.county} 
+                  onChange={e => handleInputChange("county", e.target.value)}
+                  placeholder="e.g., Greater London"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pin_code">Postcode</Label>
+                <Input 
+                  id="pin_code" 
+                  value={formData.pin_code} 
+                  onChange={e => handleInputChange("pin_code", e.target.value)}
+                  placeholder="e.g., MK9 1AA"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="emergency_contact">Emergency Contact Person</Label>
-              <Input id="emergency_contact" value={formData.emergency_contact} onChange={e => handleInputChange("emergency_contact", e.target.value)} />
+          {/* SECTION 4: Personal Details */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Personal Details</h3>
             </div>
-            <div>
-              <Label htmlFor="emergency_phone">Emergency Phone</Label>
-              <Input id="emergency_phone" value={formData.emergency_phone} onChange={e => handleInputChange("emergency_phone", e.target.value)} />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select value={formData.status} onValueChange={value => handleInputChange("status", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="New Enquiries">New Enquiries</SelectItem>
+                    <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
+                    <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
+                    <SelectItem value="Former">Former</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="region">Region</Label>
+                <Select value={formData.region} onValueChange={value => handleInputChange("region", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="North">North</SelectItem>
+                    <SelectItem value="South">South</SelectItem>
+                    <SelectItem value="East">East</SelectItem>
+                    <SelectItem value="West">West</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                <Input id="date_of_birth" type="date" value={formData.date_of_birth} onChange={e => handleInputChange("date_of_birth", e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Select value={formData.gender} onValueChange={value => handleInputChange("gender", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="age_group">Age Group <span className="text-red-500">*</span></Label>
+                <Select value={formData.age_group} onValueChange={value => handleInputChange("age_group", value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="adult">Adult (18+ years)</SelectItem>
+                    <SelectItem value="young_person">Young Person (16-17 years)</SelectItem>
+                    <SelectItem value="child">Child (0-15 years)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="gp_details">GP Details</Label>
-            <Input id="gp_details" value={formData.gp_details} onChange={e => handleInputChange("gp_details", e.target.value)} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="mobility_status">Mobility Status</Label>
-              <Select value={formData.mobility_status} onValueChange={value => handleInputChange("mobility_status", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mobility status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Independent">Independent</SelectItem>
-                  <SelectItem value="Assisted">Assisted</SelectItem>
-                  <SelectItem value="Wheelchair">Wheelchair</SelectItem>
-                  <SelectItem value="Bed bound">Bed bound</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* SECTION 5: Emergency Contact */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Emergency Contact</h3>
             </div>
-            <div>
-              <Label htmlFor="communication_preferences">Communication Preferences</Label>
-              <Select value={formData.communication_preferences} onValueChange={value => handleInputChange("communication_preferences", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select preference" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Phone">Phone</SelectItem>
-                  <SelectItem value="Email">Email</SelectItem>
-                  <SelectItem value="SMS">SMS</SelectItem>
-                  <SelectItem value="Post">Post</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="emergency_contact">Emergency Contact Person</Label>
+                <Input id="emergency_contact" value={formData.emergency_contact} onChange={e => handleInputChange("emergency_contact", e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="emergency_phone">Emergency Phone</Label>
+                <Input id="emergency_phone" value={formData.emergency_phone} onChange={e => handleInputChange("emergency_phone", e.target.value)} />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="other_identifier">Other Identifier</Label>
-              <Input 
-                id="other_identifier" 
-                value={formData.other_identifier} 
-                onChange={e => handleInputChange("other_identifier", e.target.value)}
-                placeholder="Alternative ID or reference"
-              />
+          {/* SECTION 6: Medical Information */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Medical Information</h3>
             </div>
+            
             <div>
-              <Label htmlFor="referral_route">Referral Route</Label>
-              <Input 
-                id="referral_route" 
-                value={formData.referral_route} 
-                onChange={e => handleInputChange("referral_route", e.target.value)}
-                placeholder="How did they find us?"
-              />
+              <Label htmlFor="gp_details">GP Details</Label>
+              <Input id="gp_details" value={formData.gp_details} onChange={e => handleInputChange("gp_details", e.target.value)} />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="mobility_status">Mobility Status</Label>
+                <Select value={formData.mobility_status} onValueChange={value => handleInputChange("mobility_status", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select mobility status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Independent">Independent</SelectItem>
+                    <SelectItem value="Assisted">Assisted</SelectItem>
+                    <SelectItem value="Wheelchair">Wheelchair</SelectItem>
+                    <SelectItem value="Bed bound">Bed bound</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="communication_preferences">Communication Preferences</Label>
+                <Select value={formData.communication_preferences} onValueChange={value => handleInputChange("communication_preferences", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Phone">Phone</SelectItem>
+                    <SelectItem value="Email">Email</SelectItem>
+                    <SelectItem value="SMS">SMS</SelectItem>
+                    <SelectItem value="Post">Post</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="additional_information">Additional Information</Label>
-            <Textarea id="additional_information" value={formData.additional_information} onChange={e => handleInputChange("additional_information", e.target.value)} rows={3} />
+          {/* SECTION 7: Additional Information */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Additional Information</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="other_identifier">Other Identifier</Label>
+                <Input 
+                  id="other_identifier" 
+                  value={formData.other_identifier} 
+                  onChange={e => handleInputChange("other_identifier", e.target.value)}
+                  placeholder="Alternative ID or reference"
+                />
+              </div>
+              <div>
+                <Label htmlFor="referral_route">Referral Route</Label>
+                <Input 
+                  id="referral_route" 
+                  value={formData.referral_route} 
+                  onChange={e => handleInputChange("referral_route", e.target.value)}
+                  placeholder="How did they find us?"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="additional_information">Additional Notes</Label>
+              <Textarea id="additional_information" value={formData.additional_information} onChange={e => handleInputChange("additional_information", e.target.value)} rows={3} />
+            </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          {/* Form Actions */}
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
