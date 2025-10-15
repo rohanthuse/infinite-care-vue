@@ -5978,6 +5978,97 @@ export type Database = {
           },
         ]
       }
+      scheduled_messages: {
+        Row: {
+          action_required: boolean | null
+          admin_eyes_only: boolean | null
+          attachments: Json | null
+          branch_id: string | null
+          content: string
+          created_at: string
+          error_message: string | null
+          id: string
+          message_type: string | null
+          notification_methods: string[] | null
+          organization_id: string | null
+          priority: string | null
+          recipient_ids: string[]
+          scheduled_for: string
+          sender_id: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          thread_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_required?: boolean | null
+          admin_eyes_only?: boolean | null
+          attachments?: Json | null
+          branch_id?: string | null
+          content: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_type?: string | null
+          notification_methods?: string[] | null
+          organization_id?: string | null
+          priority?: string | null
+          recipient_ids: string[]
+          scheduled_for: string
+          sender_id: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          thread_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_required?: boolean | null
+          admin_eyes_only?: boolean | null
+          attachments?: Json | null
+          branch_id?: string | null
+          content?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_type?: string | null
+          notification_methods?: string[] | null
+          organization_id?: string | null
+          priority?: string | null
+          recipient_ids?: string[]
+          scheduled_for?: string
+          sender_id?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          thread_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_messages_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_rates: {
         Row: {
           amount: number

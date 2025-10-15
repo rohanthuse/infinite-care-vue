@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -27,18 +28,35 @@ import { useFileUpload } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { CommunicationTypeSelector } from "@/components/messaging/CommunicationTypeSelector";
 
+interface ClientMessageRecipient {
+  id: string;
+  auth_user_id: string;
+  name: string;
+  avatar: string;
+  type: 'branch_admin' | 'super_admin' | 'assigned_carer';
+  email?: string;
+  canMessage: boolean;
+  groupLabel: string;
+}
+
 interface MessageComposerProps {
   branchId: string;
   onClose: () => void;
   selectedContactId?: string | null;
   selectedThreadId?: string | null;
+  clientId?: string | null;
+  availableRecipients?: ClientMessageRecipient[];
+  restrictToClientContext?: boolean;
 }
 
 export const MessageComposer = ({ 
   branchId, 
   onClose,
   selectedContactId,
-  selectedThreadId 
+  selectedThreadId,
+  clientId,
+  availableRecipients,
+  restrictToClientContext = false
 }: MessageComposerProps) => {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
@@ -70,8 +88,14 @@ export const MessageComposer = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
-  const { data: availableContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
+  const shouldUseClientRecipients = restrictToClientContext && availableRecipients;
+  const { data: adminContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
+  const availableContacts = shouldUseClientRecipients ? availableRecipients : adminContacts;
+  
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   const { uploadFile, uploading: uploadingFiles } = useFileUpload();
@@ -274,7 +298,107 @@ export const MessageComposer = ({
   };
 
   const handleScheduleSend = () => {
-    toast.info("Schedule sending feature coming soon");
+    setShowScheduler(true);
+  };
+
+  const handleCancelSchedule = () => {
+    setShowScheduler(false);
+    setScheduledDate('');
+    setScheduledTime('');
+  };
+
+  const handleConfirmSchedule = async () => {
+    if (!scheduledDate || !scheduledTime) {
+      toast.error('Please select both date and time');
+      return;
+    }
+    
+    const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
+    const now = new Date();
+    
+    if (scheduledDateTime <= now) {
+      toast.error('Scheduled time must be in the future');
+      return;
+    }
+    
+    if (!messageType.trim()) {
+      toast.error('Please select a message type');
+      return;
+    }
+    
+    if (!content.trim()) {
+      toast.error('Please enter message content');
+      return;
+    }
+    
+    if (!isReply && recipients.length === 0) {
+      toast.error('Please select at least one recipient');
+      return;
+    }
+    
+    try {
+      let attachments: any[] = [];
+      if (files.length > 0) {
+        toast.info(`Uploading ${files.length} file(s)...`);
+        for (const file of files) {
+          const uploadedFile = await uploadFile(file, { category: 'attachment' });
+          attachments.push({
+            id: uploadedFile.id,
+            name: uploadedFile.file_name,
+            path: uploadedFile.storage_path,
+            type: uploadedFile.file_type,
+            size: uploadedFile.file_size,
+            bucket: 'agreement-files'
+          });
+        }
+      }
+      
+      const { data: currentUserData } = await supabase.auth.getUser();
+      if (!currentUserData.user) throw new Error('Not authenticated');
+      
+      const { data: scheduledMessage, error: scheduleError } = await supabase
+        .from('scheduled_messages')
+        .insert({
+          thread_id: selectedThreadId || null,
+          sender_id: currentUserData.user.id,
+          recipient_ids: recipients,
+          subject: subject.trim() || null,
+          content: content.trim(),
+          message_type: messageType,
+          priority,
+          action_required: actionRequired,
+          admin_eyes_only: adminEyesOnly,
+          attachments,
+          notification_methods: Object.entries(notificationMethods)
+            .filter(([_, enabled]) => enabled)
+            .map(([method, _]) => method),
+          scheduled_for: scheduledDateTime.toISOString(),
+          status: 'pending'
+        })
+        .select()
+        .single();
+      
+      if (scheduleError) throw scheduleError;
+      
+      const formattedDate = format(scheduledDateTime, 'PPp');
+      toast.success(`Message scheduled for ${formattedDate}`);
+      
+      setContent('');
+      setFiles([]);
+      setShowScheduler(false);
+      setScheduledDate('');
+      setScheduledTime('');
+      if (!isReply) {
+        setSubject('');
+        setRecipients([]);
+        setMessageType('');
+      }
+      
+      onClose();
+    } catch (error: any) {
+      console.error('Schedule error:', error);
+      toast.error(`Failed to schedule message: ${error.message}`);
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -321,15 +445,62 @@ export const MessageComposer = ({
                 <span className="hidden sm:inline">Schedule</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleScheduleSend}>
-                <Clock className="h-4 w-4 mr-2" />
-                <span>Schedule Send</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleSaveAsDraft}>
-                <Save className="h-4 w-4 mr-2" />
-                <span>Save as Draft</span>
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-80">
+              {!showScheduler ? (
+                <>
+                  <DropdownMenuItem onClick={handleScheduleSend}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    <span>Schedule Send</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSaveAsDraft}>
+                    <Save className="h-4 w-4 mr-2" />
+                    <span>Save as Draft</span>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <div className="p-3 space-y-3">
+                  <DropdownMenuLabel>Schedule Message</DropdownMenuLabel>
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-date" className="text-xs">Date</Label>
+                    <Input
+                      id="schedule-date"
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="schedule-time" className="text-xs">Time</Label>
+                    <Input
+                      id="schedule-time"
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleCancelSchedule}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleConfirmSchedule}
+                      disabled={!scheduledDate || !scheduledTime}
+                      className="flex-1"
+                    >
+                      Confirm
+                    </Button>
+                  </div>
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           
@@ -403,69 +574,152 @@ export const MessageComposer = ({
                         <div className="text-gray-500 text-sm p-2">Loading contacts...</div>
                       ) : availableContacts.length > 0 ? (
                         <>
-                           {availableContacts.filter(c => c.type === 'client').length > 0 && (
-                             <div>
-                               <Label className="text-sm font-medium">Clients</Label>
-                               <div className="space-y-1 mt-1">
-                                 {availableContacts.filter(c => c.type === 'client').map(contact => (
-                                   <div key={contact.id} className="flex items-center space-x-2">
-                                     <Checkbox
-                                       checked={selectedContacts.clients.includes(contact.id)}
-                                       onCheckedChange={() => handleContactToggle(contact.id, 'clients')}
-                                     />
-                                     <Label className="text-sm flex items-center gap-2">
-                                       {contact.name}
-                                       {contact.canMessage === false && (
-                                         <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                                           Setup Required
-                                         </Badge>
-                                       )}
-                                     </Label>
-                                   </div>
-                                 ))}
-                               </div>
-                             </div>
-                           )}
-                           
-                           {availableContacts.filter(c => c.type === 'carer').length > 0 && (
-                             <div>
-                               <Label className="text-sm font-medium">Carers</Label>
-                               <div className="space-y-1 mt-1">
-                                 {availableContacts.filter(c => c.type === 'carer').map(contact => (
-                                   <div key={contact.id} className="flex items-center space-x-2">
-                                     <Checkbox
-                                       checked={selectedContacts.carers.includes(contact.id)}
-                                       onCheckedChange={() => handleContactToggle(contact.id, 'carers')}
-                                     />
-                                     <Label className="text-sm flex items-center gap-2">
-                                       {contact.name}
-                                       {contact.canMessage === false && (
-                                         <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                                           Setup Required
-                                         </Badge>
-                                       )}
-                                     </Label>
-                                   </div>
-                                 ))}
-                               </div>
-                             </div>
-                           )}
-                          
-                          {availableContacts.filter(c => c.type === 'branch_admin' || c.type === 'super_admin').length > 0 && (
-                            <div>
-                              <Label className="text-sm font-medium">Administrators</Label>
-                              <div className="space-y-1 mt-1">
-                                {availableContacts.filter(c => c.type === 'branch_admin' || c.type === 'super_admin').map(contact => (
-                                  <div key={contact.id} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      checked={selectedContacts.admins.includes(contact.id)}
-                                      onCheckedChange={() => handleContactToggle(contact.id, 'admins')}
-                                    />
-                                    <Label className="text-sm">{contact.name}</Label>
+                          {shouldUseClientRecipients ? (
+                            // Client-specific recipient grouping
+                            <>
+                              {availableContacts.filter((c: any) => c.groupLabel === 'Assigned Carers').length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-semibold text-blue-700">
+                                    👤 Assigned Carers
+                                  </Label>
+                                  <div className="space-y-1 mt-1">
+                                    {availableContacts.filter((c: any) => c.groupLabel === 'Assigned Carers').map((contact: any) => (
+                                      <div key={contact.auth_user_id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={recipients.includes(contact.auth_user_id)}
+                                          onCheckedChange={() => {
+                                            setRecipients(prev => 
+                                              prev.includes(contact.auth_user_id)
+                                                ? prev.filter(id => id !== contact.auth_user_id)
+                                                : [...prev, contact.auth_user_id]
+                                            );
+                                          }}
+                                        />
+                                        <Label className="text-sm">{contact.name}</Label>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
+                                </div>
+                              )}
+                              
+                              {availableContacts.filter((c: any) => c.groupLabel === 'Branch Admins').length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-semibold text-purple-700">
+                                    🏢 Branch Admins
+                                  </Label>
+                                  <div className="space-y-1 mt-1">
+                                    {availableContacts.filter((c: any) => c.groupLabel === 'Branch Admins').map((contact: any) => (
+                                      <div key={contact.auth_user_id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={recipients.includes(contact.auth_user_id)}
+                                          onCheckedChange={() => {
+                                            setRecipients(prev => 
+                                              prev.includes(contact.auth_user_id)
+                                                ? prev.filter(id => id !== contact.auth_user_id)
+                                                : [...prev, contact.auth_user_id]
+                                            );
+                                          }}
+                                        />
+                                        <Label className="text-sm">{contact.name}</Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {availableContacts.filter((c: any) => c.groupLabel === 'Super Admins').length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-semibold text-orange-700">
+                                    ⭐ Super Admins
+                                  </Label>
+                                  <div className="space-y-1 mt-1">
+                                    {availableContacts.filter((c: any) => c.groupLabel === 'Super Admins').map((contact: any) => (
+                                      <div key={contact.auth_user_id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={recipients.includes(contact.auth_user_id)}
+                                          onCheckedChange={() => {
+                                            setRecipients(prev => 
+                                              prev.includes(contact.auth_user_id)
+                                                ? prev.filter(id => id !== contact.auth_user_id)
+                                                : [...prev, contact.auth_user_id]
+                                            );
+                                          }}
+                                        />
+                                        <Label className="text-sm">{contact.name}</Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            // Original grouping for non-client context
+                            <>
+                              {availableContacts.filter((c: any) => c.type === 'client').length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-medium">Clients</Label>
+                                  <div className="space-y-1 mt-1">
+                                    {availableContacts.filter((c: any) => c.type === 'client').map((contact: any) => (
+                                      <div key={contact.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={selectedContacts.clients.includes(contact.id)}
+                                          onCheckedChange={() => handleContactToggle(contact.id, 'clients')}
+                                        />
+                                        <Label className="text-sm flex items-center gap-2">
+                                          {contact.name}
+                                          {contact.canMessage === false && (
+                                            <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                              Setup Required
+                                            </Badge>
+                                          )}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {availableContacts.filter((c: any) => c.type === 'carer').length > 0 && (
+                                <div>
+                                  <Label className="text-sm font-medium">Carers</Label>
+                                  <div className="space-y-1 mt-1">
+                                    {availableContacts.filter((c: any) => c.type === 'carer').map((contact: any) => (
+                                      <div key={contact.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={selectedContacts.carers.includes(contact.id)}
+                                          onCheckedChange={() => handleContactToggle(contact.id, 'carers')}
+                                        />
+                                        <Label className="text-sm flex items-center gap-2">
+                                          {contact.name}
+                                          {contact.canMessage === false && (
+                                            <Badge variant="outline" className="px-1.5 py-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
+                                              Setup Required
+                                            </Badge>
+                                          )}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                             
+                             {availableContacts.filter((c: any) => c.type === 'branch_admin' || c.type === 'super_admin').length > 0 && (
+                               <div>
+                                 <Label className="text-sm font-medium">Administrators</Label>
+                                 <div className="space-y-1 mt-1">
+                                   {availableContacts.filter((c: any) => c.type === 'branch_admin' || c.type === 'super_admin').map((contact: any) => (
+                                     <div key={contact.id} className="flex items-center space-x-2">
+                                       <Checkbox
+                                         checked={selectedContacts.admins.includes(contact.id)}
+                                         onCheckedChange={() => handleContactToggle(contact.id, 'admins')}
+                                       />
+                                       <Label className="text-sm">{contact.name}</Label>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+                             )}
+                            </>
                           )}
                           
                           <div className="flex items-center justify-between pt-2">

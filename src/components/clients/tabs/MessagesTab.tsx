@@ -11,6 +11,10 @@ import { MessageComposer } from '@/components/communications/MessageComposer';
 import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useClientMessageRecipients } from '@/hooks/useClientMessageRecipients';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface MessagesTabProps {
   clientId: string;
@@ -26,6 +30,52 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
   const { data: messages = [], isLoading: messagesLoading } = useClientThreadMessages(selectedThreadId || '');
   const sendMessageMutation = useSendMessageToClient();
   const { data: currentUser } = useUserRole();
+  const { data: clientRecipients = [], isLoading: recipientsLoading } = useClientMessageRecipients(clientId);
+
+  // Fetch scheduled messages for selected thread
+  const { data: scheduledMessages = [] } = useQuery({
+    queryKey: ['scheduled-messages', selectedThreadId],
+    queryFn: async () => {
+      if (!selectedThreadId) return [];
+      
+      const { data, error } = await supabase
+        .from('scheduled_messages')
+        .select('*')
+        .eq('thread_id', selectedThreadId)
+        .eq('status', 'pending')
+        .order('scheduled_for', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedThreadId
+  });
+
+  // Real-time subscription for new messages
+  useEffect(() => {
+    if (!selectedThreadId) return;
+    
+    const channel = supabase
+      .channel('thread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `thread_id=eq.${selectedThreadId}`
+        },
+        (payload) => {
+          console.log('New message received:', payload);
+          refetchThreads();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedThreadId, refetchThreads]);
 
   const handleSendMessage = async () => {
     if (!selectedThreadId || !newMessage.trim()) return;
@@ -95,7 +145,10 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
             <MessageComposer
               branchId={currentUser?.branchId || ''}
               onClose={handleCloseComposer}
-              selectedContactId={clientId}
+              selectedContactId={null}
+              clientId={clientId}
+              availableRecipients={clientRecipients}
+              restrictToClientContext={true}
             />
           </CardContent>
         </Card>
@@ -171,6 +224,42 @@ const MessagesTab: React.FC<MessagesTabProps> = ({ clientId }) => {
                   </div>
                 )}
               </ScrollArea>
+
+              {/* Scheduled Messages */}
+              {scheduledMessages.length > 0 && (
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="text-sm font-semibold mb-2 text-muted-foreground">
+                    📅 Scheduled Messages ({scheduledMessages.length})
+                  </h4>
+                  {scheduledMessages.map((scheduled: any) => (
+                    <div key={scheduled.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <Badge variant="outline" className="mb-1 bg-yellow-100 text-yellow-800">
+                            Scheduled for {format(new Date(scheduled.scheduled_for), 'PPp')}
+                          </Badge>
+                          <p className="text-sm mt-1">{scheduled.content}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            if (confirm('Cancel this scheduled message?')) {
+                              await supabase
+                                .from('scheduled_messages')
+                                .update({ status: 'cancelled' })
+                                .eq('id', scheduled.id);
+                              toast.success('Scheduled message cancelled');
+                            }
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Send message */}
               <div className="space-y-3 border-t pt-4">
