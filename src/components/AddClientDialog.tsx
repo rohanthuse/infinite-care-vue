@@ -123,12 +123,12 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       if (mode === 'edit' && clientToEdit) {
         // UPDATE existing client
         console.log("Updating client:", clientToEdit.id, "with data:", clientData);
-        const { data, error } = await supabase
-          .from('clients')
-          .update(clientData)
-          .eq('id', clientToEdit.id)
-          .select()
-          .single();
+      const { data, error } = await supabase
+        .from('clients')
+        .update(clientData)
+        .eq('id', clientToEdit.id)
+        .select()
+        .maybeSingle();
 
         if (error) {
           console.error("Error updating client:", error);
@@ -141,7 +141,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           return;
         }
 
-        console.log("Client updated successfully:", data);
+        console.log("Client updated successfully:", data ? "Data returned" : "Update succeeded but no data returned");
         toast({
           title: "Success",
           description: "Client has been updated successfully."
