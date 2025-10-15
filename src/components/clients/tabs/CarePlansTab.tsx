@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { format } from "date-fns";
 import { FileText, Clock, Plus, User, Calendar, MoreVertical, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,17 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
   const [carePlanToDelete, setCarePlanToDelete] = useState<any>(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [carePlanToView, setCarePlanToView] = useState<any>(null);
+
+  // Handle view dialog state changes with proper cleanup
+  const handleViewDialogChange = useCallback((open: boolean) => {
+    setViewDialogOpen(open);
+    if (!open) {
+      // Delay state reset to allow dialog animation to complete
+      setTimeout(() => {
+        setCarePlanToView(null);
+      }, 300);
+    }
+  }, []);
   
   const { data: carePlans = [], isLoading } = useClientCarePlans(clientId);
   const { id: branchId } = useParams();
@@ -253,7 +264,7 @@ export const CarePlansTab: React.FC<CarePlansTabProps> = ({ clientId }) => {
       <CarePlanViewDialog
         carePlanId={carePlanToView?.id}
         open={viewDialogOpen}
-        onOpenChange={setViewDialogOpen}
+        onOpenChange={handleViewDialogChange}
       />
     </div>
   );
