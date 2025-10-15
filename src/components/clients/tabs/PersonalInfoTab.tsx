@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Save, Edit, X, Loader2 } from "lucide-react";
+import { Save, Edit, X, Loader2, FileText, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from '@/integrations/supabase/client';
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientServiceActions, useCreateClientServiceAction } from "@/hooks/useClientServiceActions";
 import { useClientVaccinations } from "@/hooks/useClientVaccinations";
@@ -1456,14 +1457,14 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 ) : vaccinations && vaccinations.length > 0 ? (
                   <div className="space-y-3">
                     {vaccinations.map((vaccination) => (
-                      <div key={vaccination.id} className="border rounded-lg p-3">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <div key={vaccination.id} className="border rounded-lg p-4 space-y-3">
+                        <div className="grid grid-cols-3 gap-4">
                           <div>
                             <h4 className="text-sm font-medium text-muted-foreground">Vaccination</h4>
                             <p className="mt-1 font-medium">{vaccination.vaccination_name}</p>
                           </div>
                           <div>
-                            <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
+                            <h4 className="text-sm font-medium text-muted-foreground">Date Given</h4>
                             <p className="mt-1">{formatDate(vaccination.vaccination_date)}</p>
                           </div>
                           <div>
@@ -1471,10 +1472,27 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                             <p className="mt-1">{vaccination.next_due_date ? formatDate(vaccination.next_due_date) : 'N/A'}</p>
                           </div>
                         </div>
+                        
                         {vaccination.notes && (
-                          <div className="mt-2">
+                          <div>
                             <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
                             <p className="mt-1 text-sm">{vaccination.notes}</p>
+                          </div>
+                        )}
+
+                        {vaccination.file_path && (
+                          <div>
+                            <h4 className="text-sm font-medium text-muted-foreground mb-2">Document</h4>
+                            <a
+                              href={supabase.storage.from('client-documents').getPublicUrl(vaccination.file_path).data.publicUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 border rounded-lg transition-colors"
+                            >
+                              <FileText className="h-4 w-4 text-primary" />
+                              <span>View Document</span>
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
                           </div>
                         )}
                       </div>

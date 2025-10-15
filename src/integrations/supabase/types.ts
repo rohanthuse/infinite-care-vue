@@ -3448,6 +3448,76 @@ export type Database = {
           },
         ]
       }
+      client_vaccinations: {
+        Row: {
+          branch_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          file_path: string | null
+          id: string
+          interval_months: number | null
+          next_due_date: string | null
+          notes: string | null
+          organization_id: string | null
+          updated_at: string
+          vaccination_date: string
+          vaccination_name: string
+        }
+        Insert: {
+          branch_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          interval_months?: number | null
+          next_due_date?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+          vaccination_date: string
+          vaccination_name: string
+        }
+        Update: {
+          branch_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          interval_months?: number | null
+          next_due_date?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          updated_at?: string
+          vaccination_date?: string
+          vaccination_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_vaccinations_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_vaccinations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_vaccinations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           additional_information: string | null

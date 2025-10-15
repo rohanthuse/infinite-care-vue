@@ -92,7 +92,15 @@ const fetchClientPersonalInfo = async (clientId: string): Promise<ClientPersonal
     throw error;
   }
 
-  return data;
+  if (!data) return null;
+
+  // Parse JSONB fields properly
+  return {
+    ...data,
+    important_occasions: Array.isArray(data.important_occasions) 
+      ? data.important_occasions 
+      : [],
+  } as ClientPersonalInfo;
 };
 
 const upsertClientPersonalInfo = async (personalInfo: Partial<ClientPersonalInfo> & { client_id: string }) => {
