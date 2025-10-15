@@ -2621,64 +2621,205 @@ export type Database = {
       }
       client_personal_info: {
         Row: {
+          arrange_assistance_device: boolean | null
+          bereavement_past_two_years: boolean | null
           client_id: string
+          cognitive_impairment: boolean | null
+          communication_aids: string | null
           created_at: string
           cultural_preferences: string | null
+          desired_outcomes: string | null
+          dislikes_restrictions: string | null
+          donts: string | null
+          dos: string | null
+          emergency_access: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
+          ethnicity: string | null
+          fallen_past_six_months: boolean | null
+          gender_identity: string | null
           gp_name: string | null
           gp_phone: string | null
           gp_practice: string | null
+          gp_surgery_address: string | null
+          gp_surgery_name: string | null
+          gp_surgery_ods_code: string | null
+          gp_surgery_phone: string | null
+          has_assistance_device: boolean | null
+          hearing_difficulties: boolean | null
+          home_accessibility: string | null
           id: string
+          important_occasions: Json | null
+          instructions: string[] | null
+          interpreter_required: boolean | null
+          key_safe_location: string | null
           language_preferences: string | null
+          likes_preferences: string | null
+          living_arrangement: string | null
+          main_reasons_for_care: string | null
           marital_status: string | null
+          mobility_aids: string | null
+          nationality: string | null
           next_of_kin_name: string | null
           next_of_kin_phone: string | null
           next_of_kin_relationship: string | null
+          parking_availability: string | null
+          personal_goals: string | null
+          pets: string | null
+          pharmacy_address: string | null
+          pharmacy_name: string | null
+          pharmacy_ods_code: string | null
+          pharmacy_phone: string | null
           preferred_communication: string | null
+          preferred_communication_method: string | null
+          preferred_interpreter_language: string | null
+          primary_language: string | null
+          priority_areas: string | null
+          property_type: string | null
           religion: string | null
+          sensory_impairment: string | null
+          sexual_orientation: string | null
+          speech_difficulties: boolean | null
+          success_measures: string | null
           updated_at: string
+          used_other_care_providers: boolean | null
+          vision_difficulties: boolean | null
+          warnings: string[] | null
         }
         Insert: {
+          arrange_assistance_device?: boolean | null
+          bereavement_past_two_years?: boolean | null
           client_id: string
+          cognitive_impairment?: boolean | null
+          communication_aids?: string | null
           created_at?: string
           cultural_preferences?: string | null
+          desired_outcomes?: string | null
+          dislikes_restrictions?: string | null
+          donts?: string | null
+          dos?: string | null
+          emergency_access?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
+          ethnicity?: string | null
+          fallen_past_six_months?: boolean | null
+          gender_identity?: string | null
           gp_name?: string | null
           gp_phone?: string | null
           gp_practice?: string | null
+          gp_surgery_address?: string | null
+          gp_surgery_name?: string | null
+          gp_surgery_ods_code?: string | null
+          gp_surgery_phone?: string | null
+          has_assistance_device?: boolean | null
+          hearing_difficulties?: boolean | null
+          home_accessibility?: string | null
           id?: string
+          important_occasions?: Json | null
+          instructions?: string[] | null
+          interpreter_required?: boolean | null
+          key_safe_location?: string | null
           language_preferences?: string | null
+          likes_preferences?: string | null
+          living_arrangement?: string | null
+          main_reasons_for_care?: string | null
           marital_status?: string | null
+          mobility_aids?: string | null
+          nationality?: string | null
           next_of_kin_name?: string | null
           next_of_kin_phone?: string | null
           next_of_kin_relationship?: string | null
+          parking_availability?: string | null
+          personal_goals?: string | null
+          pets?: string | null
+          pharmacy_address?: string | null
+          pharmacy_name?: string | null
+          pharmacy_ods_code?: string | null
+          pharmacy_phone?: string | null
           preferred_communication?: string | null
+          preferred_communication_method?: string | null
+          preferred_interpreter_language?: string | null
+          primary_language?: string | null
+          priority_areas?: string | null
+          property_type?: string | null
           religion?: string | null
+          sensory_impairment?: string | null
+          sexual_orientation?: string | null
+          speech_difficulties?: boolean | null
+          success_measures?: string | null
           updated_at?: string
+          used_other_care_providers?: boolean | null
+          vision_difficulties?: boolean | null
+          warnings?: string[] | null
         }
         Update: {
+          arrange_assistance_device?: boolean | null
+          bereavement_past_two_years?: boolean | null
           client_id?: string
+          cognitive_impairment?: boolean | null
+          communication_aids?: string | null
           created_at?: string
           cultural_preferences?: string | null
+          desired_outcomes?: string | null
+          dislikes_restrictions?: string | null
+          donts?: string | null
+          dos?: string | null
+          emergency_access?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
+          ethnicity?: string | null
+          fallen_past_six_months?: boolean | null
+          gender_identity?: string | null
           gp_name?: string | null
           gp_phone?: string | null
           gp_practice?: string | null
+          gp_surgery_address?: string | null
+          gp_surgery_name?: string | null
+          gp_surgery_ods_code?: string | null
+          gp_surgery_phone?: string | null
+          has_assistance_device?: boolean | null
+          hearing_difficulties?: boolean | null
+          home_accessibility?: string | null
           id?: string
+          important_occasions?: Json | null
+          instructions?: string[] | null
+          interpreter_required?: boolean | null
+          key_safe_location?: string | null
           language_preferences?: string | null
+          likes_preferences?: string | null
+          living_arrangement?: string | null
+          main_reasons_for_care?: string | null
           marital_status?: string | null
+          mobility_aids?: string | null
+          nationality?: string | null
           next_of_kin_name?: string | null
           next_of_kin_phone?: string | null
           next_of_kin_relationship?: string | null
+          parking_availability?: string | null
+          personal_goals?: string | null
+          pets?: string | null
+          pharmacy_address?: string | null
+          pharmacy_name?: string | null
+          pharmacy_ods_code?: string | null
+          pharmacy_phone?: string | null
           preferred_communication?: string | null
+          preferred_communication_method?: string | null
+          preferred_interpreter_language?: string | null
+          primary_language?: string | null
+          priority_areas?: string | null
+          property_type?: string | null
           religion?: string | null
+          sensory_impairment?: string | null
+          sexual_orientation?: string | null
+          speech_difficulties?: boolean | null
+          success_measures?: string | null
           updated_at?: string
+          used_other_care_providers?: boolean | null
+          vision_difficulties?: boolean | null
+          warnings?: string[] | null
         }
         Relationships: [
           {
