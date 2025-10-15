@@ -32,8 +32,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   const defaultFormData = {
     title: "",
     first_name: "",
+    middle_name: "",
     last_name: "",
     preferred_name: "",
+    pronouns: "",
     email: "",
     phone: "",
     address: "",
@@ -43,6 +45,8 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     date_of_birth: "",
     gender: "",
     age_group: "adult",
+    other_identifier: "",
+    referral_route: "",
     emergency_contact: "",
     emergency_phone: "",
     gp_details: "",
@@ -60,8 +64,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       setFormData({
         title: clientToEdit.title || "",
         first_name: clientToEdit.first_name || "",
+        middle_name: clientToEdit.middle_name || "",
         last_name: clientToEdit.last_name || "",
         preferred_name: clientToEdit.preferred_name || "",
+        pronouns: clientToEdit.pronouns || "",
         email: clientToEdit.email || "",
         phone: clientToEdit.phone || clientToEdit.mobile_number || "",
         address: clientToEdit.address || "",
@@ -71,6 +77,8 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         date_of_birth: clientToEdit.date_of_birth || "",
         gender: clientToEdit.gender || "",
         age_group: clientToEdit.age_group || "adult",
+        other_identifier: clientToEdit.other_identifier || "",
+        referral_route: clientToEdit.referral_route || "",
         emergency_contact: clientToEdit.emergency_contact || "",
         emergency_phone: clientToEdit.emergency_phone || "",
         gp_details: clientToEdit.gp_details || "",
@@ -277,6 +285,27 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="middle_name">Middle Name</Label>
+              <Input 
+                id="middle_name" 
+                value={formData.middle_name} 
+                onChange={e => handleInputChange("middle_name", e.target.value)}
+                placeholder="Middle name (optional)"
+              />
+            </div>
+            <div>
+              <Label htmlFor="pronouns">Pronouns</Label>
+              <Input 
+                id="pronouns" 
+                value={formData.pronouns} 
+                onChange={e => handleInputChange("pronouns", e.target.value)}
+                placeholder="e.g., he/him, she/her, they/them"
+              />
+            </div>
+          </div>
+
           <div>
             <Label htmlFor="preferred_name">Preferred Name</Label>
             <Input 
@@ -419,6 +448,27 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
                   <SelectItem value="Post">Post</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="other_identifier">Other Identifier</Label>
+              <Input 
+                id="other_identifier" 
+                value={formData.other_identifier} 
+                onChange={e => handleInputChange("other_identifier", e.target.value)}
+                placeholder="Alternative ID or reference"
+              />
+            </div>
+            <div>
+              <Label htmlFor="referral_route">Referral Route</Label>
+              <Input 
+                id="referral_route" 
+                value={formData.referral_route} 
+                onChange={e => handleInputChange("referral_route", e.target.value)}
+                placeholder="How did they find us?"
+              />
             </div>
           </div>
 
