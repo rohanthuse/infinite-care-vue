@@ -112,6 +112,10 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [isAddNoteDialogOpen, setIsAddNoteDialogOpen] = useState(false);
   const [isUploadDocumentDialogOpen, setIsUploadDocumentDialogOpen] = useState(false);
   
+  // Edit client dialog states
+  const [clientToEdit, setClientToEdit] = useState<any | null>(null);
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  
   // Quick Add dialog states
   const [isQuickUploadDialogOpen, setIsQuickUploadDialogOpen] = useState(false);
   const [isSignAgreementDialogOpen, setIsSignAgreementDialogOpen] = useState(false);
@@ -274,6 +278,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleNewClient = () => {
+    setClientToEdit(null);
+    setDialogMode('add');
     setAddClientDialogOpen(true);
   };
 
@@ -414,6 +420,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
 
   const handleClientAdded = () => {
     queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
+    queryClient.invalidateQueries({ queryKey: ['admin-client-detail'] });
+    queryClient.invalidateQueries({ queryKey: ['client-profile'] });
     queryClient.invalidateQueries({ queryKey: ['branch-statistics', id] });
     queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats', id] });
     queryClient.invalidateQueries({ queryKey: ['branch-chart-data', id] });
@@ -456,17 +465,10 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleEditClient = (client: any) => {
-    // Open the ClientDetail modal in edit mode
-    const clientForDetails = {
-      ...client,
-      name: `${client.first_name} ${client.last_name}`,
-      location: client.address,
-      avatar: client.avatar_initials,
-      registeredOn: client.registered_on ? format(new Date(client.registered_on), 'dd/MM/yyyy') : 'N/A'
-    };
-    setSelectedClient(clientForDetails);
-    setIsClientEditModeOpen(true);
-    setClientDetailOpen(true);
+    // Open AddClientDialog in edit mode with prefilled data
+    setClientToEdit(client);
+    setDialogMode('edit');
+    setAddClientDialogOpen(true);
   };
 
   // Component to show access denied for restricted content
@@ -689,6 +691,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             onOpenChange={setAddClientDialogOpen}
             branchId={id}
             onSuccess={handleClientAdded}
+            clientToEdit={clientToEdit}
+            mode={dialogMode}
           />
         )}
         

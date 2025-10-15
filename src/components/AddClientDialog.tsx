@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,18 +13,23 @@ interface AddClientDialogProps {
   onOpenChange: (open: boolean) => void;
   branchId: string;
   onSuccess: () => void;
+  clientToEdit?: any;
+  mode?: 'add' | 'edit';
 }
 export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   open,
   onOpenChange,
   branchId,
-  onSuccess
+  onSuccess,
+  clientToEdit,
+  mode = 'add'
 }) => {
   const {
     toast
   } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  
+  const defaultFormData = {
     title: "",
     first_name: "",
     last_name: "",
@@ -44,7 +49,38 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     mobility_status: "",
     communication_preferences: "",
     additional_information: ""
-  });
+  };
+  
+  const [formData, setFormData] = useState(defaultFormData);
+  
+  // Prefill form data when editing
+  useEffect(() => {
+    if (clientToEdit && mode === 'edit') {
+      setFormData({
+        title: clientToEdit.title || "",
+        first_name: clientToEdit.first_name || "",
+        last_name: clientToEdit.last_name || "",
+        preferred_name: clientToEdit.preferred_name || "",
+        email: clientToEdit.email || "",
+        phone: clientToEdit.phone || clientToEdit.mobile_number || "",
+        address: clientToEdit.address || "",
+        pin_code: clientToEdit.pin_code || "",
+        status: clientToEdit.status || "New Enquiries",
+        region: clientToEdit.region || "North",
+        date_of_birth: clientToEdit.date_of_birth || "",
+        gender: clientToEdit.gender || "",
+        age_group: clientToEdit.age_group || "adult",
+        emergency_contact: clientToEdit.emergency_contact || "",
+        emergency_phone: clientToEdit.emergency_phone || "",
+        gp_details: clientToEdit.gp_details || "",
+        mobility_status: clientToEdit.mobility_status || "",
+        communication_preferences: clientToEdit.communication_preferences || "",
+        additional_information: clientToEdit.additional_information || ""
+      });
+    } else if (mode === 'add') {
+      setFormData(defaultFormData);
+    }
+  }, [clientToEdit, mode]);
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -68,82 +104,100 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       if (authError || !user) {
         toast({
           title: "Authentication Error",
-          description: "You must be logged in to add clients. Please refresh and try again.",
+          description: "You must be logged in. Please refresh and try again.",
           variant: "destructive"
         });
         setIsLoading(false);
         return;
       }
-      console.log("Adding client with user:", user.id, "to branch:", branchId);
 
       // Prepare client data
       const clientData = {
         ...formData,
         branch_id: branchId,
         avatar_initials: generateAvatarInitials(formData.first_name, formData.last_name),
-        registered_on: new Date().toISOString().split('T')[0],
         date_of_birth: formData.date_of_birth || null,
         age_group: formData.age_group as "adult" | "child" | "young_person"
       };
-      console.log("Client data to insert:", clientData);
-      const {
-        data,
-        error
-      } = await supabase.from('clients').insert(clientData).select().single();
-      if (error) {
-        console.error("Error adding client:", error);
 
-        // Provide specific error messages
-        if (error.message.includes('row-level security policy')) {
-          toast({
-            title: "Permission Error",
-            description: "You don't have permission to add clients to this branch. Please contact your administrator.",
-            variant: "destructive"
-          });
-        } else if (error.message.includes('duplicate key')) {
-          toast({
-            title: "Duplicate Client",
-            description: "A client with this email already exists.",
-            variant: "destructive"
-          });
-        } else {
+      if (mode === 'edit' && clientToEdit) {
+        // UPDATE existing client
+        console.log("Updating client:", clientToEdit.id, "with data:", clientData);
+        const { data, error } = await supabase
+          .from('clients')
+          .update(clientData)
+          .eq('id', clientToEdit.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error updating client:", error);
           toast({
             title: "Error",
-            description: `Failed to add client: ${error.message}`,
+            description: `Failed to update client: ${error.message}`,
             variant: "destructive"
           });
+          setIsLoading(false);
+          return;
         }
-        setIsLoading(false);
-        return;
+
+        console.log("Client updated successfully:", data);
+        toast({
+          title: "Success",
+          description: "Client has been updated successfully."
+        });
+      } else {
+        // INSERT new client
+        const newClientData = {
+          ...clientData,
+          registered_on: new Date().toISOString().split('T')[0]
+        };
+        
+        console.log("Adding client with user:", user.id, "to branch:", branchId);
+        console.log("Client data to insert:", newClientData);
+        
+        const { data, error } = await supabase
+          .from('clients')
+          .insert(newClientData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error adding client:", error);
+
+          // Provide specific error messages
+          if (error.message.includes('row-level security policy')) {
+            toast({
+              title: "Permission Error",
+              description: "You don't have permission to add clients to this branch. Please contact your administrator.",
+              variant: "destructive"
+            });
+          } else if (error.message.includes('duplicate key')) {
+            toast({
+              title: "Duplicate Client",
+              description: "A client with this email already exists.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: `Failed to add client: ${error.message}`,
+              variant: "destructive"
+            });
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        console.log("Client added successfully:", data);
+        toast({
+          title: "Success",
+          description: "Client has been added successfully."
+        });
       }
-      console.log("Client added successfully:", data);
-      toast({
-        title: "Success",
-        description: "Client has been added successfully."
-      });
 
       // Reset form and close dialog
-      setFormData({
-        title: "",
-        first_name: "",
-        last_name: "",
-        preferred_name: "",
-        email: "",
-        phone: "",
-        address: "",
-        pin_code: "",
-        status: "New Enquiries",
-        region: "North",
-        date_of_birth: "",
-        gender: "",
-        age_group: "adult",
-        emergency_contact: "",
-        emergency_phone: "",
-        gp_details: "",
-        mobility_status: "",
-        communication_preferences: "",
-        additional_information: ""
-      });
+      setFormData(defaultFormData);
       onOpenChange(false);
       onSuccess();
     } catch (error) {
@@ -160,9 +214,12 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Client</DialogTitle>
+          <DialogTitle>{mode === 'edit' ? 'Edit Client' : 'Add New Client'}</DialogTitle>
           <DialogDescription>
-            Create a new client record with their personal details and contact information.
+            {mode === 'edit' 
+              ? 'Update the client record with their personal details and contact information.'
+              : 'Create a new client record with their personal details and contact information.'
+            }
           </DialogDescription>
         </DialogHeader>
         
@@ -356,7 +413,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Adding..." : "Add Client"}
+              {isLoading 
+                ? (mode === 'edit' ? 'Updating...' : 'Adding...') 
+                : (mode === 'edit' ? 'Update Client' : 'Add Client')
+              }
             </Button>
           </div>
         </form>
