@@ -418,14 +418,17 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     queryClient.invalidateQueries({ queryKey: ['unified-documents', id] });
   };
 
-  const handleClientAdded = () => {
-    queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
-    queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
-    queryClient.invalidateQueries({ queryKey: ['admin-client-detail'] });
-    queryClient.invalidateQueries({ queryKey: ['client-profile'] });
-    queryClient.invalidateQueries({ queryKey: ['branch-statistics', id] });
-    queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats', id] });
-    queryClient.invalidateQueries({ queryKey: ['branch-chart-data', id] });
+  const handleClientAdded = async () => {
+    // Invalidate all client-related queries and wait for them to complete
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['branch-clients'] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-clients'] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-client-detail'] }),
+      queryClient.invalidateQueries({ queryKey: ['client-profile'] }),
+      queryClient.invalidateQueries({ queryKey: ['branch-statistics', id] }),
+      queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats', id] }),
+      queryClient.invalidateQueries({ queryKey: ['branch-chart-data', id] })
+    ]);
   };
 
   const handleCreateBooking = (bookingData: any) => {
@@ -465,8 +468,8 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleEditClient = (client: any) => {
-    // Open AddClientDialog in edit mode with prefilled data
-    setClientToEdit(client);
+    // Create a fresh copy to avoid reference issues
+    setClientToEdit({ ...client });
     setDialogMode('edit');
     setAddClientDialogOpen(true);
   };
@@ -688,7 +691,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {id && (
           <AddClientDialog
             open={addClientDialogOpen}
-            onOpenChange={setAddClientDialogOpen}
+            onOpenChange={(open) => {
+              setAddClientDialogOpen(open);
+              if (!open) {
+                // Clear clientToEdit when dialog closes to prevent stale data
+                setClientToEdit(null);
+                setDialogMode('add');
+              }
+            }}
             branchId={id}
             onSuccess={handleClientAdded}
             clientToEdit={clientToEdit}

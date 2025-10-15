@@ -81,6 +81,18 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       setFormData(defaultFormData);
     }
   }, [clientToEdit, mode]);
+
+  // Cleanup when dialog closes to prevent UI freeze
+  useEffect(() => {
+    if (!open) {
+      // Reset loading state when dialog closes
+      setIsLoading(false);
+      // Reset form to default when dialog closes (in add mode)
+      if (mode === 'add') {
+        setFormData(defaultFormData);
+      }
+    }
+  }, [open, mode]);
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -146,6 +158,14 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           title: "Success",
           description: "Client has been updated successfully."
         });
+        
+        // Clear loading state BEFORE closing dialog to prevent UI freeze
+        setIsLoading(false);
+        
+        // Reset form and close dialog
+        setFormData(defaultFormData);
+        onOpenChange(false);
+        onSuccess();
       } else {
         // INSERT new client
         const newClientData = {
@@ -194,6 +214,9 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           title: "Success",
           description: "Client has been added successfully."
         });
+        
+        // Clear loading state BEFORE closing dialog to prevent UI freeze
+        setIsLoading(false);
       }
 
       // Reset form and close dialog
