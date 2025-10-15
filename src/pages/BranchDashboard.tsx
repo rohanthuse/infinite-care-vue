@@ -115,6 +115,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Edit client dialog states
   const [clientToEdit, setClientToEdit] = useState<any | null>(null);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [isInvalidating, setIsInvalidating] = useState(false); // Track query invalidation state
   
   // Quick Add dialog states
   const [isQuickUploadDialogOpen, setIsQuickUploadDialogOpen] = useState(false);
@@ -419,6 +420,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleClientAdded = async () => {
+    // Set invalidating state to true to prevent editing during query updates
+    setIsInvalidating(true);
+    
     // Invalidate all client-related queries and wait for them to complete
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] }),
@@ -429,6 +433,9 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats', id] }),
       queryClient.invalidateQueries({ queryKey: ['branch-chart-data', id] })
     ]);
+    
+    // Reset invalidating state after queries complete
+    setIsInvalidating(false);
   };
 
   const handleCreateBooking = (bookingData: any) => {
@@ -468,6 +475,12 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleEditClient = (client: any) => {
+    // Prevent editing while query invalidation is in progress
+    if (isInvalidating) {
+      console.log("Query invalidation in progress, please wait...");
+      return;
+    }
+    
     // Create a fresh copy to avoid reference issues
     setClientToEdit({ ...client });
     setDialogMode('edit');
@@ -690,6 +703,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         {/* Dialogs */}
         {id && (
           <AddClientDialog
+            key={clientToEdit?.id || 'add-client'} // Force re-mount when editing different clients
             open={addClientDialogOpen}
             onOpenChange={(open) => {
               setAddClientDialogOpen(open);

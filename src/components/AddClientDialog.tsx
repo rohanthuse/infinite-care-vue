@@ -53,9 +53,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   
   const [formData, setFormData] = useState(defaultFormData);
   
-  // Prefill form data when editing
+  // Prefill form data when editing - only trigger on dialog open
   useEffect(() => {
-    if (clientToEdit && mode === 'edit') {
+    if (open && clientToEdit && mode === 'edit') {
+      // Only prefill when dialog is OPENING with edit mode
       setFormData({
         title: clientToEdit.title || "",
         first_name: clientToEdit.first_name || "",
@@ -77,10 +78,11 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         communication_preferences: clientToEdit.communication_preferences || "",
         additional_information: clientToEdit.additional_information || ""
       });
-    } else if (mode === 'add') {
+    } else if (open && mode === 'add') {
+      // Reset for add mode when opening
       setFormData(defaultFormData);
     }
-  }, [clientToEdit, mode]);
+  }, [open, mode]); // Simplified dependencies - only trigger when dialog opens/closes
 
   // Cleanup when dialog closes to prevent UI freeze
   useEffect(() => {
@@ -158,14 +160,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           title: "Success",
           description: "Client has been updated successfully."
         });
-        
-        // Clear loading state BEFORE closing dialog to prevent UI freeze
-        setIsLoading(false);
-        
-        // Reset form and close dialog
-        setFormData(defaultFormData);
-        onOpenChange(false);
-        onSuccess();
+        // Don't close dialog here - let it fall through to common cleanup
       } else {
         // INSERT new client
         const newClientData = {
@@ -214,11 +209,12 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           title: "Success",
           description: "Client has been added successfully."
         });
-        
-        // Clear loading state BEFORE closing dialog to prevent UI freeze
-        setIsLoading(false);
+        // Don't close dialog here - let it fall through to common cleanup
       }
 
+      // Common cleanup for both INSERT and UPDATE - Clear loading state BEFORE closing dialog
+      setIsLoading(false);
+      
       // Reset form and close dialog
       setFormData(defaultFormData);
       onOpenChange(false);
