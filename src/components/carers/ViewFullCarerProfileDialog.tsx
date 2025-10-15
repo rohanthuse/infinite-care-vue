@@ -27,7 +27,6 @@ import { CarerEmploymentHistoryTab } from "@/components/carer-profile/CarerEmplo
 import { CarerTrainingTab } from "@/components/carer-profile/CarerTrainingTab";
 import { CarerSupportingStatementTab } from "@/components/carer-profile/CarerSupportingStatementTab";
 import { CarerImportantContactTab } from "@/components/carer-profile/CarerImportantContactTab";
-import { CarerReferFriendTab } from "@/components/carer-profile/CarerReferFriendTab";
 import { CarerFormsTab } from "@/components/carer-profile/CarerFormsTab";
 import { CarerSkillsTab } from "@/components/carer-profile/CarerSkillsTab";
 import { CarerTypeOfWorkTab } from "@/components/carer-profile/CarerTypeOfWorkTab";
@@ -68,7 +67,6 @@ export function ViewFullCarerProfileDialog({
     { value: "training", label: "Training", icon: GraduationCap },
     { value: "statement", label: "Statement", icon: FileText },
     { value: "contacts", label: "Contacts", icon: Phone },
-    { value: "refer", label: "Refer Friend", icon: UserPlus },
     { value: "forms", label: "Forms", icon: ClipboardList },
     { value: "skills", label: "Skills", icon: Award },
     { value: "work-type", label: "Work Type", icon: Briefcase },
@@ -241,7 +239,6 @@ export function ViewFullCarerProfileDialog({
                     {activeTab === "training" && <CarerTrainingTab carerId={carerId} />}
                     {activeTab === "statement" && <CarerSupportingStatementTab carerId={carerId} />}
                     {activeTab === "contacts" && <CarerImportantContactTab carerId={carerId} />}
-                    {activeTab === "refer" && <CarerReferFriendTab carerId={carerId} />}
                     {activeTab === "forms" && <CarerFormsTab carerId={carerId} branchId={branchId} />}
                     {activeTab === "skills" && <CarerSkillsTab carerId={carerId} />}
                     {activeTab === "work-type" && <CarerTypeOfWorkTab carerId={carerId} />}

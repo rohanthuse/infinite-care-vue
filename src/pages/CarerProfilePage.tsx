@@ -25,7 +25,6 @@ import { CarerEmploymentHistoryTab } from "@/components/carer-profile/CarerEmplo
 import { CarerTrainingTab } from "@/components/carer-profile/CarerTrainingTab";
 import { CarerSupportingStatementTab } from "@/components/carer-profile/CarerSupportingStatementTab";
 import { CarerImportantContactTab } from "@/components/carer-profile/CarerImportantContactTab";
-import { CarerReferFriendTab } from "@/components/carer-profile/CarerReferFriendTab";
 import { CarerFormsTab } from "@/components/carer-profile/CarerFormsTab";
 import { CarerSkillsTab } from "@/components/carer-profile/CarerSkillsTab";
 import { CarerTypeOfWorkTab } from "@/components/carer-profile/CarerTypeOfWorkTab";
@@ -259,7 +258,6 @@ const CarerProfilePage: React.FC = () => {
                   <TabsTrigger value="training">Training</TabsTrigger>
                   <TabsTrigger value="statement">Statement</TabsTrigger>
                   <TabsTrigger value="contacts">Contacts</TabsTrigger>
-                  <TabsTrigger value="refer">Refer Friend</TabsTrigger>
                   <TabsTrigger value="forms">Forms</TabsTrigger>
                   <TabsTrigger value="skills">Skills</TabsTrigger>
                   <TabsTrigger value="work-type">Work Type</TabsTrigger>
@@ -282,7 +280,6 @@ const CarerProfilePage: React.FC = () => {
               <TabsContent value="training"><CarerTrainingTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="statement"><CarerSupportingStatementTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="contacts"><CarerImportantContactTab carerId={carerId || ''} /></TabsContent>
-              <TabsContent value="refer"><CarerReferFriendTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="forms"><CarerFormsTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="skills"><CarerSkillsTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="work-type"><CarerTypeOfWorkTab carerId={carerId || ''} /></TabsContent>
