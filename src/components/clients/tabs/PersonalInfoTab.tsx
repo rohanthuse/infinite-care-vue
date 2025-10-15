@@ -126,8 +126,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       street: parts[1] || '',
       city: parts[parts.length - 3] || '',
       county: parts[parts.length - 2] || '',
-      postcode: parts[parts.length - 1] || '',
-      country: 'United Kingdom' // Default assumption
+      postcode: parts[parts.length - 1] || ''
     };
   };
 
@@ -295,8 +294,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     street: addressComponents.street || '',
     city: addressComponents.city || '',
     county: addressComponents.county || '',
-    postcode: addressComponents.postcode || client.pin_code || '',
-    country: addressComponents.country || 'United Kingdom'
+    postcode: addressComponents.postcode || client.pin_code || ''
   });
 
   // Related Info form state
@@ -411,8 +409,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       street: components.street || '',
       city: components.city || '',
       county: components.county || '',
-      postcode: components.postcode || client.pin_code || '',
-      country: components.country || 'United Kingdom'
+      postcode: components.postcode || client.pin_code || ''
     });
     setEditingTab('address');
   };
@@ -423,7 +420,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
   const handleSaveAddress = async () => {
     // Validate required fields
-    if (!addressFormData.houseNo || !addressFormData.street || !addressFormData.country || 
+    if (!addressFormData.houseNo || !addressFormData.street || 
         !addressFormData.county || !addressFormData.city || !addressFormData.postcode) {
       toast.error('Please fill in all required address fields');
       return;
@@ -699,15 +696,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       placeholder="e.g., SW1A 1AA"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="country">Country <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="country"
-                      value={addressFormData.country}
-                      onChange={(e) => setAddressFormData(prev => ({ ...prev, country: e.target.value }))}
-                      placeholder="e.g., United Kingdom"
-                    />
-                  </div>
                 </div>
                 
                 <div className="flex justify-end gap-2 pt-2">
@@ -772,12 +760,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                     Postcode <span className="text-red-500">*</span>
                   </h4>
                   <p className="mt-1">{addressComponents.postcode || client.pin_code || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">
-                    Country <span className="text-red-500">*</span>
-                  </h4>
-                  <p className="mt-1">{addressComponents.country || 'Not provided'}</p>
                 </div>
               </div>
             )}
