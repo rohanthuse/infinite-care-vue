@@ -5,6 +5,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import { useHobbies } from "@/data/hooks/useHobbies";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ClientHobbiesTabProps {
   clientId: string;
@@ -15,6 +16,7 @@ export function ClientHobbiesTab({ clientId }: ClientHobbiesTabProps) {
   const [selectedHobbies, setSelectedHobbies] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
 
   const hobbiesOptions = hobbies.map((hobby) => ({
     value: hobby.id,
@@ -45,10 +47,26 @@ export function ClientHobbiesTab({ clientId }: ClientHobbiesTabProps) {
   const handleSaveHobbies = async () => {
     if (!clientId) return;
 
+    // Trigger click animation
+    setIsClicked(true);
+    
+    // Reset click animation after brief moment
+    setTimeout(() => setIsClicked(false), 150);
+
     setIsSaving(true);
+    
     try {
+      // Create a promise that resolves after minimum delay
+      const minDelay = new Promise(resolve => setTimeout(resolve, 400));
+      
       // Save to localStorage for now (until database table is created)
-      localStorage.setItem(`client-hobbies-${clientId}`, JSON.stringify(selectedHobbies));
+      const saveOperation = Promise.resolve(
+        localStorage.setItem(`client-hobbies-${clientId}`, JSON.stringify(selectedHobbies))
+      );
+      
+      // Wait for both the save operation AND the minimum delay
+      await Promise.all([saveOperation, minDelay]);
+      
       toast.success('Client hobbies updated successfully');
     } catch (error) {
       console.error('Error saving client hobbies:', error);
@@ -100,7 +118,10 @@ export function ClientHobbiesTab({ clientId }: ClientHobbiesTabProps) {
             <Button 
               onClick={handleSaveHobbies}
               disabled={isSaving}
-              className="min-w-[120px]"
+              className={cn(
+                "min-w-[120px] transition-all duration-150",
+                isClicked && !isSaving && "scale-95"
+              )}
             >
               {isSaving ? (
                 <>
