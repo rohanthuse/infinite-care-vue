@@ -42,7 +42,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     other_identifier: client?.other_identifier || '',
     email: client?.email || '',
     phone: client?.phone || '',
-    mobile_number: client?.mobile_number || '',
     telephone_number: client?.telephone_number || '',
     country_code: client?.country_code || '',
     address: client?.address || client?.location || '',
@@ -69,7 +68,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         other_identifier: client?.other_identifier || '',
         email: client?.email || '',
         phone: client?.phone || '',
-        mobile_number: client?.mobile_number || '',
+        
         telephone_number: client?.telephone_number || '',
         country_code: client?.country_code || '',
         address: client?.address || client?.location || '',
@@ -214,10 +213,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             <div>
               <Label htmlFor="phone">Phone</Label>
               <Input id="phone" value={formData.phone} onChange={e => handleInputChange('phone', e.target.value)} placeholder="Phone number" />
-            </div>
-            <div>
-              <Label htmlFor="mobile_number">Mobile Number</Label>
-              <Input id="mobile_number" value={formData.mobile_number} onChange={e => handleInputChange('mobile_number', e.target.value)} placeholder="Mobile number" />
             </div>
             <div>
               <Label htmlFor="telephone_number">Telephone</Label>
@@ -615,10 +610,6 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Phone</h4>
                   <p className="mt-1">{client.phone || 'Not provided'}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Mobile Number</h4>
-                  <p className="mt-1">{client.mobile_number || 'Not provided'}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Telephone</h4>

@@ -38,6 +38,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
     pronouns: "",
     email: "",
     phone: "",
+    telephone_number: "",
     house_no: "",
     street: "",
     city: "",
@@ -91,7 +92,8 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         preferred_name: clientToEdit.preferred_name || "",
         pronouns: clientToEdit.pronouns || "",
         email: clientToEdit.email || "",
-        phone: clientToEdit.phone || clientToEdit.mobile_number || "",
+        phone: clientToEdit.phone || "",
+        telephone_number: clientToEdit.telephone_number || "",
         house_no: addressParts.house_no,
         street: addressParts.street,
         city: addressParts.city,
@@ -369,7 +371,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               <h3 className="text-sm font-semibold text-gray-900">Contact Information</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={formData.email} onChange={e => handleInputChange("email", e.target.value)} />
@@ -377,6 +379,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               <div>
                 <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" value={formData.phone} onChange={e => handleInputChange("phone", e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="telephone_number">Telephone</Label>
+                <Input id="telephone_number" value={formData.telephone_number} onChange={e => handleInputChange("telephone_number", e.target.value)} placeholder="Telephone number" />
               </div>
             </div>
           </div>
