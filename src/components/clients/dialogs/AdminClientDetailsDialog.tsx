@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClientTabBar } from "@/components/clients/ClientTabBar";
-import { PersonalInfoTab } from "@/components/care/tabs/PersonalInfoTab";
+import { PersonalInfoTab } from "@/components/clients/tabs/PersonalInfoTab";
 import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
 import { ClientNews2Tab } from "@/components/clients/tabs/ClientNews2Tab";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
@@ -499,16 +499,6 @@ export function AdminClientDetailsDialog({
                     <TabsContent value="profile" className="mt-6">
                       <PersonalInfoTab
                         client={client}
-                        personalInfo={personalInfo}
-                        medicalInfo={medicalInfo}
-                        onEditPersonalInfo={() => {
-                          // Handle client profile editing
-                          console.log("Edit personal info clicked");
-                        }}
-                        onEditMedicalInfo={() => {
-                          // Handle medical info editing
-                          console.log("Edit medical info clicked");
-                        }}
                       />
                     </TabsContent>
                     
