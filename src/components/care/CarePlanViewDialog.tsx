@@ -19,6 +19,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useControlledDialog } from '@/hooks/useDialogManager';
 import { generateCarePlanDetailPDF } from '@/services/enhancedPdfGenerator';
 
+// Import client-friendly section components
+import { BasicInfoSection } from '@/components/care/client-view/BasicInfoSection';
+import { AboutMeSection } from '@/components/care/client-view/AboutMeSection';
+import { MedicalSection } from '@/components/care/client-view/MedicalSection';
+import { MedicationSection } from '@/components/care/client-view/MedicationSection';
+import { GoalsSection } from '@/components/care/client-view/GoalsSection';
+import { ActivitiesSection } from '@/components/care/client-view/ActivitiesSection';
+import { PersonalCareSection } from '@/components/care/client-view/PersonalCareSection';
+import { DietarySection } from '@/components/care/client-view/DietarySection';
+import { RiskAssessmentSection } from '@/components/care/client-view/RiskAssessmentSection';
+import { EquipmentSection } from '@/components/care/client-view/EquipmentSection';
+import { ServicesSection } from '@/components/care/client-view/ServicesSection';
+import { DocumentsSection } from '@/components/care/client-view/DocumentsSection';
+import { ConsentSection } from '@/components/care/client-view/ConsentSection';
+import { ReviewSection } from '@/components/care/client-view/ReviewSection';
+
 interface CarePlanViewDialogProps {
   carePlanId: string;
   open: boolean;
@@ -335,30 +351,86 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     }
   };
 
+  // Render client-friendly content based on current step
+  const renderClientFriendlyContent = () => {
+    if (!carePlanWithDetails) return null;
+
+    const wizardData = mapCarePlanToWizardDefaults(carePlanWithDetails);
+    const medications = wizardData.medical_info?.medication_manager?.medications || [];
+
+    switch (currentStep) {
+      case 1: // Basic Information
+        return <BasicInfoSection carePlan={wizardData} />;
+      
+      case 2: // About Me
+        return <AboutMeSection aboutMe={wizardData.about_me} />;
+      
+      case 3: // Medical and Mental
+        return <MedicalSection medicalInfo={wizardData.medical_info} />;
+      
+      case 4: // Medication
+      case 5: // Admin Medication (combined with medication)
+        return <MedicationSection medications={medications} />;
+      
+      case 6: // Goals
+        return <GoalsSection goals={wizardData.goals || []} />;
+      
+      case 7: // Activities
+        return <ActivitiesSection activities={wizardData.activities || []} />;
+      
+      case 8: // Personal Care
+        return <PersonalCareSection personalCare={wizardData.personal_care} />;
+      
+      case 9: // Dietary
+        return <DietarySection dietary={wizardData.dietary} />;
+      
+      case 10: // Risk Assessments
+        return <RiskAssessmentSection riskAssessments={wizardData.risk_assessments || []} />;
+      
+      case 11: // Equipment
+        return <EquipmentSection equipment={wizardData.equipment || []} />;
+      
+      case 12: // Service Plans
+      case 13: // Service Actions (combined with service plans)
+        return <ServicesSection 
+          servicePlans={wizardData.service_plans || []} 
+          serviceActions={wizardData.service_actions || []} 
+        />;
+      
+      case 14: // Documents
+        return <DocumentsSection documents={wizardData.documents || []} />;
+      
+      case 15: // Consent
+        return <ConsentSection consent={wizardData.consent} />;
+      
+      case 16: // Review
+        return <ReviewSection 
+          carePlan={carePlanWithDetails} 
+          additionalNotes={wizardData.additional_notes} 
+        />;
+      
+      default:
+        return <div className="text-center text-muted-foreground">Section not found</div>;
+    }
+  };
+
   const renderStepContent = () => {
     if (!carePlanWithDetails) return null;
 
-    // Enhanced read-only styles for client context
-    const readOnlyStyles = context === 'client' 
-      ? `[&_input]:pointer-events-none [&_input]:bg-muted/50 [&_input]:cursor-not-allowed
+    // If client context, render client-friendly read-only view
+    if (context === 'client') {
+      return renderClientFriendlyContent();
+    }
+
+    // Enhanced read-only styles for staff context
+    const readOnlyStyles = `[&_input]:pointer-events-none [&_input]:bg-muted/50 [&_input]:cursor-not-allowed
          [&_textarea]:pointer-events-none [&_textarea]:bg-muted/50 [&_textarea]:cursor-not-allowed
          [&_select]:pointer-events-none [&_button[role=combobox]]:pointer-events-none [&_button[role=combobox]]:bg-muted/50 [&_button[role=combobox]]:cursor-not-allowed
-         [&_button:not(.sidebar-nav-button)]:pointer-events-none [&_button:not(.sidebar-nav-button)]:opacity-50 [&_button:not(.sidebar-nav-button)]:cursor-not-allowed
-         [&_[role=checkbox]]:pointer-events-none [&_[role=checkbox]]:opacity-50
-         [&_[role=radio]]:pointer-events-none [&_[role=radio]]:opacity-50
-         [&_[role=switch]]:pointer-events-none [&_[role=switch]]:opacity-50
-         [&_[role=slider]]:pointer-events-none [&_[role=slider]]:opacity-50
-         [&_[type=file]]:pointer-events-none [&_[type=file]]:opacity-50
-         [&_.dropzone]:pointer-events-none [&_.dropzone]:opacity-50
-         [&_a:not(.sidebar-link)]:pointer-events-none [&_a:not(.sidebar-link)]:opacity-50
-         [&_[role=spinbutton]]:pointer-events-none [&_[role=spinbutton]]:bg-muted/50
-         [&_[data-calendar]]:pointer-events-none [&_[data-calendar]]:opacity-50`
-      : '';
+         [&_button:not(.sidebar-nav-button)]:pointer-events-none [&_button:not(.sidebar-nav-button)]:opacity-50 [&_button:not(.sidebar-nav-button)]:cursor-not-allowed`;
 
     return (
       <div 
         className={readOnlyStyles}
-        aria-readonly={context === 'client' ? 'true' : undefined}
       >
         <Form {...form}>
           <CarePlanWizardSteps 
