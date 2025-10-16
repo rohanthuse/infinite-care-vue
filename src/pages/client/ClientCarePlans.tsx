@@ -132,7 +132,7 @@ const ClientCarePlans = () => {
         return null;
     }
   };
-  return <div className="space-y-6">
+  return <div className="max-w-5xl mx-auto px-4 space-y-6">
       {/* Summary Header */}
       <div className="bg-white p-6 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between">
@@ -192,27 +192,48 @@ const ClientCarePlans = () => {
         return (
           <>
             {enhanceCarePlanData}
-            <Card key={carePlan.id} className={`${requiresApproval ? 'border-orange-200 bg-orange-50/30' : 'border-gray-200'}`}>
-              <CardHeader className="pb-4">
+            <Card 
+              key={carePlan.id} 
+              className={`
+                transition-all duration-200 hover:shadow-md
+                ${requiresApproval 
+                  ? 'border-orange-300 bg-orange-50/50 shadow-sm' 
+                  : 'border-gray-200 bg-white'
+                }
+              `}
+            >
+              <CardHeader className="pb-3 border-b">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CardTitle className="text-lg">{carePlan.title}</CardTitle>
-                      <Badge variant={statusInfo.variant}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <CardTitle className="text-xl font-semibold">{carePlan.title}</CardTitle>
+                      <Badge variant={statusInfo.variant} className="text-xs">
                         {statusInfo.label}
                       </Badge>
                     </div>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div>Care Provider: {carePlan.provider_name}</div>
-                      <div>Plan ID: {carePlan.display_id}</div>
-                      <div>Last updated: {new Date(carePlan.updated_at).toLocaleDateString()}</div>
-                      {carePlan.client_acknowledged_at && <div className="text-green-600">
-                          ✓ Approved by you on: {new Date(carePlan.client_acknowledged_at).toLocaleDateString()}
-                        </div>}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">Provider:</span>
+                        <span>{carePlan.provider_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">Plan ID:</span>
+                        <span>{carePlan.display_id}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">Last updated:</span>
+                        <span>{new Date(carePlan.updated_at).toLocaleDateString()}</span>
+                      </div>
+                      {carePlan.client_acknowledged_at && (
+                        <div className="flex items-center gap-2 text-green-600">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>Approved: {new Date(carePlan.client_acknowledged_at).toLocaleDateString()}</span>
+                        </div>
+                      )}
                       {changeRequestInfo.hasRequest && (
-                        <div className="text-amber-600">
-                          <MessageSquare className="h-4 w-4 inline mr-1" />
-                          Changes requested on: {new Date(changeRequestInfo.requestDate).toLocaleDateString()}
+                        <div className="flex items-center gap-2 text-amber-600 col-span-full">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>Changes requested: {new Date(changeRequestInfo.requestDate).toLocaleDateString()}</span>
                         </div>
                       )}
                     </div>
@@ -220,105 +241,111 @@ const ClientCarePlans = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="pt-0">
+              <CardContent className="pt-4 space-y-4">
                 {/* Action Required Notice for Approval */}
-                {requiresApproval && <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-6">
-                    <div className="flex items-center gap-2 text-orange-800 mb-2">
-                      <AlertCircle className="h-5 w-5" />
-                      <span className="font-semibold">Your Approval Required</span>
+                {requiresApproval && (
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
+                    <div className="flex items-center gap-2 text-orange-800 mb-1.5">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="font-semibold text-sm">Your Approval Required</span>
                     </div>
-                    <p className="text-sm text-orange-700 mb-3">
-                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections, then click "Sign & Approve Care Plan" to provide your digital signature and approval.
+                    <p className="text-sm text-orange-700 mb-2">
+                      Your care team has prepared this care plan. Please review and sign to approve.
                     </p>
                     <div className="text-xs text-orange-600 font-medium">
-                      ✓ Plan reviewed by healthcare team  •  ⏳ Awaiting your signature
+                      ✓ Healthcare team reviewed  •  ⏳ Awaiting your signature
                     </div>
-                  </div>}
+                  </div>
+                )}
 
                 {/* Care Plan Summary Statistics */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-blue-800 text-sm">Goals</h4>
-                      <FileText className="h-5 w-5 text-blue-600" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h4 className="font-medium text-blue-800 text-xs">Goals</h4>
+                      <FileText className="h-4 w-4 text-blue-600" />
                     </div>
-                    <p className="text-2xl font-bold text-blue-900">{carePlan.goals?.length || 0}</p>
-                    <p className="text-xs text-blue-600 mt-1">Active goals</p>
+                    <p className="text-xl font-bold text-blue-900">{carePlan.goals?.length || 0}</p>
+                    <p className="text-xs text-blue-600 mt-0.5">Active goals</p>
                   </div>
-                  
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-green-800 text-sm">Medications</h4>
-                      <FileText className="h-5 w-5 text-green-600" />
+
+                  <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h4 className="font-medium text-green-800 text-xs">Medications</h4>
+                      <FileText className="h-4 w-4 text-green-600" />
                     </div>
-                    <p className="text-2xl font-bold text-green-900">{carePlan.medications?.length || 0}</p>
-                    <p className="text-xs text-green-600 mt-1">Current medications</p>
+                    <p className="text-xl font-bold text-green-900">{carePlan.medications?.length || 0}</p>
+                    <p className="text-xs text-green-600 mt-0.5">Current medications</p>
                   </div>
-                  
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-purple-800 text-sm">Activities</h4>
-                      <FileText className="h-5 w-5 text-purple-600" />
+
+                  <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h4 className="font-medium text-purple-800 text-xs">Activities</h4>
+                      <FileText className="h-4 w-4 text-purple-600" />
                     </div>
-                    <p className="text-2xl font-bold text-purple-900">{carePlan.activities?.length || 0}</p>
-                    <p className="text-xs text-purple-600 mt-1">Scheduled activities</p>
+                    <p className="text-xl font-bold text-purple-900">{carePlan.activities?.length || 0}</p>
+                    <p className="text-xs text-purple-600 mt-0.5">Scheduled activities</p>
                   </div>
-                  
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-orange-800 text-sm">Risk Items</h4>
-                      <AlertCircle className="h-5 w-5 text-orange-600" />
+
+                  <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h4 className="font-medium text-orange-800 text-xs">Risk Items</h4>
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
                     </div>
-                    <p className="text-2xl font-bold text-orange-900">{carePlan.risk_assessments?.length || 0}</p>
-                    <p className="text-xs text-orange-600 mt-1">Risk assessments</p>
+                    <p className="text-xl font-bold text-orange-900">{carePlan.risk_assessments?.length || 0}</p>
+                    <p className="text-xs text-orange-600 mt-0.5">Risk assessments</p>
                   </div>
                 </div>
 
                 {/* Next Review Date */}
                 {carePlan.review_date && (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-gray-600" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Next Review Date</p>
-                        <p className="text-sm text-gray-600">{new Date(carePlan.review_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                      </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 flex items-center gap-3">
+                    <Clock className="h-4 w-4 text-gray-600 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-medium text-gray-700">Next Review</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        {new Date(carePlan.review_date).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
+                      </p>
                     </div>
                   </div>
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex flex-col gap-3">
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    className="w-full"
+                <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="flex-1 sm:flex-initial"
                     onClick={() => handleOpenViewDialog(carePlan)}
                   >
-                    <FileText className="h-5 w-5 mr-2" />
+                    <FileText className="h-4 w-4 mr-2" />
                     View Details
                   </Button>
-                  
+
                   {requiresApproval && (
-                    <Button 
-                      size="lg"
-                      className="w-full bg-green-600 hover:bg-green-700"
+                    <Button
+                      size="default"
+                      className="flex-1 sm:flex-initial bg-green-600 hover:bg-green-700"
                       onClick={() => handleOpenApprovalDialog(carePlan)}
                     >
-                      <PenTool className="h-5 w-5 mr-2" />
-                      Sign & Approve Care Plan
+                      <PenTool className="h-4 w-4 mr-2" />
+                      Sign & Approve
                     </Button>
                   )}
-                  
+
                   {(requiresApproval || carePlan.status === 'approved' || carePlan.status === 'active') && (
-                    <Button 
-                      variant="outline" 
-                      size="lg"
-                      className={`w-full ${changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700 hover:bg-amber-50" : ""}`}
+                    <Button
+                      variant="outline"
+                      size="default"
+                      className={`flex-1 sm:flex-initial ${changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700 hover:bg-amber-50" : ""}`}
                       onClick={() => handleOpenChangeRequestDialog(carePlan)}
                     >
-                      <MessageSquare className="h-5 w-5 mr-2" />
-                      {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      {changeRequestInfo.hasRequest ? "Changes Requested" : "Request Changes"}
                     </Button>
                   )}
                 </div>
