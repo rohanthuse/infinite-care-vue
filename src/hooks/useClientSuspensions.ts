@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { markBookingsForStaffPayment, removeBookingsStaffPaymentProtection } from "@/services/StaffPaymentProtectionService";
 
 type ClientStatusHistory = Database["public"]["Tables"]["client_status_history"]["Row"];
 type ClientStatusHistoryInsert = Database["public"]["Tables"]["client_status_history"]["Insert"];
@@ -89,6 +90,8 @@ const fetchClientSuspensions = async (clientId: string): Promise<SuspensionStatu
 
 // Suspend client
 const suspendClient = async ({ clientId, data }: SuspendClientData): Promise<void> => {
+  console.log('[suspendClient] Starting suspension process', { clientId, data });
+  
   const { error } = await supabase.from("client_status_history").insert({
     client_id: clientId,
     action: "suspend",
@@ -106,7 +109,7 @@ const suspendClient = async ({ clientId, data }: SuspendClientData): Promise<voi
   });
 
   if (error) {
-    console.error("Error suspending client:", error);
+    console.error('[suspendClient] Error suspending client:', error);
     throw error;
   }
 
@@ -117,13 +120,31 @@ const suspendClient = async ({ clientId, data }: SuspendClientData): Promise<voi
     .eq("id", clientId);
 
   if (updateError) {
-    console.error("Error updating client status:", updateError);
+    console.error('[suspendClient] Error updating client status:', updateError);
     throw updateError;
   }
+
+  // CRITICAL: If "Pay Staff" was checked, mark bookings for payment protection
+  if (data.notify.carers) {
+    console.log('[suspendClient] "Pay Staff" checked - protecting staff payment for bookings');
+    const { success, affectedCount } = await markBookingsForStaffPayment(
+      clientId,
+      data.effective_from,
+      data.effective_until || null
+    );
+    
+    if (success && affectedCount > 0) {
+      console.log(`[suspendClient] Protected payment for ${affectedCount} bookings`);
+    }
+  }
+  
+  console.log('[suspendClient] Successfully suspended client');
 };
 
 // End suspension
 const endSuspension = async ({ clientId, suspensionId }: EndSuspensionData): Promise<void> => {
+  console.log('[endSuspension] Ending suspension', { clientId, suspensionId });
+  
   const { error } = await supabase.from("client_status_history").insert({
     client_id: clientId,
     action: "resume",
@@ -137,7 +158,7 @@ const endSuspension = async ({ clientId, suspensionId }: EndSuspensionData): Pro
   });
 
   if (error) {
-    console.error("Error ending suspension:", error);
+    console.error('[endSuspension] Error ending suspension:', error);
     throw error;
   }
 
@@ -148,9 +169,19 @@ const endSuspension = async ({ clientId, suspensionId }: EndSuspensionData): Pro
     .eq("id", clientId);
 
   if (updateError) {
-    console.error("Error updating client status:", updateError);
+    console.error('[endSuspension] Error updating client status:', updateError);
     throw updateError;
   }
+
+  // CRITICAL: Remove staff payment protection when suspension ends
+  console.log('[endSuspension] Removing staff payment protection from bookings');
+  const { success, affectedCount } = await removeBookingsStaffPaymentProtection(clientId);
+  
+  if (success && affectedCount > 0) {
+    console.log(`[endSuspension] Removed payment protection from ${affectedCount} bookings`);
+  }
+  
+  console.log('[endSuspension] Successfully ended suspension');
 };
 
 // Update suspension

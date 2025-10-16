@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Form,
   FormControl,
@@ -313,7 +315,7 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
                 )}
               />
 
-              {/* Checkboxes */}
+              {/* Checkboxes with Help Tooltips */}
               <div className="space-y-3">
                 <FormField
                   control={form.control}
@@ -327,7 +329,23 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-normal">Remove from invoice</FormLabel>
+                        <div className="flex items-center gap-2">
+                          <FormLabel className="text-sm font-normal">Remove from invoice</FormLabel>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-sm">
+                                  When checked, this client will be <strong>excluded from all new invoices</strong> 
+                                  during the suspension period. Use this when the client is temporarily unable 
+                                  to receive services and should not be billed. Existing invoices will not be affected.
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </FormItem>
                   )}
@@ -345,7 +363,23 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-normal">Pay Staff</FormLabel>
+                        <div className="flex items-center gap-2">
+                          <FormLabel className="text-sm font-normal">Pay Staff</FormLabel>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs">
+                                <p className="text-sm">
+                                  When checked, <strong>staff will still be paid</strong> for scheduled bookings 
+                                  during the suspension period, even if visits don't occur. Use this when staff 
+                                  need to be compensated for short-notice cancellations (e.g., emergency hospital admission).
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </FormItem>
                   )}

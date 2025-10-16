@@ -28,6 +28,13 @@ export const CARE_PLAN_TO_CLIENT_STATUS_MAP = {
 } as const;
 
 export const getStatusBadgeClass = (status: string) => {
+  const normalizedStatus = normalizeStatus(status);
+  
+  // CRITICAL: Suspended status gets highest priority with special styling
+  if (normalizedStatus === 'Suspended') {
+    return 'bg-red-100 text-red-800 border-red-300 font-bold animate-pulse';
+  }
+  
   switch (status) {
     // Client statuses
     case CLIENT_STATUSES.ACTIVE:
@@ -159,3 +166,42 @@ export const getCarePlanStatusOptions = () => [
   { value: CARE_PLAN_STATUSES.COMPLETED, label: CARE_PLAN_STATUSES.COMPLETED },
   { value: CARE_PLAN_STATUSES.ARCHIVED, label: CARE_PLAN_STATUSES.ARCHIVED }
 ];
+
+/**
+ * Get status badge with icon for better visual indication
+ * Particularly useful for suspended status
+ */
+export const getStatusBadgeWithIcon = (status: string): { text: string; icon: string; class: string } => {
+  const normalizedStatus = normalizeStatus(status);
+  const badgeClass = getStatusBadgeClass(status);
+  
+  if (normalizedStatus === 'Suspended') {
+    return {
+      text: 'Suspended',
+      icon: 'ban',
+      class: badgeClass
+    };
+  }
+  
+  if (normalizedStatus === 'Active') {
+    return {
+      text: 'Active',
+      icon: 'check-circle',
+      class: badgeClass
+    };
+  }
+  
+  if (normalizedStatus === 'Pending') {
+    return {
+      text: 'Pending',
+      icon: 'clock',
+      class: badgeClass
+    };
+  }
+  
+  return {
+    text: normalizedStatus,
+    icon: 'circle',
+    class: badgeClass
+  };
+};

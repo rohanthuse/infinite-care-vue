@@ -1,6 +1,6 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { checkClientSuspensionForBilling } from "@/services/SuspensionAwareInvoiceService";
 
 export interface CreateBookingInput {
   branch_id: string;
@@ -17,6 +17,19 @@ export interface CreateBookingInput {
 export async function createBooking(input: CreateBookingInput) {
   console.log('[createBooking] ========== BOOKING CREATION START ==========');
   console.log('[createBooking] Input data:', JSON.stringify(input, null, 2));
+  
+  // CRITICAL: Check if client is suspended before creating booking
+  console.log('[createBooking] Checking client suspension status...');
+  const suspensionStatus = await checkClientSuspensionForBilling(input.client_id);
+  
+  if (suspensionStatus.isSuspended && suspensionStatus.visitsSuspended) {
+    const message = `Cannot create booking: Client is suspended until ${
+      suspensionStatus.effectiveUntil || 'indefinitely'
+    }. Reason: ${suspensionStatus.reason || 'Not specified'}`;
+    
+    console.error('[createBooking] Blocked by suspension:', message);
+    throw new Error(message);
+  }
   
   const { data, error } = await supabase
     .from("bookings")

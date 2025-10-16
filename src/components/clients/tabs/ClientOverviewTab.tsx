@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, MapPin, Mail, Phone, Smartphone, Star, Activity, Clock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import { SuspensionAlertBanner } from "../SuspensionAlertBanner";
 
 interface ClientOverviewTabProps {
   client: any;

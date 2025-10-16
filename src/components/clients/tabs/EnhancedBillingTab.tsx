@@ -23,6 +23,7 @@ import {
 } from "@/hooks/useEnhancedClientBilling";
 import { useAdminClientDetail } from "@/hooks/useAdminClientData";
 import { supabase } from "@/integrations/supabase/client";
+import { SuspensionAlertBanner } from "../SuspensionAlertBanner";
 
 interface EnhancedBillingTabProps {
   clientId: string;
@@ -181,6 +182,8 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
 
   return (
     <div className="space-y-6">
+      <SuspensionAlertBanner clientId={clientId} />
+      
       {/* Uninvoiced Services Alert */}
       {uninvoicedBookings.length > 0 && (
         <UninvoicedServicesAlert 

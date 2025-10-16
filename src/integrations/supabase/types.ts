@@ -685,6 +685,7 @@ export type Database = {
           staff_id: string | null
           start_time: string
           status: string | null
+          suspension_honor_staff_payment: boolean | null
         }
         Insert: {
           branch_id?: string | null
@@ -699,6 +700,7 @@ export type Database = {
           staff_id?: string | null
           start_time: string
           status?: string | null
+          suspension_honor_staff_payment?: boolean | null
         }
         Update: {
           branch_id?: string | null
@@ -713,6 +715,7 @@ export type Database = {
           staff_id?: string | null
           start_time?: string
           status?: string | null
+          suspension_honor_staff_payment?: boolean | null
         }
         Relationships: [
           {

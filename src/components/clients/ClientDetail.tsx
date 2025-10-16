@@ -1,12 +1,14 @@
 
 import React, { useState } from "react";
-import { X, Download, Share2 } from "lucide-react";
+import { X, Download, Share2, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
+import { useClientSuspensions } from "@/hooks/useClientSuspensions";
 
 import { ClientSideTabNav } from "./ClientSideTabNav";
 import { ClientOverviewTab } from "./tabs/ClientOverviewTab";
@@ -68,6 +70,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
   
   // Fetch real client data
   const { data: realClientData, isLoading, refetch } = useAdminClientDetail(client?.id || '');
+  const { data: suspensionData } = useClientSuspensions(client?.id || '');
   const updateClientMutation = useAdminUpdateClient();
 
   // Sync isEditMode prop with internal isEditing state
@@ -160,7 +163,15 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
               {realClientData?.avatar_initials || client.avatar}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground">{displayName}</h2>
+                {suspensionData?.is_suspended && (
+                  <Badge variant="destructive" className="flex items-center gap-1 animate-pulse">
+                    <Ban className="h-3 w-3" />
+                    SUSPENDED
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                 <span>Client ID: {client.id}</span>
                 <span>•</span>
