@@ -9089,6 +9089,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_admin_user_details: {
+        Args: { user_ids: string[] }
+        Returns: {
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+        }[]
+      }
       get_branch_chart_data: {
         Args: { p_branch_id: string }
         Returns: Json

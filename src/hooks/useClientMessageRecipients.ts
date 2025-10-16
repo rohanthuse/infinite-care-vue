@@ -13,6 +13,13 @@ export interface ClientMessageRecipient {
   groupLabel: string;
 }
 
+interface AdminUserDetail {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
 /**
  * Fetch recipients available for messaging a specific client
  * Returns: Branch Admins, Super Admins, and Assigned Carers ONLY
@@ -112,10 +119,10 @@ export const useClientMessageRecipients = (clientId: string) => {
             
             if (userIds.length > 0) {
               const { data: adminDetails, error: adminDetailsError } = await supabase
-                .rpc('get_admin_user_details', { user_ids: userIds });
+                .rpc('get_admin_user_details', { user_ids: userIds }) as { data: AdminUserDetail[] | null, error: any };
               
               if (!adminDetailsError && adminDetails) {
-                adminDetails.forEach(admin => {
+                (adminDetails as AdminUserDetail[]).forEach(admin => {
                   const firstName = admin.first_name || '';
                   const lastName = admin.last_name || '';
                   const displayName = `${firstName} ${lastName}`.trim() || 
@@ -164,10 +171,10 @@ export const useClientMessageRecipients = (clientId: string) => {
             
             if (superAdminIds.length > 0) {
               const { data: adminDetails, error: adminDetailsError } = await supabase
-                .rpc('get_admin_user_details', { user_ids: superAdminIds });
+                .rpc('get_admin_user_details', { user_ids: superAdminIds }) as { data: AdminUserDetail[] | null, error: any };
               
               if (!adminDetailsError && adminDetails) {
-                adminDetails.forEach(admin => {
+                (adminDetails as AdminUserDetail[]).forEach(admin => {
                   const firstName = admin.first_name || '';
                   const lastName = admin.last_name || '';
                   const displayName = `${firstName} ${lastName}`.trim() || 
