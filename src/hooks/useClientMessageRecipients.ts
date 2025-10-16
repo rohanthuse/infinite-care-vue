@@ -31,91 +31,141 @@ export const useClientMessageRecipients = (clientId: string) => {
   return useQuery({
     queryKey: ['client-message-recipients', clientId, organization?.id],
     queryFn: async (): Promise<ClientMessageRecipient[]> => {
-      if (!clientId || !organization) {
-        console.log('[useClientMessageRecipients] Missing clientId or organization');
-        return [];
-      }
-
-      const recipients: ClientMessageRecipient[] = [];
-
       try {
-        // 1. Get client details to find their branch
+        console.log('[useClientMessageRecipients] Starting fetch for clientId:', clientId);
+        
+        // First get the client and their branch information
         const { data: client, error: clientError } = await supabase
           .from('clients')
-          .select('id, branch_id, auth_user_id')
+          .select('id, branch_id')
           .eq('id', clientId)
           .single();
 
-        if (clientError || !client) {
-          console.error('[useClientMessageRecipients] Client not found:', clientError);
+        if (clientError) {
+          console.error('[useClientMessageRecipients] Error fetching client:', clientError);
+          throw clientError;
+        }
+
+        if (!client) {
+          console.log('[useClientMessageRecipients] Client not found');
           return [];
         }
 
-        const clientBranchId = client.branch_id;
+        console.log('[useClientMessageRecipients] Client branch_id:', client.branch_id);
 
-        // 2. Get assigned carers for this client from bookings
+        // Get the organization_id from the branch
+        const { data: branch, error: branchError } = await supabase
+          .from('branches')
+          .select('organization_id')
+          .eq('id', client.branch_id)
+          .single();
+
+        if (branchError) {
+          console.error('[useClientMessageRecipients] Error fetching branch:', branchError);
+          throw branchError;
+        }
+
+        if (!branch) {
+          console.log('[useClientMessageRecipients] Branch not found');
+          return [];
+        }
+
+        const organization = branch;
+        console.log('[useClientMessageRecipients] Organization:', organization);
+
+        const recipients: ClientMessageRecipient[] = [];
+        const addedStaffIds = new Set<string>();
+
+        // 1. Get assigned carers/staff from bookings
         const { data: bookings, error: bookingsError } = await supabase
           .from('bookings')
           .select('staff_id')
           .eq('client_id', clientId)
           .not('staff_id', 'is', null);
 
-        if (!bookingsError && bookings) {
-          const staffIds = [...new Set(bookings.map(b => b.staff_id).filter(Boolean))];
+        if (bookingsError) {
+          console.error('[useClientMessageRecipients] Error fetching bookings:', bookingsError);
+        } else if (bookings && bookings.length > 0) {
+          console.log('[useClientMessageRecipients] Found bookings:', bookings.length);
           
-          if (staffIds.length > 0) {
-            const { data: staffDetails, error: staffError } = await supabase
-              .from('staff')
-              .select('id, auth_user_id, first_name, last_name, email')
-              .in('id', staffIds);
-            
-            if (!staffError && staffDetails) {
-              staffDetails.forEach(carer => {
-                const firstName = carer.first_name || '';
-                const lastName = carer.last_name || '';
-                const displayName = `${firstName} ${lastName}`.trim() || 
-                                   carer.email?.split('@')[0] || 
-                                   `Carer ${carer.id.slice(0, 8)}`;
-                
+          const staffIdsFromBookings = [...new Set(bookings.map(b => b.staff_id).filter(Boolean))];
+          staffIdsFromBookings.forEach(id => addedStaffIds.add(id as string));
+        }
+
+        // 2. Get assigned carers/staff from care plans
+        const { data: carePlans, error: carePlansError } = await supabase
+          .from('client_care_plans')
+          .select('staff_id')
+          .eq('client_id', clientId)
+          .not('staff_id', 'is', null);
+
+        if (carePlansError) {
+          console.error('[useClientMessageRecipients] Error fetching care plans:', carePlansError);
+        } else if (carePlans && carePlans.length > 0) {
+          console.log('[useClientMessageRecipients] Found care plans:', carePlans.length);
+          
+          const staffIdsFromCarePlans = [...new Set(carePlans.map(cp => cp.staff_id).filter(Boolean))];
+          staffIdsFromCarePlans.forEach(id => addedStaffIds.add(id as string));
+        }
+
+        // Fetch all unique staff details
+        const allStaffIds = Array.from(addedStaffIds);
+        console.log('[useClientMessageRecipients] Total unique staff IDs:', allStaffIds.length);
+        
+        if (allStaffIds.length > 0) {
+          const { data: staffMembers, error: staffError } = await supabase
+            .from('staff')
+            .select('id, auth_user_id, first_name, last_name, email')
+            .in('id', allStaffIds);
+
+          if (staffError) {
+            console.error('[useClientMessageRecipients] Error fetching staff:', staffError);
+          } else if (staffMembers) {
+            console.log('[useClientMessageRecipients] Staff members found:', staffMembers.length);
+            staffMembers.forEach(staff => {
+              if (staff.auth_user_id) {
                 recipients.push({
-                  id: carer.id,
-                  auth_user_id: carer.auth_user_id,
-                  name: displayName,
-                  avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
+                  id: staff.auth_user_id, // Use auth_user_id as id for consistency
+                  auth_user_id: staff.auth_user_id,
+                  name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Staff Member',
+                  avatar: '',
                   type: 'assigned_carer',
-                  email: carer.email,
+                  email: staff.email,
                   canMessage: true,
                   groupLabel: 'Assigned Carers'
                 });
-              });
-            }
+              }
+            });
           }
         }
 
-        // 3. Get branch admins for this client's branch
-        const { data: branchAdmins, error: branchAdminsError } = await supabase
-          .from('admin_branches')
-          .select(`
-            admin_id,
-            branches!inner (
-              id,
-              organization_id
-            )
-          `)
-          .eq('branch_id', clientBranchId)
-          .eq('branches.organization_id', organization.id);
+        // 3. Get branch admins for this branch
+        console.log('[useClientMessageRecipients] Fetching branch admins...');
+        try {
+          const { data: adminBranches, error: adminBranchesError } = await supabase
+            .from('admin_branches')
+            .select('admin_id')
+            .eq('branch_id', client.branch_id);
 
-        if (!branchAdminsError && branchAdmins) {
-          const adminIds = branchAdmins.map(ab => ab.admin_id);
-          
-          const { data: adminUsers, error: adminUsersError } = await supabase
-            .from('user_roles')
-            .select('user_id, role')
-            .in('user_id', adminIds)
-            .eq('role', 'branch_admin');
+          if (adminBranchesError) {
+            console.error('[useClientMessageRecipients] Error fetching admin_branches:', adminBranchesError);
+          } else if (adminBranches && adminBranches.length > 0) {
+            console.log('[useClientMessageRecipients] Found admin_branches:', adminBranches.length);
+            
+            const adminIds = adminBranches.map((ab: any) => ab.admin_id);
+            
+            // Try to narrow to branch_admins using user_roles
+            const { data: adminUsers, error: adminUsersError } = await supabase
+              .from('user_roles')
+              .select('user_id')
+              .in('user_id', adminIds)
+              .eq('role', 'branch_admin');
 
-          if (!adminUsersError && adminUsers) {
-            const userIds = adminUsers.map((u: any) => u.user_id);
+            const userIds = (adminUsersError || !adminUsers || adminUsers.length === 0) 
+              ? adminIds // Fallback to all admin_ids if user_roles query fails
+              : adminUsers.map((u: any) => u.user_id);
+
+            console.log('[useClientMessageRecipients] Branch admin user IDs:', userIds.length);
             
             if (userIds.length > 0) {
               // @ts-ignore - RPC function exists but types not yet regenerated
@@ -123,80 +173,119 @@ export const useClientMessageRecipients = (clientId: string) => {
                 .rpc('get_admin_user_details', { user_ids: userIds });
               
               if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
+                console.log('[useClientMessageRecipients] Branch admin details fetched:', adminDetails.length);
                 adminDetails.forEach((admin: any) => {
                   const firstName = admin.first_name || '';
                   const lastName = admin.last_name || '';
                   const displayName = `${firstName} ${lastName}`.trim() || 
-                                     admin.email?.split('@')[0] || 
-                                     `Branch Admin ${admin.id.slice(0, 8)}`;
+                                    admin.email?.split('@')[0] || 
+                                    'Branch Admin';
                   
                   recipients.push({
-                    id: admin.id,
+                    id: admin.id, // auth user id
                     auth_user_id: admin.id,
                     name: displayName,
-                    avatar: `${firstName.charAt(0) || 'B'}${lastName.charAt(0) || 'A'}`,
+                    avatar: '',
                     type: 'branch_admin',
                     email: admin.email,
                     canMessage: true,
                     groupLabel: 'Branch Admins'
                   });
                 });
+              } else if (adminDetailsError) {
+                console.error('[useClientMessageRecipients] Error fetching admin details:', adminDetailsError);
               }
             }
+          } else {
+            console.log('[useClientMessageRecipients] No admin_branches found for this branch');
           }
+        } catch (error) {
+          console.error('[useClientMessageRecipients] Error in branch admin fetch:', error);
         }
 
-        // 4. Get super admins who have access to this organization
-        const { data: orgSuperAdminBranches } = await supabase
-          .from('admin_branches')
-          .select(`
-            admin_id,
-            branches!inner (
-              id,
-              organization_id
-            )
-          `)
-          .eq('branches.organization_id', organization.id);
+        // 4. Get super admins in the same organization
+        console.log('[useClientMessageRecipients] Fetching super admins...');
+        try {
+          // Get all branches in the organization
+          const { data: orgBranches, error: orgBranchesError } = await supabase
+            .from('branches')
+            .select('id')
+            .eq('organization_id', organization.organization_id);
 
-        if (orgSuperAdminBranches) {
-          const orgSuperAdminIds = [...new Set(orgSuperAdminBranches.map(ab => ab.admin_id))];
-          
-          const { data: superAdminRoles } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .eq('role', 'super_admin')
-            .in('user_id', orgSuperAdminIds);
-
-          if (superAdminRoles) {
-            const superAdminIds = superAdminRoles.map((r: any) => r.user_id);
+          if (orgBranchesError) {
+            console.error('[useClientMessageRecipients] Error fetching org branches:', orgBranchesError);
+          } else if (orgBranches && orgBranches.length > 0) {
+            console.log('[useClientMessageRecipients] Found org branches:', orgBranches.length);
             
-            if (superAdminIds.length > 0) {
-              // @ts-ignore - RPC function exists but types not yet regenerated
-              const { data: adminDetails, error: adminDetailsError } = await supabase
-                .rpc('get_admin_user_details', { user_ids: superAdminIds });
+            const branchIds = orgBranches.map(b => b.id);
+            
+            // Get admin_ids for all branches in the org
+            const { data: orgAdminBranches, error: orgAdminBranchesError } = await supabase
+              .from('admin_branches')
+              .select('admin_id')
+              .in('branch_id', branchIds);
+
+            if (orgAdminBranchesError) {
+              console.error('[useClientMessageRecipients] Error fetching org admin_branches:', orgAdminBranchesError);
+            } else if (orgAdminBranches && orgAdminBranches.length > 0) {
+              console.log('[useClientMessageRecipients] Found org admin_branches:', orgAdminBranches.length);
               
-              if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
-                adminDetails.forEach((admin: any) => {
-                  const firstName = admin.first_name || '';
-                  const lastName = admin.last_name || '';
-                  const displayName = `${firstName} ${lastName}`.trim() || 
-                                     admin.email?.split('@')[0] || 
-                                     `Super Admin ${admin.id.slice(0, 8)}`;
+              const orgAdminIds = [...new Set(orgAdminBranches.map((ab: any) => ab.admin_id))];
+              
+              // Filter to super_admins only
+              const { data: superAdminRoles, error: superAdminRolesError } = await supabase
+                .from('user_roles')
+                .select('user_id')
+                .in('user_id', orgAdminIds)
+                .eq('role', 'super_admin');
+
+              if (superAdminRolesError) {
+                console.error('[useClientMessageRecipients] Error fetching super admin user_roles:', superAdminRolesError);
+              } else if (superAdminRoles && superAdminRoles.length > 0) {
+                console.log('[useClientMessageRecipients] Found super admins in user_roles:', superAdminRoles.length);
+                
+                const superAdminIds = superAdminRoles.map((r: any) => r.user_id);
+                
+                if (superAdminIds.length > 0) {
+                  // @ts-ignore - RPC function exists but types not yet regenerated
+                  const { data: adminDetails, error: adminDetailsError } = await supabase
+                    .rpc('get_admin_user_details', { user_ids: superAdminIds });
                   
-                  recipients.push({
-                    id: admin.id,
-                    auth_user_id: admin.id,
-                    name: displayName,
-                    avatar: `${firstName.charAt(0) || 'S'}${lastName.charAt(0) || 'A'}`,
-                    type: 'super_admin',
-                    email: admin.email,
-                    canMessage: true,
-                    groupLabel: 'Super Admins'
-                  });
-                });
+                  if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
+                    console.log('[useClientMessageRecipients] Super admin details fetched:', adminDetails.length);
+                    adminDetails.forEach((admin: any) => {
+                      const firstName = admin.first_name || '';
+                      const lastName = admin.last_name || '';
+                      const displayName = `${firstName} ${lastName}`.trim() || 
+                                        admin.email?.split('@')[0] || 
+                                        'Super Admin';
+                      
+                      recipients.push({
+                        id: admin.id, // auth user id
+                        auth_user_id: admin.id,
+                        name: displayName,
+                        avatar: '',
+                        type: 'super_admin',
+                        email: admin.email,
+                        canMessage: true,
+                        groupLabel: 'Super Admins'
+                      });
+                    });
+                  } else if (adminDetailsError) {
+                    console.error('[useClientMessageRecipients] Error fetching super admin details:', adminDetailsError);
+                  }
+                }
+              } else {
+                console.log('[useClientMessageRecipients] No super admins found in user_roles');
               }
+            } else {
+              console.log('[useClientMessageRecipients] No org admin_branches found');
             }
+          } else {
+            console.log('[useClientMessageRecipients] No org branches found');
           }
+        } catch (error) {
+          console.error('[useClientMessageRecipients] Error in super admin fetch:', error);
         }
 
         console.log('[useClientMessageRecipients] Found recipients:', recipients.length);

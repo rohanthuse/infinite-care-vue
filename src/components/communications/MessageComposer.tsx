@@ -149,7 +149,11 @@ export const MessageComposer = ({
   };
 
   const getContactDetails = (contactId: string) => {
-    return availableContacts.find(c => c.id === contactId);
+    // In client context, recipients are stored as auth_user_id, so match by that first
+    return availableContacts.find(c => {
+      const recipientContact = c as ClientMessageRecipient;
+      return (recipientContact.auth_user_id && recipientContact.auth_user_id === contactId) || c.id === contactId;
+    });
   };
 
   const handleSendMessage = async () => {
@@ -226,7 +230,10 @@ export const MessageComposer = ({
         
         // Filter to only valid recipients for messaging (those with auth accounts)
         const messageableRecipients = uniqueRecipients.filter(id => {
-          const contact = availableContacts.find(c => c.id === id);
+          const contact = availableContacts.find(c => {
+            const recipientContact = c as ClientMessageRecipient;
+            return (recipientContact.auth_user_id && recipientContact.auth_user_id === id) || c.id === id;
+          });
           return contact?.canMessage !== false;
         });
         
@@ -243,7 +250,10 @@ export const MessageComposer = ({
         }
         
         const recipientData = messageableRecipients.map(recipientId => {
-          const contact = availableContacts.find(c => c.id === recipientId);
+          const contact = availableContacts.find(c => {
+            const recipientContact = c as ClientMessageRecipient;
+            return (recipientContact.auth_user_id && recipientContact.auth_user_id === recipientId) || c.id === recipientId;
+          });
           return {
             id: recipientId,
             name: contact?.name || 'Unknown',
