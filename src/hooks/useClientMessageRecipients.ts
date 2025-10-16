@@ -118,11 +118,12 @@ export const useClientMessageRecipients = (clientId: string) => {
             const userIds = adminUsers.map((u: any) => u.user_id);
             
             if (userIds.length > 0) {
+              // @ts-ignore - RPC function exists but types not yet regenerated
               const { data: adminDetails, error: adminDetailsError } = await supabase
-                .rpc('get_admin_user_details', { user_ids: userIds }) as { data: AdminUserDetail[] | null, error: any };
+                .rpc('get_admin_user_details', { user_ids: userIds });
               
-              if (!adminDetailsError && adminDetails) {
-                (adminDetails as AdminUserDetail[]).forEach(admin => {
+              if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
+                adminDetails.forEach((admin: any) => {
                   const firstName = admin.first_name || '';
                   const lastName = admin.last_name || '';
                   const displayName = `${firstName} ${lastName}`.trim() || 
@@ -170,11 +171,12 @@ export const useClientMessageRecipients = (clientId: string) => {
             const superAdminIds = superAdminRoles.map((r: any) => r.user_id);
             
             if (superAdminIds.length > 0) {
+              // @ts-ignore - RPC function exists but types not yet regenerated
               const { data: adminDetails, error: adminDetailsError } = await supabase
-                .rpc('get_admin_user_details', { user_ids: superAdminIds }) as { data: AdminUserDetail[] | null, error: any };
+                .rpc('get_admin_user_details', { user_ids: superAdminIds });
               
-              if (!adminDetailsError && adminDetails) {
-                (adminDetails as AdminUserDetail[]).forEach(admin => {
+              if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
+                adminDetails.forEach((admin: any) => {
                   const firstName = admin.first_name || '';
                   const lastName = admin.last_name || '';
                   const displayName = `${firstName} ${lastName}`.trim() || 
