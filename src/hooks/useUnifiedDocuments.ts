@@ -41,6 +41,24 @@ export interface UploadDocumentData {
   shared_with_staff?: string[];
 }
 
+interface DocumentUploadAccessCheck {
+  user_id: string;
+  branch_id: string;
+  user_roles: string[];
+  is_super_admin: boolean;
+  is_branch_admin: boolean;
+  is_branch_staff: boolean;
+  can_upload: boolean;
+  staff_record?: {
+    id: string;
+    auth_user_id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  };
+  error?: string;
+}
+
 export const useUnifiedDocuments = (branchId: string) => {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
@@ -86,6 +104,51 @@ export const useUnifiedDocuments = (branchId: string) => {
     });
     
     setIsUploading(true);
+
+    // Phase 3: Add diagnostic check before upload
+    console.log('[useUnifiedDocuments] Running upload permission diagnostic...');
+    const { data: accessCheckData, error: accessError } = await supabase
+      .rpc('check_document_upload_access', { p_branch_id: branchId });
+
+    if (accessError) {
+      console.error('[useUnifiedDocuments] Diagnostic check failed:', accessError);
+    } else {
+      const accessCheck = accessCheckData as unknown as DocumentUploadAccessCheck;
+      console.log('[useUnifiedDocuments] Upload permission diagnostic:', accessCheck);
+      
+      if (accessCheck && !accessCheck.can_upload) {
+        let detailedError = '❌ Document Upload Permission Denied\n\n';
+        detailedError += `📋 Diagnostic Information:\n`;
+        detailedError += `• User ID: ${accessCheck.user_id}\n`;
+        detailedError += `• Branch ID: ${accessCheck.branch_id}\n`;
+        detailedError += `• User Roles: ${accessCheck.user_roles?.join(', ') || 'None'}\n`;
+        detailedError += `• Is Super Admin: ${accessCheck.is_super_admin ? '✅ Yes' : '❌ No'}\n`;
+        detailedError += `• Is Branch Admin: ${accessCheck.is_branch_admin ? '✅ Yes' : '❌ No'}\n`;
+        detailedError += `• Is Branch Staff: ${accessCheck.is_branch_staff ? '✅ Yes' : '❌ No'}\n\n`;
+        
+        if (accessCheck.staff_record) {
+          detailedError += `👤 Staff Record Found:\n`;
+          detailedError += `• Staff ID: ${accessCheck.staff_record.id}\n`;
+          detailedError += `• Auth User ID: ${accessCheck.staff_record.auth_user_id}\n`;
+          detailedError += `• Name: ${accessCheck.staff_record.first_name} ${accessCheck.staff_record.last_name}\n`;
+          detailedError += `• Email: ${accessCheck.staff_record.email}\n\n`;
+        } else {
+          detailedError += `⚠️ No Staff Record Found\n`;
+          detailedError += `This indicates your staff account may not be properly linked to your login.\n`;
+          detailedError += `Please contact your administrator to link your account.\n\n`;
+        }
+        
+        detailedError += `💡 Solution: You need one of the following:\n`;
+        detailedError += `• Super Admin role (system-wide access)\n`;
+        detailedError += `• Branch Admin assignment for this branch\n`;
+        detailedError += `• Staff record with auth_user_id linked to this branch\n`;
+        
+        console.error('[useUnifiedDocuments] Upload blocked:', detailedError);
+        setIsUploading(false);
+        toast.error('Permission denied. Check console for details.');
+        throw new Error(detailedError);
+      }
+    }
 
     try {
       // Get current user

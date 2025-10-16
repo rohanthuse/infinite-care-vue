@@ -8928,6 +8928,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      check_document_upload_access: {
+        Args: { p_branch_id: string }
+        Returns: Json
+      }
       check_user_role_health: {
         Args: Record<PropertyKey, never>
         Returns: {
