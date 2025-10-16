@@ -3409,6 +3409,7 @@ export type Database = {
           reason: string | null
           suspension_type: string | null
           to_status: string | null
+          updated_at: string
         }
         Insert: {
           action: string
@@ -3426,6 +3427,7 @@ export type Database = {
           reason?: string | null
           suspension_type?: string | null
           to_status?: string | null
+          updated_at?: string
         }
         Update: {
           action?: string
@@ -3443,6 +3445,7 @@ export type Database = {
           reason?: string | null
           suspension_type?: string | null
           to_status?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
