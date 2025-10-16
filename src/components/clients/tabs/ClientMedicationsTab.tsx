@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pill, Clock, Calendar, AlertTriangle, CheckCircle, Plus } from "lucide-react";
-import { useMedicationsByClient } from "@/hooks/useMedications";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Pill, Clock, Calendar, AlertTriangle, CheckCircle, Plus, Eye, Edit, Trash } from "lucide-react";
+import { useMedicationsByClient, useDeleteMedication } from "@/hooks/useMedications";
 import { useMARByClient } from "@/hooks/useMedicationAdministration";
+import { ClientMedicationDialog } from "./dialogs/ClientMedicationDialog";
 import { format, parseISO, isAfter, isBefore } from "date-fns";
 
 interface ClientMedicationsTabProps {
@@ -15,8 +17,12 @@ interface ClientMedicationsTabProps {
 export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clientId }) => {
   const { data: medications = [], isLoading: medicationsLoading } = useMedicationsByClient(clientId);
   const { data: adminRecords = [], isLoading: recordsLoading } = useMARByClient(clientId);
+  const deleteMedication = useDeleteMedication();
 
   const [selectedMedication, setSelectedMedication] = useState<string | null>(null);
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'view' | null>(null);
+  const [selectedMedicationForDialog, setSelectedMedicationForDialog] = useState<any>(null);
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
   const getMedicationStatus = (medication: any) => {
     const now = new Date();
@@ -118,9 +124,22 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
       {/* Active Medications */}
       <Card>
         <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
-          <div className="flex items-center gap-2">
-            <Pill className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Active Medications</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Pill className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Active Medications</CardTitle>
+            </div>
+            <Button
+              onClick={() => {
+                setDialogMode('add');
+                setSelectedMedicationForDialog(null);
+              }}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Medication
+            </Button>
           </div>
           <CardDescription>Currently prescribed medications</CardDescription>
         </CardHeader>
@@ -163,15 +182,41 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedMedication(
-                            selectedMedication === medication.id ? null : medication.id
-                          )}
-                        >
-                          {selectedMedication === medication.id ? 'Hide' : 'View'} Records
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setDialogMode('view');
+                              setSelectedMedicationForDialog(medication);
+                            }}
+                            className="gap-1"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setDialogMode('edit');
+                              setSelectedMedicationForDialog(medication);
+                            }}
+                            className="gap-1"
+                          >
+                            <Edit className="h-3 w-3" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setDeleteConfirmationId(medication.id)}
+                            className="gap-1"
+                          >
+                            <Trash className="h-3 w-3" />
+                            Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -303,6 +348,47 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
           </Table>
         </CardContent>
       </Card>
+
+      {/* Medication Dialog */}
+      <ClientMedicationDialog
+        isOpen={dialogMode !== null}
+        onClose={() => {
+          setDialogMode(null);
+          setSelectedMedicationForDialog(null);
+        }}
+        clientId={clientId}
+        mode={dialogMode || 'add'}
+        medication={selectedMedicationForDialog}
+      />
+
+      {/* Delete Confirmation AlertDialog */}
+      <AlertDialog
+        open={deleteConfirmationId !== null}
+        onOpenChange={(open) => !open && setDeleteConfirmationId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Medication</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this medication? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteConfirmationId) {
+                  deleteMedication.mutate(deleteConfirmationId);
+                  setDeleteConfirmationId(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
