@@ -59,6 +59,19 @@ interface UpdateSuspensionData {
     details?: string | null;
     effective_from: string;
     effective_until?: string | null;
+    apply_to: {
+      visits: boolean;
+      serviceActions: boolean;
+      billing: boolean;
+      messaging: boolean;
+    };
+    notify: {
+      client: boolean;
+      nextOfKin: boolean;
+      carers: boolean;
+      admin: boolean;
+      ccEmails?: string[];
+    };
   };
 }
 
@@ -186,6 +199,8 @@ const endSuspension = async ({ clientId, suspensionId }: EndSuspensionData): Pro
 
 // Update suspension
 const updateSuspension = async ({ suspensionId, clientId, data }: UpdateSuspensionData): Promise<void> => {
+  console.log('[updateSuspension] Starting update', { suspensionId, clientId, data });
+  
   const { error } = await supabase
     .from("client_status_history")
     .update({
@@ -194,14 +209,39 @@ const updateSuspension = async ({ suspensionId, clientId, data }: UpdateSuspensi
       details: data.details,
       effective_from: data.effective_from,
       effective_until: data.effective_until,
+      apply_to: data.apply_to,
+      notify: data.notify,
       updated_at: new Date().toISOString(),
     })
     .eq("id", suspensionId);
 
   if (error) {
-    console.error("Error updating suspension:", error);
+    console.error('[updateSuspension] Error updating suspension:', error);
     throw error;
   }
+
+  // CRITICAL: Handle staff payment protection based on "Pay Staff" checkbox
+  if (data.notify.carers) {
+    console.log('[updateSuspension] "Pay Staff" enabled - protecting staff payment');
+    const { success, affectedCount } = await markBookingsForStaffPayment(
+      clientId,
+      data.effective_from,
+      data.effective_until || null
+    );
+    
+    if (success && affectedCount > 0) {
+      console.log(`[updateSuspension] Protected payment for ${affectedCount} bookings`);
+    }
+  } else {
+    console.log('[updateSuspension] "Pay Staff" disabled - removing protection');
+    const { success, affectedCount } = await removeBookingsStaffPaymentProtection(clientId);
+    
+    if (success && affectedCount > 0) {
+      console.log(`[updateSuspension] Removed payment protection from ${affectedCount} bookings`);
+    }
+  }
+  
+  console.log('[updateSuspension] Successfully updated suspension');
 };
 
 // Delete suspension

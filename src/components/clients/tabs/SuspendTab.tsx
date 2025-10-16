@@ -103,6 +103,19 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
             details: values.description || null,
             effective_from: values.fromDateTime,
             effective_until: values.untilDateTime || null,
+            apply_to: {
+              visits: true,
+              serviceActions: true,
+              billing: !values.removeFromInvoice,
+              messaging: true,
+            },
+            notify: {
+              client: true,
+              nextOfKin: false,
+              carers: values.payStaff,
+              admin: true,
+              ccEmails: [],
+            },
           },
         });
 
@@ -149,12 +162,12 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
         form.reset();
       }
     } catch (error) {
-      console.error("Error with suspension:", error);
+      console.error("[SuspendTab] Error during submission:", error);
       toast({
         title: "Error",
-        description: isEditMode 
+        description: error instanceof Error ? error.message : (isEditMode 
           ? "Failed to update suspension. Please try again." 
-          : "Failed to suspend client. Please try again.",
+          : "Failed to suspend client. Please try again."),
         variant: "destructive",
       });
     }
