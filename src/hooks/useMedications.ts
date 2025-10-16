@@ -12,6 +12,7 @@ export interface Medication {
   start_date: string;
   end_date?: string;
   status: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -24,6 +25,7 @@ export interface MedicationFormData {
   start_date: string;
   end_date?: string;
   status?: string;
+  notes?: string;
 }
 
 // Hook to fetch medications by care plan

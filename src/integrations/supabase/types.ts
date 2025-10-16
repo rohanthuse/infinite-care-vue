@@ -2359,6 +2359,7 @@ export type Database = {
           frequency: string
           id: string
           name: string
+          notes: string | null
           start_date: string
           status: string
           updated_at: string
@@ -2371,6 +2372,7 @@ export type Database = {
           frequency: string
           id?: string
           name: string
+          notes?: string | null
           start_date: string
           status?: string
           updated_at?: string
@@ -2383,6 +2385,7 @@ export type Database = {
           frequency?: string
           id?: string
           name?: string
+          notes?: string | null
           start_date?: string
           status?: string
           updated_at?: string
