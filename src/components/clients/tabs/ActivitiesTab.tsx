@@ -1,29 +1,57 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, Heart, Users, Calendar, Trophy, Clock } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Activity, Heart, Users, Calendar, Trophy, Plus, Eye, Edit, Trash } from "lucide-react";
 import { useClientEvents } from "@/hooks/useClientEvents";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, startOfWeek, endOfWeek, isWithinInterval } from "date-fns";
+import { ClientActivityDialog } from "../dialogs/ClientActivityDialog";
+import { 
+  useCreateClientActivity, 
+  useUpdateClientActivity, 
+  useDeleteClientActivity,
+  ClientActivity 
+} from "@/hooks/useClientActivities";
+import { toast } from "sonner";
 
 interface ActivitiesTabProps {
   clientId: string;
 }
 
-interface ClientActivity {
-  id: string;
-  care_plan_id: string;
-  name: string;
-  description?: string;
-  frequency: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [selectedActivity, setSelectedActivity] = useState<ClientActivity | undefined>();
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [selectedCarePlanId, setSelectedCarePlanId] = useState<string>('');
+
+  const createMutation = useCreateClientActivity();
+  const updateMutation = useUpdateClientActivity();
+  const deleteMutation = useDeleteClientActivity();
+
+  // Fetch active care plan for this client
+  const { data: carePlans = [] } = useQuery({
+    queryKey: ['client-care-plans', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('id, status')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientId,
+  });
+
+  const activePlan = carePlans.find(cp => cp.status === 'active') || carePlans[0];
+
   // Fetch client activities from care plans
   const { data: activities = [], isLoading: activitiesLoading } = useQuery({
     queryKey: ['client-activities', clientId],
@@ -62,6 +90,71 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
 
   // Fetch client events for social/wellbeing activities
   const { data: clientEvents = [], isLoading: eventsLoading } = useClientEvents(clientId);
+
+  const handleAddActivity = () => {
+    if (!activePlan) {
+      toast.error('No active care plan found. Please create a care plan first.');
+      return;
+    }
+    setSelectedCarePlanId(activePlan.id);
+    setDialogMode('add');
+    setSelectedActivity(undefined);
+    setDialogOpen(true);
+  };
+
+  const handleViewActivity = (activity: ClientActivity) => {
+    setDialogMode('view');
+    setSelectedActivity(activity);
+    setDialogOpen(true);
+  };
+
+  const handleEditActivity = (activity: ClientActivity) => {
+    setDialogMode('edit');
+    setSelectedActivity(activity);
+    setDialogOpen(true);
+  };
+
+  const handleDeleteActivity = (activityId: string) => {
+    setDeleteConfirmId(activityId);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirmId) return;
+    
+    const activity = activities.find(a => a.id === deleteConfirmId);
+    if (!activity) return;
+
+    deleteMutation.mutate(
+      { id: deleteConfirmId, carePlanId: activity.care_plan_id },
+      {
+        onSuccess: () => {
+          setDeleteConfirmId(null);
+        },
+      }
+    );
+  };
+
+  const handleSaveActivity = (formData: any) => {
+    if (dialogMode === 'add') {
+      createMutation.mutate(
+        { ...formData, care_plan_id: selectedCarePlanId },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+          },
+        }
+      );
+    } else if (dialogMode === 'edit' && selectedActivity) {
+      updateMutation.mutate(
+        { id: selectedActivity.id, updates: formData },
+        {
+          onSuccess: () => {
+            setDialogOpen(false);
+          },
+        }
+      );
+    }
+  };
 
   const getActivityTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -222,9 +315,15 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
       {/* Recent Activities */}
       <Card>
         <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
-          <div className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">Recent Activities</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">Recent Activities</CardTitle>
+            </div>
+            <Button size="sm" onClick={handleAddActivity}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Activity
+            </Button>
           </div>
           <CardDescription>Detailed activity participation records</CardDescription>
         </CardHeader>
@@ -246,6 +345,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
                   <TableHead>Frequency</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -260,6 +360,50 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
                     {getStatusBadge(activity.status)}
                   </TableCell>
                   <TableCell>{format(parseISO(activity.created_at), 'MMM dd, yyyy')}</TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewActivity(activity)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View details</TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditActivity(activity)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Edit activity</TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteActivity(activity.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Delete activity</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
+                  </TableCell>
                 </TableRow>
               ))}
               </TableBody>
@@ -317,6 +461,37 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Activity Dialog */}
+      <ClientActivityDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSave={handleSaveActivity}
+        mode={dialogMode}
+        activity={selectedActivity}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Activity?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this activity. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
