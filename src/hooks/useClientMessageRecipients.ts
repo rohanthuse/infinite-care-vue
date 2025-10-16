@@ -49,50 +49,40 @@ export const useClientMessageRecipients = (clientId: string) => {
         // 2. Get assigned carers for this client from bookings
         const { data: bookings, error: bookingsError } = await supabase
           .from('bookings')
-          .select(`
-            staff_id,
-            staff:staff_id (
-              id,
-              auth_user_id,
-              first_name,
-              last_name,
-              email
-            )
-          `)
+          .select('staff_id')
           .eq('client_id', clientId)
           .not('staff_id', 'is', null);
 
         if (!bookingsError && bookings) {
-          const uniqueCarerIds = new Set<string>();
-          bookings.forEach(booking => {
-            if (booking.staff_id && (booking.staff as any)?.auth_user_id) {
-              uniqueCarerIds.add((booking.staff as any).auth_user_id);
-            }
-          });
-
-          bookings.forEach(booking => {
-            const carer = booking.staff as any;
-            if (carer && carer.auth_user_id && uniqueCarerIds.has(carer.auth_user_id)) {
-              uniqueCarerIds.delete(carer.auth_user_id);
-              
-              const firstName = carer.first_name || '';
-              const lastName = carer.last_name || '';
-              const displayName = `${firstName} ${lastName}`.trim() || 
-                                 carer.email?.split('@')[0] || 
-                                 `Carer ${carer.id.slice(0, 8)}`;
-              
-              recipients.push({
-                id: carer.id,
-                auth_user_id: carer.auth_user_id,
-                name: displayName,
-                avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
-                type: 'assigned_carer',
-                email: carer.email,
-                canMessage: true,
-                groupLabel: 'Assigned Carers'
+          const staffIds = [...new Set(bookings.map(b => b.staff_id).filter(Boolean))];
+          
+          if (staffIds.length > 0) {
+            const { data: staffDetails, error: staffError } = await supabase
+              .from('staff')
+              .select('id, auth_user_id, first_name, last_name, email')
+              .in('id', staffIds);
+            
+            if (!staffError && staffDetails) {
+              staffDetails.forEach(carer => {
+                const firstName = carer.first_name || '';
+                const lastName = carer.last_name || '';
+                const displayName = `${firstName} ${lastName}`.trim() || 
+                                   carer.email?.split('@')[0] || 
+                                   `Carer ${carer.id.slice(0, 8)}`;
+                
+                recipients.push({
+                  id: carer.id,
+                  auth_user_id: carer.auth_user_id,
+                  name: displayName,
+                  avatar: `${firstName.charAt(0) || 'C'}${lastName.charAt(0) || 'R'}`,
+                  type: 'assigned_carer',
+                  email: carer.email,
+                  canMessage: true,
+                  groupLabel: 'Assigned Carers'
+                });
               });
             }
-          });
+          }
         }
 
         // 3. Get branch admins for this client's branch
@@ -121,26 +111,28 @@ export const useClientMessageRecipients = (clientId: string) => {
             const userIds = adminUsers.map((u: any) => u.user_id);
             
             if (userIds.length > 0) {
-              for (const userId of userIds) {
-                const { data: authUser } = await supabase.auth.admin.getUserById(userId);
-                
-                if (authUser?.user) {
-                  const admin = authUser.user;
-                  const displayName = admin.user_metadata?.first_name && admin.user_metadata?.last_name
-                    ? `${admin.user_metadata.first_name} ${admin.user_metadata.last_name}`
-                    : admin.email?.split('@')[0] || `Branch Admin ${admin.id.slice(0, 8)}`;
+              const { data: adminDetails, error: adminDetailsError } = await supabase
+                .rpc('get_admin_user_details', { user_ids: userIds });
+              
+              if (!adminDetailsError && adminDetails) {
+                adminDetails.forEach(admin => {
+                  const firstName = admin.first_name || '';
+                  const lastName = admin.last_name || '';
+                  const displayName = `${firstName} ${lastName}`.trim() || 
+                                     admin.email?.split('@')[0] || 
+                                     `Branch Admin ${admin.id.slice(0, 8)}`;
                   
                   recipients.push({
                     id: admin.id,
                     auth_user_id: admin.id,
                     name: displayName,
-                    avatar: `${(admin.user_metadata?.first_name || 'B').charAt(0)}${(admin.user_metadata?.last_name || 'A').charAt(0)}`,
+                    avatar: `${firstName.charAt(0) || 'B'}${lastName.charAt(0) || 'A'}`,
                     type: 'branch_admin',
                     email: admin.email,
                     canMessage: true,
                     groupLabel: 'Branch Admins'
                   });
-                }
+                });
               }
             }
           }
@@ -171,26 +163,28 @@ export const useClientMessageRecipients = (clientId: string) => {
             const superAdminIds = superAdminRoles.map((r: any) => r.user_id);
             
             if (superAdminIds.length > 0) {
-              for (const userId of superAdminIds) {
-                const { data: authUser } = await supabase.auth.admin.getUserById(userId);
-                
-                if (authUser?.user) {
-                  const admin = authUser.user;
-                  const displayName = admin.user_metadata?.first_name && admin.user_metadata?.last_name
-                    ? `${admin.user_metadata.first_name} ${admin.user_metadata.last_name}`
-                    : admin.email?.split('@')[0] || `Super Admin ${admin.id.slice(0, 8)}`;
+              const { data: adminDetails, error: adminDetailsError } = await supabase
+                .rpc('get_admin_user_details', { user_ids: superAdminIds });
+              
+              if (!adminDetailsError && adminDetails) {
+                adminDetails.forEach(admin => {
+                  const firstName = admin.first_name || '';
+                  const lastName = admin.last_name || '';
+                  const displayName = `${firstName} ${lastName}`.trim() || 
+                                     admin.email?.split('@')[0] || 
+                                     `Super Admin ${admin.id.slice(0, 8)}`;
                   
                   recipients.push({
                     id: admin.id,
                     auth_user_id: admin.id,
                     name: displayName,
-                    avatar: `${(admin.user_metadata?.first_name || 'S').charAt(0)}${(admin.user_metadata?.last_name || 'A').charAt(0)}`,
+                    avatar: `${firstName.charAt(0) || 'S'}${lastName.charAt(0) || 'A'}`,
                     type: 'super_admin',
                     email: admin.email,
                     canMessage: true,
                     groupLabel: 'Super Admins'
                   });
-                }
+                });
               }
             }
           }
