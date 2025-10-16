@@ -194,7 +194,7 @@ const ClientCarePlans = () => {
             {enhanceCarePlanData}
             <Card key={carePlan.id} className={`${requiresApproval ? 'border-orange-200 bg-orange-50/30' : 'border-gray-200'}`}>
               <CardHeader className="pb-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <CardTitle className="text-lg">{carePlan.title}</CardTitle>
@@ -217,610 +217,112 @@ const ClientCarePlans = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleOpenViewDialog(carePlan)}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                    {requiresApproval ? (
-                      <>
-                        <Button onClick={() => handleOpenApprovalDialog(carePlan)} className="bg-green-600 hover:bg-green-700">
-                          <PenTool className="h-4 w-4 mr-2" />
-                          Sign & Approve Care Plan
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => handleOpenChangeRequestDialog(carePlan)}
-                          className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
-                        </Button>
-                      </>
-                    ) : carePlan.status === 'approved' || carePlan.status === 'active' ? (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => handleOpenChangeRequestDialog(carePlan)}
-                        className={changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700" : ""}
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
-                      </Button>
-                    ) : null}
-                  </div>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-0">
                 {/* Action Required Notice for Approval */}
-                {requiresApproval && <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                {requiresApproval && <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg mb-6">
                     <div className="flex items-center gap-2 text-orange-800 mb-2">
                       <AlertCircle className="h-5 w-5" />
                       <span className="font-semibold">Your Approval Required</span>
                     </div>
                     <p className="text-sm text-orange-700 mb-3">
-                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections below including goals, medications, and activities, then click "Sign & Approve Care Plan" to provide your digital signature and approval.
+                      Your care team has prepared and approved this comprehensive care plan for you. Please review all sections, then click "Sign & Approve Care Plan" to provide your digital signature and approval.
                     </p>
                     <div className="text-xs text-orange-600 font-medium">
                       ✓ Plan reviewed by healthcare team  •  ⏳ Awaiting your signature
                     </div>
                   </div>}
 
-                {/* Care Plan Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm">
-                      Review: {carePlan.review_date ? new Date(carePlan.review_date).toLocaleDateString() : 'Not scheduled'}
-                    </span>
+                {/* Care Plan Summary Statistics */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-blue-800 text-sm">Goals</h4>
+                      <FileText className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-blue-900">{carePlan.goals?.length || 0}</p>
+                    <p className="text-xs text-blue-600 mt-1">Active goals</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">
-                      Provider: {carePlan.provider_name || 'Not assigned'}
-                    </span>
+                  
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-green-800 text-sm">Medications</h4>
+                      <FileText className="h-5 w-5 text-green-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-green-900">{carePlan.medications?.length || 0}</p>
+                    <p className="text-xs text-green-600 mt-1">Current medications</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm">
-                      Status: {carePlan.status?.replace('_', ' ') || 'Unknown'}
-                    </span>
+                  
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-purple-800 text-sm">Activities</h4>
+                      <FileText className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-purple-900">{carePlan.activities?.length || 0}</p>
+                    <p className="text-xs text-purple-600 mt-1">Scheduled activities</p>
+                  </div>
+                  
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-orange-800 text-sm">Risk Items</h4>
+                      <AlertCircle className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <p className="text-2xl font-bold text-orange-900">{carePlan.risk_assessments?.length || 0}</p>
+                    <p className="text-xs text-orange-600 mt-1">Risk assessments</p>
                   </div>
                 </div>
 
-                {/* Goals Progress */}
-                {carePlan.goals_progress !== undefined && <div className="mb-4">
-                    
-                    <Progress value={carePlan.goals_progress} className="h-2" />
-                  </div>}
+                {/* Next Review Date */}
+                {carePlan.review_date && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Next Review Date</p>
+                        <p className="text-sm text-gray-600">{new Date(carePlan.review_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                {/* Expandable Content */}
-                <Tabs defaultValue="summary" className="w-full">
-                  <TabsList className="grid grid-cols-5 w-full mb-2">
-                    <TabsTrigger value="summary">Summary</TabsTrigger>
-                    <TabsTrigger value="goals">Goals ({carePlan.goals?.length || 0})</TabsTrigger>
-                    <TabsTrigger value="medications">Medications ({carePlan.medications?.length || 0})</TabsTrigger>
-                    <TabsTrigger value="activities">Activities ({carePlan.activities?.length || 0})</TabsTrigger>
-                    <TabsTrigger value="personal">Personal</TabsTrigger>
-                  </TabsList>
-                  <TabsList className="grid grid-cols-5 w-full">
-                    <TabsTrigger value="medical">Medical</TabsTrigger>
-                    <TabsTrigger value="care">Personal Care</TabsTrigger>
-                    <TabsTrigger value="dietary">Dietary</TabsTrigger>
-                    <TabsTrigger value="services">Services ({(carePlan.service_plans?.length || 0) + (carePlan.service_actions?.length || 0)})</TabsTrigger>
-                    <TabsTrigger value="safety">Safety & Risk ({(carePlan.risk_assessments?.length || 0) + (carePlan.equipment?.length || 0)})</TabsTrigger>
-                  </TabsList>
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="w-full"
+                    onClick={() => handleOpenViewDialog(carePlan)}
+                  >
+                    <FileText className="h-5 w-5 mr-2" />
+                    View Details
+                  </Button>
                   
-                  <TabsContent value="summary" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <h4 className="font-medium text-blue-800 text-sm">Goals & Activities</h4>
-                          <p className="text-blue-600 text-xs">{carePlan.goals?.length || 0} goals • {carePlan.activities?.length || 0} activities</p>
-                          {carePlan.goals_progress !== undefined && (
-                            <div className="mt-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-blue-200 rounded-full h-1">
-                                  <div 
-                                    className="bg-blue-600 h-1 rounded-full" 
-                                    style={{ width: `${carePlan.goals_progress}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-xs text-blue-700">{carePlan.goals_progress}%</span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <h4 className="font-medium text-green-800 text-sm">Medical Care</h4>
-                          <p className="text-green-600 text-xs">{carePlan.medications?.length || 0} medications</p>
-                          {carePlan.medical_info && Object.keys(carePlan.medical_info).length > 0 && (
-                            <p className="text-green-600 text-xs mt-1">
-                              {carePlan.medical_info.conditions?.length || 0} conditions • 
-                              {carePlan.medical_info.allergies?.length || 0} allergies
-                            </p>
-                          )}
-                        </div>
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-                          <h4 className="font-medium text-purple-800 text-sm">Services</h4>
-                          <p className="text-purple-600 text-xs">{(carePlan.service_plans?.length || 0) + (carePlan.service_actions?.length || 0)} service items</p>
-                          {carePlan.personal_care && Object.keys(carePlan.personal_care).length > 0 && (
-                            <p className="text-purple-600 text-xs mt-1">Personal care plan available</p>
-                          )}
-                        </div>
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                          <h4 className="font-medium text-orange-800 text-sm">Safety & Risk</h4>
-                          <p className="text-orange-600 text-xs">{carePlan.risk_assessments?.length || 0} risk assessments • {carePlan.equipment?.length || 0} equipment items</p>
-                          {carePlan.dietary_requirements && Object.keys(carePlan.dietary_requirements).length > 0 && (
-                            <p className="text-orange-600 text-xs mt-1">Dietary requirements documented</p>
-                          )}
-                        </div>
-                      </div>
-                      {/* Care Team Information */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 className="font-medium text-blue-800 text-sm mb-2">Care Team</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-sm font-medium text-blue-700">Primary Care Provider</p>
-                            <p className="text-blue-600 text-sm">{carePlan.provider_name || 'Not assigned'}</p>
-                            {carePlan.staff && (
-                              <p className="text-blue-500 text-xs">
-                                Assigned Carer: {carePlan.staff.first_name} {carePlan.staff.last_name}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-blue-700">Plan Details</p>
-                            <p className="text-blue-600 text-xs">ID: {carePlan.display_id}</p>
-                            <p className="text-blue-600 text-xs">Created: {new Date(carePlan.created_at).toLocaleDateString()}</p>
-                            {(carePlan as any).finalized_at && (
-                              <p className="text-blue-600 text-xs">Finalized: {new Date((carePlan as any).finalized_at).toLocaleDateString()}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                  {requiresApproval && (
+                    <Button 
+                      size="lg"
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={() => handleOpenApprovalDialog(carePlan)}
+                    >
+                      <PenTool className="h-5 w-5 mr-2" />
+                      Sign & Approve Care Plan
+                    </Button>
+                  )}
+                  
+                  {(requiresApproval || carePlan.status === 'approved' || carePlan.status === 'active') && (
+                    <Button 
+                      variant="outline" 
+                      size="lg"
+                      className={`w-full ${changeRequestInfo.hasRequest ? "border-amber-300 text-amber-700 hover:bg-amber-50" : ""}`}
+                      onClick={() => handleOpenChangeRequestDialog(carePlan)}
+                    >
+                      <MessageSquare className="h-5 w-5 mr-2" />
+                      {changeRequestInfo.hasRequest ? "Changes Requested" : "Need to Add Some Changes"}
+                    </Button>
+                  )}
+                </div>
 
-                      {carePlan.notes && <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                          <h4 className="font-medium text-gray-800 text-sm mb-2">Care Plan Notes</h4>
-                          <p className="text-gray-600 text-sm">{carePlan.notes}</p>
-                        </div>}
-                      {carePlan.documents && carePlan.documents.length > 0 && <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <h4 className="font-medium text-blue-800 text-sm mb-2">Documents ({carePlan.documents.length})</h4>
-                          <div className="space-y-2">
-                            {carePlan.documents.slice(0, 3).map((doc: any) => <div key={doc.id} className="flex items-center justify-between text-sm">
-                                <span className="text-blue-600">{doc.document_name || doc.document_type}</span>
-                                <span className={`px-2 py-1 rounded-full text-xs ${doc.consent_given ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                  {doc.consent_given ? 'Signed' : 'Pending'}
-                                </span>
-                              </div>)}
-                            {carePlan.documents.length > 3 && <p className="text-blue-600 text-xs">+ {carePlan.documents.length - 3} more documents</p>}
-                          </div>
-                        </div>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="goals" className="mt-4">
-                    <div className="space-y-3">
-                      {carePlan.goals && carePlan.goals.length > 0 ? carePlan.goals.map(goal => <div key={goal.id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <h5 className="font-medium text-sm">{goal.description}</h5>
-                              {renderGoalStatus(goal.status)}
-                            </div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="flex-1">
-                                <Progress value={goal.progress || 0} className="h-2" />
-                              </div>
-                              <span className="text-xs font-medium">{goal.progress || 0}%</span>
-                            </div>
-                            {goal.notes && <p className="text-xs text-gray-600 mt-1">{goal.notes}</p>}
-                          </div>) : <p className="text-gray-500 text-sm">No goals defined for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="medications" className="mt-4">
-                    <div className="space-y-3">
-                      {carePlan.medications && carePlan.medications.length > 0 ? carePlan.medications.map(med => <div key={med.id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <div className="flex-1">
-                                <h5 className="font-medium text-sm">{med.name}</h5>
-                                <p className="text-xs text-gray-600 mt-1">{med.dosage} • {med.frequency}</p>
-                              </div>
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                {med.status}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-2">
-                              Start: {new Date(med.start_date).toLocaleDateString()}
-                              {med.end_date && <span> • End: {new Date(med.end_date).toLocaleDateString()}</span>}
-                            </div>
-                          </div>) : <p className="text-gray-500 text-sm">No medications defined for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="activities" className="mt-4">
-                    <div className="space-y-3">
-                      {carePlan.activities && carePlan.activities.length > 0 ? carePlan.activities.map(activity => <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <h5 className="font-medium text-sm">{activity.name}</h5>
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                                {activity.status}
-                              </span>
-                            </div>
-                            {activity.description && <p className="text-xs text-gray-600 mb-2">{activity.description}</p>}
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                {activity.frequency}
-                              </span>
-                            </div>
-                          </div>) : <p className="text-gray-500 text-sm">No activities defined for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="personal" className="mt-4">
-                    <div className="space-y-4">
-                      {/* Basic Details Section */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <h4 className="font-medium text-blue-800 mb-3">Basic Details</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <div>
-                            <p className="text-xs text-gray-600">Date of Birth</p>
-                            <p className="text-sm">{carePlan.personal_info?.date_of_birth ? new Date(carePlan.personal_info.date_of_birth).toLocaleDateString() : 'Not available'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-600">Phone</p>
-                            <p className="text-sm">{carePlan.personal_info?.phone || 'Not available'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-600">Email</p>
-                            <p className="text-sm">{carePlan.personal_info?.email || 'Not available'}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-600">Address</p>
-                            <p className="text-sm">{carePlan.personal_info?.address || 'Not available'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* About Me Section */}
-                      {carePlan.about_me && Object.keys(carePlan.about_me).some(key => carePlan.about_me[key]) && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                          <h4 className="font-medium text-green-800 mb-3">About Me</h4>
-                          <div className="space-y-2">
-                            {carePlan.about_me.hobbies && <p className="text-sm"><span className="font-medium text-green-700">Hobbies:</span> {carePlan.about_me.hobbies}</p>}
-                            {carePlan.about_me.personality && <p className="text-sm"><span className="font-medium text-green-700">Personality:</span> {carePlan.about_me.personality}</p>}
-                            {carePlan.about_me.family_info && <p className="text-sm"><span className="font-medium text-green-700">Family:</span> {carePlan.about_me.family_info}</p>}
-                            {carePlan.about_me.social_preferences && <p className="text-sm"><span className="font-medium text-green-700">Social Preferences:</span> {carePlan.about_me.social_preferences}</p>}
-                            {carePlan.about_me.background && <p className="text-sm"><span className="font-medium text-green-700">Background:</span> {carePlan.about_me.background}</p>}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Preferences Section */}
-                      {carePlan.personal_info && (carePlan.personal_info.preferred_communication || carePlan.personal_info.cultural_preferences || carePlan.personal_info.language_preferences || carePlan.personal_info.religion || carePlan.personal_info.marital_status) && (
-                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                          <h4 className="font-medium text-purple-800 mb-3">Preferences & Cultural Information</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {carePlan.personal_info.preferred_communication && (
-                              <div>
-                                <p className="text-xs text-gray-600">Preferred Communication</p>
-                                <p className="text-sm">{carePlan.personal_info.preferred_communication}</p>
-                              </div>
-                            )}
-                            {carePlan.personal_info.cultural_preferences && (
-                              <div>
-                                <p className="text-xs text-gray-600">Cultural Preferences</p>
-                                <p className="text-sm">{carePlan.personal_info.cultural_preferences}</p>
-                              </div>
-                            )}
-                            {carePlan.personal_info.language_preferences && (
-                              <div>
-                                <p className="text-xs text-gray-600">Language Preferences</p>
-                                <p className="text-sm">{carePlan.personal_info.language_preferences}</p>
-                              </div>
-                            )}
-                            {carePlan.personal_info.religion && (
-                              <div>
-                                <p className="text-xs text-gray-600">Religion</p>
-                                <p className="text-sm">{carePlan.personal_info.religion}</p>
-                              </div>
-                            )}
-                            {carePlan.personal_info.marital_status && (
-                              <div>
-                                <p className="text-xs text-gray-600">Marital Status</p>
-                                <p className="text-sm">{carePlan.personal_info.marital_status}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Contact Information */}
-                      {carePlan.personal_info && Object.keys(carePlan.personal_info).length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {carePlan.personal_info.emergency_contact_name && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Emergency Contact</h5>
-                              <p className="text-sm">{carePlan.personal_info.emergency_contact_name}</p>
-                              {carePlan.personal_info.emergency_contact_phone && <p className="text-xs text-gray-600">Phone: {carePlan.personal_info.emergency_contact_phone}</p>}
-                              {carePlan.personal_info.emergency_contact_relationship && <p className="text-xs text-gray-600">Relationship: {carePlan.personal_info.emergency_contact_relationship}</p>}
-                            </div>}
-                          {carePlan.personal_info.next_of_kin_name && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Next of Kin</h5>
-                              <p className="text-sm">{carePlan.personal_info.next_of_kin_name}</p>
-                              {carePlan.personal_info.next_of_kin_phone && <p className="text-xs text-gray-600">Phone: {carePlan.personal_info.next_of_kin_phone}</p>}
-                              {carePlan.personal_info.next_of_kin_relationship && <p className="text-xs text-gray-600">Relationship: {carePlan.personal_info.next_of_kin_relationship}</p>}
-                            </div>}
-                          {carePlan.personal_info.gp_name && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">GP Information</h5>
-                              <p className="text-sm">{carePlan.personal_info.gp_name}</p>
-                              {carePlan.personal_info.gp_practice && <p className="text-xs text-gray-600">Practice: {carePlan.personal_info.gp_practice}</p>}
-                              {carePlan.personal_info.gp_phone && <p className="text-xs text-gray-600">Phone: {carePlan.personal_info.gp_phone}</p>}
-                            </div>}
-                        </div> : <p className="text-gray-500 text-sm">No personal information available for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="medical" className="mt-4">
-                    <div className="space-y-4">
-                      {carePlan.medical_info && Object.keys(carePlan.medical_info).length > 0 ? <div className="space-y-4">
-                          {carePlan.medical_info.medical_conditions && Array.isArray(carePlan.medical_info.medical_conditions) && carePlan.medical_info.medical_conditions.length > 0 && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Medical Conditions</h5>
-                              <div className="space-y-2">
-                                {carePlan.medical_info.medical_conditions.map((condition: any, index: number) => <div key={index} className="bg-gray-50 rounded p-2">
-                                    <p className="text-sm font-medium">{condition.condition}</p>
-                                    {condition.diagnosed_date && <p className="text-xs text-gray-600">Diagnosed: {condition.diagnosed_date}</p>}
-                                    {condition.severity && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                                        {condition.severity}
-                                      </span>}
-                                  </div>)}
-                              </div>
-                            </div>}
-                          
-                          {carePlan.medical_info.allergies && Array.isArray(carePlan.medical_info.allergies) && carePlan.medical_info.allergies.length > 0 && <div className="border border-red-200 rounded-lg p-4 bg-red-50">
-                              <h5 className="font-medium text-sm mb-2 text-red-800">Allergies & Reactions</h5>
-                              <div className="space-y-2">
-                                {carePlan.medical_info.allergies.map((allergy: any, index: number) => <div key={index} className="bg-white rounded p-2 border border-red-100">
-                                    <p className="text-sm font-medium text-red-800">{allergy.allergen}</p>
-                                    {allergy.reaction && <p className="text-xs text-red-600">Reaction: {allergy.reaction}</p>}
-                                    {allergy.severity && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                                        {allergy.severity}
-                                      </span>}
-                                  </div>)}
-                              </div>
-                            </div>}
-
-                          {carePlan.medical_info.mobility_status && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Mobility Status</h5>
-                              <p className="text-sm">{carePlan.medical_info.mobility_status}</p>
-                              {carePlan.medical_info.mobility_aids && <p className="text-xs text-gray-600 mt-1">Aids: {carePlan.medical_info.mobility_aids}</p>}
-                            </div>}
-
-                          {carePlan.medical_info.mental_health_status && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Mental Health</h5>
-                              <p className="text-sm">{carePlan.medical_info.mental_health_status}</p>
-                            </div>}
-
-                          {carePlan.dietary_requirements && Object.keys(carePlan.dietary_requirements).length > 0 && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Dietary Requirements</h5>
-                              {carePlan.dietary_requirements.dietary_restrictions && <p className="text-sm mb-1">Restrictions: {carePlan.dietary_requirements.dietary_restrictions}</p>}
-                              {carePlan.dietary_requirements.food_allergies && <p className="text-sm mb-1">Food Allergies: {carePlan.dietary_requirements.food_allergies}</p>}
-                              {carePlan.dietary_requirements.texture_preference && <p className="text-sm mb-1">Texture Preference: {carePlan.dietary_requirements.texture_preference}</p>}
-                              {carePlan.dietary_requirements.nutritional_supplements && <p className="text-sm">Supplements: {carePlan.dietary_requirements.nutritional_supplements}</p>}
-                            </div>}
-
-                          {carePlan.risk_assessments && Array.isArray(carePlan.risk_assessments) && carePlan.risk_assessments.length > 0 && <div className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
-                              <h5 className="font-medium text-sm mb-2 text-yellow-800">Risk Assessments</h5>
-                              <div className="space-y-2">
-                                {carePlan.risk_assessments.map((risk: any, index: number) => <div key={index} className="bg-white rounded p-2 border border-yellow-100">
-                                    <p className="text-sm font-medium">{risk.risk_factor}</p>
-                                    {risk.likelihood && <p className="text-xs text-gray-600">Likelihood: {risk.likelihood}</p>}
-                                    {risk.mitigation_strategies && <p className="text-xs text-gray-600">Mitigation: {risk.mitigation_strategies}</p>}
-                                  </div>)}
-                              </div>
-                            </div>}
-                        </div> : <p className="text-gray-500 text-sm">No medical information available for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="care" className="mt-4">
-                    <div className="space-y-4">
-                      {carePlan.personal_care && Object.keys(carePlan.personal_care).length > 0 ? <div className="space-y-4">
-                          {carePlan.personal_care.bathing_preferences && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Bathing Preferences</h5>
-                              <p className="text-sm">{carePlan.personal_care.bathing_preferences}</p>
-                            </div>}
-                          {carePlan.personal_care.assistance_level && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Assistance Level</h5>
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                {carePlan.personal_care.assistance_level}
-                              </span>
-                            </div>}
-                          {carePlan.personal_care.behavioral_notes && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Behavioral Notes</h5>
-                              <p className="text-sm">{carePlan.personal_care.behavioral_notes}</p>
-                            </div>}
-                          {carePlan.personal_care.comfort_measures && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Comfort Measures</h5>
-                              <p className="text-sm">{carePlan.personal_care.comfort_measures}</p>
-                            </div>}
-                        </div> : <p className="text-gray-500 text-sm">No personal care information available for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="dietary" className="mt-4">
-                    <div className="space-y-4">
-                      {carePlan.dietary_requirements && Object.keys(carePlan.dietary_requirements).length > 0 ? <div className="space-y-4">
-                          {carePlan.dietary_requirements.dietary_restrictions && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Dietary Restrictions</h5>
-                              <p className="text-sm">{carePlan.dietary_requirements.dietary_restrictions}</p>
-                            </div>}
-                          {carePlan.dietary_requirements.food_allergies && <div className="border border-red-200 rounded-lg p-4 bg-red-50">
-                              <h5 className="font-medium text-sm mb-2 text-red-800">Food Allergies</h5>
-                              <p className="text-sm text-red-700">{carePlan.dietary_requirements.food_allergies}</p>
-                            </div>}
-                          {carePlan.dietary_requirements.food_preferences && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Food Preferences</h5>
-                              <p className="text-sm">{carePlan.dietary_requirements.food_preferences}</p>
-                            </div>}
-                          {carePlan.dietary_requirements.texture_preference && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Texture Requirements</h5>
-                              <p className="text-sm">{carePlan.dietary_requirements.texture_preference}</p>
-                            </div>}
-                          {carePlan.dietary_requirements.special_equipment && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Special Equipment</h5>
-                              <p className="text-sm">{carePlan.dietary_requirements.special_equipment}</p>
-                            </div>}
-                          {carePlan.dietary_requirements.nutritional_supplements && <div className="border border-gray-200 rounded-lg p-4">
-                              <h5 className="font-medium text-sm mb-2">Nutritional Supplements</h5>
-                              <p className="text-sm">{carePlan.dietary_requirements.nutritional_supplements}</p>
-                            </div>}
-                        </div> : <p className="text-gray-500 text-sm">No dietary requirements specified for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="services" className="mt-4">
-                    <div className="space-y-4">
-                      {/* Service Plans */}
-                      {carePlan.service_plans && carePlan.service_plans.length > 0 && <div>
-                          <h4 className="font-medium text-sm mb-3 text-purple-800">Service Plans ({carePlan.service_plans.length})</h4>
-                          <div className="space-y-3">
-                            {carePlan.service_plans.map((plan: any) => <div key={plan.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h5 className="font-medium text-sm">{plan.service_name}</h5>
-                                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-                                    {plan.service_category}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
-                                  <p>Provider: {plan.provider_name}</p>
-                                  <p>Frequency: {plan.frequency}</p>
-                                  <p>Duration: {plan.duration}</p>
-                                  <p>Start: {plan.start_date ? new Date(plan.start_date).toLocaleDateString() : 'Not specified'}</p>
-                                </div>
-                                {plan.goals && plan.goals.length > 0 && <div className="mt-2">
-                                    <p className="text-xs font-medium text-gray-700">Goals:</p>
-                                    <ul className="text-xs text-gray-600 list-disc list-inside">
-                                      {plan.goals.map((goal: string, index: number) => <li key={index}>{goal}</li>)}
-                                    </ul>
-                                  </div>}
-                                {plan.notes && <p className="text-xs text-gray-600 mt-2">{plan.notes}</p>}
-                              </div>)}
-                          </div>
-                        </div>}
-
-                      {/* Service Actions */}
-                      {carePlan.service_actions && carePlan.service_actions.length > 0 && <div>
-                          <h4 className="font-medium text-sm mb-3 text-blue-800">Service Actions ({carePlan.service_actions.length})</h4>
-                          <div className="space-y-3">
-                            {carePlan.service_actions.map((action: any) => <div key={action.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h5 className="font-medium text-sm">{action.service_name}</h5>
-                                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                    {action.status}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
-                                  <p>Category: {action.service_category}</p>
-                                  <p>Provider: {action.provider_name}</p>
-                                  <p>Frequency: {action.frequency}</p>
-                                  <p>Duration: {action.duration}</p>
-                                </div>
-                                {action.objectives && <div className="mt-2">
-                                    <p className="text-xs font-medium text-gray-700">Objectives:</p>
-                                    <p className="text-xs text-gray-600">{action.objectives}</p>
-                                  </div>}
-                                {action.schedule_notes && <p className="text-xs text-gray-600 mt-2">Schedule: {action.schedule_notes}</p>}
-                              </div>)}
-                          </div>
-                        </div>}
-
-                      {(!carePlan.service_plans || carePlan.service_plans.length === 0) && (!carePlan.service_actions || carePlan.service_actions.length === 0) && <p className="text-gray-500 text-sm">No services specified for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="safety" className="mt-4">
-                    <div className="space-y-4">
-                      {/* Risk Assessments */}
-                      {carePlan.risk_assessments && carePlan.risk_assessments.length > 0 && <div>
-                          <h4 className="font-medium text-sm mb-3 text-orange-800">Risk Assessments ({carePlan.risk_assessments.length})</h4>
-                          <div className="space-y-3">
-                            {carePlan.risk_assessments.map((risk: any) => <div key={risk.id} className="border border-orange-200 rounded-lg p-4 bg-orange-50">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h5 className="font-medium text-sm">{risk.risk_type}</h5>
-                                  <span className={`text-xs px-2 py-1 rounded-full ${risk.risk_level === 'high' ? 'bg-red-100 text-red-800' : risk.risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-                                    {risk.risk_level} risk
-                                  </span>
-                                </div>
-                                {risk.risk_factors && risk.risk_factors.length > 0 && <div className="mb-2">
-                                    <p className="text-xs font-medium text-gray-700">Risk Factors:</p>
-                                    <ul className="text-xs text-gray-600 list-disc list-inside">
-                                      {risk.risk_factors.map((factor: string, index: number) => <li key={index}>{factor}</li>)}
-                                    </ul>
-                                  </div>}
-                                {risk.mitigation_strategies && risk.mitigation_strategies.length > 0 && <div className="mb-2">
-                                    <p className="text-xs font-medium text-gray-700">Mitigation Strategies:</p>
-                                    <ul className="text-xs text-gray-600 list-disc list-inside">
-                                      {risk.mitigation_strategies.map((strategy: string, index: number) => <li key={index}>{strategy}</li>)}
-                                    </ul>
-                                  </div>}
-                                <div className="text-xs text-gray-500">
-                                  Assessed: {risk.assessment_date ? new Date(risk.assessment_date).toLocaleDateString() : 'Not specified'}
-                                  {risk.next_review_date && <span> • Next review: {new Date(risk.next_review_date).toLocaleDateString()}</span>}
-                                </div>
-                              </div>)}
-                          </div>
-                        </div>}
-
-                      {/* Equipment */}
-                      {carePlan.equipment && carePlan.equipment.length > 0 && <div>
-                          <h4 className="font-medium text-sm mb-3 text-gray-800">Equipment ({carePlan.equipment.length})</h4>
-                          <div className="space-y-3">
-                            {carePlan.equipment.map((item: any) => <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h5 className="font-medium text-sm">{item.equipment_name}</h5>
-                                  <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
-                                    {item.status}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600">
-                                  <p>Type: {item.equipment_type}</p>
-                                  <p>Location: {item.location}</p>
-                                  {item.manufacturer && <p>Manufacturer: {item.manufacturer}</p>}
-                                  {item.model && <p>Model: {item.model}</p>}
-                                  {item.serial_number && <p>Serial: {item.serial_number}</p>}
-                                  {item.installation_date && <p>Installed: {new Date(item.installation_date).toLocaleDateString()}</p>}
-                                </div>
-                                {item.maintenance_schedule && <p className="text-xs text-gray-600 mt-2">Maintenance: {item.maintenance_schedule}</p>}
-                                {item.next_maintenance && <p className="text-xs text-orange-600 mt-1">
-                                    Next maintenance: {new Date(item.next_maintenance).toLocaleDateString()}
-                                  </p>}
-                              </div>)}
-                          </div>
-                        </div>}
-
-                      {/* Documents Section in Safety Tab */}
-                      {carePlan.documents && carePlan.documents.length > 0 && <div>
-                          <h4 className="font-medium text-sm mb-3 text-blue-800">Documents & Consents ({carePlan.documents.length})</h4>
-                          <div className="space-y-3">
-                            {carePlan.documents.map((doc: any) => <div key={doc.id} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h5 className="font-medium text-sm">{doc.document_name || doc.document_type}</h5>
-                                  <span className={`text-xs px-2 py-1 rounded-full ${doc.consent_given ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                    {doc.consent_given ? 'Signed' : 'Pending'}
-                                  </span>
-                                </div>
-                                {doc.consent_date && <p className="text-xs text-gray-600">Signed on: {new Date(doc.consent_date).toLocaleDateString()}</p>}
-                                {doc.witness_name && <p className="text-xs text-gray-600">Witnessed by: {doc.witness_name}</p>}
-                                {doc.notes && <p className="text-xs text-gray-600 mt-1">{doc.notes}</p>}
-                              </div>)}
-                          </div>
-                        </div>}
-
-                      {(!carePlan.risk_assessments || carePlan.risk_assessments.length === 0) && (!carePlan.equipment || carePlan.equipment.length === 0) && (!carePlan.documents || carePlan.documents.length === 0) && <p className="text-gray-500 text-sm">No safety information or equipment specified for this care plan.</p>}
-                    </div>
-                  </TabsContent>
-                </Tabs>
               </CardContent>
             </Card>
           </>
