@@ -8,6 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Check, X, AlertCircle } from "lucide-react";
 
 interface SuspensionRecord {
   id: string;
@@ -40,6 +43,13 @@ export const SuspensionDetailsDialog: React.FC<SuspensionDetailsDialogProps> = (
     return format(new Date(dateString), "dd/MM/yyyy HH:mm");
   };
 
+  const isActiveSuspension = (effectiveFrom: string, effectiveUntil?: string) => {
+    const now = new Date();
+    const from = new Date(effectiveFrom);
+    const until = effectiveUntil ? new Date(effectiveUntil) : null;
+    return from <= now && (!until || until > now);
+  };
+
   const getStatusBadge = (action: string) => {
     switch (action) {
       case "suspend":
@@ -51,9 +61,25 @@ export const SuspensionDetailsDialog: React.FC<SuspensionDetailsDialogProps> = (
     }
   };
 
+  const getImpactBadge = (value: boolean) => {
+    return value ? (
+      <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+        <Check className="h-3 w-3 mr-1" />
+        Yes
+      </Badge>
+    ) : (
+      <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
+        <X className="h-3 w-3 mr-1" />
+        No
+      </Badge>
+    );
+  };
+
+  const isActive = isActiveSuspension(suspension.effective_from, suspension.effective_until);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             Suspension Details
@@ -62,6 +88,16 @@ export const SuspensionDetailsDialog: React.FC<SuspensionDetailsDialogProps> = (
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Active Suspension Alert */}
+          {isActive && suspension.action === "suspend" && (
+            <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                This suspension is currently <strong>ACTIVE</strong> and affecting the client.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -112,6 +148,39 @@ export const SuspensionDetailsDialog: React.FC<SuspensionDetailsDialogProps> = (
 
           <Separator />
 
+          {/* Suspension Impact Section */}
+          {suspension.action === "suspend" && (
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Suspension Impact</h4>
+              <Card className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Visits Blocked:</span>
+                    {getImpactBadge(suspension.apply_to?.visits !== false)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Service Actions Blocked:</span>
+                    {getImpactBadge(suspension.apply_to?.serviceActions !== false)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Remove from Invoice:</span>
+                    {getImpactBadge(suspension.apply_to?.billing === false)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Messaging Blocked:</span>
+                    {getImpactBadge(suspension.apply_to?.messaging !== false)}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Staff Payment Protected:</span>
+                    {getImpactBadge(suspension.notify?.carers === true)}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          <Separator />
+
           {/* Created Information */}
           <div>
             <label className="text-sm font-medium text-muted-foreground">
@@ -119,29 +188,6 @@ export const SuspensionDetailsDialog: React.FC<SuspensionDetailsDialogProps> = (
             </label>
             <p className="text-sm">{formatDate(suspension.created_at)}</p>
           </div>
-
-          {/* Apply To Information (if available) */}
-          {suspension.apply_to && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Applied To
-              </label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {suspension.apply_to.visits && (
-                  <Badge variant="outline">Visits</Badge>
-                )}
-                {suspension.apply_to.serviceActions && (
-                  <Badge variant="outline">Service Actions</Badge>
-                )}
-                {suspension.apply_to.billing && (
-                  <Badge variant="outline">Billing</Badge>
-                )}
-                {suspension.apply_to.messaging && (
-                  <Badge variant="outline">Messaging</Badge>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Attachments (if any) */}
           {suspension.attachments && suspension.attachments.length > 0 && (
