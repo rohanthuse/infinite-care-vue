@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Pill, Clock, Calendar, AlertTriangle, CheckCircle, Plus, Eye, Edit, Trash } from "lucide-react";
 import { useMedicationsByClient, useDeleteMedication } from "@/hooks/useMedications";
 import { useMARByClient } from "@/hooks/useMedicationAdministration";
@@ -182,41 +183,54 @@ export const ClientMedicationsTab: React.FC<ClientMedicationsTabProps> = ({ clie
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setDialogMode('view');
-                              setSelectedMedicationForDialog(medication);
-                            }}
-                            className="gap-1"
-                          >
-                            <Eye className="h-3 w-3" />
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setDialogMode('edit');
-                              setSelectedMedicationForDialog(medication);
-                            }}
-                            className="gap-1"
-                          >
-                            <Edit className="h-3 w-3" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setDeleteConfirmationId(medication.id)}
-                            className="gap-1"
-                          >
-                            <Trash className="h-3 w-3" />
-                            Delete
-                          </Button>
-                        </div>
+                        <TooltipProvider>
+                          <div className="flex justify-end gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setDialogMode('view');
+                                    setSelectedMedicationForDialog(medication);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View details</TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setDialogMode('edit');
+                                    setSelectedMedicationForDialog(medication);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit medication</TooltipContent>
+                            </Tooltip>
+                            
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setDeleteConfirmationId(medication.id)}
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete medication</TooltipContent>
+                            </Tooltip>
+                          </div>
+                        </TooltipProvider>
                       </TableCell>
                     </TableRow>
                   );
