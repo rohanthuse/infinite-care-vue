@@ -98,7 +98,9 @@ export function ClientMedicationDialog({
         }
       } else {
         // Add mode - auto-select care plan if only one exists
-        const activeCarePlans = carePlans.filter((cp: any) => cp.status === 'confirmed');
+        const activeCarePlans = carePlans.filter((cp: any) => 
+          cp.status === 'active' || cp.status === 'approved'
+        );
         form.reset({
           care_plan_id: activeCarePlans.length === 1 ? activeCarePlans[0].id : "",
           name: "",
@@ -143,7 +145,9 @@ export function ClientMedicationDialog({
     }
   };
 
-  const activeCarePlans = carePlans.filter((cp: any) => cp.status === 'confirmed');
+  const activeCarePlans = carePlans.filter((cp: any) => 
+    cp.status === 'active' || cp.status === 'approved'
+  );
   const hasNoCarePlans = activeCarePlans.length === 0;
   const isViewMode = mode === 'view';
   const isLoading = createMedication.isPending || updateMedication.isPending;
