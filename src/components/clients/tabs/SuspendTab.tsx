@@ -161,9 +161,27 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
   };
 
   const handleView = (suspension: any) => {
+    console.log('[SuspendTab] Opening suspension details:', suspension.id);
     setViewingSuspension(suspension);
     setShowViewDialog(true);
   };
+
+  const handleViewDialogClose = (open: boolean) => {
+    console.log('[SuspendTab] Dialog state changing to:', open);
+    setShowViewDialog(open);
+    if (!open) {
+      console.log('[SuspendTab] Clearing viewingSuspension');
+      setViewingSuspension(null);
+    }
+  };
+
+  // Cleanup effect to ensure no lingering scroll locks
+  React.useEffect(() => {
+    return () => {
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('pointer-events');
+    };
+  }, [showViewDialog]);
 
   const handleEdit = (suspension: any) => {
     setIsEditMode(true);
@@ -487,7 +505,7 @@ export const SuspendTab: React.FC<SuspendTabProps> = ({ clientId }) => {
       <SuspensionDetailsDialog
         suspension={viewingSuspension}
         open={showViewDialog}
-        onOpenChange={setShowViewDialog}
+        onOpenChange={handleViewDialogClose}
       />
 
       <ConfirmDeleteDialog

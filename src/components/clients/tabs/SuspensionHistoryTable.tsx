@@ -179,7 +179,12 @@ export const SuspensionHistoryTable: React.FC<SuspensionHistoryTableProps> = ({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onView(suspension)}>
+                        <DropdownMenuItem 
+                          onClick={() => {
+                            // Close dropdown first, then open dialog
+                            setTimeout(() => onView(suspension), 0);
+                          }}
+                        >
                           <Eye className="mr-2 h-4 w-4" />
                           View
                         </DropdownMenuItem>

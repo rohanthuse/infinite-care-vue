@@ -37,7 +37,14 @@ export const SuspensionDetailsDialog: React.FC<SuspensionDetailsDialogProps> = (
   open,
   onOpenChange,
 }) => {
-  if (!suspension) return null;
+  console.log('[SuspensionDetailsDialog] Rendering with:', { 
+    open, 
+    hasSuspension: !!suspension,
+    suspensionId: suspension?.id 
+  });
+
+  // Defensive check: don't render if no suspension or dialog not open
+  if (!suspension || !open) return null;
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd/MM/yyyy HH:mm");

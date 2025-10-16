@@ -309,6 +309,15 @@ export const useUpdateSuspension = () => {
         queryKey: ["suspension-history", variables.clientId],
       });
     },
+    onError: (error, variables) => {
+      console.error('[useUpdateSuspension] Error during update:', error);
+      // Clear stale queries on error to prevent UI freeze
+      queryClient.invalidateQueries({
+        queryKey: ["suspension-history", variables.clientId],
+      });
+    },
+    // Add retry with exponential backoff
+    retry: 1,
   });
 };
 
