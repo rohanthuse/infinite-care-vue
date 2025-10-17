@@ -11,6 +11,7 @@ import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
 import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
+import { InvoicePeriodSelector } from './InvoicePeriodSelector';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
 import { ReportExporter } from '@/utils/reportExporter';
@@ -39,6 +40,12 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [isViewPaymentOpen, setIsViewPaymentOpen] = useState(false);
   const [showClientSelectionForInvoice, setShowClientSelectionForInvoice] = useState(false);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
+  const [isInvoicePeriodOpen, setIsInvoicePeriodOpen] = useState(false);
+  const [selectedInvoicePeriod, setSelectedInvoicePeriod] = useState<{
+    type: 'weekly' | 'fortnightly' | 'monthly';
+    startDate: string;
+    endDate: string;
+  } | null>(null);
   
   const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
   
@@ -110,9 +117,21 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     setIsViewPaymentOpen(true);
   };
 
-  // Handler for creating invoice - now opens enhanced flow
+  // Handler for creating invoice - now opens period selector first
   const handleCreateInvoice = () => {
-    // Always show client selection for the enhanced billing flow
+    // First open period selection dialog
+    setIsInvoicePeriodOpen(true);
+  };
+
+  // Handler for period selection
+  const handleInvoicePeriodSelect = (periodDetails: {
+    type: 'weekly' | 'fortnightly' | 'monthly';
+    startDate: string;
+    endDate: string;
+  }) => {
+    setSelectedInvoicePeriod(periodDetails);
+    setIsInvoicePeriodOpen(false);
+    // After period is selected, show client selection
     setShowClientSelectionForInvoice(true);
   };
 
@@ -351,6 +370,13 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         </TabsContent>
       </Tabs>
 
+      {/* Invoice Period Selector */}
+      <InvoicePeriodSelector
+        isOpen={isInvoicePeriodOpen}
+        onClose={() => setIsInvoicePeriodOpen(false)}
+        onPeriodSelect={handleInvoicePeriodSelect}
+      />
+
       {/* Invoice Creation/Edit Dialog */}
       <EnhancedCreateInvoiceDialog
         isOpen={isCreateInvoiceOpen || isEditInvoiceOpen}
@@ -359,11 +385,13 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
           setIsEditInvoiceOpen(false);
           setSelectedClientId('');
           setSelectedInvoiceForEdit('');
+          setSelectedInvoicePeriod(null);
         }}
         branchId={branchId!}
         organizationId={organizationId || ''}
         preSelectedClientId={selectedClientId}
         invoiceId={selectedInvoiceForEdit || undefined}
+        invoicePeriod={selectedInvoicePeriod || undefined}
       />
 
       {/* Record Payment Dialog */}

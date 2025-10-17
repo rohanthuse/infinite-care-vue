@@ -25,6 +25,11 @@ interface EnhancedCreateInvoiceDialogProps {
   organizationId: string;
   preSelectedClientId?: string;
   invoiceId?: string;
+  invoicePeriod?: {
+    type: 'weekly' | 'fortnightly' | 'monthly';
+    startDate: string;
+    endDate: string;
+  };
 }
 
 export const EnhancedCreateInvoiceDialog = ({
@@ -33,7 +38,8 @@ export const EnhancedCreateInvoiceDialog = ({
   branchId,
   organizationId,
   preSelectedClientId,
-  invoiceId
+  invoiceId,
+  invoicePeriod
 }: EnhancedCreateInvoiceDialogProps) => {
   const [billToType, setBillToType] = useState<'authority' | 'private'>('private');
   const [selectedClientId, setSelectedClientId] = useState(preSelectedClientId || '');
@@ -43,11 +49,17 @@ export const EnhancedCreateInvoiceDialog = ({
 
   // Form data
   const [formData, setFormData] = useState({
-    description: '',
+    description: invoicePeriod 
+      ? `${invoicePeriod.type.charAt(0).toUpperCase() + invoicePeriod.type.slice(1)} Invoice (${invoicePeriod.startDate} to ${invoicePeriod.endDate})`
+      : '',
     amount: '',
     invoice_date: new Date().toISOString().split('T')[0],
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    notes: ''
+    notes: invoicePeriod 
+      ? `Invoice period: ${invoicePeriod.startDate} to ${invoicePeriod.endDate}`
+      : '',
+    start_date: invoicePeriod?.startDate || '',
+    end_date: invoicePeriod?.endDate || ''
   });
 
   const { data: clientFunding } = useClientFundingInfo(selectedClientId);
@@ -80,7 +92,9 @@ export const EnhancedCreateInvoiceDialog = ({
               amount: data.amount?.toString() || '',
               invoice_date: data.invoice_date || new Date().toISOString().split('T')[0],
               due_date: data.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-              notes: data.notes || ''
+              notes: data.notes || '',
+              start_date: data.start_date || '',
+              end_date: data.end_date || ''
             });
             setStep('invoice_details');
           }
@@ -133,7 +147,9 @@ export const EnhancedCreateInvoiceDialog = ({
         amount: '',
         invoice_date: new Date().toISOString().split('T')[0],
         due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        notes: ''
+        notes: '',
+        start_date: '',
+        end_date: ''
       });
     }
   }, [isOpen, preSelectedClientId, clientFunding]);
@@ -206,6 +222,11 @@ export const EnhancedCreateInvoiceDialog = ({
           <DialogTitle className="flex items-center gap-2">
             {invoiceId ? 'Edit Invoice' : 'Generate Invoice'}
             <Badge variant="outline">{step.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</Badge>
+            {invoicePeriod && (
+              <Badge variant="secondary" className="ml-2">
+                {invoicePeriod.type.charAt(0).toUpperCase() + invoicePeriod.type.slice(1)} Period
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
