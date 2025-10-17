@@ -134,7 +134,7 @@ const ClientCarePlans = () => {
   };
   return <div className="space-y-6">
       {/* Summary Header */}
-      <div className="pb-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 -mx-6 px-6 py-6 mb-6 rounded-lg">
+      <div className="pb-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-6 mb-6 rounded-lg">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center text-gray-900">
@@ -185,7 +185,7 @@ const ClientCarePlans = () => {
       )}
 
     {/* Care Plans List */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
         {carePlans.map(carePlan => {
         // Add data enhancer for each care plan
         const enhanceCarePlanData = clientId && (
@@ -203,14 +203,14 @@ const ClientCarePlans = () => {
             {enhanceCarePlanData}
         <Card 
           key={carePlan.id} 
-          className={`
-            group transition-all duration-300 hover:shadow-xl hover:scale-[1.02]
-            border-2 rounded-xl overflow-hidden
-            ${requiresApproval 
-              ? 'border-orange-400 bg-gradient-to-br from-orange-50 to-orange-100/50' 
-              : 'border-gray-200 bg-gradient-to-br from-white to-gray-50'
-            }
-          `}
+            className={`
+              transition-all duration-300 hover:shadow-xl
+              border-2 rounded-xl overflow-hidden
+              ${requiresApproval 
+                ? 'border-orange-400 bg-gradient-to-br from-orange-50 to-orange-100/50' 
+                : 'border-gray-200 bg-gradient-to-br from-white to-gray-50'
+              }
+            `}
         >
           <CardHeader className="relative pb-4 border-b-2">
             {/* Colored accent bar */}
@@ -270,7 +270,7 @@ const ClientCarePlans = () => {
             )}
 
             {/* Statistics with Icon-First Design */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="flex items-center gap-3 p-3 rounded-lg border border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                   <FileText className="h-5 w-5 text-blue-600" />
