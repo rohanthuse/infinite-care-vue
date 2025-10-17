@@ -54,11 +54,11 @@ export const TravelRateForm: React.FC<TravelRateFormProps> = ({
           name="travel_rate_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Travel Rate</FormLabel>
+              <FormLabel>Rate Schedule</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={isLoading ? "Loading rates..." : "Select travel rate"} />
+                    <SelectValue placeholder={isLoading ? "Loading rates..." : "Select rate schedule"} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>

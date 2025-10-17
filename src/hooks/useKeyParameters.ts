@@ -625,14 +625,14 @@ export function useTravelRates() {
       queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
       toast({
         title: "Success",
-        description: "Travel rate created successfully",
+        description: "Rate created successfully",
       });
     },
     onError: (error) => {
       console.error('Travel rate creation failed:', error);
       toast({
         title: "Error",
-        description: `Failed to create travel rate: ${error.message}`,
+        description: `Failed to create rate: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -660,14 +660,14 @@ export function useTravelRates() {
       queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
       toast({
         title: "Success",
-        description: "Travel rate updated successfully",
+        description: "Rate updated successfully",
       });
     },
     onError: (error) => {
       console.error('Travel rate update failed:', error);
       toast({
         title: "Error",
-        description: `Failed to update travel rate: ${error.message}`,
+        description: `Failed to update rate: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -692,14 +692,14 @@ export function useTravelRates() {
       queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
       toast({
         title: "Success",
-        description: "Travel rate deleted successfully",
+        description: "Rate deleted successfully",
       });
     },
     onError: (error) => {
       console.error('Travel rate deletion failed:', error);
       toast({
         title: "Error",
-        description: `Failed to delete travel rate: ${error.message}`,
+        description: `Failed to delete rate: ${error.message}`,
         variant: "destructive",
       });
     },

@@ -67,7 +67,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
       case "bank-holidays":
         return "Bank Holiday";
       case "travel-rates":
-        return "Travel Rate";
+        return "Rate Management";
       case "communication-types":
         return "Communication Type";
       case "expense-types":
@@ -299,8 +299,8 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
               className="flex items-center justify-center gap-2 rounded-none py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-b-2 data-[state=active]:border-primary"
             >
               <Car className="h-4 w-4" />
-              <span className="hidden md:inline">Travel Rates</span>
-              <span className="md:hidden">Travel</span>
+              <span className="hidden md:inline">Rate Management</span>
+              <span className="md:hidden">Rates</span>
             </TabsTrigger>
             <TabsTrigger 
               value="communication-types" 
@@ -357,7 +357,7 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
                     <div className="flex items-center gap-2">
                       {getParameterTypeIcon(paramType)}
                       <h2 className="text-xl font-semibold text-foreground">
-                        {getParameterTypeTitle(paramType)}s
+                        {paramType === "travel-rates" ? "Rate Management" : `${getParameterTypeTitle(paramType)}s`}
                       </h2>
                     </div>
                     <Button 

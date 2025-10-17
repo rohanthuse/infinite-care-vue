@@ -118,11 +118,11 @@ export const PrivateAccountingSettings: React.FC<PrivateAccountingSettingsProps>
                 name="travel_rate_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Travel Rate</FormLabel>
+                    <FormLabel>Default Rate</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select travel rate" />
+                          <SelectValue placeholder="Select default rate" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

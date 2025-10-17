@@ -130,14 +130,14 @@ export const AddTravelRecordDialog = ({ open, onOpenChange }: AddTravelRecordDia
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="travel_rate_type">Travel Rate Type</Label>
+              <Label htmlFor="travel_rate_type">Rate Type</Label>
               <Select
                 value={formData.travel_rate_type}
                 onValueChange={handleRateTypeChange}
                 disabled={loadingRates}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={loadingRates ? "Loading rates..." : "Select travel rate"} />
+                  <SelectValue placeholder={loadingRates ? "Loading rates..." : "Select rate type"} />
                 </SelectTrigger>
                 <SelectContent>
                   {travelRateOptions.map((option) => (
