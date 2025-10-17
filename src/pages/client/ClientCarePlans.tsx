@@ -132,9 +132,9 @@ const ClientCarePlans = () => {
         return null;
     }
   };
-  return <div className="space-y-6">
+  return <div className="-m-6">
       {/* Summary Header */}
-      <div className="pb-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-6 mb-6 rounded-lg">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-6 mb-0 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center text-gray-900">
@@ -160,8 +160,8 @@ const ClientCarePlans = () => {
 
       {/* Global Alert for Pending Approvals */}
       {pendingApprovals > 0 && (
-        <div className="mb-6">
-          <div className="max-w-4xl mx-auto">
+        <div className="px-6 py-6 bg-white">
+          <div>
             <Card className="border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
               <CardContent className="pt-5 pb-5">
                 <div className="flex items-start gap-4">
@@ -185,7 +185,7 @@ const ClientCarePlans = () => {
       )}
 
     {/* Care Plans List */}
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 px-6 pb-6">
         {carePlans.map(carePlan => {
         // Add data enhancer for each care plan
         const enhanceCarePlanData = clientId && (
