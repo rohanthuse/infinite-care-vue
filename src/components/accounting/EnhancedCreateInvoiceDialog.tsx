@@ -204,7 +204,7 @@ export const EnhancedCreateInvoiceDialog = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {invoiceId ? 'Edit Invoice' : 'Create Invoice'}
+            {invoiceId ? 'Edit Invoice' : 'Generate Invoice'}
             <Badge variant="outline">{step.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</Badge>
           </DialogTitle>
         </DialogHeader>
@@ -406,7 +406,7 @@ export const EnhancedCreateInvoiceDialog = ({
                   onClick={handleSubmit}
                   disabled={!canProceedToNext() || createInvoice.isPending}
                 >
-                  {createInvoice.isPending ? 'Creating...' : 'Create Invoice'}
+                  {createInvoice.isPending ? 'Generating...' : 'Generate Invoice'}
                 </Button>
               )}
             </div>

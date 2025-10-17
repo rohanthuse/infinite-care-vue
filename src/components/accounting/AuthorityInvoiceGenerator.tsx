@@ -252,7 +252,7 @@ export const AuthorityInvoiceGenerator: React.FC<AuthorityInvoiceGeneratorProps>
               type="submit" 
               disabled={!form.authority_id || form.client_ids.length === 0 || createInvoiceMutation.isPending}
             >
-              {createInvoiceMutation.isPending ? 'Creating...' : 'Create Invoice'}
+              {createInvoiceMutation.isPending ? 'Generating...' : 'Generate Invoice'}
             </Button>
           </div>
         </form>

@@ -262,7 +262,7 @@ export function CreateInvoiceDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Calculator className="w-5 h-5" />
-              Create Invoice
+              Generate Invoice
             </DialogTitle>
           </DialogHeader>
 

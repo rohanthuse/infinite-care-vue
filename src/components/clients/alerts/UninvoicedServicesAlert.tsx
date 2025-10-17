@@ -71,7 +71,7 @@ export function UninvoicedServicesAlert({ uninvoicedBookings, onCreateInvoice }:
           
           <div className="flex gap-2 pt-2">
             <Button size="sm" onClick={onCreateInvoice} className="bg-orange-600 hover:bg-orange-700">
-              Create Invoice
+              Generate Invoice
             </Button>
             <Button size="sm" variant="outline" className="text-orange-700 border-orange-300">
               Review All Services

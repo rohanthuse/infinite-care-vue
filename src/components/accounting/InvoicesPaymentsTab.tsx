@@ -275,7 +275,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
               onClick={handleCreateInvoice}
             >
               <PlusCircle className="h-4 w-4" />
-              Create Invoice
+              Generate Invoice
             </Button>
             <Button 
               variant="outline" 

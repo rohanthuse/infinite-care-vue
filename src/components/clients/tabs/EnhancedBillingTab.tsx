@@ -241,7 +241,7 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
             </div>
             <Button size="sm" className="gap-1" onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />
-              <span>Create Invoice</span>
+              <span>Generate Invoice</span>
             </Button>
           </div>
           <CardDescription>Comprehensive invoicing system with payment tracking</CardDescription>

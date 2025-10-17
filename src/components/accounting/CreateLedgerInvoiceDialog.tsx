@@ -356,12 +356,12 @@ export function CreateLedgerInvoiceDialog({
               {creating || generateLedger.isPending ? (
                 <>
                   <Calculator className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
+                  Generating...
                 </>
               ) : (
                 <>
                   <Calculator className="w-4 h-4 mr-2" />
-                  Create Invoice
+                  Generate Invoice
                 </>
               )}
             </Button>

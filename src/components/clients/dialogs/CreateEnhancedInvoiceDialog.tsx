@@ -500,7 +500,7 @@ export function CreateEnhancedInvoiceDialog({
                 Cancel
               </Button>
               <Button type="submit" disabled={createInvoiceMutation.isPending}>
-                {createInvoiceMutation.isPending ? 'Creating...' : 'Create Invoice'}
+                {createInvoiceMutation.isPending ? 'Generating...' : 'Generate Invoice'}
               </Button>
             </DialogFooter>
           </form>
