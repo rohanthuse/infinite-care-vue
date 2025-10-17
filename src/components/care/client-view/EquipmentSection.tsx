@@ -52,10 +52,16 @@ export function EquipmentSection({ equipment }: EquipmentSectionProps) {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                  {item.category && (
+                  {(item.category || item.equipment_type) && (
                     <div>
-                      <label className="text-muted-foreground">Category</label>
-                      <p className="font-medium capitalize">{item.category}</p>
+                      <label className="text-muted-foreground">Category / Type</label>
+                      <p className="font-medium capitalize">{item.category || item.equipment_type}</p>
+                    </div>
+                  )}
+                  {item.quantity && (
+                    <div>
+                      <label className="text-muted-foreground">Quantity</label>
+                      <p className="font-medium">{item.quantity}</p>
                     </div>
                   )}
                   {item.location && (
@@ -86,6 +92,17 @@ export function EquipmentSection({ equipment }: EquipmentSectionProps) {
                     </div>
                   )}
                 </div>
+
+                {(item.maintenance_required || item.maintenance_schedule || item.maintenance_notes) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                    <label className="text-sm font-medium text-blue-900">Maintenance Information</label>
+                    <div className="text-sm text-blue-800 mt-1 space-y-1">
+                      {item.maintenance_required && <p>• Maintenance Required: Yes</p>}
+                      {item.maintenance_schedule && <p>• Schedule: {item.maintenance_schedule}</p>}
+                      {item.maintenance_notes && <p>• Notes: {item.maintenance_notes}</p>}
+                    </div>
+                  </div>
+                )}
 
                 {item.usage_instructions && (
                   <div className="bg-blue-50 border border-blue-200 rounded p-3">

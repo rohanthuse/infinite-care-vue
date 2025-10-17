@@ -266,23 +266,60 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
     about_me: autoSaveData.about_me || {},
     consent: autoSaveData.consent || {},
     hobbies: autoSaveData.hobbies || {},
-    // Enhanced extraction of complex structures with proper date handling
+    // Enhanced extraction of complex structures with proper date handling and field normalization
     risk_assessments: extractComplexData('risk_assessments', []).map((assessment: any) => ({
       ...assessment,
-      review_date: assessment.review_date ? new Date(assessment.review_date).toISOString() : null,
+      risk_type: assessment.risk_type || assessment.type || assessment.category,
+      risk_level: assessment.risk_level || assessment.level,
+      description: assessment.description || assessment.risk_description,
+      mitigation_strategies: assessment.mitigation_strategies || assessment.strategies || assessment.control_measures || [],
+      review_date: assessment.review_date ? new Date(assessment.review_date).toISOString().split('T')[0] : null,
+      assessed_by: assessment.assessed_by || assessment.reviewed_by,
+      notes: assessment.notes || assessment.additional_notes || '',
+      assessment_date: assessment.assessment_date ? new Date(assessment.assessment_date).toISOString().split('T')[0] : null,
     })),
     service_actions: extractComplexData('service_actions', []).map((action: any) => ({
       ...action,
-      start_date: action.start_date ? new Date(action.start_date).toISOString() : null,
-      end_date: action.end_date ? new Date(action.end_date).toISOString() : null,
+      action: action.action || action.name || action.action_description,
+      description: action.description,
+      responsible_person: action.responsible_person || action.assigned_to,
+      priority: action.priority || 'medium',
+      start_date: action.start_date ? new Date(action.start_date).toISOString().split('T')[0] : null,
+      end_date: action.end_date ? new Date(action.end_date).toISOString().split('T')[0] : null,
+      status: action.status || 'pending',
+      notes: action.notes || action.additional_notes || '',
     })),
     service_plans: extractComplexData('service_plans', []).map((plan: any) => ({
       ...plan,
-      start_date: plan.start_date ? new Date(plan.start_date).toISOString() : null,  
-      end_date: plan.end_date ? new Date(plan.end_date).toISOString() : null,
+      service_name: plan.service_name || plan.name,
+      description: plan.description,
+      frequency: plan.frequency,
+      start_date: plan.start_date ? new Date(plan.start_date).toISOString().split('T')[0] : null,  
+      end_date: plan.end_date ? new Date(plan.end_date).toISOString().split('T')[0] : null,
+      provider: plan.provider || plan.service_provider,
+      status: plan.status || 'active',
+      notes: plan.notes || plan.additional_notes || '',
     })),
-    equipment: extractComplexData('equipment', []),
-    documents: extractComplexData('documents', [])
+    equipment: extractComplexData('equipment', []).map((item: any) => ({
+      ...item,
+      equipment_name: item.equipment_name || item.name,
+      equipment_type: item.equipment_type || item.type,
+      quantity: item.quantity || 1,
+      location: item.location || '',
+      maintenance_required: item.maintenance_required || false,
+      maintenance_schedule: item.maintenance_schedule || '',
+      maintenance_notes: item.maintenance_notes || '',
+      supplier: item.supplier || '',
+      notes: item.notes || item.additional_notes || '',
+    })),
+    documents: extractComplexData('documents', []).map((doc: any) => ({
+      ...doc,
+      name: doc.name || doc.document_name || doc.file_name,
+      type: doc.type || doc.document_type,
+      uploaded_date: doc.uploaded_date || doc.created_at,
+      file_path: doc.file_path || doc.url || doc.storage_path,
+      notes: doc.notes || doc.description || '',
+    }))
   };
 
   return transformedData;

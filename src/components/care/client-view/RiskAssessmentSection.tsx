@@ -72,10 +72,14 @@ export function RiskAssessmentSection({ riskAssessments }: RiskAssessmentSection
                   </div>
                 )}
 
-                {risk.control_measures && (
+                {(risk.control_measures || risk.mitigation_strategies) && (
                   <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <label className="text-sm font-medium text-green-900">Control Measures</label>
-                    <p className="text-sm text-green-800 mt-1 whitespace-pre-wrap">{risk.control_measures}</p>
+                    <label className="text-sm font-medium text-green-900">Control Measures / Mitigation Strategies</label>
+                    <div className="text-sm text-green-800 mt-1 whitespace-pre-wrap">
+                      {risk.control_measures || (Array.isArray(risk.mitigation_strategies) 
+                        ? risk.mitigation_strategies.join(', ') 
+                        : risk.mitigation_strategies)}
+                    </div>
                   </div>
                 )}
 

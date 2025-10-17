@@ -84,7 +84,11 @@ export function ConsentSection({ consent }: ConsentSectionProps) {
           {renderField('Representative Contact', consent.representative_contact)}
           {renderField('Advanced Care Preferences', consent.advanced_care_preferences)}
           {renderField('End of Life Wishes', consent.end_of_life_wishes)}
-          {renderField('Additional Notes', consent.notes)}
+          {renderField('Consent Statement', consent.consent_statement)}
+          {renderField('Assessor Name', consent.assessor_name)}
+          {renderField('Assessor Role', consent.assessor_role)}
+          {renderField('Witness Name', consent.witness_name)}
+          {renderField('Additional Notes', consent.notes || consent.additional_notes)}
         </div>
 
         {consent.signed_date && (

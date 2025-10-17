@@ -61,9 +61,9 @@ export function DocumentsSection({ documents }: DocumentsSectionProps) {
                     )}
                   </div>
                 </div>
-                {doc.storage_path && (
+                {(doc.storage_path || doc.file_path) && (
                   <Button variant="outline" size="sm" asChild>
-                    <a href={doc.storage_path} download>
+                    <a href={doc.storage_path || doc.file_path} download>
                       <Download className="h-4 w-4" />
                     </a>
                   </Button>

@@ -24,6 +24,7 @@ import { BasicInfoSection } from '@/components/care/client-view/BasicInfoSection
 import { AboutMeSection } from '@/components/care/client-view/AboutMeSection';
 import { MedicalSection } from '@/components/care/client-view/MedicalSection';
 import { MedicationSection } from '@/components/care/client-view/MedicationSection';
+import { AdminMedicationSection } from '@/components/care/client-view/AdminMedicationSection';
 import { GoalsSection } from '@/components/care/client-view/GoalsSection';
 import { ActivitiesSection } from '@/components/care/client-view/ActivitiesSection';
 import { PersonalCareSection } from '@/components/care/client-view/PersonalCareSection';
@@ -178,6 +179,22 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
     goals: safeArray(carePlan.goals?.length > 0 ? carePlan.goals : autoSaveData.goals),
     activities: safeArray(carePlan.activities?.length > 0 ? carePlan.activities : autoSaveData.activities),
     
+    // Medications
+    medications: safeArray(carePlan.medications || autoSaveData.medications),
+    
+    // Admin Medication
+    admin_medication: {
+      admin_method: safeString(carePlan.medical_info?.admin_medication?.admin_method || autoSaveData.admin_medication?.admin_method),
+      administration_times: safeArray(carePlan.medical_info?.admin_medication?.administration_times || autoSaveData.admin_medication?.administration_times),
+      special_instructions: safeString(carePlan.medical_info?.admin_medication?.special_instructions || autoSaveData.admin_medication?.special_instructions),
+      trained_staff_required: carePlan.medical_info?.admin_medication?.trained_staff_required || autoSaveData.admin_medication?.trained_staff_required || false,
+      medication_storage: safeString(carePlan.medical_info?.admin_medication?.medication_storage || autoSaveData.admin_medication?.medication_storage),
+      disposal_method: safeString(carePlan.medical_info?.admin_medication?.disposal_method || autoSaveData.admin_medication?.disposal_method),
+      monitoring_requirements: safeString(carePlan.medical_info?.admin_medication?.monitoring_requirements || autoSaveData.admin_medication?.monitoring_requirements),
+      side_effects_to_monitor: safeString(carePlan.medical_info?.admin_medication?.side_effects_to_monitor || autoSaveData.admin_medication?.side_effects_to_monitor),
+      ...safeObject(carePlan.medical_info?.admin_medication || autoSaveData.admin_medication),
+    },
+    
     // Personal Care - Enhanced with detailed sleep and assistance fields
     personal_care: {
       ...safeObject(carePlan.personal_care),
@@ -210,27 +227,53 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       ...safeObject(autoSaveData.dietary_requirements || autoSaveData.dietary),
     },
     
-    // Risk Assessments - Enhanced with review dates
+    // Risk Assessments - Enhanced with review dates and all fields
     risk_assessments: safeArray(carePlan.risk_assessments?.length > 0 ? carePlan.risk_assessments : autoSaveData.risk_assessments).map((assessment: any) => ({
       ...assessment,
+      risk_type: assessment.risk_type || assessment.type || assessment.category,
+      risk_level: assessment.risk_level || assessment.level,
+      description: assessment.description || assessment.risk_description,
+      mitigation_strategies: safeArray(assessment.mitigation_strategies || assessment.strategies || assessment.control_measures),
       review_date: assessment.review_date ? new Date(assessment.review_date).toISOString().split('T')[0] : '',
+      assessed_by: assessment.assessed_by || assessment.reviewed_by || '',
+      notes: assessment.notes || assessment.additional_notes || '',
+      assessment_date: assessment.assessment_date ? new Date(assessment.assessment_date).toISOString().split('T')[0] : '',
     })),
     
-    // Equipment - Enhanced with detailed information
-    equipment: safeArray(carePlan.equipment?.length > 0 ? carePlan.equipment : autoSaveData.equipment),
+    // Service Actions - Enhanced with all fields and dates
+    service_actions: safeArray(carePlan.service_actions?.length > 0 ? carePlan.service_actions : autoSaveData.service_actions).map((action: any) => ({
+      ...action,
+      action: action.action || action.name || action.action_description,
+      responsible_person: action.responsible_person || action.assigned_to || '',
+      priority: action.priority || 'medium',
+      start_date: action.start_date ? new Date(action.start_date).toISOString().split('T')[0] : '',
+      end_date: action.end_date ? new Date(action.end_date).toISOString().split('T')[0] : '',
+      status: action.status || 'pending',
+    })),
+    
+    // Equipment - Enhanced with detailed maintenance and supplier info
+    equipment: safeArray(carePlan.equipment?.length > 0 ? carePlan.equipment : autoSaveData.equipment).map((item: any) => ({
+      ...item,
+      equipment_name: item.equipment_name || item.name,
+      equipment_type: item.equipment_type || item.type,
+      quantity: item.quantity || 1,
+      location: item.location || '',
+      maintenance_required: item.maintenance_required || false,
+      maintenance_schedule: item.maintenance_schedule || '',
+      maintenance_notes: item.maintenance_notes || '',
+      supplier: item.supplier || '',
+      notes: item.notes || item.additional_notes || '',
+    })),
     
     // Service Plans - Enhanced with end dates
     service_plans: safeArray(carePlan.service_plans?.length > 0 ? carePlan.service_plans : autoSaveData.service_plans).map((plan: any) => ({
       ...plan,
+      service_name: plan.service_name || plan.name,
       start_date: plan.start_date ? new Date(plan.start_date).toISOString().split('T')[0] : '',
       end_date: plan.end_date ? new Date(plan.end_date).toISOString().split('T')[0] : '',
-    })),
-    
-    // Service Actions - Enhanced with end dates
-    service_actions: safeArray(carePlan.service_actions?.length > 0 ? carePlan.service_actions : autoSaveData.service_actions).map((action: any) => ({
-      ...action,
-      start_date: action.start_date ? new Date(action.start_date).toISOString().split('T')[0] : '',
-      end_date: action.end_date ? new Date(action.end_date).toISOString().split('T')[0] : '',
+      provider: plan.provider || plan.service_provider,
+      status: plan.status || 'active',
+      notes: plan.notes || plan.additional_notes || '',
     })),
     
     // Documents
@@ -342,8 +385,10 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
         return <MedicalSection medicalInfo={wizardData.medical_info} />;
       
       case 4: // Medication
-      case 5: // Admin Medication (combined with medication)
         return <MedicationSection medications={medications} />;
+
+      case 5: // Admin Medication
+        return <AdminMedicationSection adminMedication={wizardData.admin_medication || wizardData.medical_info?.admin_medication} />;
       
       case 6: // Goals
         return <GoalsSection goals={wizardData.goals || []} />;
