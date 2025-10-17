@@ -134,6 +134,13 @@ const Settings = () => {
     }
   }, [settings]);
 
+  // Sync logoPreview with fetched logo_url
+  useEffect(() => {
+    if (settings?.logo_url) {
+      setLogoPreview(settings.logo_url);
+    }
+  }, [settings?.logo_url]);
+
   const { mutate: updateSettings, isPending: isUpdating } = useMutation({
     mutationFn: updateCompanySettings,
     onSuccess: () => {
@@ -154,6 +161,7 @@ const Settings = () => {
     initialData.logo_url || null
   );
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const passwordForm = useForm<PasswordFormValues>({
@@ -225,6 +233,11 @@ const Settings = () => {
     }
 
     setLogoFile(file);
+    
+    // Add feedback for logo change
+    if (logoPreview) {
+      toast.info('New logo selected. Click "Save Changes" to update.');
+    }
     
     // Create preview
     const reader = new FileReader();
@@ -339,6 +352,38 @@ const Settings = () => {
     );
   }
 
+  // Logo Preview Modal Component
+  const LogoViewModal = () => {
+    if (!showLogoModal || !logoPreview) return null;
+
+    return (
+      <div 
+        className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+        onClick={() => setShowLogoModal(false)}
+      >
+        <div 
+          className="relative bg-card rounded-xl max-w-4xl max-h-[90vh] overflow-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => setShowLogoModal(false)}
+            className="absolute top-4 right-4 p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors z-10"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div className="p-8">
+            <h3 className="text-xl font-semibold mb-4">Company Logo Preview</h3>
+            <img
+              src={logoPreview}
+              alt="Company Logo Full View"
+              className="max-w-full max-h-[70vh] object-contain mx-auto rounded-lg"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <DashboardHeader />
@@ -406,8 +451,8 @@ const Settings = () => {
                   </div>
                 </div>
                 
-                {/* Upload Button */}
-                <div className="flex-1 space-y-2">
+                {/* Action Buttons */}
+                <div className="flex-1 space-y-3">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -416,16 +461,35 @@ const Settings = () => {
                     className="hidden"
                     disabled={isUpdating || uploadingLogo}
                   />
-                  <CustomButton
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUpdating || uploadingLogo}
-                    className="w-full sm:w-auto"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {logoPreview ? 'Change Logo' : 'Upload Logo'}
-                  </CustomButton>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {/* Upload/Change Logo Button */}
+                    <CustomButton
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUpdating || uploadingLogo}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                    </CustomButton>
+                    
+                    {/* View Logo Button - Only show if logo exists */}
+                    {logoPreview && (
+                      <CustomButton
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowLogoModal(true)}
+                        disabled={isUpdating || uploadingLogo}
+                        className="flex-1 sm:flex-none"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Logo
+                      </CustomButton>
+                    )}
+                  </div>
+                  
                   <p className="text-xs text-muted-foreground">
                     Recommended: Square image, max 5MB (JPEG, PNG, WebP)
                   </p>
@@ -707,6 +771,9 @@ const Settings = () => {
           </Form>
         </div>
       </motion.main>
+      
+      {/* Logo View Modal */}
+      <LogoViewModal />
     </div>
   );
 };
