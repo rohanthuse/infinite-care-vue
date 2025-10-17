@@ -51,12 +51,6 @@ export default function SystemDashboard() {
     console.log('[SystemDashboard] Current path:', window.location.pathname);
   }, [user]);
 
-  if (!user) {
-    console.log('[SystemDashboard] No user found, redirecting to login');
-    navigate('/system-login', { replace: true });
-    return null;
-  }
-
 
   const { systemStats, isLoading } = useSystemDashboard();
   const { data: demoStats } = useDemoRequestStats();
