@@ -46,6 +46,23 @@ export function AdminMedicationSection({ adminMedication }: AdminMedicationSecti
     );
   };
 
+  const renderArrayField = (label: string, items: any[]) => {
+    if (!items || items.length === 0) return null;
+    return (
+      <div>
+        <label className="text-sm font-medium text-muted-foreground">{label}</label>
+        <ul className="mt-2 space-y-1">
+          {items.map((item, idx) => (
+            <li key={idx} className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span className="text-base">{typeof item === 'string' ? item : JSON.stringify(item)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   const renderList = (label: string, items: any[]) => {
     if (!items || items.length === 0) return null;
     return (
@@ -72,12 +89,45 @@ export function AdminMedicationSection({ adminMedication }: AdminMedicationSecti
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {renderField('Administration Method', adminMedication.admin_method)}
-          {renderList('Administration Times', adminMedication.administration_times)}
-          {renderYesNo('Trained Staff Required', adminMedication.trained_staff_required)}
-          {renderField('Medication Storage', adminMedication.medication_storage)}
-          {renderField('Disposal Method', adminMedication.disposal_method)}
+        {/* Medication Overview */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Medication Overview</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderYesNo('Takes Medication', adminMedication.take_medication)}
+            {renderField('Medication Details', adminMedication.take_medication_details)}
+            {renderYesNo('Allergic to Medicine', adminMedication.allergic_to_medicine)}
+            {renderYesNo('Needs Assistance', adminMedication.need_assistance)}
+          </div>
+        </div>
+
+        {/* Storage and Access */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Storage & Access</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderField('Medicine Storage Location', adminMedication.medicine_storage_location)}
+            {renderField('Medication Storage', adminMedication.medication_storage)}
+            {renderYesNo('Has Medicines Box', adminMedication.have_medicines_box)}
+            {renderArrayField('Medicines Access', adminMedication.medicines_access)}
+            {renderYesNo('Uses Dosette Box', adminMedication.use_dosette_box)}
+            {renderField('Dosette Box Details', adminMedication.dosette_box_details)}
+            {renderYesNo('Medication Outside Dosette', adminMedication.medication_outside_dosette)}
+          </div>
+        </div>
+
+        {/* Administration */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Administration</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderField('Administration Method', adminMedication.admin_method)}
+            {renderArrayField('Administration Methods', adminMedication.administration_methods)}
+            {renderList('Administration Times', adminMedication.administration_times)}
+            {renderYesNo('Trained Staff Required', adminMedication.trained_staff_required)}
+            {renderYesNo('Help Required - Inhalers', adminMedication.help_required_inhalers)}
+            {renderYesNo('Help Required - Eye Drops', adminMedication.help_required_eye_drops)}
+            {renderYesNo('Help Required - Creams', adminMedication.help_required_creams)}
+            {renderYesNo('Uses Pain Patches', adminMedication.use_pain_patches)}
+            {renderField('Disposal Method', adminMedication.disposal_method)}
+          </div>
         </div>
 
         {adminMedication.special_instructions && (

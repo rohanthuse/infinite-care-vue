@@ -96,6 +96,8 @@ export function PersonalCareSection({ personalCare }: PersonalCareSectionProps) 
               {renderField('Preparation Duration', personalCare.sleep_prepare_duration)}
               {renderYesNo('Assist Going to Bed', personalCare.assist_going_to_bed)}
               {renderYesNo('Assist Getting Out of Bed', personalCare.assist_getting_out_of_bed)}
+              {renderYesNo('Panic Button in Bed', personalCare.panic_button_in_bed)}
+              {renderYesNo('Assist Turn to Sleep Position', personalCare.assist_turn_to_sleep_position)}
             </div>
           </div>
         )}

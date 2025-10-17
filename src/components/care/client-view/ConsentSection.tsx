@@ -72,6 +72,14 @@ export function ConsentSection({ consent }: ConsentSectionProps) {
         <div className="space-y-3">
           {renderYesNo('Has Capacity to Consent', consent.has_capacity || consent.capacity_to_consent)}
           {renderYesNo('Consent Given', consent.consent_given)}
+          {renderYesNo('Care Plan Importance Understood', consent.care_plan_importance_understood)}
+          {renderYesNo('Share Info with Professionals', consent.share_info_with_professionals)}
+          {renderYesNo('Regular Reviews Understood', consent.regular_reviews_understood)}
+          {renderYesNo('May Need Capacity Assessment', consent.may_need_capacity_assessment)}
+          {renderYesNo('Consent to Care and Support', consent.consent_to_care_and_support)}
+          {renderYesNo('Consent to Medication Administration', consent.consent_to_medication_administration)}
+          {renderYesNo('Consent to Healthcare Professionals', consent.consent_to_healthcare_professionals)}
+          {renderYesNo('Consent to Emergency Services', consent.consent_to_emergency_services)}
           {renderYesNo('Consent to Care Plan Changes', consent.consent_to_care_plan_changes)}
           {renderYesNo('Consent to Data Sharing', consent.consent_to_data_sharing)}
           {renderYesNo('Consent to Personal Care', consent.consent_to_personal_care)}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Utensils, AlertCircle } from 'lucide-react';
 
 interface DietarySectionProps {
@@ -77,6 +78,7 @@ export function DietarySection({ dietary }: DietarySectionProps) {
           {renderList('Supplements', dietary.supplements)}
           {renderField('Nutritional Needs', dietary.nutritional_needs)}
           {renderField('Meal Preparation Needs', dietary.meal_preparation_needs)}
+          {renderField('Preparation Instructions', dietary.preparation_instructions)}
           {renderField('Eating Assistance Required', dietary.eating_assistance || dietary.feeding_assistance_required)}
           {renderField('Hydration Needs', dietary.hydration_needs)}
           {renderField('Fluid Restrictions', dietary.fluid_restrictions)}
@@ -84,6 +86,75 @@ export function DietarySection({ dietary }: DietarySectionProps) {
           {renderField('Meal Schedule', dietary.meal_schedule ? JSON.stringify(dietary.meal_schedule, null, 2) : null)}
           {renderField('Special Equipment Needed', dietary.special_equipment_needed)}
           {renderField('Cultural/Religious Requirements', dietary.cultural_religious_requirements)}
+        </div>
+
+        {/* Risk Factors and Monitoring */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Risk Factors & Monitoring</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">At Risk of Malnutrition</label>
+              <Badge variant={dietary.at_risk_malnutrition ? 'destructive' : 'secondary'} className="mt-1">
+                {dietary.at_risk_malnutrition ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">At Risk of Dehydration</label>
+              <Badge variant={dietary.at_risk_dehydration ? 'destructive' : 'secondary'} className="mt-1">
+                {dietary.at_risk_dehydration ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Check Fridge Expiry</label>
+              <Badge variant={dietary.check_fridge_expiry ? 'default' : 'secondary'} className="mt-1">
+                {dietary.check_fridge_expiry ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Weight Monitoring</label>
+              <Badge variant={dietary.weight_monitoring ? 'default' : 'secondary'} className="mt-1">
+                {dietary.weight_monitoring ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Cooking and Meal Preparation */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Cooking & Meal Preparation</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Do You Cook</label>
+              <Badge variant={dietary.do_you_cook ? 'default' : 'secondary'} className="mt-1">
+                {dietary.do_you_cook ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Help with Cooking</label>
+              <Badge variant={dietary.help_with_cooking ? 'default' : 'secondary'} className="mt-1">
+                {dietary.help_with_cooking ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Avoidance Reasons */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Food Avoidance</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Avoid for Medical Reasons</label>
+              <Badge variant={dietary.avoid_medical_reasons ? 'default' : 'secondary'} className="mt-1">
+                {dietary.avoid_medical_reasons ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">Avoid for Religious Reasons</label>
+              <Badge variant={dietary.avoid_religious_reasons ? 'default' : 'secondary'} className="mt-1">
+                {dietary.avoid_religious_reasons ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

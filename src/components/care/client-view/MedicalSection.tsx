@@ -71,6 +71,12 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
           </div>
         )}
         
+        {(medicalInfo.current_medications && medicalInfo.current_medications.length > 0) && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            {renderList('Current Medications', medicalInfo.current_medications)}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {renderList('Medical Conditions', medicalInfo.medical_conditions || medicalInfo.conditions)}
           {renderList('Mental Health Conditions', medicalInfo.mental_health_conditions)}
@@ -86,6 +92,42 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
           {renderField('GP Information', medicalInfo.gp_info)}
           {renderField('Hospital/Consultant', medicalInfo.hospital_consultant)}
         </div>
+
+        {medicalInfo.service_band && (medicalInfo.service_band.categories || medicalInfo.service_band.details) && (
+          <div>
+            <h4 className="font-semibold text-base mb-3">Service Band Categories</h4>
+            {medicalInfo.service_band.categories && medicalInfo.service_band.categories.length > 0 && (
+              <div className="mb-4">
+                <label className="text-sm font-medium text-muted-foreground">Selected Categories</label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {medicalInfo.service_band.categories.map((cat: string, idx: number) => (
+                    <Badge key={idx} variant="outline">{cat}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {medicalInfo.service_band.details && Object.keys(medicalInfo.service_band.details).length > 0 && (
+              <div className="space-y-4">
+                {Object.entries(medicalInfo.service_band.details).map(([categorySlug, details]: [string, any]) => (
+                  <div key={categorySlug} className="bg-muted/50 rounded p-4">
+                    <h5 className="font-medium capitalize mb-2">{categorySlug.replace(/_/g, ' ')}</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      {Object.entries(details).map(([key, value]: [string, any]) => {
+                        if (!value) return null;
+                        return (
+                          <div key={key}>
+                            <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                            <span className="ml-2">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {medicalInfo.news2_monitoring_enabled && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

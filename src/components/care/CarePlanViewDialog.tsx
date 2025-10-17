@@ -371,6 +371,20 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     const wizardData = mapCarePlanToWizardDefaults(carePlanWithDetails);
     const medications = wizardData.medical_info?.medication_manager?.medications || [];
 
+    // QA Logging: Track what data is available for current step
+    if (context === 'client') {
+      console.log(`[CarePlanView QA] Step ${currentStep}: ${viewSteps[currentStep - 1]?.name}`, {
+        hasData: !!wizardData,
+        dataKeys: Object.keys(wizardData),
+        stepSpecificData: currentStep === 2 ? wizardData.about_me : 
+                          currentStep === 3 ? wizardData.medical_info :
+                          currentStep === 5 ? wizardData.admin_medication :
+                          currentStep === 8 ? wizardData.personal_care :
+                          currentStep === 9 ? wizardData.dietary :
+                          currentStep === 15 ? wizardData.consent : 'see wizardData'
+      });
+    }
+
     switch (currentStep) {
       case 1: // Basic Information
         return <BasicInfoSection carePlan={wizardData} />;
