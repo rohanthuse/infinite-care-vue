@@ -156,6 +156,9 @@ export const useBulkInvoiceGeneration = () => {
           continue;
         }
 
+        // Cast rate schedules to the correct type
+        const typedRateSchedules = rateSchedules as any[];
+
         // 3b. Convert bookings to Visit format for calculator
         const visits: Visit[] = await Promise.all(
           clientData.bookings.map(async (booking) => ({
@@ -175,7 +178,7 @@ export const useBulkInvoiceGeneration = () => {
         );
 
         // 3c. Calculate using existing VisitBillingCalculator
-        const calculator = new VisitBillingCalculator(rateSchedules, false);
+        const calculator = new VisitBillingCalculator(typedRateSchedules, false);
         const billingSummary = calculator.calculateVisitsBilling(visits);
 
         console.log(`[BulkInvoiceGeneration] Calculated billing for ${clientData.clientName}:`, {
