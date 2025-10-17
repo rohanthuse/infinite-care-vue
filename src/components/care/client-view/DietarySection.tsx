@@ -77,9 +77,12 @@ export function DietarySection({ dietary }: DietarySectionProps) {
           {renderList('Supplements', dietary.supplements)}
           {renderField('Nutritional Needs', dietary.nutritional_needs)}
           {renderField('Meal Preparation Needs', dietary.meal_preparation_needs)}
-          {renderField('Eating Assistance Required', dietary.eating_assistance)}
+          {renderField('Eating Assistance Required', dietary.eating_assistance || dietary.feeding_assistance_required)}
           {renderField('Hydration Needs', dietary.hydration_needs)}
+          {renderField('Fluid Restrictions', dietary.fluid_restrictions)}
           {renderField('Texture Modifications', dietary.texture_modifications)}
+          {renderField('Meal Schedule', dietary.meal_schedule ? JSON.stringify(dietary.meal_schedule, null, 2) : null)}
+          {renderField('Special Equipment Needed', dietary.special_equipment_needed)}
           {renderField('Cultural/Religious Requirements', dietary.cultural_religious_requirements)}
         </div>
       </CardContent>

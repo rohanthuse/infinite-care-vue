@@ -70,15 +70,20 @@ export function ConsentSection({ consent }: ConsentSectionProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-3">
-          {renderYesNo('Has Capacity to Consent', consent.has_capacity)}
+          {renderYesNo('Has Capacity to Consent', consent.has_capacity || consent.capacity_to_consent)}
           {renderYesNo('Consent Given', consent.consent_given)}
+          {renderYesNo('Consent to Care Plan Changes', consent.consent_to_care_plan_changes)}
+          {renderYesNo('Consent to Data Sharing', consent.consent_to_data_sharing)}
+          {renderYesNo('Consent to Personal Care', consent.consent_to_personal_care)}
+          {renderYesNo('Medication Support Consent', consent.medication_support_consent)}
+          {renderYesNo('Discuss Health and Risks', consent.discuss_health_and_risks)}
           {renderYesNo('Power of Attorney in Place', consent.power_of_attorney)}
           {renderYesNo('Advanced Directive Available', consent.advanced_directive)}
           {renderYesNo('DNAR (Do Not Attempt Resuscitation)', consent.dnar)}
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {renderField('Capacity Assessment Notes', consent.capacity_assessment_notes)}
+          {renderField('Capacity Assessment Notes', consent.capacity_assessment_notes || consent.capacity_notes)}
           {renderField('Consent Limitations', consent.consent_limitations)}
           {renderField('Legal Representative', consent.legal_representative)}
           {renderField('Representative Contact', consent.representative_contact)}
@@ -87,7 +92,11 @@ export function ConsentSection({ consent }: ConsentSectionProps) {
           {renderField('Consent Statement', consent.consent_statement)}
           {renderField('Assessor Name', consent.assessor_name)}
           {renderField('Assessor Role', consent.assessor_role)}
+          {renderField('Assessor Statement', consent.assessor_statement_3 || consent.assessor_statement_4)}
+          {renderField('Confirmed By', consent.confirmed_by)}
+          {renderField('Confirmed On', consent.confirmed_on)}
           {renderField('Witness Name', consent.witness_name)}
+          {renderField('Extra Information', consent.extra_information)}
           {renderField('Additional Notes', consent.notes || consent.additional_notes)}
         </div>
 

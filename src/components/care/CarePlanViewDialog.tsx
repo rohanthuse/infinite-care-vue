@@ -151,11 +151,8 @@ const mapCarePlanToWizardDefaults = (carePlan: CarePlanWithDetails) => {
       last_name: safeString(carePlan.client?.last_name),
     },
     
-    // About Me
-    about_me: {
-      ...safeObject(carePlan.about_me),
-      ...safeObject(autoSaveData.about_me),
-    },
+    // About Me - preserve all fields as stored in database, no field remapping
+    about_me: autoSaveData.about_me || carePlan.about_me || {},
     
     // Medical Info - Enhanced with admin medication and complex structures
     medical_info: {

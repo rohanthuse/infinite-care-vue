@@ -263,6 +263,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
       incontinence_products_required: autoSaveData.personal_care?.incontinence_products_required,
     },
     dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
+    // Pass through about_me as-is to preserve all actual field names from database
     about_me: autoSaveData.about_me || {},
     consent: autoSaveData.consent || {},
     hobbies: autoSaveData.hobbies || {},

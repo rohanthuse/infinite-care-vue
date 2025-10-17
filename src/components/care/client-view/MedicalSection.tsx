@@ -74,11 +74,14 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {renderList('Medical Conditions', medicalInfo.medical_conditions || medicalInfo.conditions)}
           {renderList('Mental Health Conditions', medicalInfo.mental_health_conditions)}
+          {renderList('Sensory Impairments', medicalInfo.sensory_impairments)}
           {renderField('Mobility Status', medicalInfo.mobility_status)}
+          {renderField('Mental Health Status', medicalInfo.mental_health_status)}
           {renderField('Communication Needs', medicalInfo.communication_needs)}
           {renderField('Sensory Needs', medicalInfo.sensory_needs)}
           {renderField('Cognitive Status', medicalInfo.cognitive_status)}
           {renderField('Pain Management', medicalInfo.pain_management)}
+          {renderField('Medical History', medicalInfo.medical_history)}
           {renderField('Emergency Contacts', medicalInfo.emergency_contacts)}
           {renderField('GP Information', medicalInfo.gp_info)}
           {renderField('Hospital/Consultant', medicalInfo.hospital_consultant)}
