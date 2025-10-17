@@ -4,7 +4,6 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { UnifiedAuthProvider } from './contexts/UnifiedAuthProvider';
-import { SystemAuthProvider } from './contexts/SystemAuthContext';
 import { SessionTimeoutProvider } from './contexts/SessionTimeoutProvider';
 import { registerSW } from './utils/pwa';
 
@@ -14,11 +13,9 @@ registerSW();
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <UnifiedAuthProvider>
-      <SystemAuthProvider>
-        <SessionTimeoutProvider timeoutMinutes={10}>
-          <App />
-        </SessionTimeoutProvider>
-      </SystemAuthProvider>
+      <SessionTimeoutProvider timeoutMinutes={10}>
+        <App />
+      </SessionTimeoutProvider>
     </UnifiedAuthProvider>
   </React.StrictMode>
 );
