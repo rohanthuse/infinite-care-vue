@@ -8,9 +8,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { TenantProvider } from "@/contexts/TenantContext";
-import { UnifiedAuthProvider } from "@/contexts/UnifiedAuthProvider";
-import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
-import { SessionTimeoutProvider } from "@/contexts/SessionTimeoutProvider";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import { NavigationGuard } from "@/components/NavigationGuard";
@@ -103,80 +100,137 @@ const AppContent = () => {
   return (
     <AuthErrorBoundary error={error}>
       <BrowserRouter>
-        <SessionTimeoutProvider timeoutMinutes={10}>
-          <TaskProvider>
-            <ErrorBoundary fallback={<RoutingErrorFallback />}>
-              <NavigationGuard />
-              <PWAInstallPrompt />
-              <OfflineIndicator />
-              <PWAUpdatePrompt />
-              <Routes>
-                {/* Main Admin Dashboard Route for Super Admins */}
-                <Route path="/dashboard" element={
-                  <SuperAdminGuard>
-                    <Dashboard />
-                  </SuperAdminGuard>
-                } />
-                
-                {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
-                <Route path="/branch-dashboard/*" element={<BranchDashboardRedirect />} />
-                
-                {/* Carer Dashboard Redirect - Ensure tenant-aware URLs */}
-                <Route path="/carer-dashboard/*" element={<CarerDashboardRedirect />} />
-                
-                {/* Tenant Login Routes - Separate from protected routes */}
-                <Route path="/:tenantSlug/login" element={
-                  <TenantProvider>
-                    <TenantLogin />
-                  </TenantProvider>
-                } />
-                <Route path="/:tenantSlug/client-login" element={
-                  <TenantProvider>
-                    <TenantClientLogin />
-                  </TenantProvider>
-                } />
-                <Route path="/:tenantSlug/carer-login" element={
-                  <TenantProvider>
-                    <TenantCarerLogin />
-                  </TenantProvider>
-                } />
-                
-                {/* Tenant Dashboard Route */}
-                <Route path="/:tenantSlug/dashboard" element={
-                  <TenantProvider>
-                    <TenantErrorWrapper>
-                      <TenantDashboard />
-                    </TenantErrorWrapper>
-                  </TenantProvider>
-                } />
-                
-                {/* Tenant-specific Protected Routes */}
-                <Route path="/:tenantSlug/*" element={
-                  <TenantProvider>
-                    <TenantErrorWrapper>
-                      <Routes>
-                        {AdminRoutes()}
-                        {CarerRoutes()}
-                        {ClientRoutes()}
-                      </Routes>
-                    </TenantErrorWrapper>
-                  </TenantProvider>
-                } />
-                
-                {/* Redirect non-tenant client dashboard routes */}
-                <Route path="/client-dashboard/*" element={
-                  <Navigate to="/client-login" replace />
-                } />
-                <Route path="/client-dashboard" element={
-                  <Navigate to="/client-login" replace />
-                } />
-                
-                {/* Fallback route for unmatched paths */}
-                <Route path="*" element={<RoutingErrorFallback />} />
-              </Routes>
-            </ErrorBoundary>
-          </TaskProvider>
-        </SessionTimeoutProvider>
+        <TaskProvider>
+          <ErrorBoundary fallback={<RoutingErrorFallback />}>
+            <NavigationGuard />
+            <PWAInstallPrompt />
+            <OfflineIndicator />
+            <PWAUpdatePrompt />
+            <Routes>
+              {/* Public Routes - Always accessible */}
+              <Route path="/" element={<Index />} />
+              <Route path="/demo-request" element={<DemoRequest />} />
+              <Route path="/login" element={<UnifiedLogin />} />
+              {/* Redirect old super-admin route to main page */}
+              <Route path="/super-admin" element={<Index />} />
+              <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
+              <Route path="/branch-selection" element={<BranchSelection />} />
+              <Route path="/carer-login" element={<CarerLoginSafe />} />
+              <Route path="/carer-invitation" element={<CarerInvitation />} />
+              <Route path="/carer-onboarding" element={<CarerOnboarding />} />
+              <Route path="/client-login" element={<ClientLogin />} />
+              <Route path="/tenant-setup" element={<TenantSetup />} />
+              <Route path="/tenant-error" element={<TenantError />} />
+              <Route path="/system-login" element={<SystemLogin />} />
+              
+              {/* Shared Client Profile Route - Must be before tenant routes */}
+              <Route path="/shared/client/:clientId" element={<SharedClientProfile />} />
+              
+              {/* Third-Party Workspace Route */}
+              <Route path="/third-party/workspace" element={<ThirdPartyWorkspace />} />
+              
+              {/* System Dashboard Routes */}
+              <Route path="/system-dashboard" element={
+                <SystemGuard>
+                  <SystemDashboard />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/tenants" element={
+                <SystemGuard>
+                  <SystemTenants />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/users" element={
+                <SystemGuard>
+                  <SystemUsers />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/analytics" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/settings" element={
+                <SystemGuard>
+                  <SystemSettings />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/audit" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              <Route path="/system-dashboard/database" element={
+                <SystemGuard>
+                  <SystemAnalytics />
+                </SystemGuard>
+              } />
+              
+              {/* Main Admin Dashboard Route for Super Admins */}
+              <Route path="/dashboard" element={
+                <SuperAdminGuard>
+                  <Dashboard />
+                </SuperAdminGuard>
+              } />
+              
+              {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
+              <Route path="/branch-dashboard/*" element={<BranchDashboardRedirect />} />
+              
+              {/* Carer Dashboard Redirect - Ensure tenant-aware URLs */}
+              <Route path="/carer-dashboard/*" element={<CarerDashboardRedirect />} />
+              
+              {/* Tenant Login Routes - Separate from protected routes */}
+              <Route path="/:tenantSlug/login" element={
+                <TenantProvider>
+                  <TenantLogin />
+                </TenantProvider>
+              } />
+              <Route path="/:tenantSlug/client-login" element={
+                <TenantProvider>
+                  <TenantClientLogin />
+                </TenantProvider>
+              } />
+              <Route path="/:tenantSlug/carer-login" element={
+                <TenantProvider>
+                  <TenantCarerLogin />
+                </TenantProvider>
+              } />
+              
+              {/* Tenant Dashboard Route */}
+              <Route path="/:tenantSlug/dashboard" element={
+                <TenantProvider>
+                  <TenantErrorWrapper>
+                    <TenantDashboard />
+                  </TenantErrorWrapper>
+                </TenantProvider>
+              } />
+              
+              {/* Tenant-specific Protected Routes */}
+              <Route path="/:tenantSlug/*" element={
+                <TenantProvider>
+                  <TenantErrorWrapper>
+                    <Routes>
+                      {AdminRoutes()}
+                      {CarerRoutes()}
+                      {ClientRoutes()}
+                    </Routes>
+                  </TenantErrorWrapper>
+                </TenantProvider>
+              } />
+              
+              {/* Redirect non-tenant client dashboard routes */}
+              <Route path="/client-dashboard/*" element={
+                <Navigate to="/client-login" replace />
+              } />
+              <Route path="/client-dashboard" element={
+                <Navigate to="/client-login" replace />
+              } />
+              
+              {/* Fallback route for unmatched paths */}
+              <Route path="*" element={<RoutingErrorFallback />} />
+            </Routes>
+          </ErrorBoundary>
+        </TaskProvider>
       </BrowserRouter>
     </AuthErrorBoundary>
   );
@@ -194,86 +248,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <ErrorBoundary fallback={<RoutingErrorFallback />}>
-              <PWAInstallPrompt />
-              <OfflineIndicator />
-              <PWAUpdatePrompt />
-              <Routes>
-                {/* Public Routes - Always accessible */}
-                <Route path="/" element={<Index />} />
-                <Route path="/demo-request" element={<DemoRequest />} />
-                <Route path="/login" element={<UnifiedLogin />} />
-                {/* Redirect old super-admin route to main page */}
-                <Route path="/super-admin" element={<Index />} />
-                <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
-                <Route path="/branch-selection" element={<BranchSelection />} />
-                <Route path="/carer-login" element={<CarerLoginSafe />} />
-                <Route path="/carer-invitation" element={<CarerInvitation />} />
-                <Route path="/carer-onboarding" element={<CarerOnboarding />} />
-                <Route path="/client-login" element={<ClientLogin />} />
-                <Route path="/tenant-setup" element={<TenantSetup />} />
-                <Route path="/tenant-error" element={<TenantError />} />
-                <Route path="/system-login" element={<SystemLogin />} />
-                
-                {/* Shared Client Profile Route - Must be before tenant routes */}
-                <Route path="/shared/client/:clientId" element={<SharedClientProfile />} />
-                
-                {/* Third-Party Workspace Route */}
-                <Route path="/third-party/workspace" element={<ThirdPartyWorkspace />} />
-                
-                {/* System Dashboard Routes - Wrapped with SystemAuthProvider */}
-                <Route path="/system-dashboard/*" element={
-                  <SystemAuthProvider>
-                    <Routes>
-                      <Route path="/" element={
-                        <SystemGuard>
-                          <SystemDashboard />
-                        </SystemGuard>
-                      } />
-                      <Route path="/tenants" element={
-                        <SystemGuard>
-                          <SystemTenants />
-                        </SystemGuard>
-                      } />
-                      <Route path="/users" element={
-                        <SystemGuard>
-                          <SystemUsers />
-                        </SystemGuard>
-                      } />
-                      <Route path="/analytics" element={
-                        <SystemGuard>
-                          <SystemAnalytics />
-                        </SystemGuard>
-                      } />
-                      <Route path="/settings" element={
-                        <SystemGuard>
-                          <SystemSettings />
-                        </SystemGuard>
-                      } />
-                      <Route path="/audit" element={
-                        <SystemGuard>
-                          <SystemAnalytics />
-                        </SystemGuard>
-                      } />
-                      <Route path="/database" element={
-                        <SystemGuard>
-                          <SystemAnalytics />
-                        </SystemGuard>
-                      } />
-                    </Routes>
-                  </SystemAuthProvider>
-                } />
-                
-                {/* Tenant Routes - Wrapped with UnifiedAuthProvider */}
-                <Route path="/*" element={
-                  <UnifiedAuthProvider>
-                    <AppContent />
-                  </UnifiedAuthProvider>
-                } />
-              </Routes>
-            </ErrorBoundary>
-          </BrowserRouter>
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
