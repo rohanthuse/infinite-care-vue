@@ -5514,6 +5514,7 @@ export type Database = {
           billing_email: string | null
           contact_email: string | null
           contact_phone: string | null
+          country: string | null
           created_at: string
           director: string | null
           id: string
@@ -5540,6 +5541,7 @@ export type Database = {
           billing_email?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string
           director?: string | null
           id?: string
@@ -5566,6 +5568,7 @@ export type Database = {
           billing_email?: string | null
           contact_email?: string | null
           contact_phone?: string | null
+          country?: string | null
           created_at?: string
           director?: string | null
           id?: string

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { motion } from "framer-motion";
-import { Settings as SettingsIcon, Building2, Save, XCircle, Loader2, Lock, Eye, EyeOff } from "lucide-react";
+import { Settings as SettingsIcon, Building2, Save, XCircle, Loader2, Lock, Eye, EyeOff, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,6 +35,7 @@ type CompanySettings = {
   address: string;
   website: string;
   email: string;
+  logo_url?: string;
 };
 
 const fetchCompanySettings = async (organizationId: string | undefined): Promise<CompanySettings | null> => {
@@ -62,6 +63,7 @@ const fetchCompanySettings = async (organizationId: string | undefined): Promise
     address: data.address || '',
     website: (data as any).website || '',
     email: data.contact_email || '',
+    logo_url: data.logo_url || '',
   };
 };
 
@@ -75,6 +77,7 @@ const updateCompanySettings = async (settings: Partial<CompanySettings>) => {
     contact_email: updateData.email,
     contact_phone: updateData.mobile_number || updateData.telephone,
     address: updateData.address,
+    country: updateData.country,
   };
 
   // Add new columns if they exist in the form data
@@ -87,8 +90,8 @@ const updateCompanySettings = async (settings: Partial<CompanySettings>) => {
   if (updateData.website !== undefined) {
     updatePayload.website = updateData.website;
   }
-  if (updateData.country !== undefined) {
-    updatePayload.country = updateData.country;
+  if (updateData.logo_url !== undefined) {
+    updatePayload.logo_url = updateData.logo_url;
   }
 
   const { error } = await supabase
@@ -146,6 +149,12 @@ const Settings = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(
+    initialData.logo_url || null
+  );
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const passwordForm = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
@@ -198,9 +207,87 @@ const Settings = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPEG, PNG, or WebP)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Logo file size must be less than 5MB');
+      return;
+    }
+
+    setLogoFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleLogoRemove = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    handleChange('logo_url', '');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadLogo = async (organizationId: string): Promise<string | null> => {
+    if (!logoFile) return null;
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `${organizationId}/logo-${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('organization-logos')
+        .upload(fileName, logoFile, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('organization-logos')
+        .getPublicUrl(data.path);
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      toast.error(`Failed to upload logo: ${error.message}`);
+      return null;
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(formData);
+    
+    let updatedFormData = { ...formData };
+    
+    // Upload logo if a new file is selected
+    if (logoFile && formData.id) {
+      const logoUrl = await uploadLogo(formData.id);
+      if (logoUrl) {
+        updatedFormData.logo_url = logoUrl;
+      }
+    }
+    
+    updateSettings(updatedFormData);
   };
 
   const handleCancel = () => {
@@ -284,6 +371,71 @@ const Settings = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="p-5 md:p-8 space-y-6">
+            {/* Company Logo Upload Section */}
+            <div className="space-y-4 pb-6 border-b border-border">
+              <Label className="text-foreground font-medium">
+                Company Logo
+              </Label>
+              
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                {/* Logo Preview */}
+                <div className="relative">
+                  <div className="w-32 h-32 rounded-lg border-2 border-dashed border-border bg-muted/30 flex items-center justify-center overflow-hidden">
+                    {logoPreview ? (
+                      <>
+                        <img
+                          src={logoPreview}
+                          alt="Company Logo"
+                          className="w-full h-full object-contain"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleLogoRemove}
+                          className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors"
+                          disabled={isUpdating || uploadingLogo}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">No logo</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Upload Button */}
+                <div className="flex-1 space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleLogoSelect}
+                    className="hidden"
+                    disabled={isUpdating || uploadingLogo}
+                  />
+                  <CustomButton
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUpdating || uploadingLogo}
+                    className="w-full sm:w-auto"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                  </CustomButton>
+                  <p className="text-xs text-muted-foreground">
+                    Recommended: Square image, max 5MB (JPEG, PNG, WebP)
+                  </p>
+                  {uploadingLogo && (
+                    <p className="text-xs text-primary">Uploading logo...</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="companyName" className="text-foreground font-medium">
