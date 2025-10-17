@@ -11,13 +11,19 @@ import { ViewInvoiceDialog } from '../clients/dialogs/ViewInvoiceDialog';
 import { ViewPaymentDialog } from './ViewPaymentDialog';
 import { EnhancedClientSelector } from '@/components/ui/enhanced-client-selector';
 import { useUninvoicedBookings, EnhancedClientBilling } from '@/hooks/useEnhancedClientBilling';
-import { InvoicePeriodSelector } from './InvoicePeriodSelector';
+import { InvoicePeriodSelector, type PeriodDetails } from './InvoicePeriodSelector';
+import { BulkInvoicePreviewDialog } from './BulkInvoicePreviewDialog';
+import { BulkGenerationProgressDialog } from './BulkGenerationProgressDialog';
+import { BulkGenerationResultsDialog } from './BulkGenerationResultsDialog';
+import { useBulkInvoiceGeneration } from '@/hooks/useBulkInvoiceGeneration';
+import type { BulkGenerationProgress, BulkGenerationResult } from '@/hooks/useBulkInvoiceGeneration';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
 import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePDF } from '@/utils/invoicePdfGenerator';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface InvoicesPaymentsTabProps {
   branchId?: string;
@@ -41,11 +47,20 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
   const [showClientSelectionForInvoice, setShowClientSelectionForInvoice] = useState(false);
   const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
   const [isInvoicePeriodOpen, setIsInvoicePeriodOpen] = useState(false);
-  const [selectedInvoicePeriod, setSelectedInvoicePeriod] = useState<{
-    type: 'weekly' | 'fortnightly' | 'monthly';
-    startDate: string;
-    endDate: string;
-  } | null>(null);
+  const [selectedInvoicePeriod, setSelectedInvoicePeriod] = useState<PeriodDetails | null>(null);
+  
+  // Bulk generation states
+  const [showBulkPreview, setShowBulkPreview] = useState(false);
+  const [showBulkProgress, setShowBulkProgress] = useState(false);
+  const [showBulkResults, setShowBulkResults] = useState(false);
+  const [bulkGenerationResults, setBulkGenerationResults] = useState<BulkGenerationResult | null>(null);
+  const [bulkGenerationProgress, setBulkGenerationProgress] = useState<BulkGenerationProgress>({ 
+    current: 0, 
+    total: 0 
+  });
+
+  const { generateBulkInvoices } = useBulkInvoiceGeneration();
+  const queryClient = useQueryClient();
   
   const { data: uninvoicedBookings } = useUninvoicedBookings(branchId);
   
@@ -123,16 +138,47 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     setIsInvoicePeriodOpen(true);
   };
 
-  // Handler for period selection
-  const handleInvoicePeriodSelect = (periodDetails: {
-    type: 'weekly' | 'fortnightly' | 'monthly';
-    startDate: string;
-    endDate: string;
-  }) => {
+  // Handler for period selection (manual invoice)
+  const handleInvoicePeriodSelect = (periodDetails: PeriodDetails) => {
     setSelectedInvoicePeriod(periodDetails);
     setIsInvoicePeriodOpen(false);
-    // After period is selected, show client selection
     setShowClientSelectionForInvoice(true);
+  };
+
+  // Handler for bulk generation
+  const handleBulkGenerate = (periodDetails: PeriodDetails) => {
+    setSelectedInvoicePeriod(periodDetails);
+    setIsInvoicePeriodOpen(false);
+    setShowBulkPreview(true);
+  };
+
+  // Handler for confirming bulk generation
+  const handleConfirmBulkGenerate = async () => {
+    if (!selectedInvoicePeriod || !branchId) return;
+    setShowBulkPreview(false);
+    setShowBulkProgress(true);
+    try {
+      const results = await generateBulkInvoices(
+        selectedInvoicePeriod,
+        branchId,
+        organizationId,
+        (progress) => setBulkGenerationProgress(progress)
+      );
+      setShowBulkProgress(false);
+      setBulkGenerationResults(results);
+      setShowBulkResults(true);
+      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      if (results.successCount > 0) {
+        toast.success(`Successfully generated ${results.successCount} invoice${results.successCount !== 1 ? 's' : ''}`);
+      }
+    } catch (error: any) {
+      setShowBulkProgress(false);
+      toast.error('Failed to generate bulk invoices');
+    }
+  };
+
+  const handleViewGeneratedInvoices = () => {
+    setActiveSubTab('invoices');
   };
 
   // Handler for when client is selected from the modal - now opens enhanced flow
@@ -373,8 +419,38 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
       {/* Invoice Period Selector */}
       <InvoicePeriodSelector
         isOpen={isInvoicePeriodOpen}
-        onClose={() => setIsInvoicePeriodOpen(false)}
+        onClose={() => {
+          setIsInvoicePeriodOpen(false);
+          setSelectedInvoicePeriod(null);
+        }}
         onPeriodSelect={handleInvoicePeriodSelect}
+        onBulkGenerate={handleBulkGenerate}
+        branchId={branchId}
+        organizationId={organizationId}
+      />
+
+      <BulkInvoicePreviewDialog
+        isOpen={showBulkPreview}
+        onClose={() => setShowBulkPreview(false)}
+        periodDetails={selectedInvoicePeriod}
+        branchId={branchId!}
+        organizationId={organizationId}
+        onConfirm={handleConfirmBulkGenerate}
+      />
+
+      <BulkGenerationProgressDialog
+        isOpen={showBulkProgress}
+        progress={bulkGenerationProgress}
+      />
+
+      <BulkGenerationResultsDialog
+        isOpen={showBulkResults}
+        onClose={() => {
+          setShowBulkResults(false);
+          setBulkGenerationResults(null);
+        }}
+        results={bulkGenerationResults}
+        onViewInvoices={handleViewGeneratedInvoices}
       />
 
       {/* Invoice Creation/Edit Dialog */}

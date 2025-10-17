@@ -98,6 +98,17 @@ export type ChargeType =
   | 'rate_per_minutes_flat_rate' 
   | 'daily_flat_rate';
 
+export interface Visit {
+  id: string;
+  client_id: string;
+  date: string;
+  planned_start: string;
+  planned_end: string;
+  actual_start?: string;
+  actual_end?: string;
+  is_bank_holiday: boolean;
+}
+
 export const invoiceMethodLabels: Record<InvoiceMethod, string> = {
   per_visit: 'Per Visit',
   weekly: 'Weekly',
