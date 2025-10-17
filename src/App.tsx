@@ -39,6 +39,7 @@ import TenantClientLogin from "./pages/TenantClientLogin";
 import TenantCarerLogin from "./pages/TenantCarerLogin";
 import TenantDashboard from "./pages/TenantDashboard";
 import { SystemGuard } from "@/components/system/SystemGuard";
+import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
 import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
@@ -121,7 +122,11 @@ const AppContent = () => {
               <Route path="/client-login" element={<ClientLogin />} />
               <Route path="/tenant-setup" element={<TenantSetup />} />
               <Route path="/tenant-error" element={<TenantError />} />
-              <Route path="/system-login" element={<SystemLogin />} />
+              <Route path="/system-login" element={
+                <SystemAuthProvider>
+                  <SystemLogin />
+                </SystemAuthProvider>
+              } />
               
               {/* Shared Client Profile Route - Must be before tenant routes */}
               <Route path="/shared/client/:clientId" element={<SharedClientProfile />} />
@@ -131,39 +136,53 @@ const AppContent = () => {
               
               {/* System Dashboard Routes */}
               <Route path="/system-dashboard" element={
-                <SystemGuard>
-                  <SystemDashboard />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemDashboard />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               <Route path="/system-dashboard/tenants" element={
-                <SystemGuard>
-                  <SystemTenants />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemTenants />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               <Route path="/system-dashboard/users" element={
-                <SystemGuard>
-                  <SystemUsers />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemUsers />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               <Route path="/system-dashboard/analytics" element={
-                <SystemGuard>
-                  <SystemAnalytics />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemAnalytics />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               <Route path="/system-dashboard/settings" element={
-                <SystemGuard>
-                  <SystemSettings />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemSettings />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               <Route path="/system-dashboard/audit" element={
-                <SystemGuard>
-                  <SystemAnalytics />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemAnalytics />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               <Route path="/system-dashboard/database" element={
-                <SystemGuard>
-                  <SystemAnalytics />
-                </SystemGuard>
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemAnalytics />
+                  </SystemGuard>
+                </SystemAuthProvider>
               } />
               
               {/* Main Admin Dashboard Route for Super Admins */}
