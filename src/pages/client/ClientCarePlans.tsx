@@ -382,12 +382,16 @@ const ClientCarePlans = () => {
         existingComments={selectedCarePlan?.change_request_comments}
       />}
 
-      {/* View Details Dialog */}
       {selectedCarePlan && (
         <CarePlanViewDialog
           carePlanId={selectedCarePlan.id}
           open={viewDialogOpen}
-          onOpenChange={setViewDialogOpen}
+          onOpenChange={(next) => {
+            setViewDialogOpen(next);
+            if (!next) {
+              setTimeout(() => setSelectedCarePlan(null), 250);
+            }
+          }}
           context="client"
         />
       )}

@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
 import { useTenant } from '@/contexts/TenantContext';
 import { useToast } from '@/hooks/use-toast';
-import { useControlledDialog } from '@/hooks/useDialogManager';
+
 import { generateCarePlanDetailPDF } from '@/services/enhancedPdfGenerator';
 
 // Import client-friendly section components
@@ -257,37 +257,10 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   
   const carePlanWithDetails = carePlan as CarePlanWithDetails;
 
-  // Use controlled dialog for proper cleanup and state management
-  const controlledDialog = useControlledDialog(`care-plan-view-${carePlanId}`, open);
-  
-  // Sync with external open/onOpenChange props
-  useEffect(() => {
-    if (open !== controlledDialog.open) {
-      controlledDialog.onOpenChange(open);
-    }
-  }, [open, controlledDialog.open, controlledDialog.onOpenChange]);
-  
-  useEffect(() => {
-    onOpenChange(controlledDialog.open);
-  }, [controlledDialog.open, onOpenChange]);
-
-  // Handle dialog close with proper cleanup
+  // Handle dialog close
   const handleClose = useCallback((newOpen: boolean) => {
-    controlledDialog.onOpenChange(newOpen);
-    
-    if (!newOpen) {
-      // Restore parent dialog interactivity after animation completes
-      setTimeout(() => {
-        const parentDialog = document.querySelector('[role="dialog"]');
-        if (parentDialog) {
-          parentDialog.removeAttribute('inert');
-          parentDialog.removeAttribute('aria-hidden');
-        }
-        document.body.style.removeProperty('pointer-events');
-        document.body.style.removeProperty('overflow');
-      }, 200);
-    }
-  }, [controlledDialog]);
+    onOpenChange(newOpen);
+  }, [onOpenChange]);
 
   // Initialize form with care plan data
   const form = useForm({ defaultValues: {} });
@@ -446,7 +419,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
 
   if (isLoading) {
     return (
-      <Dialog open={controlledDialog.open} onOpenChange={handleClose}>
+      <Dialog open={open} onOpenChange={handleClose}>
         <DialogPortal>
           <DialogOverlay className="z-[60]" />
           <DialogContent className="z-[70] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -473,7 +446,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   }
 
   return (
-    <Dialog open={controlledDialog.open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogPortal>
         <DialogOverlay className="z-[60]" />
         <DialogContent 
