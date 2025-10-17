@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -452,6 +452,9 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
           <DialogContent className="z-[70] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>Loading Care Plan...</DialogTitle>
+              <DialogDescription>
+                Please wait while we fetch the care plan details.
+              </DialogDescription>
             </DialogHeader>
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -490,6 +493,11 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
               <DialogTitle>
                 {carePlan.title || `Care Plan #${carePlan.display_id}`}
               </DialogTitle>
+              <DialogDescription>
+                {carePlan.client 
+                  ? `Care plan for ${carePlan.client.first_name} ${carePlan.client.last_name}` 
+                  : 'View and manage care plan details'}
+              </DialogDescription>
             <div className="flex items-center gap-2 mt-2">
                 <Badge className={getStatusColor(carePlan.status)} variant="outline">
                   {carePlan.status?.replace('_', ' ')}

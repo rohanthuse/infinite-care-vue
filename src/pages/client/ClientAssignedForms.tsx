@@ -5,7 +5,7 @@ import { useClientNavigation } from '@/hooks/useClientNavigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { FileText, Calendar, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -223,6 +223,9 @@ const ClientAssignedForms = () => {
             <DialogTitle>
               {selectedSubmission?.forms?.title || 'Form Submission'}
             </DialogTitle>
+            <DialogDescription>
+              {selectedSubmission?.forms?.description || 'View your submitted form details and responses'}
+            </DialogDescription>
           </DialogHeader>
           {selectedSubmission && (
             <FormSubmissionDetail
