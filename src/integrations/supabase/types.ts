@@ -3536,6 +3536,7 @@ export type Database = {
           authority_id: string | null
           avatar_initials: string | null
           branch_id: string | null
+          client_id: string | null
           communication_preferences: string | null
           country_code: string | null
           created_at: string | null
@@ -3577,6 +3578,7 @@ export type Database = {
           authority_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
+          client_id?: string | null
           communication_preferences?: string | null
           country_code?: string | null
           created_at?: string | null
@@ -3618,6 +3620,7 @@ export type Database = {
           authority_id?: string | null
           avatar_initials?: string | null
           branch_id?: string | null
+          client_id?: string | null
           communication_preferences?: string | null
           country_code?: string | null
           created_at?: string | null

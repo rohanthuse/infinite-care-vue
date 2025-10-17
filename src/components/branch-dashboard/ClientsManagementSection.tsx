@@ -26,7 +26,7 @@ export function ClientsManagementSection({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<'name' | 'email' | 'pin_code' | 'region' | 'created_at'>('created_at');
+  const [sortBy, setSortBy] = useState<'name' | 'email' | 'pin_code' | 'region' | 'created_at' | 'client_id'>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedClient, setSelectedClient] = useState<any>(null);
@@ -67,7 +67,7 @@ export function ClientsManagementSection({
     }, 50);
   };
 
-  const handleSort = (column: 'name' | 'email' | 'pin_code' | 'region' | 'created_at') => {
+  const handleSort = (column: 'name' | 'email' | 'pin_code' | 'region' | 'created_at' | 'client_id') => {
     if (sortBy === column) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -140,7 +140,7 @@ export function ClientsManagementSection({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search clients by name, email, or post code..."
+                  placeholder="Search clients by name, email, post code, or Client ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -177,6 +177,7 @@ export function ClientsManagementSection({
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="client_id">Client ID</SelectItem>
                   <SelectItem value="name">Name (A-Z)</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
                   <SelectItem value="pin_code">Post code (Area)</SelectItem>
@@ -221,6 +222,14 @@ export function ClientsManagementSection({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-medium">
+                        <button 
+                          onClick={() => handleSort('client_id')}
+                          className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+                        >
+                          Client ID {getSortIcon('client_id')}
+                        </button>
+                      </th>
                       <th className="text-left py-3 px-4 font-medium">
                         <button 
                           onClick={() => handleSort('name')}
@@ -269,6 +278,11 @@ export function ClientsManagementSection({
                   <tbody>
                     {clients.map((client) => (
                       <tr key={client.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 text-sm">
+                          <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs font-medium">
+                            {client.client_id || 'N/A'}
+                          </span>
+                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -343,6 +357,11 @@ export function ClientsManagementSection({
                           </div>
                           <div>
                             <p className="font-medium">{client.first_name} {client.last_name}</p>
+                            {client.client_id && (
+                              <p className="text-xs text-gray-500 font-mono">
+                                ID: <span className="text-indigo-600 font-medium">{client.client_id}</span>
+                              </p>
+                            )}
                             <p className="text-sm text-gray-600">{client.email || 'No email'}</p>
                             <p className="text-sm text-gray-600">{client.phone || client.mobile_number || 'No phone'}</p>
                           </div>

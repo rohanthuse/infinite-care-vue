@@ -30,6 +30,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   
   const defaultFormData = {
+    client_id: "",
     title: "",
     first_name: "",
     middle_name: "",
@@ -85,6 +86,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       const addressParts = parseAddress(clientToEdit.address || '');
       
       setFormData({
+        client_id: clientToEdit.client_id || "",
         title: clientToEdit.title || "",
         first_name: clientToEdit.first_name || "",
         middle_name: clientToEdit.middle_name || "",
@@ -171,6 +173,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       // Prepare client data
       const clientData = {
         ...formData,
+        client_id: formData.client_id?.trim() || null, // Trim and set to null if empty (triggers auto-generation)
         address: fullAddress, // Store reconstructed address
         branch_id: branchId,
         avatar_initials: generateAvatarInitials(formData.first_name, formData.last_name),
@@ -293,7 +296,33 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         
         <form onSubmit={handleSubmit} className="space-y-6">
           
-          {/* SECTION 1: Personal Information */}
+          {/* SECTION 1: Client Identification */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Client Identification</h3>
+            </div>
+            
+            <div>
+              <Label htmlFor="client_id">
+                Client ID
+                <span className="text-xs text-gray-500 ml-2 font-normal">
+                  (Optional - Auto-generated if empty)
+                </span>
+              </Label>
+              <Input 
+                id="client_id" 
+                value={formData.client_id} 
+                onChange={e => handleInputChange("client_id", e.target.value)}
+                placeholder="e.g., CLIENT-2025-001 (auto-generated if empty)"
+                className="font-mono"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter a custom alphanumeric ID or leave empty to auto-generate in format <strong>CLIENT-YYYY-NNN</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* SECTION 2: Personal Information */}
           <div className="space-y-3">
             <div className="border-b pb-2">
               <h3 className="text-sm font-semibold text-gray-900">Personal Information</h3>
@@ -365,7 +394,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             </div>
           </div>
 
-          {/* SECTION 2: Contact Information */}
+          {/* SECTION 3: Contact Information */}
           <div className="space-y-3">
             <div className="border-b pb-2">
               <h3 className="text-sm font-semibold text-gray-900">Contact Information</h3>
@@ -387,7 +416,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             </div>
           </div>
 
-          {/* SECTION 3: Address Information */}
+          {/* SECTION 4: Address Information */}
           <div className="space-y-3">
             <div className="border-b pb-2">
               <h3 className="text-sm font-semibold text-gray-900">Address Information</h3>
@@ -445,7 +474,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             </div>
           </div>
 
-          {/* SECTION 4: Personal Details */}
+          {/* SECTION 5: Personal Details */}
           <div className="space-y-3">
             <div className="border-b pb-2">
               <h3 className="text-sm font-semibold text-gray-900">Personal Details</h3>

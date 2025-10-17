@@ -10,7 +10,7 @@ interface UseBranchClientsParams {
     searchTerm?: string;
     statusFilter?: string;
     regionFilter?: string;
-    sortBy?: 'name' | 'email' | 'pin_code' | 'region' | 'created_at';
+    sortBy?: 'name' | 'email' | 'pin_code' | 'region' | 'created_at' | 'client_id';
     sortOrder?: 'asc' | 'desc';
     page: number;
     itemsPerPage: number;
@@ -37,7 +37,7 @@ const fetchBranchClients = async ({
 
     if (searchTerm) {
         const searchIlke = `%${searchTerm}%`;
-        query = query.or(`first_name.ilike.${searchIlke},last_name.ilike.${searchIlke},email.ilike.${searchIlke},pin_code.ilike.${searchIlke}`);
+        query = query.or(`first_name.ilike.${searchIlke},last_name.ilike.${searchIlke},email.ilike.${searchIlke},pin_code.ilike.${searchIlke},client_id.ilike.${searchIlke}`);
     }
 
     if (statusFilter && statusFilter !== 'all') {
