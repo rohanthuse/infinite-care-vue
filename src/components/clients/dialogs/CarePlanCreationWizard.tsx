@@ -508,13 +508,10 @@ export function CarePlanCreationWizard({
       if (hasPersonalInfo(formData.personal_info)) completedSteps.push(2);
       if (hasAnyValue(formData.about_me)) completedSteps.push(3);
       if (hasMedicalInfo(formData.medical_info)) completedSteps.push(4);
-      // Step 5 is now Medication (standard medication management)
-      if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && formData.medical_info.medication_manager.medications.length > 0) completedSteps.push(5);
-      // Step 6 is now Admin Medication - check if there are any medication administration details
-      if (formData.medical_info?.medication_manager?.medications && Array.isArray(formData.medical_info.medication_manager.medications) && 
-          formData.medical_info.medication_manager.medications.some(med => 
-            isNonEmptyString(med?.who_administers) || isNonEmptyString(med?.level) || isNonEmptyString(med?.instruction)
-           )) completedSteps.push(6);
+      // Step 5 - Medication (always marked as complete - it's optional)
+      completedSteps.push(5);
+      // Step 6 - Admin Medication (always marked as complete - it's optional)
+      completedSteps.push(6);
       if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(7);
       if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(8);
       if (hasAnyValue(formData.personal_care)) completedSteps.push(9);

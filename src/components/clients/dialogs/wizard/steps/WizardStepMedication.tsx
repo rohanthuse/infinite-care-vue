@@ -134,6 +134,7 @@ export function WizardStepMedication({
         </h2>
         <p className="text-gray-600">
           Manage client medications and view them on the calendar.
+          <span className="text-amber-600 font-medium ml-1">(Optional - Skip if client has no medications)</span>
         </p>
       </div>
 
