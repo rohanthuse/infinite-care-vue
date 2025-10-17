@@ -19,7 +19,17 @@ export function DashboardHeader() {
   const { signOut } = useAuth();
   const { data: userRole, isLoading: userRoleLoading } = useUserRole();
   const { toast } = useToast();
-  const { tenantSlug } = useTenant();
+  
+  // Safely get tenant context - may not be available in system-level routes
+  let tenantSlug = null;
+  try {
+    const tenantContext = useTenant();
+    tenantSlug = tenantContext.tenantSlug;
+  } catch (error) {
+    // Not in a tenant context (e.g., system dashboard), use null
+    console.log('[DashboardHeader] Not in tenant context, using system-level routing');
+  }
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   
