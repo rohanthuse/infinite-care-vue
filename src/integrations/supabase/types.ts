@@ -5515,6 +5515,7 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          director: string | null
           id: string
           is_trial: boolean | null
           logo_url: string | null
@@ -5522,6 +5523,7 @@ export type Database = {
           max_users: number | null
           name: string
           primary_color: string | null
+          registration_number: string | null
           secondary_color: string | null
           settings: Json | null
           slug: string
@@ -5531,6 +5533,7 @@ export type Database = {
           subscription_status: string
           trial_ends_at: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -5538,6 +5541,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          director?: string | null
           id?: string
           is_trial?: boolean | null
           logo_url?: string | null
@@ -5545,6 +5549,7 @@ export type Database = {
           max_users?: number | null
           name: string
           primary_color?: string | null
+          registration_number?: string | null
           secondary_color?: string | null
           settings?: Json | null
           slug: string
@@ -5554,6 +5559,7 @@ export type Database = {
           subscription_status?: string
           trial_ends_at?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -5561,6 +5567,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          director?: string | null
           id?: string
           is_trial?: boolean | null
           logo_url?: string | null
@@ -5568,6 +5575,7 @@ export type Database = {
           max_users?: number | null
           name?: string
           primary_color?: string | null
+          registration_number?: string | null
           secondary_color?: string | null
           settings?: Json | null
           slug?: string
@@ -5577,6 +5585,7 @@ export type Database = {
           subscription_status?: string
           trial_ends_at?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {

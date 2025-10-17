@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserOrganization } from "@/hooks/useUserOrganization";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -36,24 +37,63 @@ type CompanySettings = {
   email: string;
 };
 
-const fetchCompanySettings = async (): Promise<CompanySettings | null> => {
+const fetchCompanySettings = async (organizationId: string | undefined): Promise<CompanySettings | null> => {
+  if (!organizationId) return null;
+
   const { data, error } = await supabase
-    .from('company_settings')
+    .from('organizations')
     .select('*')
-    .limit(1)
+    .eq('id', organizationId)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data;
+  
+  if (!data) return null;
+
+  // Map organization fields to CompanySettings format
+  return {
+    id: data.id,
+    company_name: data.name || '',
+    registration_number: (data as any).registration_number || '',
+    director: (data as any).director || '',
+    country: (data as any).country || '',
+    mobile_number: data.contact_phone || '',
+    telephone: data.contact_phone || '',
+    address: data.address || '',
+    website: (data as any).website || '',
+    email: data.contact_email || '',
+  };
 };
 
 const updateCompanySettings = async (settings: Partial<CompanySettings>) => {
-  if (!settings.id) throw new Error("Settings ID is missing.");
+  if (!settings.id) throw new Error("Organization ID is missing.");
   const { id, ...updateData } = settings;
 
+  // Map CompanySettings fields to organizations table columns
+  const updatePayload: any = {
+    name: updateData.company_name,
+    contact_email: updateData.email,
+    contact_phone: updateData.mobile_number || updateData.telephone,
+    address: updateData.address,
+  };
+
+  // Add new columns if they exist in the form data
+  if (updateData.registration_number !== undefined) {
+    updatePayload.registration_number = updateData.registration_number;
+  }
+  if (updateData.director !== undefined) {
+    updatePayload.director = updateData.director;
+  }
+  if (updateData.website !== undefined) {
+    updatePayload.website = updateData.website;
+  }
+  if (updateData.country !== undefined) {
+    updatePayload.country = updateData.country;
+  }
+
   const { error } = await supabase
-    .from('company_settings')
-    .update(updateData)
+    .from('organizations')
+    .update(updatePayload)
     .eq('id', id);
 
   if (error) throw new Error(error.message);
@@ -74,10 +114,14 @@ const Settings = () => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Partial<CompanySettings>>({});
   const [initialData, setInitialData] = useState<Partial<CompanySettings>>({});
+  
+  // Get user's organization
+  const { data: userOrg } = useUserOrganization();
 
   const { data: settings, isLoading, isError, error } = useQuery({
-    queryKey: ['companySettings'],
-    queryFn: fetchCompanySettings,
+    queryKey: ['companySettings', userOrg?.id],
+    queryFn: () => fetchCompanySettings(userOrg?.id),
+    enabled: !!userOrg?.id,
   });
 
   useEffect(() => {
@@ -91,7 +135,7 @@ const Settings = () => {
     mutationFn: updateCompanySettings,
     onSuccess: () => {
       toast.success("Settings saved successfully!");
-      queryClient.invalidateQueries({ queryKey: ['companySettings'] });
+      queryClient.invalidateQueries({ queryKey: ['companySettings', userOrg?.id] });
     },
     onError: (error: any) => {
       toast.error(`Failed to save settings: ${error.message}`);
