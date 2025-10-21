@@ -135,6 +135,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
     "Resources": true,
     "Reports": true,
   });
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
 
   // Filter tabs based on permissions for branch admins
   const filterTabsByPermissions = (tabs: TabItem[]) => {
@@ -160,46 +161,80 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
     tab.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleQuickAddAction = (action: string) => {
-    switch (action) {
-      case "New Client":
-        if (onNewClient) {
-          onNewClient();
-        } else {
-          toast.info("Feature coming soon");
-        }
-        break;
-      case "New Booking":
-        if (onNewBooking) {
-          onNewBooking();
-        } else {
-          toast.info("Feature coming soon");
-        }
-        break;
-      case "New Staff":
-        if (onNewStaff) {
-          onNewStaff();
-        } else {
-          toast.info("Feature coming soon");
-        }
-        break;
-      case "New Agreement":
-        if (onNewAgreement) {
-          onNewAgreement();
-        } else {
-          toast.info("Feature coming soon");
-        }
-        break;
-      case "Upload Document":
-        if (onUploadDocument) {
-          onUploadDocument();
-        } else {
-          toast.info("Feature coming soon");
-        }
-        break;
-      default:
-        toast.info("Feature coming soon");
+  const cleanupDropdownState = () => {
+    // Remove any lingering pointer-events blocks
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('pointer-events');
+    
+    // Remove any lingering overlays or portals
+    const overlays = document.querySelectorAll('[data-radix-dropdown-menu-content]');
+    overlays.forEach(overlay => {
+      if (overlay.getAttribute('data-state') === 'closed') {
+        overlay.remove();
+      }
+    });
+    
+    // Remove inert and aria-hidden from root
+    const root = document.getElementById('root');
+    if (root) {
+      root.removeAttribute('inert');
+      root.removeAttribute('aria-hidden');
     }
+    
+    // Ensure body can scroll
+    document.body.style.removeProperty('overflow');
+    document.documentElement.style.removeProperty('overflow');
+  };
+
+  const handleQuickAddAction = (action: string) => {
+    // Force close dropdown first
+    setIsQuickActionsOpen(false);
+    
+    // Small delay to ensure dropdown cleanup completes
+    setTimeout(() => {
+      switch (action) {
+        case "New Client":
+          if (onNewClient) {
+            onNewClient();
+          } else {
+            toast.info("Feature coming soon");
+          }
+          break;
+        case "New Booking":
+          if (onNewBooking) {
+            onNewBooking();
+          } else {
+            toast.info("Feature coming soon");
+          }
+          break;
+        case "New Staff":
+          if (onNewStaff) {
+            onNewStaff();
+          } else {
+            toast.info("Feature coming soon");
+          }
+          break;
+        case "New Agreement":
+          if (onNewAgreement) {
+            onNewAgreement();
+          } else {
+            toast.info("Feature coming soon");
+          }
+          break;
+        case "Upload Document":
+          if (onUploadDocument) {
+            onUploadDocument();
+          } else {
+            toast.info("Feature coming soon");
+          }
+          break;
+        default:
+          toast.info("Feature coming soon");
+      }
+      
+      // Additional cleanup to ensure no lingering state
+      cleanupDropdownState();
+    }, 50);
   };
 
   const handleTabNavigation = (tabValue: string) => {
@@ -287,7 +322,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
           <div className="p-4 border-b border-border bg-background">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-medium text-foreground">Quick Actions</h3>
-              <DropdownMenu>
+              <DropdownMenu open={isQuickActionsOpen} onOpenChange={setIsQuickActionsOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" className="h-8 w-8 p-0" variant="outline">
                     <Plus className="h-4 w-4" />

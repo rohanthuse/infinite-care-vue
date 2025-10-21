@@ -36,6 +36,23 @@ export function useDialogManager() {
         (trigger as HTMLElement).click();
       }
     });
+    
+    // Force cleanup after a brief delay to ensure portals are removed
+    setTimeout(() => {
+      // Remove any closed dropdown content elements
+      const closedDropdowns = document.querySelectorAll('[data-radix-dropdown-menu-content][data-state="closed"]');
+      closedDropdowns.forEach(dropdown => dropdown.remove());
+      
+      // Clean up any lingering state
+      document.body.style.removeProperty('pointer-events');
+      document.documentElement.style.removeProperty('pointer-events');
+      
+      const root = document.getElementById('root');
+      if (root) {
+        root.removeAttribute('inert');
+        root.removeAttribute('aria-hidden');
+      }
+    }, 100);
   }, []);
 
   const registerDialog = useCallback((id: string, onClose: () => void) => {
@@ -77,7 +94,7 @@ export function useDialogManager() {
       });
       setDialogs(prev => prev.map(d => ({ ...d, isOpen: false })));
       
-      // Additional cleanup for any lingering UI states
+      // Enhanced cleanup for any lingering UI states
       setTimeout(() => {
         // Remove any lingering overlay or focus trap attributes
         const appRoot = document.getElementById('root');
@@ -90,6 +107,15 @@ export function useDialogManager() {
         document.body.style.removeProperty('overflow');
         document.body.style.removeProperty('pointer-events');
         document.documentElement.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('pointer-events');
+        
+        // Remove any lingering Radix portals (dropdowns, popovers, etc.)
+        const stalePortals = document.querySelectorAll('[data-radix-dropdown-menu-content], [data-radix-popover-content]');
+        stalePortals.forEach(portal => {
+          if (portal.getAttribute('data-state') === 'closed') {
+            portal.remove();
+          }
+        });
       }, 50);
     } catch (error) {
       console.error('Error closing all dialogs:', error);
