@@ -105,7 +105,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         region: clientToEdit.region || "North",
         date_of_birth: clientToEdit.date_of_birth || "",
         gender: clientToEdit.gender || "",
-        age_group: clientToEdit.age_group || "adult",
+        age_group: (clientToEdit.age_group === 'child' ? 'young_person' : clientToEdit.age_group) || "adult",
         other_identifier: clientToEdit.other_identifier || "",
         referral_route: clientToEdit.referral_route || "",
         emergency_contact: clientToEdit.emergency_contact || "",
@@ -539,8 +539,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="adult">Adult (18+ years)</SelectItem>
-                    <SelectItem value="young_person">Young Person (16-17 years)</SelectItem>
-                    <SelectItem value="child">Child (0-15 years)</SelectItem>
+                    <SelectItem value="young_person">Young Person (0-17 years)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

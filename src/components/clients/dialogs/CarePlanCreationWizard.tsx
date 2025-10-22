@@ -696,7 +696,7 @@ export function CarePlanCreationWizard({
               {clientProfile.first_name} {clientProfile.last_name}
               {clientProfile.age_group && clientProfile.age_group !== 'adult' && (
                 <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                  {clientProfile.age_group === 'child' ? 'Child' : 'Young Person'}
+                  Young Person
                 </span>
               )}
             </span>

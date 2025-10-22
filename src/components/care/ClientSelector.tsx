@@ -77,7 +77,7 @@ export const ClientSelector: React.FC<ClientSelectorProps> = ({
                   {client.last_name}, {client.first_name}
                   {client.age_group && client.age_group !== 'adult' && (
                     <span className="ml-2 px-1 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
-                      {client.age_group === 'child' ? 'Child' : 'Young Person'}
+                      Young Person
                     </span>
                   )}
                 </SelectItem>

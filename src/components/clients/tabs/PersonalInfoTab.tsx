@@ -52,7 +52,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     referral_route: client?.referral_route || '',
     avatar_initials: client?.avatar_initials || client?.avatar || '',
     additional_information: client?.additional_information || '',
-    age_group: client?.age_group || 'adult',
+    age_group: (client?.age_group === 'child' ? 'young_person' : client?.age_group) || 'adult',
     branch_id: client?.branch_id
   });
   useEffect(() => {
@@ -79,7 +79,7 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         referral_route: client?.referral_route || '',
         avatar_initials: client?.avatar_initials || client?.avatar || '',
         additional_information: client?.additional_information || '',
-        age_group: client?.age_group || 'adult',
+        age_group: (client?.age_group === 'child' ? 'young_person' : client?.age_group) || 'adult',
         branch_id: client?.branch_id
       });
     }
@@ -195,9 +195,8 @@ export const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   <SelectValue placeholder="Select age group" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="adult">Adult</SelectItem>
-                  <SelectItem value="child">Child</SelectItem>
-                  <SelectItem value="young_person">Young Person</SelectItem>
+                  <SelectItem value="adult">Adult (18+ years)</SelectItem>
+                  <SelectItem value="young_person">Young Person (0-17 years)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
