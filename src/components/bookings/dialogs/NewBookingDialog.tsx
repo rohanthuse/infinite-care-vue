@@ -811,7 +811,7 @@ export function NewBookingDialog({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="1">Every week</SelectItem>
-                          <SelectItem value="2">Every 2 weeks</SelectItem>
+                          <SelectItem value="2">Every Other Week</SelectItem>
                           <SelectItem value="3">Every 3 weeks</SelectItem>
                           <SelectItem value="4">Every 4 weeks (monthly)</SelectItem>
                         </SelectContent>
