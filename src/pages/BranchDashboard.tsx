@@ -6,6 +6,7 @@ import { BranchRightSidebar } from "@/components/branch-dashboard/BranchRightSid
 
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
+import { AddCarerDialog } from "@/components/carers/AddCarerDialog";
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
 import { SignAgreementDialog } from "@/components/agreements/SignAgreementDialog";
 import { ScheduleAgreementDialog } from "@/components/agreements/ScheduleAgreementDialog";
@@ -121,6 +122,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   const [isQuickUploadDialogOpen, setIsQuickUploadDialogOpen] = useState(false);
   const [isSignAgreementDialogOpen, setIsSignAgreementDialogOpen] = useState(false);
   const [isScheduleAgreementDialogOpen, setIsScheduleAgreementDialogOpen] = useState(false);
+  const [isAddCarerDialogOpen, setIsAddCarerDialogOpen] = useState(false);
 
   // State for access control
   const [accessDenied, setAccessDenied] = useState(false);
@@ -408,8 +410,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   };
 
   const handleNewStaff = () => {
-    // No staff creation dialog exists yet, so show coming soon message
-    console.log("New Staff feature coming soon");
+    setIsAddCarerDialogOpen(true);
   };
 
   const handleQuickUploadSave = async (uploadData: any) => {
@@ -728,6 +729,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
           onCreateBooking={handleCreateBooking}
           branchId={id}
         />
+        
+        {id && (
+          <AddCarerDialog
+            open={isAddCarerDialogOpen}
+            onOpenChange={setIsAddCarerDialogOpen}
+            branchId={id}
+          />
+        )}
         
         {selectedClient && clientDetailOpen && (
           <ClientDetail
