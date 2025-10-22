@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Download, Plus, Search, Filter, Calendar as CalendarIcon, ChevronDown, Users, Clock, MapPin, AlertCircle, FileText } from 'lucide-react';
+import { Download, Plus, Search, Filter, Calendar as CalendarIcon, ChevronDown, Users, Clock, MapPin, AlertCircle, FileText, Share2 } from 'lucide-react';
 import { DateNavigation } from '@/components/bookings/DateNavigation';
 import { CalendarDayView } from './CalendarDayView';
 import { CalendarWeekView } from './CalendarWeekView';
@@ -30,6 +30,7 @@ import { NewLeaveDialog } from './NewLeaveDialog';
 import { NewTrainingDialog } from './NewTrainingDialog';
 import { BranchCombobox } from './BranchCombobox';
 import { CalendarExportDialog } from './CalendarExportDialog';
+import { CalendarShareDialog } from './CalendarShareDialog';
 import { DeleteEventDialog } from './DeleteEventDialog';
 import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalendarEvents';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -53,6 +54,7 @@ export const OrganizationCalendarView = () => {
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [deleteEventDialogOpen, setDeleteEventDialogOpen] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -266,6 +268,10 @@ export const OrganizationCalendarView = () => {
   const handleExportCalendar = () => {
     setExportDialogOpen(true);
   };
+
+  const handleShareCalendar = () => {
+    setShareDialogOpen(true);
+  };
   const handleEditEvent = (event: CalendarEvent) => {
     console.log('Edit event:', event);
     if (event.type === 'booking') {
@@ -379,6 +385,11 @@ export const OrganizationCalendarView = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleShareCalendar}>
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
+
           <Button variant="outline" size="sm" onClick={handleExportCalendar}>
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -632,6 +643,9 @@ export const OrganizationCalendarView = () => {
 
       {/* Export Dialog */}
       <CalendarExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} events={calendarEvents || []} currentDate={currentDate} branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'} />
+
+      {/* Share Dialog */}
+      <CalendarShareDialog open={shareDialogOpen} onOpenChange={setShareDialogOpen} events={calendarEvents || []} currentDate={currentDate} branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'} />
 
       {/* Delete Event Dialog */}
       <DeleteEventDialog open={deleteEventDialogOpen} onOpenChange={setDeleteEventDialogOpen} event={eventToDelete} onConfirm={handleConfirmDeleteEvent} isDeleting={deleteEventMutation.isPending} />

@@ -57,6 +57,49 @@ export class ReportExporter {
     doc.save(finalFileName);
   }
 
+  static exportToPDFBlob(options: ExportOptions): Blob {
+    const { title, data, columns, branchName, dateRange } = options;
+    const doc = new jsPDF();
+    
+    // Add header
+    doc.setFontSize(20);
+    doc.text(title, 20, 20);
+    
+    if (branchName) {
+      doc.setFontSize(12);
+      doc.text(`Branch: ${branchName}`, 20, 30);
+    }
+    
+    if (dateRange) {
+      doc.setFontSize(10);
+      doc.text(`Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, 20, 40);
+    }
+    
+    // Add table
+    autoTable(doc, {
+      head: [columns],
+      body: data.map(row => columns.map(col => row[col] || '')),
+      startY: dateRange ? 50 : 40,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+    
+    // Add footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.text(
+        `Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Page ${i} of ${pageCount}`,
+        20,
+        doc.internal.pageSize.height - 10
+      );
+    }
+    
+    // Return as Blob instead of saving
+    return doc.output('blob');
+  }
+
   static exportToCSV(options: ExportOptions) {
     const { title, data, columns, fileName } = options;
     
