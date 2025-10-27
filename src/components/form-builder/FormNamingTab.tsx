@@ -4,15 +4,23 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Save, Loader2 } from 'lucide-react';
 
 interface FormNamingTabProps {
   form: Form;
   onFormChange: (title: string, description: string) => void;
+  onSave: () => void;
+  isFormDirty: boolean;
+  isSaving: boolean;
 }
 
 export const FormNamingTab: React.FC<FormNamingTabProps> = ({
   form,
   onFormChange,
+  onSave,
+  isFormDirty,
+  isSaving,
 }) => {
   const [title, setTitle] = useState(form.title);
   const [description, setDescription] = useState(form.description || '');
@@ -77,6 +85,30 @@ export const FormNamingTab: React.FC<FormNamingTabProps> = ({
               {description.length} characters
             </p>
           </div>
+
+          <div className="pt-4 border-t">
+            <Button 
+              onClick={onSave} 
+              disabled={!isFormDirty || isSaving}
+              variant={isFormDirty ? "default" : "outline"}
+              className="w-full sm:w-auto"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" /> Save Form Details
+                </>
+              )}
+            </Button>
+            {isFormDirty && (
+              <p className="text-xs text-amber-600 mt-2">
+                You have unsaved changes
+              </p>
+            )}
+          </div>
         </div>
       </Card>
 
@@ -85,7 +117,7 @@ export const FormNamingTab: React.FC<FormNamingTabProps> = ({
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
           <li>Use a clear, action-oriented title that describes the form's purpose</li>
           <li>Include instructions or context in the description to help users complete the form</li>
-          <li>Remember to save your changes using the Save button at the top</li>
+          <li>Click the "Save Form Details" button below to save your changes</li>
         </ul>
       </div>
     </div>

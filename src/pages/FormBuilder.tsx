@@ -604,9 +604,6 @@ const FormBuilder = () => {
     <BranchLayout>
       <FormBuilderNavBar 
         form={form}
-        onSave={handleSaveForm}
-        isFormDirty={isFormDirty}
-        isSaving={isCreating || isUpdating || isSavingElements}
       />
       
       <FormTabNavigation 
@@ -621,6 +618,9 @@ const FormBuilder = () => {
           <FormNamingTab 
             form={form}
             onFormChange={handleFormChange}
+            onSave={handleSaveForm}
+            isFormDirty={isFormDirty}
+            isSaving={isCreating || isUpdating || isSavingElements}
           />
         </TabsContent>
         
