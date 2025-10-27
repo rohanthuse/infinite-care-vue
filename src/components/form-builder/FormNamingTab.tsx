@@ -88,7 +88,7 @@ export const FormNamingTab: React.FC<FormNamingTabProps> = ({
 
           <div className="pt-4 border-t">
             <Button 
-              onClick={onSave} 
+              onClick={() => onSave()} 
               disabled={!isFormDirty || isSaving}
               variant={isFormDirty ? "default" : "outline"}
               className="w-full sm:w-auto"
