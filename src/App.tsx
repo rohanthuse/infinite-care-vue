@@ -92,24 +92,10 @@ const AppContent = () => {
 
   console.log('[App] Route check:', { isPublicRoute, shouldShowLoading: loading && !isPublicRoute });
 
-  // Only show loading screen for protected routes
+
   if (loading && !isPublicRoute) {
     console.log('[App] Showing loading screen for protected route');
     return <LoadingScreen />;
-  }
-
-  // Show error only for protected routes
-  if (error && !isPublicRoute) {
-    console.error('[App] Auth error on protected route:', error);
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Authentication Error</p>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <a href="/login" className="text-blue-600 underline">Go to Login</a>
-        </div>
-      </div>
-    );
   }
 
   return (

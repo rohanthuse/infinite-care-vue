@@ -34,7 +34,7 @@ export const UnifiedAuthProvider: React.FC<{ children: ReactNode }> = ({ childre
             console.warn('[UnifiedAuth] Initialization timeout, proceeding without auth');
             setLoading(false);
           }
-        }, 3000);
+        }, 5000);
 
         // Get existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
