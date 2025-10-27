@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Bell, ListChecks, BookText, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
+import { Bell, ListChecks, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,17 +57,6 @@ const WorkflowContent = ({
     }
   };
   
-  const handleTrainingMatrixClick = () => {
-    if (effectiveBranchId && effectiveBranchName) {
-      const targetPath = tenantSlug 
-        ? `/${tenantSlug}/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`
-        : `/branch-dashboard/${effectiveBranchId}/${effectiveBranchName}/training-matrix`;
-      navigate(targetPath);
-    } else {
-      navigate(`/training-matrix`);
-    }
-  };
-  
   return <>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Workflow Management</h1>
@@ -83,7 +72,7 @@ const WorkflowContent = ({
     }}>
         <div className="mb-8 mt-8">
           <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Core Workflow Elements</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('notifications')}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-3">
@@ -101,16 +90,6 @@ const WorkflowContent = ({
                 </div>
                 <h3 className="font-semibold text-gray-800 text-lg">Action Plan</h3>
                 <p className="text-sm text-gray-500 mt-1">Manage priority tasks</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={handleTrainingMatrixClick}>
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                  <BookText className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Training Program</h3>
-                <p className="text-sm text-gray-500 mt-1">Staff development</p>
               </CardContent>
             </Card>
 

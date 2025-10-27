@@ -5,7 +5,7 @@ import {
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Search, Plus, UserPlus2, FileSignature, CalendarPlus, 
-  UserRoundPlus, ChevronDown
+  UserRoundPlus, ChevronDown, BookText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -60,6 +60,7 @@ const primaryTabs: TabItem[] = [
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },
+  { icon: BookText, label: "Training", value: "training-matrix", description: "Staff training & development" },
   { icon: ClipboardList, label: "Care Plan", value: "care-plan", description: "Patient care plans" },
   { icon: PoundSterling, label: "Finance", value: "finance", description: "Financial management" },
   { icon: Star, label: "Feedbacks", value: "reviews", description: "Client feedback" },
