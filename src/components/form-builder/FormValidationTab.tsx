@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertCircle, Check, X } from 'lucide-react';
+import { AlertCircle, Check, X, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface FormValidationTabProps {
@@ -29,6 +29,9 @@ export const FormValidationTab: React.FC<FormValidationTabProps> = ({
     });
     return initialState;
   });
+  
+  const [applyingForElement, setApplyingForElement] = useState<string | null>(null);
+  const [appliedForElement, setAppliedForElement] = useState<string | null>(null);
 
   const handleValidationChange = (elementId: string, message: string) => {
     setValidationMessages(prev => ({
@@ -38,7 +41,20 @@ export const FormValidationTab: React.FC<FormValidationTabProps> = ({
   };
 
   const handleApplyValidation = (elementId: string) => {
+    setApplyingForElement(elementId);
+    
     onUpdateValidation(elementId, validationMessages[elementId] || '');
+    
+    // Show loading for 300ms
+    setTimeout(() => {
+      setApplyingForElement(null);
+      setAppliedForElement(elementId);
+      
+      // Show success state for 1.5s
+      setTimeout(() => {
+        setAppliedForElement(null);
+      }, 1500);
+    }, 300);
   };
 
   // Filter out elements that don't need validation (like headings, paragraphs, etc.)
@@ -130,10 +146,30 @@ export const FormValidationTab: React.FC<FormValidationTabProps> = ({
                       <TableCell>
                         <Button 
                           size="sm" 
-                          variant="outline"
+                          variant={
+                            applyingForElement === element.id 
+                              ? "default" 
+                              : appliedForElement === element.id 
+                                ? "success"
+                                : "outline"
+                          }
                           onClick={() => handleApplyValidation(element.id)}
+                          disabled={applyingForElement === element.id}
+                          className="relative transition-all duration-300"
                         >
-                          Apply
+                          {applyingForElement === element.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Applying...
+                            </>
+                          ) : appliedForElement === element.id ? (
+                            <>
+                              <Check className="h-4 w-4 mr-2" />
+                              Applied!
+                            </>
+                          ) : (
+                            'Apply'
+                          )}
                         </Button>
                       </TableCell>
                     </TableRow>
