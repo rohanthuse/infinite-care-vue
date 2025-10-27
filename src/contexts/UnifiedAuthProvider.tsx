@@ -32,7 +32,11 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         timeoutId = setTimeout(() => {
           if (mounted && loading) {
             console.warn('[UnifiedAuth] Initialization timeout, proceeding without auth');
-            setLoading(false);
+            if (mounted) {
+              setLoading(false);
+              setUser(null);
+              setSession(null);
+            }
           }
         }, 3000);
 

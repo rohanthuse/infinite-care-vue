@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -16,12 +16,25 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading } = useUserRole();
   const hasRedirected = useRef(false);
+  const [forceRender, setForceRender] = useState(false);
+
+  // Safety timeout to force render landing page if loading takes too long
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if ((authLoading || roleLoading) && !forceRender) {
+        console.warn('[Index] Loading timeout exceeded, forcing landing page render');
+        setForceRender(true);
+      }
+    }, 3000);
+
+    return () => clearTimeout(timeout);
+  }, [authLoading, roleLoading, forceRender]);
 
   // Redirect authenticated users to their appropriate dashboard
   useEffect(() => {
     console.log('[Index] Auth state check:', { user: !!user, authLoading, roleLoading, userRole });
     
-    if (authLoading || roleLoading) {
+    if ((authLoading || roleLoading) && !forceRender) {
       console.log('[Index] Still loading, waiting...');
       return;
     }
@@ -67,7 +80,7 @@ const Index = () => {
     } else {
       console.log('[Index] User not authenticated, showing landing page');
     }
-  }, [user, userRole, authLoading, roleLoading, navigate]);
+  }, [user, userRole, authLoading, roleLoading, navigate, forceRender]);
 
   useEffect(() => {
     // Intersection Observer for animations
@@ -109,6 +122,18 @@ const Index = () => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Show loading state if still loading and timeout hasn't been reached
+  if ((authLoading || roleLoading) && !forceRender) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="home-page-light bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50 min-h-screen">

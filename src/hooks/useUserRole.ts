@@ -152,6 +152,18 @@ export const useUserRole = () => {
               additionalData.branchId = adminBranches.branch_id;
             }
           }
+          
+          // For super_admin and branch_admin, fetch organization slug
+          const { data: orgMember } = await supabase
+            .from('organization_members')
+            .select('organization:organizations(slug)')
+            .eq('user_id', user.id)
+            .limit(1)
+            .single();
+            
+          if (orgMember && orgMember.organization) {
+            additionalData.organizationSlug = (orgMember.organization as any).slug;
+          }
         }
 
         return {
