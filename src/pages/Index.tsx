@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
@@ -15,6 +15,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const hasRedirected = useRef(false);
 
   // Redirect authenticated users to their appropriate dashboard
   useEffect(() => {
@@ -53,7 +54,12 @@ const Index = () => {
       }
       
       console.log('[Index] Redirecting authenticated user to:', redirectPath);
-      window.location.href = redirectPath;
+      
+      // Use SPA navigation to prevent white screen from full page reload
+      if (!hasRedirected.current) {
+        hasRedirected.current = true;
+        navigate(redirectPath, { replace: true });
+      }
       return;
     } else if (user && !userRole) {
       console.log('[Index] User authenticated but no role found - redirecting to login');
