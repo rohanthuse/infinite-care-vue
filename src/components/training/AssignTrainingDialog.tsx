@@ -117,18 +117,22 @@ export const AssignTrainingDialog: React.FC<AssignTrainingDialogProps> = ({
 
           <div className="space-y-2">
             <Label>Select Staff Members</Label>
-            <MultiSelect
-              options={staffOptions}
-              selected={selectedStaffIds}
-              onSelectionChange={setSelectedStaffIds}
-              placeholder="Choose staff members..."
-              maxDisplay={3}
-            />
-            {selectedStaffIds.length > 0 && (
-              <div className="text-sm text-gray-600">
-                {selectedStaffIds.length} staff member(s) selected
-              </div>
-            )}
+              <MultiSelect
+                options={staffOptions}
+                selected={selectedStaffIds}
+                onSelectionChange={setSelectedStaffIds}
+                placeholder="Choose staff members..."
+                maxDisplay={3}
+                showSelectAll={true}
+              />
+              {selectedStaffIds.length > 0 && (
+                <div className="text-sm text-gray-600">
+                  {selectedStaffIds.length} staff member(s) selected
+                  {selectedStaffIds.length === staff.length && staff.length > 0 && (
+                    <span className="ml-1 text-blue-600 font-medium">(All Staff)</span>
+                  )}
+                </div>
+              )}
           </div>
 
           {alreadyAssigned.length > 0 && (

@@ -32,6 +32,7 @@ interface MultiSelectProps {
   emptyText?: string;
   maxDisplay?: number;
   disabled?: boolean;
+  showSelectAll?: boolean;
 }
 
 export function MultiSelect({
@@ -43,6 +44,7 @@ export function MultiSelect({
   emptyText = "No items found.",
   maxDisplay = 3,
   disabled = false,
+  showSelectAll = false,
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
 
@@ -58,6 +60,15 @@ export function MultiSelect({
     onSelectionChange(selected.filter((item) => item !== value));
   };
 
+  const handleSelectAll = () => {
+    onSelectionChange(options.map(option => option.value));
+  };
+
+  const handleDeselectAll = () => {
+    onSelectionChange([]);
+  };
+
+  const allSelected = selected.length === options.length && options.length > 0;
   const selectedOptions = options.filter(option => selected.includes(option.value));
 
   return (
@@ -113,6 +124,17 @@ export function MultiSelect({
       <PopoverContent className="w-full p-0 z-50 bg-white dark:bg-gray-800 shadow-md border" align="start">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
+          {showSelectAll && options.length > 0 && (
+            <div className="border-b px-3 py-2">
+              <button
+                type="button"
+                onClick={allSelected ? handleDeselectAll : handleSelectAll}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium w-full text-left"
+              >
+                {allSelected ? '✓ Deselect All' : 'Select All Staff'}
+              </button>
+            </div>
+          )}
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
