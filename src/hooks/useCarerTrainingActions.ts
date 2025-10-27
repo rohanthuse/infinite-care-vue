@@ -90,6 +90,8 @@ export const useCarerTrainingActions = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-training-by-id'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-training-records'] });
       
       if (variables.status === 'completed') {
         toast.success('Training completed successfully!');

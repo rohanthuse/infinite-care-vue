@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -10,6 +11,7 @@ export interface TrainingFileUploadOptions {
 }
 
 export const useTrainingFileUpload = () => {
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -111,6 +113,12 @@ export const useTrainingFileUpload = () => {
       }
 
       setProgress(100);
+      
+      // Invalidate queries to refresh training data across the app
+      await queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training-by-id'] });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training-records'] });
+      
       toast.success('Training certificate uploaded successfully');
       
       return newFileMetadata;
@@ -159,6 +167,11 @@ export const useTrainingFileUpload = () => {
         .eq('id', trainingRecordId);
 
       if (updateError) throw updateError;
+
+      // Invalidate queries to refresh training data across the app
+      await queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training-by-id'] });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training-records'] });
 
       toast.success('Training certificate deleted successfully');
     } catch (error) {
