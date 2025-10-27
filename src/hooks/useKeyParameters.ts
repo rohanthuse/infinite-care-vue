@@ -195,14 +195,27 @@ export function useReportTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Report type updated successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Report type update failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to update report type: ${error.message}`,
@@ -227,14 +240,27 @@ export function useReportTypes() {
       console.log('Deleted report_types:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Report type deleted successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['report_types', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Report type deletion failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to delete report type: ${error.message}`,
@@ -349,14 +375,27 @@ export function useFileCategories() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "File category updated successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('File category update failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to update file category: ${error.message}`,
@@ -381,14 +420,27 @@ export function useFileCategories() {
       console.log('Deleted file_categories:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "File category deleted successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['file_categories', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('File category deletion failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to delete file category: ${error.message}`,
@@ -503,14 +555,27 @@ export function useBankHolidays() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Bank holiday updated successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Bank holiday update failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to update bank holiday: ${error.message}`,
@@ -535,14 +600,27 @@ export function useBankHolidays() {
       console.log('Deleted bank_holidays:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Bank holiday deleted successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['bank_holidays', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Bank holiday deletion failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to delete bank holiday: ${error.message}`,
@@ -657,14 +735,27 @@ export function useTravelRates() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Rate updated successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Travel rate update failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to update rate: ${error.message}`,
@@ -689,14 +780,27 @@ export function useTravelRates() {
       console.log('Deleted travel_rates:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Rate deleted successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['travel_rates', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Travel rate deletion failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to delete rate: ${error.message}`,
@@ -811,14 +915,27 @@ export function useCommunicationTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Communication type updated successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Communication type update failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to update communication type: ${error.message}`,
@@ -843,14 +960,27 @@ export function useCommunicationTypes() {
       console.log('Deleted communication_types:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Communication type deleted successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['communication_types', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Communication type deletion failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to delete communication type: ${error.message}`,
@@ -965,14 +1095,27 @@ export function useExpenseTypes() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Expense type updated successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Expense type update failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to update expense type: ${error.message}`,
@@ -997,14 +1140,27 @@ export function useExpenseTypes() {
       console.log('Deleted expense_types:', id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
+      // Clean up document body to prevent UI freeze
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+
       toast({
         title: "Success",
         description: "Expense type deleted successfully",
       });
+
+      // Delay invalidation to avoid focus/aria-hidden race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['expense_types', organization?.id] });
+      }, 300);
     },
     onError: (error) => {
       console.error('Expense type deletion failed:', error);
+      
+      // Clean up document body on error too
+      document.body.style.pointerEvents = '';
+      document.body.removeAttribute('data-scroll-locked');
+      
       toast({
         title: "Error",
         description: `Failed to delete expense type: ${error.message}`,

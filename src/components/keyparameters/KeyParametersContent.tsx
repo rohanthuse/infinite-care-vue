@@ -207,22 +207,31 @@ const KeyParametersContent = ({ branchId, branchName }: KeyParametersContentProp
 
   const confirmDelete = () => {
     if (itemToDelete) {
-      const hook = getParameterHook(activeSectionTab);
-      hook?.delete(itemToDelete.id);
+      // Close dialog immediately
       setDeleteDialogOpen(false);
       setItemToDelete(null);
+      
+      // Then trigger delete
+      const hook = getParameterHook(activeSectionTab);
+      hook?.delete(itemToDelete.id);
     }
   };
 
   const handleFormSubmit = (data: any) => {
     const hook = getParameterHook(activeSectionTab);
     if (editingItem) {
-      hook?.update({ id: editingItem.id, updates: data });
+      // Close dialog immediately
       setIsEditDialogOpen(false);
       setEditingItem(null);
+      
+      // Then trigger update
+      hook?.update({ id: editingItem.id, updates: data });
     } else {
-      hook?.create(data);
+      // Close dialog immediately
       setIsDialogOpen(false);
+      
+      // Then trigger create
+      hook?.create(data);
     }
   };
 
