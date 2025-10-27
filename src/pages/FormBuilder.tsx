@@ -11,6 +11,7 @@ import { FormBuilderNavBar } from '@/components/form-builder/FormBuilderNavBar';
 import { FormValidationTab } from '@/components/form-builder/FormValidationTab';
 import { FormAdvancedTab } from '@/components/form-builder/FormAdvancedTab';
 import { FormSubmissionsTab } from '@/components/form-builder/FormSubmissionsTab';
+import { FormNamingTab } from '@/components/form-builder/FormNamingTab';
 import { TabNavigation as FormTabNavigation } from '@/components/form-builder/TabNavigation';
 
 import { FormBuilderTab } from '@/components/form-builder/FormBuilderTab';
@@ -100,11 +101,11 @@ const FormBuilder = () => {
   const getInitialTab = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabFromUrl = urlParams.get('tab');
-    if (tabFromUrl && ['design', 'validation', 'preview', 'advanced', 'submissions', 'publish'].includes(tabFromUrl)) {
+    if (tabFromUrl && ['naming', 'design', 'validation', 'preview', 'advanced', 'submissions', 'publish'].includes(tabFromUrl)) {
       return tabFromUrl;
     }
     // Fallback to localStorage for the last opened tab
-    return localStorage.getItem(`form-builder-last-tab-${formId}`) || 'design';
+    return localStorage.getItem(`form-builder-last-tab-${formId}`) || 'naming';
   };
   
   const [activeTab, setActiveTab] = useState<string>(getInitialTab());
@@ -604,14 +605,6 @@ const FormBuilder = () => {
       <FormBuilderNavBar 
         form={form}
         onSave={handleSaveForm}
-        onFormChange={(title, description) => {
-          setForm(prev => ({
-            ...prev,
-            title,
-            description,
-          }));
-          setIsFormDirty(true);
-        }}
         isFormDirty={isFormDirty}
         isSaving={isCreating || isUpdating || isSavingElements}
       />
@@ -624,6 +617,13 @@ const FormBuilder = () => {
       />
       
       <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsContent value="naming" className="p-4 bg-white rounded-lg border shadow-sm">
+          <FormNamingTab 
+            form={form}
+            onFormChange={handleFormChange}
+          />
+        </TabsContent>
+        
         <TabsContent value="design" className="p-4 bg-white rounded-lg border shadow-sm">
           <FormBuilderDesigner 
             form={form}

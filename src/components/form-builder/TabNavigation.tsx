@@ -2,7 +2,7 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { FileText, Eye, Upload, ShieldCheck, Settings, Inbox } from 'lucide-react';
+import { FileText, Eye, Upload, ShieldCheck, Settings, Inbox, Type } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: string;
@@ -24,7 +24,19 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
       
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={onTabChange} className="mt-2">
-          <TabsList className="grid grid-cols-6 mb-6 w-full lg:w-auto">
+          <TabsList className="grid grid-cols-7 mb-6 w-full lg:w-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="naming" className="flex items-center gap-1">
+                  <Type className="h-4 w-4" />
+                  <span className="hidden md:inline">Naming</span>
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent className="md:hidden">
+                <p>Form Naming</p>
+              </TooltipContent>
+            </Tooltip>
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <TabsTrigger value="design" className="flex items-center gap-1">
