@@ -14,7 +14,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
   const [forceRender, setForceRender] = useState(false);
 
@@ -22,17 +22,24 @@ const Index = () => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       if ((authLoading || roleLoading) && !forceRender) {
-        console.warn('[Index] Loading timeout exceeded, forcing landing page render');
+        console.warn('[Index] Loading timeout exceeded (1s), forcing landing page render');
         setForceRender(true);
       }
-    }, 3000);
+    }, 1000);
 
     return () => clearTimeout(timeout);
   }, [authLoading, roleLoading, forceRender]);
 
   // Redirect authenticated users to their appropriate dashboard
   useEffect(() => {
-    console.log('[Index] Auth state check:', { user: !!user, authLoading, roleLoading, userRole });
+    console.log('[Index] Auth state check:', { user: !!user, authLoading, roleLoading, userRole, roleError: !!roleError });
+    
+    // If role query errored, treat as no role (show landing page)
+    if (roleError) {
+      console.error('[Index] Role query failed:', roleError);
+      console.log('[Index] Showing landing page due to role error');
+      return;
+    }
     
     if ((authLoading || roleLoading) && !forceRender) {
       console.log('[Index] Still loading, waiting...');
@@ -80,7 +87,7 @@ const Index = () => {
     } else {
       console.log('[Index] User not authenticated, showing landing page');
     }
-  }, [user, userRole, authLoading, roleLoading, navigate, forceRender]);
+  }, [user, userRole, authLoading, roleLoading, roleError, navigate, forceRender]);
 
   useEffect(() => {
     // Intersection Observer for animations
@@ -123,8 +130,9 @@ const Index = () => {
     };
   }, []);
 
-  // Show loading state if still loading and timeout hasn't been reached
-  if ((authLoading || roleLoading) && !forceRender) {
+  // Only show loading for authenticated users while determining their role
+  // Never block landing page for unauthenticated visitors
+  if (user && (authLoading || roleLoading) && !forceRender) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
         <div className="text-center">
