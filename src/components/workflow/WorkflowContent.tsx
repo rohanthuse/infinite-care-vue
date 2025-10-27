@@ -107,27 +107,7 @@ const WorkflowContent = ({
         
         <div className="mb-8">
           <h2 className="text-xl font-bold text-gray-800 tracking-tight mb-4">Additional Workflows</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('key-parameters')}>
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
-                  <ListChecks className="h-8 w-8 text-indigo-600" />
-                </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Core Settings</h3>
-                <p className="text-sm text-gray-500 mt-1">Track metrics</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('medication')}>
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-3">
-                  <ClipboardCheck className="h-8 w-8 text-red-600" />
-                </div>
-                <h3 className="font-semibold text-gray-800 text-lg">Medication</h3>
-                <p className="text-sm text-gray-500 mt-1">Medicine tracking</p>
-              </CardContent>
-            </Card>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <Card className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200" onClick={() => handleNavigate('care-plan')}>
               <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 rounded-full bg-cyan-100 flex items-center justify-center mb-3">
