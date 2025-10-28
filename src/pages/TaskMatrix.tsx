@@ -7,6 +7,7 @@ import TaskDetailsDialog from "@/components/tasks/TaskDetailsDialog";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
 import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
 import SortTasksDialog, { SortOption } from "@/components/carer/SortTasksDialog";
+import DeleteZone from "@/components/tasks/DeleteZone";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Filter, Plus, Users, UserRound, 
@@ -44,6 +45,8 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const [currentDraggedItem, setCurrentDraggedItem] = useState<DragItem | null>(null);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   const [addToColumn, setAddToColumn] = useState<TaskStatus>("todo");
+  const [isOverDeleteZone, setIsOverDeleteZone] = useState(false);
+  const [isDraggingFromDone, setIsDraggingFromDone] = useState(false);
   
   // Task details dialog state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -65,7 +68,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     label: "Due Date (Earliest First)"
   });
   
-  const { tasks, isLoading, updateTask, isUpdating } = useTasks(branchId);
+  const { tasks, isLoading, updateTask, isUpdating, deleteTask, isDeleting } = useTasks(branchId);
   const { staff, clients } = useBranchStaffAndClients(branchId);
   
   // Transform database tasks to match UI requirements
@@ -238,6 +241,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   
   const handleDragStart = (e: React.DragEvent, taskId: string, sourceColumn: string) => {
     setCurrentDraggedItem({ taskId, sourceColumn });
+    setIsDraggingFromDone(sourceColumn === "done");
     e.dataTransfer.effectAllowed = "move";
   };
   
@@ -267,6 +271,53 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     });
     
     setCurrentDraggedItem(null);
+  };
+  
+  const handleDeleteZoneDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsOverDeleteZone(true);
+  };
+
+  const handleDeleteZoneDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOverDeleteZone(false);
+  };
+
+  const handleDeleteZoneDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    
+    if (!currentDraggedItem) return;
+    
+    const { taskId, sourceColumn } = currentDraggedItem;
+    
+    // Only allow deletion from "done" column
+    if (sourceColumn !== "done") {
+      toast({
+        title: "Cannot delete",
+        description: "Only completed tasks can be deleted this way.",
+        variant: "destructive",
+      });
+      setIsOverDeleteZone(false);
+      setIsDraggingFromDone(false);
+      setCurrentDraggedItem(null);
+      return;
+    }
+    
+    // Delete the task
+    deleteTask(taskId);
+    
+    // Reset states
+    setIsOverDeleteZone(false);
+    setIsDraggingFromDone(false);
+    setCurrentDraggedItem(null);
+  };
+  
+  const handleDragEnd = () => {
+    // Reset all drag states when drag operation ends
+    setCurrentDraggedItem(null);
+    setIsDraggingFromDone(false);
+    setIsOverDeleteZone(false);
   };
   
   const handleAddTask = (columnId: TaskStatus) => {
@@ -383,8 +434,18 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
         </div>
       </div>
       
-      <div className="overflow-x-auto pb-6">
+      <div className="overflow-x-auto pb-6 relative">
         <div className="flex gap-4 min-w-max">
+          {/* Delete Zone - only visible when dragging from Done */}
+          <DeleteZone
+            isVisible={isDraggingFromDone}
+            isActive={isOverDeleteZone}
+            onDragOver={handleDeleteZoneDragOver}
+            onDragLeave={handleDeleteZoneDragLeave}
+            onDrop={handleDeleteZoneDrop}
+          />
+          
+          {/* Task Columns */}
           {columns.map(column => (
             <TaskColumn
               key={column.id}
@@ -394,6 +455,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
               onDrop={handleDrop}
               onAddTask={handleAddTask}
               onTaskClick={handleTaskClick}
+              onDragEnd={handleDragEnd}
             />
           ))}
         </div>
