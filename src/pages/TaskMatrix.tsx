@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { TaskStatus, TaskView, Task } from "@/types/task";
 import TaskColumn from "@/components/tasks/TaskColumn";
+import TaskDetailsDialog from "@/components/tasks/TaskDetailsDialog";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
 import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
 import SortTasksDialog, { SortOption } from "@/components/carer/SortTasksDialog";
@@ -44,6 +45,10 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   const [addToColumn, setAddToColumn] = useState<TaskStatus>("todo");
   
+  // Task details dialog state
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+  
   // Filter and Sort state
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isSortDialogOpen, setIsSortDialogOpen] = useState(false);
@@ -60,7 +65,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     label: "Due Date (Earliest First)"
   });
   
-  const { tasks, isLoading, updateTask } = useTasks(branchId);
+  const { tasks, isLoading, updateTask, isUpdating } = useTasks(branchId);
   const { staff, clients } = useBranchStaffAndClients(branchId);
   
   // Transform database tasks to match UI requirements
@@ -89,6 +94,8 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
       staffId: task.assignee?.id,
       staffName: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
       category: task.category || 'General',
+      notes: task.notes || '',
+      completion_percentage: task.completion_percentage || 0,
     };
   });
   
@@ -267,6 +274,29 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     setIsAddTaskDialogOpen(true);
   };
   
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task);
+    setIsTaskDetailsOpen(true);
+  };
+  
+  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+    updateTask({
+      id: taskId,
+      status: newStatus
+    });
+    
+    // Close dialog after short delay to show update
+    setTimeout(() => {
+      setIsTaskDetailsOpen(false);
+      setSelectedTask(null);
+    }, 500);
+  };
+  
+  const handleCloseTaskDetails = () => {
+    setIsTaskDetailsOpen(false);
+    setSelectedTask(null);
+  };
+  
   const handleApplyFilters = (filters: typeof activeFilters) => {
     setActiveFilters(filters);
     setIsFilterDialogOpen(false);
@@ -363,6 +393,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onAddTask={handleAddTask}
+              onTaskClick={handleTaskClick}
             />
           ))}
         </div>
@@ -393,6 +424,14 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
         onOpenChange={setIsSortDialogOpen}
         selectedSort={sortOption}
         onSelectSort={handleApplySort}
+      />
+      
+      <TaskDetailsDialog
+        task={selectedTask}
+        isOpen={isTaskDetailsOpen}
+        onClose={handleCloseTaskDetails}
+        onStatusChange={handleStatusChange}
+        isUpdating={isUpdating}
       />
     </div>
   );

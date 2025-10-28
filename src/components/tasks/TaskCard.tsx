@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 interface TaskCardProps {
   task: Task;
   isDragging?: boolean;
+  onClick?: () => void;
 }
 
 const getPriorityIcon = (priority: string) => {
@@ -44,12 +45,14 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, isDragging = false }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, isDragging = false, onClick }) => {
   return (
     <div 
+      onClick={onClick}
       className={cn(
-        "bg-white p-3 rounded-md shadow-sm border border-gray-200 cursor-grab",
-        "hover:shadow-md transition-shadow",
+        "bg-white p-3 rounded-md shadow-sm border border-gray-200",
+        onClick ? "cursor-pointer hover:shadow-lg hover:border-blue-300" : "cursor-grab",
+        "hover:shadow-md transition-all",
         isDragging && "opacity-50 shadow-md",
         "transform transition-transform active:scale-95"
       )}

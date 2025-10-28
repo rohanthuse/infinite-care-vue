@@ -1,6 +1,6 @@
 
 import React from "react";
-import { TaskColumn as TaskColumnType } from "@/types/task";
+import { TaskColumn as TaskColumnType, Task } from "@/types/task";
 import TaskCard from "./TaskCard";
 import { cn } from "@/lib/utils";
 import { PlusCircle } from "lucide-react";
@@ -11,6 +11,7 @@ interface TaskColumnProps {
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, targetColumn: string) => void;
   onAddTask: (columnId: string) => void;
+  onTaskClick?: (task: Task) => void;
 }
 
 const TaskColumn: React.FC<TaskColumnProps> = ({ 
@@ -18,7 +19,8 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
   onDragStart, 
   onDragOver, 
   onDrop,
-  onAddTask
+  onAddTask,
+  onTaskClick
 }) => {
   return (
     <div 
@@ -51,7 +53,10 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
             draggable
             onDragStart={(e) => onDragStart(e, task.id, column.id)}
           >
-            <TaskCard task={task} />
+            <TaskCard 
+              task={task}
+              onClick={() => onTaskClick?.(task)}
+            />
           </div>
         ))}
       </div>
