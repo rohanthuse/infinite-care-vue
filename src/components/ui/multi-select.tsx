@@ -49,22 +49,27 @@ export function MultiSelect({
   const [open, setOpen] = useState(false);
 
   const handleSelect = (value: string) => {
-    if (selected.includes(value)) {
-      onSelectionChange(selected.filter((item) => item !== value));
-    } else {
-      onSelectionChange([...selected, value]);
-    }
+    const newSelection = selected.includes(value)
+      ? selected.filter((item) => item !== value)
+      : [...selected, value];
+    console.log('🔍 MultiSelect - Selection changed:', newSelection);
+    onSelectionChange(newSelection);
   };
 
   const handleRemove = (value: string) => {
-    onSelectionChange(selected.filter((item) => item !== value));
+    const newSelection = selected.filter((item) => item !== value);
+    console.log('🔍 MultiSelect - Removed item, new selection:', newSelection);
+    onSelectionChange(newSelection);
   };
 
   const handleSelectAll = () => {
-    onSelectionChange(options.map(option => option.value));
+    const allValues = options.map(option => option.value);
+    console.log('🔍 MultiSelect - Select All:', allValues);
+    onSelectionChange(allValues);
   };
 
   const handleDeselectAll = () => {
+    console.log('🔍 MultiSelect - Deselect All');
     onSelectionChange([]);
   };
 

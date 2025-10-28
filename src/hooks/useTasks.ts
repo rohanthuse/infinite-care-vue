@@ -125,6 +125,7 @@ export const useTasks = (branchId: string) => {
 
       // Insert assignees if provided
       if (assignee_ids && assignee_ids.length > 0) {
+        console.log('🔍 Creating task assignees:', assignee_ids);
         const assigneeRecords = assignee_ids.map((staff_id, index) => ({
           task_id: createdTask.id,
           staff_id: staff_id,
@@ -136,7 +137,7 @@ export const useTasks = (branchId: string) => {
           .insert(assigneeRecords);
 
         if (assigneeError) {
-          console.error('Error inserting assignees:', assigneeError);
+          console.error('❌ Error inserting assignees:', assigneeError);
           toast({
             title: "Warning: Assignees not saved",
             description: "Task was created but assignees could not be assigned. Please edit the task to add assignees.",
@@ -146,7 +147,33 @@ export const useTasks = (branchId: string) => {
         }
       }
 
-      return createdTask;
+      // ✅ Fetch the complete task with all assignees before returning
+      const { data: completeTask, error: fetchError } = await supabase
+        .from('tasks')
+        .select(`
+          *,
+          assignee:staff!tasks_assignee_id_fkey(id, first_name, last_name),
+          client:clients(id, first_name, last_name),
+          task_assignees(
+            staff:staff(id, first_name, last_name, specialization)
+          )
+        `)
+        .eq('id', createdTask.id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Error fetching complete task:', fetchError);
+        return createdTask; // Fallback to basic task data
+      }
+
+      // Transform to match expected format
+      const transformedTask = {
+        ...completeTask,
+        assignees: completeTask.task_assignees?.map(ta => ta.staff).filter(Boolean) || []
+      };
+
+      console.log('✅ Task created with assignees:', transformedTask);
+      return transformedTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', branchId] });

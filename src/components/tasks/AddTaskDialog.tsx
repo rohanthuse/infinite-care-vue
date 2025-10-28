@@ -89,6 +89,9 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🔍 Submit Task - Selected Assignee IDs:', assigneeIds);
+    console.log('🔍 Submit Task - Assignee Count:', assigneeIds.length);
+    
     if (!branchId) {
       console.error('No branch ID available');
       return;
@@ -111,7 +114,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       carerTasks.addTask(taskData);
     } else {
       // Use admin task creation flow
-      createTask({
+      const taskPayload = {
         ...taskData,
         branch_id: branchId,
         assignee_id: assigneeIds.length > 0 ? assigneeIds[0] : null, // Primary assignee
@@ -120,7 +123,10 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
         notes: notes || null,
         completion_percentage: 0,
-      });
+      };
+      
+      console.log('🔍 Creating task with payload:', taskPayload);
+      createTask(taskPayload);
     }
     
     resetForm();
