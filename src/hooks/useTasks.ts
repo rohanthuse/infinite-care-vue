@@ -85,20 +85,33 @@ export const useTasks = (branchId: string) => {
     mutationFn: async (newTask: Omit<DatabaseTask, 'id' | 'created_at' | 'updated_at' | 'assignee' | 'client' | 'assignees' | 'task_assignees'> & { assignee_ids?: string[] }) => {
       const { assignee_ids, ...taskData } = newTask as any;
       
-      // Validate user is authenticated and is staff
+      // Validate user is authenticated
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('You must be logged in to create tasks');
       }
       
-      const { data: staffData, error: staffError } = await supabase
-        .from('staff')
-        .select('id, branch_id')
-        .eq('auth_user_id', user.id)
-        .single();
-      
-      if (staffError || !staffData) {
-        throw new Error('You must be a staff member to create tasks');
+      // Check if user has super_admin or branch_admin role
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .in('role', ['super_admin', 'branch_admin'])
+        .limit(1);
+
+      const isAdmin = roleData && roleData.length > 0;
+
+      // If not an admin, verify they are staff
+      if (!isAdmin) {
+        const { data: staffData, error: staffError } = await supabase
+          .from('staff')
+          .select('id, branch_id')
+          .eq('auth_user_id', user.id)
+          .single();
+
+        if (staffError || !staffData) {
+          throw new Error('You must be a staff member or admin to create tasks');
+        }
       }
       
       // Insert the task
