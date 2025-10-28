@@ -5,6 +5,7 @@ import { TaskStatus, TaskView, Task } from "@/types/task";
 import TaskColumn from "@/components/tasks/TaskColumn";
 import TaskDetailsDialog from "@/components/tasks/TaskDetailsDialog";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
+import EditTaskDialog from "@/components/tasks/EditTaskDialog";
 import FilterTasksDialog from "@/components/carer/FilterTasksDialog";
 import SortTasksDialog, { SortOption } from "@/components/carer/SortTasksDialog";
 import DeleteZone from "@/components/tasks/DeleteZone";
@@ -51,6 +52,10 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   // Task details dialog state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false);
+  
+  // Edit task dialog state
+  const [isEditTaskDialogOpen, setIsEditTaskDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   
   // Filter and Sort state
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
@@ -345,6 +350,11 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
     setIsTaskDetailsOpen(true);
   };
   
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setIsEditTaskDialogOpen(true);
+  };
+  
   const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
     updateTask({
       id: taskId,
@@ -470,6 +480,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
               onDrop={handleDrop}
               onAddTask={handleAddTask}
               onTaskClick={handleTaskClick}
+              onTaskEdit={handleEditTask}
               onDragEnd={handleDragEnd}
             />
           ))}
@@ -486,6 +497,19 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
         initialStatus={addToColumn}
         clients={clients?.map(c => `${c.first_name} ${c.last_name}`) || []}
         categories={['Medical', 'Administrative', 'Training', 'Maintenance', 'Social', 'Safety', 'Nutrition', 'Therapy']}
+      />
+      
+      <EditTaskDialog
+        isOpen={isEditTaskDialogOpen}
+        onClose={() => {
+          setIsEditTaskDialogOpen(false);
+          setEditingTask(null);
+        }}
+        task={editingTask}
+        branchId={branchId}
+        staff={staff || []}
+        clients={clients || []}
+        categories={['general', 'Medical', 'Administrative', 'Training', 'Maintenance', 'Social', 'Safety', 'Nutrition', 'Therapy']}
       />
       
       <FilterTasksDialog

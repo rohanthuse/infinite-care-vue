@@ -217,6 +217,64 @@ export const useTasks = (branchId: string) => {
     },
   });
 
+  const updateTaskWithAssigneesMutation = useMutation({
+    mutationFn: async ({ 
+      id, 
+      assignee_ids, 
+      ...taskUpdates 
+    }: Partial<DatabaseTask> & { id: string; assignee_ids?: string[] }) => {
+      // 1. Update task
+      const { error: taskError } = await supabase
+        .from('tasks')
+        .update(taskUpdates)
+        .eq('id', id);
+      
+      if (taskError) throw taskError;
+      
+      // 2. Handle assignees if provided
+      if (assignee_ids !== undefined) {
+        // Delete old assignees
+        const { error: deleteError } = await supabase
+          .from('task_assignees')
+          .delete()
+          .eq('task_id', id);
+        
+        if (deleteError) throw new Error(`Failed to remove old assignees: ${deleteError.message}`);
+        
+        // Insert new assignees
+        if (assignee_ids.length > 0) {
+          const assigneeRecords = assignee_ids.map((staff_id, index) => ({
+            task_id: id,
+            staff_id: staff_id,
+            is_primary: index === 0 // First assignee is primary
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('task_assignees')
+            .insert(assigneeRecords);
+          
+          if (insertError) throw new Error(`Failed to assign staff: ${insertError.message}`);
+        }
+      }
+      
+      return { id };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', branchId] });
+      toast({
+        title: "Task updated",
+        description: "Task and assignees updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update task: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     tasks,
     isLoading,
@@ -224,8 +282,10 @@ export const useTasks = (branchId: string) => {
     createTask: createTaskMutation.mutate,
     updateTask: updateTaskMutation.mutate,
     deleteTask: deleteTaskMutation.mutate,
+    updateTaskWithAssignees: updateTaskWithAssigneesMutation.mutate,
     isCreating: createTaskMutation.isPending,
     isUpdating: updateTaskMutation.isPending,
     isDeleting: deleteTaskMutation.isPending,
+    isUpdatingWithAssignees: updateTaskWithAssigneesMutation.isPending,
   };
 };

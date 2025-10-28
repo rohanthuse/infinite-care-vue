@@ -12,6 +12,7 @@ interface TaskColumnProps {
   onDrop: (e: React.DragEvent, targetColumn: string) => void;
   onAddTask: (columnId: string) => void;
   onTaskClick?: (task: Task) => void;
+  onTaskEdit?: (task: Task) => void;
   onDragEnd?: () => void;
 }
 
@@ -22,6 +23,7 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
   onDrop,
   onAddTask,
   onTaskClick,
+  onTaskEdit,
   onDragEnd
 }) => {
   return (
@@ -59,6 +61,7 @@ const TaskColumn: React.FC<TaskColumnProps> = ({
             <TaskCard 
               task={task}
               onClick={() => onTaskClick?.(task)}
+              onEdit={onTaskEdit}
             />
           </div>
         ))}

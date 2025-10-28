@@ -2,7 +2,7 @@
 import React from "react";
 import { 
   Clock, Tag, AlertCircle, User, Check, 
-  CheckCircle, CircleAlert, Circle
+  CheckCircle, CircleAlert, Circle, Pencil
 } from "lucide-react";
 import { Task } from "@/types/task";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ interface TaskCardProps {
   task: Task;
   isDragging?: boolean;
   onClick?: () => void;
+  onEdit?: (task: Task) => void;
 }
 
 const getPriorityIcon = (priority: string) => {
@@ -45,7 +46,7 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, isDragging = false, onClick }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, isDragging = false, onClick, onEdit }) => {
   return (
     <div 
       onClick={onClick}
@@ -58,14 +59,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isDragging = false, onClick }
       )}
     >
       <div className="flex justify-between items-start mb-2">
-        <div className="font-medium text-gray-800 text-sm truncate">{task.title}</div>
-        <div className={cn(
-          "text-xs font-medium rounded-full px-2 py-0.5",
-          getPriorityColor(task.priority)
-        )}>
-          <div className="flex items-center space-x-1">
-            {getPriorityIcon(task.priority)}
-            <span className="capitalize">{task.priority}</span>
+        <div className="font-medium text-gray-800 text-sm truncate flex-1">{task.title}</div>
+        <div className="flex items-center gap-1 ml-2">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+              className="hover:bg-gray-200 rounded p-1 transition-colors flex-shrink-0"
+              aria-label="Edit task"
+            >
+              <Pencil className="h-3.5 w-3.5 text-gray-600" />
+            </button>
+          )}
+          <div className={cn(
+            "text-xs font-medium rounded-full px-2 py-0.5 flex-shrink-0",
+            getPriorityColor(task.priority)
+          )}>
+            <div className="flex items-center space-x-1">
+              {getPriorityIcon(task.priority)}
+              <span className="capitalize">{task.priority}</span>
+            </div>
           </div>
         </div>
       </div>
