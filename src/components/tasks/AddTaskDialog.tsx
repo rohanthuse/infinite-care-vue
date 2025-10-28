@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { TaskPriority, TaskStatus } from "@/types/task";
 import { useTasks } from "@/hooks/useTasks";
+import { useToast } from "@/hooks/use-toast";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 import { useCarerTasks } from "@/hooks/useCarerTasks";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
@@ -62,8 +63,9 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const carerTasks = isCarerContext ? useCarerTasks() : { addTask: null };
   
   // Get admin context
-  const { createTask } = useTasks(branchId!);
+  const { createTask, isCreating } = useTasks(branchId!);
   const { staff, clients } = useBranchStaffAndClients(branchId!);
+  const { toast } = useToast();
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -86,16 +88,65 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     return saved ? JSON.parse(saved) : false;
   });
 
+  // Track submission state to handle dialog close after mutation completes
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Monitor assigneeIds changes for debugging
+  useEffect(() => {
+    console.log('🔍 assigneeIds state changed:', assigneeIds);
+  }, [assigneeIds]);
+
+  // Close dialog and reset form only after mutation completes successfully
+  useEffect(() => {
+    if (isSubmitting && !isCreating) {
+      console.log('✅ Task creation completed, closing dialog');
+      resetForm();
+      onClose();
+      setIsSubmitting(false);
+    }
+  }, [isCreating, isSubmitting]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🔍 Submit Task - Selected Assignee IDs:', assigneeIds);
-    console.log('🔍 Submit Task - Assignee Count:', assigneeIds.length);
+    console.log('🔍 FULL STATE BEFORE SUBMIT:', {
+      assigneeIds,
+      assigneeIdsLength: assigneeIds.length,
+      title,
+      status,
+      priority,
+      branchId,
+      clientId,
+      category
+    });
+    
+    // Validation
+    if (!title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Task title is required",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!branchId) {
       console.error('No branch ID available');
+      toast({
+        title: "Error",
+        description: "Branch ID is missing",
+        variant: "destructive"
+      });
       return;
     }
+    
+    // Warn if no assignees selected
+    if (assigneeIds.length === 0) {
+      console.warn('⚠️ No assignees selected for task');
+    }
+    
+    console.log('🔍 Submit Task - Selected Assignee IDs:', assigneeIds);
+    console.log('🔍 Submit Task - Assignee Count:', assigneeIds.length);
     
     const taskData = {
       title,
@@ -127,10 +178,10 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       
       console.log('🔍 Creating task with payload:', taskPayload);
       createTask(taskPayload);
+      setIsSubmitting(true); // Mark as submitting - dialog will close when mutation completes
     }
     
-    resetForm();
-    onClose();
+    // DON'T reset or close here - let useEffect handle it after mutation completes
   };
 
   const resetForm = () => {
@@ -269,6 +320,12 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                   showSelectAll={true}
                   maxDisplay={2}
                 />
+                {assigneeIds.length > 0 && (
+                  <div className="text-sm text-blue-600 mt-1 flex items-center gap-1">
+                    <span>✓</span>
+                    <span>{assigneeIds.length} staff member{assigneeIds.length !== 1 ? 's' : ''} selected</span>
+                  </div>
+                )}
               </div>
             )}
             

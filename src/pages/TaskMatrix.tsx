@@ -85,7 +85,7 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
         ? `${task.assignee.first_name} ${task.assignee.last_name}`
         : undefined;
 
-    return {
+    const transformed = {
       id: task.id,
       title: task.title,
       description: task.description || '',
@@ -105,6 +105,18 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
       notes: task.notes || '',
       completion_percentage: task.completion_percentage || 0,
     };
+
+    // Log tasks with multiple assignees for verification
+    if (task.assignees && task.assignees.length > 1) {
+      console.log('✅ Task with multiple assignees:', {
+        id: task.id,
+        title: task.title,
+        assigneeCount: task.assignees.length,
+        assignees: task.assignees.map(a => `${a.first_name} ${a.last_name}`)
+      });
+    }
+
+    return transformed;
   });
   
   // Extract unique categories and clients for filter options
