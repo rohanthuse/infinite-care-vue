@@ -37,11 +37,26 @@ export const useScheduleTraining = () => {
       console.log('Training scheduled successfully:', data);
       return data?.[0] || data;
     },
-    onSuccess: (data) => {
-      console.log('Training scheduling successful:', data);
-      toast.success('Training scheduled successfully');
-      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
-      queryClient.invalidateQueries({ queryKey: ['staff-training'] });
+    onSuccess: async (data, variables) => {
+      console.log('✅ Training scheduling successful:', data);
+      
+      await queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training'] });
+      
+      // CRITICAL: Force immediate refetch to ensure calendar updates
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        type: 'active'
+      });
+      
+      console.log('✅ Calendar refetched after training creation');
+      
+      toast.success(
+        `Training scheduled for ${variables.scheduled_date}`,
+        {
+          description: 'View it in the organization calendar',
+        }
+      );
     },
     onError: (error) => {
       console.error('Error scheduling training:', error);

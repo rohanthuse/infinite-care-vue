@@ -199,7 +199,7 @@ export const OrganizationCalendarView = () => {
       toast.error('Please ensure you are logged in and have access to this organization');
       return;
     }
-    console.log('handleNewEvent called with:', eventType);
+    console.log('🔍 handleNewEvent called with:', eventType, 'prefilledDate:', prefilledDate);
     console.log('Organization found:', organization?.id);
 
     // Close dropdown first - this happens synchronously
@@ -207,35 +207,33 @@ export const OrganizationCalendarView = () => {
     setNewEventType(eventType);
 
     // Open the appropriate dialog after dropdown closes
+    // DON'T clear prefilledDate here - let the dialog handle it
     setTimeout(() => {
       comprehensiveCleanup();
       switch (eventType) {
         case 'booking':
-          console.log('Opening booking dialog');
+          console.log('Opening booking dialog with date:', prefilledDate);
           setNewBookingDialogOpen(true);
           break;
         case 'agreement':
-          console.log('Opening agreement dialog');
+          console.log('Opening agreement dialog with date:', prefilledDate);
           setAgreementDialogOpen(true);
           break;
         case 'training':
-          console.log('Opening training dialog');
+          console.log('Opening training dialog with date:', prefilledDate);
           setTrainingDialogOpen(true);
           break;
         case 'leave':
-          console.log('Opening leave dialog');
+          console.log('Opening leave dialog with date:', prefilledDate);
           setLeaveDialogOpen(true);
           break;
         case 'meeting':
-          console.log('Opening meeting dialog, branch selected:', selectedBranch);
+          console.log('Opening meeting dialog with date:', prefilledDate, 'branch selected:', selectedBranch);
           setMeetingDialogOpen(true);
           break;
         default:
           console.warn('Unknown event type:', eventType);
       }
-
-      // Clear prefilled date after dialog opens
-      setPrefilledDate(null);
     }, 50);
   };
   const handleNewBooking = () => {
@@ -333,15 +331,20 @@ export const OrganizationCalendarView = () => {
   const handleAddEvent = (date?: Date, timeSlot?: Date, eventType?: 'agreement' | 'booking' | 'leave' | 'meeting' | 'training') => {
     // Set the prefilled date/time based on what was clicked
     const eventDate = timeSlot || date || new Date();
-    console.log('Add event clicked for date:', eventDate, 'type:', eventType);
+    console.log('🔍 Add event clicked:', {
+      date: format(eventDate, 'yyyy-MM-dd HH:mm'),
+      type: eventType,
+      isTimeSlot: !!timeSlot
+    });
+
+    // Set prefilled date FIRST before opening any dialogs
+    setPrefilledDate(eventDate);
 
     // If eventType is provided (from popover), directly open the dialog
     if (eventType) {
-      setPrefilledDate(eventDate);
       handleNewEvent(eventType);
     } else {
       // Fallback for header dropdown usage
-      setPrefilledDate(eventDate);
       setDropdownOpen(true);
     }
   };
@@ -623,19 +626,39 @@ export const OrganizationCalendarView = () => {
        {/* Meeting Dialog */}
        <NewMeetingDialog 
          open={meetingDialogOpen} 
-         onOpenChange={setMeetingDialogOpen} 
+         onOpenChange={(open) => {
+           setMeetingDialogOpen(open);
+           if (!open) {
+             setTimeout(() => setPrefilledDate(null), 100);
+           }
+         }}
          branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
          prefilledDate={prefilledDate || currentDate}
          prefilledTime={getTimeFromDate(prefilledDate)}
        />
 
        {/* Leave Dialog */}
-       <NewLeaveDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen} branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} prefilledDate={prefilledDate || currentDate} />
+       <NewLeaveDialog 
+         open={leaveDialogOpen} 
+         onOpenChange={(open) => {
+           setLeaveDialogOpen(open);
+           if (!open) {
+             setTimeout(() => setPrefilledDate(null), 100);
+           }
+         }}
+         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
+         prefilledDate={prefilledDate || currentDate} 
+       />
 
       {/* Training Dialog */}
       <NewTrainingDialog 
         open={trainingDialogOpen} 
-        onOpenChange={setTrainingDialogOpen} 
+        onOpenChange={(open) => {
+          setTrainingDialogOpen(open);
+          if (!open) {
+            setTimeout(() => setPrefilledDate(null), 100);
+          }
+        }}
         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
         prefilledDate={prefilledDate || currentDate}
         prefilledTime={getTimeFromDate(prefilledDate)}

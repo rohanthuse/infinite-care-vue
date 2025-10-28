@@ -99,6 +99,12 @@ export function useCreateBooking(branchId?: string) {
           invalidateWithRetry(["organization-calendar"]), // FIX: Add organization calendar invalidation
           invalidateWithRetry(["organization-bookings"]) // FIX: Add organization bookings invalidation
         ];
+        
+        // CRITICAL: Force immediate refetch to ensure calendar updates
+        await queryClient.refetchQueries({ 
+          queryKey: ['organization-calendar'],
+          type: 'active'
+        });
 
         // Only invalidate carer-related queries if staff_id exists (not unassigned booking)
         if (data.staff_id) {

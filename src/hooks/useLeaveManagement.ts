@@ -208,10 +208,26 @@ export const useCreateAnnualLeave = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      toast.success('Annual leave date added');
-      queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
-      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+    onSuccess: async (data) => {
+      console.log('✅ Leave creation successful:', data);
+      
+      await queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
+      await queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      
+      // CRITICAL: Force immediate refetch to ensure calendar updates
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        type: 'active'
+      });
+      
+      console.log('✅ Calendar refetched after leave creation');
+      
+      toast.success(
+        `Leave added for ${data.leave_date}`,
+        {
+          description: 'View it in the organization calendar',
+        }
+      );
     },
     onError: (error) => {
       console.error('Error creating annual leave:', error);

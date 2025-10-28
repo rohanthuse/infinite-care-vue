@@ -14,7 +14,15 @@ interface UseOrganizationCalendarParams {
 }
 
 const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarParams & { organizationId: string }): Promise<CalendarEvent[]> => {
-  console.log('[fetchOrganizationCalendarEvents] Fetching events with params:', params);
+  console.log('🔍 [fetchOrganizationCalendarEvents] ========== FETCH START ==========');
+  console.log('🔍 [fetchOrganizationCalendarEvents] Params:', {
+    date: format(params.date, 'yyyy-MM-dd'),
+    viewType: params.viewType,
+    searchTerm: params.searchTerm,
+    branchId: params.branchId,
+    eventType: params.eventType,
+    organizationId: params.organizationId
+  });
   
   const { date, viewType, searchTerm, branchId, eventType, organizationId } = params;
   
@@ -408,7 +416,25 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         };
       });
 
-      console.log('[fetchOrganizationCalendarEvents] Successfully fetched', eventsWithConflicts.length, 'events with conflicts detected');
+      // Detailed event breakdown for debugging
+      console.log('✅ [fetchOrganizationCalendarEvents] Event breakdown:', {
+        total: eventsWithConflicts.length,
+        byType: {
+          bookings: eventsWithConflicts.filter(e => e.type === 'booking').length,
+          meetings: eventsWithConflicts.filter(e => e.type === 'meeting').length,
+          training: eventsWithConflicts.filter(e => e.type === 'training').length,
+          agreements: eventsWithConflicts.filter(e => e.type === 'agreement').length,
+          leave: eventsWithConflicts.filter(e => e.type === 'leave').length,
+        },
+        conflicts: eventsWithConflicts.filter(e => e.conflictsWith && e.conflictsWith.length > 0).length
+      });
+      
+      // Log first 5 events for debugging
+      eventsWithConflicts.slice(0, 5).forEach(event => {
+        console.log(`  📅 [${event.type}] ${event.title}: ${format(event.startTime, 'yyyy-MM-dd HH:mm')}`);
+      });
+      
+      console.log('✅ [fetchOrganizationCalendarEvents] ========== FETCH END ==========');
       return eventsWithConflicts;
 
   } catch (error) {

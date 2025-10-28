@@ -34,12 +34,19 @@ export const useCreateClientAppointment = () => {
       console.log('Appointment created successfully:', data);
       return data?.[0] || data;
     },
-    onSuccess: (data, variables) => {
-      console.log('Appointment creation successful:', data);
-      toast.success('Meeting scheduled successfully');
+    onSuccess: async (data, variables) => {
+      console.log('✅ Appointment creation successful:', data);
       
       // Invalidate all relevant caches for real-time sync across all views
-      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      await queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      
+      // CRITICAL: Force immediate refetch to ensure calendar updates
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        type: 'active'
+      });
+      
+      console.log('✅ Calendar refetched after meeting creation');
       
       // Invalidate client appointments if this was a client meeting
       if (variables.client_id) {
@@ -54,6 +61,14 @@ export const useCreateClientAppointment = () => {
       
       // Also invalidate all staff meetings cache to ensure comprehensive sync
       queryClient.invalidateQueries({ queryKey: ['staff-meetings'] });
+      
+      // Success toast with date confirmation
+      toast.success(
+        `Meeting scheduled for ${variables.appointment_date}`,
+        {
+          description: `Time: ${variables.appointment_time} - View it in the calendar`,
+        }
+      );
     },
     onError: (error) => {
       console.error('Error creating appointment:', error);

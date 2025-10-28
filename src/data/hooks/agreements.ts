@@ -160,10 +160,30 @@ export const useCreateScheduledAgreement = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: createScheduledAgreement,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['scheduled_agreements'] });
-            queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
-            toast.success("Agreement scheduled successfully");
+        onSuccess: async (_, variables) => {
+            console.log('✅ Agreement creation successful');
+            
+            await queryClient.invalidateQueries({ queryKey: ['scheduled_agreements'] });
+            await queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+            
+            // CRITICAL: Force immediate refetch to ensure calendar updates
+            await queryClient.refetchQueries({ 
+                queryKey: ['organization-calendar'],
+                type: 'active'
+            });
+            
+            console.log('✅ Calendar refetched after agreement creation');
+            
+            // Format date for toast
+            const scheduledDate = new Date(variables.scheduled_for);
+            const dateStr = scheduledDate.toLocaleDateString();
+            
+            toast.success(
+                `Agreement scheduled for ${dateStr}`,
+                {
+                    description: 'View it in the organization calendar',
+                }
+            );
         },
         onError: (error) => toast.error(`Failed to schedule agreement: ${error.message}`),
     });
