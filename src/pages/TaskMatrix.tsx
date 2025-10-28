@@ -275,21 +275,29 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   
   const handleDeleteZoneDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to columns
     e.dataTransfer.dropEffect = "move";
     setIsOverDeleteZone(true);
   };
 
   const handleDeleteZoneDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to columns
     setIsOverDeleteZone(false);
   };
 
   const handleDeleteZoneDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Critical - prevent column drop handlers from firing
     
-    if (!currentDraggedItem) return;
+    if (!currentDraggedItem) {
+      console.warn('No dragged item found on delete zone drop');
+      return;
+    }
     
     const { taskId, sourceColumn } = currentDraggedItem;
+    
+    console.log('Delete zone drop:', { taskId, sourceColumn });
     
     // Only allow deletion from "done" column
     if (sourceColumn !== "done") {
@@ -304,7 +312,14 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
       return;
     }
     
+    // Show immediate feedback
+    toast({
+      title: "Deleting task...",
+      description: "Task is being removed from the system.",
+    });
+    
     // Delete the task
+    console.log('Deleting task:', taskId);
     deleteTask(taskId);
     
     // Reset states

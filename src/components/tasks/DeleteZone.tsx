@@ -27,7 +27,7 @@ const DeleteZone: React.FC<DeleteZoneProps> = ({
       className={cn(
         "flex-shrink-0 w-[200px] h-full min-h-[500px] rounded-lg border-2 border-dashed",
         "flex flex-col items-center justify-center gap-3 transition-all duration-200",
-        "animate-in fade-in slide-in-from-left-5",
+        "animate-in fade-in slide-in-from-left-5 z-10",
         isActive
           ? "bg-red-100 border-red-500 scale-105"
           : "bg-red-50 border-red-300"
