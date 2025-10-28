@@ -100,8 +100,8 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
 
     if (!organization?.id) {
       toast({
-        title: "Organization required",
-        description: "Unable to determine organization context.",
+        title: "Organisation required",
+        description: "Unable to determine organisation context.",
         variant: "destructive",
       });
       return;

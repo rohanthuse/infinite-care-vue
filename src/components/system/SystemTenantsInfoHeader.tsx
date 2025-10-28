@@ -20,9 +20,9 @@ export const SystemTenantsInfoHeader = ({
             <Building className="h-8 w-8 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Tenant Organizations</h1>
+            <h1 className="text-2xl font-bold text-foreground">Tenant Organisations</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and monitor all tenant organizations in the system
+              Manage and monitor all tenant organisations in the system
             </p>
             <div className="flex items-center gap-4 mt-3">
               <div className="flex items-center gap-2">

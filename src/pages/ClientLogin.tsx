@@ -73,8 +73,8 @@ const ClientLogin = () => {
       
       // Fallback - redirect to tenant selection or show error
       toast({
-        title: "Organization Not Found",
-        description: "Please use your organization's specific login page.",
+        title: "Organisation Not Found",
+        description: "Please use your organisation's specific login page.",
         variant: "destructive",
       });
     }

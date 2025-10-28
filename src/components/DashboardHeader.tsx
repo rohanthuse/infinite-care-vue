@@ -270,7 +270,7 @@ export function DashboardHeader() {
           <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm py-2 px-4 rounded-full border border-border/60 shadow-sm w-full md:w-auto justify-between md:justify-start ml-0 md:ml-2">
             <div>
               <div className="text-foreground font-semibold">
-                {location.pathname.startsWith('/system') ? 'Organization Super Admin' : (userRoleLoading ? 'Loading...' : getUserDisplayName())}
+                {location.pathname.startsWith('/system') ? 'Organisation Super Admin' : (userRoleLoading ? 'Loading...' : getUserDisplayName())}
               </div>
               <div className="text-muted-foreground text-xs font-medium">
                 {location.pathname.startsWith('/system') ? 'admin@system.local' : (userRoleLoading ? 'Loading...' : getUserRole())}

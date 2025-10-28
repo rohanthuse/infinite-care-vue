@@ -74,7 +74,7 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
 
       // Generate PDF blob for sharing
       const pdfBlob = ReportExporter.exportToPDFBlob({
-        title: 'Organization Calendar Report',
+        title: 'Organisation Calendar Report',
         data: exportData,
         columns,
         branchName,
@@ -90,7 +90,7 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
       // Try Web Share API if available
       if (navigator.share && navigator.canShare?.({ files: [pdfFile] })) {
         await navigator.share({
-          title: 'Organization Calendar Report',
+          title: 'Organisation Calendar Report',
           text: `Calendar events for ${format(currentDate, 'MMMM yyyy')}`,
           files: [pdfFile]
         });

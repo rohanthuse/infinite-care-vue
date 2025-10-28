@@ -116,7 +116,7 @@ const DemoRequest = () => {
         {/* Demo Request Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Tell us about your organization</CardTitle>
+            <CardTitle>Tell us about your organisation</CardTitle>
             <CardDescription>
               Fill out the form below and our team will schedule a personalized demo for you.
             </CardDescription>
@@ -140,14 +140,14 @@ const DemoRequest = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organizationName">Organization Name</Label>
+                  <Label htmlFor="organizationName">Organisation Name</Label>
                   <Input
                     id="organizationName"
                     name="organizationName"
                     type="text"
                     value={formData.organizationName}
                     onChange={handleInputChange}
-                    placeholder="Enter your organization name"
+                    placeholder="Enter your organisation name"
                   />
                 </div>
               </div>

@@ -202,7 +202,7 @@ const AddTravelRecordDialog: React.FC<AddTravelRecordDialogProps> = ({
       let errorMessage = 'Failed to save travel record';
       if (error instanceof Error) {
         if (error.message.includes('organization_id')) {
-          errorMessage = 'Organization access error. Please contact support.';
+          errorMessage = 'Organisation access error. Please contact support.';
         } else if (error.message.includes('branch_id')) {
           errorMessage = 'Branch access error. Please contact support.';
         } else if (error.message.includes('staff_id')) {

@@ -25,7 +25,7 @@ export default function OrganizationCalendar() {
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-destructive mb-4">Access Error</h1>
           <p className="text-muted-foreground mb-4">
-            Unable to access organization calendar. Please ensure you're logged in with proper permissions.
+            Unable to access organisation calendar. Please ensure you're logged in with proper permissions.
           </p>
           <a href="/login" className="text-primary hover:text-primary/80 underline">
             Return to Login

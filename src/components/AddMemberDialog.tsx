@@ -81,7 +81,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     onSuccess: () => {
       toast({
         title: "Member Added",
-        description: "New member has been successfully added to the organization.",
+        description: "New member has been successfully added to the organisation.",
       });
       queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       setOpen(false);
@@ -160,7 +160,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     if (!organization?.id) {
       toast({
         title: "Error",
-        description: "No organization context available.",
+        description: "No organisation context available.",
         variant: "destructive",
       });
       return;
@@ -182,7 +182,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Add Organization Member
+            Add Organisation Member
           </DialogTitle>
         </DialogHeader>
         

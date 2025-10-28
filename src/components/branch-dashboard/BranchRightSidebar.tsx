@@ -56,7 +56,7 @@ interface TabGroup {
 
 const primaryTabs: TabItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", value: "dashboard", description: "Branch overview" },
-  { icon: CalendarDays, label: "Organization Calendar", value: "organization-calendar", description: "Comprehensive calendar view" },
+  { icon: CalendarDays, label: "Organisation Calendar", value: "organization-calendar", description: "Comprehensive calendar view" },
   { icon: Calendar, label: "Bookings", value: "bookings", description: "Manage appointments" },
   { icon: Users, label: "Clients", value: "clients", description: "Client information" },
   { icon: Users, label: "Staff", value: "carers", description: "Staff management" },

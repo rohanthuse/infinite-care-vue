@@ -91,8 +91,8 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
         clientPhone: clientData?.phone || '',
         organizationInfo: {
           name: orgData?.name || 'Care Service Provider',
-          address: orgData?.address || 'Organization Address',
-          email: orgData?.contact_email || 'contact@organization.com',
+          address: orgData?.address || 'Organisation Address',
+          email: orgData?.contact_email || 'contact@organisation.com',
           phone: orgData?.contact_phone
         }
       });

@@ -53,7 +53,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
-        console.log('Organization branches (super admin):', data);
+        console.log('Organisation branches (super admin):', data);
         return data || [];
       } else if (userRole?.role === 'branch_admin') {
         // Branch admins can only see their assigned branches
@@ -168,8 +168,8 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Organization Branches</h2>
-            <p className="text-muted-foreground text-sm">Navigate to any branch within your organization</p>
+            <h2 className="text-xl font-semibold text-foreground">Organisation Branches</h2>
+            <p className="text-muted-foreground text-sm">Navigate to any branch within your organisation</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -198,7 +198,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
             ? "No branches match your search." 
             : userRole?.role === 'branch_admin' 
               ? "No branches assigned to you." 
-              : "No active branches found for this organization."
+              : "No active branches found for this organisation."
           }
         </div>
       ) : (

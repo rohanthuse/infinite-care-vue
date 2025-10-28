@@ -242,10 +242,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         clientAddress: client?.address || '',
         clientEmail: client?.email || '',
         clientPhone: client?.phone || '',
-        organizationInfo: {
-          name: orgData?.name || 'Care Service Provider',
-          address: orgData?.address || 'Organization Address',
-          email: orgData?.contact_email || 'contact@organization.com',
+      organizationInfo: {
+        name: orgData?.name || 'Care Service Provider',
+        address: orgData?.address || 'Organisation Address',
+        email: orgData?.contact_email || 'contact@organisation.com',
           phone: orgData?.contact_phone
         }
       });

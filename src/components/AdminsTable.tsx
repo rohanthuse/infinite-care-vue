@@ -212,12 +212,12 @@ export const AdminsTable = () => {
     return (
       <div className="p-4 text-center space-y-4">
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-          <h3 className="text-destructive font-medium mb-2">Organization Context Error</h3>
+          <h3 className="text-destructive font-medium mb-2">Organisation Context Error</h3>
           <p className="text-destructive/90 text-sm mb-3">{tenantError.message}</p>
           <details className="text-left">
             <summary className="text-destructive/80 cursor-pointer text-sm font-medium">Show Debug Info</summary>
             <div className="mt-2 text-xs text-destructive/80 bg-destructive/5 p-2 rounded border font-mono">
-              Unable to load organization context. Check console for details.
+              Unable to load organisation context. Check console for details.
             </div>
           </details>
         </div>

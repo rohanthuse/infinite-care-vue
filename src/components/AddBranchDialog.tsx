@@ -87,8 +87,8 @@ export function AddBranchDialog() {
 
     if (!organization?.id) {
       toast({
-        title: "Organization required",
-        description: "No organization context found",
+        title: "Organisation required",
+        description: "No organisation context found",
         variant: "destructive",
       });
       return;

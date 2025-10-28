@@ -80,7 +80,7 @@ export const CalendarExportDialog: React.FC<CalendarExportDialogProps> = ({
       ];
 
       const exportOptions = {
-        title: 'Organization Calendar Report',
+        title: 'Organisation Calendar Report',
         data: exportData,
         columns,
         branchName,
