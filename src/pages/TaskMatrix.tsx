@@ -64,23 +64,33 @@ const TaskMatrix: React.FC<TaskMatrixProps> = (props) => {
   const { staff, clients } = useBranchStaffAndClients(branchId);
   
   // Transform database tasks to match UI requirements
-  const transformedTasks = tasks.map(task => ({
-    id: task.id,
-    title: task.title,
-    description: task.description || '',
-    status: task.status,
-    priority: task.priority,
-    assignee: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
-    assigneeAvatar: "/placeholder.svg",
-    dueDate: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
-    createdAt: new Date(task.created_at).toISOString().split('T')[0],
-    tags: task.tags,
-    clientId: task.client?.id,
-    clientName: task.client ? `${task.client.first_name} ${task.client.last_name}` : undefined,
-    staffId: task.assignee?.id,
-    staffName: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
-    category: task.category || 'General',
-  }));
+  const transformedTasks = tasks.map(task => {
+    // Get all assignee names
+    const assigneeNames = task.assignees && task.assignees.length > 0
+      ? task.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ')
+      : task.assignee 
+        ? `${task.assignee.first_name} ${task.assignee.last_name}`
+        : undefined;
+
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description || '',
+      status: task.status,
+      priority: task.priority,
+      assignee: assigneeNames,
+      assignees: task.assignees, // Array of all assignees
+      assigneeAvatar: "/placeholder.svg",
+      dueDate: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : undefined,
+      createdAt: new Date(task.created_at).toISOString().split('T')[0],
+      tags: task.tags,
+      clientId: task.client?.id,
+      clientName: task.client ? `${task.client.first_name} ${task.client.last_name}` : undefined,
+      staffId: task.assignee?.id,
+      staffName: task.assignee ? `${task.assignee.first_name} ${task.assignee.last_name}` : undefined,
+      category: task.category || 'General',
+    };
+  });
   
   // Extract unique categories and clients for filter options
   const uniqueCategories = Array.from(new Set(transformedTasks.map(task => task.category).filter(Boolean)));

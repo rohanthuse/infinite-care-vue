@@ -29,6 +29,13 @@ export interface Task {
   // Client visibility fields
   client_visible?: boolean;
   client_can_complete?: boolean;
+  // Multiple assignees support
+  assignees?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    specialization?: string;
+  }>;
 }
 
 export interface TaskColumn {

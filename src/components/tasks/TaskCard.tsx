@@ -102,7 +102,28 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, isDragging = false }) => {
       )}
       
       <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-        {task.assignee ? (
+        {task.assignees && task.assignees.length > 0 ? (
+          <div className="flex items-center gap-1">
+            {task.assignees.slice(0, 2).map((assignee, index) => (
+              <Avatar key={index} className="h-5 w-5 border border-white">
+                <AvatarFallback className="text-[10px] bg-blue-100">
+                  {assignee.first_name[0]}{assignee.last_name[0]}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+            {task.assignees.length > 2 && (
+              <span className="text-xs text-gray-500 ml-1">
+                +{task.assignees.length - 2}
+              </span>
+            )}
+            <span className="text-xs text-gray-600 ml-1 truncate max-w-[100px]">
+              {task.assignees.length === 1 
+                ? `${task.assignees[0].first_name} ${task.assignees[0].last_name}`
+                : `${task.assignees.length} assignees`
+              }
+            </span>
+          </div>
+        ) : task.assignee ? (
           <div className="flex items-center">
             <Avatar className="h-5 w-5 mr-1">
               <AvatarImage src={task.assigneeAvatar} alt={task.assignee} />

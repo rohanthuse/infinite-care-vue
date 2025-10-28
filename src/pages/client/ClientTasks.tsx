@@ -141,12 +141,20 @@ const ClientTasks: React.FC = () => {
               
               <CardContent className="pt-0 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                  {task.assignee_name && (
+                  {(task.assignees && task.assignees.length > 0) || task.assignee_name ? (
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
-                      <span>Assigned by: {task.assignee_name}</span>
+                      <span>
+                        Assigned by: {
+                          task.assignees && task.assignees.length > 0
+                            ? task.assignees.length === 1
+                              ? `${task.assignees[0].first_name} ${task.assignees[0].last_name}`
+                              : `${task.assignees.map(a => `${a.first_name} ${a.last_name}`).join(', ')}`
+                            : task.assignee_name
+                        }
+                      </span>
                     </div>
-                  )}
+                  ) : null}
                   
                   {task.due_date && (
                     <div className="flex items-center gap-2">

@@ -30,6 +30,7 @@ import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 import { useCarerTasks } from "@/hooks/useCarerTasks";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 import { useParams } from "react-router-dom";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 
 interface AddTaskDialogProps {
   isOpen: boolean;
@@ -68,7 +69,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [status, setStatus] = useState<TaskStatus>(initialStatus);
-  const [assigneeId, setAssigneeId] = useState<string>("no-assignee");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [clientId, setClientId] = useState<string>("no-client");
   const [category, setCategory] = useState<string>("general");
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
@@ -113,7 +114,8 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
       createTask({
         ...taskData,
         branch_id: branchId,
-        assignee_id: assigneeId === "no-assignee" ? null : assigneeId,
+        assignee_id: assigneeIds.length > 0 ? assigneeIds[0] : null, // Primary assignee
+        assignee_ids: assigneeIds, // All assignees
         created_by: null,
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
         notes: notes || null,
@@ -130,7 +132,7 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     setDescription("");
     setPriority("medium");
     setStatus(initialStatus);
-    setAssigneeId("no-assignee");
+    setAssigneeIds([]);
     setClientId("no-client");
     setCategory("general");
     setDueDate(undefined);
@@ -144,6 +146,13 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
     'general', 'Medical', 'Administrative', 'Training', 
     'Maintenance', 'Social', 'Safety', 'Nutrition', 'Therapy'
   ];
+
+  // Transform staff data to MultiSelect options
+  const staffOptions: MultiSelectOption[] = staff.map(member => ({
+    label: `${member.first_name} ${member.last_name}`,
+    value: member.id,
+    description: member.specialization || undefined
+  }));
 
   // Don't render if no branchId is available
   if (!branchId) {
@@ -243,21 +252,17 @@ const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
           <div className={`grid grid-cols-1 ${isCarerContext ? '' : 'sm:grid-cols-2'} gap-4`}>
             {!isCarerContext && (
               <div className="space-y-2">
-                <Label htmlFor="assignee">Assignee</Label>
-                <Select value={assigneeId} onValueChange={setAssigneeId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no-assignee">No assignee</SelectItem>
-                    {staff.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                        {member.specialization && ` (${member.specialization})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="assignee">Assignee(s)</Label>
+                <MultiSelect
+                  options={staffOptions}
+                  selected={assigneeIds}
+                  onSelectionChange={setAssigneeIds}
+                  placeholder="Select assignee(s)..."
+                  searchPlaceholder="Search staff..."
+                  emptyText="No staff members found."
+                  showSelectAll={true}
+                  maxDisplay={2}
+                />
               </div>
             )}
             

@@ -20,6 +20,18 @@ export interface ClientTask {
     first_name: string;
     last_name: string;
   } | null;
+  assignees?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+  }>;
+  task_assignees?: Array<{
+    staff: {
+      id: string;
+      first_name: string;
+      last_name: string;
+    };
+  }>;
 }
 
 const fetchClientTasks = async (clientId: string): Promise<ClientTask[]> => {
@@ -46,6 +58,9 @@ const fetchClientTasks = async (clientId: string): Promise<ClientTask[]> => {
       staff:assignee_id (
         first_name,
         last_name
+      ),
+      task_assignees(
+        staff:staff(id, first_name, last_name)
       )
     `)
     .eq('client_id', clientId)
@@ -61,6 +76,7 @@ const fetchClientTasks = async (clientId: string): Promise<ClientTask[]> => {
 
   return (data || []).map(task => ({
     ...task,
+    assignees: task.task_assignees?.map(ta => ta.staff).filter(Boolean) || [],
     assignee_name: task.staff ? `${task.staff.first_name} ${task.staff.last_name}` : null,
   }));
 };

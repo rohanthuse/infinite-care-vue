@@ -1607,7 +1607,7 @@ export type Database = {
           changes_requested_at: string | null
           changes_requested_by: string | null
           client_acknowledged_at: string | null
-          client_acknowledgment_ip: unknown | null
+          client_acknowledgment_ip: unknown
           client_comments: string | null
           client_id: string
           client_signature_data: string | null
@@ -1645,7 +1645,7 @@ export type Database = {
           changes_requested_at?: string | null
           changes_requested_by?: string | null
           client_acknowledged_at?: string | null
-          client_acknowledgment_ip?: unknown | null
+          client_acknowledgment_ip?: unknown
           client_comments?: string | null
           client_id: string
           client_signature_data?: string | null
@@ -1683,7 +1683,7 @@ export type Database = {
           changes_requested_at?: string | null
           changes_requested_by?: string | null
           client_acknowledged_at?: string | null
-          client_acknowledgment_ip?: unknown | null
+          client_acknowledgment_ip?: unknown
           client_comments?: string | null
           client_id?: string
           client_signature_data?: string | null
@@ -7650,7 +7650,7 @@ export type Database = {
           created_at: string
           details: Json | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string
           system_user_id: string | null
@@ -7661,7 +7661,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type: string
           system_user_id?: string | null
@@ -7672,7 +7672,7 @@ export type Database = {
           created_at?: string
           details?: Json | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string
           system_user_id?: string | null
@@ -7693,7 +7693,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           last_activity_at: string
           session_token: string
           system_user_id: string
@@ -7703,7 +7703,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity_at?: string
           session_token: string
           system_user_id: string
@@ -7713,7 +7713,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           last_activity_at?: string
           session_token?: string
           system_user_id?: string
@@ -7866,6 +7866,45 @@ export type Database = {
           },
         ]
       }
+      task_assignees: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          staff_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          staff_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          staff_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_assignees_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_assignees_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -7956,7 +7995,7 @@ export type Database = {
           action: string
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           resource_id: string | null
           resource_type: string | null
           session_id: string | null
@@ -7967,7 +8006,7 @@ export type Database = {
           action: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           session_id?: string | null
@@ -7978,7 +8017,7 @@ export type Database = {
           action?: string
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           resource_id?: string | null
           resource_type?: string | null
           session_id?: string | null
@@ -8087,7 +8126,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_accessed_at: string
           third_party_user_id: string
@@ -8098,7 +8137,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_accessed_at?: string
           third_party_user_id: string
@@ -8109,7 +8148,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_accessed_at?: string
           third_party_user_id?: string
@@ -8130,7 +8169,7 @@ export type Database = {
         Row: {
           ended_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_active: boolean
           last_activity_at: string
           session_token: string
@@ -8141,7 +8180,7 @@ export type Database = {
         Insert: {
           ended_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity_at?: string
           session_token: string
@@ -8152,7 +8191,7 @@ export type Database = {
         Update: {
           ended_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_active?: boolean
           last_activity_at?: string
           session_token?: string
@@ -8882,14 +8921,8 @@ export type Database = {
         Args: { p_admin_id: string; p_new_password: string; p_staff_id: string }
         Returns: Json
       }
-      auto_confirm_branch_admins: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      calculate_invoice_total: {
-        Args: { invoice_id: string }
-        Returns: number
-      }
+      auto_confirm_branch_admins: { Args: never; Returns: Json }
+      calculate_invoice_total: { Args: { invoice_id: string }; Returns: number }
       calculate_invoice_totals: {
         Args: { p_invoice_id: string }
         Returns: undefined
@@ -8898,9 +8931,9 @@ export type Database = {
         Args: { p_end_date: string; p_start_date: string }
         Returns: number
       }
-      calculate_news2_score: {
-        Args:
-          | {
+      calculate_news2_score:
+        | {
+            Args: {
               consciousness: string
               dias_bp: number
               o2_sat: number
@@ -8910,7 +8943,20 @@ export type Database = {
               sys_bp: number
               temp: number
             }
-          | {
+            Returns: {
+              bp_score: number
+              consciousness_score: number
+              o2_score: number
+              pulse_score: number
+              resp_score: number
+              risk: string
+              supp_o2_score: number
+              temp_score: number
+              total: number
+            }[]
+          }
+        | {
+            Args: {
               consciousness: string
               o2_sat: number
               pulse: number
@@ -8919,36 +8965,30 @@ export type Database = {
               sys_bp: number
               temp: number
             }
-        Returns: {
-          bp_score: number
-          consciousness_score: number
-          o2_score: number
-          pulse_score: number
-          resp_score: number
-          risk: string
-          supp_o2_score: number
-          temp_score: number
-          total: number
-        }[]
-      }
+            Returns: {
+              bp_score: number
+              consciousness_score: number
+              o2_score: number
+              pulse_score: number
+              resp_score: number
+              risk: string
+              supp_o2_score: number
+              temp_score: number
+              total: number
+            }[]
+          }
       can_access_thread: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
-      check_auth_schema_health: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      check_carer_auth_health: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      check_auth_schema_health: { Args: never; Returns: Json }
+      check_carer_auth_health: { Args: never; Returns: Json }
       check_document_upload_access: {
         Args: { p_branch_id: string }
         Returns: Json
       }
       check_user_role_health: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           email: string
           has_auth: boolean
@@ -8962,12 +9002,19 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
-      create_auth_user_for_system_user: {
-        Args:
-          | { p_email: string; p_password?: string; p_system_user_id: string }
-          | { p_password?: string; p_system_user_id: string }
-        Returns: Json
-      }
+      create_auth_user_for_system_user:
+        | {
+            Args: { p_password?: string; p_system_user_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_email: string
+              p_password?: string
+              p_system_user_id: string
+            }
+            Returns: Json
+          }
       create_carer_preapproved: {
         Args: {
           p_address: string
@@ -8998,10 +9045,7 @@ export type Database = {
         }
         Returns: string
       }
-      create_overdue_booking_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      create_overdue_booking_notifications: { Args: never; Returns: undefined }
       create_system_user_and_role: {
         Args: {
           p_email: string
@@ -9037,7 +9081,7 @@ export type Database = {
         Returns: string
       }
       current_user_branch_ids: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           branch_id: string
         }[]
@@ -9050,24 +9094,12 @@ export type Database = {
         Args: { p_session_token: string; p_user_id: string }
         Returns: Json
       }
-      expire_third_party_access: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      fix_all_client_auth_issues: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      fix_branch_admin_organization_memberships: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      fix_client_auth_links: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      expire_third_party_access: { Args: never; Returns: undefined }
+      fix_all_client_auth_issues: { Args: never; Returns: Json }
+      fix_branch_admin_organization_memberships: { Args: never; Returns: Json }
+      fix_client_auth_links: { Args: never; Returns: Json }
       fix_client_message_participants: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           details: Json
           error_count: number
@@ -9075,17 +9107,14 @@ export type Database = {
         }[]
       }
       fix_message_participants_user_ids: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           details: Json
           error_count: number
           fixed_count: number
         }[]
       }
-      fix_staff_auth_links: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      fix_staff_auth_links: { Args: never; Returns: Json }
       force_insert_staff_document: {
         Args: {
           p_document_type: string
@@ -9100,10 +9129,7 @@ export type Database = {
         Args: { p_form_id: string; p_user_id?: string }
         Returns: boolean
       }
-      generate_invite_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_invite_token: { Args: never; Returns: string }
       generate_invoice_ledger: {
         Args: {
           client_id_param: string
@@ -9113,10 +9139,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      generate_temporary_password: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      generate_temporary_password: { Args: never; Returns: string }
       get_admin_user_details: {
         Args: { user_ids: string[] }
         Returns: {
@@ -9126,10 +9149,7 @@ export type Database = {
           last_name: string
         }[]
       }
-      get_branch_chart_data: {
-        Args: { p_branch_id: string }
-        Returns: Json
-      }
+      get_branch_chart_data: { Args: { p_branch_id: string }; Returns: Json }
       get_branch_documents: {
         Args: { p_branch_id: string }
         Returns: {
@@ -9211,24 +9231,15 @@ export type Database = {
         }
         Returns: Json
       }
-      get_current_system_session: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_system_user_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_organization_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_system_session: { Args: never; Returns: string }
+      get_current_system_user_id: { Args: never; Returns: string }
+      get_current_user_organization_id: { Args: never; Returns: string }
       get_day_type: {
         Args: { branch_id_param: string; check_date: string }
         Returns: string
       }
       get_demo_request_stats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           last_request_date: string
           pending_requests: number
@@ -9236,7 +9247,7 @@ export type Database = {
         }[]
       }
       get_demo_requests: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           company_name: string
           created_at: string
@@ -9285,7 +9296,7 @@ export type Database = {
         Returns: Json
       }
       get_optimized_tenant_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           active_users: number
           contact_email: string
@@ -9423,22 +9434,13 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_app_admin: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
-      is_authenticated_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_app_admin: { Args: { user_id_param: string }; Returns: boolean }
+      is_authenticated_admin: { Args: never; Returns: boolean }
       is_current_staff_member: {
         Args: { staff_id_param: string }
         Returns: boolean
       }
-      is_system_admin: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
+      is_system_admin: { Args: { user_id_param: string }; Returns: boolean }
       is_system_super_admin: {
         Args: { _system_user_id: string }
         Returns: boolean
@@ -9491,20 +9493,24 @@ export type Database = {
         Args: { org_role: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
-      notify_unassigned_bookings: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      reset_system_user_password_with_session: {
-        Args:
-          | { p_admin_id: string; p_new_password: string; p_user_id: string }
-          | {
+      notify_unassigned_bookings: { Args: never; Returns: undefined }
+      reset_system_user_password_with_session:
+        | {
+            Args: {
+              p_admin_id: string
+              p_new_password: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
               p_new_password: string
               p_session_token: string
               p_user_id: string
             }
-        Returns: Json
-      }
+            Returns: Json
+          }
       safe_notify: {
         Args: {
           p_branch_id: string
@@ -9522,20 +9528,14 @@ export type Database = {
         Args: { p_admin_id: string; p_client_id: string; p_password: string }
         Returns: Json
       }
-      safe_setup_client_messaging_auth: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      safe_setup_client_messaging_auth: { Args: never; Returns: Json }
       seed_default_parameters_for_organization: {
         Args: { org_id: string }
         Returns: undefined
       }
-      sync_client_message_participants: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      sync_client_message_participants: { Args: never; Returns: undefined }
       sync_organization_members_with_roles: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           action_taken: string
           email: string
@@ -9552,21 +9552,18 @@ export type Database = {
         }
         Returns: Json
       }
-      system_authenticate: {
-        Args:
-          | {
+      system_authenticate:
+        | {
+            Args: {
               p_email: string
               p_ip_address?: unknown
               p_password: string
               p_user_agent?: string
             }
-          | { p_email: string; p_password: string }
-        Returns: Json
-      }
-      system_logout: {
-        Args: { p_session_token: string }
-        Returns: Json
-      }
+            Returns: Json
+          }
+        | { Args: { p_email: string; p_password: string }; Returns: Json }
+      system_logout: { Args: { p_session_token: string }; Returns: Json }
       system_validate_session: {
         Args: { p_session_token: string }
         Returns: Json
@@ -9598,24 +9595,27 @@ export type Database = {
         }
         Returns: Json
       }
-      upload_staff_document: {
-        Args:
-          | {
-              p_document_type: string
-              p_expiry_date?: string
-              p_file_path: string
-              p_file_size?: string
-              p_staff_id: string
-            }
-          | {
+      upload_staff_document:
+        | {
+            Args: {
               p_document_type: string
               p_file_name: string
               p_file_path: string
               p_file_size: string
               p_staff_id: string
             }
-        Returns: string
-      }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_document_type: string
+              p_expiry_date?: string
+              p_file_path: string
+              p_file_size?: string
+              p_staff_id: string
+            }
+            Returns: Json
+          }
       upload_staff_document_bypass_rls: {
         Args: {
           p_document_type: string
@@ -9642,16 +9642,13 @@ export type Database = {
         Args: { org_id_param: string; user_id_param: string }
         Returns: boolean
       }
-      user_is_admin: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
+      user_is_admin: { Args: { user_id_param: string }; Returns: boolean }
       user_is_assigned_to_form: {
         Args: { p_form_id: string }
         Returns: boolean
       }
       validate_organization_member_roles: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           email: string
           has_org_membership: boolean
@@ -9660,10 +9657,7 @@ export type Database = {
           user_id: string
         }[]
       }
-      verify_staff_auth_context: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      verify_staff_auth_context: { Args: never; Returns: string }
     }
     Enums: {
       age_group: "child" | "young_person" | "adult"

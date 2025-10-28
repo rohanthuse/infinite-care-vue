@@ -32,6 +32,21 @@ export interface DatabaseTask {
     first_name: string;
     last_name: string;
   };
+  // Multiple assignees support
+  assignees?: Array<{
+    id: string;
+    first_name: string;
+    last_name: string;
+    specialization?: string;
+  }>;
+  task_assignees?: Array<{
+    staff: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      specialization?: string;
+    };
+  }>;
 }
 
 export const useTasks = (branchId: string) => {
@@ -45,27 +60,59 @@ export const useTasks = (branchId: string) => {
         .from('tasks')
         .select(`
           *,
-          assignee:staff(id, first_name, last_name),
-          client:clients(id, first_name, last_name)
+          assignee:staff!tasks_assignee_id_fkey(id, first_name, last_name),
+          client:clients(id, first_name, last_name),
+          task_assignees(
+            staff:staff(id, first_name, last_name, specialization)
+          )
         `)
         .eq('branch_id', branchId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as DatabaseTask[];
+      
+      // Transform data to flatten task_assignees
+      const transformedData = data?.map(task => ({
+        ...task,
+        assignees: task.task_assignees?.map(ta => ta.staff).filter(Boolean) || []
+      }));
+      
+      return transformedData as DatabaseTask[];
     },
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: async (newTask: Omit<DatabaseTask, 'id' | 'created_at' | 'updated_at' | 'assignee' | 'client'>) => {
-      const { data, error } = await supabase
+    mutationFn: async (newTask: Omit<DatabaseTask, 'id' | 'created_at' | 'updated_at' | 'assignee' | 'client' | 'assignees' | 'task_assignees'> & { assignee_ids?: string[] }) => {
+      const { assignee_ids, ...taskData } = newTask as any;
+      
+      // Insert the task
+      const { data: createdTask, error: taskError } = await supabase
         .from('tasks')
-        .insert(newTask)
+        .insert(taskData)
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (taskError) throw taskError;
+
+      // Insert assignees if provided
+      if (assignee_ids && assignee_ids.length > 0) {
+        const assigneeRecords = assignee_ids.map((staff_id, index) => ({
+          task_id: createdTask.id,
+          staff_id: staff_id,
+          is_primary: index === 0 // First assignee is primary
+        }));
+
+        const { error: assigneeError } = await supabase
+          .from('task_assignees')
+          .insert(assigneeRecords);
+
+        if (assigneeError) {
+          console.error('Error inserting assignees:', assigneeError);
+          // Don't throw - task is created, just log the error
+        }
+      }
+
+      return createdTask;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', branchId] });
