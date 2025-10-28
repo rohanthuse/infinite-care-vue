@@ -96,15 +96,28 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
     }
 
     try {
+      // Combine time/location info into notes since DB only stores date and training_notes
+      const timeLocationInfo = [
+        time && endTime ? `Time: ${time} - ${endTime}` : '',
+        location ? `Location: ${location}` : ''
+      ].filter(Boolean).join(' | ');
+      
+      const combinedNotes = [timeLocationInfo, notes].filter(Boolean).join('\n');
+      
+      console.log('🔍 Scheduling training with data:', {
+        training_course_id: trainingCourseId,
+        staff_id: staffId,
+        branch_id: branchId,
+        scheduled_date: date,
+        notes: combinedNotes
+      });
+
       await scheduleTraining.mutateAsync({
         training_course_id: trainingCourseId,
         staff_id: staffId,
         branch_id: branchId,
         scheduled_date: date,
-        scheduled_time: time,
-        end_time: endTime,
-        location,
-        notes
+        notes: combinedNotes
       });
 
       resetForm();

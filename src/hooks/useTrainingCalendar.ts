@@ -6,11 +6,8 @@ export interface ScheduleTraining {
   training_course_id: string;
   staff_id: string;
   branch_id: string;
-  scheduled_date: string;
-  scheduled_time?: string;
-  end_time?: string;
-  location?: string;
-  notes?: string;
+  scheduled_date: string; // Will be mapped to assigned_date in DB
+  notes?: string; // Will be mapped to training_notes in DB
 }
 
 export const useScheduleTraining = () => {
@@ -26,12 +23,9 @@ export const useScheduleTraining = () => {
           training_course_id: training.training_course_id,
           staff_id: training.staff_id,
           branch_id: training.branch_id,
-          scheduled_date: training.scheduled_date,
-          scheduled_time: training.scheduled_time,
-          end_time: training.end_time,
-          location: training.location,
-          notes: training.notes,
-          status: 'scheduled'
+          assigned_date: training.scheduled_date, // Map scheduled_date to assigned_date
+          training_notes: training.notes, // Map notes to training_notes
+          status: 'not-started' // Default status for newly scheduled training
         }])
         .select();
 
