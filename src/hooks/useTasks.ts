@@ -85,6 +85,22 @@ export const useTasks = (branchId: string) => {
     mutationFn: async (newTask: Omit<DatabaseTask, 'id' | 'created_at' | 'updated_at' | 'assignee' | 'client' | 'assignees' | 'task_assignees'> & { assignee_ids?: string[] }) => {
       const { assignee_ids, ...taskData } = newTask as any;
       
+      // Validate user is authenticated and is staff
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to create tasks');
+      }
+      
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('id, branch_id')
+        .eq('auth_user_id', user.id)
+        .single();
+      
+      if (staffError || !staffData) {
+        throw new Error('You must be a staff member to create tasks');
+      }
+      
       // Insert the task
       const { data: createdTask, error: taskError } = await supabase
         .from('tasks')
@@ -108,7 +124,12 @@ export const useTasks = (branchId: string) => {
 
         if (assigneeError) {
           console.error('Error inserting assignees:', assigneeError);
-          // Don't throw - task is created, just log the error
+          toast({
+            title: "Warning: Assignees not saved",
+            description: "Task was created but assignees could not be assigned. Please edit the task to add assignees.",
+            variant: "destructive",
+          });
+          throw new Error(`Failed to assign staff: ${assigneeError.message}`);
         }
       }
 
