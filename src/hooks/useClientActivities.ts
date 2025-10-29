@@ -49,12 +49,41 @@ export const useCreateClientActivity = () => {
 
   return useMutation({
     mutationFn: createClientActivity,
+    onMutate: async (newActivity) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['client-activities'] });
+
+      // Snapshot the previous value
+      const previousActivities = queryClient.getQueryData(['client-activities', newActivity.care_plan_id]);
+
+      // Optimistically add the new activity to the TOP of the list
+      queryClient.setQueryData(['client-activities', newActivity.care_plan_id], (old: ClientActivity[] = []) => {
+        const optimisticActivity = {
+          ...newActivity,
+          id: 'temp-' + Date.now(), // Temporary ID
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        return [optimisticActivity, ...old]; // Add to the beginning
+      });
+
+      // Return context with the previous data
+      return { previousActivities };
+    },
     onSuccess: (data) => {
+      // Invalidate and refetch to get the real server data
       queryClient.invalidateQueries({ queryKey: ['client-activities', data.care_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['client-activities'] });
       toast.success('Activity created successfully');
     },
-    onError: () => {
+    onError: (err, newActivity, context) => {
+      // Rollback on error
+      if (context?.previousActivities) {
+        queryClient.setQueryData(
+          ['client-activities', newActivity.care_plan_id],
+          context.previousActivities
+        );
+      }
       toast.error('Failed to create activity');
     },
   });

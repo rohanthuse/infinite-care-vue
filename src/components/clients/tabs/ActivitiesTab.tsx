@@ -82,8 +82,22 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({ clientId }) => {
       }
 
       // Flatten activities from all care plans
-      const allActivities = data?.flatMap(cp => cp.activities || []) || [];
-      return allActivities as ClientActivity[];
+    const allActivities = data?.flatMap(cp => cp.activities || []) || [];
+    
+    // Sort activities by created_at descending (newest first)
+    const sortedActivities = allActivities.sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
+
+    console.log('[ActivitiesTab] Sorted activities:', sortedActivities.length, 'activities (newest first)');
+    if (sortedActivities.length > 0) {
+      console.log('[ActivitiesTab] First activity:', sortedActivities[0]?.name, sortedActivities[0]?.created_at);
+      console.log('[ActivitiesTab] Last activity:', sortedActivities[sortedActivities.length - 1]?.name, sortedActivities[sortedActivities.length - 1]?.created_at);
+    }
+
+    return sortedActivities as ClientActivity[];
     },
     enabled: !!clientId,
   });
