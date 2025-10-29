@@ -4,9 +4,11 @@ import { OrganizationCalendarView } from '@/components/organization-calendar/Org
 import { AuthGuard } from '@/components/AuthGuard';
 import { useTenant } from '@/contexts/TenantContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { useBranchDashboardNavigation } from '@/hooks/useBranchDashboardNavigation';
 
 export default function OrganizationCalendar() {
   const { organization, isLoading, error } = useTenant();
+  const { id: branchId } = useBranchDashboardNavigation();
 
   const handleNewBooking = () => {
     // Handle new booking functionality - this is for the header button
@@ -38,7 +40,7 @@ export default function OrganizationCalendar() {
   return (
     <AuthGuard requiresTenant={true}>
       <BranchLayout onNewBooking={handleNewBooking}>
-        <OrganizationCalendarView />
+        <OrganizationCalendarView defaultBranchId={branchId} />
       </BranchLayout>
     </AuthGuard>
   );

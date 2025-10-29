@@ -36,13 +36,19 @@ import { useUpdateCalendarEvent, useDeleteCalendarEvent } from '@/hooks/useCalen
 import { ErrorBoundary } from './ErrorBoundary';
 import { useDialogManager } from '@/hooks/useDialogManager';
 import { useQueryClient } from '@tanstack/react-query';
+
 type ViewType = 'daily' | 'weekly' | 'monthly';
-export const OrganizationCalendarView = () => {
+
+interface OrganizationCalendarViewProps {
+  defaultBranchId?: string;
+}
+
+export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalendarViewProps = {}) => {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<ViewType>('daily');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [selectedBranch, setSelectedBranch] = useState<string>(defaultBranchId || 'all');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
