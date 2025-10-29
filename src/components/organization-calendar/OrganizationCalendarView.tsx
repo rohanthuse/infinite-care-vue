@@ -100,7 +100,11 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const {
     data: stats,
     isLoading: statsLoading
-  } = useOrganizationCalendarStats(calendarEvents || [], currentDate);
+  } = useOrganizationCalendarStats(
+    calendarEvents || [], 
+    currentDate,
+    selectedBranch !== 'all' ? selectedBranch : undefined
+  );
 
   // Fetch services for booking dialog
   const {

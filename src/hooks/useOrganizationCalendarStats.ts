@@ -10,16 +10,23 @@ interface CalendarStats {
   conflictCount: number;
 }
 
-const fetchOrganizationStats = async (organizationId: string, events: CalendarEvent[], date: Date): Promise<CalendarStats> => {
-  console.log('[fetchOrganizationStats] Calculating stats for organization:', organizationId);
+const fetchOrganizationStats = async (organizationId: string, events: CalendarEvent[], date: Date, branchId?: string): Promise<CalendarStats> => {
+  console.log('[fetchOrganizationStats] Calculating stats for organization:', organizationId, 'branch:', branchId);
 
   try {
-    // Get total active staff count for organization
-    const { data: staffData, error: staffError } = await supabase
+    // Get total active staff count for organization (or specific branch)
+    let staffQuery = supabase
       .from('staff')
       .select('id, branch_id, branches!inner(organization_id)')
       .eq('branches.organization_id', organizationId)
       .eq('status', 'Active');
+    
+    // Add branch filter if specific branch is selected
+    if (branchId && branchId !== 'all') {
+      staffQuery = staffQuery.eq('branch_id', branchId);
+    }
+
+    const { data: staffData, error: staffError } = await staffQuery;
 
     if (staffError) {
       console.error('[fetchOrganizationStats] Staff query error:', staffError);
@@ -81,16 +88,16 @@ const fetchOrganizationStats = async (organizationId: string, events: CalendarEv
   }
 };
 
-export const useOrganizationCalendarStats = (events: CalendarEvent[], date: Date) => {
+export const useOrganizationCalendarStats = (events: CalendarEvent[], date: Date, branchId?: string) => {
   const { organization } = useTenant();
 
   return useQuery({
-    queryKey: ['organization-calendar-stats', organization?.id, events?.length, format(date, 'yyyy-MM-dd')],
+    queryKey: ['organization-calendar-stats', organization?.id, events?.length, format(date, 'yyyy-MM-dd'), branchId],
     queryFn: () => {
       if (!organization?.id) {
         throw new Error('Organization context required for calendar stats');
       }
-      return fetchOrganizationStats(organization.id, events || [], date);
+      return fetchOrganizationStats(organization.id, events || [], date, branchId);
     },
     enabled: !!organization?.id && Array.isArray(events),
     staleTime: 1000 * 60 * 5, // 5 minutes
