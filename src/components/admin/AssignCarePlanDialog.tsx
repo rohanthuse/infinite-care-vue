@@ -68,7 +68,7 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
         .from('staff')
         .select('id, first_name, last_name, status')
         .eq('branch_id', branchId)
-        .eq('status', 'active')
+        .ilike('status', 'active')
         .order('first_name');
 
       if (error) throw error;
