@@ -16,38 +16,14 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
-  const [forceRender, setForceRender] = useState(false);
 
-  // Safety timeout to force render landing page if loading takes too long
+  // Background redirect (non-blocking) - runs after page renders
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if ((authLoading || roleLoading) && !forceRender) {
-        console.warn('[Index] Loading timeout exceeded (1s), forcing landing page render');
-        setForceRender(true);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timeout);
-  }, [authLoading, roleLoading, forceRender]);
-
-  // Redirect authenticated users to their appropriate dashboard
-  useEffect(() => {
-    console.log('[Index] Auth state check:', { user: !!user, authLoading, roleLoading, userRole, roleError: !!roleError });
-    
-    // If role query errored, treat as no role (show landing page)
-    if (roleError) {
-      console.error('[Index] Role query failed:', roleError);
-      console.log('[Index] Showing landing page due to role error');
-      return;
-    }
-    
-    if ((authLoading || roleLoading) && !forceRender) {
-      console.log('[Index] Still loading, waiting...');
-      return;
-    }
-
-    if (user && userRole) {
-      console.log('[Index] User authenticated with role:', userRole.role, '- redirecting immediately');
+    // Only redirect if auth is complete AND user is authenticated
+    if (!authLoading && !roleLoading && user && userRole && !hasRedirected.current) {
+      hasRedirected.current = true;
+      
+      console.log('[Index] User authenticated with role:', userRole.role, '- preparing redirect');
       
       // Determine redirect path based on role and organization
       let redirectPath = '/dashboard'; // Default fallback
@@ -75,19 +51,17 @@ const Index = () => {
       
       console.log('[Index] Redirecting authenticated user to:', redirectPath);
       
-      // Use SPA navigation to prevent white screen from full page reload
-      if (!hasRedirected.current) {
-        hasRedirected.current = true;
+      // Use setTimeout to ensure redirect happens after render
+      setTimeout(() => {
         navigate(redirectPath, { replace: true });
-      }
-      return;
-    } else if (user && !userRole) {
+      }, 0);
+    } else if (!authLoading && !roleLoading && user && !userRole && !roleError) {
       console.log('[Index] User authenticated but no role found - redirecting to login');
-      navigate('/login', { replace: true });
-    } else {
-      console.log('[Index] User not authenticated, showing landing page');
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 0);
     }
-  }, [user, userRole, authLoading, roleLoading, roleError, navigate, forceRender]);
+  }, [user, userRole, authLoading, roleLoading, roleError, navigate]);
 
   useEffect(() => {
     // Intersection Observer for animations
@@ -130,18 +104,8 @@ const Index = () => {
     };
   }, []);
 
-  // Only show loading for authenticated users while determining their role
-  // Never block landing page for unauthenticated visitors
-  if (user && (authLoading || roleLoading) && !forceRender) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // ALWAYS render landing page immediately - no loading state
+  // Redirects happen in background after page is visible
 
   return (
     <main className="home-page-light bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50 min-h-screen">

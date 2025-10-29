@@ -17,7 +17,7 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = React.useState<User | null>(null);
   const [session, setSession] = React.useState<Session | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false); // Start false for instant landing page render
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -27,18 +27,19 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const initializeAuth = async () => {
       try {
         console.log('[UnifiedAuth] Initializing authentication...');
+        setLoading(true); // Set true when starting check
         
-        // Safety timeout to prevent infinite loading
+        // Reduced timeout from 3s to 1s for faster failure detection
         timeoutId = setTimeout(() => {
           if (mounted && loading) {
-            console.warn('[UnifiedAuth] Initialization timeout, proceeding without auth');
+            console.warn('[UnifiedAuth] Initialization timeout (1s), proceeding without auth');
             if (mounted) {
               setLoading(false);
               setUser(null);
               setSession(null);
             }
           }
-        }, 3000);
+        }, 1000);
 
         // Get existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();

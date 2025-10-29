@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/UnifiedAuthProvider';
 
 export type UserRole = 'super_admin' | 'branch_admin' | 'carer' | 'client' | 'app_admin';
 
@@ -17,12 +18,20 @@ export interface UserWithRole {
 }
 
 export const useUserRole = () => {
+  const { user: authUser } = useAuth();
+  
   return useQuery<UserWithRole | null>({
-    queryKey: ['userRole'],
+    queryKey: ['userRole', authUser?.id],
     queryFn: async (): Promise<UserWithRole | null> => {
-      // Add timeout to prevent infinite loading
+      // Immediate return if no user
+      if (!authUser) {
+        console.log('[useUserRole] No authenticated user, skipping query');
+        return null;
+      }
+
+      // Reduced timeout from 10s to 5s for faster failure detection
       const timeout = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('User role query timed out')), 10000)
+        setTimeout(() => reject(new Error('User role query timed out')), 5000)
       );
 
       const queryPromise = async (): Promise<UserWithRole | null> => {
@@ -181,8 +190,8 @@ export const useUserRole = () => {
         return null; // Return null on timeout or error
       }
     },
-    enabled: true,
-    retry: 2, // Increase retry count for better reliability
+    enabled: !!authUser, // Only run when user exists - prevents unnecessary queries
+    retry: 1, // Reduced from 2 to 1 for faster failure detection
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
