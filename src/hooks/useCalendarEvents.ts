@@ -68,8 +68,29 @@ export const useUpdateCalendarEvent = () => {
 
       return { id, type, updates };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+    onSuccess: (data) => {
+      console.log(`[useUpdateCalendarEvent] Successfully updated ${data.type} event:`, data.id);
+      
+      // Invalidate ALL organization-calendar queries (partial matching)
+      queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      // Also invalidate stats queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      // If it's a booking, also invalidate branch-specific queries
+      if (data.type === 'booking') {
+        queryClient.invalidateQueries({ 
+          queryKey: ['branch-bookings'],
+          exact: false
+        });
+      }
+      
       toast.success('Event updated successfully');
     },
     onError: (error) => {
@@ -133,8 +154,29 @@ export const useDeleteCalendarEvent = () => {
 
       return { id, type };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+    onSuccess: (data) => {
+      console.log(`[useDeleteCalendarEvent] Successfully deleted ${data.type} event:`, data.id);
+      
+      // Invalidate ALL organization-calendar queries (partial matching)
+      queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      // Also invalidate stats queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      // If it's a booking, also invalidate branch-specific queries
+      if (data.type === 'booking') {
+        queryClient.invalidateQueries({ 
+          queryKey: ['branch-bookings'],
+          exact: false
+        });
+      }
+      
       toast.success('Event deleted successfully');
     },
     onError: (error) => {
