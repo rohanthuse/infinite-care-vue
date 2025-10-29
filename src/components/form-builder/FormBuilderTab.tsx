@@ -17,6 +17,7 @@ import { useFormManagement } from '@/hooks/useFormManagement';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 import { FormTemplatesContent } from './FormTemplatesContent';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
+import { toast } from '@/hooks/use-toast';
 
 interface FormBuilderTabProps {
   branchId: string;
@@ -131,8 +132,16 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   };
 
   const handleDuplicateForm = (formId: string) => {
-    // For now, we'll use a placeholder user ID. In a real implementation, this would come from auth context
-    duplicateForm({ formId, userId: 'current-user-id' });
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to duplicate forms",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    duplicateForm({ formId, userId: user.id });
   };
 
   const handleConfirmDelete = (formId: string) => {

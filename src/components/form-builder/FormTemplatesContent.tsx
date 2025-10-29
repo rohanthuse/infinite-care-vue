@@ -59,8 +59,16 @@ export const FormTemplatesContent: React.FC<FormTemplatesContentProps> = ({ bran
   });
 
   const handleUseTemplate = (templateId: string) => {
-    const userId = user?.id || 'current-user-id';
-    duplicateForm({ formId: templateId, userId });
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to use templates",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    duplicateForm({ formId: templateId, userId: user.id });
   };
 
   const handleViewTemplate = (templateId: string) => {
