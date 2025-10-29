@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTenant } from "@/contexts/TenantContext";
@@ -22,28 +22,28 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "", expandable: false },
-  { icon: Workflow, label: "Workflow", path: "workflow", expandable: true },
-  { icon: ListChecks, label: "Core Settings", path: "key-parameters", expandable: true },
-  { icon: Users, label: "Staff", path: "carers", expandable: true },
-  { icon: Users, label: "Client", path: "clients", expandable: true },
-  { icon: Calendar, label: "Bookings", path: "bookings", expandable: false },
-  { icon: CalendarDays, label: "Leave Management", path: "leave", expandable: false },
-  { icon: Star, label: "Feedbacks", path: "reviews", expandable: false },
-  { icon: MessageSquare, label: "Communication", path: "communication", expandable: false },
-  { icon: Pill, label: "Medication", path: "medication", expandable: true },
-  { icon: PoundSterling, label: "Accounting", path: "accounting", expandable: true },
-  { icon: ClipboardList, label: "Care Plan", path: "care-plan", expandable: true },
-  { icon: FileText, label: "Agreements", path: "agreements", expandable: true },
-  { icon: Bell, label: "Events & Logs", path: "events-logs", expandable: false },
-  { icon: ClipboardCheck, label: "Attendance", path: "attendance", expandable: false },
-  { icon: FileUp, label: "Form Builder", path: "form-builder", expandable: false },
-  { icon: FileArchive, label: "Documents", path: "documents", expandable: false },
-  { icon: Bell, label: "Notifications", path: "notifications", expandable: true },
-  { icon: Folder, label: "Library", path: "library", expandable: false },
-  { icon: UserPlus, label: "Third Party Access", path: "third-party", expandable: false },
-  { icon: BarChart4, label: "Reports", path: "reports", expandable: true },
-  { icon: Settings, label: "Settings", path: "settings", expandable: true },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/branch-dashboard" },
+  { icon: Workflow, label: "Workflow", path: "/branch-workflow", expandable: true },
+  { icon: ListChecks, label: "Core Settings", path: "/branch-parameters", expandable: true },
+  { icon: Users, label: "Staff", path: "/branch-staff", expandable: true },
+  { icon: Users, label: "Client", path: "/branch-client", expandable: true },
+  { icon: Calendar, label: "Bookings", path: "/branch-bookings" },
+  { icon: CalendarDays, label: "Leave Management", path: "/branch-leave" },
+  { icon: Star, label: "Feedbacks", path: "/branch-reviews" },
+  { icon: MessageSquare, label: "Communication", path: "/branch-communication" },
+  { icon: Pill, label: "Medication", path: "/branch-medication", expandable: true },
+  { icon: PoundSterling, label: "Accounting", path: "/branch-accounting", expandable: true },
+  { icon: ClipboardList, label: "Care Plan", path: "/branch-care-plan", expandable: true },
+  { icon: FileText, label: "Agreements", path: "/branch-agreements", expandable: true },
+  { icon: Bell, label: "Events & Logs", path: "/branch-events-logs" },
+  { icon: ClipboardCheck, label: "Attendance", path: "/branch-attendance" },
+  { icon: FileUp, label: "Form Builder", path: "/branch-form-builder" },
+  { icon: FileArchive, label: "Documents", path: "/branch-documents" },
+  { icon: Bell, label: "Notifications", path: "/branch-notifications", expandable: true },
+  { icon: Folder, label: "Library", path: "/branch-library" },
+  { icon: UserPlus, label: "Third Party Access", path: "/branch-third-party" },
+  { icon: BarChart4, label: "Reports", path: "/branch-reports", expandable: true },
+  { icon: Settings, label: "Settings", path: "/branch-settings", expandable: true },
 ];
 
 type SidebarItemProps = {
@@ -118,28 +118,13 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { tenantSlug } = useTenant();
-  const { id, branchName: urlBranchName } = useParams<{ id: string; branchName: string }>();
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   
   const handleItemClick = (item: MenuItem) => {
     setActiveItem(item.label);
-    
-    // Construct tenant-aware path
-    if (!id || !urlBranchName) {
-      console.error('[BranchSidebar] Missing required parameters:', { id, branchName: urlBranchName });
-      return;
-    }
-    
-    const basePath = tenantSlug 
-      ? `/${tenantSlug}/branch-dashboard/${id}/${urlBranchName}` 
-      : `/branch-dashboard/${id}/${urlBranchName}`;
-    
-    const targetPath = item.path === "" ? basePath : `${basePath}/${item.path}`;
-    
-    console.log('[BranchSidebar] Navigating to:', targetPath);
-    navigate(targetPath);
+    navigate(item.path);
   };
   
   const toggleExpand = (label: string) => {
@@ -151,15 +136,7 @@ export const BranchSidebar = ({ branchName }: BranchSidebarProps) => {
   };
   
   const isActive = (item: MenuItem) => {
-    const pathParts = location.pathname.split('/').filter(Boolean);
-    const branchDashboardIndex = pathParts.findIndex(part => part === 'branch-dashboard');
-    
-    if (branchDashboardIndex >= 0 && pathParts.length > branchDashboardIndex + 2) {
-      const currentTab = pathParts[branchDashboardIndex + 3];
-      return item.path === currentTab || (item.path === "" && !currentTab);
-    }
-    
-    return item.path === "" && location.pathname.includes('branch-dashboard');
+    return location.pathname === item.path || activeItem === item.label;
   };
   
   const isExpanded = (label: string) => {
