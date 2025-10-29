@@ -196,7 +196,8 @@ export function CarePlanCreationWizard({
       general: {},
       medical_info: {
         medication_manager: {
-          medications: []
+          medications: [],
+          applicable: true
         }
       },
       goals: [],

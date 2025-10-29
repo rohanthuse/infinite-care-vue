@@ -8,6 +8,8 @@ import { MedicationDetailsDialog } from "@/components/care/medication/Medication
 import { EditPersistedMedicationDialog } from "@/components/care/medication/EditPersistedMedicationDialog";
 import { useMedicationsByCarePlan, useCreateMedication, useDeleteMedication } from "@/hooks/useMedications";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface WizardStepMedicationProps {
@@ -134,21 +136,54 @@ export function WizardStepMedication({
         </h2>
         <p className="text-gray-600">
           Manage client medications and view them on the calendar.
-          <span className="text-amber-600 font-medium ml-1">(Optional - Skip if client has no medications)</span>
         </p>
       </div>
 
-      <MedicationCalendar 
-        medications={allMedications}
-        onAddMedication={() => setIsAddMedicationOpen(true)}
-      />
+      {/* Medication Applicable Toggle */}
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+        <div className="space-y-1">
+          <Label htmlFor="medication-applicable" className="text-base font-medium">
+            Medication Applicable
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Toggle off if this client does not receive any medication
+          </p>
+        </div>
+        <Switch
+          id="medication-applicable"
+          checked={form.watch("medical_info.medication_manager.applicable") ?? true}
+          onCheckedChange={(checked) => {
+            form.setValue("medical_info.medication_manager.applicable", checked);
+          }}
+        />
+      </div>
 
-      <MedicationList
-        medications={allMedications}
-        onView={handleViewMedication}
-        onEdit={handleEditMedication}
-        onDelete={handleDeleteMedication}
-      />
+      {/* Conditional Medication UI */}
+      {form.watch("medical_info.medication_manager.applicable") !== false ? (
+        <>
+          <MedicationCalendar 
+            medications={allMedications}
+            onAddMedication={() => setIsAddMedicationOpen(true)}
+          />
+
+          <MedicationList
+            medications={allMedications}
+            onView={handleViewMedication}
+            onEdit={handleEditMedication}
+            onDelete={handleDeleteMedication}
+          />
+        </>
+      ) : (
+        <div className="p-8 text-center border-2 border-dashed rounded-lg bg-muted/20">
+          <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+          <h3 className="text-lg font-medium text-gray-900 mb-1">
+            Medication Not Applicable
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            This client does not receive any medication. Toggle the switch above if this changes.
+          </p>
+        </div>
+      )}
 
       <AddMedicationDialog
         isOpen={isAddMedicationOpen}

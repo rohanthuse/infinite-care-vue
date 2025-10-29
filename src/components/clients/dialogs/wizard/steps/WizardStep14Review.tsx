@@ -64,7 +64,12 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
       id: "medication",
       title: "Medication",
       icon: Pill,
-      data: formData.medical_info?.medication_manager?.medications
+      data: formData.medical_info?.medication_manager?.medications,
+      status: formData.medical_info?.medication_manager?.applicable !== false 
+        ? (formData.medical_info?.medication_manager?.medications?.length > 0 
+            ? `Applicable (${formData.medical_info?.medication_manager?.medications?.length} medication${formData.medical_info?.medication_manager?.medications?.length !== 1 ? 's' : ''})` 
+            : 'Applicable (No medications added)')
+        : 'Not Applicable'
     },
     {
       id: "admin_medication",
@@ -195,14 +200,18 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
               const status = getSectionStatus(section.data);
               const Icon = section.icon;
               
+              // Special handling for medication section with custom status
+              const displayStatus = (section as any).status || (status === "completed" ? "Complete" : "Empty");
+              const badgeVariant = status === "completed" ? "default" : "secondary";
+              
               return (
                 <div key={section.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center gap-3">
                     <Icon className="h-4 w-4 text-gray-600" />
                     <span className="text-sm font-medium">{section.title}</span>
                   </div>
-                  <Badge variant={status === "completed" ? "default" : "secondary"}>
-                    {status === "completed" ? "Complete" : "Empty"}
+                  <Badge variant={badgeVariant}>
+                    {displayStatus}
                   </Badge>
                 </div>
               );
