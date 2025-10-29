@@ -286,25 +286,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const statusDialogId = 'care-plan-status-change';
   const statusControlledDialog = useControlledDialog(statusDialogId, statusDialogOpen);
 
-  // Force UI unlock function
-  const forceUIUnlock = useCallback(() => {
-    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
-    overlays.forEach(overlay => overlay.remove());
-    
-    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
-      el.removeAttribute('aria-hidden');
-      el.removeAttribute('inert');
-    });
-    
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('pointer-events');
-    document.documentElement.style.removeProperty('overflow');
-    document.body.classList.remove('overflow-hidden');
-    document.documentElement.classList.remove('overflow-hidden');
-    document.body.removeAttribute('data-scroll-locked');
-    document.documentElement.removeAttribute('data-scroll-locked');
-  }, []);
-
   // Sync dialog state
   useEffect(() => {
     if (statusDialogOpen !== statusControlledDialog.open) {
@@ -709,7 +690,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     setSelectedPlan(null);
     setSelectedStatus("");
     setStatusReason("");
-    setTimeout(forceUIUnlock, 50);
   };
   
   const handleStatusDialogClose = useCallback(() => {
@@ -717,8 +697,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     setSelectedPlan(null);
     setSelectedStatus("");
     setStatusReason("");
-    setTimeout(forceUIUnlock, 50);
-  }, [statusControlledDialog, forceUIUnlock]);
+  }, [statusControlledDialog]);
 
   const handleFilterApply = () => {
     setIsFiltering(statusFilter !== "all" || assignedToFilter !== "all" || !!dateRangeStart || !!dateRangeEnd);
@@ -1214,15 +1193,8 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       <Dialog open={statusControlledDialog.open} onOpenChange={handleStatusDialogClose}>
         <DialogContent 
           className="sm:max-w-[425px]"
-          onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
-          onEscapeKeyDown={() => {
-            handleStatusDialogClose();
-            setTimeout(forceUIUnlock, 50);
-          }}
-          onPointerDownOutside={() => {
-            handleStatusDialogClose();
-            setTimeout(forceUIUnlock, 50);
-          }}
+          onEscapeKeyDown={handleStatusDialogClose}
+          onPointerDownOutside={handleStatusDialogClose}
         >
           <DialogHeader>
             <DialogTitle>Change Care Plan Status</DialogTitle>

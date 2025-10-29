@@ -48,25 +48,6 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
   const dialogId = `assign-care-plan-${carePlan?.id || 'new'}`;
   const controlledDialog = useControlledDialog(dialogId, open);
 
-  // Force UI unlock function for comprehensive cleanup
-  const forceUIUnlock = useCallback(() => {
-    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
-    overlays.forEach(overlay => overlay.remove());
-    
-    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
-      el.removeAttribute('aria-hidden');
-      el.removeAttribute('inert');
-    });
-    
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('pointer-events');
-    document.documentElement.style.removeProperty('overflow');
-    document.body.classList.remove('overflow-hidden');
-    document.documentElement.classList.remove('overflow-hidden');
-    document.body.removeAttribute('data-scroll-locked');
-    document.documentElement.removeAttribute('data-scroll-locked');
-  }, []);
-
   // Sync with external open prop
   useEffect(() => {
     if (open !== controlledDialog.open) {
@@ -99,8 +80,7 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
   const handleClose = useCallback(() => {
     controlledDialog.onOpenChange(false);
     setSelectedStaffId('');
-    setTimeout(forceUIUnlock, 50);
-  }, [controlledDialog, forceUIUnlock]);
+  }, [controlledDialog]);
 
   const handleAssign = async () => {
     if (!carePlan || !selectedStaffId) return;
@@ -117,7 +97,6 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
       handleClose();
     } catch (error) {
       console.error('Failed to assign care plan:', error);
-      setTimeout(forceUIUnlock, 50);
     }
   };
 
@@ -133,7 +112,6 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
       handleClose();
     } catch (error) {
       console.error('Failed to unassign care plan:', error);
-      setTimeout(forceUIUnlock, 50);
     }
   };
 
@@ -145,15 +123,8 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
     <Dialog open={controlledDialog.open} onOpenChange={handleClose}>
       <DialogContent 
         className="max-w-md"
-        onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
-        onEscapeKeyDown={() => {
-          handleClose();
-          setTimeout(forceUIUnlock, 50);
-        }}
-        onPointerDownOutside={() => {
-          handleClose();
-          setTimeout(forceUIUnlock, 50);
-        }}
+        onEscapeKeyDown={handleClose}
+        onPointerDownOutside={handleClose}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
