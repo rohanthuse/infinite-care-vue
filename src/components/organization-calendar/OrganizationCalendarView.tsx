@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,14 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState<string>(defaultBranchId || 'all');
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
+
+  // Sync selectedBranch with defaultBranchId when it changes
+  useEffect(() => {
+    if (defaultBranchId && defaultBranchId !== selectedBranch) {
+      console.log('[OrganizationCalendarView] Syncing selectedBranch with defaultBranchId:', defaultBranchId);
+      setSelectedBranch(defaultBranchId);
+    }
+  }, [defaultBranchId, selectedBranch]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
   const [editBookingDialogOpen, setEditBookingDialogOpen] = useState(false);
