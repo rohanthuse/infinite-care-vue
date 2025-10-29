@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { AlertTriangle, Search, Filter, Calendar, MapPin, User, Eye, Trash2, RotateCcw, Download, FileText } from 'lucide-react';
+import { AlertTriangle, Search, Filter, Calendar, MapPin, User, Eye, Trash2, RotateCcw, Download, FileText, Share2 } from 'lucide-react';
 import { useEventsLogs, useUpdateEventLogStatus, useDeleteEventLog } from '@/data/hooks/useEventsLogs';
 import { EventDetailsDialog } from './EventDetailsDialog';
 import { EventLog } from '@/data/hooks/useEventsLogs';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
-import { exportEventsToCSV, exportEventsListToPDF } from '@/lib/exportEvents';
+import { exportEventsToCSV, exportEventsListToPDF, exportEventToPDFBlob } from '@/lib/exportEvents';
 
 interface EventLogsListProps {
   branchId: string;
@@ -86,6 +86,41 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const handleViewDetails = (event: EventLog) => {
     setSelectedEvent(event);
     setIsDetailsOpen(true);
+  };
+
+  const handleShareEvent = async (event: EventLog) => {
+    try {
+      // Generate PDF blob
+      const pdfBlob = exportEventToPDFBlob(event);
+      const fileName = `event-${event.title.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+
+      // Try Web Share API first (mobile/modern browsers)
+      if (navigator.share && navigator.canShare) {
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `Event Log: ${event.title}`,
+            text: `Event log details for ${event.client_name || 'client'}`,
+            files: [file]
+          });
+          toast.success('Event shared successfully');
+          return;
+        }
+      }
+
+      // Fallback: Download the PDF
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Event PDF downloaded');
+    } catch (error) {
+      console.error('Error sharing event:', error);
+      toast.error('Failed to share event');
+    }
   };
 
   if (isLoading) {
@@ -330,6 +365,16 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleShareEvent(event)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Share2 className="h-4 w-4 mr-1" />
+                      Share
                     </Button>
 
                     <Select

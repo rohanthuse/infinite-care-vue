@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { AlertTriangle, Clock, Plus, User, Eye } from "lucide-react";
+import { AlertTriangle, Clock, Plus, User, Eye, Share2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useClientEvents, useUpdateClientEventStatus } from "@/hooks/useClientEvents";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
 import { EventLogForm } from "@/components/events-logs/EventLogForm";
+import { exportEventToPDFBlob } from "@/lib/exportEvents";
+import { toast } from "sonner";
 
 interface EventsLogsTabProps {
   clientId: string;
@@ -62,6 +64,38 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
       await updateStatusMutation.mutateAsync({ id: eventId, status: newStatus });
     } catch (error) {
       console.error('Error updating status:', error);
+    }
+  };
+
+  const handleShareEvent = async (event: any) => {
+    try {
+      const pdfBlob = exportEventToPDFBlob(event);
+      const fileName = `event-${event.title.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+
+      if (navigator.share && navigator.canShare) {
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: `Event Log: ${event.title}`,
+            text: `Event log details for ${patientName || 'client'}`,
+            files: [file]
+          });
+          toast.success('Event shared successfully');
+          return;
+        }
+      }
+
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Event PDF downloaded');
+    } catch (error) {
+      console.error('Error sharing event:', error);
+      toast.error('Failed to share event');
     }
   };
 
@@ -145,6 +179,16 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View Details
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleShareEvent(event)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Share2 className="h-4 w-4 mr-1" />
+                        Share
                       </Button>
                       
                       <Select

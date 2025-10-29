@@ -114,6 +114,56 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
   pdf.save(pdfFilename);
 };
 
+export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
+  const pdf = new jsPDF();
+  
+  // Header
+  pdf.setFontSize(20);
+  pdf.text('Event Log Report', 20, 20);
+  
+  pdf.setFontSize(12);
+  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, 20, 30);
+  
+  // Event details
+  const eventData = [
+    ['Title', event.title || ''],
+    ['Client', event.client_name || ''],
+    ['Event Type', event.event_type || ''],
+    ['Category', event.category || ''],
+    ['Severity', event.severity || ''],
+    ['Status', event.status || ''],
+    ['Reporter', event.reporter || ''],
+    ['Location', event.location || ''],
+    ['Event Date', event.event_date || ''],
+    ['Event Time', event.event_time || ''],
+    ['Recorded Date', format(new Date(event.created_at), 'PPP')],
+    ['Recorded By', event.recorded_by_staff_name || '']
+  ];
+
+  autoTable(pdf, {
+    head: [['Field', 'Value']],
+    body: eventData,
+    startY: 40,
+    theme: 'grid',
+    styles: { fontSize: 10 },
+    columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+  });
+
+  // Description section
+  if (event.description) {
+    const finalY = (pdf as any).lastAutoTable?.finalY || 40;
+    pdf.setFontSize(14);
+    pdf.text('Description:', 20, finalY + 20);
+    
+    pdf.setFontSize(10);
+    const splitDescription = pdf.splitTextToSize(event.description, 170);
+    pdf.text(splitDescription, 20, finalY + 30);
+  }
+
+  // Return as Blob for sharing
+  return pdf.output('blob');
+};
+
 export const exportEventsListToPDF = (events: ExportableEvent[], filename: string = 'events-logs') => {
   const pdf = new jsPDF();
   
