@@ -281,21 +281,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [statusReason, setStatusReason] = useState<string>("");
   const { changeStatus, isChanging } = useCarePlanStatusChange();
-  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   
   const statusDialogId = 'care-plan-status-change';
-  const statusControlledDialog = useControlledDialog(statusDialogId, statusDialogOpen);
-
-  // Sync dialog state
-  useEffect(() => {
-    if (statusDialogOpen !== statusControlledDialog.open) {
-      statusControlledDialog.onOpenChange(statusDialogOpen);
-    }
-  }, [statusDialogOpen, statusControlledDialog]);
-
-  useEffect(() => {
-    setStatusDialogOpen(statusControlledDialog.open);
-  }, [statusControlledDialog.open]);
+  const statusControlledDialog = useControlledDialog(statusDialogId, false);
   
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -674,7 +662,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     if (plan) {
       setSelectedPlan(plan._databaseId || id);
       setSelectedStatus(plan.status);
-      setStatusDialogOpen(true);
+      statusControlledDialog.onOpenChange(true);
     } else {
       toast({
         title: "Care Plan Not Found",
@@ -685,11 +673,39 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   };
 
   const handleStatusChange = () => {
-    if (!selectedPlan || !selectedStatus) return;
+    if (!selectedPlan || !selectedStatus) {
+      console.warn('[CareTab] Cannot change status: missing plan or status', {
+        selectedPlan,
+        selectedStatus
+      });
+      return;
+    }
+
+    // Convert display status to database format
+    const statusMap: Record<string, string> = {
+      'Active': 'active',
+      'Draft': 'draft',
+      'Under Review': 'under_review',
+      'On Hold': 'on_hold',
+      'Completed': 'completed',
+      'Archived': 'archived',
+      'Pending Client Approval': 'pending_client_approval',
+      'Client Approved': 'approved',
+      'Changes Requested': 'rejected'
+    };
+    
+    const databaseStatus = statusMap[selectedStatus] || selectedStatus.toLowerCase().replace(/\s+/g, '_');
+    
+    console.log('[CareTab] Changing care plan status:', {
+      carePlanId: selectedPlan,
+      displayStatus: selectedStatus,
+      databaseStatus: databaseStatus,
+      reason: statusReason
+    });
 
     changeStatus({
       carePlanId: selectedPlan,
-      newStatus: selectedStatus,
+      newStatus: databaseStatus,
       reason: statusReason || undefined
     });
 
