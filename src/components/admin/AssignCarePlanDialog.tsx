@@ -107,8 +107,6 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent 
         className="max-w-md"
-        onEscapeKeyDown={handleClose}
-        onPointerDownOutside={handleClose}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
