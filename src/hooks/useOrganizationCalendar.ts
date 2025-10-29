@@ -286,7 +286,7 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           `)
           .gte('leave_date', startDate.toISOString().split('T')[0])
           .lte('leave_date', endDate.toISOString().split('T')[0])
-          .or(`branch_id.in.(${targetBranchIds.join(',')}),is_company_wide.eq.true`)
+          .in('branch_id', targetBranchIds)
           .order('leave_date', { ascending: true });
 
         if (leavesError) {
