@@ -60,15 +60,28 @@ export const CareTab: React.FC = () => {
     const editCarePlanId = searchParams.get('editCarePlan');
     const clientId = searchParams.get('clientId');
     
+    console.log('[CareTab] URL params changed:', { editCarePlanId, clientId, hasClient: !!urlClient });
+    
     if (editCarePlanId && clientId && urlClient) {
+      console.log('[CareTab] Auto-opening edit wizard for care plan:', editCarePlanId);
+      console.log('[CareTab] Setting up with client:', `${urlClient.first_name} ${urlClient.last_name}`);
+      
       setSelectedClientId(clientId);
       setSelectedClientName(`${urlClient.first_name} ${urlClient.last_name}`);
       setSelectedClientData(urlClient);
       setEditingCarePlanId(editCarePlanId);
-      setIsWizardOpen(true);
       
-      // Clean up URL parameters
-      setSearchParams({});
+      // FORCE wizard to open with a slight delay to ensure state is set
+      setTimeout(() => {
+        console.log('[CareTab] Force opening wizard');
+        setIsWizardOpen(true);
+      }, 50);
+      
+      // Clear the URL parameters after processing with delay
+      setTimeout(() => {
+        console.log('[CareTab] Clearing URL parameters');
+        setSearchParams({}, { replace: true });
+      }, 500);
     }
   }, [searchParams, urlClient, setSearchParams]);
 
@@ -177,14 +190,25 @@ export const CareTab: React.FC = () => {
       </Card>
 
       {/* Care Plan Creation Wizard */}
-      {selectedClientId && selectedClientName && (
-        <CarePlanCreationWizard
-          isOpen={isWizardOpen}
-          onClose={handleCloseWizard}
-          clientId={selectedClientId}
-          carePlanId={editingCarePlanId || undefined}
-        />
-      )}
+      {(() => {
+        const shouldRender = selectedClientId && selectedClientName;
+        console.log('[CareTab] Wizard render check:', {
+          selectedClientId,
+          selectedClientName,
+          editingCarePlanId,
+          isWizardOpen,
+          shouldRender
+        });
+        
+        return shouldRender ? (
+          <CarePlanCreationWizard
+            isOpen={isWizardOpen}
+            onClose={handleCloseWizard}
+            clientId={selectedClientId}
+            carePlanId={editingCarePlanId || undefined}
+          />
+        ) : null;
+      })()}
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CarePlanWizardSidebar } from '@/components/clients/dialogs/wizard/CarePlanWizardSidebar';
 import { CarePlanWizardSteps } from '@/components/clients/dialogs/wizard/CarePlanWizardSteps';
+import { CarePlanCreationWizard } from '@/components/clients/dialogs/CarePlanCreationWizard';
 import { Edit, Download, CheckCircle2, UserX, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 import { useCarePlanData, CarePlanWithDetails } from '@/hooks/useCarePlanData';
@@ -292,6 +293,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   const { id: branchId, branchName } = useParams();
   const { tenantSlug } = useTenant();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isOpeningWizard, setIsOpeningWizard] = useState(false);
   const { data: carePlan, isLoading } = useCarePlanData(carePlanId);
   const { toast } = useToast();
   
@@ -328,13 +330,22 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   };
 
   const handleEditToggle = () => {
-    handleClose(false);
-    if (branchId && branchName && carePlan?.client?.id) {
-      const basePath = tenantSlug ? `/${tenantSlug}` : '';
-      const encodedBranchName = encodeURIComponent(branchName);
-      const careTabPath = `${basePath}/branch-dashboard/${branchId}/${encodedBranchName}/care-plan?editCarePlan=${carePlanId}&clientId=${carePlan.client.id}`;
-      navigate(careTabPath);
-    }
+    console.log('[CarePlanViewDialog] Opening edit wizard for care plan:', carePlanId);
+    // Trigger wizard opening directly
+    setIsOpeningWizard(true);
+    
+    // Close view dialog AFTER a brief delay to allow wizard to open
+    setTimeout(() => {
+      handleClose(false);
+      
+      // Navigate to care plan page if not already there (for URL consistency)
+      if (branchId && branchName && carePlan?.client?.id) {
+        const basePath = tenantSlug ? `/${tenantSlug}` : '';
+        const encodedBranchName = encodeURIComponent(branchName);
+        const careTabPath = `${basePath}/branch-dashboard/${branchId}/${encodedBranchName}/care-plan`;
+        navigate(careTabPath, { replace: true }); // Use replace to avoid history stack issues
+      }
+    }, 100); // Brief delay ensures wizard mounting starts first
   };
 
   const handleExport = () => {
@@ -502,6 +513,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogPortal>
         <DialogOverlay className="z-[60]" />
@@ -634,6 +646,20 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
         </DialogContent>
       </DialogPortal>
     </Dialog>
+    
+    {/* Edit Wizard - Opens when edit button is clicked */}
+    {isOpeningWizard && carePlan && carePlan.client && (
+      <CarePlanCreationWizard
+        isOpen={isOpeningWizard}
+        onClose={() => {
+          console.log('[CarePlanViewDialog] Edit wizard closed');
+          setIsOpeningWizard(false);
+        }}
+        clientId={carePlan.client.id}
+        carePlanId={carePlanId}
+      />
+    )}
+    </>
   );
 }
 
