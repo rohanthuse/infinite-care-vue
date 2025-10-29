@@ -323,6 +323,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [carePlanToDelete, setCarePlanToDelete] = useState<any>(null);
   const deleteCarePlanMutation = useDeleteCarePlan();
 
+  const handleStatusDialogClose = useCallback(() => {
+    statusControlledDialog.onOpenChange(false);
+    setSelectedPlan(null);
+    setSelectedStatus("");
+    setStatusReason("");
+  }, [statusControlledDialog]);
+
   // useEffect hooks MUST also be at the top - ONLY ONE useEffect with these dependencies
   useEffect(() => {
     setCurrentPage(1);
@@ -691,13 +698,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     setSelectedStatus("");
     setStatusReason("");
   };
-  
-  const handleStatusDialogClose = useCallback(() => {
-    statusControlledDialog.onOpenChange(false);
-    setSelectedPlan(null);
-    setSelectedStatus("");
-    setStatusReason("");
-  }, [statusControlledDialog]);
 
   const handleFilterApply = () => {
     setIsFiltering(statusFilter !== "all" || assignedToFilter !== "all" || !!dateRangeStart || !!dateRangeEnd);
