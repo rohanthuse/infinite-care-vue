@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { BranchRightSidebar } from "@/components/branch-dashboard/BranchRightSidebar";
@@ -56,6 +56,7 @@ interface BranchDashboardProps {
 
 const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   
   // Always call all hooks unconditionally at the top level
@@ -69,6 +70,18 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     handleTabChange,
     handleWorkflowNavigation
   } = useBranchDashboardNavigation();
+
+  // Add navigation error detection
+  useEffect(() => {
+    if (activeTab === 'care-plan') {
+      console.log('[BranchDashboard] Care Plan tab loaded:', {
+        branchId: id,
+        branchName,
+        tenantSlug,
+        pathname: location.pathname
+      });
+    }
+  }, [activeTab, id, branchName, tenantSlug]);
 
   // Get categoryId from URL params for notification routing
   const { categoryId } = useParams<{ categoryId?: string }>();

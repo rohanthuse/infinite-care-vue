@@ -239,33 +239,76 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
   };
 
   const handleTabNavigation = (tabValue: string) => {
+    console.log('[BranchRightSidebar] handleTabNavigation called:', {
+      tabValue,
+      userRole: userRole?.role,
+      permissions,
+      tenantSlug,
+      id,
+      branchName
+    });
+    
     // Check permissions for branch admins
-    if (userRole?.role === 'branch_admin' && !hasTabPermission(permissions || null, tabValue)) {
-      toast.error("Access denied", {
-        description: "You don't have permission to access this section",
-        position: "top-center",
+    if (userRole?.role === 'branch_admin') {
+      const hasPermission = hasTabPermission(permissions || null, tabValue);
+      console.log('[BranchRightSidebar] Permission check:', {
+        tabValue,
+        hasPermission,
+        permissions
       });
-      return;
+      
+      if (!hasPermission) {
+        toast.error("Access denied", {
+          description: `You don't have permission to access ${tabValue}. Please contact your administrator.`,
+          position: "top-center",
+        });
+        return;
+      }
     }
     
     // Ensure we have the required parameters
     if (!id || !branchName) {
+      console.error('[BranchRightSidebar] Missing navigation parameters:', { id, branchName });
       toast.error("Navigation error", {
-        description: "Branch information is missing",
+        description: "Branch information is missing. Please refresh the page.",
         position: "top-center",
       });
       return;
     }
     
-    // Use proper tenant context from hook instead of parsing URL
-    const basePath = tenantSlug ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` : `/branch-dashboard/${id}/${branchName}`;
+    // Use proper tenant context
+    const basePath = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` 
+      : `/branch-dashboard/${id}/${branchName}`;
     
-    // Navigate to dedicated pages for modules that have them
-    const dedicatedModules = ['events-logs', 'attendance', 'form-builder', 'documents', 'library', 'third-party', 'reports', 'bookings', 'accounting', 'care-plan', 'agreements', 'forms', 'notifications', 'workflow', 'organization-calendar'];
+    const targetPath = `${basePath}/${tabValue}`;
+    
+    console.log('[BranchRightSidebar] Navigating to:', {
+      basePath,
+      tabValue,
+      targetPath,
+      tenantSlug
+    });
+    
+    // Navigate to dedicated pages
+    const dedicatedModules = [
+      'events-logs', 'attendance', 'form-builder', 'documents', 
+      'library', 'third-party', 'reports', 'bookings', 'accounting', 
+      'care-plan', 'agreements', 'forms', 'notifications', 'workflow', 
+      'organization-calendar'
+    ];
     
     if (dedicatedModules.includes(tabValue)) {
-      console.log(`Navigating to: ${basePath}/${tabValue}`); // Debug log
-      navigate(`${basePath}/${tabValue}`);
+      try {
+        navigate(targetPath);
+        console.log('[BranchRightSidebar] Navigation completed successfully');
+      } catch (error) {
+        console.error('[BranchRightSidebar] Navigation failed:', error);
+        toast.error("Navigation failed", {
+          description: "Unable to navigate to the requested page. Please try again.",
+          position: "top-center",
+        });
+      }
     } else {
       onChange(tabValue);
     }
