@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,6 +7,7 @@ import { User, UserCheck, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateCarePlanAssignment } from '@/hooks/useUpdateCarePlan';
+import { useControlledDialog } from '@/hooks/useDialogManager';
 
 interface AssignCarePlanDialogProps {
   open: boolean;
@@ -43,6 +44,40 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
 }) => {
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const updateAssignmentMutation = useUpdateCarePlanAssignment();
+  
+  const dialogId = `assign-care-plan-${carePlan?.id || 'new'}`;
+  const controlledDialog = useControlledDialog(dialogId, open);
+
+  // Force UI unlock function for comprehensive cleanup
+  const forceUIUnlock = useCallback(() => {
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+    overlays.forEach(overlay => overlay.remove());
+    
+    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    });
+    
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('overflow');
+    document.body.classList.remove('overflow-hidden');
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.removeAttribute('data-scroll-locked');
+    document.documentElement.removeAttribute('data-scroll-locked');
+  }, []);
+
+  // Sync with external open prop
+  useEffect(() => {
+    if (open !== controlledDialog.open) {
+      controlledDialog.onOpenChange(open);
+    }
+  }, [open, controlledDialog]);
+
+  // Sync controlled state back to parent
+  useEffect(() => {
+    onOpenChange(controlledDialog.open);
+  }, [controlledDialog.open, onOpenChange]);
 
   // Fetch available staff for this branch
   const { data: staff, isLoading: staffLoading } = useQuery({
@@ -61,6 +96,12 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
     enabled: Boolean(branchId && open),
   });
 
+  const handleClose = useCallback(() => {
+    controlledDialog.onOpenChange(false);
+    setSelectedStaffId('');
+    setTimeout(forceUIUnlock, 50);
+  }, [controlledDialog, forceUIUnlock]);
+
   const handleAssign = async () => {
     if (!carePlan || !selectedStaffId) return;
 
@@ -73,10 +114,10 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
         staffId: selectedStaffId,
         providerName: `${selectedStaff.first_name} ${selectedStaff.last_name}`,
       });
-      onOpenChange(false);
-      setSelectedStaffId('');
+      handleClose();
     } catch (error) {
       console.error('Failed to assign care plan:', error);
+      setTimeout(forceUIUnlock, 50);
     }
   };
 
@@ -89,16 +130,11 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
         staffId: '',
         providerName: 'Unassigned',
       });
-      onOpenChange(false);
-      setSelectedStaffId('');
+      handleClose();
     } catch (error) {
       console.error('Failed to unassign care plan:', error);
+      setTimeout(forceUIUnlock, 50);
     }
-  };
-
-  const handleClose = () => {
-    onOpenChange(false);
-    setSelectedStaffId('');
   };
 
   if (!carePlan) return null;
@@ -106,8 +142,19 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
   const currentlyAssigned = carePlan.staff;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+    <Dialog open={controlledDialog.open} onOpenChange={handleClose}>
+      <DialogContent 
+        className="max-w-md"
+        onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
+        onEscapeKeyDown={() => {
+          handleClose();
+          setTimeout(forceUIUnlock, 50);
+        }}
+        onPointerDownOutside={() => {
+          handleClose();
+          setTimeout(forceUIUnlock, 50);
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />

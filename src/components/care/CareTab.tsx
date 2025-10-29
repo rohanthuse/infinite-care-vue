@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUserRole } from '@/hooks/useUserRole';
 import { useTenant } from '@/contexts/TenantContext';
@@ -62,6 +62,7 @@ import { ClientSelector } from "./ClientSelector";
 import { CarePlanCreationWizard } from "@/components/clients/dialogs/CarePlanCreationWizard";
 import { DeleteCarePlanDialog } from "@/components/clients/dialogs/DeleteCarePlanDialog";
 import { useDeleteCarePlan } from "@/hooks/useDeleteCarePlan";
+import { useControlledDialog } from "@/hooks/useDialogManager";
 
 const mockCarePlans = [
   {
@@ -281,6 +282,39 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [statusReason, setStatusReason] = useState<string>("");
   const { changeStatus, isChanging } = useCarePlanStatusChange();
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  
+  const statusDialogId = 'care-plan-status-change';
+  const statusControlledDialog = useControlledDialog(statusDialogId, statusDialogOpen);
+
+  // Force UI unlock function
+  const forceUIUnlock = useCallback(() => {
+    const overlays = document.querySelectorAll('[data-radix-dialog-overlay], [data-radix-alert-dialog-overlay]');
+    overlays.forEach(overlay => overlay.remove());
+    
+    document.querySelectorAll('[aria-hidden="true"], [inert]').forEach(el => {
+      el.removeAttribute('aria-hidden');
+      el.removeAttribute('inert');
+    });
+    
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('pointer-events');
+    document.documentElement.style.removeProperty('overflow');
+    document.body.classList.remove('overflow-hidden');
+    document.documentElement.classList.remove('overflow-hidden');
+    document.body.removeAttribute('data-scroll-locked');
+    document.documentElement.removeAttribute('data-scroll-locked');
+  }, []);
+
+  // Sync dialog state
+  useEffect(() => {
+    if (statusDialogOpen !== statusControlledDialog.open) {
+      statusControlledDialog.onOpenChange(statusDialogOpen);
+    }
+  }, [statusDialogOpen, statusControlledDialog]);
+
+  useEffect(() => {
+    setStatusDialogOpen(statusControlledDialog.open);
+  }, [statusControlledDialog.open]);
   
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -671,11 +705,20 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       reason: statusReason || undefined
     });
 
-    setStatusDialogOpen(false);
+    statusControlledDialog.onOpenChange(false);
     setSelectedPlan(null);
     setSelectedStatus("");
     setStatusReason("");
+    setTimeout(forceUIUnlock, 50);
   };
+  
+  const handleStatusDialogClose = useCallback(() => {
+    statusControlledDialog.onOpenChange(false);
+    setSelectedPlan(null);
+    setSelectedStatus("");
+    setStatusReason("");
+    setTimeout(forceUIUnlock, 50);
+  }, [statusControlledDialog, forceUIUnlock]);
 
   const handleFilterApply = () => {
     setIsFiltering(statusFilter !== "all" || assignedToFilter !== "all" || !!dateRangeStart || !!dateRangeEnd);
@@ -1168,8 +1211,19 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         )}
       </div>
 
-      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog open={statusControlledDialog.open} onOpenChange={handleStatusDialogClose}>
+        <DialogContent 
+          className="sm:max-w-[425px]"
+          onCloseAutoFocus={() => setTimeout(forceUIUnlock, 50)}
+          onEscapeKeyDown={() => {
+            handleStatusDialogClose();
+            setTimeout(forceUIUnlock, 50);
+          }}
+          onPointerDownOutside={() => {
+            handleStatusDialogClose();
+            setTimeout(forceUIUnlock, 50);
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Change Care Plan Status</DialogTitle>
             <DialogDescription>
@@ -1216,9 +1270,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
             </div>
           </div>
           <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={isChanging}>Cancel</Button>
-            </DialogClose>
+            <Button variant="outline" onClick={handleStatusDialogClose} disabled={isChanging}>
+              Cancel
+            </Button>
             <Button 
               onClick={handleStatusChange} 
               type="button"
