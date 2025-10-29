@@ -149,6 +149,86 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
     }));
   };
 
+  // Select all items in the current filtered list
+  const handleSelectAll = () => {
+    let itemsToSelect: string[] = [];
+    
+    switch(selectedTab) {
+      case 'clients':
+        itemsToSelect = filteredClients.map(c => c.id);
+        break;
+      case 'staff':
+        itemsToSelect = filteredStaff.map(s => s.id);
+        break;
+      case 'branches':
+        itemsToSelect = filteredBranches.map(b => b.id);
+        break;
+      case 'admins':
+        itemsToSelect = filteredBranchAdmins.map(a => a.id);
+        break;
+    }
+    
+    setSelectedAssignees(prev => {
+      const newState = { ...prev };
+      itemsToSelect.forEach(id => {
+        newState[id] = true;
+      });
+      return newState;
+    });
+  };
+
+  // Deselect all items in the current filtered list
+  const handleDeselectAll = () => {
+    let itemsToDeselect: string[] = [];
+    
+    switch(selectedTab) {
+      case 'clients':
+        itemsToDeselect = filteredClients.map(c => c.id);
+        break;
+      case 'staff':
+        itemsToDeselect = filteredStaff.map(s => s.id);
+        break;
+      case 'branches':
+        itemsToDeselect = filteredBranches.map(b => b.id);
+        break;
+      case 'admins':
+        itemsToDeselect = filteredBranchAdmins.map(a => a.id);
+        break;
+    }
+    
+    setSelectedAssignees(prev => {
+      const newState = { ...prev };
+      itemsToDeselect.forEach(id => {
+        newState[id] = false;
+      });
+      return newState;
+    });
+  };
+
+  // Check if all items in the current filtered list are selected
+  const areAllCurrentItemsSelected = () => {
+    let currentItems: string[] = [];
+    
+    switch(selectedTab) {
+      case 'clients':
+        currentItems = filteredClients.map(c => c.id);
+        break;
+      case 'staff':
+        currentItems = filteredStaff.map(s => s.id);
+        break;
+      case 'branches':
+        currentItems = filteredBranches.map(b => b.id);
+        break;
+      case 'admins':
+        currentItems = filteredBranchAdmins.map(a => a.id);
+        break;
+    }
+    
+    if (currentItems.length === 0) return false;
+    
+    return currentItems.every(id => selectedAssignees[id]);
+  };
+
   const handlePublish = () => {
     const assignees = Object.entries(selectedAssignees)
       .filter(([_, isSelected]) => isSelected)
@@ -394,6 +474,49 @@ export const FormBuilderPublish: React.FC<FormBuilderPublishProps> = ({
                 <TabsTrigger value="branches">Branches</TabsTrigger>
                 <TabsTrigger value="admins">Admins</TabsTrigger>
               </TabsList>
+              
+              <div className="flex items-center justify-between mt-3 mb-2 px-2">
+                <div className="text-sm text-muted-foreground">
+                  {selectedTab === 'clients' && `${filteredClients.length} client${filteredClients.length !== 1 ? 's' : ''}`}
+                  {selectedTab === 'staff' && `${filteredStaff.length} staff member${filteredStaff.length !== 1 ? 's' : ''}`}
+                  {selectedTab === 'branches' && `${filteredBranches.length} branch${filteredBranches.length !== 1 ? 'es' : ''}`}
+                  {selectedTab === 'admins' && `${filteredBranchAdmins.length} admin${filteredBranchAdmins.length !== 1 ? 's' : ''}`}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {areAllCurrentItemsSelected() ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeselectAll}
+                      className="text-xs h-7"
+                      disabled={
+                        (selectedTab === 'clients' && filteredClients.length === 0) ||
+                        (selectedTab === 'staff' && filteredStaff.length === 0) ||
+                        (selectedTab === 'branches' && filteredBranches.length === 0) ||
+                        (selectedTab === 'admins' && filteredBranchAdmins.length === 0)
+                      }
+                    >
+                      Deselect All
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="text-xs h-7"
+                      disabled={
+                        (selectedTab === 'clients' && filteredClients.length === 0) ||
+                        (selectedTab === 'staff' && filteredStaff.length === 0) ||
+                        (selectedTab === 'branches' && filteredBranches.length === 0) ||
+                        (selectedTab === 'admins' && filteredBranchAdmins.length === 0)
+                      }
+                    >
+                      Select All
+                    </Button>
+                  )}
+                </div>
+              </div>
               
               <ScrollArea className="h-[250px] mt-2">
                 <TabsContent value="clients" className="space-y-2 py-2">
