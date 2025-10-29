@@ -7,7 +7,6 @@ import { User, UserCheck, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useUpdateCarePlanAssignment } from '@/hooks/useUpdateCarePlan';
-import { useControlledDialog } from '@/hooks/useDialogManager';
 
 interface AssignCarePlanDialogProps {
   open: boolean;
@@ -44,21 +43,6 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
 }) => {
   const [selectedStaffId, setSelectedStaffId] = useState<string>('');
   const updateAssignmentMutation = useUpdateCarePlanAssignment();
-  
-  const dialogId = `assign-care-plan-${carePlan?.id || 'new'}`;
-  const controlledDialog = useControlledDialog(dialogId, open);
-
-  // Sync with external open prop
-  useEffect(() => {
-    if (open !== controlledDialog.open) {
-      controlledDialog.onOpenChange(open);
-    }
-  }, [open, controlledDialog]);
-
-  // Sync controlled state back to parent
-  useEffect(() => {
-    onOpenChange(controlledDialog.open);
-  }, [controlledDialog.open, onOpenChange]);
 
   // Fetch available staff for this branch
   const { data: staff, isLoading: staffLoading } = useQuery({
@@ -78,9 +62,9 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
   });
 
   const handleClose = useCallback(() => {
-    controlledDialog.onOpenChange(false);
+    onOpenChange(false);
     setSelectedStaffId('');
-  }, [controlledDialog]);
+  }, [onOpenChange]);
 
   const handleAssign = async () => {
     if (!carePlan || !selectedStaffId) return;
@@ -120,7 +104,7 @@ export const AssignCarePlanDialog: React.FC<AssignCarePlanDialogProps> = ({
   const currentlyAssigned = carePlan.staff;
 
   return (
-    <Dialog open={controlledDialog.open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent 
         className="max-w-md"
         onEscapeKeyDown={handleClose}
