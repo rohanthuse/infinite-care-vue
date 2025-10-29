@@ -17,6 +17,7 @@ import { EventComplianceView } from './EventComplianceView';
 import { EventAttachmentsView } from './EventAttachmentsView';
 import { exportEventToPDF } from '@/lib/exportEvents';
 import { useBranchStaff } from '@/hooks/useBranchStaff';
+import { toast } from 'sonner';
 
 interface EventDetailsDialogProps {
   event: EventLog | null;
@@ -257,7 +258,14 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
             </Button>
             <Button
               variant="outline"
-              onClick={() => exportEventToPDF(event)}
+              onClick={async () => {
+                try {
+                  await exportEventToPDF(event);
+                } catch (error) {
+                  console.error('Error exporting PDF:', error);
+                  toast.error('Failed to export PDF');
+                }
+              }}
             >
               <FileText className="h-4 w-4 mr-1" />
               Export PDF

@@ -69,7 +69,7 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
 
   const handleShareEvent = async (event: any) => {
     try {
-      const pdfBlob = exportEventToPDFBlob(event);
+      const pdfBlob = await exportEventToPDFBlob(event);
       const fileName = `event-${event.title.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
 
       if (navigator.share && navigator.canShare) {

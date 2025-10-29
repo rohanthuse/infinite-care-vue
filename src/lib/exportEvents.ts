@@ -1,6 +1,70 @@
 import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { supabase } from '@/integrations/supabase/client';
+
+// Helper function to fetch staff names for a branch
+const fetchStaffNames = async (branchId: string): Promise<Map<string, string>> => {
+  try {
+    const { data, error } = await supabase
+      .from('staff')
+      .select('id, first_name, last_name')
+      .eq('branch_id', branchId)
+      .eq('status', 'Active');
+
+    if (error) {
+      console.error('Error fetching staff names:', error);
+      return new Map();
+    }
+
+    const staffMap = new Map<string, string>();
+    data?.forEach(staff => {
+      const fullName = `${staff.first_name} ${staff.last_name}`.trim();
+      staffMap.set(staff.id, fullName);
+    });
+
+    return staffMap;
+  } catch (error) {
+    console.error('Error in fetchStaffNames:', error);
+    return new Map();
+  }
+};
+
+// Helper function to resolve staff ID to name
+const resolveStaffName = (staffId: string | undefined, staffMap: Map<string, string>): string => {
+  if (!staffId) return 'Not assigned';
+  return staffMap.get(staffId) || staffId;
+};
+
+// Helper function to resolve array of staff IDs to names
+const resolveStaffNames = (staffIds: string[] | undefined, staffMap: Map<string, string>): string => {
+  if (!staffIds || staffIds.length === 0) return 'None';
+  return staffIds
+    .map(id => staffMap.get(id) || id)
+    .join(', ');
+};
+
+// Helper function to load image from URL and convert to base64
+const loadImageAsBase64 = async (imageUrl: string): Promise<string | null> => {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error('Failed to fetch image:', response.status);
+      return null;
+    }
+    
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Error loading image:', error);
+    return null;
+  }
+};
 
 export interface ExportableEvent {
   // Basic fields
@@ -19,6 +83,7 @@ export interface ExportableEvent {
   created_at: string;
   updated_at?: string;
   recorded_by_staff_name?: string;
+  branch_id?: string;
   
   // Body map
   body_map_points?: any;
@@ -110,9 +175,12 @@ export const exportEventsToCSV = (events: ExportableEvent[], filename: string = 
   URL.revokeObjectURL(link.href);
 };
 
-export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
+export const exportEventToPDF = async (event: ExportableEvent, filename?: string) => {
   const pdf = new jsPDF();
   let currentY = 20;
+  
+  // Fetch staff names if branch_id is available
+  const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
   
   // Header
   pdf.setFontSize(20);
@@ -189,10 +257,10 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
     
     const staffData = [];
     if (event.staff_present && event.staff_present.length > 0) {
-      staffData.push(['Staff Present', event.staff_present.join(', ')]);
+      staffData.push(['Staff Present', resolveStaffNames(event.staff_present, staffMap)]);
     }
     if (event.staff_aware && event.staff_aware.length > 0) {
-      staffData.push(['Staff Aware', event.staff_aware.join(', ')]);
+      staffData.push(['Staff Aware', resolveStaffNames(event.staff_aware, staffMap)]);
     }
     if (event.other_people_present && event.other_people_present.length > 0) {
       const otherPeople = event.other_people_present.map((p: any) => 
@@ -228,7 +296,7 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
     const followUpData = [
       ['Action Required', event.action_required ? 'Yes' : 'No'],
       ['Follow-up Date', event.follow_up_date || 'Not set'],
-      ['Assigned To', event.follow_up_assigned_to || 'Not assigned'],
+      ['Assigned To', resolveStaffName(event.follow_up_assigned_to, staffMap)],
       ['Follow-up Notes', event.follow_up_notes || 'No notes']
     ];
     
@@ -262,7 +330,7 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
     }
     actionsData.push(['Investigation Required', event.investigation_required ? 'Yes' : 'No']);
     if (event.investigation_assigned_to) {
-      actionsData.push(['Investigation Assigned To', event.investigation_assigned_to]);
+      actionsData.push(['Investigation Assigned To', resolveStaffName(event.investigation_assigned_to, staffMap)]);
     }
     if (event.expected_resolution_date) {
       actionsData.push(['Expected Resolution', event.expected_resolution_date]);
@@ -377,10 +445,68 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
     currentY = (pdf as any).lastAutoTable.finalY + 10;
   }
   
-  // === BODY MAP & ATTACHMENTS ===
-  if ((event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0) ||
-      (event.attachments && event.attachments.length > 0)) {
+  // === BODY MAP IMAGES ===
+  if (event.body_map_front_image_url || event.body_map_back_image_url) {
+    if (currentY > 180) {
+      pdf.addPage();
+      currentY = 20;
+    }
     
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('Body Map', 20, currentY);
+    currentY += 10;
+    
+    if (event.body_map_front_image_url) {
+      try {
+        const frontImageBase64 = await loadImageAsBase64(event.body_map_front_image_url);
+        if (frontImageBase64) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Front View:', 20, currentY);
+          currentY += 5;
+          
+          pdf.addImage(frontImageBase64, 'PNG', 20, currentY, 80, 100);
+          currentY += 105;
+        }
+      } catch (error) {
+        console.error('Error adding front body map image:', error);
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'italic');
+        pdf.text('Front body map image could not be loaded', 20, currentY);
+        currentY += 10;
+      }
+    }
+    
+    if (event.body_map_back_image_url && currentY > 180) {
+      pdf.addPage();
+      currentY = 20;
+    }
+    
+    if (event.body_map_back_image_url) {
+      try {
+        const backImageBase64 = await loadImageAsBase64(event.body_map_back_image_url);
+        if (backImageBase64) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Back View:', 20, currentY);
+          currentY += 5;
+          
+          pdf.addImage(backImageBase64, 'PNG', 20, currentY, 80, 100);
+          currentY += 105;
+        }
+      } catch (error) {
+        console.error('Error adding back body map image:', error);
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'italic');
+        pdf.text('Back body map image could not be loaded', 20, currentY);
+        currentY += 10;
+      }
+    }
+  }
+  
+  // === ATTACHMENTS INFO ===
+  if (event.attachments && event.attachments.length > 0) {
     if (currentY > 240) {
       pdf.addPage();
       currentY = 20;
@@ -388,36 +514,25 @@ export const exportEventToPDF = (event: ExportableEvent, filename?: string) => {
     
     pdf.setFontSize(14);
     pdf.setFont(undefined, 'bold');
-    pdf.text('Additional Information', 20, currentY);
+    pdf.text('Attachments', 20, currentY);
     currentY += 5;
     
-    const additionalData = [];
-    
-    if (event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0) {
-      additionalData.push(['Body Map Points', `${event.body_map_points.length} point(s) marked`]);
-    }
-    
-    if (event.attachments && event.attachments.length > 0) {
-      additionalData.push(['Attachments', `${event.attachments.length} file(s) attached`]);
-    }
-    
-    autoTable(pdf, {
-      body: additionalData,
-      startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
-    });
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, 20, currentY);
+    currentY += 10;
   }
 
   const pdfFilename = filename || `event-${event.id}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
   pdf.save(pdfFilename);
 };
 
-export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
+export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob> => {
   const pdf = new jsPDF();
   let currentY = 20;
+  
+  // Fetch staff names if branch_id is available
+  const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
   
   // Header
   pdf.setFontSize(20);
@@ -494,10 +609,10 @@ export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
     
     const staffData = [];
     if (event.staff_present && event.staff_present.length > 0) {
-      staffData.push(['Staff Present', event.staff_present.join(', ')]);
+      staffData.push(['Staff Present', resolveStaffNames(event.staff_present, staffMap)]);
     }
     if (event.staff_aware && event.staff_aware.length > 0) {
-      staffData.push(['Staff Aware', event.staff_aware.join(', ')]);
+      staffData.push(['Staff Aware', resolveStaffNames(event.staff_aware, staffMap)]);
     }
     if (event.other_people_present && event.other_people_present.length > 0) {
       const otherPeople = event.other_people_present.map((p: any) => 
@@ -533,7 +648,7 @@ export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
     const followUpData = [
       ['Action Required', event.action_required ? 'Yes' : 'No'],
       ['Follow-up Date', event.follow_up_date || 'Not set'],
-      ['Assigned To', event.follow_up_assigned_to || 'Not assigned'],
+      ['Assigned To', resolveStaffName(event.follow_up_assigned_to, staffMap)],
       ['Follow-up Notes', event.follow_up_notes || 'No notes']
     ];
     
@@ -567,7 +682,7 @@ export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
     }
     actionsData.push(['Investigation Required', event.investigation_required ? 'Yes' : 'No']);
     if (event.investigation_assigned_to) {
-      actionsData.push(['Investigation Assigned To', event.investigation_assigned_to]);
+      actionsData.push(['Investigation Assigned To', resolveStaffName(event.investigation_assigned_to, staffMap)]);
     }
     if (event.expected_resolution_date) {
       actionsData.push(['Expected Resolution', event.expected_resolution_date]);
@@ -682,10 +797,68 @@ export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
     currentY = (pdf as any).lastAutoTable.finalY + 10;
   }
   
-  // === BODY MAP & ATTACHMENTS ===
-  if ((event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0) ||
-      (event.attachments && event.attachments.length > 0)) {
+  // === BODY MAP IMAGES ===
+  if (event.body_map_front_image_url || event.body_map_back_image_url) {
+    if (currentY > 180) {
+      pdf.addPage();
+      currentY = 20;
+    }
     
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('Body Map', 20, currentY);
+    currentY += 10;
+    
+    if (event.body_map_front_image_url) {
+      try {
+        const frontImageBase64 = await loadImageAsBase64(event.body_map_front_image_url);
+        if (frontImageBase64) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Front View:', 20, currentY);
+          currentY += 5;
+          
+          pdf.addImage(frontImageBase64, 'PNG', 20, currentY, 80, 100);
+          currentY += 105;
+        }
+      } catch (error) {
+        console.error('Error adding front body map image:', error);
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'italic');
+        pdf.text('Front body map image could not be loaded', 20, currentY);
+        currentY += 10;
+      }
+    }
+    
+    if (event.body_map_back_image_url && currentY > 180) {
+      pdf.addPage();
+      currentY = 20;
+    }
+    
+    if (event.body_map_back_image_url) {
+      try {
+        const backImageBase64 = await loadImageAsBase64(event.body_map_back_image_url);
+        if (backImageBase64) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Back View:', 20, currentY);
+          currentY += 5;
+          
+          pdf.addImage(backImageBase64, 'PNG', 20, currentY, 80, 100);
+          currentY += 105;
+        }
+      } catch (error) {
+        console.error('Error adding back body map image:', error);
+        pdf.setFontSize(9);
+        pdf.setFont(undefined, 'italic');
+        pdf.text('Back body map image could not be loaded', 20, currentY);
+        currentY += 10;
+      }
+    }
+  }
+  
+  // === ATTACHMENTS INFO ===
+  if (event.attachments && event.attachments.length > 0) {
     if (currentY > 240) {
       pdf.addPage();
       currentY = 20;
@@ -693,27 +866,13 @@ export const exportEventToPDFBlob = (event: ExportableEvent): Blob => {
     
     pdf.setFontSize(14);
     pdf.setFont(undefined, 'bold');
-    pdf.text('Additional Information', 20, currentY);
+    pdf.text('Attachments', 20, currentY);
     currentY += 5;
     
-    const additionalData = [];
-    
-    if (event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0) {
-      additionalData.push(['Body Map Points', `${event.body_map_points.length} point(s) marked`]);
-    }
-    
-    if (event.attachments && event.attachments.length > 0) {
-      additionalData.push(['Attachments', `${event.attachments.length} file(s) attached`]);
-    }
-    
-    autoTable(pdf, {
-      body: additionalData,
-      startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
-    });
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, 20, currentY);
+    currentY += 10;
   }
   
   // Return as Blob for sharing

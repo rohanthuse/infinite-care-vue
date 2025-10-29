@@ -90,8 +90,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
 
   const handleShareEvent = async (event: EventLog) => {
     try {
-      // Generate PDF blob
-      const pdfBlob = exportEventToPDFBlob(event);
+      // Generate PDF blob (now async)
+      const pdfBlob = await exportEventToPDFBlob(event);
       const fileName = `event-${event.title.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
 
       // Try Web Share API first (mobile/modern browsers)
