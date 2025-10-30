@@ -3,6 +3,10 @@ import { flushSync } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { BranchLayout } from '@/components/branch-dashboard/BranchLayout';
+import { AddClientDialog } from '@/components/AddClientDialog';
+import { NewBookingDialog } from '@/components/bookings/dialogs/NewBookingDialog';
+import { useBookingData } from '@/components/bookings/hooks/useBookingData';
+import { useServices } from '@/data/hooks/useServices';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { FormBuilderDesigner } from '@/components/form-builder/FormBuilderDesigner';
 import { FormBuilderPreview } from '@/components/form-builder/FormBuilderPreview';
@@ -142,6 +146,14 @@ const FormBuilder = () => {
       submitButtonText: 'Submit'
     }
   });
+  
+  // Quick Action dialog states
+  const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  
+  // Data for dialogs
+  const { clients, carers } = useBookingData(branchId || '');
+  const { data: services = [] } = useServices();
 
   // Memoize the conversion function to prevent recreating on every render
   const convertDatabaseFormToForm = useCallback((dbForm: DatabaseForm, elements: FormElement[] = []): Form => {
@@ -257,6 +269,15 @@ const FormBuilder = () => {
       }
     }
   }, [formId, saveElements, toast]);
+
+  // Quick Action handlers
+  const handleNewClient = () => setAddClientDialogOpen(true);
+  const handleNewBooking = () => setNewBookingDialogOpen(true);
+  const handleClientAdded = () => {};
+  const handleCreateBooking = (bookingData: any) => {
+    console.log("Creating new booking:", bookingData);
+    setNewBookingDialogOpen(false);
+  };
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -581,27 +602,64 @@ const FormBuilder = () => {
   // If no formId is provided, show the Form Matrix (FormBuilderTab)
   if (!formId) {
     return (
-      <BranchLayout>
-        <FormBuilderTab branchId={branchId || ''} branchName={decodedBranchName} />
-      </BranchLayout>
+      <>
+        <BranchLayout onNewClient={handleNewClient} onNewBooking={handleNewBooking}>
+          <FormBuilderTab branchId={branchId || ''} branchName={decodedBranchName} />
+        </BranchLayout>
+        
+        <AddClientDialog
+          open={addClientDialogOpen}
+          onOpenChange={setAddClientDialogOpen}
+          branchId={branchId || ''}
+          onSuccess={handleClientAdded}
+        />
+        
+        <NewBookingDialog
+          open={newBookingDialogOpen}
+          onOpenChange={setNewBookingDialogOpen}
+          carers={carers}
+          services={services}
+          onCreateBooking={handleCreateBooking}
+          branchId={branchId || ''}
+        />
+      </>
     );
   }
 
   if (isLoadingForm || (formId && isLoadingElements)) {
     return (
-      <BranchLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-            <p>Loading form...</p>
+      <>
+        <BranchLayout onNewClient={handleNewClient} onNewBooking={handleNewBooking}>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p>Loading form...</p>
+            </div>
           </div>
-        </div>
-      </BranchLayout>
+        </BranchLayout>
+        
+        <AddClientDialog
+          open={addClientDialogOpen}
+          onOpenChange={setAddClientDialogOpen}
+          branchId={branchId || ''}
+          onSuccess={handleClientAdded}
+        />
+        
+        <NewBookingDialog
+          open={newBookingDialogOpen}
+          onOpenChange={setNewBookingDialogOpen}
+          carers={carers}
+          services={services}
+          onCreateBooking={handleCreateBooking}
+          branchId={branchId || ''}
+        />
+      </>
     );
   }
 
   return (
-    <BranchLayout>
+    <>
+      <BranchLayout onNewClient={handleNewClient} onNewBooking={handleNewBooking}>
       <FormBuilderNavBar 
         form={form}
       />
@@ -669,6 +727,23 @@ const FormBuilder = () => {
         </TabsContent>
       </Tabs>
     </BranchLayout>
+    
+    <AddClientDialog
+      open={addClientDialogOpen}
+      onOpenChange={setAddClientDialogOpen}
+      branchId={branchId || ''}
+      onSuccess={handleClientAdded}
+    />
+    
+    <NewBookingDialog
+      open={newBookingDialogOpen}
+      onOpenChange={setNewBookingDialogOpen}
+      carers={carers}
+      services={services}
+      onCreateBooking={handleCreateBooking}
+      branchId={branchId || ''}
+    />
+  </>
   );
 };
 

@@ -6,11 +6,21 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LibraryResourcesList } from "@/components/library/LibraryResourcesList";
 import { LibraryResourceForm } from "@/components/library/LibraryResourceForm";
+import { AddClientDialog } from "@/components/AddClientDialog";
+import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
+import { useBookingData } from "@/components/bookings/hooks/useBookingData";
+import { useServices } from "@/data/hooks/useServices";
 
 const Library = () => {
   const { id, branchName } = useParams();
+  const branchId = id || "";
   const [activeTab, setActiveTab] = useState("view");
   const decodedBranchName = decodeURIComponent(branchName || "Med-Infinite Branch");
+  const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  
+  const { clients, carers } = useBookingData(branchId);
+  const { data: services = [] } = useServices();
 
   // Set page title
   useEffect(() => {
@@ -26,9 +36,18 @@ const Library = () => {
     setActiveTab("view");
     toast.success("Resource added successfully to the library");
   };
+  
+  const handleNewClient = () => setAddClientDialogOpen(true);
+  const handleNewBooking = () => setNewBookingDialogOpen(true);
+  const handleClientAdded = () => {};
+  const handleCreateBooking = (bookingData: any) => {
+    console.log("Creating new booking:", bookingData);
+    setNewBookingDialogOpen(false);
+  };
 
   return (
-    <BranchLayout>
+    <>
+      <BranchLayout onNewClient={handleNewClient} onNewBooking={handleNewBooking}>
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-2xl font-bold">Library Resources</h2>
@@ -84,6 +103,23 @@ const Library = () => {
         </Tabs>
       </div>
     </BranchLayout>
+    
+    <AddClientDialog
+      open={addClientDialogOpen}
+      onOpenChange={setAddClientDialogOpen}
+      branchId={branchId}
+      onSuccess={handleClientAdded}
+    />
+    
+    <NewBookingDialog
+      open={newBookingDialogOpen}
+      onOpenChange={setNewBookingDialogOpen}
+      carers={carers}
+      services={services}
+      onCreateBooking={handleCreateBooking}
+      branchId={branchId}
+    />
+  </>
   );
 };
 

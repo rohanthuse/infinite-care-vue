@@ -5,13 +5,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AttendanceForm } from "@/components/attendance/AttendanceForm";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { AttendanceLeaveManagement } from "@/components/attendance/AttendanceLeaveManagement";
+import { AddClientDialog } from "@/components/AddClientDialog";
+import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
+import { useBookingData } from "@/components/bookings/hooks/useBookingData";
+import { useServices } from "@/data/hooks/useServices";
 
 const Attendance = () => {
   const [activeTab, setActiveTab] = useState("record");
   const { id, branchName } = useParams<{ id: string; branchName: string }>();
+  const branchId = id || "";
+  const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+  const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
+  
+  const { clients, carers } = useBookingData(branchId);
+  const { data: services = [] } = useServices();
+  
+  const handleNewClient = () => setAddClientDialogOpen(true);
+  const handleNewBooking = () => setNewBookingDialogOpen(true);
+  const handleClientAdded = () => {};
+  const handleCreateBooking = (bookingData: any) => {
+    console.log("Creating new booking:", bookingData);
+    setNewBookingDialogOpen(false);
+  };
 
   return (
-    <BranchLayout>
+    <>
+      <BranchLayout onNewClient={handleNewClient} onNewBooking={handleNewBooking}>
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-1">Attendance Management</h2>
         <p className="text-sm text-muted-foreground mb-4">Track staff attendance and manage leave requests</p>
@@ -43,6 +62,23 @@ const Attendance = () => {
         </Tabs>
       </div>
     </BranchLayout>
+    
+    <AddClientDialog
+      open={addClientDialogOpen}
+      onOpenChange={setAddClientDialogOpen}
+      branchId={branchId}
+      onSuccess={handleClientAdded}
+    />
+    
+    <NewBookingDialog
+      open={newBookingDialogOpen}
+      onOpenChange={setNewBookingDialogOpen}
+      carers={carers}
+      services={services}
+      onCreateBooking={handleCreateBooking}
+      branchId={branchId}
+    />
+  </>
   );
 };
 

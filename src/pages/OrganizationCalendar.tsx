@@ -1,18 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BranchLayout } from '@/components/branch-dashboard/BranchLayout';
 import { OrganizationCalendarView } from '@/components/organization-calendar/OrganizationCalendarView';
 import { AuthGuard } from '@/components/AuthGuard';
 import { useTenant } from '@/contexts/TenantContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { useBranchDashboardNavigation } from '@/hooks/useBranchDashboardNavigation';
+import { AddClientDialog } from '@/components/AddClientDialog';
 
 export default function OrganizationCalendar() {
   const { organization, isLoading, error } = useTenant();
   const { id: branchId } = useBranchDashboardNavigation();
+  const [addClientDialogOpen, setAddClientDialogOpen] = useState(false);
+
+  const handleNewClient = () => {
+    setAddClientDialogOpen(true);
+  };
 
   const handleNewBooking = () => {
     // Handle new booking functionality - this is for the header button
     console.log('New booking requested from header');
+  };
+
+  const handleClientAdded = () => {
+    // Client added successfully
   };
 
   // Show loading while tenant context is being established
@@ -39,9 +49,16 @@ export default function OrganizationCalendar() {
 
   return (
     <AuthGuard requiresTenant={true}>
-      <BranchLayout onNewBooking={handleNewBooking}>
+      <BranchLayout onNewBooking={handleNewBooking} onNewClient={handleNewClient}>
         <OrganizationCalendarView defaultBranchId={branchId} />
       </BranchLayout>
+      
+      <AddClientDialog
+        open={addClientDialogOpen}
+        onOpenChange={setAddClientDialogOpen}
+        branchId={branchId || ''}
+        onSuccess={handleClientAdded}
+      />
     </AuthGuard>
   );
 }
