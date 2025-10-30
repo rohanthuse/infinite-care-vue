@@ -132,10 +132,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     const booking = bookings.find(b => b.id === deleteBookingId);
     if (!booking) {
       console.log('[BookingsList] Booking not found in list');
+      setDeleteBookingId(null);
       return;
     }
     
     console.log('[BookingsList] Starting delete for booking:', booking.id);
+    
+    // Safety timeout to force close dialog if deletion hangs
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[BookingsList] Delete operation timed out, forcing dialog close');
+      setDeleteBookingId(null);
+    }, 10000); // 10 second timeout
     
     try {
       await deleteBooking.mutateAsync({
@@ -144,10 +151,16 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         staffId: booking.carerId,
       });
       console.log('[BookingsList] Delete mutation completed successfully');
+      clearTimeout(safetyTimeout);
+      
+      // Wait 300ms to ensure query refetch completes before closing dialog
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       setDeleteBookingId(null);
       console.log('[BookingsList] Dialog closed, delete complete');
     } catch (error) {
       console.error('[BookingsList] Delete mutation failed:', error);
+      clearTimeout(safetyTimeout);
       // Error is handled by the mutation's onError callback
       // Close the dialog even on error to prevent freeze
       setDeleteBookingId(null);
@@ -449,7 +462,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       )}
       
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteBookingId} onOpenChange={() => setDeleteBookingId(null)}>
+      <AlertDialog 
+        open={!!deleteBookingId} 
+        onOpenChange={(open) => {
+          // Only allow closing if not pending
+          if (!open && !deleteBooking.isPending) {
+            setDeleteBookingId(null);
+          } else if (!open && deleteBooking.isPending) {
+            console.log('[BookingsList] Preventing dialog close during deletion');
+          }
+        }}
+      >
         <AlertDialogContent>
           {deleteBooking.isPending && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">

@@ -221,6 +221,12 @@ export function ViewBookingDialog({
     
     console.log('[ViewBookingDialog] Starting delete for booking:', booking.id);
     
+    // Safety timeout to force close dialog if deletion hangs
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[ViewBookingDialog] Delete operation timed out, forcing dialog close');
+      onOpenChange(false);
+    }, 10000); // 10 second timeout
+    
     try {
       await deleteBooking.mutateAsync({
         bookingId: booking.id,
@@ -228,10 +234,16 @@ export function ViewBookingDialog({
         staffId: booking.carerId,
       });
       console.log('[ViewBookingDialog] Delete mutation completed successfully');
+      clearTimeout(safetyTimeout);
+      
+      // Wait 300ms to ensure query refetch completes before closing dialog
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       onOpenChange(false);
       console.log('[ViewBookingDialog] Dialog closed, delete complete');
     } catch (error) {
       console.error('[ViewBookingDialog] Delete mutation failed:', error);
+      clearTimeout(safetyTimeout);
       // Error is handled by the mutation's onError callback
       // Close the dialog even on error to prevent freeze
       onOpenChange(false);

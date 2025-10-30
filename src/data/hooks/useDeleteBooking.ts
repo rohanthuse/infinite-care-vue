@@ -30,16 +30,28 @@ export function useDeleteBooking(branchId?: string) {
     onSuccess: (deletedBookingId, variables) => {
       console.log('[useDeleteBooking] Successfully deleted booking:', deletedBookingId);
       
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+      // Force immediate refetch of all relevant queries
+      queryClient.refetchQueries({ 
+        queryKey: ["branch-bookings", branchId],
+        type: 'active' 
+      });
       
       if (variables.clientId) {
-        queryClient.invalidateQueries({ queryKey: ["client-bookings", variables.clientId] });
+        queryClient.refetchQueries({ 
+          queryKey: ["client-bookings", variables.clientId],
+          type: 'active'
+        });
       }
       
       if (variables.staffId) {
-        queryClient.invalidateQueries({ queryKey: ["carer-bookings", variables.staffId] });
-        queryClient.invalidateQueries({ queryKey: ["carer-appointments-full", variables.staffId] });
+        queryClient.refetchQueries({ 
+          queryKey: ["carer-bookings", variables.staffId],
+          type: 'active'
+        });
+        queryClient.refetchQueries({ 
+          queryKey: ["carer-appointments-full", variables.staffId],
+          type: 'active'
+        });
       }
       
       toast.success("Booking deleted successfully!");
