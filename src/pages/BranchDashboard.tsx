@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { BranchRightSidebar } from "@/components/branch-dashboard/BranchRightSidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
@@ -519,13 +520,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     <div className="min-h-screen flex flex-col bg-background w-full">
         <DashboardHeader />
         
-        <div className="flex flex-1 w-full relative">
-          <main className="flex-1 min-w-0 px-4 md:px-8 pt-4 pb-20 md:py-6 transition-all duration-200">
-            <BranchInfoHeader 
-              branchName={displayBranchName} 
-              branchId={id || ""}
-              onNewBooking={handleNewBooking}
-            />
+        <div className="flex flex-1 w-full">
+          <SidebarInset className="flex-1">
+            <main className="px-4 md:px-8 pt-4 pb-20 md:py-6">
+              <BranchInfoHeader 
+                branchName={displayBranchName} 
+                branchId={id || ""}
+                onNewBooking={handleNewBooking}
+              />
             
             {/* Main Content */}
             {/* Dashboard Tab */}
@@ -702,6 +704,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               )
             )}
           </main>
+          </SidebarInset>
           
           <BranchRightSidebar
             activeTab={activeTab}
