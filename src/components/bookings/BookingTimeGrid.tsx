@@ -6,6 +6,7 @@ import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
 import { EditBookingDialog } from "./EditBookingDialog";
+import { BookingsMonthView } from "./BookingsMonthView";
 
 import { Maximize2, Minimize2, Calendar, Clock, AlertCircle } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, parseISO } from "date-fns";
@@ -645,33 +646,22 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     );
   };
 
-  // For monthly view, show a message directing users to the appropriate view
+  // For monthly view, use the dedicated BookingsMonthView component
   if (viewType === "monthly") {
     return (
-      <div className="bg-card rounded-lg border border-border shadow-sm">
-        <div className="p-8 text-center">
-          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">Monthly View</h3>
-          <p className="text-muted-foreground mb-4">
-            The time grid view is not available for monthly view. 
-            Switch to Daily or Weekly view to see the detailed schedule.
-          </p>
-          <div className="flex gap-2 justify-center">
-            <Button 
-              variant="outline" 
-              onClick={() => onRequestViewTypeChange?.("weekly")}
-            >
-              Switch to Weekly
-            </Button>
-            <Button 
-              variant="default" 
-              onClick={() => onRequestViewTypeChange?.("daily")}
-            >
-              Switch to Daily
-            </Button>
-          </div>
-        </div>
-      </div>
+      <BookingsMonthView
+        date={validDate}
+        bookings={localBookings}
+        clients={clients}
+        carers={carers}
+        isLoading={false}
+        onBookingClick={(booking) => {
+          onViewBooking?.(booking);
+        }}
+        onCreateBooking={(date, time) => {
+          onCreateBooking?.(date, time, undefined, undefined);
+        }}
+      />
     );
   }
 
