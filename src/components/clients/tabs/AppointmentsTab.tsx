@@ -133,35 +133,73 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
             bookingStartTime.setHours(startHour, startMinute, 0, 0);
             bookingEndTime.setHours(endHour, endMinute, 0, 0);
 
-            // Skip if no service is selected (should be prevented by validation)
-            if (!schedule.services?.[0]) {
-              console.warn('[handleCreateBooking] No service selected for schedule, skipping');
+            // Skip if no services are selected (should be prevented by validation)
+            if (!schedule.services || schedule.services.length === 0) {
+              console.warn('[handleCreateBooking] No services selected for schedule, skipping');
               continue;
             }
 
-            const bookingInput = {
-              branch_id: client.branch_id, // Use client's actual branch_id
-              client_id: actualClientId,   // Use the correct client_id from props
-              staff_id: bookingData.carerId, // Individual carer ID passed from dialog
-              start_time: bookingStartTime.toISOString(),
-              end_time: bookingEndTime.toISOString(),
-              service_id: schedule.services[0], // Required service ID
-              status: "assigned",
-              notes: bookingData.notes || null,
-            };
-
-            console.log('[handleCreateBooking] Creating booking:', bookingInput);
-            const createdBooking = await createBookingMutation.mutateAsync(bookingInput);
+            // ✅ Create a separate booking for EACH selected service
+            console.log(`[handleCreateBooking] Creating ${schedule.services.length} booking(s) for services:`, schedule.services);
             
-            // Store the first created booking for navigation
-            if (!firstCreatedBooking) {
-              firstCreatedBooking = createdBooking;
+            for (const serviceId of schedule.services) {
+              const bookingInput = {
+                branch_id: client.branch_id, // Use client's actual branch_id
+                client_id: actualClientId,   // Use the correct client_id from props
+                staff_id: bookingData.carerId, // Individual carer ID passed from dialog
+                start_time: bookingStartTime.toISOString(),
+                end_time: bookingEndTime.toISOString(),
+                service_id: serviceId, // ✅ Each service gets its own booking
+                status: "assigned",
+                notes: bookingData.notes || null,
+              };
+
+              console.log('[handleCreateBooking] Creating booking for service:', serviceId, bookingInput);
+              const createdBooking = await createBookingMutation.mutateAsync(bookingInput);
+              
+              // Store the first created booking for navigation
+              if (!firstCreatedBooking) {
+                firstCreatedBooking = createdBooking;
+              }
             }
           }
         }
       }
 
-      toast.success("Booking created successfully!");
+      // Calculate total bookings created
+      const totalServices = bookingData.schedules.reduce((sum: number, schedule: any) => 
+        sum + (schedule.services?.length || 0), 0
+      );
+      const totalDays = bookingData.schedules.reduce((sum: number, schedule: any) => {
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        const selectedDays = days.filter(day => schedule[day]);
+        
+        const startDate = new Date(bookingData.fromDate);
+        const endDate = new Date(bookingData.untilDate);
+        let dayCount = 0;
+        
+        for (let currentDate = new Date(startDate); currentDate <= endDate; currentDate.setDate(currentDate.getDate() + 1)) {
+          const dayOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][currentDate.getDay()];
+          if (selectedDays.includes(dayOfWeek)) {
+            dayCount++;
+          }
+        }
+        
+        return sum + dayCount;
+      }, 0);
+      
+      const totalBookings = totalServices * totalDays;
+      
+      toast.success(
+        totalBookings > 1 
+          ? `${totalBookings} bookings created successfully!` 
+          : "Booking created successfully!",
+        {
+          description: totalServices > 1 
+            ? `Created separate bookings for each service and time slot.`
+            : undefined
+        }
+      );
       
       // Refresh bookings for this client
       refetch();
