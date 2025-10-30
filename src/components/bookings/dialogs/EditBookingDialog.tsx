@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Save, X } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle } from "lucide-react";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
 import { BookingValidationAlert } from "../BookingValidationAlert";
 import { BookingOverlapAlert } from "../BookingOverlapAlert";
@@ -131,6 +131,18 @@ export function EditBookingDialog({
 
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
+
+  // Calculate predicted status based on staff_id selection
+  const predictedStatus = useMemo(() => {
+    const selectedStaffId = form.watch('staff_id');
+    return selectedStaffId ? 'assigned' : 'unassigned';
+  }, [form.watch('staff_id')]);
+
+  // Get current status from booking
+  const currentStatus = booking?.status || 'unassigned';
+  
+  // Check if status will change
+  const statusWillChange = predictedStatus !== currentStatus;
 
   const handleDelete = async () => {
     if (!booking) {
@@ -303,6 +315,27 @@ export function EditBookingDialog({
           </div>
         ) : (
           <>
+            {/* Status Change Preview */}
+            {statusWillChange && (
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 text-sm">
+                  <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    Status will be updated
+                  </p>
+                  <p className="text-blue-700 dark:text-blue-300">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                      {currentStatus}
+                    </span>
+                    <span className="mx-2">→</span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                      {predictedStatus}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {/* Validation Alert */}
             <BookingValidationAlert
               isValidating={isValidating}
@@ -345,14 +378,36 @@ export function EditBookingDialog({
                   name="staff_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Assigned Carer</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <FormLabel className="flex items-center gap-2">
+                        Assigned Carer
+                        {field.value && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Will be assigned
+                          </span>
+                        )}
+                        {!field.value && currentStatus === 'assigned' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Will be unassigned
+                          </span>
+                        )}
+                      </FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // Reset validation when carer changes
+                          setValidationResult(null);
+                        }} 
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a carer (optional)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="">No carer (unassigned)</SelectItem>
                           {carers.map((carer) => (
                             <SelectItem key={carer.id} value={carer.id}>
                               {carer.name}
