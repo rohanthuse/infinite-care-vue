@@ -58,14 +58,11 @@ export function ViewBookingDialog({
       onOpenChange(false);
     }
   }, [open, booking, onOpenChange]);
-  
-  if (!booking) return null;
 
-  const service = services.find((s) => s.id === booking.service_id);
-  
-  // Parse ISO datetime strings
-  const startTime = booking.start_time ? parseISO(booking.start_time) : null;
-  const endTime = booking.end_time ? parseISO(booking.end_time) : null;
+  // Safe calculations that handle null booking (moved AFTER hooks to prevent violations)
+  const service = booking ? services.find((s) => s.id === booking.service_id) : null;
+  const startTime = booking?.start_time ? parseISO(booking.start_time) : null;
+  const endTime = booking?.end_time ? parseISO(booking.end_time) : null;
   
   // Fetch related bookings (bookings created in the same batch)
   React.useEffect(() => {
@@ -155,9 +152,8 @@ export function ViewBookingDialog({
     }
   };
 
-  // Defensive check before rendering
+  // Early return AFTER all hooks - prevents hooks violation
   if (!booking) {
-    console.warn('[ViewBookingDialog] Rendering prevented - no booking data');
     return null;
   }
 
