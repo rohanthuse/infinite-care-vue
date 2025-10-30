@@ -25,6 +25,7 @@ import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
 import { useServices } from "@/data/hooks/useServices";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useRealTimeBookingSync } from "./hooks/useRealTimeBookingSync";
 import { BookingValidationAlert } from "./BookingValidationAlert";
 import { useSearchParams } from "react-router-dom";
@@ -164,9 +165,54 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   }, [bookings, statusFilter, selectedClientId, selectedCarerId]);
 
   // Handle booking view from list
-  const handleViewBooking = (booking: Booking) => {
-    console.log("[BookingsTab] View booking from list:", booking.id);
-    setViewingBooking(booking);
+  const handleViewBooking = async (booking: Booking) => {
+    console.log("[BookingsTab] View booking from list/calendar:", booking.id);
+    
+    // Fetch full booking data from database
+    console.log('[BookingsTab] Fetching full booking data from database...');
+    
+    const { data: fullBooking, error } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        staff (
+          id,
+          first_name,
+          last_name
+        ),
+        services (
+          id,
+          title
+        )
+      `)
+      .eq('id', booking.id)
+      .single();
+    
+    if (error) {
+      console.error('[BookingsTab] Error fetching booking:', error);
+      toast.error('Unable to load appointment details');
+      return;
+    }
+    
+    if (!fullBooking) {
+      console.error('[BookingsTab] Booking not found');
+      toast.error('Appointment not found');
+      return;
+    }
+    
+    console.log('[BookingsTab] Full booking data:', fullBooking);
+    
+    // Transform to include both formats for compatibility
+    const enrichedBooking = {
+      ...booking,              // Keep simplified format
+      ...fullBooking,          // Add database format
+      status: fullBooking.status as Booking['status'],  // Type-safe status
+      carerName: fullBooking.staff 
+        ? `${fullBooking.staff.first_name} ${fullBooking.staff.last_name}` 
+        : 'Not assigned',
+    } as Booking;
+    
+    setViewingBooking(enrichedBooking);
     setShowViewDialog(true);
   };
 
