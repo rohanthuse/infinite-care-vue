@@ -394,7 +394,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
   };
 
   const proceedWithSingleBookingCreation = (bookingData: any) => {
-    console.log("[useBookingHandlers] Creating single booking");
+    console.log("[useBookingHandlers] Creating single booking with multiple schedules");
     console.log("[useBookingHandlers] Single booking data:", JSON.stringify(bookingData, null, 2));
     
     if (!user) {
@@ -406,52 +406,70 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       return;
     }
 
-    const schedule = bookingData.schedules[0];
-    if (!schedule) {
+    if (!bookingData.schedules || bookingData.schedules.length === 0) {
       toast.error("No schedule data found");
       return;
     }
 
-    // Create single booking directly without recurring logic
+    // Create booking directly without recurring logic
     console.log("[useBookingHandlers] Original fromDate from form data:", bookingData.fromDate);
     console.log("[useBookingHandlers] Original fromDate type:", typeof bookingData.fromDate);
     console.log("[useBookingHandlers] Original fromDate toString:", bookingData.fromDate?.toString());
     
     const bookingDateStr = formatDateForBooking(bookingData.fromDate);
     console.log("[useBookingHandlers] Formatted booking date string:", bookingDateStr);
+    console.log(`[useBookingHandlers] Processing ${bookingData.schedules.length} schedule(s)`);
     
-    const singleBooking = {
-      branch_id: branchId,
-      client_id: bookingData.clientId,
-      staff_id: bookingData.carerId || null,
-      start_time: createBookingDateTime(bookingDateStr, schedule.startTime),
-      end_time: createBookingDateTime(bookingDateStr, schedule.endTime),
-      service_id: schedule.services[0],
-      status: bookingData.carerId ? "assigned" : "unassigned",
-      notes: bookingData.notes || null,
-    };
+    // Map ALL schedules to booking objects
+    const bookingsToCreate = bookingData.schedules.map((schedule: any, index: number) => {
+      console.log(`[useBookingHandlers] Schedule ${index + 1}:`, {
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        services: schedule.services
+      });
+      
+      return {
+        branch_id: branchId,
+        client_id: bookingData.clientId,
+        staff_id: bookingData.carerId || null,
+        start_time: createBookingDateTime(bookingDateStr, schedule.startTime),
+        end_time: createBookingDateTime(bookingDateStr, schedule.endTime),
+        service_id: schedule.services[0],
+        status: bookingData.carerId ? "assigned" : "unassigned",
+        notes: bookingData.notes || null,
+      };
+    });
     
-    console.log("[useBookingHandlers] Final booking object with start_time:", singleBooking.start_time);
-    console.log("[useBookingHandlers] Final booking object with end_time:", singleBooking.end_time);
+    console.log(`[useBookingHandlers] Creating ${bookingsToCreate.length} booking(s)`);
+    bookingsToCreate.forEach((booking, index) => {
+      console.log(`[useBookingHandlers] Booking ${index + 1}:`, {
+        start_time: booking.start_time,
+        end_time: booking.end_time,
+        service_id: booking.service_id
+      });
+    });
 
-    console.log("[useBookingHandlers] Creating single booking:", singleBooking);
-
-    toast.info("Creating Single Booking...", {
-      description: `Creating booking for ${format(bookingData.fromDate, "PPP")}`,
+    toast.info(`Creating ${bookingsToCreate.length} Booking(s)...`, {
+      description: `Creating ${bookingsToCreate.length} schedule(s) for ${format(bookingData.fromDate, "PPP")}`,
       duration: 2000
     });
 
-    // Use the single booking creation hook with proper error handling
-    createBookingMutation.mutate(singleBooking, {
-      onSuccess: (createdBooking) => {
-        console.log("[useBookingHandlers] ✅ Single booking created successfully:", createdBooking);
-        console.log("[useBookingHandlers] ✅ Booking ID:", createdBooking?.id);
-        console.log("[useBookingHandlers] ✅ Booking saved to database successfully");
+    // Use multiple bookings creation hook to ensure same created_at timestamp
+    createMultipleBookingsMutation.mutate(bookingsToCreate, {
+      onSuccess: (createdBookings) => {
+        console.log(`[useBookingHandlers] ✅ Created ${createdBookings?.length || 0} bookings successfully`);
+        
+        if (createdBookings && Array.isArray(createdBookings)) {
+          console.log("[useBookingHandlers] ✅ Sample created booking:", createdBookings[0]);
+          createdBookings.forEach((booking, index) => {
+            console.log(`[useBookingHandlers] ✅ Booking ${index + 1} ID:`, booking.id);
+          });
+        }
         
         setNewBookingDialogOpen(false);
         
-        toast.success("Single Booking Created! ✅", {
-          description: `Booking created for ${format(bookingData.fromDate, "PPP")} at ${schedule.startTime}-${schedule.endTime}`,
+        toast.success(`${createdBookings?.length || 0} Booking(s) Created! ✅`, {
+          description: `Created ${createdBookings?.length || 0} schedule(s) for ${format(bookingData.fromDate, "PPP")}`,
           duration: 3000
         });
 
@@ -459,26 +477,28 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
         queryClient.invalidateQueries({ queryKey: ["organization-bookings"] });
         
-        // Navigate to the booking date
-        const navigationDateStr = formatDateForBooking(bookingData.fromDate);
-        navigateToBookingDate(navigationDateStr, createdBooking.id);
+        // Navigate to the first booking
+        if (createdBookings && createdBookings.length > 0) {
+          const navigationDateStr = formatDateForBooking(bookingData.fromDate);
+          navigateToBookingDate(navigationDateStr, createdBookings[0].id);
 
-        // Verify booking appears
-        setTimeout(() => {
-          verifyBookingsAppear([createdBooking.id]);
-        }, 500);
+          // Verify all bookings appear
+          setTimeout(() => {
+            verifyBookingsAppear(createdBookings.map((b: any) => b.id));
+          }, 500);
+        }
       },
       onError: (error) => {
-        console.error("[useBookingHandlers] ❌ CRITICAL: Single booking creation FAILED:", error);
+        console.error("[useBookingHandlers] ❌ CRITICAL: Booking creation FAILED:", error);
         console.error("[useBookingHandlers] ❌ Error details:", error?.message || 'Unknown error');
-        console.error("[useBookingHandlers] ❌ Booking was NOT saved to database");
+        console.error("[useBookingHandlers] ❌ Bookings were NOT saved to database");
         
         if (error.message?.includes("row-level security")) {
           toast.error("Access denied. You may not be authorized for this branch.", {
             description: "Contact your administrator or create an admin user for this branch.",
           });
         } else {
-          toast.error("Failed to create single booking", {
+          toast.error("Failed to create bookings", {
             description: error?.message || "Unknown error on booking creation. Please check all fields.",
           });
         }
