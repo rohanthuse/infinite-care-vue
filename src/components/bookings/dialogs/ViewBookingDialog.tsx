@@ -1,5 +1,6 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { Eye, Clock, User, Calendar, FileText, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -73,80 +74,86 @@ export function ViewBookingDialog({
   // Safe calculations that handle null booking (moved AFTER hooks to prevent violations)
   const service = booking ? services.find((s) => s.id === booking.service_id) : null;
   
-  // Try to parse ISO datetime, with fallback to constructing from date + time
-  const startTime = React.useMemo(() => {
+  // Extract time strings in UTC to avoid timezone conversion issues
+  const startTimeStr = React.useMemo(() => {
     console.log('[ViewBookingDialog] Parsing start time:', {
       start_time: booking?.start_time,
       startTime: booking?.startTime,
-      date: booking?.date
     });
     
+    // Priority 1: Use the simplified startTime field (already correct)
+    if (booking?.startTime) {
+      console.log('[ViewBookingDialog] Using simplified startTime:', booking.startTime);
+      return booking.startTime;
+    }
+    
+    // Priority 2: Extract time from ISO string in UTC (avoid timezone conversion)
     if (booking?.start_time) {
       try {
         const parsed = parseISO(booking.start_time);
-        if (isNaN(parsed.getTime())) {
-          console.error('[ViewBookingDialog] Invalid start_time after parseISO:', booking.start_time);
-          return null;
-        }
-        return parsed;
+        // Format in UTC timezone to get the original stored time
+        const timeInUTC = formatInTimeZone(parsed, 'UTC', 'HH:mm');
+        console.log('[ViewBookingDialog] Extracted time from ISO (UTC):', timeInUTC);
+        return timeInUTC;
       } catch (error) {
         console.error('[ViewBookingDialog] Error parsing start_time:', error);
         return null;
       }
     }
     
-    // Fallback: construct from date + time if ISO not available
-    if (booking?.date && booking?.startTime) {
-      try {
-        const dateTimeStr = `${booking.date}T${booking.startTime}:00`;
-        const parsed = parseISO(dateTimeStr);
-        console.log('[ViewBookingDialog] Using fallback date+time:', dateTimeStr, parsed);
-        return parsed;
-      } catch (error) {
-        console.error('[ViewBookingDialog] Error with fallback parsing:', error);
-        return null;
-      }
-    }
-    
     return null;
-  }, [booking?.start_time, booking?.startTime, booking?.date]);
+  }, [booking?.start_time, booking?.startTime]);
 
-  const endTime = React.useMemo(() => {
+  const endTimeStr = React.useMemo(() => {
     console.log('[ViewBookingDialog] Parsing end time:', {
       end_time: booking?.end_time,
       endTime: booking?.endTime,
-      date: booking?.date
     });
     
+    // Priority 1: Use the simplified endTime field (already correct)
+    if (booking?.endTime) {
+      console.log('[ViewBookingDialog] Using simplified endTime:', booking.endTime);
+      return booking.endTime;
+    }
+    
+    // Priority 2: Extract time from ISO string in UTC (avoid timezone conversion)
     if (booking?.end_time) {
       try {
         const parsed = parseISO(booking.end_time);
-        if (isNaN(parsed.getTime())) {
-          console.error('[ViewBookingDialog] Invalid end_time after parseISO:', booking.end_time);
-          return null;
-        }
-        return parsed;
+        // Format in UTC timezone to get the original stored time
+        const timeInUTC = formatInTimeZone(parsed, 'UTC', 'HH:mm');
+        console.log('[ViewBookingDialog] Extracted time from ISO (UTC):', timeInUTC);
+        return timeInUTC;
       } catch (error) {
         console.error('[ViewBookingDialog] Error parsing end_time:', error);
         return null;
       }
     }
     
-    // Fallback: construct from date + time if ISO not available
-    if (booking?.date && booking?.endTime) {
-      try {
-        const dateTimeStr = `${booking.date}T${booking.endTime}:00`;
-        const parsed = parseISO(dateTimeStr);
-        console.log('[ViewBookingDialog] Using fallback date+time:', dateTimeStr, parsed);
-        return parsed;
-      } catch (error) {
-        console.error('[ViewBookingDialog] Error with fallback parsing:', error);
-        return null;
-      }
-    }
-    
     return null;
-  }, [booking?.end_time, booking?.endTime, booking?.date]);
+  }, [booking?.end_time, booking?.endTime]);
+
+  // Keep Date objects for date formatting and comparison
+  const startTimeDate = booking?.start_time ? parseISO(booking.start_time) : null;
+  const endTimeDate = booking?.end_time ? parseISO(booking.end_time) : null;
+
+  // Calculate duration from time strings to avoid timezone issues
+  const durationInMinutes = React.useMemo(() => {
+    if (!startTimeStr || !endTimeStr) return null;
+    
+    try {
+      const [startHour, startMin] = startTimeStr.split(':').map(Number);
+      const [endHour, endMin] = endTimeStr.split(':').map(Number);
+      
+      const startMinutes = startHour * 60 + startMin;
+      const endMinutes = endHour * 60 + endMin;
+      
+      return endMinutes - startMinutes;
+    } catch (error) {
+      console.error('[ViewBookingDialog] Error calculating duration:', error);
+      return null;
+    }
+  }, [startTimeStr, endTimeStr]);
   
   // Fetch related bookings (bookings created in the same batch)
   React.useEffect(() => {
@@ -204,7 +211,7 @@ export function ViewBookingDialog({
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
   
   // Determine if the appointment has already started
-  const hasStarted = startTime && startTime <= new Date();
+  const hasStarted = startTimeDate && startTimeDate <= new Date();
 
   const handleDelete = async () => {
     if (!booking) return;
@@ -301,26 +308,26 @@ export function ViewBookingDialog({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Date:</span>
                 <span className="text-sm font-medium">
-                  {startTime ? format(startTime, "EEEE, MMMM d, yyyy") : 'N/A'}
+                  {startTimeDate ? format(startTimeDate, "EEEE, MMMM d, yyyy") : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Start Time:</span>
                 <span className="text-sm font-medium">
-                  {startTime ? format(startTime, "HH:mm") : 'N/A'}
+                  {startTimeStr || 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">End Time:</span>
                 <span className="text-sm font-medium">
-                  {endTime ? format(endTime, "HH:mm") : 'N/A'}
+                  {endTimeStr || 'N/A'}
                 </span>
               </div>
-              {startTime && endTime && (
+              {durationInMinutes && (
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Duration:</span>
                   <span className="text-sm font-medium">
-                    {Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60))} minutes
+                    {durationInMinutes} minutes
                   </span>
                 </div>
               )}
@@ -344,7 +351,7 @@ export function ViewBookingDialog({
                       {service?.title || "No service selected"}
                     </span>
                     <div className="text-xs text-blue-700 mt-1">
-                      {startTime ? format(startTime, "HH:mm") : ''} - {endTime ? format(endTime, "HH:mm") : ''}
+                      {startTimeStr || ''} - {endTimeStr || ''}
                     </div>
                   </div>
                   <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
@@ -363,6 +370,9 @@ export function ViewBookingDialog({
                     const relatedService = services.find(s => s.id === relatedBooking.service_id);
                     const relatedStart = parseISO(relatedBooking.start_time);
                     const relatedEnd = parseISO(relatedBooking.end_time);
+                    // Format related times in UTC to match main booking display
+                    const relatedStartTime = formatInTimeZone(relatedStart, 'UTC', 'HH:mm');
+                    const relatedEndTime = formatInTimeZone(relatedEnd, 'UTC', 'HH:mm');
                     
                     return (
                       <div key={relatedBooking.id} className="p-2 bg-gray-50 rounded-md">
@@ -372,7 +382,7 @@ export function ViewBookingDialog({
                               {relatedService?.title || "Unknown Service"}
                             </span>
                             <div className="text-xs text-gray-600 mt-1">
-                              {format(relatedStart, "HH:mm")} - {format(relatedEnd, "HH:mm")}
+                              {relatedStartTime} - {relatedEndTime}
                             </div>
                           </div>
                           <Badge variant="outline" className="text-xs">
