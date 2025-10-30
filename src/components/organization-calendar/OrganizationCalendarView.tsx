@@ -154,7 +154,14 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     setViewType(type);
   };
   const handleEventClick = (event: CalendarEvent) => {
-    console.log('Event clicked:', event);
+    console.log('[OrganizationCalendarView] Event clicked:', event);
+    
+    if (!event || !event.id) {
+      console.error('[OrganizationCalendarView] Invalid event data - cannot open dialog');
+      toast.error('Unable to view this appointment - invalid data');
+      return;
+    }
+    
     if (event.type === 'booking') {
       // Convert CalendarEvent to booking format for dialog
       const bookingData = {

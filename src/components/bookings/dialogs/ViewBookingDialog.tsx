@@ -2,6 +2,7 @@ import React from "react";
 import { format, parseISO } from "date-fns";
 import { Eye, Clock, User, Calendar, FileText, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,6 +49,16 @@ export function ViewBookingDialog({
   const { data: userRole } = useUserRole();
   const [relatedBookings, setRelatedBookings] = React.useState<any[]>([]);
   
+  // Early validation - prevent dialog from opening with invalid data
+  React.useEffect(() => {
+    console.log('[ViewBookingDialog] Dialog state changed:', { open, hasBooking: !!booking, bookingId: booking?.id });
+    if (open && !booking) {
+      console.error('[ViewBookingDialog] Dialog opened without booking data');
+      toast.error('Unable to load appointment details');
+      onOpenChange(false);
+    }
+  }, [open, booking, onOpenChange]);
+  
   if (!booking) return null;
 
   const service = services.find((s) => s.id === booking.service_id);
@@ -59,7 +70,17 @@ export function ViewBookingDialog({
   // Fetch related bookings (bookings created in the same batch)
   React.useEffect(() => {
     const fetchRelatedBookings = async () => {
-      if (!booking?.id || !booking?.created_at) return;
+      console.log('[ViewBookingDialog] Fetching related bookings:', { 
+        open, 
+        hasBooking: !!booking, 
+        bookingId: booking?.id,
+        hasCreatedAt: !!booking?.created_at 
+      });
+      
+      if (!open || !booking?.id || !booking?.created_at) {
+        console.log('[ViewBookingDialog] Skipping fetch - dialog closed or missing data');
+        return;
+      }
       
       try {
         // Fetch bookings created within 2 seconds (same batch)
@@ -91,11 +112,12 @@ export function ViewBookingDialog({
         }
       } catch (error) {
         console.error('[ViewBookingDialog] Error fetching related bookings:', error);
+        // Don't show error toast for related bookings failure - main booking still works
       }
     };
     
     fetchRelatedBookings();
-  }, [booking?.id, booking?.created_at, booking?.clientId, booking?.client_id, booking?.carerId, booking?.staff_id]);
+  }, [open, booking?.id, booking?.created_at, booking?.clientId, booking?.client_id, booking?.carerId, booking?.staff_id]);
   
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
@@ -133,9 +155,23 @@ export function ViewBookingDialog({
     }
   };
 
+  // Defensive check before rendering
+  if (!booking) {
+    console.warn('[ViewBookingDialog] Rendering prevented - no booking data');
+    return null;
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto"
+        onInteractOutside={(e) => {
+          console.log('[ViewBookingDialog] Dialog interaction outside');
+        }}
+        onEscapeKeyDown={(e) => {
+          console.log('[ViewBookingDialog] Dialog escape key pressed');
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-blue-600">
             <Eye className="h-5 w-5" />

@@ -60,12 +60,22 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   };
 
   const handleViewAppointment = (booking: any) => {
+    console.log('[AppointmentsTab] View appointment clicked:', booking);
+    
+    if (!booking || !booking.id) {
+      console.error('[AppointmentsTab] Invalid booking data');
+      toast.error('Unable to view appointment - invalid data');
+      return;
+    }
+    
     const transformedBooking = {
       ...booking,
       carerId: booking.staff_id,
       clientId: booking.client_id,
       carerName: booking.staff_name,
     };
+    
+    console.log('[AppointmentsTab] Opening view dialog with:', transformedBooking);
     setViewBooking(transformedBooking);
     setIsViewDialogOpen(true);
   };
