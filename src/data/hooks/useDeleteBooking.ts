@@ -27,33 +27,32 @@ export function useDeleteBooking(branchId?: string) {
 
   return useMutation({
     mutationFn: deleteBooking,
-    onSuccess: (deletedBookingId, variables) => {
+    onSuccess: async (deletedBookingId, variables) => {
       console.log('[useDeleteBooking] Successfully deleted booking:', deletedBookingId);
       
-      // Force immediate refetch of all relevant queries
-      queryClient.refetchQueries({ 
-        queryKey: ["branch-bookings", branchId],
-        type: 'active' 
-      });
-      
-      if (variables.clientId) {
+      // Await all refetch operations to complete before mutation is marked as done
+      await Promise.all([
         queryClient.refetchQueries({ 
+          queryKey: ["branch-bookings", branchId],
+          type: 'active' 
+        }),
+        variables.clientId ? queryClient.refetchQueries({ 
           queryKey: ["client-bookings", variables.clientId],
           type: 'active'
-        });
-      }
+        }) : Promise.resolve(),
+        variables.staffId ? Promise.all([
+          queryClient.refetchQueries({ 
+            queryKey: ["carer-bookings", variables.staffId],
+            type: 'active'
+          }),
+          queryClient.refetchQueries({ 
+            queryKey: ["carer-appointments-full", variables.staffId],
+            type: 'active'
+          })
+        ]) : Promise.resolve()
+      ]);
       
-      if (variables.staffId) {
-        queryClient.refetchQueries({ 
-          queryKey: ["carer-bookings", variables.staffId],
-          type: 'active'
-        });
-        queryClient.refetchQueries({ 
-          queryKey: ["carer-appointments-full", variables.staffId],
-          type: 'active'
-        });
-      }
-      
+      console.log('[useDeleteBooking] All refetches completed');
       toast.success("Booking deleted successfully!");
     },
     onError: (error: any) => {

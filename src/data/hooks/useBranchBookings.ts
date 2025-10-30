@@ -46,7 +46,6 @@ export function useBranchBookings(branchId?: string) {
     queryKey: ["branch-bookings", branchId],
     queryFn: () => fetchBranchBookings(branchId),
     enabled: !!branchId,
-    refetchOnWindowFocus: true,
     staleTime: 1000 * 30, // 30 seconds - keeps data fresh
   });
 
