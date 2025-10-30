@@ -206,6 +206,8 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
       
       // Also invalidate branch bookings cache so it shows up in the calendar
       queryClient.invalidateQueries({ queryKey: ["branch-bookings", client.branch_id] });
+      queryClient.invalidateQueries({ queryKey: ["client-bookings", actualClientId] });
+      queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
       
       // Navigate to bookings tab with the first created booking highlighted
       if (firstCreatedBooking && branchId && branchName) {

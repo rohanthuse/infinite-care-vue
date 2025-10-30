@@ -1,6 +1,7 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
 import { Eye, Clock, User, Calendar, FileText, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -45,6 +46,8 @@ export function ViewBookingDialog({
 }: ViewBookingDialogProps) {
   const deleteBooking = useDeleteBooking(branchId);
   const { data: userRole } = useUserRole();
+  const [relatedBookings, setRelatedBookings] = React.useState<any[]>([]);
+  
   if (!booking) return null;
 
   const service = services.find((s) => s.id === booking.service_id);
@@ -52,6 +55,47 @@ export function ViewBookingDialog({
   // Parse ISO datetime strings
   const startTime = booking.start_time ? parseISO(booking.start_time) : null;
   const endTime = booking.end_time ? parseISO(booking.end_time) : null;
+  
+  // Fetch related bookings (bookings created in the same batch)
+  React.useEffect(() => {
+    const fetchRelatedBookings = async () => {
+      if (!booking?.id || !booking?.created_at) return;
+      
+      try {
+        // Fetch bookings created within 2 seconds (same batch)
+        const createdAt = new Date(booking.created_at);
+        const startWindow = new Date(createdAt.getTime() - 2000);
+        const endWindow = new Date(createdAt.getTime() + 2000);
+        
+        const { data, error } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            service_id,
+            start_time,
+            end_time,
+            services (
+              id,
+              title
+            )
+          `)
+          .eq('client_id', booking.clientId || booking.client_id)
+          .eq('staff_id', booking.carerId || booking.staff_id)
+          .gte('created_at', startWindow.toISOString())
+          .lte('created_at', endWindow.toISOString())
+          .neq('id', booking.id)
+          .order('start_time', { ascending: true });
+        
+        if (!error && data) {
+          setRelatedBookings(data);
+        }
+      } catch (error) {
+        console.error('[ViewBookingDialog] Error fetching related bookings:', error);
+      }
+    };
+    
+    fetchRelatedBookings();
+  }, [booking?.id, booking?.created_at, booking?.clientId, booking?.client_id, booking?.carerId, booking?.staff_id]);
   
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
@@ -173,15 +217,57 @@ export function ViewBookingDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <FileText className="h-4 w-4" />
-              Service
+              {relatedBookings.length > 0 ? 'Services Scheduled' : 'Service'}
             </div>
-            <div className="pl-6">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Service:</span>
-                <span className="text-sm font-medium">
-                  {service?.title || "No service selected"}
-                </span>
+            <div className="pl-6 space-y-2">
+              {/* Current booking's service */}
+              <div className="p-2 bg-blue-50 rounded-md">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-blue-900">
+                      {service?.title || "No service selected"}
+                    </span>
+                    <div className="text-xs text-blue-700 mt-1">
+                      {startTime ? format(startTime, "HH:mm") : ''} - {endTime ? format(endTime, "HH:mm") : ''}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                    Current
+                  </Badge>
+                </div>
               </div>
+              
+              {/* Related services */}
+              {relatedBookings.length > 0 && (
+                <>
+                  <div className="text-xs text-gray-500 font-medium mt-2">
+                    Additional Services (Same Booking Session):
+                  </div>
+                  {relatedBookings.map((relatedBooking) => {
+                    const relatedService = services.find(s => s.id === relatedBooking.service_id);
+                    const relatedStart = parseISO(relatedBooking.start_time);
+                    const relatedEnd = parseISO(relatedBooking.end_time);
+                    
+                    return (
+                      <div key={relatedBooking.id} className="p-2 bg-gray-50 rounded-md">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-900">
+                              {relatedService?.title || "Unknown Service"}
+                            </span>
+                            <div className="text-xs text-gray-600 mt-1">
+                              {format(relatedStart, "HH:mm")} - {format(relatedEnd, "HH:mm")}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            Related
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </div>
 
