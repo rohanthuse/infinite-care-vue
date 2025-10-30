@@ -51,7 +51,18 @@ export function ViewBookingDialog({
   
   // Early validation - prevent dialog from opening with invalid data
   React.useEffect(() => {
-    console.log('[ViewBookingDialog] Dialog state changed:', { open, hasBooking: !!booking, bookingId: booking?.id });
+    console.log('[ViewBookingDialog] Dialog state changed:', { 
+      open, 
+      hasBooking: !!booking, 
+      bookingId: booking?.id,
+      hasStartTime: !!booking?.start_time,
+      hasEndTime: !!booking?.end_time,
+      hasServiceId: !!booking?.service_id,
+      serviceId: booking?.service_id,
+      startTime: booking?.start_time,
+      endTime: booking?.end_time
+    });
+    
     if (open && !booking) {
       console.error('[ViewBookingDialog] Dialog opened without booking data');
       toast.error('Unable to load appointment details');
@@ -223,13 +234,13 @@ export function ViewBookingDialog({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Start Time:</span>
                 <span className="text-sm font-medium">
-                  {startTime ? format(startTime, "h:mm a") : 'N/A'}
+                  {startTime ? format(startTime, "HH:mm") : 'N/A'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">End Time:</span>
                 <span className="text-sm font-medium">
-                  {endTime ? format(endTime, "h:mm a") : 'N/A'}
+                  {endTime ? format(endTime, "HH:mm") : 'N/A'}
                 </span>
               </div>
               {startTime && endTime && (

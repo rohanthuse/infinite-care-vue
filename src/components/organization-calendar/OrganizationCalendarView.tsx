@@ -59,6 +59,7 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     }
   }, [defaultBranchId, selectedBranch]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
   const [editBookingDialogOpen, setEditBookingDialogOpen] = useState(false);
   const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
@@ -153,7 +154,7 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const handleViewTypeChange = (type: ViewType) => {
     setViewType(type);
   };
-  const handleEventClick = (event: CalendarEvent) => {
+  const handleEventClick = async (event: CalendarEvent) => {
     console.log('[OrganizationCalendarView] Event clicked:', event);
     
     if (!event || !event.id) {
@@ -163,22 +164,52 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     }
     
     if (event.type === 'booking') {
-      // Convert CalendarEvent to booking format for dialog
+      // Fetch full booking data from database
+      console.log('[OrganizationCalendarView] Fetching full booking data for ID:', event.id);
+      
+      const { data: fullBooking, error } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          staff (
+            id,
+            first_name,
+            last_name
+          ),
+          services (
+            id,
+            title
+          )
+        `)
+        .eq('id', event.id)
+        .single();
+      
+      if (error) {
+        console.error('[OrganizationCalendarView] Error fetching booking:', error);
+        toast.error('Unable to load appointment details');
+        return;
+      }
+      
+      if (!fullBooking) {
+        console.error('[OrganizationCalendarView] Booking not found');
+        toast.error('Appointment not found');
+        return;
+      }
+      
+      console.log('[OrganizationCalendarView] Full booking data:', fullBooking);
+      
+      // Transform to match ViewBookingDialog expectations
       const bookingData = {
-        id: event.id,
-        date: format(event.startTime, 'yyyy-MM-dd'),
-        startTime: format(event.startTime, 'HH:mm'),
-        endTime: format(event.endTime, 'HH:mm'),
-        status: event.status,
-        clientName: event.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
-        carerName: event.participants?.find(p => p.role === 'staff')?.name || 'Unknown Staff',
-        clientId: event.clientId,
-        carerId: event.staffIds?.[0],
-        service_id: null,
-        // This would need to be part of CalendarEvent if needed
-        notes: '' // This would need to be part of CalendarEvent if needed
+        ...fullBooking,
+        carerName: fullBooking.staff 
+          ? `${fullBooking.staff.first_name} ${fullBooking.staff.last_name}` 
+          : 'Not assigned',
+        carerId: fullBooking.staff_id,
+        clientId: fullBooking.client_id,
       };
+      
       setSelectedEvent(event);
+      setSelectedBooking(bookingData);
       setViewBookingDialogOpen(true);
     }
   };
@@ -606,21 +637,21 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
 
       {/* Booking Details Dialog */}
       {selectedEvent && <>
-          <ViewBookingDialog open={viewBookingDialogOpen} onOpenChange={setViewBookingDialogOpen} services={services || []} onEdit={handleEditBooking} branchId={selectedEvent.branchId} booking={{
-          id: selectedEvent.id,
-          date: format(selectedEvent.startTime, 'yyyy-MM-dd'),
-          startTime: format(selectedEvent.startTime, 'HH:mm'),
-          endTime: format(selectedEvent.endTime, 'HH:mm'),
-          status: selectedEvent.status,
-          clientName: selectedEvent.participants?.find(p => p.role === 'client')?.name || 'Unknown Client',
-          carerName: selectedEvent.participants?.find(p => p.role === 'staff')?.name || 'Needs Carer Assignment',
-          clientId: selectedEvent.clientId,
-          carerId: selectedEvent.staffIds?.[0],
-          service_id: null,
-          notes: '',
-          start_time: selectedEvent.startTime.toISOString(),
-          end_time: selectedEvent.endTime.toISOString()
-        }} />
+          <ViewBookingDialog 
+            open={viewBookingDialogOpen} 
+            onOpenChange={(open) => {
+              console.log('[ViewBookingDialog] State change:', open);
+              setViewBookingDialogOpen(open);
+              if (!open) {
+                setSelectedEvent(null);
+                setSelectedBooking(null);
+              }
+            }} 
+            services={services || []} 
+            onEdit={handleEditBooking} 
+            branchId={selectedEvent.branchId} 
+            booking={selectedBooking}
+          />
           
           <EditBookingDialog open={editBookingDialogOpen} onOpenChange={setEditBookingDialogOpen} services={services || []} carers={carers || []} branchId={selectedEvent.branchId} booking={{
           id: selectedEvent.id,
