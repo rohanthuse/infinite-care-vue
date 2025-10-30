@@ -133,7 +133,12 @@ export function EditBookingDialog({
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
 
   const handleDelete = async () => {
-    if (!booking) return;
+    if (!booking) {
+      console.log('[EditBookingDialog] No booking to delete');
+      return;
+    }
+    
+    console.log('[EditBookingDialog] Starting delete for booking:', booking.id);
     
     try {
       await deleteBooking.mutateAsync({
@@ -141,9 +146,14 @@ export function EditBookingDialog({
         clientId: booking.clientId || booking.client_id,
         staffId: booking.carerId || booking.staff_id,
       });
+      console.log('[EditBookingDialog] Delete mutation completed successfully');
       onOpenChange(false);
+      console.log('[EditBookingDialog] Dialog closed, delete complete');
     } catch (error) {
+      console.error('[EditBookingDialog] Delete mutation failed:', error);
       // Error is handled by the mutation's onError callback
+      // Close the dialog even on error to prevent freeze
+      onOpenChange(false);
     }
   };
 
@@ -445,6 +455,14 @@ export function EditBookingDialog({
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
+                    {deleteBooking.isPending && (
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                          <p className="text-sm text-muted-foreground">Deleting booking...</p>
+                        </div>
+                      </div>
+                    )}
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Booking</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -452,13 +470,14 @@ export function EditBookingDialog({
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
+                      <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
+                      <Button
                         onClick={handleDelete}
+                        disabled={deleteBooking.isPending}
                         className="bg-red-600 hover:bg-red-700"
                       >
                         {deleteBooking.isPending ? "Deleting..." : "Delete"}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

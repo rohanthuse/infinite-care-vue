@@ -214,7 +214,12 @@ export function ViewBookingDialog({
   const hasStarted = startTimeDate && startTimeDate <= new Date();
 
   const handleDelete = async () => {
-    if (!booking) return;
+    if (!booking) {
+      console.log('[ViewBookingDialog] No booking to delete');
+      return;
+    }
+    
+    console.log('[ViewBookingDialog] Starting delete for booking:', booking.id);
     
     try {
       await deleteBooking.mutateAsync({
@@ -222,9 +227,14 @@ export function ViewBookingDialog({
         clientId: booking.clientId,
         staffId: booking.carerId,
       });
+      console.log('[ViewBookingDialog] Delete mutation completed successfully');
       onOpenChange(false);
+      console.log('[ViewBookingDialog] Dialog closed, delete complete');
     } catch (error) {
+      console.error('[ViewBookingDialog] Delete mutation failed:', error);
       // Error is handled by the mutation's onError callback
+      // Close the dialog even on error to prevent freeze
+      onOpenChange(false);
     }
   };
   
@@ -452,6 +462,14 @@ export function ViewBookingDialog({
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
+                    {deleteBooking.isPending && (
+                      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                          <p className="text-sm text-muted-foreground">Deleting booking...</p>
+                        </div>
+                      </div>
+                    )}
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Booking</AlertDialogTitle>
                       <AlertDialogDescription>
@@ -460,13 +478,14 @@ export function ViewBookingDialog({
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
+                      <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
+                      <Button
                         onClick={handleDelete}
+                        disabled={deleteBooking.isPending}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
-                      </AlertDialogAction>
+                      </Button>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>

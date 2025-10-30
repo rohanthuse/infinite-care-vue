@@ -124,10 +124,18 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   };
 
   const handleConfirmDelete = async () => {
-    if (!deleteBookingId) return;
+    if (!deleteBookingId) {
+      console.log('[BookingsList] No booking ID to delete');
+      return;
+    }
     
     const booking = bookings.find(b => b.id === deleteBookingId);
-    if (!booking) return;
+    if (!booking) {
+      console.log('[BookingsList] Booking not found in list');
+      return;
+    }
+    
+    console.log('[BookingsList] Starting delete for booking:', booking.id);
     
     try {
       await deleteBooking.mutateAsync({
@@ -135,9 +143,14 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         clientId: booking.clientId,
         staffId: booking.carerId,
       });
+      console.log('[BookingsList] Delete mutation completed successfully');
       setDeleteBookingId(null);
+      console.log('[BookingsList] Dialog closed, delete complete');
     } catch (error) {
+      console.error('[BookingsList] Delete mutation failed:', error);
       // Error is handled by the mutation's onError callback
+      // Close the dialog even on error to prevent freeze
+      setDeleteBookingId(null);
     }
   };
 
@@ -438,6 +451,14 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteBookingId} onOpenChange={() => setDeleteBookingId(null)}>
         <AlertDialogContent>
+          {deleteBooking.isPending && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <p className="text-sm text-muted-foreground">Deleting booking...</p>
+              </div>
+            </div>
+          )}
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Booking</AlertDialogTitle>
             <AlertDialogDescription>
@@ -446,13 +467,14 @@ export const BookingsList: React.FC<BookingsListProps> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <AlertDialogCancel disabled={deleteBooking.isPending}>Cancel</AlertDialogCancel>
+            <Button
               onClick={handleConfirmDelete}
+              disabled={deleteBooking.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteBooking.isPending ? "Deleting..." : "Delete Booking"}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
