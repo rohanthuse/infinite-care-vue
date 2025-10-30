@@ -1,14 +1,14 @@
 
 import { Booking } from "../BookingTimeGrid";
+import { createUTCTimestamp } from '@/utils/timezoneUtils';
 
 // Legacy compatibility exports - these will be removed in future versions
 export function createBookingDateTime(dateString: string, timeString: string): string {
   console.warn('createBookingDateTime from bookingUtils is deprecated, use dateUtils instead');
   const dateStr = dateString.includes('T') ? dateString.split('T')[0] : dateString;
-  const [h, m] = timeString.split(':');
-  const formattedHour = h.padStart(2, '0');
-  const formattedMinute = m.padStart(2, '0');
-  return `${dateStr}T${formattedHour}:${formattedMinute}:00`;
+  
+  // Use timezone-aware conversion utility
+  return createUTCTimestamp(dateStr, timeString);
 }
 
 export function addDaysToDateString(dateString: string, days: number): string {

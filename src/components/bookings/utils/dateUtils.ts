@@ -4,6 +4,8 @@
  * Uses UTC internally to avoid timezone conversion issues
  */
 
+import { createUTCTimestamp } from '@/utils/timezoneUtils';
+
 // Constants for day-of-week mapping
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 export const DAY_NUMBERS = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
@@ -45,19 +47,19 @@ export function addDaysToDateString(dateString: string, days: number): string {
 
 /**
  * Create booking datetime string from date and time components
- * Creates ISO datetime string that preserves the intended date and time
+ * Uses timezone-aware conversion to ensure bookings display at correct times
  */
 export function createBookingDateTime(dateString: string, timeString: string): string {
   console.log('[createBookingDateTime] Input dateString:', dateString);
   console.log('[createBookingDateTime] Input timeString:', timeString);
   
+  // Extract date if it includes time component
   const dateStr = dateString.includes('T') ? dateString.split('T')[0] : dateString;
-  const [h, m] = timeString.split(':');
-  const formattedHour = h.padStart(2, '0');
-  const formattedMinute = m.padStart(2, '0');
   
-  const result = `${dateStr}T${formattedHour}:${formattedMinute}:00`;
-  console.log('[createBookingDateTime] Created datetime:', result);
+  // Use timezone-aware conversion utility to convert local time to UTC
+  const result = createUTCTimestamp(dateStr, timeString);
+  
+  console.log('[createBookingDateTime] Created timezone-aware UTC timestamp:', result);
   
   return result;
 }
