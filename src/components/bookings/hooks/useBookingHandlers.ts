@@ -685,11 +685,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
                 }
               });
              } else {
-               // Force a page reload to ensure fresh data after successful verification
-               setTimeout(() => {
-                 console.log("[useBookingHandlers] Reloading page to ensure fresh data");
-                 window.location.reload();
-               }, 1500);
+               // Bookings verified successfully - data already refreshed via query invalidation
+               console.log("[useBookingHandlers] Bookings verified and visible in calendar");
              }
            }
          }
