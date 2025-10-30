@@ -86,7 +86,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               {/* Time Label */}
               <div className="p-2 text-right border-r border-t border-border">
                 <span className="text-sm text-muted-foreground">
-                  {format(new Date().setHours(hour, 0, 0, 0), 'h:mm a')}
+                  {format(new Date().setHours(hour, 0, 0, 0), 'HH:mm')}
                 </span>
               </div>
 

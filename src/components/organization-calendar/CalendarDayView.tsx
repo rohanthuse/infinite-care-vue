@@ -82,7 +82,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                 <div className={`p-2 text-right border-r border-border ${isOnTheHour ? 'border-t' : ''}`}>
                   {isOnTheHour && (
                     <span className="text-sm text-muted-foreground">
-                      {format(timeSlot, 'h:mm a')}
+                      {format(timeSlot, 'HH:mm')}
                     </span>
                   )}
                 </div>
