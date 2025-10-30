@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent } from '@/types/calendar';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { createUTCTimestamp, getUserTimezone } from '@/utils/timezoneUtils';
 import { useScheduledAgreements, useCreateScheduledAgreement } from '@/data/hooks/agreements';
 import { useAnnualLeave, useCreateAnnualLeave } from '@/hooks/useLeaveManagement';
 import { ScheduleAgreementDialog } from '@/components/agreements/ScheduleAgreementDialog';
@@ -297,13 +298,29 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   };
   const handleCreateBooking = async (bookingData: any, selectedCarers: any[] = []) => {
     try {
+      // Convert local date/time to UTC for database storage
+      const userTimezone = getUserTimezone();
+      console.log('[handleCreateBooking] Creating booking in timezone:', userTimezone, {
+        localDate: bookingData.date,
+        localStartTime: bookingData.startTime,
+        localEndTime: bookingData.endTime
+      });
+
+      const start_time = createUTCTimestamp(bookingData.date, bookingData.startTime);
+      const end_time = createUTCTimestamp(bookingData.date, bookingData.endTime);
+
+      console.log('[handleCreateBooking] Converted times for database:', {
+        start_time,
+        end_time
+      });
+
       await createBookingMutation.mutateAsync({
         branch_id: selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id,
         client_id: bookingData.clientId,
         service_id: bookingData.serviceId,
         staff_id: selectedCarers[0]?.id,
-        start_time: `${bookingData.date}T${bookingData.startTime}:00`,
-        end_time: `${bookingData.date}T${bookingData.endTime}:00`,
+        start_time,
+        end_time,
         notes: bookingData.notes,
         status: 'scheduled'
       });

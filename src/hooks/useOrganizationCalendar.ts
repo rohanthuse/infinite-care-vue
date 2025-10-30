@@ -120,14 +120,31 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
     if (bookingsError) {
       console.error('[fetchOrganizationCalendarEvents] Bookings error:', bookingsError);
     } else if (bookings) {
-      const bookingEvents = bookings.map(booking => ({
+      const bookingEvents = bookings.map(booking => {
+        // JavaScript automatically converts UTC ISO strings to local timezone
+        const startTime = new Date(booking.start_time);
+        const endTime = new Date(booking.end_time);
+
+        // Debug logging for timezone conversion verification
+        console.log('[useOrganizationCalendar] Booking time conversion:', {
+          bookingId: booking.id,
+          raw_start_time: booking.start_time,
+          raw_end_time: booking.end_time,
+          parsed_start_time: startTime.toISOString(),
+          parsed_end_time: endTime.toISOString(),
+          local_start_time: format(startTime, 'yyyy-MM-dd HH:mm'),
+          local_end_time: format(endTime, 'yyyy-MM-dd HH:mm'),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        });
+
+        return {
         id: booking.id,
         type: 'booking' as const,
         title: booking.clients 
           ? `${booking.clients.first_name} ${booking.clients.last_name}` 
           : 'Appointment',
-        startTime: new Date(booking.start_time),
-        endTime: new Date(booking.end_time),
+        startTime,
+        endTime,
         status: (booking.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
         branchId: booking.branch_id,
         branchName: booking.branches?.name || 'Unknown Branch',
@@ -151,7 +168,8 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         priority: 'medium' as const,
         clientId: booking.client_id,
         staffIds: booking.staff_id ? [booking.staff_id] : []
-      }));
+      };
+      });
       
     events.push(...bookingEvents);
     }
