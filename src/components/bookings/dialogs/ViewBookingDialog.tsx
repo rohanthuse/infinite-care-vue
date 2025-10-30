@@ -72,8 +72,81 @@ export function ViewBookingDialog({
 
   // Safe calculations that handle null booking (moved AFTER hooks to prevent violations)
   const service = booking ? services.find((s) => s.id === booking.service_id) : null;
-  const startTime = booking?.start_time ? parseISO(booking.start_time) : null;
-  const endTime = booking?.end_time ? parseISO(booking.end_time) : null;
+  
+  // Try to parse ISO datetime, with fallback to constructing from date + time
+  const startTime = React.useMemo(() => {
+    console.log('[ViewBookingDialog] Parsing start time:', {
+      start_time: booking?.start_time,
+      startTime: booking?.startTime,
+      date: booking?.date
+    });
+    
+    if (booking?.start_time) {
+      try {
+        const parsed = parseISO(booking.start_time);
+        if (isNaN(parsed.getTime())) {
+          console.error('[ViewBookingDialog] Invalid start_time after parseISO:', booking.start_time);
+          return null;
+        }
+        return parsed;
+      } catch (error) {
+        console.error('[ViewBookingDialog] Error parsing start_time:', error);
+        return null;
+      }
+    }
+    
+    // Fallback: construct from date + time if ISO not available
+    if (booking?.date && booking?.startTime) {
+      try {
+        const dateTimeStr = `${booking.date}T${booking.startTime}:00`;
+        const parsed = parseISO(dateTimeStr);
+        console.log('[ViewBookingDialog] Using fallback date+time:', dateTimeStr, parsed);
+        return parsed;
+      } catch (error) {
+        console.error('[ViewBookingDialog] Error with fallback parsing:', error);
+        return null;
+      }
+    }
+    
+    return null;
+  }, [booking?.start_time, booking?.startTime, booking?.date]);
+
+  const endTime = React.useMemo(() => {
+    console.log('[ViewBookingDialog] Parsing end time:', {
+      end_time: booking?.end_time,
+      endTime: booking?.endTime,
+      date: booking?.date
+    });
+    
+    if (booking?.end_time) {
+      try {
+        const parsed = parseISO(booking.end_time);
+        if (isNaN(parsed.getTime())) {
+          console.error('[ViewBookingDialog] Invalid end_time after parseISO:', booking.end_time);
+          return null;
+        }
+        return parsed;
+      } catch (error) {
+        console.error('[ViewBookingDialog] Error parsing end_time:', error);
+        return null;
+      }
+    }
+    
+    // Fallback: construct from date + time if ISO not available
+    if (booking?.date && booking?.endTime) {
+      try {
+        const dateTimeStr = `${booking.date}T${booking.endTime}:00`;
+        const parsed = parseISO(dateTimeStr);
+        console.log('[ViewBookingDialog] Using fallback date+time:', dateTimeStr, parsed);
+        return parsed;
+      } catch (error) {
+        console.error('[ViewBookingDialog] Error with fallback parsing:', error);
+        return null;
+      }
+    }
+    
+    return null;
+  }, [booking?.end_time, booking?.endTime, booking?.date]);
   
   // Fetch related bookings (bookings created in the same batch)
   React.useEffect(() => {

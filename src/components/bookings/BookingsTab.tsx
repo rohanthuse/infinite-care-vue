@@ -203,14 +203,30 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
     console.log('[BookingsTab] Full booking data:', fullBooking);
     
     // Transform to include both formats for compatibility
+    // Don't type cast - keep all fields from both formats
     const enrichedBooking = {
-      ...booking,              // Keep simplified format
-      ...fullBooking,          // Add database format
-      status: fullBooking.status as Booking['status'],  // Type-safe status
+      ...booking,              // Keep simplified format (startTime, endTime, date)
+      ...fullBooking,          // Add database format (start_time, end_time, service_id)
+      status: fullBooking.status as Booking['status'],
       carerName: fullBooking.staff 
         ? `${fullBooking.staff.first_name} ${fullBooking.staff.last_name}` 
         : 'Not assigned',
-    } as Booking;
+      // Ensure ISO datetime fields are explicitly included
+      start_time: fullBooking.start_time,
+      end_time: fullBooking.end_time,
+      service_id: fullBooking.service_id,
+      created_at: fullBooking.created_at,
+    };
+
+    console.log('[BookingsTab] Enriched booking with both formats:', {
+      id: enrichedBooking.id,
+      hasStartTime: !!enrichedBooking.startTime,
+      hasEndTime: !!enrichedBooking.endTime,
+      hasStartTimeISO: !!enrichedBooking.start_time,
+      hasEndTimeISO: !!enrichedBooking.end_time,
+      start_time: enrichedBooking.start_time,
+      end_time: enrichedBooking.end_time,
+    });
     
     setViewingBooking(enrichedBooking);
     setShowViewDialog(true);
