@@ -139,8 +139,11 @@ export const NewMeetingDialog: React.FC<NewMeetingDialogProps> = ({
       // Invalidate staff meetings cache for real-time sync
       if (staffId) {
         const { queryClient } = await import('@/lib/queryClient');
-        queryClient.invalidateQueries({ queryKey: ['staff-meetings', staffId] });
+        await queryClient.invalidateQueries({ queryKey: ['staff-meetings', staffId] });
       }
+
+      // Wait for React Query to process invalidations
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       resetForm();
       onOpenChange(false);

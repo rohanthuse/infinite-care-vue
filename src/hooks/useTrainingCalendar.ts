@@ -40,13 +40,23 @@ export const useScheduleTraining = () => {
     onSuccess: async (data, variables) => {
       console.log('✅ Training scheduling successful:', data);
       
-      await queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
       await queryClient.invalidateQueries({ queryKey: ['staff-training'] });
       
       // CRITICAL: Force immediate refetch to ensure calendar updates
       await queryClient.refetchQueries({ 
         queryKey: ['organization-calendar'],
+        exact: false,
         type: 'active'
+      });
+      
+      // Also invalidate stats queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
       });
       
       console.log('✅ Calendar refetched after training creation');
