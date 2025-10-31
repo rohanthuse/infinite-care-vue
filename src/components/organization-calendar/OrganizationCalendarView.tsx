@@ -33,7 +33,10 @@ import { NewLeaveDialog } from './NewLeaveDialog';
 import { ViewLeaveDialog } from './ViewLeaveDialog';
 import { EditLeaveDialog } from './EditLeaveDialog';
 import { NewTrainingDialog } from './NewTrainingDialog';
+import { ViewTrainingDialog } from './ViewTrainingDialog';
+import { EditTrainingDialog } from './EditTrainingDialog';
 import { useDeleteClientAppointment } from '@/hooks/useClientAppointments';
+import { useDeleteTraining } from '@/hooks/useTrainingCalendar';
 import { BranchCombobox } from './BranchCombobox';
 import { CalendarExportDialog } from './CalendarExportDialog';
 import { CalendarShareDialog } from './CalendarShareDialog';
@@ -104,6 +107,9 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const [viewLeaveDialogOpen, setViewLeaveDialogOpen] = useState(false);
   const [editLeaveDialogOpen, setEditLeaveDialogOpen] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState<any>(null);
+  const [viewTrainingDialogOpen, setViewTrainingDialogOpen] = useState(false);
+  const [editTrainingDialogOpen, setEditTrainingDialogOpen] = useState(false);
+  const [selectedTraining, setSelectedTraining] = useState<any>(null);
   const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
@@ -341,6 +347,52 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
       setSelectedEvent(event);
       setSelectedLeave(fullLeave);
       setViewLeaveDialogOpen(true);
+    } else if (event.type === 'training') {
+      // Fetch full training data from database
+      console.log('[OrganizationCalendarView] Fetching training data for ID:', event.id);
+      
+      const { data: fullTraining, error } = await supabase
+        .from('staff_training_records')
+        .select(`
+          *,
+          staff (
+            id,
+            first_name,
+            last_name,
+            email
+          ),
+          branches (
+            id,
+            name
+          ),
+          training_courses (
+            id,
+            title,
+            description,
+            category,
+            status
+          )
+        `)
+        .eq('id', event.id)
+        .single();
+      
+      if (error) {
+        console.error('[OrganizationCalendarView] Error fetching training:', error);
+        toast.error('Unable to load training details');
+        return;
+      }
+      
+      if (!fullTraining) {
+        console.error('[OrganizationCalendarView] Training not found');
+        toast.error('Training not found');
+        return;
+      }
+      
+      console.log('[OrganizationCalendarView] Full training data:', fullTraining);
+      
+      setSelectedEvent(event);
+      setSelectedTraining(fullTraining);
+      setViewTrainingDialogOpen(true);
     }
   };
 
@@ -538,6 +590,29 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
       console.error('Error deleting leave:', error);
     }
   };
+
+  const handleEditTraining = () => {
+    setViewTrainingDialogOpen(false);
+    setTimeout(() => {
+      setEditTrainingDialogOpen(true);
+    }, 100);
+  };
+
+  const deleteTrainingMutation = useDeleteTraining();
+
+  const handleDeleteTraining = async () => {
+    if (!selectedTraining) return;
+    
+    try {
+      await deleteTrainingMutation.mutateAsync(selectedTraining.id);
+      setViewTrainingDialogOpen(false);
+      setSelectedTraining(null);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error('Error deleting training:', error);
+    }
+  };
+
   const handleEditSuccess = async (bookingId: string) => {
     setEditBookingDialogOpen(false);
 
@@ -1029,21 +1104,84 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
          />
        )}
 
-      {/* Training Dialog */}
-      <NewTrainingDialog 
-        open={trainingDialogOpen} 
-        onOpenChange={(open) => {
-          setTrainingDialogOpen(open);
-          if (!open) {
-            setTimeout(() => setPrefilledDate(null), 100);
-          }
-        }}
-        branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
-        prefilledDate={prefilledDate || currentDate}
-        prefilledTime={getTimeFromDate(prefilledDate)}
-      />
+       {/* Training Dialog */}
+       <NewTrainingDialog 
+         open={trainingDialogOpen} 
+         onOpenChange={(open) => {
+           setTrainingDialogOpen(open);
+           if (!open) {
+             setTimeout(() => setPrefilledDate(null), 100);
+           }
+         }}
+         branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
+         prefilledDate={prefilledDate || currentDate}
+         prefilledTime={getTimeFromDate(prefilledDate)}
+       />
 
-      {/* Export Dialog */}
+       {/* View Training Dialog */}
+       <ViewTrainingDialog
+         open={viewTrainingDialogOpen}
+         onOpenChange={(open) => {
+           setViewTrainingDialogOpen(open);
+           if (!open) {
+             setSelectedTraining(null);
+             setSelectedEvent(null);
+           }
+         }}
+         training={selectedTraining}
+         onEdit={handleEditTraining}
+         onDelete={handleDeleteTraining}
+       />
+
+       {/* Edit Training Dialog */}
+       {selectedTraining && (
+         <EditTrainingDialog
+           open={editTrainingDialogOpen}
+           onOpenChange={(open) => {
+             setEditTrainingDialogOpen(open);
+             if (!open) {
+               // Refresh training data after edit
+               setTimeout(async () => {
+                 if (selectedTraining?.id) {
+                   const { data } = await supabase
+                     .from('staff_training_records')
+                     .select(`
+                       *,
+                       staff (
+                         id,
+                         first_name,
+                         last_name,
+                         email
+                       ),
+                       branches (
+                         id,
+                         name
+                       ),
+                       training_courses (
+                         id,
+                         title,
+                         description,
+                         category,
+                         status
+                       )
+                     `)
+                     .eq('id', selectedTraining.id)
+                     .single();
+                   
+                   if (data) {
+                     setSelectedTraining(data);
+                     setViewTrainingDialogOpen(true);
+                   }
+                 }
+               }, 100);
+             }
+           }}
+           training={selectedTraining}
+           branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
+         />
+       )}
+
+       {/* Export Dialog */}
       <CalendarExportDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} events={calendarEvents || []} currentDate={currentDate} branchName={selectedBranch !== 'all' ? branches?.find(b => b.id === selectedBranch)?.name : 'All Branches'} />
 
       {/* Share Dialog */}

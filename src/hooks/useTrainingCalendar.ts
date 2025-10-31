@@ -74,3 +74,113 @@ export const useScheduleTraining = () => {
     }
   });
 };
+
+export interface UpdateTrainingParams {
+  trainingId: string;
+  training_course_id?: string;
+  staff_id?: string;
+  branch_id?: string;
+  assigned_date?: string;
+  training_notes?: string;
+  status?: string;
+}
+
+export const useUpdateTraining = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ trainingId, ...updates }: UpdateTrainingParams) => {
+      console.log('Updating training:', trainingId, updates);
+      
+      const { data, error } = await supabase
+        .from('staff_training_records')
+        .update(updates)
+        .eq('id', trainingId)
+        .select();
+      
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Training updated successfully:', data);
+      return data?.[0] || data;
+    },
+    onSuccess: async () => {
+      console.log('✅ Training update successful');
+      
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training'] });
+      
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      toast.success('Training updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating training:', error);
+      toast.error(`Failed to update training: ${error.message}`);
+    }
+  });
+};
+
+export const useDeleteTraining = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (trainingId: string) => {
+      console.log('Deleting training:', trainingId);
+      
+      const { error } = await supabase
+        .from('staff_training_records')
+        .delete()
+        .eq('id', trainingId);
+      
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      
+      console.log('Training deleted successfully');
+    },
+    onSuccess: async () => {
+      console.log('✅ Training deletion successful');
+      
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      await queryClient.invalidateQueries({ queryKey: ['staff-training'] });
+      
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      toast.success('Training deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting training:', error);
+      toast.error(`Failed to delete training: ${error.message}`);
+    }
+  });
+};
