@@ -89,33 +89,32 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
 
                 {/* Event Area */}
                 <div className={`min-h-[60px] border-border ${isOnTheHour ? 'border-t' : 'border-t border-dashed'} relative group`}>
-                  {timeSlotEvents.length > 0 ? (
-                    <div className="p-1 flex flex-row gap-1 flex-wrap items-start">
-                      {timeSlotEvents.map((event, eventIndex) => (
-                         <CalendarEventCard
-                           key={`${event.id}-${eventIndex}`}
-                           event={event}
-                           compact
-                           onClick={onEventClick}
-                           onEdit={onEditEvent}
-                           onDelete={onDeleteEvent}
-                           onDuplicate={onDuplicateEvent}
-                         />
-                      ))}
+                  <div className="p-1 flex flex-row gap-1 flex-wrap items-start">
+                    {timeSlotEvents.map((event, eventIndex) => (
+                      <CalendarEventCard
+                        key={`${event.id}-${eventIndex}`}
+                        event={event}
+                        compact
+                        onClick={onEventClick}
+                        onEdit={onEditEvent}
+                        onDelete={onDeleteEvent}
+                        onDuplicate={onDuplicateEvent}
+                      />
+                    ))}
+                    
+                    {/* Add Event button - always visible on hover */}
+                    <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <AddEventPopover
+                        date={date}
+                        timeSlot={timeSlot}
+                        onEventTypeSelect={(eventType) => onAddEvent?.(date, timeSlot, eventType)}
+                      >
+                        <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary min-w-[100px]">
+                          + Add Event
+                        </button>
+                      </AddEventPopover>
                     </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <AddEventPopover
-                          date={date}
-                          timeSlot={timeSlot}
-                          onEventTypeSelect={(eventType) => onAddEvent?.(date, timeSlot, eventType)}
-                        >
-                          <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
-                            + Add Event
-                          </button>
-                        </AddEventPopover>
-                      </div>
-                    )}
+                  </div>
                 </div>
               </div>
             );

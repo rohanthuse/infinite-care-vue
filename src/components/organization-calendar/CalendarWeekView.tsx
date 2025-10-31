@@ -99,9 +99,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     key={dayIndex}
                     className="min-h-[80px] border-l border-t border-border relative group"
                   >
-                    {dayEvents.length > 0 ? (
-                      <div className="p-1 flex flex-row gap-1 flex-wrap items-start">
-                        {dayEvents.map((event, eventIndex) => (
+                    <div className="p-1 flex flex-row gap-1 flex-wrap items-start">
+                      {dayEvents.map((event, eventIndex) => (
                         <CalendarEventCard
                           key={`${event.id}-${eventIndex}`}
                           event={event}
@@ -112,10 +111,10 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                           onDelete={onDeleteEvent}
                           onDuplicate={onDuplicateEvent}
                         />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      ))}
+                      
+                      {/* Add Event button - always visible on hover */}
+                      <div className="flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <AddEventPopover
                           date={day}
                           timeSlot={(() => {
@@ -129,12 +128,12 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                             onAddEvent?.(day, timeSlot, eventType);
                           }}
                         >
-                          <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary">
+                          <button className="text-xs text-muted-foreground hover:text-primary px-2 py-1 rounded border border-dashed border-border hover:border-primary min-w-[80px]">
                             +
                           </button>
                         </AddEventPopover>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
