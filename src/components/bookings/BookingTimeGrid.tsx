@@ -646,22 +646,73 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
     );
   };
 
-  // For monthly view, use the dedicated BookingsMonthView component
+  // For monthly view, use the dedicated BookingsMonthView component with entity lists
   if (viewType === "monthly") {
+    // Filter bookings based on selected client/carer
+    const filteredMonthlyBookings = localBookings.filter(booking => {
+      const matchesClient = !selectedClientId || booking.clientId === selectedClientId;
+      const matchesCarer = !selectedCarerId || booking.carerId === selectedCarerId;
+      return matchesClient && matchesCarer;
+    });
+
     return (
-      <BookingsMonthView
-        date={validDate}
-        bookings={localBookings}
-        clients={clients}
-        carers={carers}
-        isLoading={false}
-        onBookingClick={(booking) => {
-          onViewBooking?.(booking);
-        }}
-        onCreateBooking={(date, time) => {
-          onCreateBooking?.(date, time, undefined, undefined);
-        }}
-      />
+      <div className="bg-card rounded-lg border border-border shadow-sm">
+        {/* Header with date range */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-foreground">
+              {format(validDate, 'MMMM yyyy')}
+            </span>
+          </div>
+        </div>
+        
+        {/* Monthly view with entity lists - three column layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-4 p-4">
+          {/* Clients List */}
+          <div className="border border-border rounded-md overflow-hidden">
+            <EntityList 
+              type="client"
+              entities={clientBookings}
+              selectedEntityId={selectedClientId}
+              onSelect={handleClientSelect}
+              currentDate={validDate}
+              viewType="monthly"
+              weekDates={[]}
+            />
+          </div>
+          
+          {/* Monthly Calendar */}
+          <div className="border border-border rounded-md overflow-hidden">
+            <BookingsMonthView
+              date={validDate}
+              bookings={filteredMonthlyBookings}
+              clients={clients}
+              carers={carers}
+              isLoading={false}
+              onBookingClick={(booking) => {
+                onViewBooking?.(booking);
+              }}
+              onCreateBooking={(date, time) => {
+                onCreateBooking?.(date, time, selectedClientId || undefined, selectedCarerId || undefined);
+              }}
+            />
+          </div>
+          
+          {/* Carers List */}
+          <div className="border border-border rounded-md overflow-hidden">
+            <EntityList 
+              type="carer"
+              entities={carerBookings}
+              selectedEntityId={selectedCarerId}
+              onSelect={handleCarerSelect}
+              currentDate={validDate}
+              viewType="monthly"
+              weekDates={[]}
+            />
+          </div>
+        </div>
+      </div>
     );
   }
 
