@@ -368,7 +368,11 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
               ? `${appointment.appointment_type} - ${appointment.clients.first_name} ${appointment.clients.last_name}`
               : appointment.appointment_type,
             startTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
-            endTime: new Date(`${appointment.appointment_date}T${appointment.appointment_time}`),
+            endTime: (() => {
+              const start = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+              // Add default 1 hour duration for meetings
+              return new Date(start.getTime() + 60 * 60 * 1000);
+            })(),
             status: (appointment.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
             branchId: appointment.branch_id || targetBranchIds[0],
             branchName: 'Meeting',
