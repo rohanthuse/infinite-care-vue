@@ -73,10 +73,7 @@ const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
   service_id: z.string().optional(),
-  staff_id: z.string().optional().refine(
-    (val) => !val || val === "UNASSIGNED" || val.length > 0,
-    "Invalid staff selection"
-  ),
+  staff_id: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -127,7 +124,7 @@ export function EditBookingDialog({
       start_time: "",
       end_time: "",
       service_id: "",
-      staff_id: "UNASSIGNED",
+      staff_id: "",
       notes: "",
     },
   });
@@ -138,7 +135,7 @@ export function EditBookingDialog({
   // Calculate predicted status based on staff_id selection
   const predictedStatus = useMemo(() => {
     const selectedStaffId = form.watch('staff_id');
-    return (selectedStaffId && selectedStaffId !== "UNASSIGNED") ? 'assigned' : 'unassigned';
+    return selectedStaffId ? 'assigned' : 'unassigned';
   }, [form.watch('staff_id')]);
 
   // Get current status from booking
@@ -192,7 +189,7 @@ export function EditBookingDialog({
       if (startStr) form.setValue("start_time", startStr);
       if (endStr) form.setValue("end_time", endStr);
       form.setValue("service_id", booking.service_id || "");
-      form.setValue("staff_id", booking.carerId || booking.staff_id || "UNASSIGNED");
+      form.setValue("staff_id", booking.carerId || booking.staff_id || "");
       form.setValue("notes", booking.notes || "");
       
       // Reset validation state when dialog opens
@@ -217,12 +214,10 @@ export function EditBookingDialog({
     const startTime = format(startDateTime, "HH:mm");
     const endTime = format(endDateTime, "HH:mm");
 
-    const selectedCarerId = form.getValues('staff_id');
-    if (!selectedCarerId || selectedCarerId === "UNASSIGNED") {
+    const carerId = booking.carerId || booking.staff_id;
+    if (!carerId) {
       return true; // No carer assigned; skip overlap validation
     }
-    
-    const carerId = selectedCarerId;
     
     console.log("[EditBookingDialog] Validating booking:", {
       carerId,
@@ -272,8 +267,8 @@ export function EditBookingDialog({
           start_time: start.toISOString(),
           end_time: end.toISOString(),
           service_id: data.service_id,
-          staff_id: (data.staff_id && data.staff_id !== "UNASSIGNED") ? data.staff_id : null,
-          status: (data.staff_id && data.staff_id !== "UNASSIGNED") ? 'assigned' : 'unassigned',
+          staff_id: data.staff_id || null,
+          status: data.staff_id ? 'assigned' : 'unassigned',
           notes: data.notes,
         },
       });
@@ -385,13 +380,13 @@ export function EditBookingDialog({
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         Assigned Carer
-                        {field.value && field.value !== "UNASSIGNED" && (
+                        {field.value && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Will be assigned
                           </span>
                         )}
-                        {(!field.value || field.value === "UNASSIGNED") && currentStatus === 'assigned' && (
+                        {!field.value && currentStatus === 'assigned' && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Will be unassigned
@@ -412,7 +407,7 @@ export function EditBookingDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="UNASSIGNED">No carer (unassigned)</SelectItem>
+                          <SelectItem value="">No carer (unassigned)</SelectItem>
                           {carers.map((carer) => (
                             <SelectItem key={carer.id} value={carer.id}>
                               {carer.name}
