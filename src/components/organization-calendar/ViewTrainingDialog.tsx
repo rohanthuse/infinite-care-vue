@@ -41,12 +41,20 @@ export const ViewTrainingDialog: React.FC<ViewTrainingDialogProps> = ({
 }) => {
   if (!training) return null;
 
-  // Parse time and location from training_notes
-  const timeMatch = training.training_notes?.match(/Time: (\d{2}:\d{2}) - (\d{2}:\d{2})/);
+  // Parse time from training_notes (handles both \n and | separators)
+  const timeMatch = training.training_notes?.match(/Time:\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
   const startTime = timeMatch?.[1] || 'N/A';
   const endTime = timeMatch?.[2] || 'N/A';
-
-  const locationMatch = training.training_notes?.match(/Location: (.+?)(?:\n|$)/);
+  
+  console.log('[ViewTrainingDialog] Parsed time:', { 
+    notes: training.training_notes, 
+    startTime, 
+    endTime,
+    hasTimeData: !!timeMatch 
+  });
+  
+  // Parse location from training_notes (handles both \n and | separators)
+  const locationMatch = training.training_notes?.match(/Location:\s*(.+?)(?:\n|\||$)/);
   const location = locationMatch?.[1]?.trim() || 'Not specified';
 
   // Clean notes (remove metadata)

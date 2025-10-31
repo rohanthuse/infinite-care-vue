@@ -100,19 +100,18 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   };
 
   const handleScheduleTraining = async () => {
-    if (!trainingCourseId || !staffId || !date || !branchId) {
+    if (!trainingCourseId || !staffId || !date || !time || !endTime || !branchId) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     try {
       // Combine time/location info into notes since DB only stores date and training_notes
-      const timeLocationInfo = [
-        time && endTime ? `Time: ${time} - ${endTime}` : '',
-        location ? `Location: ${location}` : ''
-      ].filter(Boolean).join(' | ');
+      const timeInfo = time && endTime ? `Time: ${time} - ${endTime}` : '';
+      const locationInfo = location ? `Location: ${location}` : '';
+      const metadata = [timeInfo, locationInfo].filter(Boolean).join('\n');
       
-      const combinedNotes = [timeLocationInfo, notes].filter(Boolean).join('\n');
+      const combinedNotes = [metadata, notes].filter(Boolean).join('\n\n');
       
       console.log('🔍 Scheduling training with data:', {
         training_course_id: trainingCourseId,
@@ -256,21 +255,23 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="time">Start Time</Label>
+              <Label htmlFor="time">Start Time <span className="text-destructive">*</span></Label>
               <Input
                 id="time"
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
+                required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="endTime">End Time</Label>
+              <Label htmlFor="endTime">End Time <span className="text-destructive">*</span></Label>
               <Input
                 id="endTime"
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -303,7 +304,7 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
           </Button>
           <Button 
             onClick={handleScheduleTraining}
-            disabled={!trainingCourseId || !staffId || !date || !branchId || scheduleTraining.isPending}
+            disabled={!trainingCourseId || !staffId || !date || !time || !endTime || !branchId || scheduleTraining.isPending}
           >
             {scheduleTraining.isPending ? 'Scheduling...' : 'Schedule Training'}
           </Button>

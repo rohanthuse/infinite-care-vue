@@ -210,21 +210,23 @@ export const EditTrainingDialog: React.FC<EditTrainingDialogProps> = ({
 
             <div className="grid grid-cols-2 gap-2">
               <div className="grid gap-2">
-                <Label htmlFor="startTime">Start Time *</Label>
+                <Label htmlFor="startTime">Start Time <span className="text-destructive">*</span></Label>
                 <Input
                   id="startTime"
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
+                  required
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="endTime">End Time *</Label>
+                <Label htmlFor="endTime">End Time <span className="text-destructive">*</span></Label>
                 <Input
                   id="endTime"
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
+                  required
                 />
               </div>
             </div>
