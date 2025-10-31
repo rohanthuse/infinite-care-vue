@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Save, X, AlertCircle, CheckCircle, ChevronDown } from "lucide-react";
 import { useConsolidatedValidation } from "../hooks/useConsolidatedValidation";
 import { BookingValidationAlert } from "../BookingValidationAlert";
 import { BookingOverlapAlert } from "../BookingOverlapAlert";
@@ -36,6 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -44,6 +46,8 @@ import { toast } from "sonner";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,10 +77,8 @@ const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
   service_id: z.string().optional(),
-  staff_id: z.string().optional().refine(
-    (val) => !val || val === "UNASSIGNED" || val.length > 0,
-    "Invalid staff selection"
-  ),
+  staff_ids: z.array(z.string()).optional(),
+  assign_later: z.boolean().optional(),
   notes: z.string().optional(),
 });
 
@@ -109,6 +111,7 @@ export function EditBookingDialog({
   const updateBooking = useUpdateBooking(branchId);
   const deleteBooking = useDeleteBooking(branchId);
   const { data: userRole } = useUserRole();
+  const queryClient = useQueryClient();
   
   // Consolidated validation system
   const { validateBooking, isValidating } = useConsolidatedValidation(branchId);
@@ -120,6 +123,16 @@ export function EditBookingDialog({
     conflictingBookings: any[];
   } | null>(null);
   const [showOverlapAlert, setShowOverlapAlert] = useState(false);
+  
+  // Track all related booking records for this appointment
+  const [relatedBookingRecords, setRelatedBookingRecords] = React.useState<Array<{
+    id: string;
+    staff_id: string;
+    staff_name: string;
+  }>>([]);
+  
+  // Track original staff IDs to calculate diff
+  const [originalStaffIds, setOriginalStaffIds] = React.useState<string[]>([]);
 
   const form = useForm<EditBookingFormData>({
     resolver: zodResolver(editBookingSchema),
@@ -127,7 +140,8 @@ export function EditBookingDialog({
       start_time: "",
       end_time: "",
       service_id: "",
-      staff_id: "UNASSIGNED",
+      staff_ids: [],
+      assign_later: false,
       notes: "",
     },
   });
@@ -135,11 +149,14 @@ export function EditBookingDialog({
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
 
-  // Calculate predicted status based on staff_id selection
+  // Calculate predicted status based on staff_ids selection
   const predictedStatus = useMemo(() => {
-    const selectedStaffId = form.watch('staff_id');
-    return (selectedStaffId && selectedStaffId !== "UNASSIGNED") ? 'assigned' : 'unassigned';
-  }, [form.watch('staff_id')]);
+    const selectedStaffIds = form.watch('staff_ids') || [];
+    const assignLater = form.watch('assign_later');
+    
+    if (assignLater) return 'unassigned';
+    return selectedStaffIds.length > 0 ? 'assigned' : 'unassigned';
+  }, [form.watch('staff_ids'), form.watch('assign_later')]);
 
   // Get current status from booking
   const currentStatus = booking?.status || 'unassigned';
@@ -182,6 +199,65 @@ export function EditBookingDialog({
     }
   };
 
+  // Fetch all booking records for this appointment (multiple staff)
+  useEffect(() => {
+    const fetchRelatedBookings = async () => {
+      if (!open || !booking?.id) return;
+      
+      console.log('[EditBookingDialog] Fetching related booking records');
+      
+      try {
+        // Fetch all bookings with same client, time, and service
+        const { data: sameTimeBookings, error } = await supabase
+          .from('bookings')
+          .select(`
+            id,
+            staff_id,
+            staff:staff_id (
+              id,
+              first_name,
+              last_name
+            )
+          `)
+          .eq('client_id', booking.clientId || booking.client_id)
+          .eq('start_time', booking.start_time)
+          .eq('end_time', booking.end_time)
+          .eq('service_id', booking.service_id);
+        
+        if (error) {
+          console.error('[EditBookingDialog] Error fetching related bookings:', error);
+          return;
+        }
+        
+        // Extract staff records (filter out unassigned bookings)
+        const staffRecords = (sameTimeBookings || [])
+          .filter(b => b.staff_id && b.staff)
+          .map(b => ({
+            id: b.id,
+            staff_id: b.staff_id,
+            staff_name: `${b.staff.first_name} ${b.staff.last_name}`
+          }));
+        
+        console.log('[EditBookingDialog] Found related bookings:', staffRecords);
+        
+        setRelatedBookingRecords(staffRecords);
+        
+        // Store original staff IDs
+        const staffIds = staffRecords.map(r => r.staff_id);
+        setOriginalStaffIds(staffIds);
+        
+        // Pre-fill form with current staff
+        form.setValue('staff_ids', staffIds);
+        form.setValue('assign_later', staffIds.length === 0);
+        
+      } catch (error) {
+        console.error('[EditBookingDialog] Error:', error);
+      }
+    };
+    
+    fetchRelatedBookings();
+  }, [open, booking?.id, booking?.start_time, booking?.end_time, booking?.service_id]);
+  
   // Update form when booking changes and reset validation state
   useEffect(() => {
     if (booking && booking.id && open) {
@@ -192,7 +268,6 @@ export function EditBookingDialog({
       if (startStr) form.setValue("start_time", startStr);
       if (endStr) form.setValue("end_time", endStr);
       form.setValue("service_id", booking.service_id || "");
-      form.setValue("staff_id", booking.carerId || booking.staff_id || "UNASSIGNED");
       form.setValue("notes", booking.notes || "");
       
       // Reset validation state when dialog opens
@@ -210,44 +285,56 @@ export function EditBookingDialog({
     const endDateTime = new Date(formValues.end_time);
 
     if (!isValidDate(startDateTime) || !isValidDate(endDateTime)) {
-      return true; // Skip validation if times are not set/invalid yet
+      return true;
     }
 
     const date = format(startDateTime, "yyyy-MM-dd");
     const startTime = format(startDateTime, "HH:mm");
     const endTime = format(endDateTime, "HH:mm");
 
-    const selectedCarerId = form.getValues('staff_id');
-    if (!selectedCarerId || selectedCarerId === "UNASSIGNED") {
-      return true; // No carer assigned; skip overlap validation
+    const selectedStaffIds = formValues.staff_ids || [];
+    
+    // Skip validation if no staff or "assign later"
+    if (selectedStaffIds.length === 0 || formValues.assign_later) {
+      return true;
     }
     
-    const carerId = selectedCarerId;
+    // Validate each selected staff for overlaps
+    let hasOverlap = false;
+    let allConflictingBookings: any[] = [];
     
-    console.log("[EditBookingDialog] Validating booking:", {
-      carerId,
-      date,
-      startTime,
-      endTime,
-      excludeBookingId: booking.id
-    });
+    for (const staffId of selectedStaffIds) {
+      console.log("[EditBookingDialog] Validating for staff:", staffId);
+      
+      const result = await validateBooking(
+        staffId,
+        startTime,
+        endTime,
+        date,
+        booking.id
+      );
+      
+      if (!result.isValid && result.conflictingBookings.length > 0) {
+        hasOverlap = true;
+        allConflictingBookings = [
+          ...allConflictingBookings,
+          ...result.conflictingBookings
+        ];
+      }
+    }
     
-    const result = await validateBooking(
-      carerId,
-      startTime,
-      endTime,
-      date,
-      booking.id // Exclude current booking from validation
-    );
-    
-    setValidationResult(result);
-    
-    if (!result.isValid && result.conflictingBookings.length > 0) {
+    if (hasOverlap) {
+      setValidationResult({
+        isValid: false,
+        error: `Overlap detected for ${allConflictingBookings.length} booking(s)`,
+        conflictingBookings: allConflictingBookings
+      });
       setShowOverlapAlert(true);
       return false;
     }
     
-    return result.isValid;
+    setValidationResult({ isValid: true, conflictingBookings: [] });
+    return true;
   };
 
   const onSubmit = async (data: EditBookingFormData) => {
@@ -266,23 +353,114 @@ export function EditBookingDialog({
     }
     
     try {
-      await updateBooking.mutateAsync({
-        bookingId: booking.id,
-        updatedData: {
+      const newStaffIds = data.staff_ids || [];
+      
+      // Calculate diff: which staff to add, remove, keep
+      const staffToAdd = newStaffIds.filter(id => !originalStaffIds.includes(id));
+      const staffToRemove = originalStaffIds.filter(id => !newStaffIds.includes(id));
+      const staffToKeep = originalStaffIds.filter(id => newStaffIds.includes(id));
+      
+      console.log('[EditBookingDialog] Staff changes:', {
+        add: staffToAdd,
+        remove: staffToRemove,
+        keep: staffToKeep
+      });
+      
+      // Common booking data
+      const commonUpdates = {
+        start_time: start.toISOString(),
+        end_time: end.toISOString(),
+        service_id: data.service_id,
+        notes: data.notes,
+        status: newStaffIds.length > 0 ? 'assigned' : 'unassigned',
+      };
+      
+      // STEP 1: Update bookings for staff we're keeping
+      for (const staffId of staffToKeep) {
+        const bookingRecord = relatedBookingRecords.find(r => r.staff_id === staffId);
+        if (bookingRecord) {
+          await updateBooking.mutateAsync({
+            bookingId: bookingRecord.id,
+            updatedData: {
+              ...commonUpdates,
+              staff_id: staffId,
+            },
+          });
+        }
+      }
+      
+      // STEP 2: Delete bookings for removed staff
+      for (const staffId of staffToRemove) {
+        const bookingRecord = relatedBookingRecords.find(r => r.staff_id === staffId);
+        if (bookingRecord) {
+          await deleteBooking.mutateAsync({
+            bookingId: bookingRecord.id,
+            clientId: booking.clientId || booking.client_id,
+            staffId: staffId,
+          });
+        }
+      }
+      
+      // STEP 3: Create new bookings for added staff
+      for (const staffId of staffToAdd) {
+        const { error } = await supabase.from('bookings').insert({
+          branch_id: booking.branch_id,
+          client_id: booking.clientId || booking.client_id,
+          staff_id: staffId,
           start_time: start.toISOString(),
           end_time: end.toISOString(),
           service_id: data.service_id,
-          staff_id: (data.staff_id && data.staff_id !== "UNASSIGNED") ? data.staff_id : null,
-          status: (data.staff_id && data.staff_id !== "UNASSIGNED") ? 'assigned' : 'unassigned',
+          status: 'assigned',
           notes: data.notes,
-        },
-      });
+        });
+        
+        if (error) throw error;
+      }
+      
+      // STEP 4: Handle "assign later" case
+      if (data.assign_later && originalStaffIds.length > 0) {
+        // Delete all existing staff bookings
+        for (const record of relatedBookingRecords) {
+          await deleteBooking.mutateAsync({
+            bookingId: record.id,
+            clientId: booking.clientId || booking.client_id,
+            staffId: record.staff_id,
+          });
+        }
+        
+        // Create one unassigned booking
+        const { error } = await supabase.from('bookings').insert({
+          branch_id: booking.branch_id,
+          client_id: booking.clientId || booking.client_id,
+          staff_id: null,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          service_id: data.service_id,
+          status: 'unassigned',
+          notes: data.notes,
+        });
+        
+        if (error) throw error;
+      }
+      
+      // Success message
+      const carerCount = newStaffIds.length;
+      const message = carerCount > 1 
+        ? `Booking updated with ${carerCount} carers assigned`
+        : "Appointment updated successfully";
+      
+      toast.success(message);
+      
+      // Invalidate queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ["branch-bookings", branchId] });
+      queryClient.invalidateQueries({ queryKey: ["client-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["carer-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-calendar"] });
       
       if (onSuccess) {
         onSuccess(booking.id);
       } else {
         onOpenChange(false);
-        toast.success("Appointment updated successfully");
       }
     } catch (error) {
       console.error("Error updating booking:", error);
@@ -380,47 +558,173 @@ export function EditBookingDialog({
 
                 <FormField
                   control={form.control}
-                  name="staff_id"
+                  name="staff_ids"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        Assigned Carer
-                        {field.value && field.value !== "UNASSIGNED" && (
+                        Assigned Carers
+                        {field.value && field.value.length > 0 && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                             <CheckCircle className="h-3 w-3 mr-1" />
-                            Will be assigned
+                            {field.value.length} carer(s) assigned
                           </span>
                         )}
-                        {(!field.value || field.value === "UNASSIGNED") && currentStatus === 'assigned' && (
+                        {(!field.value || field.value.length === 0) && currentStatus === 'assigned' && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Will be unassigned
                           </span>
                         )}
                       </FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          // Reset validation when carer changes
-                          setValidationResult(null);
-                        }} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a carer (optional)" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="UNASSIGNED">No carer (unassigned)</SelectItem>
-                          {carers.map((carer) => (
-                            <SelectItem key={carer.id} value={carer.id}>
-                              {carer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      
+                      <FormControl>
+                        <div className="space-y-2">
+                          {/* Multi-select dropdown */}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full justify-between",
+                                  !field.value?.length && "text-muted-foreground"
+                                )}
+                                disabled={form.watch('assign_later')}
+                              >
+                                {field.value?.length 
+                                  ? field.value.length === 1
+                                    ? (() => {
+                                        const carer = carers.find(c => c.id === field.value[0]);
+                                        return carer?.name || "Unknown Carer";
+                                      })()
+                                    : `${field.value.length} carers selected`
+                                  : "Select carers..."
+                                }
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[320px] p-0" align="start">
+                              <div className="p-2 border-b flex items-center justify-between">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const allIds = carers.map(c => c.id);
+                                    field.onChange(allIds);
+                                  }}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Select All
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => field.onChange([])}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  Clear All
+                                </Button>
+                              </div>
+                              <div className="max-h-60 overflow-y-auto">
+                                {carers.length === 0 ? (
+                                  <div className="p-4 text-center text-sm text-muted-foreground">
+                                    No carers available
+                                  </div>
+                                ) : (
+                                  <div className="p-1">
+                                    {carers.map((carer) => {
+                                      const isSelected = field.value?.includes(carer.id);
+                                      
+                                      return (
+                                        <div
+                                          key={carer.id}
+                                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                          onClick={() => {
+                                            const currentValue = field.value || [];
+                                            if (isSelected) {
+                                              field.onChange(currentValue.filter(id => id !== carer.id));
+                                            } else {
+                                              field.onChange([...currentValue, carer.id]);
+                                            }
+                                            // Reset validation
+                                            setValidationResult(null);
+                                          }}
+                                        >
+                                          <Checkbox
+                                            checked={isSelected}
+                                            className="pointer-events-none"
+                                          />
+                                          <span className="flex-1">{carer.name}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                          
+                          {/* Selected carers display */}
+                          {field.value && field.value.length > 0 && (
+                            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                              {field.value.map((carerId) => {
+                                const carer = carers.find(c => c.id === carerId);
+                                const carerName = carer?.name || 'Unknown';
+                                
+                                return (
+                                  <Badge
+                                    key={carerId}
+                                    variant="secondary"
+                                    className="text-xs px-2 py-1"
+                                  >
+                                    {carerName}
+                                    <X 
+                                      className="h-3 w-3 ml-1 cursor-pointer hover:text-destructive"
+                                      onClick={() => {
+                                        const currentValue = field.value || [];
+                                        field.onChange(currentValue.filter(id => id !== carerId));
+                                      }}
+                                    />
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      
                       <FormMessage />
+                      
+                      {/* "Assign Later" Checkbox */}
+                      <FormField
+                        control={form.control}
+                        name="assign_later"
+                        render={({ field: assignLaterField }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-2">
+                            <FormControl>
+                              <Checkbox
+                                checked={assignLaterField.value}
+                                onCheckedChange={(checked) => {
+                                  assignLaterField.onChange(checked);
+                                  if (checked) {
+                                    form.setValue('staff_ids', []);
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                Assign carer later
+                              </FormLabel>
+                              <p className="text-xs text-muted-foreground">
+                                Remove all assigned carers. You can assign them later.
+                              </p>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
                     </FormItem>
                   )}
                 />
