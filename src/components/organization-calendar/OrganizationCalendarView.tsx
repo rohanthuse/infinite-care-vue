@@ -24,12 +24,14 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { createUTCTimestamp, getUserTimezone } from '@/utils/timezoneUtils';
 import { useScheduledAgreements, useCreateScheduledAgreement } from '@/data/hooks/agreements';
-import { useAnnualLeave, useCreateAnnualLeave } from '@/hooks/useLeaveManagement';
+import { useAnnualLeave, useCreateAnnualLeave, useDeleteAnnualLeave } from '@/hooks/useLeaveManagement';
 import { ScheduleAgreementDialog } from '@/components/agreements/ScheduleAgreementDialog';
 import { NewMeetingDialog } from './NewMeetingDialog';
 import { ViewMeetingDialog } from './ViewMeetingDialog';
 import { EditMeetingDialog } from './EditMeetingDialog';
 import { NewLeaveDialog } from './NewLeaveDialog';
+import { ViewLeaveDialog } from './ViewLeaveDialog';
+import { EditLeaveDialog } from './EditLeaveDialog';
 import { NewTrainingDialog } from './NewTrainingDialog';
 import { useDeleteClientAppointment } from '@/hooks/useClientAppointments';
 import { BranchCombobox } from './BranchCombobox';
@@ -69,6 +71,9 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const [viewMeetingDialogOpen, setViewMeetingDialogOpen] = useState(false);
   const [editMeetingDialogOpen, setEditMeetingDialogOpen] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
+  const [viewLeaveDialogOpen, setViewLeaveDialogOpen] = useState(false);
+  const [editLeaveDialogOpen, setEditLeaveDialogOpen] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState<any>(null);
   const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
@@ -257,6 +262,39 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
       setSelectedEvent(event);
       setSelectedMeeting(fullAppointment);
       setViewMeetingDialogOpen(true);
+    } else if (event.type === 'leave') {
+      // Fetch full leave data from database
+      console.log('[OrganizationCalendarView] Fetching leave data for ID:', event.id);
+      
+      const { data: fullLeave, error } = await supabase
+        .from('annual_leave_calendar')
+        .select(`
+          *,
+          branches (
+            id,
+            name
+          )
+        `)
+        .eq('id', event.id)
+        .single();
+      
+      if (error) {
+        console.error('[OrganizationCalendarView] Error fetching leave:', error);
+        toast.error('Unable to load leave details');
+        return;
+      }
+      
+      if (!fullLeave) {
+        console.error('[OrganizationCalendarView] Leave not found');
+        toast.error('Leave not found');
+        return;
+      }
+      
+      console.log('[OrganizationCalendarView] Full leave data:', fullLeave);
+      
+      setSelectedEvent(event);
+      setSelectedLeave(fullLeave);
+      setViewLeaveDialogOpen(true);
     }
   };
 
@@ -423,6 +461,35 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
       setSelectedEvent(null);
     } catch (error) {
       console.error('Error deleting meeting:', error);
+    }
+  };
+
+  const handleEditLeave = () => {
+    setViewLeaveDialogOpen(false);
+    setTimeout(() => {
+      setEditLeaveDialogOpen(true);
+    }, 100);
+  };
+
+  const deleteAnnualLeaveMutation = useDeleteAnnualLeave();
+
+  const handleDeleteLeave = async () => {
+    if (!selectedLeave) return;
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${selectedLeave.leave_name}"?\n\nThis action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await deleteAnnualLeaveMutation.mutateAsync(selectedLeave.id);
+      setViewLeaveDialogOpen(false);
+      setSelectedLeave(null);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error('Error deleting leave:', error);
     }
   };
   const handleEditSuccess = async (bookingId: string) => {
@@ -844,6 +911,56 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
          branchId={selectedBranch !== 'all' ? selectedBranch : branches?.[0]?.id} 
          prefilledDate={prefilledDate || currentDate} 
        />
+
+       {/* View Leave Dialog */}
+       <ViewLeaveDialog
+         open={viewLeaveDialogOpen}
+         onOpenChange={(open) => {
+           setViewLeaveDialogOpen(open);
+           if (!open) {
+             setSelectedLeave(null);
+             setSelectedEvent(null);
+           }
+         }}
+         leave={selectedLeave}
+         onEdit={handleEditLeave}
+         onDelete={handleDeleteLeave}
+       />
+
+       {/* Edit Leave Dialog */}
+       {selectedLeave && (
+         <EditLeaveDialog
+           open={editLeaveDialogOpen}
+           onOpenChange={(open) => {
+             setEditLeaveDialogOpen(open);
+             if (!open) {
+               // Refresh leave data after edit
+               setTimeout(async () => {
+                 if (selectedLeave?.id) {
+                   const { data } = await supabase
+                     .from('annual_leave_calendar')
+                     .select(`
+                       *,
+                       branches (
+                         id,
+                         name
+                       )
+                     `)
+                     .eq('id', selectedLeave.id)
+                     .single();
+                   
+                   if (data) {
+                     setSelectedLeave(data);
+                     setViewLeaveDialogOpen(true);
+                   }
+                 }
+               }, 100);
+             }
+           }}
+           leave={selectedLeave}
+           branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
+         />
+       )}
 
       {/* Training Dialog */}
       <NewTrainingDialog 

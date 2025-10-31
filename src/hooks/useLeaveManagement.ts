@@ -259,14 +259,118 @@ export const useDeleteAnnualLeave = () => {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      console.log('✅ Leave deletion successful');
+      
+      await queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      // Invalidate stats
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      console.log('✅ Calendar refetched after leave deletion');
+      
       toast.success('Annual leave date removed');
-      queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
     },
     onError: (error) => {
       console.error('Error deleting annual leave:', error);
       toast.error('Failed to remove annual leave date');
     }
+  });
+};
+
+// Hook to update annual leave
+export const useUpdateAnnualLeave = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      leaveId, 
+      updates 
+    }: { 
+      leaveId: string; 
+      updates: Partial<CreateAnnualLeave> 
+    }) => {
+      const { data, error } = await supabase
+        .from('annual_leave_calendar')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', leaveId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data) => {
+      console.log('✅ Leave update successful:', data);
+      
+      await queryClient.invalidateQueries({ queryKey: ['annual-leave'] });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      // Force immediate refetch
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      // Invalidate stats
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      console.log('✅ Calendar refetched after leave update');
+      
+      toast.success('Leave updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating annual leave:', error);
+      toast.error('Failed to update leave');
+    }
+  });
+};
+
+// Hook to fetch single annual leave by ID
+export const useAnnualLeaveById = (leaveId: string) => {
+  return useQuery({
+    queryKey: ['annual-leave', leaveId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('annual_leave_calendar')
+        .select(`
+          *,
+          branches (
+            id,
+            name
+          )
+        `)
+        .eq('id', leaveId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!leaveId
   });
 };
 
