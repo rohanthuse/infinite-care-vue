@@ -60,10 +60,30 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   // Sync selectedBranch with defaultBranchId when it changes
   useEffect(() => {
     if (defaultBranchId && defaultBranchId !== selectedBranch) {
-      console.log('[OrganizationCalendarView] Syncing selectedBranch with defaultBranchId:', defaultBranchId);
+      console.log('[OrganizationCalendarView] ⚠️ Branch sync:', {
+        defaultBranchId,
+        selectedBranch,
+        syncing: true
+      });
       setSelectedBranch(defaultBranchId);
+    } else {
+      console.log('[OrganizationCalendarView] ✅ Branch already synced:', {
+        defaultBranchId,
+        selectedBranch
+      });
     }
   }, [defaultBranchId, selectedBranch]);
+
+  // Force refetch when branch changes to ensure fresh data
+  useEffect(() => {
+    if (selectedBranch) {
+      console.log('[OrganizationCalendarView] Branch changed, invalidating cache');
+      queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+    }
+  }, [selectedBranch, queryClient]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
@@ -710,6 +730,51 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
       {/* Calendar View */}
       <Card className="flex-1">
         <CardContent className="p-0">
+          {/* Branch Filter Visibility Indicator */}
+          <div className="px-4 pt-4 pb-2 flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="text-xs">
+              {selectedBranch === 'all' 
+                ? '👁️ Viewing: All Branches' 
+                : `👁️ Viewing: ${branches?.find(b => b.id === selectedBranch)?.name || 'Unknown'}`
+              }
+            </Badge>
+            {stats && (
+              <>
+                <Badge variant="secondary" className="text-xs">
+                  👥 {stats.activeStaff} Active Staff
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  📊 {stats.capacityPercentage}% Capacity
+                </Badge>
+              </>
+            )}
+          </div>
+
+          {/* Debug Panel - Development Only */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mx-4 mb-4 p-3 border-2 border-yellow-500 bg-yellow-50 rounded-lg">
+              <div className="text-sm font-semibold text-yellow-900 mb-2">🔧 Debug Info</div>
+              <div className="text-xs space-y-1 text-yellow-900">
+                <div><strong>Selected Branch:</strong> {selectedBranch}</div>
+                <div><strong>Event Type Filter:</strong> {selectedEventType}</div>
+                <div><strong>Search Term:</strong> {searchTerm || 'none'}</div>
+                <div><strong>Total Events:</strong> {calendarEvents?.length || 0}</div>
+                <div><strong>By Type:</strong> {JSON.stringify(
+                  calendarEvents?.reduce((acc, e) => {
+                    acc[e.type] = (acc[e.type] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>)
+                )}</div>
+                <div><strong>By Branch:</strong> {JSON.stringify(
+                  calendarEvents?.reduce((acc, e) => {
+                    acc[e.branchName] = (acc[e.branchName] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>)
+                )}</div>
+              </div>
+            </div>
+          )}
+
           {renderCalendarView()}
         </CardContent>
       </Card>

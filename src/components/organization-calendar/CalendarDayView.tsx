@@ -6,6 +6,8 @@ import { CalendarEventCard } from './CalendarEventCard';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddEventPopover } from './AddEventPopover';
+import { AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface CalendarDayViewProps {
   date: Date;
@@ -57,6 +59,12 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
     );
   }
 
+  // Check for events outside visible time range (7 AM - 10 PM)
+  const eventsOutsideRange = events.filter(event => {
+    const hour = new Date(event.startTime).getHours();
+    return hour < 7 || hour >= 22;
+  });
+
   return (
     <div className="flex flex-col h-[600px]">
       {/* Header */}
@@ -64,9 +72,17 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
         <h3 className="text-lg font-semibold text-foreground">
           {format(date, 'EEEE, MMMM d, yyyy')}
         </h3>
-        <p className="text-sm text-muted-foreground">
-          {events.length} events scheduled
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="text-sm text-muted-foreground">
+            {events.length} event{events.length !== 1 ? 's' : ''} scheduled
+          </p>
+          {eventsOutsideRange.length > 0 && (
+            <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-900">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              {eventsOutsideRange.length} outside 7 AM-10 PM
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Time Grid */}

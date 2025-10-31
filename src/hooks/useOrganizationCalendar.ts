@@ -78,6 +78,10 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
     const targetBranchIds = branchId ? [branchId] : organizationBranchIds;
     
     // Fetch bookings with proper organization isolation using branch IDs
+    // Use date-only comparison to avoid timezone issues with daily view
+    const startDateStr = format(startDate, 'yyyy-MM-dd');
+    const endDateStr = format(endDate, 'yyyy-MM-dd');
+    
     let bookingsQuery = supabase
       .from('bookings')
       .select(`
@@ -110,8 +114,8 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           title
         )
       `)
-      .gte('start_time', startDate.toISOString())
-      .lte('start_time', endDate.toISOString())
+      .gte('start_time', `${startDateStr}T00:00:00.000Z`)
+      .lt('start_time', `${format(new Date(endDate.getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}T00:00:00.000Z`)
       .in('branch_id', targetBranchIds)
       .order('start_time', { ascending: true });
 
@@ -289,7 +293,8 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
     // Fetch annual leave calendar events
     if (!eventType || eventType === 'all' || eventType === 'leave') {
       try {
-        const { data: leaves, error: leavesError } = await supabase
+        // Query builder for annual leave - need to handle company-wide and branch-specific separately
+        let leavesQuery = supabase
           .from('annual_leave_calendar')
           .select(`
             id,
@@ -304,8 +309,17 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           `)
           .gte('leave_date', startDate.toISOString().split('T')[0])
           .lte('leave_date', endDate.toISOString().split('T')[0])
-          .in('branch_id', targetBranchIds)
           .order('leave_date', { ascending: true });
+
+        // Apply branch filter: include company-wide OR matching branch
+        if (branchId) {
+          leavesQuery = leavesQuery.or(`is_company_wide.eq.true,branch_id.eq.${branchId}`);
+        } else {
+          // For "All Branches", get company-wide plus all branch-specific for this org
+          leavesQuery = leavesQuery.or(`is_company_wide.eq.true,branch_id.in.(${targetBranchIds.join(',')})`);
+        }
+
+        const { data: leaves, error: leavesError } = await leavesQuery;
 
         if (leavesError) {
           console.error('[fetchOrganizationCalendarEvents] Leaves error:', leavesError);
@@ -407,6 +421,22 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           event.participants?.some(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
         )
       : filteredEvents;
+
+    // Enhanced debug logging
+    console.log('🔍 [Filter Debug]:', {
+      selectedBranch: branchId || 'all',
+      totalEvents: events.length,
+      afterTypeFilter: filteredEvents.length,
+      afterSearchFilter: searchFilteredEvents.length,
+      byBranch: searchFilteredEvents.reduce((acc, e) => {
+        acc[e.branchName] = (acc[e.branchName] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>),
+      byType: searchFilteredEvents.reduce((acc, e) => {
+        acc[e.type] = (acc[e.type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    });
 
       // Add conflict detection
       const eventsWithConflicts = searchFilteredEvents.map(event => {
