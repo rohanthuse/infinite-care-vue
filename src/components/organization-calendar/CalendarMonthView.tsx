@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   format, 
   startOfMonth, 
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AddEventPopover } from './AddEventPopover';
+import { DayEventsDialog } from './DayEventsDialog';
 
 interface CalendarMonthViewProps {
   date: Date;
@@ -37,6 +38,12 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   onDuplicateEvent,
   onAddEvent
 }) => {
+  const [dayEventsDialogOpen, setDayEventsDialogOpen] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState<{
+    date: Date;
+    events: CalendarEvent[];
+  } | null>(null);
+
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -65,6 +72,16 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
       agreement: 'bg-yellow-500'
     };
     return colors[type as keyof typeof colors] || 'bg-gray-500';
+  };
+
+  const handleShowMoreEvents = (day: Date, dayEvents: CalendarEvent[]) => {
+    console.log('[CalendarMonthView] Opening day events dialog:', {
+      date: format(day, 'yyyy-MM-dd'),
+      eventCount: dayEvents.length
+    });
+    
+    setSelectedDayEvents({ date: day, events: dayEvents });
+    setDayEventsDialogOpen(true);
   };
 
   if (isLoading) {
@@ -144,9 +161,16 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                   ))}
                   
                   {dayEvents.length > 3 && (
-                    <div className="text-xs text-muted-foreground text-center py-1">
+                    <button
+                      className="text-xs text-muted-foreground hover:text-primary text-center py-1 w-full rounded hover:bg-accent transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowMoreEvents(day, dayEvents);
+                      }}
+                      title="Click to view all events"
+                    >
                       +{dayEvents.length - 3} more
-                    </div>
+                    </button>
                   )}
                 </div>
 
@@ -168,6 +192,19 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
           );
         })}
       </div>
+
+      {/* Day Events Dialog */}
+      {selectedDayEvents && (
+        <DayEventsDialog
+          open={dayEventsDialogOpen}
+          onOpenChange={setDayEventsDialogOpen}
+          date={selectedDayEvents.date}
+          events={selectedDayEvents.events}
+          onEventClick={(event) => {
+            onEventClick?.(event);
+          }}
+        />
+      )}
     </div>
   );
 };
