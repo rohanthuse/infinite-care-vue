@@ -1,4 +1,3 @@
-
 import { useMemo, useEffect } from "react";
 import { Client, Carer, Booking } from "../BookingTimeGrid";
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
@@ -13,7 +12,9 @@ import {
   getOrCreatePlaceholderCarer
 } from "../utils/dataMappers";
 import { makeDummyBookings, dummyClients, dummyCarers } from "../utils/dummyDataGenerator";
-
+import { formatInUserTimezone, getUserTimezone } from '@/utils/timezoneUtils';
+import { toZonedTime } from 'date-fns-tz';
+import { format } from 'date-fns';
 export function useBookingData(branchId?: string) {
   const { user, loading: authLoading, error: authError } = useAuthSafe();
   
@@ -152,18 +153,23 @@ export function useBookingData(branchId?: string) {
           if (!carer && bk.staff_id)
             carer = getOrCreatePlaceholderCarer(bk.staff_id);
 
-          // Enhanced date/time extraction with better error handling
+          // Enhanced date/time extraction with timezone-aware conversion
           const extractDateSafe = (isoString: string) => {
             if (!isoString) {
               console.warn(`[useBookingData] Missing date for booking ${bk.id}`);
               return "";
             }
             try {
-              const datePart = isoString.split('T')[0];
+              // Convert UTC timestamp to local timezone, then extract date
+              const utcDate = new Date(isoString);
+              const localDate = toZonedTime(utcDate, getUserTimezone());
+              const datePart = format(localDate, 'yyyy-MM-dd');
+              
               if (!datePart || !/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
                 console.warn(`[useBookingData] Invalid date format for booking ${bk.id}:`, isoString);
                 return "";
               }
+              
               return datePart;
             } catch (error) {
               console.error(`[useBookingData] Error extracting date for booking ${bk.id}:`, error);
@@ -177,13 +183,21 @@ export function useBookingData(branchId?: string) {
               return defaultTime;
             }
             try {
-              const timePart = isoString.split('T')[1]?.split(/[+\-Z]/)[0];
-              const time = timePart?.substring(0, 5);
-              if (!time || !/^\d{2}:\d{2}$/.test(time)) {
+              // Convert UTC timestamp to local timezone using our utility
+              const localTime = formatInUserTimezone(isoString, 'HH:mm');
+              
+              if (!localTime || !/^\d{2}:\d{2}$/.test(localTime)) {
                 console.warn(`[useBookingData] Invalid time format for booking ${bk.id}:`, isoString);
                 return defaultTime;
               }
-              return time;
+              
+              console.log(`[useBookingData] Converted time for booking ${bk.id}:`, {
+                utcTimestamp: isoString,
+                localTime: localTime,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+              });
+              
+              return localTime;
             } catch (error) {
               console.error(`[useBookingData] Error extracting time for booking ${bk.id}:`, error);
               return defaultTime;
