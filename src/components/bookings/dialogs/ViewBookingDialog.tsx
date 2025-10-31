@@ -50,6 +50,10 @@ export function ViewBookingDialog({
   const deleteBooking = useDeleteBooking(branchId);
   const { data: userRole } = useUserRole();
   const [relatedBookings, setRelatedBookings] = React.useState<any[]>([]);
+  const [assignedStaff, setAssignedStaff] = React.useState<Array<{
+    id: string;
+    name: string;
+  }>>([]);
   
   // Early validation - prevent dialog from opening with invalid data
   React.useEffect(() => {
@@ -156,57 +160,98 @@ export function ViewBookingDialog({
     }
   }, [startTimeStr, endTimeStr]);
   
-  // Fetch related bookings (bookings created in the same batch)
+  // Fetch all assigned staff and related bookings
+  // Note: When multiple staff are assigned to the same booking,
+  // the system creates separate booking records with the same
+  // client_id, start_time, end_time, and service_id, but different staff_ids.
   React.useEffect(() => {
-    const fetchRelatedBookings = async () => {
-      console.log('[ViewBookingDialog] Fetching related bookings:', { 
+    const fetchRelatedBookingsAndStaff = async () => {
+      console.log('[ViewBookingDialog] Fetching related bookings and staff:', { 
         open, 
         hasBooking: !!booking, 
-        bookingId: booking?.id,
-        hasCreatedAt: !!booking?.created_at 
+        bookingId: booking?.id
       });
       
-      if (!open || !booking?.id || !booking?.created_at) {
+      if (!open || !booking?.id) {
         console.log('[ViewBookingDialog] Skipping fetch - dialog closed or missing data');
         return;
       }
       
       try {
-        // Fetch bookings created within 2 seconds (same batch)
-        const createdAt = new Date(booking.created_at);
-        const startWindow = new Date(createdAt.getTime() - 2000);
-        const endWindow = new Date(createdAt.getTime() + 2000);
-        
-        const { data, error } = await supabase
+        // Fetch all bookings for same client, time slot, and service
+        // This will capture all staff assigned to this appointment
+        const { data: sameTimeBookings, error: staffError } = await supabase
           .from('bookings')
           .select(`
             id,
-            service_id,
-            start_time,
-            end_time,
-            services (
+            staff_id,
+            staff (
               id,
-              title
+              first_name,
+              last_name
             )
           `)
           .eq('client_id', booking.clientId || booking.client_id)
-          .eq('staff_id', booking.carerId || booking.staff_id)
-          .gte('created_at', startWindow.toISOString())
-          .lte('created_at', endWindow.toISOString())
-          .neq('id', booking.id)
-          .order('start_time', { ascending: true });
+          .eq('start_time', booking.start_time)
+          .eq('end_time', booking.end_time)
+          .eq('service_id', booking.service_id);
         
-        if (!error && data) {
-          setRelatedBookings(data);
+        if (!staffError && sameTimeBookings) {
+          // Extract all unique staff members
+          const staffList = sameTimeBookings
+            .filter(b => b.staff && b.staff.first_name) // Only include valid staff
+            .map(b => ({
+              id: b.staff_id,
+              name: `${b.staff.first_name} ${b.staff.last_name}`
+            }));
+          
+          // Remove duplicates based on staff_id
+          const uniqueStaff = Array.from(
+            new Map(staffList.map(s => [s.id, s])).values()
+          );
+          
+          console.log('[ViewBookingDialog] Found assigned staff:', uniqueStaff);
+          setAssignedStaff(uniqueStaff);
+        }
+        
+        // Fetch related bookings (different services for same staff in same batch)
+        // This is for the "Additional Services" section
+        if (booking?.created_at) {
+          const createdAt = new Date(booking.created_at);
+          const startWindow = new Date(createdAt.getTime() - 2000);
+          const endWindow = new Date(createdAt.getTime() + 2000);
+          
+          const { data: relatedServices, error: servicesError } = await supabase
+            .from('bookings')
+            .select(`
+              id,
+              service_id,
+              start_time,
+              end_time,
+              services (
+                id,
+                title
+              )
+            `)
+            .eq('client_id', booking.clientId || booking.client_id)
+            .eq('staff_id', booking.carerId || booking.staff_id)
+            .gte('created_at', startWindow.toISOString())
+            .lte('created_at', endWindow.toISOString())
+            .neq('id', booking.id)
+            .neq('service_id', booking.service_id) // Different service
+            .order('start_time', { ascending: true });
+          
+          if (!servicesError && relatedServices) {
+            setRelatedBookings(relatedServices);
+          }
         }
       } catch (error) {
-        console.error('[ViewBookingDialog] Error fetching related bookings:', error);
-        // Don't show error toast for related bookings failure - main booking still works
+        console.error('[ViewBookingDialog] Error fetching related data:', error);
       }
     };
     
-    fetchRelatedBookings();
-  }, [open, booking?.id, booking?.created_at, booking?.clientId, booking?.client_id, booking?.carerId, booking?.staff_id]);
+    fetchRelatedBookingsAndStaff();
+  }, [open, booking?.id, booking?.start_time, booking?.end_time, booking?.service_id, booking?.clientId, booking?.client_id, booking?.created_at, booking?.carerId, booking?.staff_id]);
   
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
@@ -305,15 +350,39 @@ export function ViewBookingDialog({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <User className="h-4 w-4" />
-              Client Information
+              Assigned Staff
             </div>
             <div className="pl-6 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Assigned Carer:</span>
-                <span className="text-sm font-medium">
-                  {booking.carerName || booking.staff_name || 'Not assigned'}
-                </span>
-              </div>
+              {assignedStaff.length === 0 ? (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Carer:</span>
+                  <span className="text-sm font-medium">
+                    {booking.carerName || booking.staff_name || 'Not assigned'}
+                  </span>
+                </div>
+              ) : assignedStaff.length === 1 ? (
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Carer:</span>
+                  <span className="text-sm font-medium">
+                    {assignedStaff[0].name}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <span className="text-sm text-gray-600">Carers ({assignedStaff.length}):</span>
+                  <div className="flex flex-wrap gap-2">
+                    {assignedStaff.map((staff) => (
+                      <Badge 
+                        key={staff.id} 
+                        variant="outline" 
+                        className="bg-blue-50 text-blue-700 border-blue-200"
+                      >
+                        {staff.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
