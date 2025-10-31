@@ -7,9 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { useTenantAwareQuery } from '@/hooks/useTenantAware';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useScheduleTraining } from '@/hooks/useTrainingCalendar';
+import { useBranchStaff } from '@/hooks/useBranchStaff';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface NewTrainingDialogProps {
   open: boolean;
@@ -43,55 +45,49 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   const [notes, setNotes] = useState('');
 
   const scheduleTraining = useScheduleTraining();
+  const { organization } = useTenant();
 
-  // Fetch training courses
-  const { data: trainingCourses } = useTenantAwareQuery(
-    ['training-courses'],
-    async () => {
+  // Fetch training courses for the selected branch
+  const { data: trainingCourses } = useQuery({
+    queryKey: ['training-courses', branchId],
+    queryFn: async () => {
+      if (!branchId) {
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('training_courses')
-        .select('*')
-        .eq('status', 'active');
+        .select('id, title, description, category, status')
+        .eq('status', 'active')
+        .eq('branch_id', branchId);
       
       if (error) throw error;
       return data || [];
-    }
-  );
-
-  // Fetch staff
-  const { data: staff, isLoading: staffLoading, error: staffError } = useTenantAwareQuery(
-    ['branch-staff', branchId],
-    async () => {
-      if (!branchId) return [];
-      
-      console.log('🔍 [NewTrainingDialog] Fetching staff for branch:', branchId);
-      
-      const { data, error } = await supabase
-        .from('staff')
-        .select('id, first_name, last_name')
-        .eq('branch_id', branchId)
-        .eq('status', 'Active');
-      
-      if (error) {
-        console.error('❌ [NewTrainingDialog] Error fetching staff:', error);
-        throw error;
-      }
-      
-      const mappedStaff = data?.map(member => ({
-        ...member,
-        name: `${member.first_name} ${member.last_name}`
-      })) || [];
-      
-      console.log('✅ [NewTrainingDialog] Staff fetched:', {
-        branchId,
-        count: mappedStaff.length,
-        staff: mappedStaff.map(s => s.name)
-      });
-      
-      return mappedStaff;
     },
-    { enabled: !!branchId }
-  );
+    enabled: Boolean(branchId)
+  });
+
+  // Fetch staff using existing hook (handles organization validation)
+  const { data: staffData, isLoading: staffLoading, error: staffError } = useBranchStaff(branchId || '');
+  
+  // Map staff data to include name field
+  const staff = React.useMemo(() => {
+    return staffData?.map(member => ({
+      ...member,
+      name: `${member.first_name} ${member.last_name}`
+    })) || [];
+  }, [staffData]);
+
+  // Log staff data for debugging
+  React.useEffect(() => {
+    if (open && branchId) {
+      console.log('✅ [NewTrainingDialog] Staff data:', {
+        branchId,
+        count: staff.length,
+        staff: staff.map(s => s.name)
+      });
+    }
+  }, [open, branchId, staff]);
 
   const resetForm = () => {
     setTrainingCourseId('');
