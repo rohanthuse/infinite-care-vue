@@ -90,7 +90,7 @@ export const CalendarDayView: React.FC<CalendarDayViewProps> = ({
                 {/* Event Area */}
                 <div className={`min-h-[60px] border-border ${isOnTheHour ? 'border-t' : 'border-t border-dashed'} relative group`}>
                   {timeSlotEvents.length > 0 ? (
-                    <div className="p-1 space-y-1">
+                    <div className="p-1 flex flex-row gap-1 flex-wrap items-start">
                       {timeSlotEvents.map((event, eventIndex) => (
                          <CalendarEventCard
                            key={`${event.id}-${eventIndex}`}

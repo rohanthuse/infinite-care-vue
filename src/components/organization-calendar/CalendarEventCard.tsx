@@ -75,7 +75,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
   if (compact) {
     return (
       <div
-        className={`p-2 rounded-md border-l-4 ${getEventColor(event.type)} cursor-pointer hover:shadow-sm transition-shadow`}
+        className={`p-2 rounded-md border-l-4 ${getEventColor(event.type)} cursor-pointer hover:shadow-sm transition-shadow min-w-[200px] max-w-[300px]`}
         onClick={handleClick}
       >
         <div className="flex items-center justify-between">

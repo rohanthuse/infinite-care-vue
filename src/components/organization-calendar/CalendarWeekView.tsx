@@ -100,7 +100,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     className="min-h-[80px] border-l border-t border-border relative group"
                   >
                     {dayEvents.length > 0 ? (
-                      <div className="p-1 space-y-1">
+                      <div className="p-1 flex flex-row gap-1 flex-wrap items-start">
                         {dayEvents.map((event, eventIndex) => (
                         <CalendarEventCard
                           key={`${event.id}-${eventIndex}`}
