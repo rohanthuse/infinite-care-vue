@@ -77,10 +77,20 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   // Force refetch when branch changes to ensure fresh data
   useEffect(() => {
     if (selectedBranch) {
-      console.log('[OrganizationCalendarView] Branch changed, invalidating cache');
+      console.log('[OrganizationCalendarView] 🔄 Branch changed, clearing cache and refetching');
+      
+      // Invalidate and immediately refetch
       queryClient.invalidateQueries({ 
         queryKey: ['organization-calendar'],
-        exact: false
+        exact: false,
+        refetchType: 'active'
+      });
+      
+      // Force immediate refetch
+      queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
       });
     }
   }, [selectedBranch, queryClient]);
@@ -136,6 +146,22 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     branchId: selectedBranch !== 'all' ? selectedBranch : undefined,
     eventType: selectedEventType !== 'all' ? selectedEventType : undefined
   });
+
+  // Log event count for verification
+  useEffect(() => {
+    if (calendarEvents) {
+      console.log('[OrganizationCalendarView] 📊 Event count verification:', {
+        date: format(currentDate, 'yyyy-MM-dd'),
+        selectedBranch,
+        selectedBranchName: branches?.find(b => b.id === selectedBranch)?.name || 'All Branches',
+        totalEvents: calendarEvents.length,
+        byBranch: calendarEvents.reduce((acc, e) => {
+          acc[e.branchName] = (acc[e.branchName] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+    }
+  }, [calendarEvents, currentDate, selectedBranch, branches]);
 
   // Fetch dynamic statistics
   const {
@@ -750,30 +776,6 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
             )}
           </div>
 
-          {/* Debug Panel - Development Only */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mx-4 mb-4 p-3 border-2 border-yellow-500 bg-yellow-50 rounded-lg">
-              <div className="text-sm font-semibold text-yellow-900 mb-2">🔧 Debug Info</div>
-              <div className="text-xs space-y-1 text-yellow-900">
-                <div><strong>Selected Branch:</strong> {selectedBranch}</div>
-                <div><strong>Event Type Filter:</strong> {selectedEventType}</div>
-                <div><strong>Search Term:</strong> {searchTerm || 'none'}</div>
-                <div><strong>Total Events:</strong> {calendarEvents?.length || 0}</div>
-                <div><strong>By Type:</strong> {JSON.stringify(
-                  calendarEvents?.reduce((acc, e) => {
-                    acc[e.type] = (acc[e.type] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>)
-                )}</div>
-                <div><strong>By Branch:</strong> {JSON.stringify(
-                  calendarEvents?.reduce((acc, e) => {
-                    acc[e.branchName] = (acc[e.branchName] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>)
-                )}</div>
-              </div>
-            </div>
-          )}
 
           {renderCalendarView()}
         </CardContent>

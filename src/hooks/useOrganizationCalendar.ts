@@ -365,6 +365,11 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
               first_name,
               last_name,
               branch_id
+            ),
+            branches (
+              id,
+              name,
+              organization_id
             )
           `)
           .gte('appointment_date', startDate.toISOString().split('T')[0])
@@ -389,7 +394,7 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
             })(),
             status: (appointment.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
             branchId: appointment.branch_id || targetBranchIds[0],
-            branchName: 'Meeting',
+            branchName: appointment.branches?.name || 'Unknown Branch',
             participants: appointment.clients ? [{
               id: appointment.client_id,
               name: `${appointment.clients.first_name} ${appointment.clients.last_name}`,
@@ -422,12 +427,20 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         )
       : filteredEvents;
 
-    // Enhanced debug logging
+    // Enhanced debug logging with detailed event information
     console.log('🔍 [Filter Debug]:', {
       selectedBranch: branchId || 'all',
       totalEvents: events.length,
       afterTypeFilter: filteredEvents.length,
       afterSearchFilter: searchFilteredEvents.length,
+      eventDetails: searchFilteredEvents.map(e => ({
+        id: e.id,
+        type: e.type,
+        title: e.title,
+        branchId: e.branchId,
+        branchName: e.branchName,
+        startTime: format(e.startTime, 'yyyy-MM-dd HH:mm')
+      })),
       byBranch: searchFilteredEvents.reduce((acc, e) => {
         acc[e.branchName] = (acc[e.branchName] || 0) + 1;
         return acc;
