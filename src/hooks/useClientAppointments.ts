@@ -87,6 +87,125 @@ export const useCreateClientAppointment = () => {
   });
 };
 
+// Hook to fetch single appointment by ID
+export const useClientAppointment = (appointmentId: string) => {
+  return useQuery({
+    queryKey: ['client-appointment', appointmentId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('client_appointments')
+        .select(`
+          *,
+          clients (
+            id,
+            first_name,
+            last_name
+          ),
+          branches (
+            id,
+            name
+          )
+        `)
+        .eq('id', appointmentId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!appointmentId
+  });
+};
+
+// Hook to update appointment
+export const useUpdateClientAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      appointmentId, 
+      updates 
+    }: { 
+      appointmentId: string; 
+      updates: Partial<CreateClientAppointment> 
+    }) => {
+      const { data, error } = await supabase
+        .from('client_appointments')
+        .update(updates)
+        .eq('id', appointmentId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: async (data, variables) => {
+      // Invalidate all calendar queries
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      // Invalidate specific appointment
+      queryClient.invalidateQueries({ 
+        queryKey: ['client-appointment', variables.appointmentId] 
+      });
+      
+      // Invalidate staff meetings if staff is involved
+      const staffIdMatch = data.notes?.match(/Staff ID: ([a-f0-9-]+)/);
+      if (staffIdMatch && staffIdMatch[1]) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['staff-meetings', staffIdMatch[1]] 
+        });
+      }
+      
+      toast.success('Meeting updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update meeting: ${error.message}`);
+    }
+  });
+};
+
+// Hook to delete appointment
+export const useDeleteClientAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (appointmentId: string) => {
+      const { error } = await supabase
+        .from('client_appointments')
+        .delete()
+        .eq('id', appointmentId);
+
+      if (error) throw error;
+      return appointmentId;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false
+      });
+      
+      await queryClient.refetchQueries({ 
+        queryKey: ['organization-calendar'],
+        exact: false,
+        type: 'active'
+      });
+      
+      toast.success('Meeting deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete meeting: ${error.message}`);
+    }
+  });
+};
+
 // Placeholder hooks for backwards compatibility
 export const useClientAppointments = (clientId: string) => {
   return useQuery({

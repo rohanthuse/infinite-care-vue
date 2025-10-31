@@ -27,8 +27,11 @@ import { useScheduledAgreements, useCreateScheduledAgreement } from '@/data/hook
 import { useAnnualLeave, useCreateAnnualLeave } from '@/hooks/useLeaveManagement';
 import { ScheduleAgreementDialog } from '@/components/agreements/ScheduleAgreementDialog';
 import { NewMeetingDialog } from './NewMeetingDialog';
+import { ViewMeetingDialog } from './ViewMeetingDialog';
+import { EditMeetingDialog } from './EditMeetingDialog';
 import { NewLeaveDialog } from './NewLeaveDialog';
 import { NewTrainingDialog } from './NewTrainingDialog';
+import { useDeleteClientAppointment } from '@/hooks/useClientAppointments';
 import { BranchCombobox } from './BranchCombobox';
 import { CalendarExportDialog } from './CalendarExportDialog';
 import { CalendarShareDialog } from './CalendarShareDialog';
@@ -63,6 +66,9 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [viewBookingDialogOpen, setViewBookingDialogOpen] = useState(false);
   const [editBookingDialogOpen, setEditBookingDialogOpen] = useState(false);
+  const [viewMeetingDialogOpen, setViewMeetingDialogOpen] = useState(false);
+  const [editMeetingDialogOpen, setEditMeetingDialogOpen] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [newEventType, setNewEventType] = useState<'booking' | 'agreement' | 'training' | 'leave' | 'meeting'>('booking');
   const [newBookingDialogOpen, setNewBookingDialogOpen] = useState(false);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
@@ -213,6 +219,44 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
       setSelectedEvent(event);
       setSelectedBooking(bookingData);
       setViewBookingDialogOpen(true);
+    } else if (event.type === 'meeting') {
+      // Fetch full meeting data from database
+      console.log('[OrganizationCalendarView] Fetching meeting data for ID:', event.id);
+      
+      const { data: fullAppointment, error } = await supabase
+        .from('client_appointments')
+        .select(`
+          *,
+          clients (
+            id,
+            first_name,
+            last_name
+          ),
+          branches (
+            id,
+            name
+          )
+        `)
+        .eq('id', event.id)
+        .single();
+      
+      if (error) {
+        console.error('[OrganizationCalendarView] Error fetching meeting:', error);
+        toast.error('Unable to load meeting details');
+        return;
+      }
+      
+      if (!fullAppointment) {
+        console.error('[OrganizationCalendarView] Meeting not found');
+        toast.error('Meeting not found');
+        return;
+      }
+      
+      console.log('[OrganizationCalendarView] Full meeting data:', fullAppointment);
+      
+      setSelectedEvent(event);
+      setSelectedMeeting(fullAppointment);
+      setViewMeetingDialogOpen(true);
     }
   };
 
@@ -358,6 +402,28 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     setTimeout(() => {
       setEditBookingDialogOpen(true);
     }, 100);
+  };
+
+  const handleEditMeeting = () => {
+    setViewMeetingDialogOpen(false);
+    setTimeout(() => {
+      setEditMeetingDialogOpen(true);
+    }, 100);
+  };
+
+  const deleteAppointmentMutation = useDeleteClientAppointment();
+
+  const handleDeleteMeeting = async () => {
+    if (!selectedMeeting) return;
+    
+    try {
+      await deleteAppointmentMutation.mutateAsync(selectedMeeting.id);
+      setViewMeetingDialogOpen(false);
+      setSelectedMeeting(null);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+    }
   };
   const handleEditSuccess = async (bookingId: string) => {
     setEditBookingDialogOpen(false);
@@ -710,6 +776,61 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
          prefilledDate={prefilledDate || currentDate}
          prefilledTime={getTimeFromDate(prefilledDate)}
        />
+
+       {/* View Meeting Dialog */}
+       <ViewMeetingDialog
+         open={viewMeetingDialogOpen}
+         onOpenChange={(open) => {
+           setViewMeetingDialogOpen(open);
+           if (!open) {
+             setSelectedMeeting(null);
+             setSelectedEvent(null);
+           }
+         }}
+         appointment={selectedMeeting}
+         onEdit={handleEditMeeting}
+         onDelete={handleDeleteMeeting}
+       />
+
+       {/* Edit Meeting Dialog */}
+       {selectedMeeting && (
+         <EditMeetingDialog
+           open={editMeetingDialogOpen}
+           onOpenChange={(open) => {
+             setEditMeetingDialogOpen(open);
+             if (!open) {
+               // Refresh meeting data after edit
+               setTimeout(async () => {
+                 if (selectedMeeting?.id) {
+                   const { data } = await supabase
+                     .from('client_appointments')
+                     .select(`
+                       *,
+                       clients (
+                         id,
+                         first_name,
+                         last_name
+                       ),
+                       branches (
+                         id,
+                         name
+                       )
+                     `)
+                     .eq('id', selectedMeeting.id)
+                     .single();
+                   
+                   if (data) {
+                     setSelectedMeeting(data);
+                     setViewMeetingDialogOpen(true);
+                   }
+                 }
+               }, 100);
+             }
+           }}
+           appointment={selectedMeeting}
+           branchId={selectedBranch !== 'all' ? selectedBranch : undefined}
+         />
+       )}
 
        {/* Leave Dialog */}
        <NewLeaveDialog 
