@@ -59,7 +59,7 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
   );
 
   // Fetch staff
-  const { data: staff } = useTenantAwareQuery(
+  const { data: staff, isLoading: staffLoading, error: staffError } = useTenantAwareQuery(
     ['branch-staff', branchId],
     async () => {
       if (!branchId) return [];
@@ -176,6 +176,15 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
     }
   }, [onOpenChange]);
 
+  // Debug branchId changes
+  React.useEffect(() => {
+    console.log('🔍 [NewTrainingDialog] Props changed:', {
+      open,
+      branchId,
+      prefilledDate: prefilledDate ? format(prefilledDate, 'yyyy-MM-dd') : null
+    });
+  }, [open, branchId, prefilledDate]);
+
   // Reset form when dialog closes
   React.useEffect(() => {
     if (!open) {
@@ -216,12 +225,22 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
                 <SafeSelectValue placeholder="Select staff member" />
               </SafeSelectTrigger>
               <SafeSelectContent>
-                {staff && staff.length === 0 && (
+                {staffLoading && (
+                  <div className="p-2 text-sm text-muted-foreground text-center">
+                    Loading staff...
+                  </div>
+                )}
+                {staffError && (
+                  <div className="p-2 text-sm text-destructive text-center">
+                    Error loading staff
+                  </div>
+                )}
+                {!staffLoading && !staffError && staff && staff.length === 0 && (
                   <div className="p-2 text-sm text-muted-foreground text-center">
                     No active staff found in this branch
                   </div>
                 )}
-                {staff?.map((member) => (
+                {!staffLoading && !staffError && staff?.map((member) => (
                   <SafeSelectItem key={member.id} value={member.id}>
                     {member.name}
                   </SafeSelectItem>

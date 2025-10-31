@@ -235,6 +235,26 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
       }
     }
 
+    // Helper function to parse time from training_notes
+    const parseTrainingTime = (notes: string | null, assignedDate: string): { start: Date, end: Date } => {
+      const defaultStart = new Date(`${assignedDate}T09:00:00`);
+      const defaultEnd = new Date(`${assignedDate}T17:00:00`);
+      
+      if (!notes) return { start: defaultStart, end: defaultEnd };
+      
+      // Parse "Time: HH:MM - HH:MM" from notes
+      const timeMatch = notes.match(/Time:\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/i);
+      if (timeMatch) {
+        const [_, startHour, startMin, endHour, endMin] = timeMatch;
+        return {
+          start: new Date(`${assignedDate}T${startHour.padStart(2, '0')}:${startMin}:00`),
+          end: new Date(`${assignedDate}T${endHour.padStart(2, '0')}:${endMin}:00`)
+        };
+      }
+      
+      return { start: defaultStart, end: defaultEnd };
+    };
+
     // Fetch staff training records
     if (!eventType || eventType === 'all' || eventType === 'training') {
       try {
@@ -248,12 +268,17 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
             staff_id,
             branch_id,
             training_course_id,
+            training_notes,
             staff (
               first_name,
               last_name
             ),
             branches (
               name
+            ),
+            training_courses (
+              title,
+              category
             )
           `)
           .gte('assigned_date', startDate.toISOString().split('T')[0])
@@ -264,24 +289,42 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
         if (trainingsError) {
           console.error('[fetchOrganizationCalendarEvents] Trainings error:', trainingsError);
         } else if (trainings) {
-          const trainingEvents = trainings.map(training => ({
-            id: training.id,
-            type: 'training' as const,
-            title: `Training Session`,
-            startTime: new Date(`${training.assigned_date}T14:00:00`),
-            endTime: new Date(`${training.assigned_date}T16:00:00`),
-            status: (training.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
-            branchId: training.branch_id,
-            branchName: training.branches?.name || 'Unknown Branch',
-            participants: training.staff ? [{
-              id: training.staff_id,
-              name: `${training.staff.first_name} ${training.staff.last_name}`,
-              role: 'staff'
-            }] : [],
-            location: training.branches?.name,
-            priority: 'medium' as const,
-            staffIds: [training.staff_id]
-          }));
+          const trainingEvents = trainings.map(training => {
+            const times = parseTrainingTime(training.training_notes, training.assigned_date);
+            const courseTitle = training.training_courses?.title || 'Training Session';
+            
+            return {
+              id: training.id,
+              type: 'training' as const,
+              title: courseTitle,
+              startTime: times.start,
+              endTime: times.end,
+              status: (training.status as 'scheduled' | 'in-progress' | 'completed' | 'cancelled') || 'scheduled',
+              branchId: training.branch_id,
+              branchName: training.branches?.name || 'Unknown Branch',
+              participants: training.staff ? [{
+                id: training.staff_id,
+                name: `${training.staff.first_name} ${training.staff.last_name}`,
+                role: 'staff'
+              }] : [],
+              location: training.branches?.name,
+              priority: 'medium' as const,
+              staffIds: [training.staff_id],
+              description: training.training_notes || undefined
+            };
+          });
+          
+          console.log('✅ [fetchOrganizationCalendarEvents] Training events processed:', {
+            count: trainingEvents.length,
+            events: trainingEvents.map(e => ({
+              id: e.id,
+              title: e.title,
+              date: format(e.startTime, 'yyyy-MM-dd'),
+              time: `${format(e.startTime, 'HH:mm')} - ${format(e.endTime, 'HH:mm')}`,
+              branch: e.branchName,
+              staff: e.participants.map(p => p.name).join(', ')
+            }))
+          });
           
           events.push(...trainingEvents);
         }
