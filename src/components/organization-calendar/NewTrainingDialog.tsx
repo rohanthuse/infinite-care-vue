@@ -64,17 +64,31 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
     async () => {
       if (!branchId) return [];
       
+      console.log('🔍 [NewTrainingDialog] Fetching staff for branch:', branchId);
+      
       const { data, error } = await supabase
         .from('staff')
         .select('id, first_name, last_name')
         .eq('branch_id', branchId)
-        .eq('status', 'active');
+        .eq('status', 'Active');
       
-      if (error) throw error;
-      return data?.map(member => ({
+      if (error) {
+        console.error('❌ [NewTrainingDialog] Error fetching staff:', error);
+        throw error;
+      }
+      
+      const mappedStaff = data?.map(member => ({
         ...member,
         name: `${member.first_name} ${member.last_name}`
       })) || [];
+      
+      console.log('✅ [NewTrainingDialog] Staff fetched:', {
+        branchId,
+        count: mappedStaff.length,
+        staff: mappedStaff.map(s => s.name)
+      });
+      
+      return mappedStaff;
     },
     { enabled: !!branchId }
   );
@@ -202,6 +216,11 @@ export const NewTrainingDialog: React.FC<NewTrainingDialogProps> = ({
                 <SafeSelectValue placeholder="Select staff member" />
               </SafeSelectTrigger>
               <SafeSelectContent>
+                {staff && staff.length === 0 && (
+                  <div className="p-2 text-sm text-muted-foreground text-center">
+                    No active staff found in this branch
+                  </div>
+                )}
                 {staff?.map((member) => (
                   <SafeSelectItem key={member.id} value={member.id}>
                     {member.name}
