@@ -1,6 +1,7 @@
 import React from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import { getUserTimezone } from "@/utils/timezoneUtils";
 import { Eye, Clock, User, Calendar, FileText, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -87,14 +88,14 @@ export function ViewBookingDialog({
       return booking.startTime;
     }
     
-    // Priority 2: Extract time from ISO string in UTC (avoid timezone conversion)
+    // Priority 2: Extract time from ISO string and convert to local timezone
     if (booking?.start_time) {
       try {
         const parsed = parseISO(booking.start_time);
-        // Format in UTC timezone to get the original stored time
-        const timeInUTC = formatInTimeZone(parsed, 'UTC', 'HH:mm');
-        console.log('[ViewBookingDialog] Extracted time from ISO (UTC):', timeInUTC);
-        return timeInUTC;
+        // Format in user's local timezone to display correct time
+        const timeInLocalTZ = formatInTimeZone(parsed, getUserTimezone(), 'HH:mm');
+        console.log('[ViewBookingDialog] Extracted time from ISO (local timezone):', timeInLocalTZ);
+        return timeInLocalTZ;
       } catch (error) {
         console.error('[ViewBookingDialog] Error parsing start_time:', error);
         return null;
@@ -116,14 +117,14 @@ export function ViewBookingDialog({
       return booking.endTime;
     }
     
-    // Priority 2: Extract time from ISO string in UTC (avoid timezone conversion)
+    // Priority 2: Extract time from ISO string and convert to local timezone
     if (booking?.end_time) {
       try {
         const parsed = parseISO(booking.end_time);
-        // Format in UTC timezone to get the original stored time
-        const timeInUTC = formatInTimeZone(parsed, 'UTC', 'HH:mm');
-        console.log('[ViewBookingDialog] Extracted time from ISO (UTC):', timeInUTC);
-        return timeInUTC;
+        // Format in user's local timezone to display correct time
+        const timeInLocalTZ = formatInTimeZone(parsed, getUserTimezone(), 'HH:mm');
+        console.log('[ViewBookingDialog] Extracted time from ISO (local timezone):', timeInLocalTZ);
+        return timeInLocalTZ;
       } catch (error) {
         console.error('[ViewBookingDialog] Error parsing end_time:', error);
         return null;
@@ -390,9 +391,9 @@ export function ViewBookingDialog({
                     const relatedService = services.find(s => s.id === relatedBooking.service_id);
                     const relatedStart = parseISO(relatedBooking.start_time);
                     const relatedEnd = parseISO(relatedBooking.end_time);
-                    // Format related times in UTC to match main booking display
-                    const relatedStartTime = formatInTimeZone(relatedStart, 'UTC', 'HH:mm');
-                    const relatedEndTime = formatInTimeZone(relatedEnd, 'UTC', 'HH:mm');
+                    // Format related times in user's local timezone to match main booking display
+                    const relatedStartTime = formatInTimeZone(relatedStart, getUserTimezone(), 'HH:mm');
+                    const relatedEndTime = formatInTimeZone(relatedEnd, getUserTimezone(), 'HH:mm');
                     
                     return (
                       <div key={relatedBooking.id} className="p-2 bg-gray-50 rounded-md">

@@ -116,14 +116,15 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
     selectedBranch !== 'all' ? selectedBranch : undefined
   );
 
-  // Fetch services for booking dialog
+  // Fetch services for booking dialog (including services with null organization_id)
   const {
     data: services
   } = useTenantAwareQuery(['organization-services'], async organizationId => {
     const {
       data,
       error
-    } = await supabase.from('services').select('*').eq('organization_id', organizationId);
+    } = await supabase.from('services').select('*');
+    // Fetch all services to include those with null organization_id
     if (error) throw error;
     return data;
   }, {
