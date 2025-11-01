@@ -607,11 +607,12 @@ export function StaffScheduleCalendar({
           }}
         />
       ) : (
-        <div className="border rounded-lg overflow-x-auto overflow-y-auto max-h-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="border rounded-lg overflow-hidden flex flex-col h-full">
           <div className="text-xs text-muted-foreground mb-2 px-1 sticky left-0 bg-background z-20">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
-          <div className="time-grid-inner" style={{ width: TOTAL_WIDTH }}>
+          <div className="overflow-x-auto overflow-y-hidden flex-1">
+            <div className="time-grid-inner" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
             {/* Header row */}
             <div 
               className="bg-muted/50 border-b flex"
@@ -782,6 +783,7 @@ export function StaffScheduleCalendar({
                 )}
               </div>
             ))}
+          </div>
           </div>
         </div>
       )}
