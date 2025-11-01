@@ -162,9 +162,9 @@ export function DashboardHeader() {
 
   // Handle navigation back to admin dashboard
   const handleLogoClick = () => {
-    // Super admins go to system dashboard with tenants view
+    // Super admins go to main dashboard with branch navigation
     if (userRole?.role === 'super_admin') {
-      navigate('/system-dashboard/tenants');
+      navigate('/dashboard');
       return;
     }
     

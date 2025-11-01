@@ -28,7 +28,7 @@ export const BranchInfoHeader = ({
   // Determine back destination based on user role
   const handleBack = () => {
     if (userRole?.role === 'super_admin') {
-      navigate('/system-dashboard/tenants');
+      navigate('/dashboard');
     } else {
       navigate('/branch-selection');
     }
