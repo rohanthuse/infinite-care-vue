@@ -11,16 +11,17 @@ interface DashboardChartsSectionProps {
   branchId: string | undefined;
 }
 
-const COLORS = ["#4f46e5", "#a5b4fc"];
+const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#6b7280", "#8b5cf6"];
 
 export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ branchId }) => {
   const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(branchId);
 
-  const totalClientsForDist = chartData?.clientDistribution.reduce((acc, cur) => acc + cur.value, 0) || 0;
-  const returningClientsCount = chartData?.clientDistribution.find(d => d.name === "Returning")?.value || 0;
-  const newClientsCount = chartData?.clientDistribution.find(d => d.name === "New")?.value || 0;
-  const returningPercentage = totalClientsForDist > 0 ? Math.round((returningClientsCount / totalClientsForDist) * 100) : 0;
-  const newPercentage = totalClientsForDist > 0 ? Math.round((newClientsCount / totalClientsForDist) * 100) : 0;
+  const totalClients = chartData?.clientDistribution.reduce((acc, cur) => acc + cur.value, 0) || 0;
+  const statusPercentages = chartData?.clientDistribution.map(item => ({
+    name: item.name,
+    value: item.value,
+    percentage: totalClients > 0 ? Math.round((item.value / totalClients) * 100) : 0
+  })) || [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
@@ -81,8 +82,8 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
       
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base md:text-lg font-semibold">Client Distribution</CardTitle>
-          <CardDescription>New vs returning clients</CardDescription>
+          <CardTitle className="text-base md:text-lg font-semibold">Client Status</CardTitle>
+          <CardDescription>Distribution by current status</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[180px] md:h-[240px] flex items-center justify-center">
@@ -110,15 +111,18 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
             )}
           </div>
           
-          <div className="flex justify-around mt-3">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-indigo-600"></div>
-              <span className="text-xs md:text-sm">Returning ({returningPercentage}%)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
-              <span className="text-xs md:text-sm">New ({newPercentage}%)</span>
-            </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {statusPercentages.map((item, index) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div 
+                  className="h-3 w-3 rounded-full flex-shrink-0" 
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-xs md:text-sm truncate" title={`${item.name}: ${item.value} (${item.percentage}%)`}>
+                  {item.name} ({item.percentage}%)
+                </span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -10,7 +10,7 @@ export interface WeeklyStat {
 }
 
 export interface ClientDistribution {
-    name: 'New' | 'Returning';
+    name: 'Active' | 'New Enquiries' | 'Actively Assessing' | 'Closed Enquiries' | 'Former' | 'Unknown';
     value: number;
 }
 
