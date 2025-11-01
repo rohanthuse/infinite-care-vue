@@ -12,25 +12,33 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const Index = () => {
-  const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
-  const hasRedirected = useRef(false);
-  
-  // Check if we're in the middle of a navigation from login
+  // CRITICAL: Check navigation intent BEFORE any hooks are called
   const isNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
   const targetDashboard = sessionStorage.getItem('target_dashboard');
   
-  // If navigating with a target, show minimal loading and let interceptor handle it
+  // If navigating, return loading immediately - don't execute ANY other code
   if (isNavigating && targetDashboard) {
+    // Safety: Clear flags after 3 seconds to prevent infinite loading
+    setTimeout(() => {
+      sessionStorage.removeItem('navigating_to_dashboard');
+      sessionStorage.removeItem('target_dashboard');
+    }, 3000);
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-gray-600 mt-4">Redirecting to dashboard...</p>
         </div>
       </div>
     );
   }
+  
+  // Only if NOT navigating, initialize hooks and render full page
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
+  const hasRedirected = useRef(false);
 
   // Background redirect (non-blocking) - runs after page renders
   useEffect(() => {
