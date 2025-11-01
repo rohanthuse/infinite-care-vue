@@ -1,7 +1,7 @@
 import React from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Download, FileDown, FileSpreadsheet, Printer, Mail } from "lucide-react";
+import { Download, FileDown, FileSpreadsheet, Printer } from "lucide-react";
 import { ReportExporter } from "@/utils/reportExporter";
 import { WeeklyStat } from "@/data/hooks/useBranchChartData";
 import { useToast } from "@/hooks/use-toast";
@@ -136,16 +136,6 @@ export const ChartExportMenu: React.FC<ChartExportMenuProps> = ({
     printWindow.close();
   };
 
-  const handleEmail = () => {
-    const subject = encodeURIComponent(`${chartTitle}${branchName ? ` - ${branchName}` : ''}`);
-    const body = encodeURIComponent(`Please find attached the ${chartTitle.toLowerCase()} report.\n\nGenerated on ${new Date().toLocaleString()}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    
-    toast({
-      title: "Email client opened",
-      description: "Compose your email with the report details.",
-    });
-  };
 
   return (
     <DropdownMenu>
@@ -166,10 +156,6 @@ export const ChartExportMenu: React.FC<ChartExportMenuProps> = ({
         <DropdownMenuItem onClick={handlePrint}>
           <Printer className="h-4 w-4 mr-2" />
           Print Chart
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleEmail}>
-          <Mail className="h-4 w-4 mr-2" />
-          Email Report
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
