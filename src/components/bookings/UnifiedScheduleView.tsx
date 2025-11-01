@@ -73,7 +73,7 @@ export function UnifiedScheduleView({
             <h3 className="text-lg font-semibold">Client Schedule</h3>
             <p className="text-sm text-muted-foreground">View all client appointments</p>
           </div>
-          <div className="h-[28vh] overflow-auto">
+          <div className="h-[28vh] overflow-auto pr-20">
             <ClientScheduleCalendar
               date={date}
               bookings={bookings}
@@ -102,7 +102,7 @@ export function UnifiedScheduleView({
             <h3 className="text-lg font-semibold">Staff Schedule</h3>
             <p className="text-sm text-muted-foreground">View all staff assignments</p>
           </div>
-          <div className="h-[28vh] overflow-auto">
+          <div className="h-[28vh] overflow-auto pr-20">
             <StaffScheduleCalendar
               date={date}
               bookings={bookings}
