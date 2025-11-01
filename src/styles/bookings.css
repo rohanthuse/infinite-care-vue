@@ -396,51 +396,54 @@
    ======================================== */
 
 /* Only apply to the Unified Schedule tab within Bookings page */
+/* ========================================
+   UNIFIED SCHEDULE TAB - RIGHT SIDEBAR FIX
+   ======================================== */
+
+/* Remove padding from outer container - we'll apply it to scroll containers */
 .page-bookings .unified-schedule-container {
-  /* Add padding to prevent content from going under the sidebar */
-  padding-right: var(--right-rail-w);
+  /* No padding here */
 }
 
-/* Ensure the time grid scrolls horizontally without content hidden */
-.page-bookings .unified-schedule-container .time-grid {
-  overflow: auto;
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  position: relative;
-  padding-right: 320px; /* Padding for sidebar space */
+/* Target the actual scrollable divs inside the calendar components */
+.page-bookings .unified-schedule-container .time-grid > div > div.overflow-x-auto {
+  padding-right: 320px; /* Space for the sidebar */
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Prevent the inner grid from shrinking */
+/* Ensure the inner content grid doesn't shrink */
 .page-bookings .unified-schedule-container .time-grid-inner {
-  min-width: 1200px; /* Minimum width to show ~15 hours at 80px each */
+  min-width: 1200px !important;
   position: relative;
 }
 
-/* For weekly view, adjust minimum width */
+/* View-specific minimum widths */
 .page-bookings .unified-schedule-container.weekly-view .time-grid-inner {
-  min-width: 840px; /* 7 days × 120px */
+  min-width: 840px !important;
 }
 
-/* For daily view with 24 hours */
 .page-bookings .unified-schedule-container.daily-view .time-grid-inner {
-  min-width: 1536px; /* 24 hours × 64px */
+  min-width: 1536px !important;
 }
 
-/* Ensure scrollbar is visible */
-.page-bookings .unified-schedule-container .time-grid::-webkit-scrollbar {
+/* Style the scrollbars */
+.page-bookings .unified-schedule-container .time-grid > div > div.overflow-x-auto::-webkit-scrollbar {
   height: 8px;
-  display: block;
+  display: block !important;
 }
 
-.page-bookings .unified-schedule-container .time-grid::-webkit-scrollbar-track {
+.page-bookings .unified-schedule-container .time-grid > div > div.overflow-x-auto::-webkit-scrollbar-track {
   background: hsl(var(--muted));
   border-radius: 4px;
 }
 
-.page-bookings .unified-schedule-container .time-grid::-webkit-scrollbar-thumb {
+.page-bookings .unified-schedule-container .time-grid > div > div.overflow-x-auto::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
   border-radius: 4px;
 }
 
-.page-bookings .unified-schedule-container .time-grid::-webkit-scrollbar-thumb:hover {
+.page-bookings .unified-schedule-container .time-grid > div > div.overflow-x-auto::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--foreground) / 0.5);
 }
