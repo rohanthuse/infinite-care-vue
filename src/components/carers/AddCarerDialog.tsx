@@ -21,7 +21,11 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
     last_name: "",
     email: "",
     phone: "",
-    address: "",
+    house_no: "",
+    street: "",
+    city: "",
+    county: "",
+    pin_code: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
     experience: "",
@@ -49,8 +53,18 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
     }
 
     try {
+      // Concatenate address fields into single string
+      const fullAddress = [
+        formData.house_no,
+        formData.street,
+        formData.city,
+        formData.county,
+        formData.pin_code
+      ].filter(part => part && part.trim()).join(', ');
+
       await createCarerMutation.mutateAsync({
         ...formData,
+        address: fullAddress,
         branch_id: branchId
       });
       
@@ -60,7 +74,11 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
         last_name: "",
         email: "",
         phone: "",
-        address: "",
+        house_no: "",
+        street: "",
+        city: "",
+        county: "",
+        pin_code: "",
         emergency_contact_name: "",
         emergency_contact_phone: "",
         experience: "",
@@ -128,14 +146,62 @@ export const AddCarerDialog = ({ open, onOpenChange, branchId }: AddCarerDialogP
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              rows={2}
-            />
+          {/* SECTION: Address Information */}
+          <div className="space-y-3">
+            <div className="border-b pb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Address Information</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="house_no">House No/Name</Label>
+                <Input 
+                  id="house_no" 
+                  value={formData.house_no} 
+                  onChange={(e) => handleInputChange("house_no", e.target.value)}
+                  placeholder="e.g., 123 or Apartment 4B"
+                />
+              </div>
+              <div>
+                <Label htmlFor="street">Street</Label>
+                <Input 
+                  id="street" 
+                  value={formData.street} 
+                  onChange={(e) => handleInputChange("street", e.target.value)}
+                  placeholder="e.g., High Street"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input 
+                  id="city" 
+                  value={formData.city} 
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  placeholder="e.g., London"
+                />
+              </div>
+              <div>
+                <Label htmlFor="county">County</Label>
+                <Input 
+                  id="county" 
+                  value={formData.county} 
+                  onChange={(e) => handleInputChange("county", e.target.value)}
+                  placeholder="e.g., Greater London"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pin_code">Postcode</Label>
+                <Input 
+                  id="pin_code" 
+                  value={formData.pin_code} 
+                  onChange={(e) => handleInputChange("pin_code", e.target.value)}
+                  placeholder="e.g., MK9 1AA"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
