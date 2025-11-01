@@ -35,12 +35,22 @@ interface ClientStatus {
   booking?: Booking;
 }
 
+interface BookingBlock {
+  booking: Booking;
+  startMinutes: number;
+  durationMinutes: number;
+  leftPosition: number;
+  width: number;
+  status: ClientStatus['type'];
+}
+
 interface ClientScheduleRow {
   id: string;
   name: string;
   address?: string;
   carePackage?: string;
   schedule: Record<string, ClientStatus>;
+  bookingBlocks: BookingBlock[];
   totalCareHours: number;
   contractedHours: number;
 }
@@ -127,10 +137,24 @@ export function ClientScheduleCalendar({
     return slots;
   }, [timeInterval]);
 
+  // Helper function to calculate booking block position
+  const calculateBookingPosition = (startMinutes: number, durationMinutes: number): { left: number; width: number } => {
+    // Calculate position based on start time as fraction of time slots
+    const slotsFromStart = startMinutes / timeInterval;
+    const left = slotsFromStart * SLOT_WIDTH;
+    
+    // Calculate width based on duration
+    const durationInSlots = durationMinutes / timeInterval;
+    const width = durationInSlots * SLOT_WIDTH;
+    
+    return { left, width };
+  };
+
   // Process client schedule data
   const clientSchedule = useMemo(() => {
     const scheduleData: ClientScheduleRow[] = clients.map(client => {
       const schedule: Record<string, ClientStatus> = {};
+      const bookingBlocks: BookingBlock[] = [];
       let totalCareHours = 0;
       
       // Initialize all time slots as available
@@ -149,24 +173,38 @@ export function ClientScheduleCalendar({
         const [startHour, startMin] = booking.startTime.split(':').map(Number);
         const [endHour, endMin] = booking.endTime.split(':').map(Number);
         
-        // Calculate which 30-minute slots this booking occupies
+        // Calculate which slots this booking occupies
         const startMinutes = startHour * 60 + startMin;
         const endMinutes = endHour * 60 + endMin;
+        const durationMinutes = endMinutes - startMinutes;
         
-        // Mark all occupied 30-minute slots
+        // Determine booking status
+        let statusType: ClientStatus['type'] = 'scheduled';
+        if (booking.status === 'departed') statusType = 'in-progress';
+        else if (booking.status === 'done') statusType = 'completed';
+        else if (booking.status === 'cancelled') statusType = 'cancelled';
+        
+        // Calculate position for continuous booking block
+        const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
+        
+        // Add to booking blocks for rendering
+        bookingBlocks.push({
+          booking,
+          startMinutes,
+          durationMinutes,
+          leftPosition: left,
+          width,
+          status: statusType
+        });
+        
+        // Mark all occupied slots based on timeInterval (for empty cell detection)
         timeSlots.forEach(slot => {
           const [slotHour, slotMin] = slot.split(':').map(Number);
           const slotMinutes = slotHour * 60 + slotMin;
-          const nextSlotMinutes = slotMinutes + 30;
+          const nextSlotMinutes = slotMinutes + timeInterval;
           
-          // Check if this 30-minute slot overlaps with the booking
+          // Check if this slot overlaps with the booking
           if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
-            // Determine booking status
-            let statusType: ClientStatus['type'] = 'scheduled';
-            if (booking.status === 'departed') statusType = 'in-progress';
-            else if (booking.status === 'done') statusType = 'completed';
-            else if (booking.status === 'cancelled') statusType = 'cancelled';
-            
             schedule[slot] = {
               type: statusType,
               booking
@@ -175,7 +213,7 @@ export function ClientScheduleCalendar({
         });
 
         // Calculate hours more accurately
-        totalCareHours += (endMinutes - startMinutes) / 60;
+        totalCareHours += durationMinutes / 60;
       });
 
       return {
@@ -184,6 +222,7 @@ export function ClientScheduleCalendar({
         address: 'Address not available', // Client interface doesn't have address
         carePackage: 'Standard Care', // Default care package
         schedule,
+        bookingBlocks,
         totalCareHours,
         contractedHours: 8 // TODO: Get from client profile when available
       };
@@ -479,32 +518,57 @@ export function ClientScheduleCalendar({
                   </div>
                 </div>
 
-                {/* Time slot cells */}
-                {timeSlots.map(slot => {
-                  const status = client.schedule[slot];
-                  return (
-                    <Tooltip key={slot}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={`
-                            border-r last:border-r-0 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors flex-shrink-0
-                            ${getStatusColor(status)}
-                          `}
-                          style={{ 
-                            width: SLOT_WIDTH,
-                            height: '80px'
-                          }}
-                          onClick={() => handleCellClick(client.id, slot, status)}
-                        >
-                          {getStatusLabel(status)}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {renderTooltipContent(status, client.name)}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+                {/* Time slot cells - background grid for empty slots */}
+                <div className="relative flex">
+                  {timeSlots.map(slot => {
+                    const status = client.schedule[slot];
+                    return (
+                      <div
+                        key={slot}
+                        className={`
+                          border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
+                          ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : 'bg-transparent'}
+                        `}
+                        style={{ 
+                          width: SLOT_WIDTH,
+                          height: '80px'
+                        }}
+                        onClick={() => status.type === 'available' && handleCellClick(client.id, slot, status)}
+                      />
+                    );
+                  })}
+                  
+                  {/* Booking blocks - absolutely positioned overlays */}
+                  {client.bookingBlocks.map((block, idx) => {
+                    const colorClass = getStatusColor({ type: block.status, booking: block.booking });
+                    return (
+                      <Tooltip key={`${block.booking.id}-${idx}`}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={`
+                              absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
+                              ${colorClass}
+                            `}
+                            style={{ 
+                              left: `${block.leftPosition}px`,
+                              width: `${Math.max(block.width, 20)}px`, // Minimum 20px width
+                              height: '80px',
+                              zIndex: 1
+                            }}
+                            onClick={() => onViewBooking && onViewBooking(block.booking)}
+                          >
+                            <span className="truncate px-1">
+                              {getInitials(block.booking.carerName)}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {renderTooltipContent({ type: block.status, booking: block.booking }, client.name)}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>

@@ -41,12 +41,22 @@ interface StaffStatus {
   leaveType?: string;
 }
 
+interface BookingBlock {
+  booking: Booking;
+  startMinutes: number;
+  durationMinutes: number;
+  leftPosition: number;
+  width: number;
+  status: StaffStatus['type'];
+}
+
 interface StaffScheduleRow {
   id: string;
   name: string;
   email?: string;
   specialization?: string;
   schedule: Record<string, StaffStatus>;
+  bookingBlocks: BookingBlock[];
   totalHours: number;
   contractedHours: number;
 }
@@ -144,10 +154,24 @@ export function StaffScheduleCalendar({
     return slots;
   }, [timeInterval]);
 
+  // Helper function to calculate booking block position
+  const calculateBookingPosition = (startMinutes: number, durationMinutes: number): { left: number; width: number } => {
+    // Calculate position based on start time as fraction of time slots
+    const slotsFromStart = startMinutes / timeInterval;
+    const left = slotsFromStart * SLOT_WIDTH;
+    
+    // Calculate width based on duration
+    const durationInSlots = durationMinutes / timeInterval;
+    const width = durationInSlots * SLOT_WIDTH;
+    
+    return { left, width };
+  };
+
   // Process staff schedule data
   const staffSchedule = useMemo(() => {
     const scheduleData: StaffScheduleRow[] = staff.map(member => {
       const schedule: Record<string, StaffStatus> = {};
+      const bookingBlocks: BookingBlock[] = [];
       let totalHours = 0;
       
       // Initialize all time slots as available
@@ -166,23 +190,37 @@ export function StaffScheduleCalendar({
         const [startHour, startMin] = booking.startTime.split(':').map(Number);
         const [endHour, endMin] = booking.endTime.split(':').map(Number);
         
-        // Calculate which 30-minute slots this booking occupies
+        // Calculate which slots this booking occupies
         const startMinutes = startHour * 60 + startMin;
         const endMinutes = endHour * 60 + endMin;
+        const durationMinutes = endMinutes - startMinutes;
         
-        // Mark all occupied 30-minute slots
+        // Determine booking status
+        let statusType: StaffStatus['type'] = 'assigned';
+        if (booking.status === 'departed') statusType = 'in-progress';
+        else if (booking.status === 'done') statusType = 'done';
+        
+        // Calculate position for continuous booking block
+        const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
+        
+        // Add to booking blocks for rendering
+        bookingBlocks.push({
+          booking,
+          startMinutes,
+          durationMinutes,
+          leftPosition: left,
+          width,
+          status: statusType
+        });
+        
+        // Mark all occupied slots based on timeInterval (for empty cell detection)
         timeSlots.forEach(slot => {
           const [slotHour, slotMin] = slot.split(':').map(Number);
           const slotMinutes = slotHour * 60 + slotMin;
-          const nextSlotMinutes = slotMinutes + 30;
+          const nextSlotMinutes = slotMinutes + timeInterval;
           
-          // Check if this 30-minute slot overlaps with the booking
+          // Check if this slot overlaps with the booking
           if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
-            // Determine booking status
-            let statusType: StaffStatus['type'] = 'assigned';
-            if (booking.status === 'departed') statusType = 'in-progress';
-            else if (booking.status === 'done') statusType = 'done';
-            
             schedule[slot] = {
               type: statusType,
               booking
@@ -191,7 +229,7 @@ export function StaffScheduleCalendar({
         });
 
         // Calculate hours more accurately
-        totalHours += (endMinutes - startMinutes) / 60;
+        totalHours += durationMinutes / 60;
       });
 
       // Add leave periods
@@ -221,6 +259,7 @@ export function StaffScheduleCalendar({
         email: member.email,
         specialization: member.specialization,
         schedule,
+        bookingBlocks,
         totalHours,
         contractedHours: 8 // TODO: Get from staff profile when available
       };
@@ -546,26 +585,63 @@ export function StaffScheduleCalendar({
                 </div>
               </div>
 
-              {/* Time slot cells */}
-              {timeSlots.map(slot => {
-                const status = staffMember.schedule[slot];
-                return (
-                  <Tooltip key={`${staffMember.id}-${slot}-${status.type}`}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={`p-0.5 border-r last:border-r-0 h-16 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors flex-shrink-0 ${getStatusColor(status)}`}
-                        style={{ width: SLOT_WIDTH }}
-                        onClick={() => handleCellClick(staffMember.id, slot, status)}
-                      >
-                        {getStatusLabel(status)}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
-                      {renderTooltipContent(status, staffMember.name)}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
+              {/* Time slot cells - background grid for empty slots */}
+              <div className="relative flex">
+                {timeSlots.map(slot => {
+                  const status = staffMember.schedule[slot];
+                  return (
+                    <div
+                      key={slot}
+                      className={`
+                        border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
+                        ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : status.type === 'leave' ? getStatusColor(status) : 'bg-transparent'}
+                      `}
+                      style={{ 
+                        width: SLOT_WIDTH,
+                        height: '64px'
+                      }}
+                      onClick={() => (status.type === 'available' || status.type === 'leave') && handleCellClick(staffMember.id, slot, status)}
+                    >
+                      {status.type === 'leave' && (
+                        <div className="flex items-center justify-center h-full text-xs font-medium">
+                          {getStatusLabel(status)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                
+                {/* Booking blocks - absolutely positioned overlays */}
+                {staffMember.bookingBlocks.map((block, idx) => {
+                  const colorClass = getStatusColor({ type: block.status, booking: block.booking });
+                  return (
+                    <Tooltip key={`${block.booking.id}-${idx}`}>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={`
+                            absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
+                            ${colorClass}
+                          `}
+                          style={{ 
+                            left: `${block.leftPosition}px`,
+                            width: `${Math.max(block.width, 20)}px`, // Minimum 20px width
+                            height: '64px',
+                            zIndex: 1
+                          }}
+                          onClick={() => onViewBooking && onViewBooking(block.booking)}
+                        >
+                          <span className="truncate px-1">
+                            {getInitials(block.booking.clientName)}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
+                        {renderTooltipContent({ type: block.status, booking: block.booking }, staffMember.name)}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
