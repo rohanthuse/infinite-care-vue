@@ -13,24 +13,81 @@ interface CarerPersonalDetailsTabProps {
   carerId: string;
 }
 
+// Helper function to parse concatenated address string
+const parseAddress = (addressString: string | null | undefined) => {
+  if (!addressString || addressString.trim() === '') {
+    return {
+      house_no: '',
+      street: '',
+      city: '',
+      county: '',
+      pin_code: ''
+    };
+  }
+  
+  // Split by comma and trim whitespace
+  const parts = addressString.split(',').map(part => part.trim());
+  
+  // Map parts to fields (handle cases where some parts might be missing)
+  return {
+    house_no: parts[0] || '',
+    street: parts[1] || '',
+    city: parts[2] || '',
+    county: parts[3] || '',
+    pin_code: parts[4] || ''
+  };
+};
+
 export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = ({ carerId }) => {
   const { data: carer } = useCarerProfileById(carerId);
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    first_name: carer?.first_name || '',
-    last_name: carer?.last_name || '',
-    email: carer?.email || '',
-    phone: carer?.phone || '',
-    address: carer?.address || '',
-    date_of_birth: carer?.date_of_birth || '',
-    national_insurance_number: carer?.national_insurance_number || '',
-    emergency_contact_name: carer?.emergency_contact_name || '',
-    emergency_contact_phone: carer?.emergency_contact_phone || ''
+  
+  const [formData, setFormData] = useState(() => {
+    const parsedAddress = parseAddress(carer?.address);
+    
+    return {
+      first_name: carer?.first_name || '',
+      last_name: carer?.last_name || '',
+      email: carer?.email || '',
+      phone: carer?.phone || '',
+      ...parsedAddress,
+      date_of_birth: carer?.date_of_birth || '',
+      national_insurance_number: carer?.national_insurance_number || '',
+      emergency_contact_name: carer?.emergency_contact_name || '',
+      emergency_contact_phone: carer?.emergency_contact_phone || ''
+    };
   });
+
+  // Update form data when carer data changes
+  React.useEffect(() => {
+    if (carer) {
+      const parsedAddress = parseAddress(carer.address);
+      setFormData({
+        first_name: carer.first_name || '',
+        last_name: carer.last_name || '',
+        email: carer.email || '',
+        phone: carer.phone || '',
+        ...parsedAddress,
+        date_of_birth: carer.date_of_birth || '',
+        national_insurance_number: carer.national_insurance_number || '',
+        emergency_contact_name: carer.emergency_contact_name || '',
+        emergency_contact_phone: carer.emergency_contact_phone || ''
+      });
+    }
+  }, [carer]);
 
   const handleSave = async () => {
     try {
+      // Concatenate address fields into single string
+      const fullAddress = [
+        formData.house_no,
+        formData.street,
+        formData.city,
+        formData.county,
+        formData.pin_code
+      ].filter(part => part && part.trim()).join(', ');
+      
       const { error } = await supabase
         .from('staff')
         .update({
@@ -38,7 +95,7 @@ export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = (
           last_name: formData.last_name,
           email: formData.email,
           phone: formData.phone,
-          address: formData.address,
+          address: fullAddress,
           date_of_birth: formData.date_of_birth,
           national_insurance_number: formData.national_insurance_number,
           emergency_contact_name: formData.emergency_contact_name,
@@ -65,12 +122,14 @@ export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = (
   };
 
   const handleCancel = () => {
+    const parsedAddress = parseAddress(carer?.address);
+    
     setFormData({
       first_name: carer?.first_name || '',
       last_name: carer?.last_name || '',
       email: carer?.email || '',
       phone: carer?.phone || '',
-      address: carer?.address || '',
+      ...parsedAddress,
       date_of_birth: carer?.date_of_birth || '',
       national_insurance_number: carer?.national_insurance_number || '',
       emergency_contact_name: carer?.emergency_contact_name || '',
@@ -162,16 +221,95 @@ export const CarerPersonalDetailsTab: React.FC<CarerPersonalDetailsTabProps> = (
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <Label htmlFor="address">Address</Label>
+            {/* Address Information Section */}
+            <div className="md:col-span-2 space-y-3 border-t pt-4">
+              <div className="border-b pb-2">
+                <h3 className="text-sm font-semibold text-gray-900">Address Information</h3>
+              </div>
+              
               {isEditing ? (
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                />
+                <>
+                  {/* Edit Mode: Structured Fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="house_no">House No/Name</Label>
+                      <Input 
+                        id="house_no" 
+                        value={formData.house_no} 
+                        onChange={(e) => setFormData({...formData, house_no: e.target.value})}
+                        placeholder="e.g., 123 or Apartment 4B"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="street">Street</Label>
+                      <Input 
+                        id="street" 
+                        value={formData.street} 
+                        onChange={(e) => setFormData({...formData, street: e.target.value})}
+                        placeholder="e.g., High Street"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="city">City</Label>
+                      <Input 
+                        id="city" 
+                        value={formData.city} 
+                        onChange={(e) => setFormData({...formData, city: e.target.value})}
+                        placeholder="e.g., London"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="county">County</Label>
+                      <Input 
+                        id="county" 
+                        value={formData.county} 
+                        onChange={(e) => setFormData({...formData, county: e.target.value})}
+                        placeholder="e.g., Greater London"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="pin_code">Postcode</Label>
+                      <Input 
+                        id="pin_code" 
+                        value={formData.pin_code} 
+                        onChange={(e) => setFormData({...formData, pin_code: e.target.value})}
+                        placeholder="e.g., MK9 1AA"
+                      />
+                    </div>
+                  </div>
+                </>
               ) : (
-                <p className="text-sm text-muted-foreground p-2">{carer?.address || 'Not provided'}</p>
+                <>
+                  {/* View Mode: Display Structured Address */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">House No/Name</Label>
+                      <p className="text-sm p-2">{formData.house_no || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Street</Label>
+                      <p className="text-sm p-2">{formData.street || 'Not provided'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">City</Label>
+                      <p className="text-sm p-2">{formData.city || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">County</Label>
+                      <p className="text-sm p-2">{formData.county || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Postcode</Label>
+                      <p className="text-sm p-2">{formData.pin_code || 'Not provided'}</p>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 
