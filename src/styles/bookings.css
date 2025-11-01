@@ -403,9 +403,10 @@
 
 /* Ensure the time grid scrolls horizontally without content hidden */
 .page-bookings .unified-schedule-container .time-grid {
-  overflow-x: auto;
+  overflow: auto;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   position: relative;
+  padding-right: 320px; /* Padding for sidebar space */
 }
 
 /* Prevent the inner grid from shrinking */
