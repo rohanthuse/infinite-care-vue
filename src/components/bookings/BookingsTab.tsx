@@ -431,7 +431,25 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <BookingReport bookings={filteredBookings} />
         </TabsContent>
 
-        <TabsContent value="unified-schedule" className="w-full max-h-[calc(100vh-280px)] overflow-auto pr-4 md:pr-20 lg:pr-24">
+        <TabsContent value="unified-schedule" className="space-y-4">
+          <DateNavigation 
+            currentDate={selectedDate} 
+            onDateChange={setSelectedDate}
+            viewType={viewType}
+            onViewTypeChange={setViewType}
+          />
+          
+          <BookingFilters
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            selectedClientId={selectedClientId}
+            onClientChange={setSelectedClientId}
+            selectedCarerId={selectedCarerId}
+            onCarerChange={setSelectedCarerId}
+            clients={clients}
+            carers={carers}
+          />
+
           <UnifiedScheduleView
             date={selectedDate}
             bookings={filteredBookings}
@@ -442,11 +460,6 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             selectedCarer={selectedCarerId}
             selectedStatus={statusFilter}
             viewType={viewType}
-            onViewTypeChange={setViewType}
-            onClientChange={setSelectedClientId}
-            onCarerChange={setSelectedCarerId}
-            onStatusChange={setStatusFilter}
-            onDateChange={setSelectedDate}
             onViewBooking={handleViewBooking}
             onCreateBooking={(clientId, staffId, timeSlot) => {
               handleContextMenuBooking(selectedDate, timeSlot, clientId, staffId);
