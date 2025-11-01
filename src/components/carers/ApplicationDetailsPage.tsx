@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, MailIcon, MapPin, Phone, XCircle, Download, Clock, Briefcase, ChevronLeft } from "lucide-react";
+import { CheckCircle, MailIcon, MapPin, Phone, XCircle, Download, Clock, Briefcase } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BackButton } from "@/components/navigation/BackButton";
+import { BreadcrumbNavigation } from "@/components/navigation/BreadcrumbNavigation";
+import { useTenant } from "@/contexts/TenantContext";
 
 const mockRecruitmentData = [
   {
@@ -92,11 +95,31 @@ const mockDocuments = [
 const ApplicationDetailsPage = () => {
   const { candidateId, id, branchName } = useParams();
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   const { toast } = useToast();
   const [adminNotes, setAdminNotes] = useState("");
   const [applicationStatus, setApplicationStatus] = useState("pending");
   
   const candidate = mockRecruitmentData.find(c => c.id === candidateId);
+
+  const handleGoBack = () => {
+    const path = tenantSlug 
+      ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}`
+      : `/branch-dashboard/${id}/${branchName}`;
+    navigate(path, { 
+      state: { 
+        activeTab: 'carers',
+        carersSubTab: 'recruitment' 
+      } 
+    });
+  };
+
+  const breadcrumbItems = [
+    { label: 'Dashboard', onClick: handleGoBack },
+    { label: 'Carers', onClick: handleGoBack },
+    { label: 'Recruitment', onClick: handleGoBack },
+    { label: candidate?.name || 'Application Details' }
+  ];
   
   useEffect(() => {
     if (candidate) {
@@ -115,11 +138,8 @@ const ApplicationDetailsPage = () => {
     return (
       <div className="p-6">
         <div className="flex items-center mb-6">
-          <Button variant="outline" onClick={() => navigate(-1)} className="mr-2">
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">Candidate Not Found</h1>
+          <BackButton onClick={handleGoBack} label="Back to Recruitment" />
+          <h1 className="text-2xl font-bold ml-4">Candidate Not Found</h1>
         </div>
         <p>The candidate you're looking for could not be found. ID: {candidateId}</p>
       </div>
@@ -156,34 +176,17 @@ const ApplicationDetailsPage = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(`/branch-dashboard/${id}/${branchName}`, { 
-              state: { 
-                activeTab: 'carers',
-                carersSubTab: 'recruitment' 
-              } 
-            })} 
-            className="mr-4"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back to Recruitment
-          </Button>
-          <div>
-            <div className="text-sm breadcrumbs">
-              <ul className="flex space-x-2">
-                <li>Dashboard</li>
-                <span className="mx-1">›</span>
-                <li>Recruitment</li>
-                <span className="mx-1">›</span>
-                <li>Application Details</li>
-              </ul>
-            </div>
-            <h1 className="text-2xl font-bold mt-1">
-              Application Details for {candidate.name}
-            </h1>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <BackButton 
+              onClick={handleGoBack}
+              label="Back to Recruitment"
+            />
+            <BreadcrumbNavigation items={breadcrumbItems} />
           </div>
+          <h1 className="text-2xl font-bold">
+            Application Details for {candidate.name}
+          </h1>
         </div>
       </div>
 

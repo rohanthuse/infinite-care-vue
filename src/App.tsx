@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { TaskProvider } from "@/contexts/TaskContext";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import { NavigationGuard } from "@/components/NavigationGuard";
@@ -101,13 +101,14 @@ const AppContent = () => {
   return (
     <AuthErrorBoundary error={error}>
       <BrowserRouter>
-        <TaskProvider>
-          <ErrorBoundary fallback={<RoutingErrorFallback />}>
-            <NavigationGuard />
-            <PWAInstallPrompt />
-            <OfflineIndicator />
-            <PWAUpdatePrompt />
-            <Routes>
+        <NavigationProvider>
+          <TaskProvider>
+            <ErrorBoundary fallback={<RoutingErrorFallback />}>
+              <NavigationGuard />
+              <PWAInstallPrompt />
+              <OfflineIndicator />
+              <PWAUpdatePrompt />
+              <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
               <Route path="/demo-request" element={<DemoRequest />} />
@@ -250,6 +251,7 @@ const AppContent = () => {
             </Routes>
           </ErrorBoundary>
         </TaskProvider>
+      </NavigationProvider>
       </BrowserRouter>
     </AuthErrorBoundary>
   );

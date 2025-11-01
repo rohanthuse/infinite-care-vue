@@ -4,8 +4,9 @@ import { flushSync } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { Form } from '@/types/form-builder';
+import { BackButton } from '@/components/navigation/BackButton';
 
 interface FormBuilderNavBarProps {
   form: Form;
@@ -43,9 +44,11 @@ export const FormBuilderNavBar: React.FC<FormBuilderNavBarProps> = ({
   return (
     <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm border">
       <div className="flex items-center space-x-2">
-        <Button variant="outline" size="sm" onClick={handleBack}>
-          <ChevronLeft className="h-4 w-4 mr-1" /> Back
-        </Button>
+        <BackButton 
+          onClick={handleBack}
+          label="Back"
+          variant="outline"
+        />
         <Button variant="ghost" size="sm" onClick={handleBack}>
           <Home className="h-4 w-4 mr-1" /> Dashboard
         </Button>

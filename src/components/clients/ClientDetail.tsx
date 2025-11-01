@@ -9,6 +9,7 @@ import { generatePDF } from "@/utils/pdfGenerator";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { useClientSuspensions } from "@/hooks/useClientSuspensions";
+import { BackButton } from "@/components/navigation/BackButton";
 
 import { ClientSideTabNav } from "./ClientSideTabNav";
 import { ClientOverviewTab } from "./tabs/ClientOverviewTab";
@@ -159,6 +160,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
       <div className="bg-card rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center space-x-3">
+            <BackButton 
+              onClick={onClose}
+              label="Back"
+              variant="ghost"
+            />
             <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
               {realClientData?.avatar_initials || client.avatar}
             </div>

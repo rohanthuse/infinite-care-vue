@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
-import { ArrowLeft, User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star, Share2 } from "lucide-react";
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, CheckCircle, Clock, Users, FileText, BarChart3, Award, Star, Share2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BackButton } from "@/components/navigation/BackButton";
 import { useCarerProfileById } from "@/hooks/useCarerProfile";
 import { useCarerBookings } from "@/hooks/useCarerBookings";
 import { useCarerDocuments } from "@/hooks/useCarerDocuments";
@@ -152,9 +153,10 @@ const CarerProfilePage: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={handleGoBack}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <BackButton 
+              onClick={handleGoBack}
+              label="Back to Carers"
+            />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Carer Profile</h1>
               <p className="text-gray-600">View and manage carer information</p>
