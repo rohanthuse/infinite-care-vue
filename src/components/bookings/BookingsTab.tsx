@@ -431,7 +431,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <BookingReport bookings={filteredBookings} />
         </TabsContent>
 
-        <TabsContent value="unified-schedule" className="w-full">
+        <TabsContent value="unified-schedule" className="w-full max-h-[calc(100vh-280px)] overflow-auto">
           <UnifiedScheduleView
             date={selectedDate}
             bookings={filteredBookings}
