@@ -1,10 +1,13 @@
-
 import React from "react";
 import { Phone, Mail, MapPin, Clock, CalendarRange, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
 import { useBranchInfo } from "@/hooks/useBranchInfo";
+import { BackButton } from "@/components/navigation/BackButton";
+import { BreadcrumbNavigation } from "@/components/navigation/BreadcrumbNavigation";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useNavigate } from "react-router-dom";
 
 interface BranchInfoHeaderProps {
   branchName: string;
@@ -19,6 +22,28 @@ export const BranchInfoHeader = ({
 }: BranchInfoHeaderProps) => {
   const { user } = useAuthSafe();
   const { data: branchInfo, isLoading } = useBranchInfo(branchId);
+  const { data: userRole } = useUserRole();
+  const navigate = useNavigate();
+  
+  // Determine back destination based on user role
+  const handleBack = () => {
+    if (userRole?.role === 'super_admin') {
+      navigate('/system-dashboard/tenants');
+    } else {
+      navigate('/branch-selection');
+    }
+  };
+  
+  // Create breadcrumb items
+  const breadcrumbItems = [
+    {
+      label: userRole?.role === 'super_admin' ? 'All Tenants' : 'Dashboard',
+      onClick: handleBack
+    },
+    {
+      label: branchName
+    }
+  ];
   
   // If data is still loading, show loading state or use fallbacks
   if (isLoading || !branchInfo) {
@@ -33,6 +58,16 @@ export const BranchInfoHeader = ({
   }
 
   return <div className="bg-card rounded-lg shadow-sm border border-border p-4 md:p-6 mb-6">
+      {/* Back Button and Breadcrumbs */}
+      <div className="flex items-center gap-4 mb-4">
+        <BackButton 
+          onClick={handleBack}
+          label={userRole?.role === 'super_admin' ? 'Back to All Branches' : 'Back'}
+          variant="outline"
+        />
+        <BreadcrumbNavigation items={breadcrumbItems} />
+      </div>
+      
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">

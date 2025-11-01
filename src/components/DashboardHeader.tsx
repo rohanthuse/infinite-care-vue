@@ -162,7 +162,13 @@ export function DashboardHeader() {
 
   // Handle navigation back to admin dashboard
   const handleLogoClick = () => {
-    // Navigate to appropriate admin dashboard based on tenant context
+    // Super admins go to system dashboard with tenants view
+    if (userRole?.role === 'super_admin') {
+      navigate('/system-dashboard/tenants');
+      return;
+    }
+    
+    // Other roles navigate to appropriate admin dashboard based on tenant context
     const adminPath = tenantSlug ? `/${tenantSlug}/dashboard` : '/dashboard';
     navigate(adminPath);
   };
