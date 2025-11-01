@@ -537,9 +537,9 @@ export function ClientScheduleCalendar({
             }}
           />
         ) : (
-          <div className="border rounded-lg overflow-x-auto">
-            <div className="text-xs text-muted-foreground mb-2 px-1">
-              ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'}
+          <div className="border rounded-lg overflow-x-auto overflow-y-auto max-h-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="text-xs text-muted-foreground mb-2 px-1 sticky left-0 bg-background z-20">
+              ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
             </div>
             <div className="time-grid-inner" style={{ width: TOTAL_WIDTH }}>
               {/* Header row */}
@@ -618,10 +618,11 @@ export function ClientScheduleCalendar({
                         <Tooltip key={booking.id}>
                           <TooltipTrigger asChild>
                             <div
-                              className="text-xs p-1 rounded cursor-pointer truncate bg-blue-100 border-blue-300 text-blue-800 border"
+                              className="text-xs p-2 rounded cursor-pointer bg-blue-100 border-blue-300 text-blue-800 border"
                               onClick={() => onViewBooking?.(booking)}
                             >
-                              {booking.startTime} - {getInitials(booking.carerName)}
+                              <div className="font-semibold">{booking.carerName}</div>
+                              <div className="text-[10px] opacity-75">{booking.startTime} - {booking.endTime}</div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
@@ -678,9 +679,14 @@ export function ClientScheduleCalendar({
                               }}
                               onClick={() => onViewBooking && onViewBooking(block.booking)}
                             >
-                              <span className="truncate px-1">
-                                {getInitials(block.booking.carerName)}
-                              </span>
+                              <div className="flex flex-col items-center justify-center px-1 w-full">
+                                <div className="font-semibold truncate w-full text-center">
+                                  {block.booking.carerName}
+                                </div>
+                                <div className="text-[10px] opacity-75">
+                                  {block.booking.startTime}-{block.booking.endTime}
+                                </div>
+                              </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
