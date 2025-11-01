@@ -374,13 +374,11 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="unified-schedule">Unified Schedule</TabsTrigger>
-          <TabsTrigger value="staff-schedule">Staff Only</TabsTrigger>
-          <TabsTrigger value="client-schedule">Client Only</TabsTrigger>
         </TabsList>
         
         <TabsContent value="calendar" className="space-y-4">
@@ -454,49 +452,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           />
         </TabsContent>
 
-        <TabsContent value="staff-schedule" className="w-full min-w-0">
-          <StaffScheduleCalendar
-            date={selectedDate}
-            bookings={filteredBookings}
-            branchId={branchId}
-            onViewBooking={handleViewBooking}
-            onCreateBooking={(staffId, timeSlot) => {
-              // Create new booking with pre-filled staff and time (preserve exact 30-minute slot)
-              handleContextMenuBooking(selectedDate, timeSlot, undefined, staffId);
-            }}
-            onDateChange={setSelectedDate}
-            clients={clients}
-            carers={carers}
-            selectedClient={selectedClientId}
-            selectedCarer={selectedCarerId}
-            selectedStatus={statusFilter}
-            onClientChange={setSelectedClientId}
-            onCarerChange={setSelectedCarerId}
-            onStatusChange={setStatusFilter}
-          />
-        </TabsContent>
 
-        <TabsContent value="client-schedule" className="w-full min-w-0">
-          <ClientScheduleCalendar
-            date={selectedDate}
-            bookings={filteredBookings}
-            branchId={branchId}
-            onViewBooking={handleViewBooking}
-            onCreateBooking={(clientId, timeSlot) => {
-              // Create new booking with pre-filled client and time (preserve exact 30-minute slot)
-              handleContextMenuBooking(selectedDate, timeSlot, clientId, undefined);
-            }}
-            onDateChange={setSelectedDate}
-            clients={clients}
-            carers={carers}
-            selectedClient={selectedClientId}
-            selectedCarer={selectedCarerId}
-            selectedStatus={statusFilter}
-            onClientChange={setSelectedClientId}
-            onCarerChange={setSelectedCarerId}
-            onStatusChange={setStatusFilter}
-          />
-        </TabsContent>
       </Tabs>
 
       <NewBookingDialog
