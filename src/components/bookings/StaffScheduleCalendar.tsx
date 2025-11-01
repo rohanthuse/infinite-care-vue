@@ -32,6 +32,7 @@ interface StaffScheduleCalendarProps {
   onCarerChange?: (carerId: string) => void;
   onStatusChange?: (status: string) => void;
   hideControls?: boolean;
+  timeInterval?: 30 | 60;
 }
 
 interface StaffStatus {
@@ -66,6 +67,7 @@ export function StaffScheduleCalendar({
   onCarerChange,
   onStatusChange,
   hideControls = false,
+  timeInterval = 30,
 }: StaffScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -103,9 +105,9 @@ export function StaffScheduleCalendar({
 
   // Layout constants for consistent width
   const LEFT_COL_WIDTH = 200; // Staff info column width
-  const SLOT_WIDTH = 32; // Each 30-minute slot width
-  const TOTAL_SLOTS = 48; // 24 hours * 2 (30-minute slots)
-  const TOTAL_WIDTH = LEFT_COL_WIDTH + (SLOT_WIDTH * TOTAL_SLOTS); // 200 + (32 * 48) = 1736px
+  const SLOT_WIDTH = timeInterval === 60 ? 64 : 32; // 1-hour or 30-minute slot width
+  const TOTAL_SLOTS = timeInterval === 60 ? 24 : 48; // 24 hours (1hr) or 48 (30min)
+  const TOTAL_WIDTH = LEFT_COL_WIDTH + (SLOT_WIDTH * TOTAL_SLOTS);
 
   // Fetch staff and leave data
   const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
@@ -123,16 +125,24 @@ export function StaffScheduleCalendar({
     return fullName.split(' ').map(n => n[0] || '').join('').toUpperCase();
   };
 
-  // Generate 30-minute time slots
+  // Generate time slots based on interval
   const timeSlots = useMemo(() => {
     const slots = [];
-    for (let i = 0; i < 24; i++) {
-      const hour = i.toString().padStart(2, '0');
-      slots.push(`${hour}:00`);
-      slots.push(`${hour}:30`);
+    if (timeInterval === 60) {
+      // 1-hour intervals: 00:00, 01:00, 02:00, ... 23:00
+      for (let i = 0; i < 24; i++) {
+        slots.push(`${i.toString().padStart(2, '0')}:00`);
+      }
+    } else {
+      // 30-minute intervals: 00:00, 00:30, 01:00, 01:30, ...
+      for (let i = 0; i < 24; i++) {
+        const hour = i.toString().padStart(2, '0');
+        slots.push(`${hour}:00`);
+        slots.push(`${hour}:30`);
+      }
     }
     return slots;
-  }, []);
+  }, [timeInterval]);
 
   // Process staff schedule data
   const staffSchedule = useMemo(() => {

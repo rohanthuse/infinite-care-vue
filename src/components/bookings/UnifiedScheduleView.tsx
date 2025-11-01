@@ -86,6 +86,7 @@ export function UnifiedScheduleView({
               onViewBooking={onViewBooking}
               onCreateBooking={(clientId, timeSlot) => onCreateBooking(clientId, undefined, timeSlot)}
               hideControls={true}
+              timeInterval={60}
             />
           </div>
         </div>
@@ -113,6 +114,7 @@ export function UnifiedScheduleView({
               onViewBooking={onViewBooking}
               onCreateBooking={(staffId, timeSlot) => onCreateBooking(undefined, staffId, timeSlot)}
               hideControls={true}
+              timeInterval={60}
             />
           </div>
         </div>
