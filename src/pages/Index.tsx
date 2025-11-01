@@ -19,6 +19,15 @@ const Index = () => {
 
   // Background redirect (non-blocking) - runs after page renders
   useEffect(() => {
+    const currentPath = window.location.pathname;
+    
+    // CRITICAL: Only redirect if user is actually on the Index page (/)
+    // This prevents interference with TenantLogin navigation
+    if (currentPath !== '/') {
+      console.log('[Index] User not on Index page, skipping redirect logic');
+      return;
+    }
+    
     // Only redirect if auth is complete AND user is authenticated
     if (!authLoading && !roleLoading && user && userRole && !hasRedirected.current) {
       hasRedirected.current = true;
