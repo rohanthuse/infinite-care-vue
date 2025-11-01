@@ -19,9 +19,10 @@ const Index = () => {
   
   // Check if we're in the middle of a navigation from login
   const isNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
+  const targetDashboard = sessionStorage.getItem('target_dashboard');
   
-  // If navigating, don't render landing page - just show minimal loading
-  if (isNavigating) {
+  // If navigating with a target, show minimal loading and let interceptor handle it
+  if (isNavigating && targetDashboard) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
         <div className="text-center">

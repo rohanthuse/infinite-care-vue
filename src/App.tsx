@@ -51,6 +51,7 @@ import ThirdPartyWorkspace from "./pages/ThirdPartyWorkspace";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
+import { LoginNavigationInterceptor } from "@/components/LoginNavigationInterceptor";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -101,6 +102,7 @@ const AppContent = () => {
   return (
     <AuthErrorBoundary error={error}>
       <BrowserRouter>
+        <LoginNavigationInterceptor />
         <NavigationProvider>
           <TaskProvider>
             <ErrorBoundary fallback={<RoutingErrorFallback />}>

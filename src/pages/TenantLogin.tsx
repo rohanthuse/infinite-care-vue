@@ -55,6 +55,9 @@ const TenantLogin = () => {
 
     setIsSubmitting(true);
 
+    // Set navigation intent BEFORE auth to ensure it's ready for routing
+    sessionStorage.setItem('navigating_to_dashboard', 'true');
+
     try {
       // Authenticate with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -127,20 +130,24 @@ const TenantLogin = () => {
           title: 'Welcome, Super Administrator!',
           description: `Accessing ${organization.name} organization dashboard.`,
         });
-        sessionStorage.setItem('navigating_to_dashboard', 'true');
-        navigate(`/${tenantSlug}/dashboard`);
+        const targetPath = `/${tenantSlug}/dashboard`;
+        sessionStorage.setItem('target_dashboard', targetPath);
+        navigate(targetPath, { replace: true });
       } else if (memberData.role === 'owner' || memberData.role === 'admin') {
         // Organization admin - go to tenant dashboard which will show old-style admin interface
-        sessionStorage.setItem('navigating_to_dashboard', 'true');
-        navigate(`/${tenantSlug}/dashboard`);
+        const targetPath = `/${tenantSlug}/dashboard`;
+        sessionStorage.setItem('target_dashboard', targetPath);
+        navigate(targetPath, { replace: true });
       } else if (memberData.role === 'branch_admin') {
         // Branch admin - redirect to branch selection or specific branch
-        sessionStorage.setItem('navigating_to_dashboard', 'true');
-        navigate(`/${tenantSlug}/branches`);
+        const targetPath = `/${tenantSlug}/branches`;
+        sessionStorage.setItem('target_dashboard', targetPath);
+        navigate(targetPath, { replace: true });
       } else {
         // Regular member - go to regular tenant dashboard
-        sessionStorage.setItem('navigating_to_dashboard', 'true');
-        navigate(`/${tenantSlug}/dashboard`);
+        const targetPath = `/${tenantSlug}/dashboard`;
+        sessionStorage.setItem('target_dashboard', targetPath);
+        navigate(targetPath, { replace: true });
       }
     } catch (error: any) {
       console.error('Login error:', error);
