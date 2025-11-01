@@ -2,10 +2,13 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Download } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, PieChart, Pie, Cell } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBranchChartData } from "@/data/hooks/useBranchChartData";
+import { useQueryClient } from "@tanstack/react-query";
+import { ChartExportMenu } from "./ChartExportMenu";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardChartsSectionProps {
   branchId: string | undefined;
@@ -15,6 +18,28 @@ const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#6b7280", "#8b5cf6"
 
 export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ branchId }) => {
   const { data: chartData, isLoading: isLoadingChartData } = useBranchChartData(branchId);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['branch-chart-data', branchId] });
+      toast({
+        title: "Data refreshed",
+        description: "Chart data has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh chart data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const totalClients = chartData?.clientDistribution.reduce((acc, cur) => acc + cur.value, 0) || 0;
   const statusPercentages = chartData?.clientDistribution.map(item => ({
@@ -33,12 +58,19 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
               <CardDescription>Appointments, visits and revenue</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <RefreshCw className="h-4 w-4" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                onClick={handleRefresh}
+                disabled={isRefreshing || isLoadingChartData}
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Download className="h-4 w-4" />
-              </Button>
+              <ChartExportMenu 
+                chartData={chartData?.weeklyStats || []}
+                chartTitle="Weekly Statistics"
+              />
             </div>
           </div>
         </CardHeader>

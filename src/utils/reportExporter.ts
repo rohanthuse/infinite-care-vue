@@ -2,6 +2,7 @@
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import type { WeeklyStat } from "@/data/hooks/useBranchChartData";
 
 export interface ExportOptions {
   title: string;
@@ -170,5 +171,37 @@ export class ReportExporter {
     printWindow.focus();
     printWindow.print();
     printWindow.close();
+  }
+
+  static exportChartData(options: {
+    title: string;
+    weeklyStats: WeeklyStat[];
+    fileName?: string;
+    branchName?: string;
+    format: 'pdf' | 'csv';
+  }) {
+    const { title, weeklyStats, fileName, branchName, format } = options;
+    
+    const columns = ['Day', 'Visits', 'Bookings', 'Revenue (£)'];
+    const data = weeklyStats.map(stat => ({
+      Day: stat.day,
+      Visits: stat.visits,
+      Bookings: stat.bookings,
+      'Revenue (£)': `£${stat.revenue.toFixed(2)}`
+    }));
+
+    const exportOptions: ExportOptions = {
+      title,
+      data,
+      columns,
+      fileName,
+      branchName
+    };
+
+    if (format === 'pdf') {
+      this.exportToPDF(exportOptions);
+    } else {
+      this.exportToCSV(exportOptions);
+    }
   }
 }
