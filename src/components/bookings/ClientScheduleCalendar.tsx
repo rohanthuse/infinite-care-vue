@@ -537,11 +537,11 @@ export function ClientScheduleCalendar({
             }}
           />
         ) : (
-          <div className="border rounded-lg overflow-x-auto">
+          <div className="border rounded-lg overflow-x-auto time-grid">
             <div className="text-xs text-muted-foreground mb-2 px-1">
               ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'}
             </div>
-            <div style={{ width: TOTAL_WIDTH }}>
+            <div className="time-grid-inner" style={{ width: TOTAL_WIDTH }}>
               {/* Header row */}
               <div className="bg-muted/50 border-b flex" style={{ width: TOTAL_WIDTH }}>
                 <div 

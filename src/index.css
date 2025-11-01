@@ -34,6 +34,9 @@
     --ring: 195 74% 49%;
 
     --radius: 0.75rem;
+    
+    /* Right sidebar width for layout calculations */
+    --right-rail-w: 320px; /* Matches w-80 (expanded sidebar) */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;

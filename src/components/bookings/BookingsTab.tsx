@@ -291,7 +291,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-bookings">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">Bookings</h2>
