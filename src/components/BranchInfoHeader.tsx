@@ -8,6 +8,7 @@ import { BackButton } from "@/components/navigation/BackButton";
 import { BreadcrumbNavigation } from "@/components/navigation/BreadcrumbNavigation";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface BranchInfoHeaderProps {
   branchName: string;
@@ -24,11 +25,17 @@ export const BranchInfoHeader = ({
   const { data: branchInfo, isLoading } = useBranchInfo(branchId);
   const { data: userRole } = useUserRole();
   const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
   
   // Determine back destination based on user role
   const handleBack = () => {
     if (userRole?.role === 'super_admin') {
-      navigate('/dashboard');
+      // Navigate to tenant-specific dashboard
+      if (tenantSlug) {
+        navigate(`/${tenantSlug}/dashboard`);
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       navigate('/branch-selection');
     }
