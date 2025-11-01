@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { format, isToday, startOfDay, addHours, isSameHour } from "date-fns";
+import { format, isToday, startOfDay, addHours, isSameHour, startOfWeek, addDays } from "date-fns";
 import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { BookingFilters } from "./BookingFilters";
 import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookingsMonthView } from "./BookingsMonthView";
 
 interface StaffScheduleCalendarProps {
   date: Date;
@@ -74,6 +75,7 @@ export function StaffScheduleCalendar({
   selectedClient,
   selectedCarer,
   selectedStatus,
+  viewType = "daily",
   onClientChange,
   onCarerChange,
   onStatusChange,
@@ -116,8 +118,8 @@ export function StaffScheduleCalendar({
 
   // Layout constants for consistent width
   const LEFT_COL_WIDTH = 200; // Staff info column width
-  const SLOT_WIDTH = timeInterval === 60 ? 64 : 32; // 1-hour or 30-minute slot width
-  const TOTAL_SLOTS = timeInterval === 60 ? 24 : 48; // 24 hours (1hr) or 48 (30min)
+  const SLOT_WIDTH = viewType === 'weekly' ? 120 : (timeInterval === 60 ? 64 : 32);
+  const TOTAL_SLOTS = viewType === 'weekly' ? 7 : (timeInterval === 60 ? 24 : 48);
   const TOTAL_WIDTH = LEFT_COL_WIDTH + (SLOT_WIDTH * TOTAL_SLOTS);
 
   // Fetch staff and leave data
@@ -136,16 +138,34 @@ export function StaffScheduleCalendar({
     return fullName.split(' ').map(n => n[0] || '').join('').toUpperCase();
   };
 
-  // Generate time slots based on interval
+  // Generate column headers based on view type
+  const columnHeaders = useMemo(() => {
+    if (viewType === 'weekly') {
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+      return Array.from({ length: 7 }, (_, i) => {
+        const day = addDays(weekStart, i);
+        return {
+          label: format(day, 'EEE d'),
+          fullLabel: format(day, 'EEEE, MMM d'),
+          date: day,
+          dateString: format(day, 'yyyy-MM-dd')
+        };
+      });
+    } else if (viewType === 'monthly') {
+      return [];
+    } else {
+      return [];
+    }
+  }, [viewType, date]);
+
+  // Generate time slots based on interval (for daily view)
   const timeSlots = useMemo(() => {
     const slots = [];
     if (timeInterval === 60) {
-      // 1-hour intervals: 00:00, 01:00, 02:00, ... 23:00
       for (let i = 0; i < 24; i++) {
         slots.push(`${i.toString().padStart(2, '0')}:00`);
       }
     } else {
-      // 30-minute intervals: 00:00, 00:30, 01:00, 01:30, ...
       for (let i = 0; i < 24; i++) {
         const hour = i.toString().padStart(2, '0');
         slots.push(`${hour}:00`);
@@ -170,131 +190,166 @@ export function StaffScheduleCalendar({
 
   // Process staff schedule data
   const staffSchedule = useMemo(() => {
-    const scheduleData: StaffScheduleRow[] = staff.map(member => {
-      const schedule: Record<string, StaffStatus> = {};
-      const bookingBlocks: BookingBlock[] = [];
-      let totalHours = 0;
+    if (viewType === 'weekly') {
+      // Weekly view data structure
+      const scheduleData = staff.map(member => {
+        const weekBookings: Record<string, Booking[]> = {};
+        const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+        
+        // Initialize each weekday
+        for (let i = 0; i < 7; i++) {
+          const dayDate = format(addDays(weekStart, i), 'yyyy-MM-dd');
+          weekBookings[dayDate] = [];
+        }
+        
+        // Group bookings by day
+        const staffBookings = bookings.filter(b => b.carerId === member.id);
+        staffBookings.forEach(booking => {
+          if (weekBookings[booking.date]) {
+            weekBookings[booking.date].push(booking);
+          }
+        });
+        
+        // Calculate total hours for the week
+        const totalWeekHours = staffBookings.reduce((sum, b) => {
+          const [startH, startM] = b.startTime.split(':').map(Number);
+          const [endH, endM] = b.endTime.split(':').map(Number);
+          const duration = (endH * 60 + endM - startH * 60 - startM) / 60;
+          return sum + duration;
+        }, 0);
+        
+        return {
+          id: member.id,
+          name: `${member.first_name} ${member.last_name}`,
+          email: member.email,
+          specialization: member.specialization,
+          weekBookings,
+          totalWeekHours,
+          contractedHours: 40
+        };
+      });
       
-      // Initialize all time slots as available
-      timeSlots.forEach(slot => {
-        schedule[slot] = { type: 'available' };
-      });
-
-      // Add bookings for this staff member on this date
-      const dayBookings = bookings.filter(booking => 
-        booking.carerId === member.id && 
-        booking.date === format(date, 'yyyy-MM-dd')
-      );
-
-      dayBookings.forEach(booking => {
-        // Get exact start and end times including minutes
-        const [startHour, startMin] = booking.startTime.split(':').map(Number);
-        const [endHour, endMin] = booking.endTime.split(':').map(Number);
-        
-        // Calculate which slots this booking occupies
-        const startMinutes = startHour * 60 + startMin;
-        const endMinutes = endHour * 60 + endMin;
-        const durationMinutes = endMinutes - startMinutes;
-        
-        // Determine booking status
-        let statusType: StaffStatus['type'] = 'assigned';
-        if (booking.status === 'departed') statusType = 'in-progress';
-        else if (booking.status === 'done') statusType = 'done';
-        
-        // Calculate position for continuous booking block
-        const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
-        
-        // Add to booking blocks for rendering
-        bookingBlocks.push({
-          booking,
-          startMinutes,
-          durationMinutes,
-          leftPosition: left,
-          width,
-          status: statusType
-        });
-        
-        // Mark all occupied slots based on timeInterval (for empty cell detection)
-        timeSlots.forEach(slot => {
-          const [slotHour, slotMin] = slot.split(':').map(Number);
-          const slotMinutes = slotHour * 60 + slotMin;
-          const nextSlotMinutes = slotMinutes + timeInterval;
-          
-          // Check if this slot overlaps with the booking
-          if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
-            schedule[slot] = {
-              type: statusType,
-              booking
-            };
-          }
-        });
-
-        // Calculate hours more accurately
-        totalHours += durationMinutes / 60;
-      });
-
-      // Add leave periods
-      const todayString = format(date, 'yyyy-MM-dd');
-      const todayLeave = leaveRequests.find(leave => 
-        leave.staff_id === member.id &&
-        leave.status === 'approved' &&
-        leave.start_date <= todayString &&
-        leave.end_date >= todayString
-      );
-
-      if (todayLeave) {
-        // Mark entire day as leave
-        timeSlots.forEach(slot => {
-          if (schedule[slot].type === 'available') {
-            schedule[slot] = {
-              type: 'leave',
-              leaveType: todayLeave.leave_type
-            };
-          }
-        });
+      // Apply filters
+      let filteredData = scheduleData;
+      if (searchTerm) {
+        filteredData = filteredData.filter(staff => 
+          staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (staff.specialization && staff.specialization.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
       }
+      if (!filters.showRuns) {
+        filteredData = filteredData.filter(staff => staff.totalWeekHours > 0);
+      }
+      return filteredData;
+    } else {
+      // Daily view logic
+      const scheduleData: StaffScheduleRow[] = staff.map(member => {
+        const schedule: Record<string, StaffStatus> = {};
+        const bookingBlocks: BookingBlock[] = [];
+        let totalHours = 0;
+        
+        // Initialize all time slots as available
+        timeSlots.forEach(slot => {
+          schedule[slot] = { type: 'available' };
+        });
 
-      return {
-        id: member.id,
-        name: `${member.first_name} ${member.last_name}`,
-        email: member.email,
-        specialization: member.specialization,
-        schedule,
-        bookingBlocks,
-        totalHours,
-        contractedHours: 8 // TODO: Get from staff profile when available
-      };
-    });
+        // Add bookings for this staff member on this date
+        const dayBookings = bookings.filter(booking => 
+          booking.carerId === member.id && 
+          booking.date === format(date, 'yyyy-MM-dd')
+        );
 
-    // Apply filters
-    let filteredData = scheduleData;
+        dayBookings.forEach(booking => {
+          const [startHour, startMin] = booking.startTime.split(':').map(Number);
+          const [endHour, endMin] = booking.endTime.split(':').map(Number);
+          
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+          const durationMinutes = endMinutes - startMinutes;
+          
+          let statusType: StaffStatus['type'] = 'assigned';
+          if (booking.status === 'departed') statusType = 'in-progress';
+          else if (booking.status === 'done') statusType = 'done';
+          
+          const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
+          
+          bookingBlocks.push({
+            booking,
+            startMinutes,
+            durationMinutes,
+            leftPosition: left,
+            width,
+            status: statusType
+          });
+          
+          timeSlots.forEach(slot => {
+            const [slotHour, slotMin] = slot.split(':').map(Number);
+            const slotMinutes = slotHour * 60 + slotMin;
+            const nextSlotMinutes = slotMinutes + timeInterval;
+            
+            if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
+              schedule[slot] = {
+                type: statusType,
+                booking
+              };
+            }
+          });
 
-    // Filter based on search term
-    if (searchTerm) {
-      filteredData = filteredData.filter(staff => 
-        staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (staff.specialization && staff.specialization.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+          totalHours += durationMinutes / 60;
+        });
+
+        // Add leave periods
+        const todayString = format(date, 'yyyy-MM-dd');
+        const todayLeave = leaveRequests.find(leave => 
+          leave.staff_id === member.id &&
+          leave.status === 'approved' &&
+          leave.start_date <= todayString &&
+          leave.end_date >= todayString
+        );
+
+        if (todayLeave) {
+          timeSlots.forEach(slot => {
+            if (schedule[slot].type === 'available') {
+              schedule[slot] = {
+                type: 'leave',
+                leaveType: todayLeave.leave_type
+              };
+            }
+          });
+        }
+
+        return {
+          id: member.id,
+          name: `${member.first_name} ${member.last_name}`,
+          email: member.email,
+          specialization: member.specialization,
+          schedule,
+          bookingBlocks,
+          totalHours,
+          contractedHours: 8
+        };
+      });
+
+      // Apply filters
+      let filteredData = scheduleData;
+      if (searchTerm) {
+        filteredData = filteredData.filter(staff => 
+          staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (staff.specialization && staff.specialization.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      }
+      if (!filters.showRuns) {
+        filteredData = filteredData.filter(staff => staff.totalHours > 0);
+      }
+      if (filters.maxHours) {
+        filteredData = filteredData.filter(staff => staff.totalHours <= staff.contractedHours);
+      }
+      if (filters.assignedOnly) {
+        filteredData = filteredData.filter(staff => staff.totalHours > 0);
+      }
+      return filteredData;
     }
-
-    // Apply functional filters
-    if (!filters.showRuns) {
-      // Hide staff with no bookings (runs)
-      filteredData = filteredData.filter(staff => staff.totalHours > 0);
-    }
-
-    if (filters.maxHours) {
-      // Show only staff who haven't exceeded contracted hours
-      filteredData = filteredData.filter(staff => staff.totalHours <= staff.contractedHours);
-    }
-
-    if (filters.assignedOnly) {
-      // Show only staff with assignments
-      filteredData = filteredData.filter(staff => staff.totalHours > 0);
-    }
-
-    return filteredData;
-  }, [staff, bookings, date, leaveRequests, timeSlots, searchTerm]);
+  }, [viewType, staff, bookings, date, leaveRequests, timeSlots, searchTerm, filters, timeInterval]);
 
   const getStatusColor = (status: StaffStatus) => {
     switch (status.type) {
@@ -537,116 +592,193 @@ export function StaffScheduleCalendar({
       </Card>
 
       {/* Schedule Grid */}
-      <div className="border rounded-lg overflow-x-auto">
-        <div className="text-xs text-muted-foreground mb-2 px-1">← Scroll horizontally to see more time slots</div>
-        <div style={{ width: TOTAL_WIDTH }}>
-        {/* Header row with time slots */}
-        <div 
-          className="bg-muted/50 border-b flex"
-          style={{ width: TOTAL_WIDTH }}
-        >
-          <div 
-            className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50 flex-shrink-0"
-            style={{ width: LEFT_COL_WIDTH }}
-          >
-            Staff
+      {viewType === 'monthly' ? (
+        <BookingsMonthView
+          date={date}
+          bookings={bookings}
+          clients={clients}
+          carers={carers}
+          isLoading={false}
+          onBookingClick={onViewBooking}
+          onCreateBooking={(date, time, clientId, carerId) => {
+            if (carerId && onCreateBooking) {
+              onCreateBooking(carerId, time);
+            }
+          }}
+        />
+      ) : (
+        <div className="border rounded-lg overflow-x-auto">
+          <div className="text-xs text-muted-foreground mb-2 px-1">
+            ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'}
           </div>
-          {timeSlots.map(slot => (
+          <div style={{ width: TOTAL_WIDTH }}>
+            {/* Header row */}
             <div 
-              key={slot} 
-              className="p-1 text-xs text-center font-medium border-r last:border-r-0 flex-shrink-0 flex items-center justify-center"
-              style={{ width: SLOT_WIDTH }}
-            >
-              {slot}
-            </div>
-          ))}
-        </div>
-
-          {/* Staff rows */}
-          {staffSchedule.map((staffMember) => (
-            <div 
-              key={staffMember.id} 
-              className="border-b last:border-b-0 flex"
+              className="bg-muted/50 border-b flex"
               style={{ width: TOTAL_WIDTH }}
             >
-              {/* Staff info column */}
               <div 
-                className="p-3 border-r bg-background sticky left-0 z-10 flex-shrink-0"
+                className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50 flex-shrink-0"
                 style={{ width: LEFT_COL_WIDTH }}
               >
-                <div className="font-medium text-sm">{staffMember.name}</div>
-                {staffMember.specialization && (
-                  <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
-                )}
-                <div className="text-xs text-muted-foreground mt-1">
-                  {staffMember.totalHours}h / {staffMember.contractedHours}h
-                  <span className={`ml-1 ${staffMember.totalHours > staffMember.contractedHours ? 'text-amber-600' : ''}`}>
-                    ({((staffMember.totalHours / staffMember.contractedHours) * 100).toFixed(0)}%)
-                  </span>
-                </div>
+                Staff
               </div>
+              {viewType === 'weekly' ? (
+                columnHeaders.map((header, idx) => (
+                  <div 
+                    key={idx}
+                    className="p-1 text-xs text-center font-medium border-r last:border-r-0 flex-shrink-0 flex items-center justify-center"
+                    style={{ width: SLOT_WIDTH }}
+                    title={header.fullLabel}
+                  >
+                    {header.label}
+                  </div>
+                ))
+              ) : (
+                timeSlots.map(slot => (
+                  <div 
+                    key={slot} 
+                    className="p-1 text-xs text-center font-medium border-r last:border-r-0 flex-shrink-0 flex items-center justify-center"
+                    style={{ width: SLOT_WIDTH }}
+                  >
+                    {slot}
+                  </div>
+                ))
+              )}
+            </div>
 
-              {/* Time slot cells - background grid for empty slots */}
-              <div className="relative flex">
-                {timeSlots.map(slot => {
-                  const status = staffMember.schedule[slot];
-                  return (
-                    <div
-                      key={slot}
-                      className={`
-                        border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
-                        ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : status.type === 'leave' ? getStatusColor(status) : 'bg-transparent'}
-                      `}
-                      style={{ 
-                        width: SLOT_WIDTH,
-                        height: '64px'
-                      }}
-                      onClick={() => (status.type === 'available' || status.type === 'leave') && handleCellClick(staffMember.id, slot, status)}
+            {/* Staff rows */}
+            {staffSchedule.map((staffMember: any) => (
+              <div 
+                key={staffMember.id} 
+                className="border-b last:border-b-0 flex"
+                style={{ width: TOTAL_WIDTH }}
+              >
+                {/* Staff info column */}
+                <div 
+                  className="p-3 border-r bg-background sticky left-0 z-10 flex-shrink-0"
+                  style={{ width: LEFT_COL_WIDTH }}
+                >
+                  <div className="font-medium text-sm">{staffMember.name}</div>
+                  {staffMember.specialization && (
+                    <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {viewType === 'weekly' ? (
+                      <>
+                        {staffMember.totalWeekHours?.toFixed(1) || '0.0'}h / {staffMember.contractedHours}h
+                        <span className={`ml-1 ${staffMember.totalWeekHours > staffMember.contractedHours ? 'text-amber-600' : ''}`}>
+                          ({((staffMember.totalWeekHours / staffMember.contractedHours) * 100).toFixed(0)}%)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        {staffMember.totalHours?.toFixed(1) || '0.0'}h / {staffMember.contractedHours}h
+                        <span className={`ml-1 ${staffMember.totalHours > staffMember.contractedHours ? 'text-amber-600' : ''}`}>
+                          ({((staffMember.totalHours / staffMember.contractedHours) * 100).toFixed(0)}%)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Render based on view type */}
+                {viewType === 'weekly' ? (
+                  // Weekly view: Show bookings grouped by day
+                  columnHeaders.map((header, idx) => (
+                    <div 
+                      key={idx}
+                      className="border-r last:border-r-0 p-2 min-h-[64px] flex-shrink-0 space-y-1"
+                      style={{ width: SLOT_WIDTH }}
                     >
-                      {status.type === 'leave' && (
-                        <div className="flex items-center justify-center h-full text-xs font-medium">
-                          {getStatusLabel(status)}
-                        </div>
+                      {(staffMember.weekBookings[header.dateString] || []).map((booking: Booking) => (
+                        <Tooltip key={booking.id}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="text-xs p-1 rounded cursor-pointer truncate bg-blue-100 border-blue-300 text-blue-800 border"
+                              onClick={() => onViewBooking?.(booking)}
+                            >
+                              {booking.startTime} - {getInitials(booking.clientName)}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-sm space-y-1">
+                              <div><strong>Client:</strong> {booking.clientName}</div>
+                              <div><strong>Time:</strong> {booking.startTime} - {booking.endTime}</div>
+                              <div><strong>Status:</strong> {booking.status}</div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                      {(staffMember.weekBookings[header.dateString] || []).length === 0 && (
+                        <div className="text-xs text-muted-foreground text-center pt-4">Available</div>
                       )}
                     </div>
-                  );
-                })}
-                
-                {/* Booking blocks - absolutely positioned overlays */}
-                {staffMember.bookingBlocks.map((block, idx) => {
-                  const colorClass = getStatusColor({ type: block.status, booking: block.booking });
-                  return (
-                    <Tooltip key={`${block.booking.id}-${idx}`}>
-                      <TooltipTrigger asChild>
+                  ))
+                ) : (
+                  // Daily view: Time-based booking blocks
+                  <div className="relative flex">
+                    {timeSlots.map(slot => {
+                      const status = staffMember.schedule[slot];
+                      return (
                         <div
+                          key={slot}
                           className={`
-                            absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
-                            ${colorClass}
+                            border-r last:border-r-0 flex-shrink-0 cursor-pointer transition-colors
+                            ${status.type === 'available' ? 'bg-white border-gray-200 hover:bg-gray-50' : status.type === 'leave' ? getStatusColor(status) : 'bg-transparent'}
                           `}
                           style={{ 
-                            left: `${block.leftPosition}px`,
-                            width: `${Math.max(block.width, 20)}px`, // Minimum 20px width
-                            height: '64px',
-                            zIndex: 1
+                            width: SLOT_WIDTH,
+                            height: '64px'
                           }}
-                          onClick={() => onViewBooking && onViewBooking(block.booking)}
+                          onClick={() => (status.type === 'available' || status.type === 'leave') && handleCellClick(staffMember.id, slot, status)}
                         >
-                          <span className="truncate px-1">
-                            {getInitials(block.booking.clientName)}
-                          </span>
+                          {status.type === 'leave' && (
+                            <div className="flex items-center justify-center h-full text-xs font-medium">
+                              {getStatusLabel(status)}
+                            </div>
+                          )}
                         </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
-                        {renderTooltipContent({ type: block.status, booking: block.booking }, staffMember.name)}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+                      );
+                    })}
+                    
+                    {/* Booking blocks - absolutely positioned overlays */}
+                    {staffMember.bookingBlocks?.map((block: BookingBlock, idx: number) => {
+                      const colorClass = getStatusColor({ type: block.status, booking: block.booking });
+                      return (
+                        <Tooltip key={`${block.booking.id}-${idx}`}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`
+                                absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
+                                ${colorClass}
+                              `}
+                              style={{ 
+                                left: `${block.leftPosition}px`,
+                                width: `${Math.max(block.width, 20)}px`,
+                                height: '64px',
+                                zIndex: 1
+                              }}
+                              onClick={() => onViewBooking && onViewBooking(block.booking)}
+                            >
+                              <span className="truncate px-1">
+                                {getInitials(block.booking.clientName)}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
+                            {renderTooltipContent({ type: block.status, booking: block.booking }, staffMember.name)}
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Enhanced Summary footer with utilization metrics */}
       {staffSchedule.length > 0 && (
@@ -657,13 +789,20 @@ export function StaffScheduleCalendar({
                 <Users className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="font-medium">{staffSchedule.length} Staff</p>
-                  <p className="text-xs text-muted-foreground">Active today</p>
+                  <p className="text-xs text-muted-foreground">Active {viewType === 'weekly' ? 'this week' : 'today'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{staffSchedule.reduce((acc, staff) => acc + staff.totalHours, 0)} Hours</p>
+                  <p className="font-medium">
+                    {staffSchedule.reduce((acc: number, staff: any) => {
+                      if (viewType === 'weekly') {
+                        return acc + (staff.totalWeekHours || 0);
+                      }
+                      return acc + (staff.totalHours || 0);
+                    }, 0).toFixed(1)} Hours
+                  </p>
                   <p className="text-xs text-muted-foreground">Scheduled</p>
                 </div>
               </div>
