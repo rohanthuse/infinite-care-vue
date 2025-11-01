@@ -23,6 +23,7 @@ interface ClientScheduleCalendarProps {
   selectedClient?: string;
   selectedCarer?: string;
   selectedStatus?: string;
+  viewType?: "daily" | "weekly" | "monthly";
   onClientChange?: (clientId: string) => void;
   onCarerChange?: (carerId: string) => void;
   onStatusChange?: (status: string) => void;

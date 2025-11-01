@@ -441,6 +441,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             selectedClient={selectedClientId}
             selectedCarer={selectedCarerId}
             selectedStatus={statusFilter}
+            viewType={viewType}
+            onViewTypeChange={setViewType}
             onClientChange={setSelectedClientId}
             onCarerChange={setSelectedCarerId}
             onStatusChange={setStatusFilter}

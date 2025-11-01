@@ -14,6 +14,8 @@ interface UnifiedScheduleViewProps {
   selectedClient: string;
   selectedCarer: string;
   selectedStatus: string;
+  viewType: "daily" | "weekly" | "monthly";
+  onViewTypeChange: (viewType: "daily" | "weekly" | "monthly") => void;
   onClientChange: (clientId: string) => void;
   onCarerChange: (carerId: string) => void;
   onStatusChange: (status: string) => void;
@@ -31,6 +33,8 @@ export function UnifiedScheduleView({
   selectedClient,
   selectedCarer,
   selectedStatus,
+  viewType,
+  onViewTypeChange,
   onClientChange,
   onCarerChange,
   onStatusChange,
@@ -45,8 +49,8 @@ export function UnifiedScheduleView({
         <DateNavigation
           currentDate={date}
           onDateChange={onDateChange}
-          viewType="daily"
-          onViewTypeChange={() => {}}
+          viewType={viewType}
+          onViewTypeChange={onViewTypeChange}
         />
         
         <BookingFilters
@@ -79,6 +83,7 @@ export function UnifiedScheduleView({
               selectedClient={selectedClient}
               selectedCarer={selectedCarer}
               selectedStatus={selectedStatus}
+              viewType={viewType}
               onClientChange={onClientChange}
               onCarerChange={onCarerChange}
               onStatusChange={onStatusChange}
@@ -107,6 +112,7 @@ export function UnifiedScheduleView({
               selectedClient={selectedClient}
               selectedCarer={selectedCarer}
               selectedStatus={selectedStatus}
+              viewType={viewType}
               onClientChange={onClientChange}
               onCarerChange={onCarerChange}
               onStatusChange={onStatusChange}
