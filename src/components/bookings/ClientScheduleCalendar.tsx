@@ -26,6 +26,7 @@ interface ClientScheduleCalendarProps {
   onClientChange?: (clientId: string) => void;
   onCarerChange?: (carerId: string) => void;
   onStatusChange?: (status: string) => void;
+  hideControls?: boolean;
 }
 
 interface ClientStatus {
@@ -57,7 +58,8 @@ export function ClientScheduleCalendar({
   selectedStatus,
   onClientChange,
   onCarerChange,
-  onStatusChange
+  onStatusChange,
+  hideControls = false,
 }: ClientScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -300,7 +302,7 @@ export function ClientScheduleCalendar({
     <TooltipProvider>
       <div className="space-y-4">
         {/* Date Navigation */}
-        {onDateChange && (
+        {!hideControls && onDateChange && (
           <DateNavigation
             currentDate={date}
             onDateChange={onDateChange}
@@ -310,16 +312,18 @@ export function ClientScheduleCalendar({
         )}
 
         {/* Booking Filters */}
-        <BookingFilters
-          statusFilter={selectedStatus || "all"}
-          onStatusFilterChange={onStatusChange || (() => {})}
-          selectedClientId={selectedClient || "all-clients"}
-          onClientChange={onClientChange || (() => {})}
-          selectedCarerId={selectedCarer || "all-carers"}
-          onCarerChange={onCarerChange || (() => {})}
-          clients={clients || []}
-          carers={carers || []}
-        />
+        {!hideControls && (
+          <BookingFilters
+            statusFilter={selectedStatus || "all"}
+            onStatusFilterChange={onStatusChange || (() => {})}
+            selectedClientId={selectedClient || "all-clients"}
+            onClientChange={onClientChange || (() => {})}
+            selectedCarerId={selectedCarer || "all-carers"}
+            onCarerChange={onCarerChange || (() => {})}
+            clients={clients || []}
+            carers={carers || []}
+          />
+        )}
 
         {/* Header with search and filters */}
         <div className="flex items-center justify-between">

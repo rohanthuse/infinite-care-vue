@@ -14,6 +14,7 @@ import { BookingsList } from "./BookingsList";
 import { BookingReport } from "./BookingReport";
 import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
 import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
+import { UnifiedScheduleView } from "./UnifiedScheduleView";
 import { NewBookingDialog } from "./dialogs/NewBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { ViewBookingDialog } from "./dialogs/ViewBookingDialog";
@@ -373,12 +374,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       />
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="staff-schedule">Staff Schedule</TabsTrigger>
-          <TabsTrigger value="client-schedule">Client Schedule</TabsTrigger>
+          <TabsTrigger value="unified-schedule">Unified Schedule</TabsTrigger>
+          <TabsTrigger value="staff-schedule">Staff Only</TabsTrigger>
+          <TabsTrigger value="client-schedule">Client Only</TabsTrigger>
         </TabsList>
         
         <TabsContent value="calendar" className="space-y-4">
@@ -429,6 +431,27 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         
         <TabsContent value="reports">
           <BookingReport bookings={filteredBookings} />
+        </TabsContent>
+
+        <TabsContent value="unified-schedule" className="w-full">
+          <UnifiedScheduleView
+            date={selectedDate}
+            bookings={filteredBookings}
+            branchId={branchId}
+            clients={clients}
+            carers={carers}
+            selectedClient={selectedClientId}
+            selectedCarer={selectedCarerId}
+            selectedStatus={statusFilter}
+            onClientChange={setSelectedClientId}
+            onCarerChange={setSelectedCarerId}
+            onStatusChange={setStatusFilter}
+            onDateChange={setSelectedDate}
+            onViewBooking={handleViewBooking}
+            onCreateBooking={(clientId, staffId, timeSlot) => {
+              handleContextMenuBooking(selectedDate, timeSlot, clientId, staffId);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="staff-schedule" className="w-full min-w-0">
