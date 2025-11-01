@@ -127,15 +127,19 @@ const TenantLogin = () => {
           title: 'Welcome, Super Administrator!',
           description: `Accessing ${organization.name} organization dashboard.`,
         });
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
         navigate(`/${tenantSlug}/dashboard`);
       } else if (memberData.role === 'owner' || memberData.role === 'admin') {
         // Organization admin - go to tenant dashboard which will show old-style admin interface
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
         navigate(`/${tenantSlug}/dashboard`);
       } else if (memberData.role === 'branch_admin') {
         // Branch admin - redirect to branch selection or specific branch
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
         navigate(`/${tenantSlug}/branches`);
       } else {
         // Regular member - go to regular tenant dashboard
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
         navigate(`/${tenantSlug}/dashboard`);
       }
     } catch (error: any) {

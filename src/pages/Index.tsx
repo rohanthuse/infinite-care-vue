@@ -16,6 +16,20 @@ const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
+  
+  // Check if we're in the middle of a navigation from login
+  const isNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
+  
+  // If navigating, don't render landing page - just show minimal loading
+  if (isNavigating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Background redirect (non-blocking) - runs after page renders
   useEffect(() => {

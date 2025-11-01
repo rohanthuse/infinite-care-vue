@@ -51,6 +51,11 @@ const TenantDashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Clear navigation intent flag once we've reached the dashboard
+  useEffect(() => {
+    sessionStorage.removeItem('navigating_to_dashboard');
+  }, []);
+
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!user || !tenantSlug) {
