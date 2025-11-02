@@ -12,7 +12,7 @@ export interface ClientNews2Data {
   latest_observation?: {
     id: string;
     total_score: number;
-    risk_level: string;
+    risk_level: 'low' | 'medium' | 'high';
     recorded_at: string;
     respiratory_rate: number;
     oxygen_saturation: number;
@@ -22,6 +22,7 @@ export interface ClientNews2Data {
     pulse_rate: number;
     consciousness_level: string;
     temperature: number;
+    ai_recommendations?: string;
   };
   observations_count: number;
   created_at: string;
@@ -99,7 +100,8 @@ export const useClientNews2Data = () => {
           diastolic_bp,
           pulse_rate,
           consciousness_level,
-          temperature
+          temperature,
+          ai_recommendations
         `)
         .eq('news2_patient_id', patientData.id)
         .order('recorded_at', { ascending: false })

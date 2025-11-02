@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { CalendarDays, Clock, UserPlus } from "lucide-react";
-import { useCreateNews2Observation, CreateObservationData } from "@/hooks/useNews2Data";
+import { useCreateNews2Observation, CreateObservationData, News2Observation } from "@/hooks/useNews2Data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AIRecommendationsCard } from "@/components/news2/AIRecommendationsCard";
 
 interface NewObservationDialogProps {
   open: boolean;
@@ -37,6 +39,8 @@ export function NewObservationDialog({
     supplemental_oxygen: false,
   });
   const [previewScore, setPreviewScore] = useState<any>(null);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [savedObservation, setSavedObservation] = useState<News2Observation | null>(null);
 
   const createObservation = useCreateNews2Observation();
 
@@ -135,21 +139,33 @@ export function NewObservationDialog({
     const news2PatientId = selectedPatient?._raw?.id || selectedPatientId;
 
     try {
-      await createObservation.mutateAsync({
+      const result = await createObservation.mutateAsync({
         news2_patient_id: news2PatientId,
         ...formData,
       } as CreateObservationData);
       
-      // Reset form and close dialog
-      setFormData({
-        consciousness_level: 'A',
-        supplemental_oxygen: false,
-      });
-      setSelectedPatientId("");
-      onOpenChange(false);
+      setSavedObservation(result);
+      
+      if (result.ai_recommendations) {
+        setShowRecommendations(true);
+      } else {
+        // No AI recommendations - close normally
+        resetAndClose();
+      }
     } catch (error) {
       console.error('Error submitting observation:', error);
     }
+  };
+
+  const resetAndClose = () => {
+    setFormData({
+      consciousness_level: 'A',
+      supplemental_oxygen: false,
+    });
+    setSelectedPatientId("");
+    setShowRecommendations(false);
+    setSavedObservation(null);
+    onOpenChange(false);
   };
 
   const getRiskColor = (risk: string) => {
@@ -423,7 +439,19 @@ export function NewObservationDialog({
           </div>
         )}
 
-        {patients.length > 0 && (
+        {showRecommendations && savedObservation?.ai_recommendations && (
+          <div className="space-y-4 mt-6">
+            <Separator />
+            <AIRecommendationsCard
+              recommendations={savedObservation.ai_recommendations}
+              observationDate={savedObservation.recorded_at}
+              totalScore={savedObservation.total_score}
+              riskLevel={savedObservation.risk_level}
+            />
+          </div>
+        )}
+
+        {patients.length > 0 && !showRecommendations && (
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -433,6 +461,20 @@ export function NewObservationDialog({
               disabled={!selectedPatientId || createObservation.isPending}
             >
               {createObservation.isPending ? "Recording..." : "Record Observation"}
+            </Button>
+          </div>
+        )}
+
+        {showRecommendations && (
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button 
+              variant="outline"
+              onClick={() => window.print()}
+            >
+              Print Recommendations
+            </Button>
+            <Button onClick={resetAndClose}>
+              Close
             </Button>
           </div>
         )}

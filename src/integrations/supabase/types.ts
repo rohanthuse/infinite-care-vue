@@ -5202,6 +5202,7 @@ export type Database = {
       news2_observations: {
         Row: {
           action_taken: string | null
+          ai_recommendations: string | null
           clinical_notes: string | null
           consciousness_level: string
           consciousness_level_score: number
@@ -5231,6 +5232,7 @@ export type Database = {
         }
         Insert: {
           action_taken?: string | null
+          ai_recommendations?: string | null
           clinical_notes?: string | null
           consciousness_level?: string
           consciousness_level_score?: number
@@ -5260,6 +5262,7 @@ export type Database = {
         }
         Update: {
           action_taken?: string | null
+          ai_recommendations?: string | null
           clinical_notes?: string | null
           consciousness_level?: string
           consciousness_level_score?: number

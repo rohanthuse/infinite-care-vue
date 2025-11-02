@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.create-branch-admin]
 verify_jwt = false
+
+[functions.news2-ai-recommendations]
+verify_jwt = true

@@ -8,6 +8,7 @@ import { useClientNavigation } from "@/hooks/useClientNavigation";
 import { format } from "date-fns";
 import { ClientNews2History } from "./ClientNews2History";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AIRecommendationsCard } from "@/components/news2/AIRecommendationsCard";
 
 export const ClientNews2Dashboard = () => {
   const { data: news2Data, isLoading, error } = useClientNews2Data();
@@ -159,6 +160,16 @@ export const ClientNews2Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* AI Recommendations */}
+      {latestObservation?.ai_recommendations && (
+        <AIRecommendationsCard
+          recommendations={latestObservation.ai_recommendations}
+          observationDate={latestObservation.recorded_at}
+          totalScore={latestObservation.total_score}
+          riskLevel={latestObservation.risk_level}
+        />
+      )}
 
       {/* Latest Vital Signs */}
       {latestObservation && (

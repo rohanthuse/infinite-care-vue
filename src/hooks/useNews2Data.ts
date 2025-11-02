@@ -59,6 +59,7 @@ export interface News2Observation {
   clinical_notes?: string;
   action_taken?: string;
   next_review_time?: string;
+  ai_recommendations?: string;
   created_at: string;
   updated_at: string;
   // Related data
@@ -196,13 +197,14 @@ const fetchPatientObservations = async (patientId: string): Promise<News2Observa
   }));
 };
 
-// Create a new NEWS2 observation
+// Create a new NEWS2 observation with AI recommendations
 const createNews2Observation = async (observationData: CreateObservationData): Promise<News2Observation> => {
-  console.log(`[createNews2Observation] Creating observation:`, observationData);
+  console.log(`[createNews2Observation] Creating observation with AI recommendations:`, observationData);
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
+  // Step 1: Create the observation
   const { data, error } = await supabase
     .from('news2_observations')
     .insert({
@@ -222,6 +224,48 @@ const createNews2Observation = async (observationData: CreateObservationData): P
   if (error) {
     console.error('Error creating NEWS2 observation:', error);
     throw error;
+  }
+
+  // Step 2: Generate AI recommendations (non-blocking)
+  try {
+    console.log('[createNews2Observation] Generating AI recommendations...');
+    
+    const { data: aiData, error: aiError } = await supabase.functions.invoke(
+      'news2-ai-recommendations',
+      {
+        body: {
+          observation_id: data.id,
+          news2_patient_id: data.news2_patient_id,
+          include_client_context: true,
+          include_history: true
+        }
+      }
+    );
+
+    if (aiError) {
+      console.error('[createNews2Observation] AI recommendation error:', aiError);
+      // Don't throw - observation is already saved
+    } else if (aiData?.recommendations) {
+      console.log('[createNews2Observation] AI recommendations received, updating observation...');
+      
+      // Step 3: Update observation with recommendations
+      const { error: updateError } = await supabase
+        .from('news2_observations')
+        .update({ 
+          ai_recommendations: JSON.stringify(aiData.recommendations)
+        })
+        .eq('id', data.id);
+
+      if (updateError) {
+        console.error('[createNews2Observation] Failed to save AI recommendations:', updateError);
+      } else {
+        console.log('[createNews2Observation] AI recommendations saved successfully');
+        data.ai_recommendations = JSON.stringify(aiData.recommendations);
+      }
+    }
+  } catch (aiException) {
+    console.error('[createNews2Observation] Exception during AI generation:', aiException);
+    // Continue - observation is saved even if AI fails
   }
 
   return {
@@ -338,7 +382,9 @@ export const useCreateNews2Observation = () => {
       queryClient.invalidateQueries({ queryKey: ['patient-observations', data.news2_patient_id] });
       queryClient.invalidateQueries({ queryKey: ['news2-alerts'] });
       
-      toast.success('NEWS2 observation recorded successfully', {
+      const hasAIRecommendations = data.ai_recommendations ? ' with AI recommendations' : '';
+      
+      toast.success('NEWS2 observation recorded successfully' + hasAIRecommendations, {
         description: `Total score: ${data.total_score} (${data.risk_level} risk)`
       });
     },
