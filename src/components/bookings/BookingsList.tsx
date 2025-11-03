@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,16 @@ import {
   ChevronLeft, ChevronRight, Search, Filter, Eye, Edit, Clock, MapPin, Calendar, User, Trash2, MoreHorizontal
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Booking } from "./BookingTimeGrid";
 import { format } from "date-fns";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
 import { useDeleteBooking } from "@/data/hooks/useDeleteBooking";
+import { useDeleteMultipleBookings } from "@/hooks/useDeleteMultipleBookings";
 import { useUserRole } from "@/hooks/useUserRole";
+import { BookingBulkActionsBar } from "./BookingBulkActionsBar";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,9 +51,13 @@ export const BookingsList: React.FC<BookingsListProps> = ({
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteBookingId, setDeleteBookingId] = useState<string | null>(null);
+  const [selectedBookingIds, setSelectedBookingIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const itemsPerPage = 10;
   
   const deleteBooking = useDeleteBooking(branchId);
+  const deleteMultipleBookings = useDeleteMultipleBookings(branchId);
   const { data: userRole } = useUserRole();
   
   // Check if user can delete bookings (admins only)
@@ -86,6 +94,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Multi-select computed values
+  const currentPageBookingIds = useMemo(
+    () => paginatedBookings.map(b => b.id),
+    [paginatedBookings]
+  );
+
+  const allCurrentPageSelected = currentPageBookingIds.length > 0 && 
+    currentPageBookingIds.every(id => selectedBookingIds.includes(id));
+
+  const someSelected = selectedBookingIds.length > 0 && !allCurrentPageSelected;
   
   const handlePreviousPage = () => {
     if (currentPage > 1) {
@@ -162,6 +181,70 @@ export const BookingsList: React.FC<BookingsListProps> = ({
       console.error('[BookingsList] Delete mutation failed:', error);
       clearTimeout(safetyTimeout);
       setDeleteBookingId(null);
+    }
+  };
+
+  // Multi-select handlers
+  const handleSelectBooking = (bookingId: string, checked: boolean | "indeterminate") => {
+    if (checked === true) {
+      setSelectedBookingIds(prev => [...prev, bookingId]);
+    } else {
+      setSelectedBookingIds(prev => prev.filter(id => id !== bookingId));
+    }
+  };
+
+  const handleSelectAllCurrentPage = (checked: boolean | "indeterminate") => {
+    if (checked === true) {
+      // Add all current page IDs that aren't already selected
+      setSelectedBookingIds(prev => {
+        const newIds = currentPageBookingIds.filter(id => !prev.includes(id));
+        return [...prev, ...newIds];
+      });
+    } else {
+      // Remove all current page IDs from selection
+      setSelectedBookingIds(prev => 
+        prev.filter(id => !currentPageBookingIds.includes(id))
+      );
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedBookingIds([]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedBookingIds.length === 0) {
+      console.log('[BookingsList] No bookings selected for bulk delete');
+      return;
+    }
+    
+    console.log('[BookingsList] Starting bulk delete for', selectedBookingIds.length, 'bookings');
+    setIsDeleting(true);
+    
+    // Get full booking objects for selected IDs (needed for refetch queries)
+    const selectedBookings = bookings
+      .filter(b => selectedBookingIds.includes(b.id))
+      .map(b => ({
+        id: b.id,
+        clientId: b.clientId,
+        staffId: b.carerId
+      }));
+    
+    try {
+      await deleteMultipleBookings.mutateAsync({
+        bookingIds: selectedBookingIds,
+        bookings: selectedBookings
+      });
+      
+      console.log('[BookingsList] Bulk delete completed successfully');
+      
+      // Clear selection and close dialog
+      setSelectedBookingIds([]);
+      setBulkDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('[BookingsList] Bulk delete failed:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -310,6 +393,17 @@ export const BookingsList: React.FC<BookingsListProps> = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted">
+              {canDelete && (
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={allCurrentPageSelected}
+                    onCheckedChange={handleSelectAllCurrentPage}
+                    aria-label="Select all bookings on this page"
+                    className="ml-2"
+                    disabled={isDeleting}
+                  />
+                </TableHead>
+              )}
               <TableHead className="font-medium">Booking ID</TableHead>
               <TableHead className="font-medium">Date</TableHead>
               <TableHead className="font-medium">Time</TableHead>
@@ -334,7 +428,24 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                 const durationText = `${hours}h ${mins > 0 ? `${mins}m` : ''}`;
                 
                 return (
-                  <TableRow key={booking.id} className="hover:bg-muted/50">
+                  <TableRow 
+                    key={booking.id} 
+                    className={cn(
+                      "hover:bg-muted/50",
+                      selectedBookingIds.includes(booking.id) && "bg-blue-50 dark:bg-blue-950/20"
+                    )}
+                  >
+                    {canDelete && (
+                      <TableCell className="w-12">
+                        <Checkbox
+                          checked={selectedBookingIds.includes(booking.id)}
+                          onCheckedChange={(checked) => handleSelectBooking(booking.id, checked)}
+                          aria-label={`Select booking ${booking.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          disabled={isDeleting}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium">{booking.id}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
@@ -420,7 +531,7 @@ export const BookingsList: React.FC<BookingsListProps> = ({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                <TableCell colSpan={canDelete ? 9 : 8} className="text-center py-6 text-muted-foreground">
                   No bookings found matching your criteria
                 </TableCell>
               </TableRow>
@@ -499,6 +610,58 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog 
+        open={bulkDeleteDialogOpen} 
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setBulkDeleteDialogOpen(false);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          {isDeleting && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                <p className="text-sm text-muted-foreground">
+                  Deleting {selectedBookingIds.length} booking{selectedBookingIds.length > 1 ? 's' : ''}...
+                </p>
+              </div>
+            </div>
+          )}
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Selected Bookings</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>{selectedBookingIds.length}</strong> selected booking{selectedBookingIds.length > 1 ? 's' : ''}? 
+              This action cannot be undone.
+              <br /><br />
+              The bookings will be permanently removed from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <Button
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : `Delete ${selectedBookingIds.length} Booking${selectedBookingIds.length > 1 ? 's' : ''}`}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Actions Toolbar */}
+      {canDelete && (
+        <BookingBulkActionsBar
+          selectedCount={selectedBookingIds.length}
+          onClearSelection={handleClearSelection}
+          onBulkDelete={() => setBulkDeleteDialogOpen(true)}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 };
