@@ -10,7 +10,7 @@ import { ClientNews2History } from "./ClientNews2History";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AIRecommendationsCard } from "@/components/news2/AIRecommendationsCard";
 
-export const ClientNews2Dashboard = () => {
+export const ClientNews2Dashboard = ({ isAdminView = false }: { isAdminView?: boolean } = {}) => {
   const { data: news2Data, isLoading, error } = useClientNews2Data();
   const { data: observations } = useClientNews2History();
   const { navigateToClientPage } = useClientNavigation();
@@ -55,17 +55,28 @@ export const ClientNews2Dashboard = () => {
             <li>• Personalized health insights and trends</li>
           </ul>
         </div>
-        <Button 
-          onClick={handleRequestMonitoring}
-          className="mb-4"
-          size="lg"
-        >
-          <HelpCircle className="h-4 w-4 mr-2" />
-          Request Health Monitoring
-        </Button>
-        <p className="text-sm text-gray-500">
-          Or contact your care team directly if you believe this is an error.
-        </p>
+        {isAdminView ? (
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              This client is not currently enrolled in NEWS2 health monitoring.
+              You can set up monitoring through the client's care plan or contact your system administrator.
+            </p>
+          </div>
+        ) : (
+          <>
+            <Button 
+              onClick={handleRequestMonitoring}
+              className="mb-4"
+              size="lg"
+            >
+              <HelpCircle className="h-4 w-4 mr-2" />
+              Request Health Monitoring
+            </Button>
+            <p className="text-sm text-gray-500">
+              Or contact your care team directly if you believe this is an error.
+            </p>
+          </>
+        )}
       </div>
     );
   }
