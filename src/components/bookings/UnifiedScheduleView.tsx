@@ -33,12 +33,12 @@ export function UnifiedScheduleView({
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* Left Panel - Client Schedule */}
-      <div className="border-2 border-blue-500 rounded-lg flex flex-col h-[500px] overflow-hidden">
+      <div className="border-2 border-blue-500 rounded-lg overflow-hidden flex flex-col h-[500px]">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Client Schedule</h3>
           <p className="text-sm text-muted-foreground">View all client appointments</p>
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 overflow-auto min-h-0">
           <ClientScheduleCalendar
             date={date}
             bookings={bookings}
@@ -62,12 +62,12 @@ export function UnifiedScheduleView({
       </div>
 
       {/* Right Panel - Staff Schedule */}
-      <div className="border-2 border-green-500 rounded-lg flex flex-col h-[500px] overflow-hidden">
+      <div className="border-2 border-green-500 rounded-lg overflow-hidden flex flex-col h-[500px]">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Staff Schedule</h3>
           <p className="text-sm text-muted-foreground">View all staff assignments</p>
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 overflow-auto min-h-0">
           <StaffScheduleCalendar
             date={date}
             bookings={bookings}
