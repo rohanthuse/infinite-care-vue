@@ -1943,6 +1943,53 @@ export type Database = {
           },
         ]
       }
+      client_email_settings: {
+        Row: {
+          cc_emails: string[] | null
+          client_id: string
+          created_at: string | null
+          email_on_due_date_reminder: boolean | null
+          email_on_generation: boolean | null
+          id: string
+          invoice_email: string | null
+          reminder_days_before: number | null
+          send_invoice_emails: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          cc_emails?: string[] | null
+          client_id: string
+          created_at?: string | null
+          email_on_due_date_reminder?: boolean | null
+          email_on_generation?: boolean | null
+          id?: string
+          invoice_email?: string | null
+          reminder_days_before?: number | null
+          send_invoice_emails?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          cc_emails?: string[] | null
+          client_id?: string
+          created_at?: string | null
+          email_on_due_date_reminder?: boolean | null
+          email_on_generation?: boolean | null
+          id?: string
+          invoice_email?: string | null
+          reminder_days_before?: number | null
+          send_invoice_emails?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_email_settings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_equipment: {
         Row: {
           client_id: string
@@ -4546,6 +4593,162 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      invoice_email_queue: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          invoice_id: string
+          max_retries: number | null
+          recipient_email: string
+          retry_count: number | null
+          scheduled_at: string | null
+          sent_at: string | null
+          status: string | null
+          subject: string
+          template_data: Json | null
+          template_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          invoice_id: string
+          max_retries?: number | null
+          recipient_email: string
+          retry_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject: string
+          template_data?: Json | null
+          template_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          invoice_id?: string
+          max_retries?: number | null
+          recipient_email?: string
+          retry_count?: number | null
+          scheduled_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subject?: string
+          template_data?: Json | null
+          template_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_email_queue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_email_queue_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "client_billing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_generation_batches: {
+        Row: {
+          branch_id: string
+          clients_processed: number
+          created_at: string | null
+          error_details: Json | null
+          execution_time_ms: number | null
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          invoice_ids: string[] | null
+          invoices_created: number
+          invoices_failed: number
+          organization_id: string
+          period_end_date: string
+          period_start_date: string
+          period_type: string
+          status: string | null
+          total_amount: number | null
+          total_net_amount: number | null
+          total_vat_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          branch_id: string
+          clients_processed?: number
+          created_at?: string | null
+          error_details?: Json | null
+          execution_time_ms?: number | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          invoice_ids?: string[] | null
+          invoices_created?: number
+          invoices_failed?: number
+          organization_id: string
+          period_end_date: string
+          period_start_date: string
+          period_type: string
+          status?: string | null
+          total_amount?: number | null
+          total_net_amount?: number | null
+          total_vat_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          branch_id?: string
+          clients_processed?: number
+          created_at?: string | null
+          error_details?: Json | null
+          execution_time_ms?: number | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          invoice_ids?: string[] | null
+          invoices_created?: number
+          invoices_failed?: number
+          organization_id?: string
+          period_end_date?: string
+          period_start_date?: string
+          period_type?: string
+          status?: string | null
+          total_amount?: number | null
+          total_net_amount?: number | null
+          total_vat_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_generation_batches_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_generation_batches_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_line_items: {
         Row: {
