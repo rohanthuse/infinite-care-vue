@@ -88,7 +88,7 @@ export const useBulkInvoiceGeneration = () => {
         services(title),
         staff(first_name, last_name)
       `)
-      .eq('status', 'completed')
+      .in('status', ['done', 'completed'])
       .eq('branch_id', branchId)
       .gte('start_time', periodDetails.startDate)
       .lte('start_time', periodDetails.endDate);

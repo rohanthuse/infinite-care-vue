@@ -62,7 +62,7 @@ export const BulkInvoicePreviewDialog: React.FC<BulkInvoicePreviewDialogProps> =
           client_id,
           clients!inner(first_name, last_name)
         `)
-        .eq('status', 'completed')
+        .in('status', ['done', 'completed'])
         .eq('branch_id', branchId)
         .gte('start_time', periodDetails.startDate)
         .lte('start_time', periodDetails.endDate);
