@@ -10,6 +10,7 @@ export interface BranchInfo {
   operating_hours: string | null;
   established_date: string | null;
   status: string;
+  organization_id: string | null;
 }
 
 export const useBranchInfo = (branchId: string | undefined) => {
@@ -20,7 +21,7 @@ export const useBranchInfo = (branchId: string | undefined) => {
       
       const { data, error } = await supabase
         .from('branches')
-        .select('id, name, address, phone, email, operating_hours, established_date, status')
+        .select('id, name, address, phone, email, operating_hours, established_date, status, organization_id')
         .eq('id', branchId)
         .single();
 

@@ -19,6 +19,7 @@ import { useBulkInvoiceGeneration } from '@/hooks/useBulkInvoiceGeneration';
 import type { BulkGenerationProgress, BulkGenerationResult } from '@/hooks/useBulkInvoiceGeneration';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
 import { useBranchPayments } from '@/hooks/useBranchPayments';
+import { useBranchInfo } from '@/hooks/useBranchInfo';
 import { ReportExporter } from '@/utils/reportExporter';
 import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePDF } from '@/utils/invoicePdfGenerator';
@@ -31,7 +32,8 @@ interface InvoicesPaymentsTabProps {
 }
 
 const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, branchName }) => {
-  const [organizationId] = useState<string>('temp-org-id'); // Temporary for now
+  const { data: branchInfo } = useBranchInfo(branchId);
+  const organizationId = branchInfo?.organization_id || '';
 
   const [activeSubTab, setActiveSubTab] = useState('invoices');
   const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false);
@@ -154,7 +156,10 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
 
   // Handler for confirming bulk generation
   const handleConfirmBulkGenerate = async () => {
-    if (!selectedInvoicePeriod || !branchId) return;
+    if (!selectedInvoicePeriod || !branchId || !organizationId) {
+      toast.error('Missing required information. Please try again.');
+      return;
+    }
     setShowBulkPreview(false);
     setShowBulkProgress(true);
     try {
