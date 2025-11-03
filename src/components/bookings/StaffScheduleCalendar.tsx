@@ -467,14 +467,15 @@ export function StaffScheduleCalendar({
 
   return (
     <TooltipProvider>
-      <Tabs defaultValue="schedule" className="w-full">
+      <div className="h-full">
+      <Tabs defaultValue="schedule" className="w-full h-full flex flex-col">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="schedule">Staff Schedule</TabsTrigger>
           <TabsTrigger value="utilization">Utilization Analysis</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="schedule" className="mt-6">
-          <div className="space-y-4 h-full">
+        <TabsContent value="schedule" className="mt-6 h-full flex flex-col">
+          <div className="flex flex-col gap-4 h-full">
         {/* Date Navigation */}
         {!hideControls && onDateChange && (
           <DateNavigation
@@ -616,6 +617,7 @@ export function StaffScheduleCalendar({
           }}
         />
       ) : (
+        <div className="flex-1 min-h-0">
         <div className="schedule-scroll border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-x-hidden">
           <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b sticky top-0 z-20 flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
@@ -795,6 +797,7 @@ export function StaffScheduleCalendar({
           </div>
           </div>
         </div>
+        </div>
       )}
 
       {/* Enhanced Summary footer with utilization metrics */}
@@ -872,6 +875,7 @@ export function StaffScheduleCalendar({
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </TooltipProvider>
   );
 }
