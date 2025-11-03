@@ -217,7 +217,7 @@ export const BulkInvoicePreviewDialog: React.FC<BulkInvoicePreviewDialogProps> =
           </Button>
           <Button 
             onClick={onConfirm} 
-            disabled={loading || eligibleClients === 0}
+            disabled={loading || eligibleClients === 0 || !organizationId}
           >
             Generate {eligibleClients} Invoice{eligibleClients !== 1 ? 's' : ''}
           </Button>

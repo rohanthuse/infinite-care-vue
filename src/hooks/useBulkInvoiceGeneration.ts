@@ -69,6 +69,15 @@ export const useBulkInvoiceGeneration = () => {
     organizationId: string,
     onProgress?: (progress: BulkGenerationProgress) => void
   ): Promise<BulkGenerationResult> => {
+    // Defensive validation
+    if (!organizationId || organizationId === '') {
+      throw new Error('Organization ID is required for invoice generation');
+    }
+    
+    if (!branchId || branchId === '') {
+      throw new Error('Branch ID is required for invoice generation');
+    }
+
     const results: BulkGenerationResult = {
       successCount: 0,
       errorCount: 0,

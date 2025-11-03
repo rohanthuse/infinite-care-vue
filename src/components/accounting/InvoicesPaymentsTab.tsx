@@ -32,7 +32,7 @@ interface InvoicesPaymentsTabProps {
 }
 
 const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, branchName }) => {
-  const { data: branchInfo } = useBranchInfo(branchId);
+  const { data: branchInfo, isLoading: isBranchLoading } = useBranchInfo(branchId);
   const organizationId = branchInfo?.organization_id || '';
 
   const [activeSubTab, setActiveSubTab] = useState('invoices');
@@ -156,8 +156,13 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
 
   // Handler for confirming bulk generation
   const handleConfirmBulkGenerate = async () => {
-    if (!selectedInvoicePeriod || !branchId || !organizationId) {
-      toast.error('Missing required information. Please try again.');
+    if (!selectedInvoicePeriod || !branchId) {
+      toast.error('Missing invoice period or branch information.');
+      return;
+    }
+    
+    if (!organizationId || isBranchLoading) {
+      toast.error('Branch information is still loading. Please wait a moment and try again.');
       return;
     }
     setShowBulkPreview(false);
@@ -343,6 +348,7 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
             <Button 
               className="flex items-center gap-2"
               onClick={handleCreateInvoice}
+              disabled={isBranchLoading}
             >
               <PlusCircle className="h-4 w-4" />
               Generate Invoice
