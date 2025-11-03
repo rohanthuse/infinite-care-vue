@@ -8,6 +8,7 @@ import { formatCurrency } from '@/utils/currencyFormatter';
 import { useDeleteClientRateSchedule } from '@/hooks/useClientAccounting';
 import { EditRateScheduleDialog } from './EditRateScheduleDialog';
 import { ViewRateScheduleDialog } from './ViewRateScheduleDialog';
+import { ServiceTypesDisplay } from '@/components/carer-profile/accounting/ServiceTypesDisplay';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -103,22 +104,10 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
           {rateSchedules.map((schedule) => (
             <TableRow key={schedule.id}>
               <TableCell>
-                {schedule.service_type_codes && schedule.service_type_codes.length > 0 ? (
-                  <div className="flex flex-wrap gap-1">
-                    {schedule.service_type_codes.slice(0, 2).map(code => (
-                      <Badge key={code} variant="outline" className="text-xs">
-                        {code}
-                      </Badge>
-                    ))}
-                    {schedule.service_type_codes.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{schedule.service_type_codes.length - 2} more
-                      </Badge>
-                    )}
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">All Services</span>
-                )}
+                <ServiceTypesDisplay 
+                  serviceCodes={schedule.service_type_codes || []} 
+                  maxVisible={2}
+                />
               </TableCell>
               <TableCell>{schedule.authority_type}</TableCell>
               <TableCell className="capitalize">{schedule.rate_category}</TableCell>
