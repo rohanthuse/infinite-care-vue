@@ -616,11 +616,11 @@ export function StaffScheduleCalendar({
           }}
         />
       ) : (
-        <div className="border rounded-lg flex flex-col h-full min-h-0">
-          <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b">
+        <div className="border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-hidden">
+          <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
-          <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0 w-full">
+          <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
             <div className="time-grid-inner" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
             {/* Header row - sticky */}
             <div 
