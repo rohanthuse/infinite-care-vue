@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AddStaffRateScheduleDialog } from "@/components/carer-profile/accounting/AddStaffRateScheduleDialog";
 import { EditStaffRateScheduleDialog } from "@/components/carer-profile/accounting/EditStaffRateScheduleDialog";
 import { ViewStaffRateScheduleDialog } from "@/components/carer-profile/accounting/ViewStaffRateScheduleDialog";
+import { ServiceTypesDisplay } from "@/components/carer-profile/accounting/ServiceTypesDisplay";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface CarerRateTabProps {
@@ -161,13 +162,10 @@ export const CarerRateTab: React.FC<CarerRateTabProps> = ({ carerId, branchId })
               {rateSchedules.map((schedule) => (
                 <TableRow key={schedule.id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium">
-                        {schedule.service_type_codes && schedule.service_type_codes.length > 0
-                          ? schedule.service_type_codes.join(', ')
-                          : 'All Services'}
-                      </p>
-                    </div>
+                    <ServiceTypesDisplay 
+                      serviceCodes={schedule.service_type_codes || []} 
+                      maxVisible={2}
+                    />
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
