@@ -14,6 +14,7 @@ import { ViewRateScheduleDialog } from "@/components/clients/tabs/accounting/Vie
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { formatCurrency } from "@/lib/utils";
 import { ClientRateSchedule } from "@/types/clientAccounting";
+import { ServiceTypesDisplay } from '@/components/carer-profile/accounting/ServiceTypesDisplay';
 
 interface ClientRatesTabProps {
   clientId: string;
@@ -165,13 +166,10 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
               {rateSchedules.map((schedule) => (
                 <TableRow key={schedule.id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium">
-                        {schedule.service_type_codes && schedule.service_type_codes.length > 0
-                          ? schedule.service_type_codes.join(', ')
-                          : 'All Services'}
-                      </p>
-                    </div>
+                    <ServiceTypesDisplay 
+                      serviceCodes={schedule.service_type_codes || []} 
+                      maxVisible={2}
+                    />
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
