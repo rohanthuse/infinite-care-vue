@@ -499,102 +499,106 @@ export function StaffScheduleCalendar({
           />
         )}
 
-        {/* Header with search and filters */}
-        <div className="flex flex-col gap-3">
-          {/* Top row: Search */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search staff..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
-            </div>
-          </div>
-          
-          {/* Middle row: Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="showRuns" 
-                  checked={filters.showRuns}
-                  onCheckedChange={(checked) => 
-                    setFilters(prev => ({ ...prev, showRuns: checked as boolean }))
-                  }
-                />
-                <label htmlFor="showRuns" className="text-sm whitespace-nowrap">Show All Staff</label>
+        {/* Header with search and filters - Only show when hideControls is false */}
+        {!hideControls && (
+          <>
+            <div className="flex flex-col gap-3">
+              {/* Top row: Search */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search staff..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="maxHours" 
-                  checked={filters.maxHours}
-                  onCheckedChange={(checked) => 
-                    setFilters(prev => ({ ...prev, maxHours: checked as boolean }))
-                  }
-                />
-                <label htmlFor="maxHours" className="text-sm whitespace-nowrap">Within Max Hours</label>
+              
+              {/* Middle row: Filters */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="showRuns" 
+                      checked={filters.showRuns}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, showRuns: checked as boolean }))
+                      }
+                    />
+                    <label htmlFor="showRuns" className="text-sm whitespace-nowrap">Show All Staff</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="maxHours" 
+                      checked={filters.maxHours}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, maxHours: checked as boolean }))
+                      }
+                    />
+                    <label htmlFor="maxHours" className="text-sm whitespace-nowrap">Within Max Hours</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="assignedOnly" 
+                      checked={filters.assignedOnly}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, assignedOnly: checked as boolean }))
+                      }
+                    />
+                    <label htmlFor="assignedOnly" className="text-sm whitespace-nowrap">Assigned Only</label>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="assignedOnly" 
-                  checked={filters.assignedOnly}
-                  onCheckedChange={(checked) => 
-                    setFilters(prev => ({ ...prev, assignedOnly: checked as boolean }))
-                  }
-                />
-                <label htmlFor="assignedOnly" className="text-sm whitespace-nowrap">Assigned Only</label>
+              
+              {/* Bottom row: Actions and date */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {format(date, 'EEEE, MMMM d, yyyy')}
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Bottom row: Actions and date */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="w-full sm:w-auto flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              {format(date, 'EEEE, MMMM d, yyyy')}
-            </div>
-          </div>
-        </div>
 
-      {/* Status Legend */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
-              <span>Assigned</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
-              <span>In Progress</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
-              <span>Done</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
-              <span>Leave</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
-              <span>Unavailable</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            {/* Status Legend */}
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
+                    <span>Assigned</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
+                    <span>In Progress</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
+                    <span>Done</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
+                    <span>Leave</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
+                    <span>Unavailable</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
       {/* Schedule Grid */}
       {viewType === 'monthly' ? (
@@ -618,13 +622,13 @@ export function StaffScheduleCalendar({
           </div>
           <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
             <div className="time-grid-inner" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
-            {/* Header row */}
+            {/* Header row - sticky */}
             <div 
-              className="bg-muted/50 border-b flex"
+              className="bg-muted/50 border-b flex sticky top-0 z-20"
               style={{ width: TOTAL_WIDTH }}
             >
               <div 
-                className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50 flex-shrink-0"
+                className="p-3 font-medium border-r sticky left-0 z-30 bg-muted/50 flex-shrink-0"
                 style={{ width: LEFT_COL_WIDTH }}
               >
                 Staff

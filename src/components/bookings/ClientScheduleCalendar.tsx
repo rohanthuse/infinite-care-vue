@@ -429,102 +429,106 @@ export function ClientScheduleCalendar({
           />
         )}
 
-        {/* Header with search and filters */}
-        <div className="flex flex-col gap-3">
-          {/* Top row: Search */}
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search clients..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full sm:w-64"
-              />
-            </div>
-          </div>
-          
-          {/* Middle row: Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="showAll" 
-                  checked={filters.showAll}
-                  onCheckedChange={(checked) => 
-                    setFilters(prev => ({ ...prev, showAll: checked as boolean }))
-                  }
-                />
-                <label htmlFor="showAll" className="text-sm whitespace-nowrap">Show All Clients</label>
+        {/* Header with search and filters - Only show when hideControls is false */}
+        {!hideControls && (
+          <>
+            <div className="flex flex-col gap-3">
+              {/* Top row: Search */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search clients..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-full sm:w-64"
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="activeOnly" 
-                  checked={filters.activeOnly}
-                  onCheckedChange={(checked) => 
-                    setFilters(prev => ({ ...prev, activeOnly: checked as boolean }))
-                  }
-                />
-                <label htmlFor="activeOnly" className="text-sm whitespace-nowrap">Active Sessions Only</label>
+              
+              {/* Middle row: Filters */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="showAll" 
+                      checked={filters.showAll}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, showAll: checked as boolean }))
+                      }
+                    />
+                    <label htmlFor="showAll" className="text-sm whitespace-nowrap">Show All Clients</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="activeOnly" 
+                      checked={filters.activeOnly}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, activeOnly: checked as boolean }))
+                      }
+                    />
+                    <label htmlFor="activeOnly" className="text-sm whitespace-nowrap">Active Sessions Only</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="scheduledOnly" 
+                      checked={filters.scheduledOnly}
+                      onCheckedChange={(checked) => 
+                        setFilters(prev => ({ ...prev, scheduledOnly: checked as boolean }))
+                      }
+                    />
+                    <label htmlFor="scheduledOnly" className="text-sm whitespace-nowrap">Scheduled Only</label>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="scheduledOnly" 
-                  checked={filters.scheduledOnly}
-                  onCheckedChange={(checked) => 
-                    setFilters(prev => ({ ...prev, scheduledOnly: checked as boolean }))
-                  }
-                />
-                <label htmlFor="scheduledOnly" className="text-sm whitespace-nowrap">Scheduled Only</label>
+              
+              {/* Bottom row: Actions and date */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+                <div className="text-sm text-muted-foreground">
+                  {format(date, 'EEEE, MMMM d, yyyy')}
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Bottom row: Actions and date */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="w-full sm:w-auto flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </Button>
-            <div className="text-sm text-muted-foreground">
-              {format(date, 'EEEE, MMMM d, yyyy')}
-            </div>
-          </div>
-        </div>
 
-        {/* Status Legend */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
-                <span>Scheduled</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
-                <span>In Progress</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
-                <span>Completed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
-                <span>Cancelled</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
-                <span>Available</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            {/* Status Legend */}
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
+                    <span>Scheduled</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300"></div>
+                    <span>In Progress</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-green-100 border border-green-300"></div>
+                    <span>Completed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
+                    <span>Cancelled</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
+                    <span>Available</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* Schedule Grid */}
         {viewType === 'monthly' ? (
@@ -548,10 +552,10 @@ export function ClientScheduleCalendar({
           </div>
           <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0">
             <div className="time-grid-inner" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
-              {/* Header row */}
-              <div className="bg-muted/50 border-b flex" style={{ width: TOTAL_WIDTH }}>
+              {/* Header row - sticky */}
+              <div className="bg-muted/50 border-b flex sticky top-0 z-20" style={{ width: TOTAL_WIDTH }}>
                 <div 
-                  className="p-3 font-medium border-r sticky left-0 z-10 bg-muted/50 flex-shrink-0"
+                  className="p-3 font-medium border-r sticky left-0 z-30 bg-muted/50 flex-shrink-0"
                   style={{ width: LEFT_COL_WIDTH }}
                 >
                   Client

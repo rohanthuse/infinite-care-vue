@@ -489,6 +489,31 @@
 /* Ensure calendar grids don't expand beyond container */
 .page-bookings .time-grid-inner {
   min-height: min-content;
+  position: relative;
+}
+
+/* Sticky header row within scrollable grid */
+.page-bookings .time-grid-inner > div:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* Sticky left column in header (Client/Staff label) */
+.page-bookings .time-grid-inner > div:first-child > div:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 30;
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* Sticky left column in data rows */
+.page-bookings .time-grid-inner > div:not(:first-child) > div:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: hsl(var(--background));
 }
 
 
