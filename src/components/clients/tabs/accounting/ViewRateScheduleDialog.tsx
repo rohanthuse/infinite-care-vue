@@ -69,8 +69,18 @@ export const ViewRateScheduleDialog: React.FC<ViewRateScheduleDialogProps> = ({
               </div>
               
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Service Type</label>
-                <p className="text-sm">{schedule.service_type_code || 'General Service'}</p>
+                <label className="text-sm font-medium text-muted-foreground">Service Types</label>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {schedule.service_type_codes && schedule.service_type_codes.length > 0 ? (
+                    schedule.service_type_codes.map(code => (
+                      <Badge key={code} variant="outline" className="text-xs">
+                        {code}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-sm">All Services</p>
+                  )}
+                </div>
               </div>
               
               <div>

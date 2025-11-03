@@ -163,11 +163,10 @@ export const CarerRateTab: React.FC<CarerRateTabProps> = ({ carerId, branchId })
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {schedule.service_types?.name || schedule.service_type_code || 'General Service'}
+                        {schedule.service_type_codes && schedule.service_type_codes.length > 0
+                          ? schedule.service_type_codes.join(', ')
+                          : 'All Services'}
                       </p>
-                      {schedule.service_types?.code && (
-                        <p className="text-sm text-muted-foreground">{schedule.service_types.code}</p>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>

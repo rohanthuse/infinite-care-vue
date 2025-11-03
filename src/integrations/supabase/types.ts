@@ -2924,7 +2924,7 @@ export type Database = {
           rate_45_minutes: number | null
           rate_60_minutes: number | null
           rate_category: string | null
-          service_type_code: string | null
+          service_type_codes: string[] | null
           start_date: string
           time_from: string
           time_until: string
@@ -2952,7 +2952,7 @@ export type Database = {
           rate_45_minutes?: number | null
           rate_60_minutes?: number | null
           rate_category?: string | null
-          service_type_code?: string | null
+          service_type_codes?: string[] | null
           start_date: string
           time_from: string
           time_until: string
@@ -2980,7 +2980,7 @@ export type Database = {
           rate_45_minutes?: number | null
           rate_60_minutes?: number | null
           rate_category?: string | null
-          service_type_code?: string | null
+          service_type_codes?: string[] | null
           start_date?: string
           time_from?: string
           time_until?: string
@@ -3000,13 +3000,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_rate_schedules_service_type_code_fkey"
-            columns: ["service_type_code"]
-            isOneToOne: false
-            referencedRelation: "service_types"
-            referencedColumns: ["code"]
           },
         ]
       }
@@ -7266,7 +7259,7 @@ export type Database = {
           rate_45_minutes: number | null
           rate_60_minutes: number | null
           rate_category: string | null
-          service_type_code: string | null
+          service_type_codes: string[] | null
           staff_id: string
           start_date: string
           time_from: string
@@ -7294,7 +7287,7 @@ export type Database = {
           rate_45_minutes?: number | null
           rate_60_minutes?: number | null
           rate_category?: string | null
-          service_type_code?: string | null
+          service_type_codes?: string[] | null
           staff_id: string
           start_date: string
           time_from: string
@@ -7322,7 +7315,7 @@ export type Database = {
           rate_45_minutes?: number | null
           rate_60_minutes?: number | null
           rate_category?: string | null
-          service_type_code?: string | null
+          service_type_codes?: string[] | null
           staff_id?: string
           start_date?: string
           time_from?: string
@@ -7343,13 +7336,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "staff_rate_schedules_service_type_code_fkey"
-            columns: ["service_type_code"]
-            isOneToOne: false
-            referencedRelation: "service_types"
-            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "staff_rate_schedules_staff_id_fkey"

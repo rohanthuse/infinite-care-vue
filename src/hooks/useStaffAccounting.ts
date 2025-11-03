@@ -6,7 +6,7 @@ import { ServiceType } from '@/types/clientAccounting';
 export interface StaffRateSchedule {
   id: string;
   staff_id: string;
-  service_type_code?: string;
+  service_type_codes: string[];
   authority_type: string;
   start_date: string;
   end_date?: string;
@@ -30,7 +30,6 @@ export interface StaffRateSchedule {
   branch_id?: string;
   organization_id?: string;
   is_vatable: boolean;
-  service_types?: ServiceType;
 }
 
 // Fetch staff rate schedules
@@ -40,19 +39,12 @@ export const useStaffRateSchedules = (staffId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('staff_rate_schedules')
-        .select(`
-          *,
-          service_types (
-            code,
-            name,
-            description
-          )
-        `)
+        .select('*')
         .eq('staff_id', staffId)
         .order('start_date', { ascending: false });
 
       if (error) throw error;
-      return data as (StaffRateSchedule & { service_types?: ServiceType })[];
+      return data as StaffRateSchedule[];
     },
     enabled: !!staffId
   });

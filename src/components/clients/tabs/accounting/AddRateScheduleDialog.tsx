@@ -13,9 +13,10 @@ import { createDateValidation, createTimeValidation } from '@/utils/validationUt
 import { useServiceTypes, useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
 import { useTenant } from '@/contexts/TenantContext';
 import { RateCategory, PayBasedOn, ChargeType, rateCategoryLabels, payBasedOnLabels, chargeTypeLabels, dayLabels } from '@/types/clientAccounting';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 const rateScheduleSchema = z.object({
   authority_type: z.string().min(1, 'Authority type is required'),
-  service_type_code: z.string().transform(val => val === '' ? undefined : val).optional(),
+  service_type_codes: z.array(z.string()).default([]),
   start_date: createDateValidation('Start date'),
   end_date: z.string().transform(val => val === '' ? undefined : val).optional(),
   days_covered: z.array(z.string()).min(1, 'At least one day must be selected'),
@@ -67,7 +68,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
     resolver: zodResolver(rateScheduleSchema),
     defaultValues: {
       authority_type: '',
-      service_type_code: '',
+      service_type_codes: [],
       start_date: '',
       end_date: '',
       days_covered: [],
@@ -88,13 +89,20 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   });
   const selectedPayBasedOn = form.watch('pay_based_on');
   const selectedChargeType = form.watch('charge_type');
+  
+  const serviceTypeOptions: MultiSelectOption[] = serviceTypes?.map(service => ({
+    label: service.name,
+    value: service.code,
+    description: undefined
+  })) || [];
+
   const onSubmit = (data: RateScheduleFormData) => {
     const scheduleData = {
       client_id: clientId,
       branch_id: branchId,
       organization_id: organization?.id || '',
       authority_type: data.authority_type,
-      service_type_code: data.service_type_code || null,
+      service_type_codes: data.service_type_codes,
       start_date: data.start_date,
       end_date: data.end_date || null,
       days_covered: data.days_covered,
@@ -123,7 +131,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
     // Simply reset the form without saving
     form.reset({
       authority_type: '',
-      service_type_code: '',
+      service_type_codes: [],
       start_date: '',
       end_date: '',
       days_covered: [],
@@ -186,23 +194,24 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                     <FormMessage />
                   </FormItem>} />
 
-              <FormField control={form.control} name="service_type_code" render={({
+              <FormField control={form.control} name="service_type_codes" render={({
               field
             }) => <FormItem>
-                    <FormLabel>Service Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {serviceTypes?.map(service => <SelectItem key={service.code} value={service.code}>
-                            {service.name}
-                          </SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Service Types</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        options={serviceTypeOptions}
+                        selected={field.value || []}
+                        onSelectionChange={field.onChange}
+                        placeholder="Select service types..."
+                        searchPlaceholder="Search services..."
+                        emptyText="No services found."
+                        maxDisplay={2}
+                        showSelectAll={true}
+                      />
+                    </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all services</p>
                   </FormItem>} />
 
               <FormField control={form.control} name="start_date" render={({

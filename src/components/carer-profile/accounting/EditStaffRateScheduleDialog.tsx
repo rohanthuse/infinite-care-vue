@@ -11,9 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useTenant } from "@/contexts/TenantContext";
 import { useServiceTypes } from "@/hooks/useClientAccounting";
 import { useUpdateStaffRateSchedule, StaffRateSchedule } from "@/hooks/useStaffAccounting";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 
 const formSchema = z.object({
-  service_type_code: z.string().optional(),
+  service_type_codes: z.array(z.string()).default([]),
   authority_type: z.string().min(1, "Authority type is required"),
   start_date: z.string().min(1, "Start date is required"),
   end_date: z.string().optional(),
@@ -65,10 +66,16 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
   const { data: serviceTypes = [] } = useServiceTypes();
   const updateSchedule = useUpdateStaffRateSchedule();
 
+  const serviceTypeOptions: MultiSelectOption[] = serviceTypes.map(service => ({
+    label: service.name,
+    value: service.code,
+    description: undefined
+  }));
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      service_type_code: schedule.service_type_code || "",
+      service_type_codes: schedule.service_type_codes || [],
       authority_type: schedule.authority_type,
       start_date: schedule.start_date,
       end_date: schedule.end_date || "",
@@ -92,7 +99,7 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
   useEffect(() => {
     if (schedule) {
       form.reset({
-        service_type_code: schedule.service_type_code || "",
+        service_type_codes: schedule.service_type_codes || [],
         authority_type: schedule.authority_type,
         start_date: schedule.start_date,
         end_date: schedule.end_date || "",
@@ -123,7 +130,7 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
       staff_id: staffId,
       branch_id: branchId,
       organization_id: organization?.id || '',
-      service_type_code: data.service_type_code || null,
+      service_type_codes: data.service_type_codes,
       authority_type: data.authority_type,
       start_date: data.start_date,
       end_date: data.end_date || null,
@@ -192,25 +199,24 @@ export const EditStaffRateScheduleDialog: React.FC<EditStaffRateScheduleDialogPr
                 />
                 <FormField
                   control={form.control}
-                  name="service_type_code"
+                  name="service_type_codes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Service Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select service type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {serviceTypes.map((service) => (
-                            <SelectItem key={service.code} value={service.code}>
-                              {service.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Service Types</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={serviceTypeOptions}
+                          selected={field.value || []}
+                          onSelectionChange={field.onChange}
+                          placeholder="Select service types..."
+                          searchPlaceholder="Search services..."
+                          emptyText="No services found."
+                          maxDisplay={2}
+                          showSelectAll={true}
+                        />
+                      </FormControl>
                       <FormMessage />
+                      <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all services</p>
                     </FormItem>
                   )}
                 />

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface RateScheduleTableProps {
-  rateSchedules: (ClientRateSchedule & { service_types?: ServiceType })[];
+  rateSchedules: ClientRateSchedule[];
   clientId: string;
   branchId: string;
 }
@@ -103,7 +103,22 @@ export const RateScheduleTable: React.FC<RateScheduleTableProps> = ({
           {rateSchedules.map((schedule) => (
             <TableRow key={schedule.id}>
               <TableCell>
-                {schedule.service_types?.name || schedule.service_type_code || 'General Service'}
+                {schedule.service_type_codes && schedule.service_type_codes.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {schedule.service_type_codes.slice(0, 2).map(code => (
+                      <Badge key={code} variant="outline" className="text-xs">
+                        {code}
+                      </Badge>
+                    ))}
+                    {schedule.service_type_codes.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{schedule.service_type_codes.length - 2} more
+                      </Badge>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">All Services</span>
+                )}
               </TableCell>
               <TableCell>{schedule.authority_type}</TableCell>
               <TableCell className="capitalize">{schedule.rate_category}</TableCell>

@@ -75,10 +75,18 @@ export const ViewStaffRateScheduleDialog: React.FC<ViewStaffRateScheduleDialogPr
                 <p className="font-medium capitalize">{schedule.authority_type}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Service Type:</span>
-                <p className="font-medium">
-                  {schedule.service_types?.name || schedule.service_type_code || 'General Service'}
-                </p>
+                <span className="text-muted-foreground">Service Types:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {schedule.service_type_codes && schedule.service_type_codes.length > 0 ? (
+                    schedule.service_type_codes.map(code => (
+                      <Badge key={code} variant="outline" className="text-xs">
+                        {code}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="font-medium">All Services</p>
+                  )}
+                </div>
               </div>
               <div>
                 <span className="text-muted-foreground">Start Date:</span>

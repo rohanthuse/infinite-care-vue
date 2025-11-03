@@ -169,20 +169,13 @@ export const useClientRateSchedules = (clientId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('client_rate_schedules')
-        .select(`
-          *,
-          service_types (
-            name,
-            code,
-            description
-          )
-        `)
+        .select('*')
         .eq('client_id', clientId)
         .eq('is_active', true)
         .order('start_date', { ascending: false });
       
       if (error) throw error;
-      return data as (ClientRateSchedule & { service_types?: ServiceType })[];
+      return data as ClientRateSchedule[];
     },
     enabled: !!clientId
   });

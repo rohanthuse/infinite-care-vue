@@ -52,7 +52,7 @@ export interface ServiceType {
 export interface ClientRateSchedule {
   id: string;
   client_id: string;
-  service_type_code?: string;
+  service_type_codes: string[];
   authority_type: string;
   start_date: string;
   end_date?: string;

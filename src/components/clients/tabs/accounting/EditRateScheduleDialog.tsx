@@ -18,10 +18,11 @@ import {
   chargeTypeLabels,
   dayLabels
 } from '@/types/clientAccounting';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 
 const editRateScheduleSchema = z.object({
   authority_type: z.string().min(1, 'Authority type is required'),
-  service_type_code: z.string().optional(),
+  service_type_codes: z.array(z.string()).default([]),
   start_date: createDateValidation('Start date'),
   end_date: z.string().optional(),
   days_covered: z.array(z.string()).min(1, 'At least one day must be selected'),
@@ -63,11 +64,17 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
   const { data: serviceTypes } = useServiceTypes();
   const updateSchedule = useUpdateClientRateSchedule();
 
+  const serviceTypeOptions: MultiSelectOption[] = serviceTypes?.map(service => ({
+    label: service.name,
+    value: service.code,
+    description: undefined
+  })) || [];
+
   const form = useForm<EditRateScheduleFormData>({
     resolver: zodResolver(editRateScheduleSchema),
     defaultValues: {
       authority_type: schedule.authority_type,
-      service_type_code: schedule.service_type_code || '',
+      service_type_codes: schedule.service_type_codes || [],
       start_date: schedule.start_date,
       end_date: schedule.end_date || '',
       days_covered: schedule.days_covered,
@@ -92,7 +99,7 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
     if (open && schedule) {
       form.reset({
         authority_type: schedule.authority_type,
-        service_type_code: schedule.service_type_code || '',
+        service_type_codes: schedule.service_type_codes || [],
         start_date: schedule.start_date,
         end_date: schedule.end_date || '',
         days_covered: schedule.days_covered,
@@ -177,25 +184,24 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
 
               <FormField
                 control={form.control}
-                name="service_type_code"
+                name="service_type_codes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select service type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {serviceTypes?.map((service) => (
-                          <SelectItem key={service.code} value={service.code}>
-                            {service.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Service Types</FormLabel>
+                    <FormControl>
+                      <MultiSelect
+                        options={serviceTypeOptions}
+                        selected={field.value || []}
+                        onSelectionChange={field.onChange}
+                        placeholder="Select service types..."
+                        searchPlaceholder="Search services..."
+                        emptyText="No services found."
+                        maxDisplay={2}
+                        showSelectAll={true}
+                      />
+                    </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all services</p>
                   </FormItem>
                 )}
               />
