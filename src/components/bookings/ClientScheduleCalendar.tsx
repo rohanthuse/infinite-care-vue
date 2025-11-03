@@ -430,20 +430,24 @@ export function ClientScheduleCalendar({
         )}
 
         {/* Header with search and filters */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
+        <div className="flex flex-col gap-3">
+          {/* Top row: Search */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search clients..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+          </div>
+          
+          {/* Middle row: Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="showAll" 
@@ -452,7 +456,7 @@ export function ClientScheduleCalendar({
                     setFilters(prev => ({ ...prev, showAll: checked as boolean }))
                   }
                 />
-                <label htmlFor="showAll" className="text-sm">Show All Clients</label>
+                <label htmlFor="showAll" className="text-sm whitespace-nowrap">Show All Clients</label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -462,7 +466,7 @@ export function ClientScheduleCalendar({
                     setFilters(prev => ({ ...prev, activeOnly: checked as boolean }))
                   }
                 />
-                <label htmlFor="activeOnly" className="text-sm">Active Sessions Only</label>
+                <label htmlFor="activeOnly" className="text-sm whitespace-nowrap">Active Sessions Only</label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -472,17 +476,18 @@ export function ClientScheduleCalendar({
                     setFilters(prev => ({ ...prev, scheduledOnly: checked as boolean }))
                   }
                 />
-                <label htmlFor="scheduledOnly" className="text-sm">Scheduled Only</label>
+                <label htmlFor="scheduledOnly" className="text-sm whitespace-nowrap">Scheduled Only</label>
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
+          
+          {/* Bottom row: Actions and date */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExport}
-              className="flex items-center gap-2"
+              className="w-full sm:w-auto flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
               Export CSV

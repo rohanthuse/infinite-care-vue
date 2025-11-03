@@ -31,14 +31,14 @@ export function UnifiedScheduleView({
   onCreateBooking,
 }: UnifiedScheduleViewProps) {
   return (
-    <div className="flex flex-col lg:flex-row gap-4 min-h-[600px] max-h-[calc(100vh-320px)] overflow-auto">
+    <div className="flex flex-col xl:flex-row gap-4 h-[calc(100vh-280px)]">
       {/* Left Panel - Client Schedule */}
-      <div className="flex-1 border-2 border-blue-500 rounded-lg overflow-hidden flex flex-col min-w-0 lg:w-1/2 h-full">
+      <div className="flex-1 border-2 border-blue-500 rounded-lg overflow-hidden flex flex-col min-w-0 xl:min-w-[500px]">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Client Schedule</h3>
           <p className="text-sm text-muted-foreground">View all client appointments</p>
         </div>
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden">
           <ClientScheduleCalendar
             date={date}
             bookings={bookings}
@@ -62,12 +62,12 @@ export function UnifiedScheduleView({
       </div>
 
       {/* Right Panel - Staff Schedule */}
-      <div className="flex-1 border-2 border-green-500 rounded-lg overflow-hidden flex flex-col min-w-0 lg:w-1/2 h-full">
+      <div className="flex-1 border-2 border-green-500 rounded-lg overflow-hidden flex flex-col min-w-0 xl:min-w-[500px]">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Staff Schedule</h3>
           <p className="text-sm text-muted-foreground">View all staff assignments</p>
         </div>
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden">
           <StaffScheduleCalendar
             date={date}
             bookings={bookings}

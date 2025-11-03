@@ -500,20 +500,24 @@ export function StaffScheduleCalendar({
         )}
 
         {/* Header with search and filters */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
+        <div className="flex flex-col gap-3">
+          {/* Top row: Search */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search staff..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full sm:w-64"
               />
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+          </div>
+          
+          {/* Middle row: Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="showRuns" 
@@ -522,7 +526,7 @@ export function StaffScheduleCalendar({
                     setFilters(prev => ({ ...prev, showRuns: checked as boolean }))
                   }
                 />
-                <label htmlFor="showRuns" className="text-sm">Show All Staff</label>
+                <label htmlFor="showRuns" className="text-sm whitespace-nowrap">Show All Staff</label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -532,7 +536,7 @@ export function StaffScheduleCalendar({
                     setFilters(prev => ({ ...prev, maxHours: checked as boolean }))
                   }
                 />
-                <label htmlFor="maxHours" className="text-sm">Within Max Hours</label>
+                <label htmlFor="maxHours" className="text-sm whitespace-nowrap">Within Max Hours</label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -542,17 +546,18 @@ export function StaffScheduleCalendar({
                     setFilters(prev => ({ ...prev, assignedOnly: checked as boolean }))
                   }
                 />
-                <label htmlFor="assignedOnly" className="text-sm">Assigned Only</label>
+                <label htmlFor="assignedOnly" className="text-sm whitespace-nowrap">Assigned Only</label>
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
+          
+          {/* Bottom row: Actions and date */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleExport}
-              className="flex items-center gap-2"
+              className="w-full sm:w-auto flex items-center gap-2"
             >
               <Download className="h-4 w-4" />
               Export CSV

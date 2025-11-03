@@ -427,4 +427,41 @@
   background-color: hsl(var(--muted-foreground) / 0.8);
 }
 
+/* Responsive adjustments for unified schedule view */
+@media (max-width: 1280px) {
+  .time-grid-inner {
+    font-size: 0.875rem;
+  }
+  
+  .time-slot {
+    min-width: 56px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Stack schedule panels vertically on mobile */
+  .unified-schedule-container {
+    flex-direction: column;
+  }
+  
+  .schedule-panel {
+    min-width: 100%;
+    max-height: 50vh;
+  }
+  
+  .time-slot {
+    min-width: 48px;
+  }
+  
+  /* Reduce padding on small screens */
+  .day-header {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .hour-cell {
+    height: 50px;
+  }
+}
+
 
