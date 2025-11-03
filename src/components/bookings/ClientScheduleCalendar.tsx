@@ -546,11 +546,11 @@ export function ClientScheduleCalendar({
             }}
           />
         ) : (
-        <div className="border rounded-lg flex flex-col h-full min-h-0 overflow-auto">
-          <div className="text-xs text-muted-foreground mb-2 px-1 sticky left-0 bg-background z-20">
+        <div className="border rounded-lg flex flex-col h-full min-h-0">
+          <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
-          <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0 max-w-full">
+          <div className="flex-1 overflow-x-auto overflow-y-auto min-h-0 w-full">
             <div className="time-grid-inner" style={{ width: TOTAL_WIDTH, minWidth: TOTAL_WIDTH }}>
               {/* Header row - sticky */}
               <div className="bg-muted/50 border-b flex sticky top-0 z-20" style={{ width: TOTAL_WIDTH }}>
@@ -593,7 +593,7 @@ export function ClientScheduleCalendar({
               >
                 {/* Client info column */}
                 <div 
-                  className="p-3 border-r bg-background sticky left-0 z-10 flex-shrink-0"
+                  className="p-3 border-r bg-background sticky left-0 z-10 flex-shrink-0 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   style={{ width: LEFT_COL_WIDTH }}
                 >
                   <div className="space-y-1">
