@@ -858,7 +858,7 @@ export function StaffScheduleCalendar({
       </div>
         </TabsContent>
 
-        <TabsContent value="utilization" className="mt-6">
+        <TabsContent value="utilization" className="mt-6 h-full flex flex-col">
           {isLoadingUtilization ? (
             <div className="flex items-center justify-center h-32">
               <div className="text-center space-y-2">
@@ -867,11 +867,13 @@ export function StaffScheduleCalendar({
               </div>
             </div>
           ) : (
-            <StaffUtilizationMetrics 
-              staffData={utilizationData} 
-              date={date} 
-              branchId={branchId} 
-            />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <StaffUtilizationMetrics 
+                staffData={utilizationData} 
+                date={date} 
+                branchId={branchId} 
+              />
+            </div>
           )}
         </TabsContent>
       </Tabs>
