@@ -42,19 +42,40 @@ export const ClientNews2Dashboard = ({ isAdminView = false }: { isAdminView?: bo
     return (
       <div className="text-center py-12 max-w-md mx-auto">
         <Activity className="h-16 w-16 text-blue-500 mx-auto mb-6" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">Health Monitoring Not Available</h3>
-        <p className="text-gray-600 mb-4">
-          You're not currently enrolled in NEWS2 health monitoring. This service tracks your vital signs and helps your care team monitor your wellbeing.
-        </p>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <h4 className="font-medium text-blue-800 mb-2">What is NEWS2 Health Monitoring?</h4>
-          <ul className="text-sm text-blue-700 text-left space-y-1">
-            <li>• Regular tracking of vital signs like heart rate and blood pressure</li>
-            <li>• Early detection of health changes</li>
-            <li>• Better coordination with your care team</li>
-            <li>• Personalized health insights and trends</li>
-          </ul>
-        </div>
+        
+        {isAdminView ? (
+          <>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Client Not Enrolled in Health Monitoring</h3>
+            <p className="text-gray-600 mb-4">
+              This client is not currently enrolled in NEWS2 health monitoring.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h4 className="font-medium text-blue-800 mb-2">What is NEWS2 Health Monitoring?</h4>
+              <ul className="text-sm text-blue-700 text-left space-y-1">
+                <li>• Regular tracking of vital signs like heart rate and blood pressure</li>
+                <li>• Early detection of health changes</li>
+                <li>• Better coordination with care teams</li>
+                <li>• Personalized health insights and trends</li>
+              </ul>
+            </div>
+          </>
+        ) : (
+          <>
+            <h3 className="text-xl font-semibold text-gray-900 mb-3">Health Monitoring Not Available</h3>
+            <p className="text-gray-600 mb-4">
+              You're not currently enrolled in NEWS2 health monitoring. This service tracks your vital signs and helps your care team monitor your wellbeing.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h4 className="font-medium text-blue-800 mb-2">What is NEWS2 Health Monitoring?</h4>
+              <ul className="text-sm text-blue-700 text-left space-y-1">
+                <li>• Regular tracking of vital signs like heart rate and blood pressure</li>
+                <li>• Early detection of health changes</li>
+                <li>• Better coordination with your care team</li>
+                <li>• Personalized health insights and trends</li>
+              </ul>
+            </div>
+          </>
+        )}
         {isAdminView ? (
           <div className="text-center">
             <p className="text-sm text-gray-600">
