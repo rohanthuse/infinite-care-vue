@@ -291,7 +291,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   }
 
   return (
-    <div className="space-y-6 page-bookings">
+    <div className="space-y-6 page-bookings w-full max-w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">Bookings</h2>
@@ -431,7 +431,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <BookingReport bookings={filteredBookings} />
         </TabsContent>
 
-        <TabsContent value="unified-schedule" className="space-y-4">
+        <TabsContent value="unified-schedule" className="space-y-4 w-full overflow-hidden">
           <DateNavigation 
             currentDate={selectedDate} 
             onDateChange={setSelectedDate}
