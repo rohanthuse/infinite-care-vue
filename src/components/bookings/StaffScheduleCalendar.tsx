@@ -616,7 +616,7 @@ export function StaffScheduleCalendar({
           }}
         />
       ) : (
-        <div className="schedule-scroll border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-hidden">
+        <div className="schedule-scroll border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-x-hidden">
           <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b sticky top-0 z-20 flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
