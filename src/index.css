@@ -95,13 +95,24 @@
     @apply border-border;
   }
 
+  html {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Plus Jakarta Sans', sans-serif;
+    max-width: 100vw;
     overflow-x: hidden;
     position: relative;
     width: 100%;
     transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  #root {
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   /* Force light theme for home page */
@@ -320,6 +331,32 @@
 
 .card-hover {
   @apply transition-all duration-300 hover:shadow-modern hover:-translate-y-1;
+}
+
+/* Schedule scroll container */
+.schedule-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.schedule-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.schedule-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.schedule-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.schedule-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.5);
 }
 
 /* Smooth scroll behavior */
