@@ -31,9 +31,9 @@ export function UnifiedScheduleView({
   onCreateBooking,
 }: UnifiedScheduleViewProps) {
   return (
-    <div className="flex flex-col xl:flex-row gap-4 h-[calc(100vh-280px)] w-full">
+    <div className="flex flex-col gap-4 w-full">
       {/* Left Panel - Client Schedule */}
-      <div className="flex-1 border-2 border-blue-500 rounded-lg overflow-hidden flex flex-col min-w-0">
+      <div className="border-2 border-blue-500 rounded-lg overflow-hidden flex flex-col h-[500px]">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Client Schedule</h3>
           <p className="text-sm text-muted-foreground">View all client appointments</p>
@@ -62,7 +62,7 @@ export function UnifiedScheduleView({
       </div>
 
       {/* Right Panel - Staff Schedule */}
-      <div className="flex-1 border-2 border-green-500 rounded-lg overflow-hidden flex flex-col min-w-0">
+      <div className="border-2 border-green-500 rounded-lg overflow-hidden flex flex-col h-[500px]">
         <div className="bg-muted/50 px-4 py-2 border-b flex-shrink-0">
           <h3 className="text-lg font-semibold">Staff Schedule</h3>
           <p className="text-sm text-muted-foreground">View all staff assignments</p>
