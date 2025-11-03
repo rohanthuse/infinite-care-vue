@@ -542,7 +542,7 @@ export function ClientScheduleCalendar({
             }}
           />
         ) : (
-        <div className="border rounded-lg flex flex-col h-full overflow-auto">
+        <div className="border rounded-lg flex flex-col h-full min-h-0 overflow-auto">
           <div className="text-xs text-muted-foreground mb-2 px-1 sticky left-0 bg-background z-20">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
           </div>
