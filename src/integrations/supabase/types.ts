@@ -6249,6 +6249,7 @@ export type Database = {
       services: {
         Row: {
           category: string
+          code: string | null
           created_at: string
           description: string | null
           double_handed: boolean
@@ -6260,6 +6261,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          code?: string | null
           created_at?: string
           description?: string | null
           double_handed?: boolean
@@ -6271,6 +6273,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          code?: string | null
           created_at?: string
           description?: string | null
           double_handed?: boolean

@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
-import { useServiceTypes, useUpdateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useUpdateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useServices } from '@/data/hooks/useServices';
 import { 
   ClientRateSchedule,
   rateCategoryLabels,
@@ -61,11 +62,11 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
   clientId,
   branchId
 }) => {
-  const { data: serviceTypes } = useServiceTypes();
+  const { data: services } = useServices();
   const updateSchedule = useUpdateClientRateSchedule();
 
-  const serviceTypeOptions: MultiSelectOption[] = serviceTypes?.map(service => ({
-    label: service.name,
+  const serviceTypeOptions: MultiSelectOption[] = services?.map(service => ({
+    label: service.title,
     value: service.code,
     description: undefined
   })) || [];

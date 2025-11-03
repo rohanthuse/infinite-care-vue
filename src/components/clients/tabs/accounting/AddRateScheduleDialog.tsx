@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
-import { useServiceTypes, useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
+import { useServices } from '@/data/hooks/useServices';
 import { useTenant } from '@/contexts/TenantContext';
 import { RateCategory, PayBasedOn, ChargeType, rateCategoryLabels, payBasedOnLabels, chargeTypeLabels, dayLabels } from '@/types/clientAccounting';
 import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
@@ -61,8 +62,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
     organization
   } = useTenant();
   const {
-    data: serviceTypes
-  } = useServiceTypes();
+    data: services
+  } = useServices();
   const createSchedule = useCreateClientRateSchedule();
   const form = useForm<RateScheduleFormData>({
     resolver: zodResolver(rateScheduleSchema),
@@ -90,8 +91,8 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   const selectedPayBasedOn = form.watch('pay_based_on');
   const selectedChargeType = form.watch('charge_type');
   
-  const serviceTypeOptions: MultiSelectOption[] = serviceTypes?.map(service => ({
-    label: service.name,
+  const serviceTypeOptions: MultiSelectOption[] = services?.map(service => ({
+    label: service.title,
     value: service.code,
     description: undefined
   })) || [];

@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTenant } from "@/contexts/TenantContext";
-import { useServiceTypes } from "@/hooks/useClientAccounting";
 import { useCreateStaffRateSchedule } from "@/hooks/useStaffAccounting";
+import { useServices } from "@/data/hooks/useServices";
 import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 
 const formSchema = z.object({
@@ -61,11 +61,11 @@ export const AddStaffRateScheduleDialog: React.FC<AddStaffRateScheduleDialogProp
   branchId,
 }) => {
   const { organization } = useTenant();
-  const { data: serviceTypes = [] } = useServiceTypes();
+  const { data: services = [] } = useServices();
   const createSchedule = useCreateStaffRateSchedule();
 
-  const serviceTypeOptions: MultiSelectOption[] = serviceTypes.map(service => ({
-    label: service.name,
+  const serviceTypeOptions: MultiSelectOption[] = services.map(service => ({
+    label: service.title,
     value: service.code,
     description: undefined
   }));
