@@ -404,7 +404,7 @@ export function ClientScheduleCalendar({
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 h-full">
+      <div className="flex flex-col gap-4 h-full">
         {/* Date Navigation */}
         {!hideControls && onDateChange && (
           <DateNavigation
@@ -546,6 +546,7 @@ export function ClientScheduleCalendar({
             }}
           />
         ) : (
+        <div className="flex-1 min-h-0">
         <div className="schedule-scroll border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-x-hidden">
           <div className="text-xs text-muted-foreground py-2 px-1 bg-background border-b sticky top-0 z-20 flex-shrink-0">
             ← Scroll horizontally to see more {viewType === 'weekly' ? 'days' : 'time slots'} →
@@ -711,6 +712,7 @@ export function ClientScheduleCalendar({
             ))}
           </div>
           </div>
+        </div>
         </div>
         )}
 
