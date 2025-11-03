@@ -404,7 +404,7 @@ export function ClientScheduleCalendar({
 
   return (
     <TooltipProvider>
-      <div className="space-y-4">
+      <div className="space-y-4 h-full">
         {/* Date Navigation */}
         {!hideControls && onDateChange && (
           <DateNavigation

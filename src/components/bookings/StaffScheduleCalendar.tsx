@@ -474,7 +474,7 @@ export function StaffScheduleCalendar({
         </TabsList>
 
         <TabsContent value="schedule" className="mt-6">
-          <div className="space-y-4">
+          <div className="space-y-4 h-full">
         {/* Date Navigation */}
         {!hideControls && onDateChange && (
           <DateNavigation
