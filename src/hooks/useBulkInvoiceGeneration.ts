@@ -196,7 +196,6 @@ export const useBulkInvoiceGeneration = () => {
           .from('client_billing')
           .insert({
             client_id: clientId,
-            branch_id: branchId,
             organization_id: organizationId,
             invoice_number: invoiceNumber,
             description: `${periodDetails.type.charAt(0).toUpperCase() + periodDetails.type.slice(1)} Invoice (${periodDetails.startDate} to ${periodDetails.endDate})`,
