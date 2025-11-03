@@ -26,6 +26,7 @@ import { ClientRatesTab } from "./tabs/ClientRatesTab";
 import { ClientHobbiesTab } from "./tabs/ClientHobbiesTab";
 import { ReviewsTab } from "./tabs/ReviewsTab";
 import { ClientMedicationsTab } from "./tabs/ClientMedicationsTab";
+import { ClientNews2Tab } from "./tabs/ClientNews2Tab";
 import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
 import { ServiceReportsTab } from "../service-reports/ServiceReportsTab";
@@ -266,6 +267,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="activities" className="p-6 m-0">
                   <ActivitiesTab clientId={client.id} />
+                </TabsContent>
+                
+                <TabsContent value="news2" className="p-6 m-0">
+                  <ClientNews2Tab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="suspend" className="p-6 m-0">

@@ -1,5 +1,5 @@
 import React from "react";
-import { User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart, DollarSign, PauseCircle, BarChart3 } from "lucide-react";
+import { User, MessageCircle, FileText, Calendar, CreditCard, ClipboardList, FileBarChart2, Heart, DollarSign, PauseCircle, BarChart3, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -54,6 +54,11 @@ const navItems = [
     id: "activities",
     label: "Activities",
     icon: Heart,
+  },
+  {
+    id: "news2",
+    label: "Health Monitoring",
+    icon: Activity,
   },
   {
     id: "suspend",
