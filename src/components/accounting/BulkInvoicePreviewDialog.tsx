@@ -54,7 +54,7 @@ export const BulkInvoicePreviewDialog: React.FC<BulkInvoicePreviewDialogProps> =
     
     setLoading(true);
     try {
-      // Fetch completed bookings for the period
+      // Fetch all bookings for the period (all statuses)
       const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -62,7 +62,6 @@ export const BulkInvoicePreviewDialog: React.FC<BulkInvoicePreviewDialogProps> =
           client_id,
           clients!inner(first_name, last_name)
         `)
-        .in('status', ['done', 'completed'])
         .eq('branch_id', branchId)
         .gte('start_time', periodDetails.startDate)
         .lte('start_time', periodDetails.endDate);

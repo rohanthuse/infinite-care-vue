@@ -88,7 +88,7 @@ export const useBulkInvoiceGeneration = () => {
 
     console.log('[BulkInvoiceGeneration] Starting bulk generation for period:', periodDetails);
 
-    // Step 1: Fetch all completed bookings in period
+    // Step 1: Fetch all bookings in period (all statuses)
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select(`
@@ -97,7 +97,6 @@ export const useBulkInvoiceGeneration = () => {
         services(title),
         staff(first_name, last_name)
       `)
-      .in('status', ['done', 'completed'])
       .eq('branch_id', branchId)
       .gte('start_time', periodDetails.startDate)
       .lte('start_time', periodDetails.endDate);
@@ -108,11 +107,11 @@ export const useBulkInvoiceGeneration = () => {
     }
 
     if (!bookings || bookings.length === 0) {
-      console.log('[BulkInvoiceGeneration] No completed bookings found for this period');
-      return { ...results, message: 'No completed bookings found for this period' };
+      console.log('[BulkInvoiceGeneration] No bookings found for this period');
+      return { ...results, message: 'No bookings found for this period' };
     }
 
-    console.log(`[BulkInvoiceGeneration] Found ${bookings.length} completed bookings`);
+    console.log(`[BulkInvoiceGeneration] Found ${bookings.length} bookings (all statuses)`);
 
     // Step 2: Group bookings by client
     const clientBookingsMap = new Map<string, { clientName: string; bookings: any[] }>();

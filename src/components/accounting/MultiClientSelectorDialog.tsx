@@ -57,7 +57,7 @@ export const MultiClientSelectorDialog: React.FC<MultiClientSelectorDialogProps>
   const fetchClients = async () => {
     setLoading(true);
     try {
-      // Fetch bookings for the period
+      // Fetch bookings for the period (all statuses)
       const { data: bookings, error } = await supabase
         .from('bookings')
         .select(`
@@ -70,7 +70,6 @@ export const MultiClientSelectorDialog: React.FC<MultiClientSelectorDialogProps>
           )
         `)
         .eq('branch_id', branchId)
-        .eq('status', 'completed')
         .gte('start_time', periodDetails.startDate)
         .lte('end_time', periodDetails.endDate);
 
