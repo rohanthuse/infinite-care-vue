@@ -23,6 +23,11 @@ export interface ClientAccountingSettings {
   consolidation_preference?: 'single' | 'split_by_client';
   contract_reference?: string;
   contract_notes?: string;
+  // Billing frequency fields
+  billing_frequency?: 'weekly' | 'fortnightly' | 'monthly' | 'on_demand';
+  auto_generate_invoices?: boolean;
+  last_invoice_generated_at?: string;
+  uninvoiced_bookings_count?: number;
 }
 
 export interface ClientPrivateAccounting {
@@ -80,6 +85,8 @@ export interface ClientRateSchedule {
 
 export type InvoiceMethod = 'per_visit' | 'weekly' | 'monthly';
 
+export type BillingFrequency = 'weekly' | 'fortnightly' | 'monthly' | 'on_demand';
+
 export type RateCategory = 'standard' | 'adult' | 'cyp';
 
 export type ServicePayer = 'authorities' | 'direct_payment' | 'self_funder' | 'other';
@@ -113,6 +120,13 @@ export const invoiceMethodLabels: Record<InvoiceMethod, string> = {
   per_visit: 'Per Visit',
   weekly: 'Weekly',
   monthly: 'Monthly'
+};
+
+export const billingFrequencyLabels: Record<BillingFrequency, string> = {
+  weekly: 'Weekly',
+  fortnightly: 'Fortnightly',
+  monthly: 'Monthly',
+  on_demand: 'On Demand'
 };
 
 export const rateCategoryLabels: Record<RateCategory, string> = {

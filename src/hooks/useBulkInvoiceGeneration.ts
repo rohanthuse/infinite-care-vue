@@ -253,6 +253,23 @@ export const useBulkInvoiceGeneration = () => {
 
         if (lineItemsError) throw lineItemsError;
 
+        // Mark bookings as invoiced
+        const bookingIds = clientData.bookings.map(b => b.id);
+        if (bookingIds.length > 0) {
+          const { error: bookingUpdateError } = await supabase
+            .from('bookings')
+            .update({ 
+              is_invoiced: true, 
+              included_in_invoice_id: invoice.id 
+            })
+            .in('id', bookingIds);
+
+          if (bookingUpdateError) {
+            console.error(`[BulkInvoiceGeneration] Error marking bookings as invoiced:`, bookingUpdateError);
+            // Don't fail the whole process, just log the error
+          }
+        }
+
         // Success!
         results.successCount++;
         results.totalAmount += billingSummary.total_amount;

@@ -15,6 +15,7 @@ import { InvoicePeriodSelector, type PeriodDetails } from './InvoicePeriodSelect
 import { BulkInvoicePreviewDialog } from './BulkInvoicePreviewDialog';
 import { BulkGenerationProgressDialog } from './BulkGenerationProgressDialog';
 import { BulkGenerationResultsDialog } from './BulkGenerationResultsDialog';
+import { InvoiceGenerationWidget } from './InvoiceGenerationWidget';
 import { useBulkInvoiceGeneration } from '@/hooks/useBulkInvoiceGeneration';
 import type { BulkGenerationProgress, BulkGenerationResult } from '@/hooks/useBulkInvoiceGeneration';
 import { useBranchInvoices } from '@/hooks/useBranchInvoices';
@@ -198,6 +199,38 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     setIsCreateInvoiceOpen(true);
   };
 
+  // Handler for booking completion to update counts
+  const handleBookingCompleted = () => {
+    // Invalidate invoice generation queue to refresh counts
+    queryClient.invalidateQueries({ queryKey: ['invoice-generation-queue', branchId] });
+  };
+
+  // Handler for invoice creation to mark bookings as invoiced
+  const handleInvoiceCreated = async (invoiceId: string, bookingIds: string[]) => {
+    try {
+      // Update bookings to mark them as invoiced
+      if (bookingIds && bookingIds.length > 0) {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ 
+            is_invoiced: true, 
+            included_in_invoice_id: invoiceId 
+          })
+          .in('id', bookingIds);
+
+        if (error) {
+          console.error('Error marking bookings as invoiced:', error);
+        } else {
+          // Refresh the queue
+          queryClient.invalidateQueries({ queryKey: ['invoice-generation-queue', branchId] });
+          queryClient.invalidateQueries({ queryKey: ['branch-invoices', branchId] });
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleInvoiceCreated:', error);
+    }
+  };
+
   // Handler for downloading invoice as PDF
   const handleDownloadInvoice = async (invoiceId: string) => {
     setDownloadingInvoiceId(invoiceId);
@@ -324,6 +357,12 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
     <div className="space-y-6">
       {/* Financial Summary */}
       <FinancialSummaryCards branchId={branchId} />
+
+      {/* Invoice Generation Queue Widget */}
+      <InvoiceGenerationWidget 
+        branchId={branchId!} 
+        onViewReadyClients={() => setIsInvoicePeriodOpen(true)} 
+      />
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg border p-4">
