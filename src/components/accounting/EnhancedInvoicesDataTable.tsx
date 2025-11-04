@@ -125,7 +125,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
       </div>
 
       {/* Comprehensive Filters */}
-      <ComprehensiveInvoiceFilters filters={filters} onFiltersChange={setFilters} onReset={resetFilters} />
+      <ComprehensiveInvoiceFilters branchId={branchId} filters={filters} onFiltersChange={setFilters} onReset={resetFilters} />
 
       {/* Enhanced Table */}
       <div className="border rounded-lg overflow-hidden">

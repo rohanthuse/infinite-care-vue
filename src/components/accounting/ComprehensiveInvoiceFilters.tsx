@@ -14,26 +14,30 @@ import { Button } from '@/components/ui/button';
 import { Search, X } from 'lucide-react';
 import { useAuthoritiesForBilling } from '@/hooks/useAuthorities';
 import { BranchInvoiceFilters } from '@/hooks/useBranchInvoices';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { useClientsList } from '@/hooks/useAccountingData';
 
 interface ComprehensiveInvoiceFiltersProps {
+  branchId: string;
   filters: BranchInvoiceFilters;
   onFiltersChange: (filters: BranchInvoiceFilters) => void;
   onReset: () => void;
 }
 
 export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersProps> = ({
+  branchId,
   filters,
   onFiltersChange,
   onReset
 }) => {
   const { data: authorities = [] } = useAuthoritiesForBilling();
+  const { data: clients = [] } = useClientsList(branchId);
 
   const handleFilterChange = (key: keyof BranchInvoiceFilters, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  const statusOptions = [
-    { value: '__ALL__', label: 'All Statuses' },
+  const statusOptions: MultiSelectOption[] = [
     { value: 'draft', label: 'Draft' },
     { value: 'ready_to_charge', label: 'Ready to Send' },
     { value: 'confirmed', label: 'Confirmed' },
@@ -42,6 +46,14 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
     { value: 'overdue', label: 'Overdue' },
     { value: 'cancelled', label: 'Cancelled' },
   ];
+
+  const clientOptions: MultiSelectOption[] = clients
+    .filter(client => client.first_name && client.last_name)
+    .map(client => ({
+      label: `${client.first_name} ${client.last_name}`,
+      value: client.id,
+      description: client.pin_code || client.email || undefined
+    }));
 
   const authorityTypeOptions = [
     { value: '__ALL__', label: 'All Types' },
@@ -63,21 +75,11 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
     { value: 'adhoc', label: 'Ad-hoc' },
   ];
 
-  // Handle single status selection by converting to/from array
-  const handleStatusChange = (value: string) => {
-    if (value === '__ALL__') {
-      handleFilterChange('status', undefined);
-    } else {
-      handleFilterChange('status', [value as any]);
-    }
-  };
-
-  const currentStatus = filters.status && filters.status.length > 0 ? filters.status[0] : '__ALL__';
 
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Search */}
           <div className="space-y-2">
             <Label htmlFor="search">Search</Label>
@@ -85,7 +87,7 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 id="search"
-                placeholder="Invoice number, client name..."
+                placeholder="Client name, description..."
                 value={filters.search || ''}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="pl-8"
@@ -93,24 +95,45 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
             </div>
           </div>
 
-          {/* Status Filter */}
+          {/* Client Name Multi-Select */}
+          <div className="space-y-2">
+            <Label>Client Name</Label>
+            <MultiSelect
+              options={clientOptions}
+              selected={filters.clientIds || []}
+              onSelectionChange={(clientIds) => handleFilterChange('clientIds', clientIds.length > 0 ? clientIds : undefined)}
+              placeholder="Select clients..."
+              searchPlaceholder="Search clients..."
+              emptyText="No clients found"
+              maxDisplay={2}
+              showSelectAll={true}
+            />
+          </div>
+
+          {/* Status Multi-Select */}
           <div className="space-y-2">
             <Label>Status</Label>
-            <Select
-              value={currentStatus}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <MultiSelect
+              options={statusOptions}
+              selected={filters.status || []}
+              onSelectionChange={(statuses) => handleFilterChange('status', statuses.length > 0 ? statuses : undefined)}
+              placeholder="Select statuses..."
+              searchPlaceholder="Search statuses..."
+              emptyText="No statuses available"
+              maxDisplay={2}
+              showSelectAll={true}
+            />
+          </div>
+
+          {/* Invoice Number Search */}
+          <div className="space-y-2">
+            <Label htmlFor="invoice-number">Invoice Number</Label>
+            <Input
+              id="invoice-number"
+              placeholder="Search by invoice number..."
+              value={filters.invoiceNumber || ''}
+              onChange={(e) => handleFilterChange('invoiceNumber', e.target.value || undefined)}
+            />
           </div>
 
           {/* Authority Type Filter */}
@@ -172,30 +195,6 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
               type="date"
               value={filters.endDate || ''}
               onChange={(e) => handleFilterChange('endDate', e.target.value)}
-            />
-          </div>
-
-          {/* Min Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="min-amount">Min Amount</Label>
-            <Input
-              id="min-amount"
-              type="number"
-              placeholder="0.00"
-              value={filters.minAmount || ''}
-              onChange={(e) => handleFilterChange('minAmount', e.target.value ? parseFloat(e.target.value) : undefined)}
-            />
-          </div>
-
-          {/* Max Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="max-amount">Max Amount</Label>
-            <Input
-              id="max-amount"
-              type="number"
-              placeholder="0.00"
-              value={filters.maxAmount || ''}
-              onChange={(e) => handleFilterChange('maxAmount', e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
         </div>
