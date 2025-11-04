@@ -177,6 +177,19 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
   const taxAmount = subtotal * (taxPercentage / 100);
   const total = subtotal - totalDiscounts + taxAmount;
 
+  // Calculate totals for line items summary
+  const subtotalBeforeVat = invoice.line_items?.reduce(
+    (sum, item) => sum + (item.line_total || 0), 
+    0
+  ) || 0;
+
+  const totalVatAmount = invoice.line_items?.reduce(
+    (sum, item) => sum + ((item.line_total || 0) * 0.20), 
+    0
+  ) || invoice.vat_amount || 0;
+
+  const grandTotal = subtotalBeforeVat + totalVatAmount;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -294,25 +307,49 @@ export function ViewInvoiceDialog({ open, onOpenChange, invoice }: ViewInvoiceDi
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Discount</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Services</TableHead>
+                    <TableHead>Price/Rate(£)</TableHead>
+                    <TableHead>VAT(£)</TableHead>
                     <TableHead>Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoice.line_items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{item.quantity}</TableCell>
-                      <TableCell>{formatCurrency(item.unit_price)}</TableCell>
-                      <TableCell>{formatCurrency(item.discount_amount)}</TableCell>
-                      <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {invoice.line_items.map((item) => {
+                    // Calculate VAT for this line item (20% of line total)
+                    const lineVat = (item.line_total || 0) * 0.20;
+                    
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell>{item.quantity || 1}</TableCell>
+                        <TableCell>{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell>{formatCurrency(lineVat)}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(item.line_total)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
+              
+              {/* Total Amount Summary */}
+              <div className="mt-6 space-y-3 border-t pt-4">
+                <h4 className="font-semibold text-base mb-3">Total Amount Summary</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal (before VAT):</span>
+                    <span className="font-medium">{formatCurrency(subtotalBeforeVat)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total VAT(£):</span>
+                    <span className="font-medium">{formatCurrency(totalVatAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-base font-semibold border-t border-border pt-2">
+                    <span>Grand Total(£):</span>
+                    <span>{formatCurrency(grandTotal)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
