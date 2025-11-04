@@ -239,7 +239,7 @@ const InvoicesDataTable: React.FC<InvoicesDataTableProps> = ({
                         <PoundSterling className="h-4 w-4" />
                       </Button>
                     )}
-                    {(invoice.status === 'draft' || invoice.status === 'cancelled') && (
+                    {(['draft', 'pending', 'cancelled'].includes(invoice.status)) && (
                       <Button
                         variant="ghost"
                         size="sm"

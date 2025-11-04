@@ -119,9 +119,9 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
     if (selectedInvoiceIds.length === invoices?.length) {
       setSelectedInvoiceIds([]);
     } else {
-      // Only select deletable invoices (draft or cancelled)
+      // Only select deletable invoices (draft, pending, or cancelled)
       const deletableInvoices = invoices?.filter(inv =>
-        ['draft', 'cancelled'].includes(inv.status)
+        ['draft', 'pending', 'cancelled'].includes(inv.status)
       ) || [];
       setSelectedInvoiceIds(deletableInvoices.map(inv => inv.id));
     }
@@ -141,13 +141,13 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
     // Filter out non-deletable invoices
     const deletableInvoices = invoices?.filter(inv =>
       selectedInvoiceIds.includes(inv.id) &&
-      ['draft', 'cancelled'].includes(inv.status)
+      ['draft', 'pending', 'cancelled'].includes(inv.status)
     ) || [];
 
     if (deletableInvoices.length === 0) {
       toast({
         title: 'No deletable invoices',
-        description: 'Only draft and cancelled invoices can be deleted.',
+        description: 'Only draft, pending, and cancelled invoices can be deleted.',
         variant: 'destructive',
       });
       return;
@@ -216,8 +216,8 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                 <Checkbox
                   checked={
                     invoices?.length > 0 &&
-                    invoices.filter(inv => ['draft', 'cancelled'].includes(inv.status)).length > 0 &&
-                    selectedInvoiceIds.length === invoices.filter(inv => ['draft', 'cancelled'].includes(inv.status)).length
+                    invoices.filter(inv => ['draft', 'pending', 'cancelled'].includes(inv.status)).length > 0 &&
+                    selectedInvoiceIds.length === invoices.filter(inv => ['draft', 'pending', 'cancelled'].includes(inv.status)).length
                   }
                   onCheckedChange={toggleSelectAll}
                   aria-label="Select all invoices"
@@ -271,7 +271,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
             const canEdit = !isLocked && ['draft', 'ready_to_charge'].includes(invoice.status);
             const canLock = !isLocked && invoice.status === 'ready_to_charge';
             const canSend = !isLocked && ['ready_to_charge', 'confirmed'].includes(invoice.status);
-            const canDelete = ['draft', 'cancelled'].includes(invoice.status);
+            const canDelete = ['draft', 'pending', 'cancelled'].includes(invoice.status);
             return <TableRow key={invoice.id} className="hover:bg-muted/50">
                   <TableCell>
                     <Checkbox
