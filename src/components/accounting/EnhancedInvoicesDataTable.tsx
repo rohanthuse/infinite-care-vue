@@ -3,7 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useBranchInvoices, BranchInvoiceFilters, BranchInvoiceSorting } from '@/hooks/useBranchInvoices';
 import { useDeleteInvoice } from '@/hooks/useEnhancedClientBilling';
@@ -262,7 +269,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                 </div>
               </TableHead>
               <TableHead className="min-w-[120px]">Pay Method</TableHead>
-              <TableHead className="text-center min-w-[180px]">Actions</TableHead>
+              <TableHead className="text-center w-[60px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -322,42 +329,94 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                       </span> : <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell>
-                    <div className="flex justify-center gap-1 flex-wrap">
-                      {/* Lock/Unlock */}
-                      {canLock ? <Button variant="ghost" size="sm" onClick={() => onLockInvoice?.(invoice.id)} title="Lock Invoice">
-                          <Lock className="h-4 w-4" />
-                        </Button> : isLocked && onUnlockInvoice ? <Button variant="ghost" size="sm" onClick={() => onUnlockInvoice?.(invoice.id)} title="Unlock Invoice">
-                          <Unlock className="h-4 w-4" />
-                        </Button> : null}
-
-                      {/* Edit */}
-                      {canEdit && <Button variant="ghost" size="sm" onClick={() => onEditInvoice?.(invoice.id)} title="Edit Invoice">
-                          <Edit className="h-4 w-4" />
-                        </Button>}
-
-                      {/* View */}
-                      <Button variant="ghost" size="sm" onClick={() => onViewInvoice?.(invoice.id)} title="View Invoice">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-
-                      {/* Send/Export */}
-                      {canSend && <Button variant="ghost" size="sm" onClick={() => onSendInvoice?.(invoice.id)} title="Send Invoice">
-                          <Send className="h-4 w-4" />
-                        </Button>}
-
-                      <Button variant="ghost" size="sm" onClick={() => onExportInvoice?.(invoice.id)} title="Export PDF">
-                        <Download className="h-4 w-4" />
-                      </Button>
-
-                      {/* Record Payment */}
-                      {invoice.remaining_amount > 0 && <Button variant="ghost" size="sm" onClick={() => onRecordPayment?.(invoice.id)} title="Record Payment" className="text-green-600 hover:text-green-700">
-                          <PoundSterling className="h-4 w-4" />
-                        </Button>}
-
-                      {/* Delete */}
-                      {canDelete && <Button variant="ghost" size="sm" onClick={() => handleDeleteInvoice(invoice)} title="Delete Invoice" className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>}
+                    <div className="flex justify-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            aria-label="Open actions menu"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        
+                        <DropdownMenuContent align="end" className="w-56">
+                          {/* Primary Actions */}
+                          <DropdownMenuItem onClick={() => onViewInvoice?.(invoice.id)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>View Invoice</span>
+                          </DropdownMenuItem>
+                          
+                          {canEdit && (
+                            <DropdownMenuItem onClick={() => onEditInvoice?.(invoice.id)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Edit Invoice</span>
+                            </DropdownMenuItem>
+                          )}
+                          
+                          {/* Status Actions */}
+                          {(canLock || (isLocked && onUnlockInvoice) || canSend) && (
+                            <>
+                              <DropdownMenuSeparator />
+                              
+                              {canLock && (
+                                <DropdownMenuItem onClick={() => onLockInvoice?.(invoice.id)}>
+                                  <Lock className="mr-2 h-4 w-4" />
+                                  <span>Lock Invoice</span>
+                                </DropdownMenuItem>
+                              )}
+                              
+                              {isLocked && onUnlockInvoice && (
+                                <DropdownMenuItem onClick={() => onUnlockInvoice?.(invoice.id)}>
+                                  <Unlock className="mr-2 h-4 w-4" />
+                                  <span>Unlock Invoice</span>
+                                </DropdownMenuItem>
+                              )}
+                              
+                              {canSend && (
+                                <DropdownMenuItem onClick={() => onSendInvoice?.(invoice.id)}>
+                                  <Send className="mr-2 h-4 w-4" />
+                                  <span>Send Invoice</span>
+                                </DropdownMenuItem>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Financial Actions */}
+                          {invoice.remaining_amount > 0 && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => onRecordPayment?.(invoice.id)}
+                                className="text-green-600 focus:text-green-600"
+                              >
+                                <PoundSterling className="mr-2 h-4 w-4" />
+                                <span>Record Payment</span>
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          
+                          {/* Export & Delete */}
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => onExportInvoice?.(invoice.id)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>Export PDF</span>
+                          </DropdownMenuItem>
+                          
+                          {canDelete && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteInvoice(invoice)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete Invoice</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>;
