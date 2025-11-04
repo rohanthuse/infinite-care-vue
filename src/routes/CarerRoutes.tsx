@@ -1,6 +1,7 @@
-
 import { Route, Navigate, Outlet } from "react-router-dom";
-import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, RefreshCw, LogOut } from "lucide-react";
 import CarerDashboard from "@/pages/CarerDashboard";
 import CarerOverview from "@/pages/carer/CarerOverview";
 import CarerProfile from "@/pages/carer/CarerProfile";
@@ -26,20 +27,106 @@ import CarerMessages from "@/pages/carer/CarerMessages";
 import CarerAgreements from "@/pages/carer/CarerAgreements";
 import CarerMyTasks from "@/pages/carer/CarerMyTasks";
 import { CarerReportsTab } from "@/components/carer/CarerReportsTab";
+import React from "react";
 
 const RequireCarerAuth = () => {
-  const { isAuthenticated, loading } = useCarerAuthSafe();
+  const { isAuthenticated, loading, error, signOut } = useUnifiedCarerAuth();
+  const [showTimeout, setShowTimeout] = React.useState(false);
 
+  // Show timeout UI after 8 seconds of loading
+  React.useEffect(() => {
+    if (loading) {
+      const timeoutId = setTimeout(() => {
+        setShowTimeout(true);
+      }, 8000);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setShowTimeout(false);
+    }
+  }, [loading]);
+
+  // Show loading state with timeout protection
   if (loading) {
+    if (showTimeout) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <div className="max-w-md w-full space-y-6 text-center">
+            <div className="space-y-2">
+              <AlertCircle className="h-12 w-12 text-warning mx-auto" />
+              <h2 className="text-2xl font-semibold">Loading Taking Longer</h2>
+              <p className="text-muted-foreground">
+                Authentication is taking longer than expected. This might be due to network issues.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button
+                onClick={() => window.location.reload()}
+                variant="default"
+                className="w-full"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Page
+              </Button>
+              <Button
+                onClick={async () => {
+                  await signOut();
+                  window.location.href = '/login';
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Return to Login
+              </Button>
+            </div>
+
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Loading your dashboard...</p>
+        </div>
       </div>
     );
   }
 
+  // Show error state if authentication failed
+  if (error && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="max-w-md w-full space-y-6 text-center">
+          <div className="space-y-2">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+            <h2 className="text-2xl font-semibold">Authentication Error</h2>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+
+          <Button
+            onClick={() => window.location.href = '/login'}
+            variant="default"
+            className="w-full"
+          >
+            Return to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    // Redirect to unified login page
     return <Navigate to="/login" replace />;
   }
 
