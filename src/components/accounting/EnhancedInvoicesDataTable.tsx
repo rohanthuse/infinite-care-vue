@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyFormatter';
 import { useBranchInvoices, BranchInvoiceFilters, BranchInvoiceSorting } from '@/hooks/useBranchInvoices';
 import { useDeleteInvoice } from '@/hooks/useEnhancedClientBilling';
+import { useDeleteMultipleInvoices } from '@/hooks/useDeleteMultipleInvoices';
 import { DeleteInvoiceDialog } from '@/components/clients/tabs/DeleteInvoiceDialog';
 import { ComprehensiveInvoiceFilters } from './ComprehensiveInvoiceFilters';
+import { InvoiceBulkActionsBar } from './InvoiceBulkActionsBar';
+import { BulkDeleteInvoicesDialog } from './BulkDeleteInvoicesDialog';
+import { toast } from '@/hooks/use-toast';
 interface EnhancedInvoicesDataTableProps {
   branchId: string;
   branchName?: string;
@@ -41,11 +46,21 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   });
   const [deleteInvoice, setDeleteInvoice] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  // Bulk selection state
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const {
     data: invoices,
     isLoading
   } = useBranchInvoices(branchId, filters, sorting);
   const deleteInvoiceMutation = useDeleteInvoice();
+  const deleteMultipleInvoices = useDeleteMultipleInvoices(branchId);
+  
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedInvoiceIds([]);
+  }, [filters]);
   const getStatusBadge = (status: string, isOverdue: boolean, isLocked: boolean) => {
     if (isOverdue) {
       return <Badge variant="destructive">Overdue</Badge>;
@@ -90,6 +105,71 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
       });
     }
   };
+
+  // Bulk selection handlers
+  const toggleInvoiceSelection = (invoiceId: string) => {
+    setSelectedInvoiceIds(prev =>
+      prev.includes(invoiceId)
+        ? prev.filter(id => id !== invoiceId)
+        : [...prev, invoiceId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedInvoiceIds.length === invoices?.length) {
+      setSelectedInvoiceIds([]);
+    } else {
+      // Only select deletable invoices (draft or cancelled)
+      const deletableInvoices = invoices?.filter(inv =>
+        ['draft', 'cancelled'].includes(inv.status)
+      ) || [];
+      setSelectedInvoiceIds(deletableInvoices.map(inv => inv.id));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedInvoiceIds([]);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedInvoiceIds.length > 0) {
+      setBulkDeleteDialogOpen(true);
+    }
+  };
+
+  const confirmBulkDelete = () => {
+    // Filter out non-deletable invoices
+    const deletableInvoices = invoices?.filter(inv =>
+      selectedInvoiceIds.includes(inv.id) &&
+      ['draft', 'cancelled'].includes(inv.status)
+    ) || [];
+
+    if (deletableInvoices.length === 0) {
+      toast({
+        title: 'No deletable invoices',
+        description: 'Only draft and cancelled invoices can be deleted.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    deleteMultipleInvoices.mutate(
+      {
+        invoiceIds: deletableInvoices.map(inv => inv.id),
+        invoices: deletableInvoices.map(inv => ({
+          id: inv.id,
+          clientId: inv.client_id,
+          invoiceNumber: inv.invoice_number,
+        })),
+      },
+      {
+        onSuccess: () => {
+          setBulkDeleteDialogOpen(false);
+          clearSelection();
+        },
+      }
+    );
+  };
   const formatDate = (dateString: string) => {
     return dateString ? new Date(dateString).toLocaleDateString('en-GB') : '-';
   };
@@ -132,6 +212,17 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={
+                    invoices?.length > 0 &&
+                    invoices.filter(inv => ['draft', 'cancelled'].includes(inv.status)).length > 0 &&
+                    selectedInvoiceIds.length === invoices.filter(inv => ['draft', 'cancelled'].includes(inv.status)).length
+                  }
+                  onCheckedChange={toggleSelectAll}
+                  aria-label="Select all invoices"
+                />
+              </TableHead>
               <TableHead className="cursor-pointer min-w-[120px]" onClick={() => handleSort('invoice_number')}>
                 <div className="flex items-center gap-2">
                   Client
@@ -180,7 +271,16 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
             const canEdit = !isLocked && ['draft', 'ready_to_charge'].includes(invoice.status);
             const canLock = !isLocked && invoice.status === 'ready_to_charge';
             const canSend = !isLocked && ['ready_to_charge', 'confirmed'].includes(invoice.status);
+            const canDelete = ['draft', 'cancelled'].includes(invoice.status);
             return <TableRow key={invoice.id} className="hover:bg-muted/50">
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedInvoiceIds.includes(invoice.id)}
+                      onCheckedChange={() => toggleInvoiceSelection(invoice.id)}
+                      disabled={!canDelete}
+                      aria-label={`Select invoice ${invoice.invoice_number}`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">{invoice.client_name}</div>
@@ -255,7 +355,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                         </Button>}
 
                       {/* Delete */}
-                      {(invoice.status === 'draft' || invoice.status === 'cancelled') && <Button variant="ghost" size="sm" onClick={() => handleDeleteInvoice(invoice)} title="Delete Invoice" className="text-destructive hover:text-destructive">
+                      {canDelete && <Button variant="ghost" size="sm" onClick={() => handleDeleteInvoice(invoice)} title="Delete Invoice" className="text-destructive hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>}
                     </div>
@@ -266,7 +366,24 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
         </Table>
       </div>
 
+      {/* Bulk Actions Bar */}
+      <InvoiceBulkActionsBar
+        selectedCount={selectedInvoiceIds.length}
+        onClearSelection={clearSelection}
+        onBulkDelete={handleBulkDelete}
+        isDeleting={deleteMultipleInvoices.isPending}
+      />
+
+      {/* Delete Dialogs */}
       <DeleteInvoiceDialog invoice={deleteInvoice} open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen} onConfirm={confirmDelete} isLoading={deleteInvoiceMutation.isPending} />
+      
+      <BulkDeleteInvoicesDialog
+        invoiceCount={selectedInvoiceIds.length}
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        onConfirm={confirmBulkDelete}
+        isLoading={deleteMultipleInvoices.isPending}
+      />
 
       {/* Empty State */}
       {!invoices?.length && <div className="text-center py-12 border rounded-lg bg-muted/20">
