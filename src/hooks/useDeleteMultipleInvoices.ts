@@ -53,13 +53,15 @@ export const useDeleteMultipleInvoices = (branchId: string) => {
 
   return useMutation({
     mutationFn: deleteMultipleInvoices,
-    onSuccess: (result, variables) => {
+    onSuccess: async (result, variables) => {
       const { successful, failed } = result;
       const total = variables.invoiceIds.length;
 
-      // Refetch relevant queries
-      queryClient.invalidateQueries({ queryKey: ['branch-invoices', branchId] });
-      queryClient.invalidateQueries({ queryKey: ['branch-invoice-stats', branchId] });
+      // ✅ Use refetchQueries for immediate table update
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['branch-invoices', branchId], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['branch-invoice-stats', branchId], type: 'active' })
+      ]);
 
       // Refetch client billing for affected clients
       const affectedClientIds = new Set(
@@ -68,9 +70,9 @@ export const useDeleteMultipleInvoices = (branchId: string) => {
           .map(inv => inv.clientId)
       );
       
-      affectedClientIds.forEach(clientId => {
-        queryClient.invalidateQueries({ queryKey: ['client-billing', clientId] });
-      });
+      for (const clientId of affectedClientIds) {
+        await queryClient.refetchQueries({ queryKey: ['client-billing', clientId], type: 'active' });
+      }
 
       // Show appropriate toast notification
       if (failed.length === 0) {

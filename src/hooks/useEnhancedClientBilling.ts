@@ -330,12 +330,15 @@ export const useDeleteInvoice = () => {
       console.log('[useDeleteInvoice] Delete successful, rows affected:', count);
       return invoiceId;
     },
-    onSuccess: (invoiceId) => {
-      console.log('[useDeleteInvoice] Success callback, invalidating queries');
+    onSuccess: async (invoiceId) => {
+      console.log('[useDeleteInvoice] Success callback, refetching queries');
       toast.success('Invoice deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['client-billing'] });
-      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['branch-invoice-stats'] });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['client-billing'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['branch-invoices'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['branch-invoice-stats'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['uninvoiced-bookings'], type: 'active' })
+      ]);
     },
     onError: (error: any) => {
       console.error('[useDeleteInvoice] Error callback:', error);

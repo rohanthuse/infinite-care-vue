@@ -178,7 +178,19 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
       setShowBulkProgress(false);
       setBulkGenerationResults(results);
       setShowBulkResults(true);
-      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      
+      // ✅ Use refetchQueries to immediately update the invoice table
+      await queryClient.refetchQueries({ 
+        queryKey: ['branch-invoices', branchId],
+        type: 'active' 
+      });
+      
+      // Also refetch stats for the summary cards
+      await queryClient.refetchQueries({ 
+        queryKey: ['branch-invoice-stats', branchId],
+        type: 'active'
+      });
+      
       if (results.successCount > 0) {
         toast.success(`Successfully generated ${results.successCount} invoice${results.successCount !== 1 ? 's' : ''}`);
       }
@@ -221,9 +233,19 @@ const InvoicesPaymentsTab: React.FC<InvoicesPaymentsTabProps> = ({ branchId, bra
         if (error) {
           console.error('Error marking bookings as invoiced:', error);
         } else {
-          // Refresh the queue
-          queryClient.invalidateQueries({ queryKey: ['invoice-generation-queue', branchId] });
-          queryClient.invalidateQueries({ queryKey: ['branch-invoices', branchId] });
+          // ✅ Refetch instead of just invalidate
+          await queryClient.refetchQueries({ 
+            queryKey: ['invoice-generation-queue', branchId],
+            type: 'active'
+          });
+          await queryClient.refetchQueries({ 
+            queryKey: ['branch-invoices', branchId],
+            type: 'active'
+          });
+          await queryClient.refetchQueries({ 
+            queryKey: ['branch-invoice-stats', branchId],
+            type: 'active'
+          });
         }
       }
     } catch (error) {
