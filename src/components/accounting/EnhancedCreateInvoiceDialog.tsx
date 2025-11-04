@@ -26,7 +26,7 @@ interface EnhancedCreateInvoiceDialogProps {
   preSelectedClientId?: string;
   invoiceId?: string;
   invoicePeriod?: {
-    type: 'weekly' | 'fortnightly' | 'monthly';
+    type: 'weekly' | 'fortnightly' | 'monthly' | 'custom';
     startDate: string;
     endDate: string;
   };
