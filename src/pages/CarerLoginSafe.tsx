@@ -102,6 +102,14 @@ export default function CarerLoginSafe() {
         if (verification.verified) {
           setAuthStatus('complete');
           setLoginAttempts(0); // Reset on success
+          
+          // Navigate to carer dashboard after successful verification
+          console.log('[CarerLoginSafe] Login verified, navigating to dashboard');
+          
+          // Small delay to allow state updates and show success message
+          setTimeout(() => {
+            navigate('/carer-dashboard');
+          }, 500);
         } else {
           console.error('[CarerLoginSafe] Login verification failed:', verification.issues);
           setShowRecovery(true);
