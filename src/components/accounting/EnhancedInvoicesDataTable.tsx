@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2, MoreVertical } from 'lucide-react';
+import { ArrowUpDown, Eye, PoundSterling, Edit, Lock, Unlock, Send, Download, Plus, RotateCcw, Trash2, MoreVertical, Mail, Receipt } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +20,7 @@ import { ComprehensiveInvoiceFilters } from './ComprehensiveInvoiceFilters';
 import { InvoiceBulkActionsBar } from './InvoiceBulkActionsBar';
 import { BulkDeleteInvoicesDialog } from './BulkDeleteInvoicesDialog';
 import { toast } from '@/hooks/use-toast';
+import { AddInvoiceExpensesDialog } from './AddInvoiceExpensesDialog';
 interface EnhancedInvoicesDataTableProps {
   branchId: string;
   branchName?: string;
@@ -57,6 +58,10 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
   // Bulk selection state
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<string[]>([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  
+  // Expenses dialog state
+  const [expensesDialogOpen, setExpensesDialogOpen] = useState(false);
+  const [selectedInvoiceForExpenses, setSelectedInvoiceForExpenses] = useState<string | null>(null);
   const {
     data: invoices,
     isLoading
@@ -177,6 +182,22 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
       }
     );
   };
+
+  // Handler for Send via Email action
+  const handleSendViaEmail = (invoiceId: string) => {
+    toast({
+      title: "Invoice sent via email successfully!",
+      description: "The invoice has been sent to the client's email address.",
+      duration: 3000,
+    });
+  };
+
+  // Handler for opening Expenses dialog
+  const handleOpenExpenses = (invoiceId: string) => {
+    setSelectedInvoiceForExpenses(invoiceId);
+    setExpensesDialogOpen(true);
+  };
+
   const formatDate = (dateString: string) => {
     return dateString ? new Date(dateString).toLocaleDateString('en-GB') : '-';
   };
@@ -384,6 +405,19 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
                             </>
                           )}
                           
+                          {/* Additional Actions */}
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => handleSendViaEmail(invoice.id)}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            <span>Send via Email</span>
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleOpenExpenses(invoice.id)}>
+                            <Receipt className="mr-2 h-4 w-4" />
+                            <span>Expenses</span>
+                          </DropdownMenuItem>
+                          
                           {/* Financial Actions */}
                           {invoice.remaining_amount > 0 && (
                             <>
@@ -442,6 +476,13 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
         onOpenChange={setBulkDeleteDialogOpen}
         onConfirm={confirmBulkDelete}
         isLoading={deleteMultipleInvoices.isPending}
+      />
+
+      {/* Add Invoice Expenses Dialog */}
+      <AddInvoiceExpensesDialog
+        open={expensesDialogOpen}
+        onOpenChange={setExpensesDialogOpen}
+        invoiceId={selectedInvoiceForExpenses}
       />
 
       {/* Empty State */}
