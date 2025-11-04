@@ -13,8 +13,6 @@ import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import { NavigationGuard } from "@/components/NavigationGuard";
 import Index from "./pages/Index";
 import UnifiedLogin from "./components/UnifiedLogin";
-import CarerLogin from "./pages/CarerLogin";
-import CarerLoginSafe from "./pages/CarerLoginSafe";
 import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -36,7 +34,6 @@ import SystemSettings from "./pages/system/SystemSettings";
 import Dashboard from "./pages/Dashboard";
 import TenantLogin from "./pages/TenantLogin";
 import TenantClientLogin from "./pages/TenantClientLogin";
-import TenantCarerLogin from "./pages/TenantCarerLogin";
 import TenantDashboard from "./pages/TenantDashboard";
 import { SystemGuard } from "@/components/system/SystemGuard";
 import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
@@ -81,7 +78,6 @@ const AppContent = () => {
     '/login',
     '/branch-admin-login',
     '/branch-selection',
-    '/carer-login', 
     '/client-login', 
     '/carer-invitation', 
     '/carer-onboarding',
@@ -119,7 +115,6 @@ const AppContent = () => {
               <Route path="/super-admin" element={<Index />} />
               <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
               <Route path="/branch-selection" element={<BranchSelection />} />
-              <Route path="/carer-login" element={<CarerLoginSafe />} />
               <Route path="/carer-invitation" element={<CarerInvitation />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
               <Route path="/client-login" element={<ClientLogin />} />
@@ -210,11 +205,6 @@ const AppContent = () => {
               <Route path="/:tenantSlug/client-login" element={
                 <TenantProvider>
                   <TenantClientLogin />
-                </TenantProvider>
-              } />
-              <Route path="/:tenantSlug/carer-login" element={
-                <TenantProvider>
-                  <TenantCarerLogin />
                 </TenantProvider>
               } />
               

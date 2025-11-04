@@ -39,9 +39,8 @@ const RequireCarerAuth = () => {
   }
 
   if (!isAuthenticated) {
-    // Get tenant slug from current path for redirection
-    const tenantSlug = window.location.pathname.split('/')[1];
-    return <Navigate to={`/${tenantSlug}/carer-login`} replace />;
+    // Redirect to unified login page
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;

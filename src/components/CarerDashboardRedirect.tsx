@@ -30,13 +30,13 @@ export const CarerDashboardRedirect: React.FC = () => {
       return <Navigate to={tenantAwarePath} replace />;
     }
 
-    // If no dev tenant, redirect to carer login
-    console.warn('[CarerDashboardRedirect] No dev tenant found in localStorage, redirecting to carer login');
-    return <Navigate to="/carer-login" replace />;
+    // If no dev tenant, redirect to login
+    console.warn('[CarerDashboardRedirect] No dev tenant found in localStorage, redirecting to login');
+    return <Navigate to="/login" replace />;
   }
 
   // In production, we should have a proper tenant domain
   // This shouldn't happen in production as domains should be tenant-specific
   console.error('[CarerDashboardRedirect] Carer dashboard accessed without tenant in production');
-  return <Navigate to="/" replace />;
+  return <Navigate to="/login" replace />;
 };

@@ -42,8 +42,9 @@ export function useCarerAuthSafe() {
           // Quick role verification - detailed profile loading handled by useCarerContext
           const { data, error: staffError } = await supabase
             .from('staff')
-            .select('id, first_name, auth_user_id, branch_id, organization_id')
+            .select('id, first_name, auth_user_id, branch_id, status')
             .eq('auth_user_id', session.user.id)
+            .eq('status', 'Active')
             .maybeSingle();
 
           if (staffError) {
@@ -57,8 +58,7 @@ export function useCarerAuthSafe() {
             console.log('[useCarerAuthSafe] Carer verified:', data.first_name);
             const profile = { 
               ...data, 
-              branchId: data.branch_id, 
-              organizationId: data.organization_id 
+              branchId: data.branch_id
             };
             setCarerProfile(profile);
             
@@ -84,13 +84,9 @@ export function useCarerAuthSafe() {
               localStorage.setItem('carerCurrentSessionWelcome', sessionStart);
             }
             
-            // DISABLED: Navigation removed to prevent conflicts with UnifiedLogin
-            // UnifiedLogin now handles all post-authentication navigation
-            // Legacy navigation code (commented out):
-            // if (isFromLoginPage) {
-            //   const dashboardPath = tenantSlug ? `/${tenantSlug}/carer-dashboard` : '/carer-dashboard';
-            //   navigate(dashboardPath);
-            // }
+            // NOTE: UnifiedLogin (/login) is now the ONLY entry point for all user types
+            // UnifiedLogin handles all post-authentication navigation based on user role
+            // This hook only performs role verification and profile loading
           } else {
             setError('No carer profile found for this account.');
             await supabase.auth.signOut();
@@ -206,8 +202,9 @@ export function useCarerAuthSafe() {
           // Quick verification - detailed profile handled by useCarerContext
           const { data: staffData, error: staffError } = await supabase
             .from('staff')
-            .select('id, first_name, branch_id, organization_id')
+            .select('id, first_name, branch_id, status')
             .eq('auth_user_id', data.user.id)
+            .eq('status', 'Active')
             .maybeSingle();
 
           if (staffError || !staffData) {
