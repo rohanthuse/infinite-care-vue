@@ -30,11 +30,18 @@ import { CarerReportsTab } from "@/components/carer/CarerReportsTab";
 import React from "react";
 
 const RequireCarerAuth = () => {
-  const { isAuthenticated, loading, error, signOut } = useUnifiedCarerAuth();
+  const { isAuthenticated, loading, error, signOut, isCarerRole, carerProfile } = useUnifiedCarerAuth();
   const [showTimeout, setShowTimeout] = React.useState(false);
   const isFreshLogin = sessionStorage.getItem('freshLogin') === 'true';
 
-  console.log('[RequireCarerAuth] State:', { isAuthenticated, loading, error, isFreshLogin });
+  console.log('[RequireCarerAuth] State:', { 
+    isAuthenticated, 
+    loading, 
+    error, 
+    isFreshLogin,
+    isCarerRole,
+    hasProfile: !!carerProfile 
+  });
 
   // Clear fresh login flag when successfully authenticated
   React.useEffect(() => {
@@ -161,7 +168,21 @@ const RequireCarerAuth = () => {
   }
 
   // Redirect to login if not authenticated
+  // But give fresh logins a grace period to initialize
   if (!isAuthenticated) {
+    if (isFreshLogin && loading) {
+      console.log('[RequireCarerAuth] Fresh login still loading, waiting...');
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-sm text-muted-foreground">Completing authentication...</p>
+          </div>
+        </div>
+      );
+    }
+    
+    console.warn('[RequireCarerAuth] Not authenticated, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 

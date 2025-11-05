@@ -32,7 +32,20 @@ interface UnifiedCarerAuthReturn {
 export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
   const { user, session, loading: authLoading, error: authError, signOut: baseSignOut } = useAuth();
   const navigate = useNavigate();
-  const [isCarerRole, setIsCarerRole] = useState(false);
+  const [isCarerRole, setIsCarerRole] = useState(() => {
+    // Optimistically set to true if we have cached profile
+    try {
+      const cached = localStorage.getItem('carerProfile');
+      if (cached) {
+        const profile = JSON.parse(cached);
+        console.log('[useUnifiedCarerAuth] Initializing isCarerRole from cached profile');
+        return !!profile.auth_user_id; // If profile has auth_user_id, it's valid
+      }
+    } catch (error) {
+      console.error('[useUnifiedCarerAuth] Error reading cached profile for role:', error);
+    }
+    return false;
+  });
 
   console.log('[useUnifiedCarerAuth] Hook initialized', { 
     hasUser: !!user, 
@@ -85,19 +98,35 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     retry: 1,
+    // Use cached profile as initial data to bridge the gap
+    initialData: () => {
+      try {
+        const cached = localStorage.getItem('carerProfile');
+        if (cached) {
+          const profile = JSON.parse(cached);
+          console.log('[useUnifiedCarerAuth] Using cached profile as initialData for React Query');
+          return profile;
+        }
+      } catch (error) {
+        console.error('[useUnifiedCarerAuth] Error loading initialData:', error);
+      }
+      return undefined;
+    },
   });
 
   // Update local state when query data changes
   useEffect(() => {
     if (staffData) {
-      console.log('[useUnifiedCarerAuth] Updating carer profile state');
+      console.log('[useUnifiedCarerAuth] Updating carer profile state from query');
       setCarerProfile(staffData);
       setIsCarerRole(true);
-    } else if (!profileLoading && user) {
-      console.log('[useUnifiedCarerAuth] No staff profile found');
+    } else if (!profileLoading && user && !staffData) {
+      // Only set to false if query completed with no result
+      console.log('[useUnifiedCarerAuth] No staff profile found after query');
       setCarerProfile(null);
       setIsCarerRole(false);
     }
+    // Don't set isCarerRole to false if we're still loading or if user is null
   }, [staffData, profileLoading, user]);
 
   // Enhanced sign out with complete cleanup
