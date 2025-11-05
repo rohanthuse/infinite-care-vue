@@ -395,6 +395,26 @@ const UnifiedLogin = () => {
           toast.success("Welcome back, Branch Administrator!");
           break;
         case 'carer':
+          console.log('[CARER_LOGIN] Carer role detected, pre-fetching profile');
+          
+          // Pre-fetch and cache staff profile for fast dashboard load
+          try {
+            const { data: staffProfile } = await supabase
+              .from('staff')
+              .select('id, first_name, last_name, email, branch_id, auth_user_id')
+              .eq('auth_user_id', authData.user.id)
+              .maybeSingle();
+            
+            if (staffProfile) {
+              console.log('[CARER_LOGIN] Staff profile fetched and cached');
+              localStorage.setItem('carerProfile', JSON.stringify(staffProfile));
+              localStorage.setItem('carerName', `${staffProfile.first_name} ${staffProfile.last_name}`);
+              sessionStorage.setItem('freshLogin', 'true');
+            }
+          } catch (profileError) {
+            console.warn('[CARER_LOGIN] Failed to pre-fetch profile, will fetch on dashboard:', profileError);
+          }
+          
           dashboardPath += '/carer-dashboard';
           toast.success("Welcome back!");
           break;
@@ -410,9 +430,7 @@ const UnifiedLogin = () => {
       }
 
       console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
-      
-      // Single, coordinated navigation - no conflicting emergency fallbacks
-      console.log('[LOGIN DEBUG] Executing navigation to:', dashboardPath);
+      console.log('[CARER_LOGIN] Redirecting to:', dashboardPath);
       
       // Use window.location.href for more reliable navigation after authentication
       window.location.href = dashboardPath;

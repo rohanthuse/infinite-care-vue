@@ -32,22 +32,57 @@ import React from "react";
 const RequireCarerAuth = () => {
   const { isAuthenticated, loading, error, signOut } = useUnifiedCarerAuth();
   const [showTimeout, setShowTimeout] = React.useState(false);
+  const isFreshLogin = sessionStorage.getItem('freshLogin') === 'true';
 
-  // Show timeout UI after 8 seconds of loading
+  console.log('[RequireCarerAuth] State:', { isAuthenticated, loading, error, isFreshLogin });
+
+  // Clear fresh login flag when successfully authenticated
   React.useEffect(() => {
-    if (loading) {
+    if (isAuthenticated && !loading) {
+      console.log('[RequireCarerAuth] Authentication successful, clearing freshLogin flag');
+      sessionStorage.removeItem('freshLogin');
+    }
+  }, [isAuthenticated, loading]);
+
+  // Show timeout UI after 5 seconds of loading (reduced from 8)
+  React.useEffect(() => {
+    if (loading && !isFreshLogin) {
       const timeoutId = setTimeout(() => {
+        console.warn('[RequireCarerAuth] Timeout reached after 5 seconds');
         setShowTimeout(true);
-      }, 8000);
+      }, 5000);
 
       return () => clearTimeout(timeoutId);
     } else {
       setShowTimeout(false);
     }
+  }, [loading, isFreshLogin]);
+
+  // Safety timeout - force redirect to login after 10 seconds
+  React.useEffect(() => {
+    if (loading) {
+      const safetyTimeout = setTimeout(() => {
+        console.error('[RequireCarerAuth] Safety timeout (10s) - forcing login redirect');
+        window.location.href = '/login';
+      }, 10000);
+      return () => clearTimeout(safetyTimeout);
+    }
   }, [loading]);
 
   // Show loading state with timeout protection
   if (loading) {
+    // Skip timeout UI for fresh logins
+    if (isFreshLogin) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-sm text-muted-foreground">Setting up your dashboard...</p>
+          </div>
+        </div>
+      );
+    }
+
     if (showTimeout) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">

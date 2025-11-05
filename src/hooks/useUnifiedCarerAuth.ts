@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 interface CarerProfile {
   id: string;
@@ -31,55 +32,73 @@ interface UnifiedCarerAuthReturn {
 export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
   const { user, session, loading: authLoading, error: authError, signOut: baseSignOut } = useAuth();
   const navigate = useNavigate();
-  const [carerProfile, setCarerProfile] = useState<CarerProfile | null>(null);
   const [isCarerRole, setIsCarerRole] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Fetch carer profile when user is authenticated
+  console.log('[useUnifiedCarerAuth] Hook initialized', { 
+    hasUser: !!user, 
+    hasSession: !!session, 
+    authLoading 
+  });
+
+  // Check for cached profile on mount (optimistic initial state)
+  const [carerProfile, setCarerProfile] = useState<CarerProfile | null>(() => {
+    try {
+      const cached = localStorage.getItem('carerProfile');
+      if (cached) {
+        console.log('[useUnifiedCarerAuth] Using cached profile');
+        return JSON.parse(cached);
+      }
+    } catch (error) {
+      console.error('[useUnifiedCarerAuth] Error reading cached profile:', error);
+    }
+    return null;
+  });
+
+  // Use React Query for optimized profile fetching with caching
+  const { data: staffData, isLoading: profileLoading, error: profileError } = useQuery({
+    queryKey: ['staffProfile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      console.log('[useUnifiedCarerAuth] Fetching staff profile for user:', user.id);
+
+      const { data: staffData, error } = await supabase
+        .from('staff')
+        .select('id, first_name, last_name, email, branch_id, auth_user_id')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('[useUnifiedCarerAuth] Profile fetch error:', error);
+        throw error;
+      }
+
+      if (staffData) {
+        console.log('[useUnifiedCarerAuth] Staff profile fetched successfully');
+        // Cache in localStorage for fast subsequent loads
+        localStorage.setItem('carerProfile', JSON.stringify(staffData));
+      }
+
+      return staffData;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+    retry: 1,
+  });
+
+  // Update local state when query data changes
   useEffect(() => {
-    const fetchCarerProfile = async () => {
-      if (!user) {
-        setCarerProfile(null);
-        setIsCarerRole(false);
-        return;
-      }
-
-      setProfileLoading(true);
-      setProfileError(null);
-
-      try {
-        const { data: staffData, error } = await supabase
-          .from('staff')
-          .select('id, first_name, last_name, email, branch_id, auth_user_id')
-          .eq('auth_user_id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('[useUnifiedCarerAuth] Profile fetch error:', error);
-          setProfileError(error.message);
-          setIsCarerRole(false);
-          setCarerProfile(null);
-        } else if (staffData) {
-          setCarerProfile(staffData);
-          setIsCarerRole(true);
-          setProfileError(null);
-        } else {
-          setIsCarerRole(false);
-          setCarerProfile(null);
-        }
-      } catch (err: any) {
-        console.error('[useUnifiedCarerAuth] Profile fetch exception:', err);
-        setProfileError(err.message || 'Failed to fetch carer profile');
-        setIsCarerRole(false);
-        setCarerProfile(null);
-      } finally {
-        setProfileLoading(false);
-      }
-    };
-
-    fetchCarerProfile();
-  }, [user]);
+    if (staffData) {
+      console.log('[useUnifiedCarerAuth] Updating carer profile state');
+      setCarerProfile(staffData);
+      setIsCarerRole(true);
+    } else if (!profileLoading && user) {
+      console.log('[useUnifiedCarerAuth] No staff profile found');
+      setCarerProfile(null);
+      setIsCarerRole(false);
+    }
+  }, [staffData, profileLoading, user]);
 
   // Enhanced sign out with complete cleanup
   const signOut = async () => {
@@ -98,7 +117,6 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
       // Clear state
       setCarerProfile(null);
       setIsCarerRole(false);
-      setProfileError(null);
 
       // Use base sign out
       await baseSignOut();
@@ -117,6 +135,16 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
     }
   };
 
+  const finalError = authError || (profileError ? String(profileError) : null);
+
+  console.log('[useUnifiedCarerAuth] Final state', { 
+    isAuthenticated: !!user && !!session,
+    loading: authLoading || profileLoading,
+    hasProfile: !!carerProfile,
+    isCarerRole,
+    error: finalError
+  });
+
   return {
     user,
     session,
@@ -124,7 +152,7 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
     isAuthenticated: !!user && !!session,
     isCarerRole,
     carerProfile,
-    error: authError || profileError,
+    error: finalError,
     signOut
   };
 };
