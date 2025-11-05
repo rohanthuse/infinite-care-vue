@@ -159,368 +159,418 @@ export function ViewAgreementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="sticky top-0 z-10 bg-white px-6 pt-6 pb-2 border-b">
-          <DialogTitle>{agreement.title}</DialogTitle>
-          <DialogDescription>
-            {signersLoading ? (
-              "Loading signers..."
-            ) : signers.length > 0 ? (
-              `Signed by ${signers.length} ${signers.length === 1 ? 'party' : 'parties'} on ${agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A'}`
-            ) : (
-              `Created on ${agreement.created_at ? format(new Date(agreement.created_at), 'dd MMM yyyy') : 'N/A'}`
-            )}
-          </DialogDescription>
+      <DialogContent className="max-w-[85vw] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="sticky top-0 z-10 bg-gradient-to-r from-background to-muted/30 px-8 pt-6 pb-4 border-b shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-2xl font-bold">{agreement.title}</DialogTitle>
+              <DialogDescription className="text-base mt-2">
+                {signersLoading ? (
+                  "Loading signers..."
+                ) : signers.length > 0 ? (
+                  `${signers.length} ${signers.length === 1 ? 'party' : 'parties'} • ${agreement.signed_at ? 'Signed ' + format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'Pending signatures'}`
+                ) : (
+                  `Created ${agreement.created_at ? format(new Date(agreement.created_at), 'dd MMM yyyy') : 'N/A'}`
+                )}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 px-6 py-4 overflow-y-auto">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Badge 
-                variant={getStatusBadgeVariant(agreement.status)}
-              >
-                {agreement.status}
-              </Badge>
-              <span className="text-sm text-gray-500">Type: {agreement.agreement_types?.name}</span>
-            </div>
+        <ScrollArea className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6 p-6">
             
-            {/* Show full signers list only to admins */}
-            {isAdmin && signers.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Users className="h-4 w-4" />
-                  <span>Signers ({signers.length}):</span>
+            {/* LEFT PANEL - Agreement Details */}
+            <div className="space-y-6">
+              {/* Status & Type */}
+              <div className="flex justify-between items-center pb-4 border-b">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Status</h3>
+                  <Badge variant={getStatusBadgeVariant(agreement.status)} className="text-sm">
+                    {agreement.status}
+                  </Badge>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {signers.map((signer) => (
-                    <Badge 
-                      key={signer.id} 
-                      variant={signer.signing_status === 'signed' ? 'success' : 'outline'} 
-                      className="text-sm"
-                    >
-                      {signer.signer_name}
-                      <span className="ml-1 text-xs text-muted-foreground">
-                        ({signer.signer_type})
-                      </span>
-                      {signer.signing_status === 'signed' && (
-                        <span className="ml-1 text-xs">✓</span>
-                      )}
-                    </Badge>
-                  ))}
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Type</h3>
+                  <p className="text-sm font-medium">{agreement.agreement_types?.name}</p>
                 </div>
               </div>
-            )}
-            
-            {/* For non-admins, show only their own signing status */}
-            {!isAdmin && currentUserSigner && (
-              <div className="space-y-2">
-                <div className="text-sm">
-                  <span className="font-medium">Your Status:</span>
+              
+              {/* Your Status (for non-admins) */}
+              {!isAdmin && currentUserSigner && (
+                <div className="p-4 bg-muted/30 rounded-lg border">
+                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Your Status</h3>
                   <Badge 
                     variant={currentUserSigner.signing_status === 'signed' ? 'success' : 'outline'} 
-                    className="ml-2"
+                    className="text-sm"
                   >
                     {currentUserSigner.signing_status === 'signed' ? 'Signed ✓' : 'Pending Signature'}
                   </Badge>
                 </div>
-              </div>
-            )}
-            
-            {/* Show signing interface if user is a pending signer */}
-            {currentUserSigner && agreement.status === 'Pending' && (
-              <div className="border p-4 rounded-md bg-blue-50 space-y-3 mt-4">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-medium text-blue-900">Action Required: Your Signature</h3>
+              )}
+              
+              {/* Signers List (Admin only) */}
+              {isAdmin && signers.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Signers ({signers.length})
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {signers.map((signer) => (
+                      <Badge 
+                        key={signer.id} 
+                        variant={signer.signing_status === 'signed' ? 'success' : 'outline'}
+                      >
+                        {signer.signer_name} 
+                        <span className="ml-1 text-xs opacity-70">({signer.signer_type})</span>
+                        {signer.signing_status === 'signed' && ' ✓'}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-sm text-blue-800">
-                  Please review the agreement content and attached documents above, then sign below to acknowledge and submit.
-                </p>
-                
-                {!showSigningCanvas ? (
-                  <Button 
-                    onClick={() => setShowSigningCanvas(true)} 
-                    className="w-full"
-                    variant="default"
-                  >
-                    <PenLine className="mr-2 h-4 w-4" />
-                    Sign Agreement
-                  </Button>
-                ) : (
-                  <div className="space-y-3">
-                    <EnhancedSignatureCanvas
-                      onSignatureSave={setCurrentSignature}
-                      agreementId={agreement.id}
-                      disabled={signMutation.isPending}
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          setShowSigningCanvas(false);
-                          setCurrentSignature("");
-                        }}
-                        disabled={signMutation.isPending}
-                      >
-                        Cancel
-                      </Button>
-                      <Button 
-                        onClick={handleSignAgreement}
-                        disabled={!currentSignature || signMutation.isPending}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        {signMutation.isPending ? 'Submitting...' : 'Done ✓'}
-                      </Button>
-                    </div>
+              )}
+              
+              {/* Agreement Content */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold">Agreement Content</h3>
+                <div className="prose prose-sm max-w-none p-5 bg-muted/20 rounded-lg border min-h-[300px]">
+                  {agreement.content}
+                </div>
+              </div>
+              
+              {/* Dates Section */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/20 rounded-lg border">
+                {agreement.created_at && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Created</p>
+                    <p className="text-sm font-medium">{format(new Date(agreement.created_at), 'dd MMM yyyy')}</p>
+                  </div>
+                )}
+                {agreement.expiry_date && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Expires</p>
+                    <p className="text-sm font-medium">{format(new Date(agreement.expiry_date), 'dd MMM yyyy')}</p>
                   </div>
                 )}
               </div>
-            )}
-            
-            <div className="border border-gray-200 rounded-md p-4 bg-gray-50 min-h-[200px] text-gray-700">
-              {agreement.content}
+              
+              {/* Admin Action Buttons */}
+              {isAdmin && (
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button variant="outline" size="sm" onClick={() => setShowStatusForm(true)}>
+                    <FileCheck className="mr-2 h-4 w-4" /> Change Status
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
+                    <History className="mr-2 h-4 w-4" /> View History
+                  </Button>
+                </div>
+              )}
             </div>
             
-            {/* Attached Documents Section */}
-            {agreement.agreement_files && agreement.agreement_files.length > 0 && (
-              <div className="space-y-3 mt-6">
-                <div className="flex items-center gap-2 pb-2 border-b">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-lg">Attached Documents</h3>
-                  <Badge variant="secondary">{agreement.agreement_files.length}</Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  {agreement.agreement_files
-                    .filter(file => file.file_category !== 'signature')
-                    .map((file) => {
-                      const fileUrl = `https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/agreement-files/${file.storage_path}`;
-                      
-                      return (
-                        <div 
-                          key={file.id} 
-                          className="flex items-center justify-between p-4 bg-card border rounded-lg hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded">
-                              <FileText className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{file.file_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {(file.file_size / 1024).toFixed(1)} KB • Uploaded {format(new Date(file.created_at), 'dd MMM yyyy')}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(fileUrl, '_blank')}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = fileUrl;
-                                link.download = file.file_name;
-                                link.click();
-                              }}
-                            >
-                              <Download className="h-4 w-4 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
-            
-            {/* Digital Signatures Section */}
-            {(agreement.digital_signature || signers.some(s => s.signing_status === 'signed')) && (
-              <div className="space-y-3 mt-6">
-                <div className="flex items-center gap-2 pb-2 border-b">
-                  <PenLine className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-lg">Digital Signatures</h3>
-                </div>
-                
-                {/* Admin/Creator Signature */}
-                {agreement.digital_signature && (
-                  <div className="p-4 bg-card border rounded-lg">
-                    <p className="text-sm font-medium mb-3 text-muted-foreground">Agreement Creator Signature</p>
-                    
-                    {/* Check if it's a base64 image */}
-                    {agreement.digital_signature.startsWith('data:image') ? (
-                      <div className="bg-white border rounded p-2 inline-block">
-                        <img 
-                          src={agreement.digital_signature} 
-                          alt="Digital Signature" 
-                          className="max-h-24 max-w-full"
-                          onError={(e) => {
-                            console.error('Failed to load signature image');
-                            e.currentTarget.style.display = 'none';
+            {/* RIGHT PANEL - Documents & Signatures */}
+            <div className="space-y-6 lg:border-l lg:pl-6">
+              
+              {/* Action Required Banner (if pending signature) */}
+              {currentUserSigner && agreement.status === 'Pending' && (
+                <div className="sticky top-0 z-10 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-semibold text-blue-900">Action Required</h3>
+                  </div>
+                  <p className="text-sm text-blue-800">
+                    Review the agreement and sign below to acknowledge.
+                  </p>
+                  
+                  {!showSigningCanvas ? (
+                    <Button 
+                      onClick={() => setShowSigningCanvas(true)} 
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <PenLine className="mr-2 h-4 w-4" />
+                      Sign Now
+                    </Button>
+                  ) : (
+                    <div className="space-y-3">
+                      <EnhancedSignatureCanvas
+                        onSignatureSave={setCurrentSignature}
+                        agreementId={agreement.id}
+                        disabled={signMutation.isPending}
+                      />
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setShowSigningCanvas(false);
+                            setCurrentSignature("");
                           }}
-                        />
-                      </div>
-                    ) : (
-                      <p className="font-handwriting text-2xl">{agreement.digital_signature}</p>
-                    )}
-                    
-                    {agreement.signed_at && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Signed on {format(new Date(agreement.signed_at), 'dd MMM yyyy, HH:mm')}
-                      </p>
-                    )}
-                  </div>
-                )}
-                
-                {/* All Signer Signatures (for admins) */}
-                {isAdmin && signers.filter(s => s.signing_status === 'signed').length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">Other Signers</p>
-                    {signers
-                      .filter(s => s.signing_status === 'signed')
-                      .map(signer => (
-                        <div key={signer.id} className="p-3 bg-muted/50 border rounded">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-sm">{signer.signer_name}</p>
-                              <p className="text-xs text-muted-foreground capitalize">{signer.signer_type}</p>
-                            </div>
-                            <Badge variant="success" className="text-xs">
-                              <Check className="h-3 w-3 mr-1" />
-                              Signed
-                            </Badge>
-                          </div>
-                          {signer.signed_at && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Signed on {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Status change and history - Admin only */}
-            {isAdmin && !showStatusForm && (
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-4">
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowStatusForm(true)}
-                  className="w-full sm:w-auto"
-                >
-                  <FileCheck className="mr-2 h-4 w-4" /> Change Status
-                </Button>
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowHistory(true)}
-                  className="w-full sm:w-auto"
-                >
-                  <History className="mr-2 h-4 w-4" /> View History
-                </Button>
-              </div>
-            )}
-            
-            {isAdmin && showStatusForm && (
-              <div className="space-y-3 border p-4 rounded-md bg-gray-50 mt-4">
-                <h3 className="font-medium">Update Agreement Status</h3>
-                <div>
-                  <label className="text-sm font-medium">New Status</label>
-                  <Select value={newStatus} onValueChange={setNewStatus}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select new status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Expired">Expired</SelectItem>
-                      <SelectItem value="Terminated">Terminated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Reason for Change</label>
-                  <Textarea 
-                    placeholder="Provide reason for status change"
-                    value={statusReason}
-                    onChange={(e) => setStatusReason(e.target.value)}
-                    className="min-h-[80px]"
-                  />
-                </div>
-                
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowStatusForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    size="sm"
-                    onClick={handleStatusChange}
-                    disabled={isUpdatingStatus || !newStatus || !statusReason}
-                  >
-                    {isUpdatingStatus ? "Updating..." : "Update Status"}
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {showHistory && (agreement.statusHistory?.length || 0) > 0 && (
-              <div className="border p-4 rounded-md bg-gray-50 space-y-3 mt-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium">Status History</h3>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setShowHistory(false)}
-                  >
-                    Close
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {agreement.statusHistory?.map((change, index) => (
-                    <div key={index} className="border-b pb-2 last:border-0">
-                      <div className="flex justify-between">
-                        <Badge 
-                          variant={getStatusBadgeVariant(change.status)}
+                          disabled={signMutation.isPending}
+                          className="flex-1"
                         >
-                          {change.status}
-                        </Badge>
-                        <span className="text-sm text-gray-500">{change.date}</span>
-                      </div>
-                      <div className="text-sm mt-1">
-                        <span className="font-medium">Reason:</span> {change.reason}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Changed by: {change.changedBy}
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleSignAgreement}
+                          disabled={!currentSignature || signMutation.isPending}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          {signMutation.isPending ? 'Submitting...' : 'Done ✓'}
+                        </Button>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
-            )}
-            
-            {/* Admin Approval Panel */}
-            {isAdmin && agreement && (
-              <AdminApprovalPanel agreement={agreement} onClose={() => onOpenChange(false)} />
-            )}
+              )}
+              
+              {/* Agreement Documents Section */}
+              {agreement.agreement_files && agreement.agreement_files.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-lg">Agreement Documents</h3>
+                    <Badge variant="secondary" className="ml-auto">
+                      {agreement.agreement_files.filter(f => f.file_category !== 'signature').length}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {agreement.agreement_files
+                      .filter(file => file.file_category !== 'signature')
+                      .map((file) => {
+                        const fileUrl = `https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/agreement-files/${file.storage_path}`;
+                        
+                        return (
+                          <div 
+                            key={file.id} 
+                            className="group p-4 bg-card border rounded-lg hover:shadow-lg transition-all hover:border-primary/50"
+                          >
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="p-2 bg-primary/10 rounded-md">
+                                <FileText className="h-5 w-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{file.file_name}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {(file.file_size / 1024).toFixed(1)} KB
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(file.created_at), 'dd MMM yyyy')}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => window.open(fileUrl, '_blank')}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = fileUrl;
+                                  link.download = file.file_name;
+                                  link.click();
+                                }}
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+              
+              {/* Digital Signatures Section */}
+              {(agreement.digital_signature || signers.some(s => s.signing_status === 'signed')) && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <PenLine className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold text-lg">Digital Signatures</h3>
+                  </div>
+                  
+                  {/* Admin/Creator Signature */}
+                  {agreement.digital_signature && (
+                    <div className="p-4 bg-card border rounded-lg space-y-3">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Agreement Creator
+                      </p>
+                      
+                      {agreement.digital_signature.startsWith('data:image') ? (
+                        <div className="bg-white border rounded-md p-3 flex items-center justify-center">
+                          <img 
+                            src={agreement.digital_signature} 
+                            alt="Digital Signature" 
+                            className="max-h-20 max-w-full object-contain"
+                            onError={(e) => {
+                              console.error('Failed to load signature image');
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <p className="font-handwriting text-2xl text-center py-2">
+                          {agreement.digital_signature}
+                        </p>
+                      )}
+                      
+                      {agreement.signed_at && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Signed {format(new Date(agreement.signed_at), 'dd MMM yyyy, HH:mm')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Other Signers (Admin view) */}
+                  {isAdmin && signers.filter(s => s.signing_status === 'signed').length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Other Signers
+                      </p>
+                      {signers
+                        .filter(s => s.signing_status === 'signed')
+                        .map(signer => (
+                          <div key={signer.id} className="p-3 bg-muted/30 border rounded-lg">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="font-medium text-sm">{signer.signer_name}</p>
+                              <Badge variant="success" className="text-xs">
+                                <Check className="h-3 w-3 mr-1" />
+                                Signed
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {signer.signer_type}
+                            </p>
+                            {signer.signed_at && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Download Agreement Button */}
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => onDownload(agreement)}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Full Agreement
+              </Button>
+            </div>
           </div>
         </ScrollArea>
+        
+        {/* Admin Status Form Modal */}
+        {isAdmin && showStatusForm && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowStatusForm(false)}>
+            <div className="bg-white rounded-lg p-6 space-y-4 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-medium text-lg">Update Agreement Status</h3>
+              <div>
+                <label className="text-sm font-medium">New Status</label>
+                <Select value={newStatus} onValueChange={setNewStatus}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select new status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Expired">Expired</SelectItem>
+                    <SelectItem value="Terminated">Terminated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Reason for Change</label>
+                <Textarea 
+                  placeholder="Provide reason for status change"
+                  value={statusReason}
+                  onChange={(e) => setStatusReason(e.target.value)}
+                  className="min-h-[80px]"
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowStatusForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={handleStatusChange}
+                  disabled={isUpdatingStatus || !newStatus || !statusReason}
+                >
+                  {isUpdatingStatus ? "Updating..." : "Update Status"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* History Modal */}
+        {showHistory && (agreement.statusHistory?.length || 0) > 0 && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowHistory(false)}>
+            <div className="bg-white rounded-lg p-6 space-y-4 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium text-lg">Status History</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowHistory(false)}
+                >
+                  Close
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {agreement.statusHistory?.map((change, index) => (
+                  <div key={index} className="border-b pb-2 last:border-0">
+                    <div className="flex justify-between">
+                      <Badge 
+                        variant={getStatusBadgeVariant(change.status)}
+                      >
+                        {change.status}
+                      </Badge>
+                      <span className="text-sm text-gray-500">{change.date}</span>
+                    </div>
+                    <div className="text-sm mt-1">
+                      <span className="font-medium">Reason:</span> {change.reason}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Changed by: {change.changedBy}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Admin Approval Panel */}
+        {isAdmin && agreement && (
+          <div className="px-6 pb-4 border-t pt-4">
+            <AdminApprovalPanel agreement={agreement} onClose={() => onOpenChange(false)} />
+          </div>
+        )}
         
         <DialogFooter className="sticky bottom-0 w-full px-6 py-4 border-t bg-white">
           <Button 
