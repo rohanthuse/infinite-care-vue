@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { SignedAgreements } from "@/components/agreements/SignedAgreements";
+import { ExpiringAgreementsBanner } from "@/components/agreements/ExpiringAgreementsBanner";
 import { 
   FileText, 
   Filter, 
@@ -140,8 +141,10 @@ const Agreement = () => {
               </div>
             </div>
 
+            <ExpiringAgreementsBanner isOrganizationLevel={true} />
+
             <TabsContent value="signed" className="focus-visible:ring-0">
-              <SignedAgreements 
+              <SignedAgreements
                 searchQuery={debouncedSearchQuery} 
                 typeFilter={typeFilter} 
                 dateFilter={dateFilter}

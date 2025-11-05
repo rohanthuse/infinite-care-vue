@@ -54,7 +54,9 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     let query = supabase.from('agreements').select(`
       *, 
       agreement_types ( name ),
-      agreement_signers ( id, signer_name, signer_type )
+      agreement_signers ( id, signer_name, signer_type ),
+      expiry_date,
+      renewal_date
     `);
     
     // Filter by scope: organization-level (branch_id IS NULL) or branch-specific

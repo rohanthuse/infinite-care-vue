@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { ViewAgreementDialog } from "./ViewAgreementDialog";
+import { ExpiryBadge } from "./ExpiryBadge";
 import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements";
 import { Agreement, AgreementPartyFilter } from "@/types/agreements";
 import { format } from "date-fns";
@@ -128,9 +129,10 @@ export function SignedAgreements({
             <TableRow>
               <TableHead className="w-[5%]">#</TableHead>
               <TableHead className="w-[20%]">Title</TableHead>
-              <TableHead className="w-[20%]">Signed By</TableHead>
-              <TableHead className="w-[15%]">Date</TableHead>
-              <TableHead className="w-[15%]">Type</TableHead>
+              <TableHead className="w-[18%]">Signed By</TableHead>
+              <TableHead className="w-[12%]">Date</TableHead>
+              <TableHead className="w-[12%]">Type</TableHead>
+              <TableHead className="w-[12%]">Expiry Date</TableHead>
               <TableHead className="w-[10%]">Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -186,6 +188,20 @@ export function SignedAgreements({
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{agreement.agreement_types?.name || 'N/A'}</span>
+                  </TableCell>
+                  <TableCell>
+                    {agreement.expiry_date ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm">
+                          {format(new Date(agreement.expiry_date), 'dd MMM yyyy')}
+                        </span>
+                        {agreement.status === 'Active' && (
+                          <ExpiryBadge expiryDate={agreement.expiry_date} />
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">No expiry</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge 

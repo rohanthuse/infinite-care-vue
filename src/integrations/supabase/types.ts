@@ -196,6 +196,38 @@ export type Database = {
           },
         ]
       }
+      agreement_expiry_notifications: {
+        Row: {
+          agreement_id: string
+          created_at: string | null
+          days_before_expiry: number
+          id: string
+          notification_sent_at: string | null
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string | null
+          days_before_expiry: number
+          id?: string
+          notification_sent_at?: string | null
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string | null
+          days_before_expiry?: number
+          id?: string
+          notification_sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_expiry_notifications_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_files: {
         Row: {
           agreement_id: string | null
@@ -405,8 +437,10 @@ export type Database = {
           content: string | null
           created_at: string
           digital_signature: string | null
+          expiry_date: string | null
           id: string
           primary_document_id: string | null
+          renewal_date: string | null
           signature_file_id: string | null
           signed_at: string | null
           signed_by_client_id: string | null
@@ -424,8 +458,10 @@ export type Database = {
           content?: string | null
           created_at?: string
           digital_signature?: string | null
+          expiry_date?: string | null
           id?: string
           primary_document_id?: string | null
+          renewal_date?: string | null
           signature_file_id?: string | null
           signed_at?: string | null
           signed_by_client_id?: string | null
@@ -443,8 +479,10 @@ export type Database = {
           content?: string | null
           created_at?: string
           digital_signature?: string | null
+          expiry_date?: string | null
           id?: string
           primary_document_id?: string | null
+          renewal_date?: string | null
           signature_file_id?: string | null
           signed_at?: string | null
           signed_by_client_id?: string | null
@@ -10043,6 +10081,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       notify_unassigned_bookings: { Args: never; Returns: undefined }
+      process_expiring_agreements: { Args: never; Returns: Json }
       reset_system_user_password_with_session:
         | {
             Args: {

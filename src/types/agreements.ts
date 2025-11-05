@@ -15,6 +15,8 @@ export type Agreement = {
     template_id: string | null;
     type_id: string | null;
     status: "Active" | "Pending" | "Expired" | "Terminated";
+    expiry_date: string | null;
+    renewal_date: string | null;
     signed_by_name: string | null;
     signed_by_client_id: string | null;
     signed_by_staff_id: string | null;
@@ -29,6 +31,11 @@ export type Agreement = {
     agreement_types: { name: string } | null;
     agreement_signers?: { id: string; signer_name: string; signer_type: string; }[];
     statusHistory?: { status: string; date: string; reason?: string; changedBy: string; }[];
+};
+
+export type ExpiringAgreement = Agreement & {
+  days_until_expiry: number;
+  notification_sent: boolean;
 };
 
 export type AgreementPartyFilter = "all" | "client" | "staff" | "other";

@@ -55,6 +55,7 @@ export function SignAgreementDialog({
   const [signingParty, setSigningParty] = useState<"client" | "staff" | "other">("client");
   const [otherSignerNames, setOtherSignerNames] = useState<string[]>([""]);
   const [signedDate, setSignedDate] = useState<Date | undefined>(new Date());
+  const [expiryDate, setExpiryDate] = useState("");
   const [digitalSignature, setDigitalSignature] = useState("");
   const [content, setContent] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
@@ -121,11 +122,13 @@ export function SignAgreementDialog({
         template_id: selectedTemplate || null,
         type_id: selectedType,
         status: "Pending" as const,
-        signed_by_name: null, // No longer used
-        signed_by_client_id: null, // No longer used
-        signed_by_staff_id: null, // No longer used
+        signed_by_name: null,
+        signed_by_client_id: null,
+        signed_by_staff_id: null,
         signing_party: signingParty,
         signed_at: signedDate.toISOString(),
+        expiry_date: expiryDate || null,
+        renewal_date: null,
         digital_signature: null,
         primary_document_id: null,
         signature_file_id: null,
@@ -242,6 +245,7 @@ export function SignAgreementDialog({
     setSigningParty("client");
     setOtherSignerNames([""]);
     setSignedDate(new Date());
+    setExpiryDate("");
     setDigitalSignature("");
     setContent("");
     setCurrentStep(1);
@@ -482,6 +486,21 @@ export function SignAgreementDialog({
                   </Button>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Expiry Date (Optional)
+                </label>
+                <Input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Set an expiry date to receive automatic notifications before expiration
+                </p>
+              </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
