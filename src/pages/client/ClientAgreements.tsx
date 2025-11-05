@@ -163,23 +163,7 @@ const ClientAgreements = () => {
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {agreement.agreement_signers && agreement.agreement_signers.length > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>
-                          {agreement.agreement_signers.length} {agreement.agreement_signers.length === 1 ? 'Signer' : 'Signers'}:
-                        </span>
-                        <span>{agreement.agreement_signers.slice(0, 2).map(s => s.signer_name).join(', ')}</span>
-                        {agreement.agreement_signers.length > 2 && (
-                          <span>+{agreement.agreement_signers.length - 2} more</span>
-                        )}
-                      </div>
-                    ) : agreement.signed_by_name ? (
-                      <p>Signed by: {agreement.signed_by_name}</p>
-                    ) : null}
-                  </div>
+                <div className="flex items-center justify-end">
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleViewAgreement(agreement)}>
                       <Eye className="h-4 w-4 mr-1" />

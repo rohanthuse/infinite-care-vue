@@ -87,6 +87,7 @@ export function SignedAgreements({
     branchId,
     partyFilter,
     isOrganizationLevel,
+    approvalFilter,
   });
 
   const deleteAgreementMutation = useDeleteAgreement();

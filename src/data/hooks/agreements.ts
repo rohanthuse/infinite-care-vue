@@ -50,7 +50,7 @@ export const useAgreementTypes = () => {
 
 // --- SIGNED AGREEMENTS ---
 
-const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all", isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; }) => {
+const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all", isOrganizationLevel = false, approvalFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; approvalFilter?: string; }) => {
     let query = supabase.from('agreements').select(`
       *, 
       agreement_types ( name ),
@@ -69,6 +69,7 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,signed_by_name.ilike.%${searchQuery}%`);
     if (typeFilter !== 'all') query = query.eq('type_id', typeFilter);
     if (partyFilter !== 'all') query = query.eq('signing_party', partyFilter);
+    if (approvalFilter !== 'all') query = query.eq('approval_status', approvalFilter);
 
     if (dateFilter !== "all") {
       const now = new Date();
@@ -84,10 +85,10 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     return data as Agreement[];
 };
 
-export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; }) => {
+export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel = false, approvalFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; approvalFilter?: string; }) => {
   return useQuery<Agreement[], Error>({
-    queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel }],
-    queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel }),
+    queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel, approvalFilter }],
+    queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel, approvalFilter }),
   });
 };
 

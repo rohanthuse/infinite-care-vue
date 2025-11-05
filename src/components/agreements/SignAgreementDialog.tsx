@@ -223,12 +223,13 @@ export function SignAgreementDialog({
     }
     
     try {
-      // Update the existing agreement with signature and Active status
+      // Update the existing agreement with signature and set to Pending status
       const { error } = await supabase
         .from('agreements')
         .update({
-          status: "Active",
-          digital_signature: digitalSignature || null
+          status: "Pending",
+          digital_signature: digitalSignature || null,
+          approval_status: "pending_signatures"
         })
         .eq('id', createdAgreementId);
 
@@ -237,6 +238,17 @@ export function SignAgreementDialog({
       }
       
       toast.success("Agreement signed successfully!");
+      
+      // Get signers count for feedback
+      const { data: signersData } = await supabase
+        .from('agreement_signers')
+        .select('id')
+        .eq('agreement_id', createdAgreementId);
+      
+      const signerCount = signersData?.length || 0;
+      if (signerCount > 0) {
+        toast.info(`This agreement has been assigned to ${signerCount} ${signerCount === 1 ? 'signer' : 'signers'}. They will be notified to complete their signatures.`);
+      }
       
       // Close dialog after successful signing
       setTimeout(() => {
