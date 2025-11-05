@@ -52,7 +52,9 @@ export function SignAgreementDialog({
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-  const [signingParty, setSigningParty] = useState<"client" | "staff" | "other">("client");
+  const [signingParty, setSigningParty] = useState<"client" | "staff" | "other">(
+    isOrganizationLevel ? "other" : "client"
+  );
   const [otherSignerNames, setOtherSignerNames] = useState<string[]>([""]);
   const [signedDate, setSignedDate] = useState<Date | undefined>(new Date());
   const [expiryDate, setExpiryDate] = useState("");
@@ -74,8 +76,13 @@ export function SignAgreementDialog({
     branchId: effectiveBranchId,
     isOrganizationLevel
   });
-  const { data: clients, isLoading: clientsLoading } = useClients(effectiveBranchId);
-  const { data: staff, isLoading: staffLoading } = useStaff(effectiveBranchId);
+  // Only fetch clients/staff for branch-level agreements
+  const { data: clients, isLoading: clientsLoading } = useClients(
+    isOrganizationLevel ? undefined : effectiveBranchId
+  );
+  const { data: staff, isLoading: staffLoading } = useStaff(
+    isOrganizationLevel ? undefined : effectiveBranchId
+  );
   
   const createAgreementMutation = useCreateAgreement();
   const createSignersMutation = useCreateSigners();
@@ -95,21 +102,28 @@ export function SignAgreementDialog({
       return false;
     }
 
-    // Validate signers based on party type
-    if (signingParty === "client" && selectedClients.length === 0) {
-      toast.error("Please select at least one client");
-      return false;
+    // Validate signers based on party type and level
+    if (!isOrganizationLevel) {
+      // Branch-level validation
+      if (signingParty === "client" && selectedClients.length === 0) {
+        toast.error("Please select at least one client");
+        return false;
+      }
+      
+      if (signingParty === "staff" && selectedStaff.length === 0) {
+        toast.error("Please select at least one staff member");
+        return false;
+      }
     }
     
-    if (signingParty === "staff" && selectedStaff.length === 0) {
-      toast.error("Please select at least one staff member");
-      return false;
-    }
-    
-    if (signingParty === "other") {
+    // Validation for "other" signers (applies to both levels)
+    if (isOrganizationLevel || signingParty === "other") {
       const validNames = otherSignerNames.filter(name => name.trim() !== "");
       if (validNames.length === 0) {
-        toast.error("Please enter at least one signer name");
+        const errorMsg = isOrganizationLevel 
+          ? "Please enter at least one authorized signer"
+          : "Please enter at least one signer name";
+        toast.error(errorMsg);
         return false;
       }
     }
@@ -242,7 +256,7 @@ export function SignAgreementDialog({
     setSelectedTemplate("");
     setSelectedClients([]);
     setSelectedStaff([]);
-    setSigningParty("client");
+    setSigningParty(isOrganizationLevel ? "other" : "client");
     setOtherSignerNames([""]);
     setSignedDate(new Date());
     setExpiryDate("");
@@ -268,12 +282,14 @@ export function SignAgreementDialog({
     }
   }, [signingParty]);
 
-  const isLoading = typesLoading || templatesLoading || clientsLoading || staffLoading || branchesLoading;
+  const isLoading = typesLoading || templatesLoading || branchesLoading ||
+    (!isOrganizationLevel && (clientsLoading || staffLoading));
 
-  const hasValidSigners = 
-    (signingParty === "client" && selectedClients.length > 0) ||
-    (signingParty === "staff" && selectedStaff.length > 0) ||
-    (signingParty === "other" && otherSignerNames.some(name => name.trim() !== ""));
+  const hasValidSigners = isOrganizationLevel
+    ? otherSignerNames.some(name => name.trim() !== "")
+    : (signingParty === "client" && selectedClients.length > 0) ||
+      (signingParty === "staff" && selectedStaff.length > 0) ||
+      (signingParty === "other" && otherSignerNames.some(name => name.trim() !== ""));
 
   const canProceedToStep2 = title && selectedType && hasValidSigners && signedDate && 
     (isOrganizationLevel || effectiveBranchId);
@@ -286,9 +302,14 @@ export function SignAgreementDialog({
     }}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Sign New Agreement</DialogTitle>
+          <DialogTitle>
+            {isOrganizationLevel ? "Sign Organization Agreement" : "Sign New Agreement"}
+          </DialogTitle>
           <DialogDescription>
-            Record a new signed agreement with documents and signatures
+            {isOrganizationLevel 
+              ? "Record a new organization-level agreement for Med Infinite with authorized signers"
+              : "Record a new signed agreement with clients, staff, documents and signatures"
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -382,23 +403,38 @@ export function SignAgreementDialog({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Signing Party <span className="text-red-500">*</span>
-                </label>
-                <Select value={signingParty} onValueChange={(value: "client" | "staff" | "other") => setSigningParty(value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Only show Signing Party selector for branch-level agreements */}
+              {!isOrganizationLevel && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Signing Party <span className="text-red-500">*</span>
+                  </label>
+                  <Select value={signingParty} onValueChange={(value: "client" | "staff" | "other") => setSigningParty(value)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="client">Client</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-              {signingParty === "client" && (
+              {/* For organization-level, show explanatory text */}
+              {isOrganizationLevel && (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-900">
+                    This is an <strong>organization-level agreement</strong> for Med Infinite. 
+                    It is not associated with specific clients or staff members.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Only show Client selection for branch-level agreements */}
+              {!isOrganizationLevel && signingParty === "client" && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
                     Clients <span className="text-red-500">*</span>
@@ -421,7 +457,8 @@ export function SignAgreementDialog({
                 </div>
               )}
 
-              {signingParty === "staff" && (
+              {/* Only show Staff selection for branch-level agreements */}
+              {!isOrganizationLevel && signingParty === "staff" && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
                     Staff Members <span className="text-red-500">*</span>
@@ -444,15 +481,24 @@ export function SignAgreementDialog({
                 </div>
               )}
 
-              {signingParty === "other" && (
+              {/* Show Other signer names for both organization-level and branch-level */}
+              {(isOrganizationLevel || signingParty === "other") && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Signer Names <span className="text-red-500">*</span>
+                    {isOrganizationLevel ? "Authorized Signers" : "Signer Names"} <span className="text-red-500">*</span>
                   </label>
+                  {isOrganizationLevel && (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Enter names of Med Infinite representatives or organization officials
+                    </p>
+                  )}
                   {otherSignerNames.map((name, index) => (
                     <div key={index} className="flex gap-2">
                       <Input
-                        placeholder={`Signer ${index + 1} name`}
+                        placeholder={isOrganizationLevel 
+                          ? `Authorized signer ${index + 1} (e.g., CEO, Legal Director)`
+                          : `Signer ${index + 1} name`
+                        }
                         value={name}
                         onChange={(e) => {
                           const newNames = [...otherSignerNames];
@@ -460,14 +506,14 @@ export function SignAgreementDialog({
                           setOtherSignerNames(newNames);
                         }}
                       />
-                      {index > 0 && (
+                      {otherSignerNames.length > 1 && (
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
                           onClick={() => {
                             const newNames = otherSignerNames.filter((_, i) => i !== index);
-                            setOtherSignerNames(newNames);
+                            setOtherSignerNames(newNames.length > 0 ? newNames : [""]);
                           }}
                         >
                           ×
@@ -480,7 +526,6 @@ export function SignAgreementDialog({
                     variant="outline"
                     size="sm"
                     onClick={() => setOtherSignerNames([...otherSignerNames, ""])}
-                    className="w-full"
                   >
                     + Add Another Signer
                   </Button>
