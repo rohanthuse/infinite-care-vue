@@ -27,20 +27,23 @@ type ScheduledAgreementsProps = {
   searchQuery?: string;
   typeFilter?: string;
   dateFilter?: string;
-  branchId: string;
+  branchId?: string;
+  isOrganizationLevel?: boolean;
 };
 
 export function ScheduledAgreements({ 
   searchQuery = "", 
   typeFilter = "all",
   dateFilter = "all",
-  branchId
+  branchId,
+  isOrganizationLevel = false
 }: ScheduledAgreementsProps) {
   const { data: agreements, isLoading, isError, error } = useScheduledAgreements({
     searchQuery,
     typeFilter,
     dateFilter,
-    branchId
+    branchId,
+    isOrganizationLevel
   });
 
   const deleteScheduledMutation = useDeleteScheduledAgreement();

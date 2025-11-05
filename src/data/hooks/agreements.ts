@@ -50,13 +50,20 @@ export const useAgreementTypes = () => {
 
 // --- SIGNED AGREEMENTS ---
 
-const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; }) => {
+const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all", isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; }) => {
     let query = supabase.from('agreements').select(`
       *, 
       agreement_types ( name ),
       agreement_signers ( id, signer_name, signer_type )
     `);
-    if (branchId) query = query.eq('branch_id', branchId);
+    
+    // Filter by scope: organization-level (branch_id IS NULL) or branch-specific
+    if (isOrganizationLevel) {
+      query = query.is('branch_id', null);
+    } else if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+    
     if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,signed_by_name.ilike.%${searchQuery}%`);
     if (typeFilter !== 'all') query = query.eq('type_id', typeFilter);
     if (partyFilter !== 'all') query = query.eq('signing_party', partyFilter);
@@ -75,10 +82,10 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     return data as Agreement[];
 };
 
-export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; }) => {
+export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; }) => {
   return useQuery<Agreement[], Error>({
-    queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter }],
-    queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter }),
+    queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel }],
+    queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel }),
   });
 };
 
@@ -119,10 +126,13 @@ export const useDeleteAgreement = () => {
 
 // --- SCHEDULED AGREEMENTS ---
 
-const fetchScheduledAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId: string; }) => {
+const fetchScheduledAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; isOrganizationLevel?: boolean; }) => {
     let query = supabase.from('scheduled_agreements').select(`*, agreement_types ( name )`);
     
-    if (branchId && branchId !== "global") {
+    // Filter by scope: organization-level (branch_id IS NULL) or branch-specific
+    if (isOrganizationLevel) {
+        query = query.is('branch_id', null);
+    } else if (branchId) {
         query = query.eq('branch_id', branchId);
     }
     
@@ -148,10 +158,10 @@ const fetchScheduledAgreements = async ({ searchQuery = "", typeFilter = "all", 
     return data as ScheduledAgreement[];
 };
 
-export const useScheduledAgreements = ({ searchQuery, typeFilter, dateFilter, branchId }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId: string; }) => {
+export const useScheduledAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; isOrganizationLevel?: boolean; }) => {
     return useQuery<ScheduledAgreement[], Error>({
-        queryKey: ['scheduled_agreements', { searchQuery, typeFilter, dateFilter, branchId }],
-        queryFn: () => fetchScheduledAgreements({ searchQuery, typeFilter, dateFilter, branchId }),
+        queryKey: ['scheduled_agreements', { searchQuery, typeFilter, dateFilter, branchId, isOrganizationLevel }],
+        queryFn: () => fetchScheduledAgreements({ searchQuery, typeFilter, dateFilter, branchId, isOrganizationLevel }),
     });
 };
 
@@ -212,10 +222,13 @@ export const useDeleteScheduledAgreement = () => {
 
 // --- AGREEMENT TEMPLATES ---
 
-const fetchTemplates = async ({ searchQuery = "", typeFilter = "all", branchId }: { searchQuery?: string; typeFilter?: string; branchId: string; }) => {
+const fetchTemplates = async ({ searchQuery = "", typeFilter = "all", branchId, isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; branchId?: string; isOrganizationLevel?: boolean; }) => {
     let query = supabase.from('agreement_templates').select(`*, agreement_types ( name )`);
     
-    if (branchId && branchId !== "global") {
+    // Filter by scope: organization-level (branch_id IS NULL) or branch-specific
+    if (isOrganizationLevel) {
+        query = query.is('branch_id', null);
+    } else if (branchId) {
         query = query.eq('branch_id', branchId);
     }
     
@@ -232,10 +245,10 @@ const fetchTemplates = async ({ searchQuery = "", typeFilter = "all", branchId }
     return data as AgreementTemplate[];
 };
 
-export const useAgreementTemplates = ({ searchQuery, typeFilter, branchId }: { searchQuery?: string; typeFilter?: string; branchId: string; }) => {
+export const useAgreementTemplates = ({ searchQuery, typeFilter, branchId, isOrganizationLevel = false }: { searchQuery?: string; typeFilter?: string; branchId?: string; isOrganizationLevel?: boolean; }) => {
     return useQuery<AgreementTemplate[], Error>({
-        queryKey: ['agreement_templates', { searchQuery, typeFilter, branchId }],
-        queryFn: () => fetchTemplates({ searchQuery, typeFilter, branchId }),
+        queryKey: ['agreement_templates', { searchQuery, typeFilter, branchId, isOrganizationLevel }],
+        queryFn: () => fetchTemplates({ searchQuery, typeFilter, branchId, isOrganizationLevel }),
     });
 };
 

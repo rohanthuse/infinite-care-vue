@@ -20,7 +20,8 @@ type SignedAgreementsProps = {
   searchQuery?: string;
   typeFilter?: string;
   dateFilter?: string;
-  branchId?: string; // Optional for global view
+  branchId?: string;
+  isOrganizationLevel?: boolean;
 };
 
 const getStatusBadgeVariant = (status: Agreement["status"]): VariantProps<typeof badgeVariants>["variant"] => {
@@ -52,7 +53,8 @@ export function SignedAgreements({
   searchQuery = "", 
   typeFilter = "all",
   dateFilter = "all",
-  branchId
+  branchId,
+  isOrganizationLevel = false
 }: SignedAgreementsProps) {
   const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
   const [partyFilter, setPartyFilter] = useState<AgreementPartyFilter>("all");
@@ -63,6 +65,7 @@ export function SignedAgreements({
     dateFilter,
     branchId,
     partyFilter,
+    isOrganizationLevel,
   });
 
   const deleteAgreementMutation = useDeleteAgreement();

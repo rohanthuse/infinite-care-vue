@@ -26,13 +26,15 @@ import { FileUploadDropzone } from "./FileUploadDropzone";
 interface CreateTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  branchId: string;
+  branchId?: string;
+  isOrganizationLevel?: boolean;
 }
 
 export function CreateTemplateDialog({
   open,
   onOpenChange,
-  branchId
+  branchId,
+  isOrganizationLevel = false
 }: CreateTemplateDialogProps) {
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -56,7 +58,7 @@ export function CreateTemplateDialog({
         content: content || null,
         type_id: selectedType,
         template_file_id: null,
-        branch_id: branchId !== "global" ? branchId : null,
+        branch_id: isOrganizationLevel ? null : branchId || null,
         created_by: null, // Will be set by auth context when available
       });
       

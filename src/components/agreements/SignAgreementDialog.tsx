@@ -37,13 +37,15 @@ import { useCreateSigners } from "@/hooks/useAgreementSigners";
 interface SignAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  branchId: string;
+  branchId?: string;
+  isOrganizationLevel?: boolean;
 }
 
 export function SignAgreementDialog({
   open,
   onOpenChange,
-  branchId
+  branchId,
+  isOrganizationLevel = false
 }: SignAgreementDialogProps) {
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -57,11 +59,10 @@ export function SignAgreementDialog({
   const [content, setContent] = useState("");
   const [currentStep, setCurrentStep] = useState(1);
   const [createdAgreementId, setCreatedAgreementId] = useState<string | null>(null);
-  const [selectedBranchId, setSelectedBranchId] = useState(branchId === "global" ? "" : branchId);
+  const [selectedBranchId, setSelectedBranchId] = useState(branchId || "");
   
-  // Check if we need branch selection (when opened from global page)
-  const isGlobalContext = branchId === "global";
-  const effectiveBranchId = isGlobalContext ? selectedBranchId : branchId;
+  // Determine the effective branch ID to use for queries
+  const effectiveBranchId = isOrganizationLevel ? undefined : (branchId || selectedBranchId);
   
   // Fetch data
   const { data: branches, isLoading: branchesLoading } = useBranchNavigation();
@@ -69,7 +70,8 @@ export function SignAgreementDialog({
   const { data: templates, isLoading: templatesLoading } = useAgreementTemplates({
     searchQuery: "",
     typeFilter: selectedType || "all",
-    branchId: effectiveBranchId
+    branchId: effectiveBranchId,
+    isOrganizationLevel
   });
   const { data: clients, isLoading: clientsLoading } = useClients(effectiveBranchId);
   const { data: staff, isLoading: staffLoading } = useStaff(effectiveBranchId);
@@ -85,7 +87,9 @@ export function SignAgreementDialog({
       return false;
     }
 
-    if (isGlobalContext && !selectedBranchId) {
+    // For organization-level, branch_id can be null
+    // For branch-level, branch must be selected
+    if (!isOrganizationLevel && !effectiveBranchId) {
       toast.error("Please select a branch");
       return false;
     }
@@ -125,7 +129,7 @@ export function SignAgreementDialog({
         digital_signature: null,
         primary_document_id: null,
         signature_file_id: null,
-        branch_id: effectiveBranchId,
+        branch_id: isOrganizationLevel ? null : effectiveBranchId || null,
       };
 
       const newAgreement = await createAgreementMutation.mutateAsync(agreementData);
@@ -268,7 +272,7 @@ export function SignAgreementDialog({
     (signingParty === "other" && otherSignerNames.some(name => name.trim() !== ""));
 
   const canProceedToStep2 = title && selectedType && hasValidSigners && signedDate && 
-    (isGlobalContext ? selectedBranchId : true);
+    (isOrganizationLevel || effectiveBranchId);
   const canComplete = canProceedToStep2;
 
   return (
@@ -297,7 +301,7 @@ export function SignAgreementDialog({
             </TabsList>
 
             <TabsContent value="step1" className="space-y-4 py-4">
-              {isGlobalContext && (
+              {!isOrganizationLevel && !branchId && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
@@ -306,7 +310,7 @@ export function SignAgreementDialog({
                 </Alert>
               )}
 
-              {isGlobalContext && (
+              {!isOrganizationLevel && !branchId && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
                     Branch <span className="text-red-500">*</span>

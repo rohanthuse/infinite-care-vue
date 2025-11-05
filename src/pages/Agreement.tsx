@@ -145,6 +145,7 @@ const Agreement = () => {
                 searchQuery={debouncedSearchQuery} 
                 typeFilter={typeFilter} 
                 dateFilter={dateFilter}
+                isOrganizationLevel={true}
               />
             </TabsContent>
             
@@ -153,7 +154,7 @@ const Agreement = () => {
                 searchQuery={debouncedSearchQuery} 
                 typeFilter={typeFilter} 
                 dateFilter={dateFilter}
-                branchId="global"
+                isOrganizationLevel={true}
               />
             </TabsContent>
 
@@ -161,16 +162,16 @@ const Agreement = () => {
               <AgreementTemplates
                 searchQuery={debouncedSearchQuery}
                 typeFilter={typeFilter}
-                branchId="global"
+                isOrganizationLevel={true}
               />
             </TabsContent>
           </Tabs>
         </div>
       </motion.main>
       
-      <SignAgreementDialog open={showSignDialog} onOpenChange={setShowSignDialog} branchId="global" />
-      <ScheduleAgreementDialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog} branchId="global" />
-      <CreateTemplateDialog open={showCreateTemplateDialog} onOpenChange={setShowCreateTemplateDialog} branchId="global" />
+      <SignAgreementDialog open={showSignDialog} onOpenChange={setShowSignDialog} isOrganizationLevel={true} />
+      <ScheduleAgreementDialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog} isOrganizationLevel={true} />
+      <CreateTemplateDialog open={showCreateTemplateDialog} onOpenChange={setShowCreateTemplateDialog} isOrganizationLevel={true} />
     </div>
   );
 };

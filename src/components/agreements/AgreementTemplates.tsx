@@ -28,13 +28,15 @@ import {
 type AgreementTemplatesProps = {
   searchQuery?: string;
   typeFilter?: string;
-  branchId: string;
+  branchId?: string;
+  isOrganizationLevel?: boolean;
 };
 
 export function AgreementTemplates({ 
   searchQuery = "", 
   typeFilter = "all",
-  branchId
+  branchId,
+  isOrganizationLevel = false
 }: AgreementTemplatesProps) {
   const [viewingTemplate, setViewingTemplate] = useState<AgreementTemplate | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<AgreementTemplate | null>(null);
@@ -42,7 +44,8 @@ export function AgreementTemplates({
   const { data: templates, isLoading, isError, error } = useAgreementTemplates({
     searchQuery,
     typeFilter,
-    branchId
+    branchId,
+    isOrganizationLevel
   });
 
   const deleteTemplateMutation = useDeleteTemplate();

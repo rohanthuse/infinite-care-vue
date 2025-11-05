@@ -35,7 +35,8 @@ const timeSlots = [
 interface ScheduleAgreementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  branchId: string;
+  branchId?: string;
+  isOrganizationLevel?: boolean;
   prefilledDate?: Date;
   prefilledTime?: string;
 }
@@ -44,6 +45,7 @@ export function ScheduleAgreementDialog({
   open,
   onOpenChange,
   branchId,
+  isOrganizationLevel = false,
   prefilledDate,
   prefilledTime
 }: ScheduleAgreementDialogProps) {
@@ -63,7 +65,8 @@ export function ScheduleAgreementDialog({
   const { data: templates, isLoading: templatesLoading } = useAgreementTemplates({
     searchQuery: "",
     typeFilter: selectedType || "all",
-    branchId
+    branchId,
+    isOrganizationLevel
   });
   const { data: clients, isLoading: clientsLoading } = useClients(branchId);
   const { data: staff, isLoading: staffLoading } = useStaff(branchId);
@@ -107,7 +110,7 @@ export function ScheduleAgreementDialog({
         status: "Upcoming",
         notes: notes || null,
         attachment_file_id: null,
-        branch_id: branchId !== "global" ? branchId : null,
+        branch_id: isOrganizationLevel ? null : branchId || null,
         created_by: user?.id || null,
       });
       
