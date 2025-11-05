@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  initialized: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
@@ -17,7 +18,8 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = React.useState<User | null>(null);
   const [session, setSession] = React.useState<Session | null>(null);
-  const [loading, setLoading] = React.useState(false); // Start false for instant landing page render
+  const [loading, setLoading] = React.useState(true);
+  const [initialized, setInitialized] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -29,17 +31,18 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         console.log('[UnifiedAuth] Initializing authentication...');
         setLoading(true); // Set true when starting check
         
-        // Reduced timeout from 3s to 1s for faster failure detection
+        // 3 second timeout for session initialization
         timeoutId = setTimeout(() => {
           if (mounted && loading) {
-            console.warn('[UnifiedAuth] Initialization timeout (1s), proceeding without auth');
+            console.warn('[UnifiedAuth] Initialization timeout (3s), proceeding without auth');
             if (mounted) {
               setLoading(false);
+              setInitialized(true);
               setUser(null);
               setSession(null);
             }
           }
-        }, 1000);
+        }, 3000);
 
         // Get existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -53,6 +56,7 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
+          setInitialized(true);
           clearTimeout(timeoutId);
           
           console.log('[UnifiedAuth] Session initialized:', {
@@ -194,6 +198,7 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
     user,
     session,
     loading,
+    initialized,
     error,
     signIn,
     signOut,
