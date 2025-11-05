@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, FileCheck, Clock, History, AlertCircle } from "lucide-react";
+import { Download, FileCheck, Clock, History, AlertCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import {
@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useAgreementSigners } from "@/hooks/useAgreementSigners";
 import {
   Select,
   SelectContent,
@@ -57,6 +58,8 @@ export function ViewAgreementDialog({
   const [statusReason, setStatusReason] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  const { data: signers = [], isLoading: signersLoading } = useAgreementSigners(agreement?.id);
 
   if (!agreement) {
     return null;
@@ -109,7 +112,13 @@ export function ViewAgreementDialog({
         <DialogHeader className="sticky top-0 z-10 bg-white px-6 pt-6 pb-2 border-b">
           <DialogTitle>{agreement.title}</DialogTitle>
           <DialogDescription>
-            Signed by {agreement.signed_by_name} on {agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A'}
+            {signersLoading ? (
+              "Loading signers..."
+            ) : signers.length > 0 ? (
+              `Signed by ${signers.length} ${signers.length === 1 ? 'party' : 'parties'} on ${agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A'}`
+            ) : (
+              `Created on ${agreement.created_at ? format(new Date(agreement.created_at), 'dd MMM yyyy') : 'N/A'}`
+            )}
           </DialogDescription>
         </DialogHeader>
         
@@ -124,9 +133,22 @@ export function ViewAgreementDialog({
               <span className="text-sm text-gray-500">Type: {agreement.agreement_types?.name}</span>
             </div>
             
-            {agreement.signing_party && (
-              <div className="text-sm text-gray-500">
-                <span className="font-medium">Signing Party:</span> {agreement.signing_party === "client" ? "Client" : "Staff"}
+            {signers.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Users className="h-4 w-4" />
+                  <span>Signers ({signers.length}):</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {signers.map((signer) => (
+                    <Badge key={signer.id} variant="outline" className="text-sm">
+                      {signer.signer_name}
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        ({signer.signer_type})
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
             

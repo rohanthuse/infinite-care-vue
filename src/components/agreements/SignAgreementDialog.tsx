@@ -31,6 +31,8 @@ import { useAgreementWorkflow } from "@/hooks/useAgreementWorkflow";
 import { useBranchNavigation } from "@/hooks/useBranchNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { useCreateSigners } from "@/hooks/useAgreementSigners";
 
 interface SignAgreementDialogProps {
   open: boolean;
@@ -46,10 +48,10 @@ export function SignAgreementDialog({
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [selectedClient, setSelectedClient] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState("");
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [signingParty, setSigningParty] = useState<"client" | "staff" | "other">("client");
-  const [signerName, setSignerName] = useState("");
+  const [otherSignerNames, setOtherSignerNames] = useState<string[]>([""]);
   const [signedDate, setSignedDate] = useState<Date | undefined>(new Date());
   const [digitalSignature, setDigitalSignature] = useState("");
   const [content, setContent] = useState("");
@@ -73,10 +75,12 @@ export function SignAgreementDialog({
   const { data: staff, isLoading: staffLoading } = useStaff(effectiveBranchId);
   
   const createAgreementMutation = useCreateAgreement();
+  const createSignersMutation = useCreateSigners();
   const { workflowState, handleFileUpload, setSignature, resetWorkflow } = useAgreementWorkflow();
   
   const handleCreateAgreement = async () => {
-    if (!title || !selectedType || !signerName || !signedDate) {
+    // Validation
+    if (!title || !selectedType || !signedDate) {
       toast.error("Please fill in all required fields");
       return false;
     }
@@ -85,53 +89,104 @@ export function SignAgreementDialog({
       toast.error("Please select a branch");
       return false;
     }
+
+    // Validate signers based on party type
+    if (signingParty === "client" && selectedClients.length === 0) {
+      toast.error("Please select at least one client");
+      return false;
+    }
+    
+    if (signingParty === "staff" && selectedStaff.length === 0) {
+      toast.error("Please select at least one staff member");
+      return false;
+    }
+    
+    if (signingParty === "other") {
+      const validNames = otherSignerNames.filter(name => name.trim() !== "");
+      if (validNames.length === 0) {
+        toast.error("Please enter at least one signer name");
+        return false;
+      }
+    }
     
     try {
-      // Map selected client/staff IDs to their auth_user_ids
-      let clientAuthUserId = null;
-      let staffAuthUserId = null;
-      
-      if (signingParty === "client" && selectedClient && clients) {
-        const client = clients.find(c => c.id === selectedClient);
-        clientAuthUserId = client?.auth_user_id || null;
-        console.log('[SignAgreementDialog] Client mapping:', { selectedClient, clientAuthUserId });
-      }
-      
-      if (signingParty === "staff" && selectedStaff && staff) {
-        const staffMember = staff.find(s => s.id === selectedStaff);
-        staffAuthUserId = staffMember?.auth_user_id || null;
-        console.log('[SignAgreementDialog] Staff mapping:', { selectedStaff, staffAuthUserId });
-      }
-      
-      // Create the agreement with Pending status initially
+      // Create the agreement first
       const agreementData = {
         title,
         content: content || null,
         template_id: selectedTemplate || null,
         type_id: selectedType,
         status: "Pending" as const,
-        signed_by_name: signerName,
-        signed_by_client_id: clientAuthUserId,
-        signed_by_staff_id: staffAuthUserId,
+        signed_by_name: null, // No longer used
+        signed_by_client_id: null, // No longer used
+        signed_by_staff_id: null, // No longer used
         signing_party: signingParty,
         signed_at: signedDate.toISOString(),
-        digital_signature: null, // Will be updated in final step
+        digital_signature: null,
         primary_document_id: null,
         signature_file_id: null,
         branch_id: effectiveBranchId,
       };
 
-      console.log('[SignAgreementDialog] Creating agreement with data:', agreementData);
-
-      // Create agreement and get the response
       const newAgreement = await createAgreementMutation.mutateAsync(agreementData);
       
-      if (newAgreement?.id) {
-        setCreatedAgreementId(newAgreement.id);
-        toast.success("Agreement created! You can now upload documents.");
-        return true;
+      if (!newAgreement?.id) {
+        return false;
       }
-      return false;
+
+      // Create signers based on party type
+      const signersData: Array<{
+        agreement_id: string;
+        signer_type: 'client' | 'staff' | 'other';
+        signer_id?: string;
+        signer_name: string;
+        signer_auth_user_id?: string;
+      }> = [];
+
+      if (signingParty === "client" && clients) {
+        selectedClients.forEach(clientId => {
+          const client = clients.find(c => c.id === clientId);
+          if (client) {
+            signersData.push({
+              agreement_id: newAgreement.id,
+              signer_type: 'client',
+              signer_id: clientId,
+              signer_name: `${client.first_name} ${client.last_name}`,
+              signer_auth_user_id: client.auth_user_id || undefined,
+            });
+          }
+        });
+      } else if (signingParty === "staff" && staff) {
+        selectedStaff.forEach(staffId => {
+          const staffMember = staff.find(s => s.id === staffId);
+          if (staffMember) {
+            signersData.push({
+              agreement_id: newAgreement.id,
+              signer_type: 'staff',
+              signer_id: staffId,
+              signer_name: `${staffMember.first_name} ${staffMember.last_name}`,
+              signer_auth_user_id: staffMember.auth_user_id || undefined,
+            });
+          }
+        });
+      } else if (signingParty === "other") {
+        otherSignerNames.filter(name => name.trim() !== "").forEach(name => {
+          signersData.push({
+            agreement_id: newAgreement.id,
+            signer_type: 'other',
+            signer_name: name.trim(),
+          });
+        });
+      }
+
+      // Create all signers
+      if (signersData.length > 0) {
+        await createSignersMutation.mutateAsync(signersData);
+      }
+
+      setCreatedAgreementId(newAgreement.id);
+      toast.success("Agreement created! You can now upload documents.");
+      return true;
     } catch (error: any) {
       console.error('Error creating agreement:', error);
       const errorMessage = error?.message || 'Failed to create agreement';
@@ -178,10 +233,10 @@ export function SignAgreementDialog({
     setTitle("");
     setSelectedType("");
     setSelectedTemplate("");
-    setSelectedClient("");
-    setSelectedStaff("");
+    setSelectedClients([]);
+    setSelectedStaff([]);
     setSigningParty("client");
-    setSignerName("");
+    setOtherSignerNames([""]);
     setSignedDate(new Date());
     setDigitalSignature("");
     setContent("");
@@ -191,26 +246,28 @@ export function SignAgreementDialog({
     resetWorkflow();
   };
 
-  // Auto-populate signer name when client or staff is selected
+  // Reset selections when signing party changes
   React.useEffect(() => {
-    if (signingParty === "client" && selectedClient && clients) {
-      const client = clients.find(c => c.id === selectedClient);
-      if (client) {
-        setSignerName(`${client.first_name} ${client.last_name}`);
-      }
-    } else if (signingParty === "staff" && selectedStaff && staff) {
-      const staffMember = staff.find(s => s.id === selectedStaff);
-      if (staffMember) {
-        setSignerName(`${staffMember.first_name} ${staffMember.last_name}`);
-      }
+    if (signingParty === "client") {
+      setSelectedStaff([]);
+      setOtherSignerNames([""]);
+    } else if (signingParty === "staff") {
+      setSelectedClients([]);
+      setOtherSignerNames([""]);
     } else if (signingParty === "other") {
-      setSignerName("");
+      setSelectedClients([]);
+      setSelectedStaff([]);
     }
-  }, [signingParty, selectedClient, selectedStaff, clients, staff]);
+  }, [signingParty]);
 
   const isLoading = typesLoading || templatesLoading || clientsLoading || staffLoading || branchesLoading;
 
-  const canProceedToStep2 = title && selectedType && signerName && signedDate && 
+  const hasValidSigners = 
+    (signingParty === "client" && selectedClients.length > 0) ||
+    (signingParty === "staff" && selectedStaff.length > 0) ||
+    (signingParty === "other" && otherSignerNames.some(name => name.trim() !== ""));
+
+  const canProceedToStep2 = title && selectedType && hasValidSigners && signedDate && 
     (isGlobalContext ? selectedBranchId : true);
   const canComplete = canProceedToStep2;
 
@@ -335,50 +392,92 @@ export function SignAgreementDialog({
 
               {signingParty === "client" && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Client</label>
-                  <Select value={selectedClient} onValueChange={setSelectedClient}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients?.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.first_name} {client.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium">
+                    Clients <span className="text-red-500">*</span>
+                  </label>
+                  <MultiSelect
+                    options={clients?.map(client => ({
+                      label: `${client.first_name} ${client.last_name}`,
+                      value: client.id,
+                    })) || []}
+                    selected={selectedClients}
+                    onSelectionChange={setSelectedClients}
+                    placeholder="Select clients"
+                    emptyText="No clients found"
+                    maxDisplay={3}
+                    showSelectAll={true}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {selectedClients.length} client(s) selected
+                  </p>
                 </div>
               )}
 
               {signingParty === "staff" && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Staff Member</label>
-                  <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select staff member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {staff?.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.first_name} {member.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium">
+                    Staff Members <span className="text-red-500">*</span>
+                  </label>
+                  <MultiSelect
+                    options={staff?.map(member => ({
+                      label: `${member.first_name} ${member.last_name}`,
+                      value: member.id,
+                    })) || []}
+                    selected={selectedStaff}
+                    onSelectionChange={setSelectedStaff}
+                    placeholder="Select staff members"
+                    emptyText="No staff members found"
+                    maxDisplay={3}
+                    showSelectAll={true}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {selectedStaff.length} staff member(s) selected
+                  </p>
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Signer Name <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  placeholder="Enter full name of person who signed"
-                  value={signerName}
-                  onChange={(e) => setSignerName(e.target.value)}
-                />
-              </div>
+              {signingParty === "other" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Signer Names <span className="text-red-500">*</span>
+                  </label>
+                  {otherSignerNames.map((name, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder={`Signer ${index + 1} name`}
+                        value={name}
+                        onChange={(e) => {
+                          const newNames = [...otherSignerNames];
+                          newNames[index] = e.target.value;
+                          setOtherSignerNames(newNames);
+                        }}
+                      />
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            const newNames = otherSignerNames.filter((_, i) => i !== index);
+                            setOtherSignerNames(newNames);
+                          }}
+                        >
+                          ×
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setOtherSignerNames([...otherSignerNames, ""])}
+                    className="w-full"
+                  >
+                    + Add Another Signer
+                  </Button>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">

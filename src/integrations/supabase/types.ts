@@ -263,6 +263,47 @@ export type Database = {
           },
         ]
       }
+      agreement_signers: {
+        Row: {
+          agreement_id: string
+          created_at: string
+          id: string
+          signer_auth_user_id: string | null
+          signer_id: string | null
+          signer_name: string
+          signer_type: string
+          updated_at: string
+        }
+        Insert: {
+          agreement_id: string
+          created_at?: string
+          id?: string
+          signer_auth_user_id?: string | null
+          signer_id?: string | null
+          signer_name: string
+          signer_type: string
+          updated_at?: string
+        }
+        Update: {
+          agreement_id?: string
+          created_at?: string
+          id?: string
+          signer_auth_user_id?: string | null
+          signer_id?: string | null
+          signer_name?: string
+          signer_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_signers_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_templates: {
         Row: {
           branch_id: string | null

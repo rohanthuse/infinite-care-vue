@@ -8,34 +8,47 @@ interface UseStaffAgreementsParams {
 }
 
 const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<Agreement[]> => {
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  
   let query = supabase
     .from('agreements')
     .select(`
       *,
       agreement_types (
         name
+      ),
+      agreement_signers (
+        id,
+        signer_name,
+        signer_type
       )
-    `)
-    .eq('signing_party', 'staff')
-    .eq('signed_by_staff_id', (await supabase.auth.getUser()).data.user?.id);
+    `);
+  
+  // Filter for agreements where the current user is a signer
+  const { data: agreements, error } = await query.order('created_at', { ascending: false });
+  
+  if (error) throw new Error(error.message);
+  
+  // Filter agreements where user is a signer
+  const filteredAgreements = (agreements || []).filter(agreement => {
+    return agreement.agreement_signers?.some((signer: any) => 
+      signer.signer_type === 'staff' && agreement.signing_party === 'staff'
+    );
+  });
+  
+  let result = filteredAgreements;
 
   if (params.searchQuery) {
-    query = query.ilike('title', `%${params.searchQuery}%`);
+    result = result.filter(a => 
+      a.title.toLowerCase().includes(params.searchQuery!.toLowerCase())
+    );
   }
 
   if (params.statusFilter) {
-    query = query.eq('status', params.statusFilter);
+    result = result.filter(a => a.status === params.statusFilter);
   }
 
-  query = query.order('created_at', { ascending: false });
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as Agreement[];
+  return result as Agreement[];
 };
 
 export const useStaffAgreements = (params: UseStaffAgreementsParams = {}) => {

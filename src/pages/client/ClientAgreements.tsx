@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Download, Eye, FileText, Calendar, User } from 'lucide-react';
+import { Search, Download, Eye, FileText, Calendar, User, Users } from 'lucide-react';
 import { useClientAgreements } from '@/data/hooks/useClientAgreements';
 import { ViewAgreementDialog } from '@/components/agreements/ViewAgreementDialog';
 import { generatePDF } from '@/utils/pdfGenerator';
@@ -52,12 +52,17 @@ const ClientAgreements = () => {
       }
       
       // Fallback to generating PDF
+      const signers = agreement.agreement_signers || [];
+      const signersText = signers.length > 0 
+        ? signers.map(s => s.signer_name).join(', ')
+        : (agreement.signed_by_name || 'N/A');
+      
       const pdfData = {
         id: agreement.id,
         title: agreement.title,
         date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : format(new Date(agreement.created_at), 'dd MMM yyyy'),
         status: agreement.status,
-        signedBy: agreement.signed_by_name || 'N/A'
+        signedBy: signersText
       };
       generatePDF(pdfData);
       toast.success('Agreement generated and downloaded successfully');
@@ -160,9 +165,20 @@ const ClientAgreements = () => {
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    {agreement.signed_by_name && (
+                    {agreement.agreement_signers && agreement.agreement_signers.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>
+                          {agreement.agreement_signers.length} {agreement.agreement_signers.length === 1 ? 'Signer' : 'Signers'}:
+                        </span>
+                        <span>{agreement.agreement_signers.slice(0, 2).map(s => s.signer_name).join(', ')}</span>
+                        {agreement.agreement_signers.length > 2 && (
+                          <span>+{agreement.agreement_signers.length - 2} more</span>
+                        )}
+                      </div>
+                    ) : agreement.signed_by_name ? (
                       <p>Signed by: {agreement.signed_by_name}</p>
-                    )}
+                    ) : null}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleViewAgreement(agreement)}>

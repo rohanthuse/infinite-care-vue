@@ -51,7 +51,11 @@ export const useAgreementTypes = () => {
 // --- SIGNED AGREEMENTS ---
 
 const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; }) => {
-    let query = supabase.from('agreements').select(`*, agreement_types ( name )`);
+    let query = supabase.from('agreements').select(`
+      *, 
+      agreement_types ( name ),
+      agreement_signers ( id, signer_name, signer_type )
+    `);
     if (branchId) query = query.eq('branch_id', branchId);
     if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,signed_by_name.ilike.%${searchQuery}%`);
     if (typeFilter !== 'all') query = query.eq('type_id', typeFilter);

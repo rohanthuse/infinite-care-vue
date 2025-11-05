@@ -4,7 +4,7 @@ import {
   TableHeader, TableRow 
 } from "@/components/ui/table";
 import { 
-  Eye, Download, FileText, Calendar, User, Trash2, UserCheck, Loader2
+  Eye, Download, FileText, Calendar, User, Trash2, UserCheck, Loader2, Users
 } from "lucide-react";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,12 +77,17 @@ export function SignedAgreements({
 
   const handleDownload = (agreement: Agreement) => {
     if (!agreement) return;
+    const signers = agreement.agreement_signers || [];
+    const signersText = signers.length > 0 
+      ? signers.map(s => s.signer_name).join(', ')
+      : (agreement.signed_by_name || 'N/A');
+    
     generatePDF({
       id: agreement.id,
       title: agreement.title,
       date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A',
       status: agreement.status,
-      signedBy: agreement.signed_by_name || 'N/A',
+      signedBy: signersText,
     });
     toast.success(`Downloaded ${agreement.title}`);
   };
@@ -140,15 +145,34 @@ export function SignedAgreements({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      {agreement.signing_party === "client" ? (
-                        <User className="h-4 w-4 text-muted-foreground" />
+                      {agreement.agreement_signers && agreement.agreement_signers.length > 0 ? (
+                        <>
+                          <Users className="h-4 w-4 text-primary" />
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {agreement.agreement_signers.length} {agreement.agreement_signers.length === 1 ? 'Signer' : 'Signers'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {agreement.agreement_signers.slice(0, 2).map(s => s.signer_name).join(', ')}
+                              {agreement.agreement_signers.length > 2 && ` +${agreement.agreement_signers.length - 2} more`}
+                            </span>
+                          </div>
+                        </>
                       ) : (
-                        <UserCheck className="h-4 w-4 text-primary" />
+                        <>
+                          {agreement.signing_party === "client" ? (
+                            <User className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <UserCheck className="h-4 w-4 text-primary" />
+                          )}
+                          <span>{agreement.signed_by_name || 'No signers'}</span>
+                        </>
                       )}
-                      <span>{agreement.signed_by_name}</span>
-                      {agreement.signing_party && <Badge variant="outline" className="text-xs capitalize">
-                        {agreement.signing_party}
-                      </Badge>}
+                      {agreement.signing_party && (
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {agreement.signing_party}
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>

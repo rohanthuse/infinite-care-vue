@@ -27,6 +27,7 @@ export type Agreement = {
     created_at: string;
     updated_at: string;
     agreement_types: { name: string } | null;
+    agreement_signers?: { id: string; signer_name: string; signer_type: string; }[];
     statusHistory?: { status: string; date: string; reason?: string; changedBy: string; }[];
 };
 
