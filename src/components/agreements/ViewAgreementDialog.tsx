@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, FileCheck, Clock, History, AlertCircle, Users } from "lucide-react";
+import { Download, FileCheck, Clock, History, AlertCircle, Users, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import {
@@ -11,6 +11,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAgreementSigners } from "@/hooks/useAgreementSigners";
+import { useSignAgreementBySigner } from "@/hooks/useSignAgreementBySigner";
+import { useAuth } from "@/contexts/UnifiedAuthProvider";
+import { EnhancedSignatureCanvas } from "./EnhancedSignatureCanvas";
 import {
   Select,
   SelectContent,
@@ -53,17 +56,47 @@ export function ViewAgreementDialog({
   agreement,
   onDownload
 }: ViewAgreementDialogProps) {
+  const { user } = useAuth();
   const [showStatusForm, setShowStatusForm] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusReason, setStatusReason] = useState("");
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showSigningCanvas, setShowSigningCanvas] = useState(false);
+  const [currentSignature, setCurrentSignature] = useState("");
 
   const { data: signers = [], isLoading: signersLoading } = useAgreementSigners(agreement?.id);
+  const signMutation = useSignAgreementBySigner();
+  
+  // Find current user's signer record (if they're a pending signer)
+  const currentUserSigner = signers.find(
+    s => s.signer_auth_user_id === user?.id && s.signing_status === 'pending'
+  );
 
   if (!agreement) {
     return null;
   }
+  
+  const handleSignAgreement = async () => {
+    if (!currentSignature || !currentUserSigner || !agreement) {
+      toast.error("Please provide a signature");
+      return;
+    }
+    
+    try {
+      await signMutation.mutateAsync({
+        agreementId: agreement.id,
+        signerId: currentUserSigner.id,
+        signatureData: currentSignature
+      });
+      
+      setShowSigningCanvas(false);
+      setCurrentSignature("");
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Signing error:', error);
+    }
+  };
   
   const handleStatusChange = async () => {
     if (!newStatus || !statusReason) {
@@ -141,14 +174,71 @@ export function ViewAgreementDialog({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {signers.map((signer) => (
-                    <Badge key={signer.id} variant="outline" className="text-sm">
+                    <Badge 
+                      key={signer.id} 
+                      variant={signer.signing_status === 'signed' ? 'success' : 'outline'} 
+                      className="text-sm"
+                    >
                       {signer.signer_name}
                       <span className="ml-1 text-xs text-muted-foreground">
                         ({signer.signer_type})
                       </span>
+                      {signer.signing_status === 'signed' && (
+                        <span className="ml-1 text-xs">✓</span>
+                      )}
                     </Badge>
                   ))}
                 </div>
+              </div>
+            )}
+            
+            {/* Show signing interface if user is a pending signer */}
+            {currentUserSigner && agreement.status === 'Pending' && (
+              <div className="border p-4 rounded-md bg-blue-50 space-y-3 mt-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-medium text-blue-900">Action Required: Your Signature</h3>
+                </div>
+                <p className="text-sm text-blue-800">
+                  You are listed as a signer on this agreement. Please review the content above and sign below.
+                </p>
+                
+                {!showSigningCanvas ? (
+                  <Button 
+                    onClick={() => setShowSigningCanvas(true)} 
+                    className="w-full"
+                    variant="default"
+                  >
+                    <PenLine className="mr-2 h-4 w-4" />
+                    Sign Agreement
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <EnhancedSignatureCanvas
+                      onSignatureSave={setCurrentSignature}
+                      agreementId={agreement.id}
+                      disabled={signMutation.isPending}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowSigningCanvas(false);
+                          setCurrentSignature("");
+                        }}
+                        disabled={signMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleSignAgreement}
+                        disabled={!currentSignature || signMutation.isPending}
+                      >
+                        {signMutation.isPending ? 'Signing...' : 'Submit Signature'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             

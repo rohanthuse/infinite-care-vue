@@ -9,6 +9,9 @@ export interface AgreementSigner {
   signer_id: string | null;
   signer_name: string;
   signer_auth_user_id: string | null;
+  signed_at: string | null;
+  signature_file_id: string | null;
+  signing_status: 'pending' | 'signed' | 'declined';
   created_at: string;
   updated_at: string;
 }

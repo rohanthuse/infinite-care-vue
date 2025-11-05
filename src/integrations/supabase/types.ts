@@ -300,30 +300,39 @@ export type Database = {
           agreement_id: string
           created_at: string
           id: string
+          signature_file_id: string | null
+          signed_at: string | null
           signer_auth_user_id: string | null
           signer_id: string | null
           signer_name: string
           signer_type: string
+          signing_status: string | null
           updated_at: string
         }
         Insert: {
           agreement_id: string
           created_at?: string
           id?: string
+          signature_file_id?: string | null
+          signed_at?: string | null
           signer_auth_user_id?: string | null
           signer_id?: string | null
           signer_name: string
           signer_type: string
+          signing_status?: string | null
           updated_at?: string
         }
         Update: {
           agreement_id?: string
           created_at?: string
           id?: string
+          signature_file_id?: string | null
+          signed_at?: string | null
           signer_auth_user_id?: string | null
           signer_id?: string | null
           signer_name?: string
           signer_type?: string
+          signing_status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -332,6 +341,13 @@ export type Database = {
             columns: ["agreement_id"]
             isOneToOne: false
             referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agreement_signers_signature_file_id_fkey"
+            columns: ["signature_file_id"]
+            isOneToOne: false
+            referencedRelation: "agreement_files"
             referencedColumns: ["id"]
           },
         ]

@@ -10,6 +10,8 @@ interface UseStaffAgreementsParams {
 const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<Agreement[]> => {
   const userId = (await supabase.auth.getUser()).data.user?.id;
   
+  console.log('[useStaffAgreements] Fetching agreements for user:', userId);
+  
   let query = supabase
     .from('agreements')
     .select(`
@@ -20,7 +22,9 @@ const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<A
       agreement_signers (
         id,
         signer_name,
-        signer_type
+        signer_type,
+        signer_auth_user_id,
+        signing_status
       )
     `);
   
@@ -29,12 +33,21 @@ const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<A
   
   if (error) throw new Error(error.message);
   
-  // Filter agreements where user is a signer
+  // Filter agreements where the current logged-in user is assigned as a signer
   const filteredAgreements = (agreements || []).filter(agreement => {
-    return agreement.agreement_signers?.some((signer: any) => 
-      signer.signer_type === 'staff' && agreement.signing_party === 'staff'
+    const isAssignedSigner = agreement.agreement_signers?.some((signer: any) => 
+      signer.signer_type === 'staff' && 
+      signer.signer_auth_user_id === userId
     );
+    
+    if (isAssignedSigner) {
+      console.log('[useStaffAgreements] Found agreement for user:', agreement.title);
+    }
+    
+    return isAssignedSigner;
   });
+  
+  console.log('[useStaffAgreements] Found', filteredAgreements.length, 'agreements for user');
   
   let result = filteredAgreements;
 
