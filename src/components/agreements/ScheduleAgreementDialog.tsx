@@ -22,8 +22,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { useAgreementTypes, useAgreementTemplates, useClients, useStaff, useCreateScheduledAgreement } from "@/data/hooks/agreements";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Time slots
 const timeSlots = [
@@ -52,8 +54,8 @@ export function ScheduleAgreementDialog({
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [selectedClient, setSelectedClient] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState("");
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [schedulingWith, setSchedulingWith] = useState<"client" | "staff" | "other">("client");
   const [otherPersonName, setOtherPersonName] = useState("");
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(prefilledDate);
@@ -75,6 +77,23 @@ export function ScheduleAgreementDialog({
   
   const handleScheduleAgreement = async () => {
     if (!title || !scheduledDate || !scheduledTime) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    
+    // Validation: ensure at least one person is selected
+    if (schedulingWith === "client" && selectedClients.length === 0) {
+      toast.error("Please select at least one client");
+      return;
+    }
+    
+    if (schedulingWith === "staff" && selectedStaff.length === 0) {
+      toast.error("Please select at least one staff member");
+      return;
+    }
+    
+    if (schedulingWith === "other" && !otherPersonName.trim()) {
+      toast.error("Please enter the person's name");
       return;
     }
     
@@ -83,41 +102,86 @@ export function ScheduleAgreementDialog({
     const [hours, minutes] = scheduledTime.split(':');
     scheduledDateTime.setHours(parseInt(hours), parseInt(minutes));
     
-    // Determine scheduled with name
-    let scheduledWithName = "";
-    if (schedulingWith === "client" && selectedClient) {
-      const client = clients?.find(c => c.id === selectedClient);
-      scheduledWithName = client ? `${client.first_name} ${client.last_name}` : "";
-    } else if (schedulingWith === "staff" && selectedStaff) {
-      const staffMember = staff?.find(s => s.id === selectedStaff);
-      scheduledWithName = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : "";
-    } else if (schedulingWith === "other") {
-      scheduledWithName = otherPersonName;
-    }
-    
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       
-      await createScheduledAgreementMutation.mutateAsync({
-        title,
-        scheduled_for: scheduledDateTime.toISOString(),
-        scheduled_with_name: scheduledWithName,
-        scheduled_with_client_id: schedulingWith === "client" ? selectedClient || null : null,
-        scheduled_with_staff_id: schedulingWith === "staff" ? selectedStaff || null : null,
-        type_id: selectedType || null,
-        template_id: selectedTemplate || null,
-        status: "Upcoming",
-        notes: notes || null,
-        attachment_file_id: null,
-        branch_id: isOrganizationLevel ? null : branchId || null,
-        created_by: user?.id || null,
-      });
+      // Determine which persons to create agreements for
+      let personsToSchedule: Array<{
+        name: string;
+        clientId?: string;
+        staffId?: string;
+      }> = [];
       
-      resetForm();
-      onOpenChange(false);
+      if (schedulingWith === "client") {
+        personsToSchedule = selectedClients.map(clientId => {
+          const client = clients?.find(c => c.id === clientId);
+          return {
+            name: client ? `${client.first_name} ${client.last_name}` : "",
+            clientId: clientId
+          };
+        });
+      } else if (schedulingWith === "staff") {
+        personsToSchedule = selectedStaff.map(staffId => {
+          const staffMember = staff?.find(s => s.id === staffId);
+          return {
+            name: staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : "",
+            staffId: staffId
+          };
+        });
+      } else if (schedulingWith === "other") {
+        personsToSchedule = [{
+          name: otherPersonName
+        }];
+      }
+      
+      // Create multiple scheduled agreements (one per person)
+      const createPromises = personsToSchedule.map(person => 
+        createScheduledAgreementMutation.mutateAsync({
+          title,
+          scheduled_for: scheduledDateTime.toISOString(),
+          scheduled_with_name: person.name,
+          scheduled_with_client_id: person.clientId || null,
+          scheduled_with_staff_id: person.staffId || null,
+          type_id: selectedType || null,
+          template_id: selectedTemplate || null,
+          status: "Upcoming",
+          notes: notes || null,
+          attachment_file_id: null,
+          branch_id: isOrganizationLevel ? null : branchId || null,
+          created_by: user?.id || null,
+        })
+      );
+      
+      // Execute all creates in parallel with error handling
+      const results = await Promise.allSettled(createPromises);
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      if (failed === 0) {
+        toast.success(
+          `Successfully scheduled ${successful} agreement${successful > 1 ? 's' : ''}`,
+          {
+            description: `${successful} scheduled agreement${successful > 1 ? 's have' : ' has'} been created`
+          }
+        );
+      } else if (successful > 0) {
+        toast.warning(
+          `Partially successful: ${successful} scheduled, ${failed} failed`,
+          { description: 'Some agreements could not be created. Please try again for failed ones.' }
+        );
+      } else {
+        toast.error('Failed to schedule agreements. Please try again.');
+      }
+      
+      if (successful > 0) {
+        resetForm();
+        onOpenChange(false);
+      }
     } catch (error) {
-      console.error('Error scheduling agreement:', error);
+      console.error('Error scheduling agreements:', error);
+      toast.error('An unexpected error occurred');
     }
   };
   
@@ -125,8 +189,8 @@ export function ScheduleAgreementDialog({
     setTitle("");
     setSelectedType("");
     setSelectedTemplate("");
-    setSelectedClient("");
-    setSelectedStaff("");
+    setSelectedClients([]);
+    setSelectedStaff([]);
     setSchedulingWith("client");
     setOtherPersonName("");
     setScheduledDate(prefilledDate);
@@ -145,7 +209,7 @@ export function ScheduleAgreementDialog({
         <DialogHeader>
           <DialogTitle>Schedule Agreement Signing</DialogTitle>
           <DialogDescription>
-            Schedule a date and time for agreement signing
+            Schedule a date and time for agreement signing. You can select multiple clients or staff members to create bulk agreements.
           </DialogDescription>
         </DialogHeader>
         
@@ -215,37 +279,49 @@ export function ScheduleAgreementDialog({
 
             {schedulingWith === "client" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Client</label>
-                <Select value={selectedClient} onValueChange={setSelectedClient}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients?.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.first_name} {client.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium">
+                  Clients <span className="text-red-500">*</span>
+                </label>
+                <MultiSelect
+                  options={clients?.map(client => ({
+                    label: `${client.first_name} ${client.last_name}`,
+                    value: client.id
+                  })) || []}
+                  selected={selectedClients}
+                  onSelectionChange={setSelectedClients}
+                  placeholder="Select clients..."
+                  searchPlaceholder="Search clients..."
+                  emptyText="No clients found"
+                  maxDisplay={3}
+                  showSelectAll={true}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''} selected. Separate agreement will be created for each.
+                </p>
               </div>
             )}
 
             {schedulingWith === "staff" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Staff Member</label>
-                <Select value={selectedStaff} onValueChange={setSelectedStaff}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select staff member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {staff?.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        {member.first_name} {member.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium">
+                  Staff Members <span className="text-red-500">*</span>
+                </label>
+                <MultiSelect
+                  options={staff?.map(member => ({
+                    label: `${member.first_name} ${member.last_name}`,
+                    value: member.id
+                  })) || []}
+                  selected={selectedStaff}
+                  onSelectionChange={setSelectedStaff}
+                  placeholder="Select staff members..."
+                  searchPlaceholder="Search staff..."
+                  emptyText="No staff members found"
+                  maxDisplay={3}
+                  showSelectAll={true}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {selectedStaff.length} staff member{selectedStaff.length !== 1 ? 's' : ''} selected. Separate agreement will be created for each.
+                </p>
               </div>
             )}
 
@@ -329,9 +405,20 @@ export function ScheduleAgreementDialog({
           </Button>
           <Button 
             onClick={handleScheduleAgreement} 
-            disabled={createScheduledAgreementMutation.isPending || !title || !scheduledDate || !scheduledTime}
+            disabled={
+              createScheduledAgreementMutation.isPending || 
+              !title || 
+              !scheduledDate || 
+              !scheduledTime ||
+              (schedulingWith === "client" && selectedClients.length === 0) ||
+              (schedulingWith === "staff" && selectedStaff.length === 0) ||
+              (schedulingWith === "other" && !otherPersonName.trim())
+            }
           >
-            {createScheduledAgreementMutation.isPending ? "Processing..." : "Schedule Agreement"}
+            {createScheduledAgreementMutation.isPending 
+              ? "Processing..." 
+              : `Schedule Agreement${(schedulingWith === 'client' && selectedClients.length > 1) || (schedulingWith === 'staff' && selectedStaff.length > 1) ? 's' : ''}`
+            }
           </Button>
         </DialogFooter>
       </DialogContent>
