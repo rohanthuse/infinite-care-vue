@@ -184,7 +184,8 @@ export function ViewAgreementDialog({
               <span className="text-sm text-gray-500">Type: {agreement.agreement_types?.name}</span>
             </div>
             
-            {signers.length > 0 && (
+            {/* Show full signers list only to admins */}
+            {isAdmin && signers.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Users className="h-4 w-4" />
@@ -206,6 +207,21 @@ export function ViewAgreementDialog({
                       )}
                     </Badge>
                   ))}
+                </div>
+              </div>
+            )}
+            
+            {/* For non-admins, show only their own signing status */}
+            {!isAdmin && currentUserSigner && (
+              <div className="space-y-2">
+                <div className="text-sm">
+                  <span className="font-medium">Your Status:</span>
+                  <Badge 
+                    variant={currentUserSigner.signing_status === 'signed' ? 'success' : 'outline'} 
+                    className="ml-2"
+                  >
+                    {currentUserSigner.signing_status === 'signed' ? 'Signed ✓' : 'Pending Signature'}
+                  </Badge>
                 </div>
               </div>
             )}
@@ -271,7 +287,8 @@ export function ViewAgreementDialog({
               {agreement.content}
             </div>
             
-            {!showStatusForm ? (
+            {/* Status change and history - Admin only */}
+            {isAdmin && !showStatusForm && (
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mt-4">
                 <Button
                   variant="outline" 
@@ -290,7 +307,9 @@ export function ViewAgreementDialog({
                   <History className="mr-2 h-4 w-4" /> View History
                 </Button>
               </div>
-            ) : (
+            )}
+            
+            {isAdmin && showStatusForm && (
               <div className="space-y-3 border p-4 rounded-md bg-gray-50 mt-4">
                 <h3 className="font-medium">Update Agreement Status</h3>
                 <div>
