@@ -29,6 +29,7 @@ const Agreement = () => {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [approvalFilter, setApprovalFilter] = useState<"all" | "pending_review" | "approved" | "rejected" | "archived">("all");
   const [activeTab, setActiveTab] = useState("signed");
   const [showSignDialog, setShowSignDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
@@ -137,6 +138,17 @@ const Agreement = () => {
                     <option value="last30days">Last 30 Days</option>
                     <option value="last90days">Last 90 Days</option>
                   </select>
+                  <select 
+                    className="px-3 py-1.5 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    value={approvalFilter}
+                    onChange={(e) => setApprovalFilter(e.target.value as typeof approvalFilter)}
+                  >
+                    <option value="all">All Approvals</option>
+                    <option value="pending_review">Pending Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="archived">Archived</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -148,6 +160,7 @@ const Agreement = () => {
                 searchQuery={debouncedSearchQuery} 
                 typeFilter={typeFilter} 
                 dateFilter={dateFilter}
+                approvalFilter={approvalFilter}
                 isOrganizationLevel={true}
               />
             </TabsContent>

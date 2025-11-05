@@ -449,6 +449,12 @@ export type Database = {
       }
       agreements: {
         Row: {
+          approval_notes: string | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          archived_at: string | null
+          archived_by: string | null
           branch_id: string | null
           content: string | null
           created_at: string
@@ -456,6 +462,7 @@ export type Database = {
           expiry_date: string | null
           id: string
           primary_document_id: string | null
+          rejection_reason: string | null
           renewal_date: string | null
           signature_file_id: string | null
           signed_at: string | null
@@ -470,6 +477,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approval_notes?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           branch_id?: string | null
           content?: string | null
           created_at?: string
@@ -477,6 +490,7 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           primary_document_id?: string | null
+          rejection_reason?: string | null
           renewal_date?: string | null
           signature_file_id?: string | null
           signed_at?: string | null
@@ -491,6 +505,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approval_notes?: string | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           branch_id?: string | null
           content?: string | null
           created_at?: string
@@ -498,6 +518,7 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           primary_document_id?: string | null
+          rejection_reason?: string | null
           renewal_date?: string | null
           signature_file_id?: string | null
           signed_at?: string | null

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Download, FileCheck, Clock, History, AlertCircle, Users, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import { useAgreementSigners } from "@/hooks/useAgreementSigners";
 import { useSignAgreementBySigner } from "@/hooks/useSignAgreementBySigner";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
 import { EnhancedSignatureCanvas } from "./EnhancedSignatureCanvas";
+import { AdminApprovalPanel } from "./AdminApprovalPanel";
 import {
   Select,
   SelectContent,
@@ -64,9 +66,25 @@ export function ViewAgreementDialog({
   const [showHistory, setShowHistory] = useState(false);
   const [showSigningCanvas, setShowSigningCanvas] = useState(false);
   const [currentSignature, setCurrentSignature] = useState("");
+  const [userRoles, setUserRoles] = useState<string[]>([]);
 
   const { data: signers = [], isLoading: signersLoading } = useAgreementSigners(agreement?.id);
   const signMutation = useSignAgreementBySigner();
+  
+  // Fetch user roles
+  useEffect(() => {
+    const fetchRoles = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+      setUserRoles(data?.map(r => r.role) || []);
+    };
+    fetchRoles();
+  }, [user?.id]);
+  
+  const isAdmin = userRoles.includes('super_admin') || userRoles.includes('branch_admin');
   
   // Find current user's signer record (if they're a pending signer)
   const currentUserSigner = signers.find(
@@ -352,6 +370,11 @@ export function ViewAgreementDialog({
                   ))}
                 </div>
               </div>
+            )}
+            
+            {/* Admin Approval Panel */}
+            {isAdmin && agreement && (
+              <AdminApprovalPanel agreement={agreement} onClose={() => onOpenChange(false)} />
             )}
           </div>
         </ScrollArea>

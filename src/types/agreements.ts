@@ -29,8 +29,17 @@ export type Agreement = {
     created_at: string;
     updated_at: string;
     agreement_types: { name: string } | null;
-    agreement_signers?: { id: string; signer_name: string; signer_type: string; }[];
+    agreement_signers?: { id: string; signer_name: string; signer_type: string; signing_status?: string; signed_at?: string | null; }[];
     statusHistory?: { status: string; date: string; reason?: string; changedBy: string; }[];
+    
+    // Approval workflow fields
+    approval_status?: "pending_signatures" | "pending_review" | "approved" | "rejected" | "archived";
+    approved_by?: string | null;
+    approved_at?: string | null;
+    rejection_reason?: string | null;
+    approval_notes?: string | null;
+    archived_at?: string | null;
+    archived_by?: string | null;
 };
 
 export type ExpiringAgreement = Agreement & {
@@ -39,6 +48,8 @@ export type ExpiringAgreement = Agreement & {
 };
 
 export type AgreementPartyFilter = "all" | "client" | "staff" | "other";
+
+export type ApprovalStatusFilter = "all" | "pending_review" | "approved" | "rejected" | "archived";
 
 export type ScheduledAgreement = {
   id: string;

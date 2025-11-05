@@ -44,14 +44,15 @@ const signAgreementBySigner = async (params: SignAgreementParams) => {
   
   console.log('[useSignAgreementBySigner] All signers signed:', allSigned);
   
-  // If all signers have signed, update agreement status to Active
+  // If all signers have signed, update agreement status to Active and set for review
   if (allSigned) {
     const { error: agreementError } = await supabase
       .from('agreements')
       .update({
         status: 'Active',
         signed_at: new Date().toISOString(),
-        digital_signature: signatureData
+        digital_signature: signatureData,
+        approval_status: 'pending_review'
       })
       .eq('id', agreementId);
     

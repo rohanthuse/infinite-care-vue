@@ -9,7 +9,7 @@ export const useExpiringAgreements = (branchId?: string, isOrganizationLevel?: b
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-      let query = supabase
+      let baseQuery = supabase
         .from('agreements')
         .select(`
           *,
@@ -22,16 +22,16 @@ export const useExpiringAgreements = (branchId?: string, isOrganizationLevel?: b
         .lte('expiry_date', thirtyDaysFromNow.toISOString());
 
       if (isOrganizationLevel) {
-        query = query.is('branch_id', null);
+        baseQuery = baseQuery.is('branch_id', null);
       } else if (branchId) {
-        query = query.eq('branch_id', branchId);
+        baseQuery = baseQuery.eq('branch_id', branchId);
       }
 
-      const { data, error } = await query.order('expiry_date', { ascending: true });
+      const { data, error } = await baseQuery.order('expiry_date', { ascending: true });
 
       if (error) throw error;
 
-      const expiringAgreements: ExpiringAgreement[] = (data || []).map(agreement => {
+      const expiringAgreements: ExpiringAgreement[] = (data || []).map((agreement: any) => {
         const expiryDate = new Date(agreement.expiry_date!);
         const today = new Date();
         const daysUntilExpiry = Math.ceil(
@@ -42,7 +42,7 @@ export const useExpiringAgreements = (branchId?: string, isOrganizationLevel?: b
           ...agreement,
           days_until_expiry: daysUntilExpiry,
           notification_sent: false
-        };
+        } as ExpiringAgreement;
       });
 
       return expiringAgreements;

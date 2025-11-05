@@ -4,7 +4,8 @@ import {
   TableHeader, TableRow 
 } from "@/components/ui/table";
 import { 
-  Eye, Download, FileText, Calendar, User, Trash2, UserCheck, Loader2, Users
+  Eye, Download, FileText, Calendar, User, Trash2, UserCheck, Loader2, Users,
+  CheckCircle, XCircle, Archive, Clock, AlertCircle
 } from "lucide-react";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { generatePDF } from "@/utils/pdfGenerator";
 import { ViewAgreementDialog } from "./ViewAgreementDialog";
 import { ExpiryBadge } from "./ExpiryBadge";
 import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements";
-import { Agreement, AgreementPartyFilter } from "@/types/agreements";
+import { Agreement, AgreementPartyFilter, ApprovalStatusFilter } from "@/types/agreements";
 import { format } from "date-fns";
 import type { VariantProps } from "class-variance-authority";
 
@@ -23,6 +24,7 @@ type SignedAgreementsProps = {
   dateFilter?: string;
   branchId?: string;
   isOrganizationLevel?: boolean;
+  approvalFilter?: ApprovalStatusFilter;
 };
 
 const getStatusBadgeVariant = (status: Agreement["status"]): VariantProps<typeof badgeVariants>["variant"] => {
@@ -50,12 +52,30 @@ const statusToNumber = (status: Agreement['status']): number => {
   }
 };
 
+const getApprovalBadge = (approvalStatus?: string) => {
+  if (!approvalStatus) return null;
+  
+  switch (approvalStatus) {
+    case 'pending_review':
+      return <Badge variant="warning" className="text-xs"><AlertCircle className="h-3 w-3 mr-1" />Review</Badge>;
+    case 'approved':
+      return <Badge variant="success" className="text-xs"><CheckCircle className="h-3 w-3 mr-1" />Approved</Badge>;
+    case 'rejected':
+      return <Badge variant="destructive" className="text-xs"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
+    case 'archived':
+      return <Badge variant="secondary" className="text-xs"><Archive className="h-3 w-3 mr-1" />Archived</Badge>;
+    default:
+      return null;
+  }
+};
+
 export function SignedAgreements({ 
   searchQuery = "", 
   typeFilter = "all",
   dateFilter = "all",
   branchId,
-  isOrganizationLevel = false
+  isOrganizationLevel = false,
+  approvalFilter = "all"
 }: SignedAgreementsProps) {
   const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
   const [partyFilter, setPartyFilter] = useState<AgreementPartyFilter>("all");
@@ -204,11 +224,14 @@ export function SignedAgreements({
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={getStatusBadgeVariant(agreement.status)}
-                    >
-                      {agreement.status}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge 
+                        variant={getStatusBadgeVariant(agreement.status)}
+                      >
+                        {agreement.status}
+                      </Badge>
+                      {getApprovalBadge(agreement.approval_status)}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
