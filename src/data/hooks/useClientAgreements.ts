@@ -24,7 +24,18 @@ const fetchClientAgreements = async (params: UseClientAgreementsParams): Promise
         signer_name,
         signer_type,
         signer_auth_user_id,
-        signing_status
+        signing_status,
+        signed_at,
+        signature_file_id
+      ),
+      agreement_files!agreement_id (
+        id,
+        file_name,
+        file_type,
+        file_size,
+        storage_path,
+        file_category,
+        created_at
       )
     `);
   

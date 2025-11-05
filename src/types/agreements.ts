@@ -29,7 +29,16 @@ export type Agreement = {
     created_at: string;
     updated_at: string;
     agreement_types: { name: string } | null;
-    agreement_signers?: { id: string; signer_name: string; signer_type: string; signing_status?: string; signed_at?: string | null; }[];
+    agreement_signers?: { id: string; signer_name: string; signer_type: string; signing_status?: string; signed_at?: string | null; signature_file_id?: string | null; }[];
+    agreement_files?: {
+      id: string;
+      file_name: string;
+      file_type: string;
+      file_size: number;
+      storage_path: string;
+      file_category: 'document' | 'signature' | 'template' | 'attachment';
+      created_at: string;
+    }[];
     statusHistory?: { status: string; date: string; reason?: string; changedBy: string; }[];
     
     // Approval workflow fields

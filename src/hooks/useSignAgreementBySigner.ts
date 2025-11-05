@@ -77,9 +77,9 @@ export const useSignAgreementBySigner = () => {
       queryClient.invalidateQueries({ queryKey: ['agreements'] });
       
       if (data.allSigned) {
-        toast.success('Agreement fully signed and activated!');
+        toast.success('Agreement fully signed! It has been sent to admin for review.');
       } else {
-        toast.success('Your signature has been recorded. Waiting for other signers.');
+        toast.success('✓ Signature submitted successfully. The admin will be notified once all signers complete.');
       }
     },
     onError: (error: any) => {

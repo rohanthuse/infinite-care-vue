@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, FileCheck, Clock, History, AlertCircle, Users, PenLine } from "lucide-react";
+import { Download, FileCheck, Clock, History, AlertCircle, Users, PenLine, FileText, Eye, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -234,7 +234,7 @@ export function ViewAgreementDialog({
                   <h3 className="font-medium text-blue-900">Action Required: Your Signature</h3>
                 </div>
                 <p className="text-sm text-blue-800">
-                  You are listed as a signer on this agreement. Please review the content above and sign below.
+                  Please review the agreement content and attached documents above, then sign below to acknowledge and submit.
                 </p>
                 
                 {!showSigningCanvas ? (
@@ -267,8 +267,9 @@ export function ViewAgreementDialog({
                       <Button 
                         onClick={handleSignAgreement}
                         disabled={!currentSignature || signMutation.isPending}
+                        className="bg-green-600 hover:bg-green-700"
                       >
-                        {signMutation.isPending ? 'Signing...' : 'Submit Signature'}
+                        {signMutation.isPending ? 'Submitting...' : 'Done ✓'}
                       </Button>
                     </div>
                   </div>
@@ -276,16 +277,139 @@ export function ViewAgreementDialog({
               </div>
             )}
             
-            {agreement.digital_signature && (
-              <div className="text-sm">
-                <span className="font-medium">Digital Signature:</span> 
-                <span className="ml-2 font-handwriting text-lg">{agreement.digital_signature}</span>
-              </div>
-            )}
-            
             <div className="border border-gray-200 rounded-md p-4 bg-gray-50 min-h-[200px] text-gray-700">
               {agreement.content}
             </div>
+            
+            {/* Attached Documents Section */}
+            {agreement.agreement_files && agreement.agreement_files.length > 0 && (
+              <div className="space-y-3 mt-6">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-lg">Attached Documents</h3>
+                  <Badge variant="secondary">{agreement.agreement_files.length}</Badge>
+                </div>
+                
+                <div className="space-y-2">
+                  {agreement.agreement_files
+                    .filter(file => file.file_category !== 'signature')
+                    .map((file) => {
+                      const fileUrl = `https://vcrjntfjsmpoupgairep.supabase.co/storage/v1/object/public/agreement-files/${file.storage_path}`;
+                      
+                      return (
+                        <div 
+                          key={file.id} 
+                          className="flex items-center justify-between p-4 bg-card border rounded-lg hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded">
+                              <FileText className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(file.file_size / 1024).toFixed(1)} KB • Uploaded {format(new Date(file.created_at), 'dd MMM yyyy')}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(fileUrl, '_blank')}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = fileUrl;
+                                link.download = file.file_name;
+                                link.click();
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              Download
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+            
+            {/* Digital Signatures Section */}
+            {(agreement.digital_signature || signers.some(s => s.signing_status === 'signed')) && (
+              <div className="space-y-3 mt-6">
+                <div className="flex items-center gap-2 pb-2 border-b">
+                  <PenLine className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-lg">Digital Signatures</h3>
+                </div>
+                
+                {/* Admin/Creator Signature */}
+                {agreement.digital_signature && (
+                  <div className="p-4 bg-card border rounded-lg">
+                    <p className="text-sm font-medium mb-3 text-muted-foreground">Agreement Creator Signature</p>
+                    
+                    {/* Check if it's a base64 image */}
+                    {agreement.digital_signature.startsWith('data:image') ? (
+                      <div className="bg-white border rounded p-2 inline-block">
+                        <img 
+                          src={agreement.digital_signature} 
+                          alt="Digital Signature" 
+                          className="max-h-24 max-w-full"
+                          onError={(e) => {
+                            console.error('Failed to load signature image');
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <p className="font-handwriting text-2xl">{agreement.digital_signature}</p>
+                    )}
+                    
+                    {agreement.signed_at && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Signed on {format(new Date(agreement.signed_at), 'dd MMM yyyy, HH:mm')}
+                      </p>
+                    )}
+                  </div>
+                )}
+                
+                {/* All Signer Signatures (for admins) */}
+                {isAdmin && signers.filter(s => s.signing_status === 'signed').length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Other Signers</p>
+                    {signers
+                      .filter(s => s.signing_status === 'signed')
+                      .map(signer => (
+                        <div key={signer.id} className="p-3 bg-muted/50 border rounded">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{signer.signer_name}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{signer.signer_type}</p>
+                            </div>
+                            <Badge variant="success" className="text-xs">
+                              <Check className="h-3 w-3 mr-1" />
+                              Signed
+                            </Badge>
+                          </div>
+                          {signer.signed_at && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Signed on {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* Status change and history - Admin only */}
             {isAdmin && !showStatusForm && (
