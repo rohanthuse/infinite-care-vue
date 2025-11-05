@@ -100,19 +100,20 @@ export function ViewAgreementDialog({
       toast.error("Please provide a signature");
       return;
     }
-    
+
     try {
       await signMutation.mutateAsync({
         agreementId: agreement.id,
         signerId: currentUserSigner.id,
-        signatureData: currentSignature
+        signatureData: currentSignature,
       });
       
+      // Close dialog and reset state after successful save
       setShowSigningCanvas(false);
       setCurrentSignature("");
       onOpenChange(false);
     } catch (error) {
-      console.error('Signing error:', error);
+      console.error('Error signing agreement:', error);
     }
   };
   
@@ -282,43 +283,26 @@ export function ViewAgreementDialog({
                     Review the agreement and sign below to acknowledge.
                   </p>
                   
-                  {!showSigningCanvas ? (
-                    <Button 
-                      onClick={() => setShowSigningCanvas(true)} 
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      <PenLine className="mr-2 h-4 w-4" />
-                      Sign Now
-                    </Button>
-                  ) : (
-                    <div className="space-y-3">
-                      <EnhancedSignatureCanvas
-                        onSignatureSave={setCurrentSignature}
-                        agreementId={agreement.id}
-                        disabled={signMutation.isPending}
-                      />
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            setShowSigningCanvas(false);
-                            setCurrentSignature("");
-                          }}
-                          disabled={signMutation.isPending}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          onClick={handleSignAgreement}
-                          disabled={!currentSignature || signMutation.isPending}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                        >
-                          {signMutation.isPending ? 'Submitting...' : 'Done ✓'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+          {!showSigningCanvas ? (
+            <Button 
+              onClick={() => setShowSigningCanvas(true)} 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              <PenLine className="mr-2 h-4 w-4" />
+              Add Your Signature
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <EnhancedSignatureCanvas
+                onSignatureSave={setCurrentSignature}
+                agreementId={agreement.id}
+                disabled={signMutation.isPending}
+              />
+              <p className="text-xs text-blue-700 bg-blue-50 p-2 rounded border border-blue-200">
+                ✓ Signature added. Click "Save" at the bottom to submit your response.
+              </p>
+            </div>
+          )}
                 </div>
               )}
               
@@ -465,14 +449,16 @@ export function ViewAgreementDialog({
               )}
               
               {/* Download Agreement Button */}
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => onDownload(agreement)}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Full Agreement
-              </Button>
+              <div className="pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => onDownload(agreement)}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Full Agreement
+                </Button>
+              </div>
             </div>
           </div>
         </ScrollArea>
@@ -579,12 +565,27 @@ export function ViewAgreementDialog({
           >
             Close
           </Button>
-          <Button 
-            onClick={() => onDownload(agreement)}
-          >
-            <Download className="mr-2 h-4 w-4" /> 
-            Download PDF
-          </Button>
+          
+          {/* Save Button - Only shown when user needs to sign */}
+          {currentUserSigner && agreement.status === 'Pending' && (
+            <Button 
+              onClick={handleSignAgreement}
+              disabled={!currentSignature || signMutation.isPending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {signMutation.isPending ? (
+                <>
+                  <Clock className="mr-2 h-4 w-4 animate-spin" /> 
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" /> 
+                  Save
+                </>
+              )}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
