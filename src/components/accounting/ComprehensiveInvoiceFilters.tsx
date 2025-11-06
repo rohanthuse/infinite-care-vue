@@ -79,15 +79,15 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Search */}
-          <div className="space-y-2">
+        <div className="space-y-4">
+          {/* 1. Search Bar - Full Width */}
+          <div className="w-full">
             <Label htmlFor="search">Search</Label>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 id="search"
-                placeholder="Client name, description..."
+                placeholder="Client name, invoice number, description..."
                 value={filters.search || ''}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="pl-8"
@@ -95,137 +95,142 @@ export const ComprehensiveInvoiceFilters: React.FC<ComprehensiveInvoiceFiltersPr
             </div>
           </div>
 
-          {/* Client Name Multi-Select */}
-          <div className="space-y-2">
-            <Label>Client Name</Label>
-            <MultiSelect
-              options={clientOptions}
-              selected={filters.clientIds || []}
-              onSelectionChange={(clientIds) => handleFilterChange('clientIds', clientIds.length > 0 ? clientIds : undefined)}
-              placeholder="Select clients..."
-              searchPlaceholder="Search clients..."
-              emptyText="No clients found"
-              maxDisplay={2}
-              showSelectAll={true}
-            />
+          {/* 2. Date Filters - 2 Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="date-from">Date From</Label>
+              <Input
+                id="date-from"
+                type="date"
+                value={filters.startDate || ''}
+                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="date-to">Date To</Label>
+              <Input
+                id="date-to"
+                type="date"
+                value={filters.endDate || ''}
+                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+              />
+            </div>
           </div>
 
-          {/* Status Multi-Select */}
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <MultiSelect
-              options={statusOptions}
-              selected={filters.status || []}
-              onSelectionChange={(statuses) => handleFilterChange('status', statuses.length > 0 ? statuses : undefined)}
-              placeholder="Select statuses..."
-              searchPlaceholder="Search statuses..."
-              emptyText="No statuses available"
-              maxDisplay={2}
-              showSelectAll={true}
-            />
+          {/* 3. Client & Authority Filters - 2 Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Client Name</Label>
+              <MultiSelect
+                options={clientOptions}
+                selected={filters.clientIds || []}
+                onSelectionChange={(clientIds) => handleFilterChange('clientIds', clientIds.length > 0 ? clientIds : undefined)}
+                placeholder="Select clients..."
+                searchPlaceholder="Search clients..."
+                emptyText="No clients found"
+                maxDisplay={2}
+                showSelectAll={true}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Authority Type</Label>
+              <Select
+                value={filters.authorityType || '__ALL__'}
+                onValueChange={(value) => handleFilterChange('authorityType', value === '__ALL__' ? undefined : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {authorityTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Invoice Number Search */}
-          <div className="space-y-2">
-            <Label htmlFor="invoice-number">Invoice Number</Label>
-            <Input
-              id="invoice-number"
-              placeholder="Search by invoice number..."
-              value={filters.invoiceNumber || ''}
-              onChange={(e) => handleFilterChange('invoiceNumber', e.target.value || undefined)}
-            />
+          {/* 4. Status & Invoice Method Filters - 2 Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <MultiSelect
+                options={statusOptions}
+                selected={filters.status || []}
+                onSelectionChange={(statuses) => handleFilterChange('status', statuses.length > 0 ? statuses : undefined)}
+                placeholder="Select statuses..."
+                searchPlaceholder="Search statuses..."
+                emptyText="No statuses available"
+                maxDisplay={2}
+                showSelectAll={true}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Invoice Method</Label>
+              <Select
+                value={filters.invoiceMethod || '__ALL__'}
+                onValueChange={(value) => handleFilterChange('invoiceMethod', value === '__ALL__' ? undefined : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {invoiceMethodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Authority Type Filter */}
-          <div className="space-y-2">
-            <Label>Authority Type</Label>
-            <Select
-              value={filters.authorityType || '__ALL__'}
-              onValueChange={(value) => handleFilterChange('authorityType', value === '__ALL__' ? undefined : value)}
+          {/* 5. Toggle Switches */}
+          <div className="flex flex-wrap gap-6 pt-2">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="ready-to-send"
+                checked={filters.isReadyToSend || false}
+                onCheckedChange={(checked) => handleFilterChange('isReadyToSend', checked)}
+              />
+              <Label htmlFor="ready-to-send" className="cursor-pointer">Ready to Send Only</Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="former-clients"
+                checked={filters.isFormerClient || false}
+                onCheckedChange={(checked) => handleFilterChange('isFormerClient', checked)}
+              />
+              <Label htmlFor="former-clients" className="cursor-pointer">Former Clients</Label>
+            </div>
+          </div>
+
+          {/* 6. Action Buttons */}
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={onReset} 
+              size="sm"
+              className="flex items-center gap-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {authorityTypeOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Invoice Method Filter */}
-          <div className="space-y-2">
-            <Label>Invoice Method</Label>
-            <Select
-              value={filters.invoiceMethod || '__ALL__'}
-              onValueChange={(value) => handleFilterChange('invoiceMethod', value === '__ALL__' ? undefined : value)}
+              <X className="h-4 w-4" />
+              Reset
+            </Button>
+            <Button 
+              onClick={() => onFiltersChange(filters)} 
+              size="sm"
+              className="flex items-center gap-2"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select method" />
-              </SelectTrigger>
-              <SelectContent>
-                {invoiceMethodOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Search className="h-4 w-4" />
+              Apply Filter
+            </Button>
           </div>
-
-          {/* Date From */}
-          <div className="space-y-2">
-            <Label htmlFor="date-from">Date From</Label>
-            <Input
-              id="date-from"
-              type="date"
-              value={filters.startDate || ''}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
-            />
-          </div>
-
-          {/* Date To */}
-          <div className="space-y-2">
-            <Label htmlFor="date-to">Date To</Label>
-            <Input
-              id="date-to"
-              type="date"
-              value={filters.endDate || ''}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Toggle Filters */}
-        <div className="flex flex-wrap gap-6 mt-4 pt-4 border-t">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="ready-to-send"
-              checked={filters.isReadyToSend || false}
-              onCheckedChange={(checked) => handleFilterChange('isReadyToSend', checked)}
-            />
-            <Label htmlFor="ready-to-send">Ready to Send Only</Label>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="former-clients"
-              checked={filters.isFormerClient || false}
-              onCheckedChange={(checked) => handleFilterChange('isFormerClient', checked)}
-            />
-            <Label htmlFor="former-clients">Former Clients</Label>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-          <Button variant="outline" onClick={onReset} size="sm">
-            <X className="h-4 w-4 mr-2" />
-            Reset Filters
-          </Button>
         </div>
       </CardContent>
     </Card>
