@@ -114,6 +114,105 @@ const fetchOrganizationSettings = async (branchId: string): Promise<{
   }
 };
 
+// Helper function to add header to each page
+const addPDFHeader = async (
+  pdf: jsPDF, 
+  orgSettings: any, 
+  logoBase64: string | null
+): Promise<number> => {
+  const pageWidth = pdf.internal.pageSize.width;
+  const leftMargin = 20;
+  const rightMargin = pageWidth - 20;
+  let headerY = 15;
+
+  // LEFT SIDE: Company Information
+  if (orgSettings) {
+    pdf.setFontSize(11);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(40, 40, 40);
+    
+    // Company Name
+    pdf.text(orgSettings.name, leftMargin, headerY);
+    headerY += 5;
+    
+    pdf.setFont(undefined, 'normal');
+    pdf.setFontSize(8);
+    pdf.setTextColor(80, 80, 80);
+    
+    // Address
+    if (orgSettings.address) {
+      const addressLines = pdf.splitTextToSize(orgSettings.address, 90);
+      addressLines.forEach((line: string) => {
+        pdf.text(line, leftMargin, headerY);
+        headerY += 3.5;
+      });
+    }
+    
+    // Contact Details
+    const contactDetails = [];
+    if (orgSettings.telephone) contactDetails.push(`Tel: ${orgSettings.telephone}`);
+    if (orgSettings.website) contactDetails.push(`Web: ${orgSettings.website}`);
+    if (orgSettings.email) contactDetails.push(`Email: ${orgSettings.email}`);
+    
+    contactDetails.forEach(detail => {
+      pdf.text(detail, leftMargin, headerY);
+      headerY += 3.5;
+    });
+  }
+
+  // RIGHT SIDE: Company Logo
+  if (logoBase64) {
+    try {
+      // Position logo on right side (max width: 50, max height: 30)
+      const logoX = rightMargin - 50;
+      pdf.addImage(logoBase64, 'PNG', logoX, 12, 50, 30);
+    } catch (error) {
+      console.error('Error adding logo to header:', error);
+    }
+  }
+
+  // Add separator line below header
+  const separatorY = Math.max(headerY + 2, 45);
+  pdf.setDrawColor(200, 200, 200);
+  pdf.setLineWidth(0.5);
+  pdf.line(leftMargin, separatorY, rightMargin, separatorY);
+  
+  // Reset colors
+  pdf.setTextColor(0, 0, 0);
+  
+  return separatorY + 8; // Return Y position for content start
+};
+
+// Helper function to add footer to each page
+const addPDFFooter = (pdf: jsPDF, orgSettings: any, pageNumber: number, totalPages: number) => {
+  const pageWidth = pdf.internal.pageSize.width;
+  const pageHeight = pdf.internal.pageSize.height;
+  const footerY = pageHeight - 15;
+  
+  // Add subtle line above footer
+  pdf.setDrawColor(220, 220, 220);
+  pdf.setLineWidth(0.3);
+  pdf.line(20, footerY - 5, pageWidth - 20, footerY - 5);
+  
+  // Footer text
+  pdf.setFontSize(8);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(120, 120, 120);
+  
+  const footerText = orgSettings 
+    ? `© ${orgSettings.name} | ${orgSettings.website || 'www.company.com'} | All Rights Reserved`
+    : '© Company Name | All Rights Reserved';
+  
+  pdf.text(footerText, pageWidth / 2, footerY, { align: 'center' });
+  
+  // Page number
+  pdf.setFontSize(7);
+  pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 20, footerY, { align: 'right' });
+  
+  // Reset colors
+  pdf.setTextColor(0, 0, 0);
+};
+
 export interface ExportableEvent {
   // Basic fields
   id: string;
@@ -316,140 +415,123 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
   const orgSettings = event.branch_id ? await fetchOrganizationSettings(event.branch_id) : null;
 
-  // === HEADER SECTION WITH COMPANY BRANDING ===
-  let headerY = 15;
+  // Pre-load logo once for reuse across pages
+  let logoBase64: string | null = null;
+  if (orgSettings?.logo_url) {
+    try {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+    } catch (error) {
+      console.error('Error loading logo:', error);
+    }
+  }
+  
   const pageWidth = pdf.internal.pageSize.width;
   const leftMargin = 20;
   const rightMargin = pageWidth - 20;
 
-  // Left side: Company Logo
-  if (orgSettings?.logo_url) {
-    try {
-      const logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
-      if (logoBase64) {
-        // Add logo with proper aspect ratio (max width: 50, max height: 25)
-        pdf.addImage(logoBase64, 'PNG', leftMargin, headerY, 50, 25);
-      }
-    } catch (error) {
-      console.error('Error loading logo:', error);
-      // Continue without logo if it fails
-    }
-  }
-
-  // Right side: Company Details
-  if (orgSettings) {
-    pdf.setFontSize(10);
-    pdf.setFont(undefined, 'bold');
-    
-    let detailY = headerY;
-    const rightX = rightMargin;
-    
-    // Company Name
-    pdf.text(orgSettings.name, rightX, detailY, { align: 'right' });
-    detailY += 5;
-    
-    pdf.setFont(undefined, 'normal');
-    pdf.setFontSize(9);
-    
-    // Address
-    if (orgSettings.address) {
-      const addressLines = pdf.splitTextToSize(orgSettings.address, 80);
-      addressLines.forEach((line: string) => {
-        pdf.text(line, rightX, detailY, { align: 'right' });
-        detailY += 4;
-      });
-    }
-    
-    // Telephone
-    if (orgSettings.telephone) {
-      pdf.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
-      detailY += 4;
-    }
-    
-    // Website
-    if (orgSettings.website) {
-      pdf.text(`Web: ${orgSettings.website}`, rightX, detailY, { align: 'right' });
-      detailY += 4;
-    }
-    
-    // Email
-    if (orgSettings.email) {
-      pdf.text(`Email: ${orgSettings.email}`, rightX, detailY, { align: 'right' });
-      detailY += 4;
-    }
-  }
-
-  // Move to next section (ensure we're past the logo area)
-  let currentY = Math.max(headerY + 30, 50);
-
-  // Add horizontal line separator
-  pdf.setDrawColor(200, 200, 200);
-  pdf.line(leftMargin, currentY, rightMargin, currentY);
-  currentY += 10;
-
+  // === PAGE 1: HEADER ===
+  let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+  
   // === REPORT TITLE ===
   pdf.setFontSize(18);
   pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(50, 50, 50);
+  pdf.setTextColor(30, 30, 30);
   pdf.text('Event Details Report', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 8;
-
-  pdf.setFontSize(10);
+  currentY += 7;
+  
+  pdf.setFontSize(9);
   pdf.setFont(undefined, 'normal');
   pdf.setTextColor(100, 100, 100);
-  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 15;
-
-  // Reset text color and font for body content
+  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 12;
+  
+  // Reset text color
   pdf.setTextColor(0, 0, 0);
-  pdf.setFont(undefined, 'normal');
+
+  // Helper to add section header with background
+  const addSectionHeader = async (title: string) => {
+    // Check if we need a new page
+    if (currentY > 240) {
+      pdf.addPage();
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+    }
+    
+    // Section header with background
+    pdf.setFillColor(245, 247, 250);
+    pdf.rect(leftMargin, currentY - 5, rightMargin - leftMargin, 10, 'F');
+    
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(40, 40, 40);
+    pdf.text(title, leftMargin + 3, currentY);
+    currentY += 8;
+    
+    // Reset
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(0, 0, 0);
+  };
   
   // === BASIC EVENT DETAILS ===
-  pdf.setFontSize(14);
-  pdf.setFont(undefined, 'bold');
-  pdf.text('Event Information', 20, currentY);
-  currentY += 5;
+  await addSectionHeader('Event Information');
   
   const basicEventData = [
-    ['Title', event.title || ''],
-    ['Client', event.client_name || ''],
-    ['Event Type', event.event_type || ''],
-    ['Category', event.category || ''],
-    ['Severity', event.severity || ''],
-    ['Status', event.status || ''],
-    ['Reporter', event.reporter || ''],
+    ['Event ID', event.id?.substring(0, 13) + '...' || 'N/A'],
+    ['Title', event.title || 'N/A'],
+    ['Client', event.client_name || 'N/A'],
+    ['Event Type', event.event_type || 'N/A'],
+    ['Category', event.category || 'N/A'],
+    ['Severity', event.severity || 'N/A'],
+    ['Status', event.status || 'N/A'],
+    ['Reporter', event.reporter || 'N/A'],
     ['Location', event.location || 'Not specified'],
-    ['Event Date', event.event_date || ''],
-    ['Event Time', event.event_time || ''],
+    ['Event Date', event.event_date || 'N/A'],
+    ['Event Time', event.event_time || 'N/A'],
     ['Recorded Date', format(new Date(event.created_at), 'PPP')],
-    ['Recorded By', event.recorded_by_staff_name || ''],
+    ['Recorded By', event.recorded_by_staff_name || 'N/A'],
     ['Last Updated', event.updated_at ? format(new Date(event.updated_at), 'PPP p') : 'N/A']
   ];
 
   autoTable(pdf, {
-    head: [['Field', 'Value']],
     body: basicEventData,
     startY: currentY,
-    theme: 'grid',
-    styles: { fontSize: 9 },
-    columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-    margin: { left: 20, right: 20 }
+    theme: 'striped',
+    styles: { 
+      fontSize: 9,
+      cellPadding: 3
+    },
+    columnStyles: { 
+      0: { 
+        fontStyle: 'bold', 
+        fillColor: [240, 243, 246],
+        cellWidth: 55,
+        textColor: [40, 40, 40]
+      },
+      1: {
+        cellWidth: 115
+      }
+    },
+    margin: { left: leftMargin, right: rightMargin }
   });
 
   currentY = (pdf as any).lastAutoTable.finalY + 10;
   
   // === DESCRIPTION ===
   if (event.description) {
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Description', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Event Description');
+    
+    // Add description in a bordered box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setFillColor(252, 252, 252);
     
     pdf.setFontSize(9);
     pdf.setFont(undefined, 'normal');
-    const splitDescription = pdf.splitTextToSize(event.description, 170);
-    pdf.text(splitDescription, 20, currentY);
-    currentY += (splitDescription.length * 5) + 10;
+    const splitDescription = pdf.splitTextToSize(event.description, 160);
+    
+    const boxHeight = (splitDescription.length * 5) + 10;
+    pdf.rect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 'FD');
+    
+    pdf.text(splitDescription, leftMargin + 5, currentY + 7);
+    currentY += boxHeight + 10;
   }
   
   // === STAFF INFORMATION ===
@@ -457,16 +539,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
       (event.staff_aware && event.staff_aware.length > 0) || 
       (event.other_people_present && event.other_people_present.length > 0)) {
     
-    // Check if we need a new page
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Staff & People Information', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Staff & People Information');
     
     const staffData = [];
     if (event.staff_present && event.staff_present.length > 0) {
@@ -485,10 +558,20 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: staffData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -496,15 +579,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === FOLLOW-UP INFORMATION ===
   if (event.action_required || event.follow_up_date || event.follow_up_assigned_to || event.follow_up_notes) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Follow-Up Details', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Follow-Up Details');
     
     const followUpData = [
       ['Action Required', event.action_required ? 'Yes' : 'No'],
@@ -516,10 +591,20 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: followUpData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -527,15 +612,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === ACTIONS TAKEN ===
   if (event.immediate_actions_taken || event.investigation_required || event.lessons_learned) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Actions & Investigation', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Actions & Investigation');
     
     const actionsData = [];
     if (event.immediate_actions_taken) {
@@ -555,10 +632,20 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: actionsData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -566,15 +653,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === RISK ASSESSMENT ===
   if (event.risk_level || event.contributing_factors || event.environmental_factors || event.preventable !== undefined) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Risk Assessment', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Risk Assessment');
     
     const riskData = [
       ['Risk Level', event.risk_level || 'Not assessed'],
@@ -594,10 +673,20 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: riskData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -605,15 +694,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === COMPLIANCE & NOTIFICATIONS ===
   if (event.family_notified || event.gp_notified || event.insurance_notified || event.external_reporting_required) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Compliance & Notifications', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Compliance & Notifications');
     
     const complianceData = [];
     
@@ -649,10 +730,20 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: complianceData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -662,13 +753,10 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   if (event.body_map_front_image_url || event.body_map_back_image_url) {
     if (currentY > 180) {
       pdf.addPage();
-      currentY = 20;
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
     }
     
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Body Map', 20, currentY);
-    currentY += 10;
+    await addSectionHeader('Body Map');
     
     if (event.body_map_front_image_url) {
       try {
@@ -693,7 +781,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     
     if (event.body_map_back_image_url && currentY > 180) {
       pdf.addPage();
-      currentY = 20;
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
     }
     
     if (event.body_map_back_image_url) {
@@ -720,20 +808,20 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === ATTACHMENTS INFO ===
   if (event.attachments && event.attachments.length > 0) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Attachments', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Attachments');
     
     pdf.setFontSize(9);
     pdf.setFont(undefined, 'normal');
-    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, 20, currentY);
+    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, leftMargin, currentY);
     currentY += 10;
+  }
+
+  // === ADD FOOTERS TO ALL PAGES ===
+  const totalPages = pdf.internal.pages.length - 1; // Subtract 1 for internal counter
+  
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    addPDFFooter(pdf, orgSettings, i, totalPages);
   }
 
   const pdfFilename = filename || `event-${event.id}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
@@ -747,140 +835,123 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
   const orgSettings = event.branch_id ? await fetchOrganizationSettings(event.branch_id) : null;
 
-  // === HEADER SECTION WITH COMPANY BRANDING ===
-  let headerY = 15;
+  // Pre-load logo once for reuse across pages
+  let logoBase64: string | null = null;
+  if (orgSettings?.logo_url) {
+    try {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+    } catch (error) {
+      console.error('Error loading logo:', error);
+    }
+  }
+  
   const pageWidth = pdf.internal.pageSize.width;
   const leftMargin = 20;
   const rightMargin = pageWidth - 20;
 
-  // Left side: Company Logo
-  if (orgSettings?.logo_url) {
-    try {
-      const logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
-      if (logoBase64) {
-        // Add logo with proper aspect ratio (max width: 50, max height: 25)
-        pdf.addImage(logoBase64, 'PNG', leftMargin, headerY, 50, 25);
-      }
-    } catch (error) {
-      console.error('Error loading logo:', error);
-      // Continue without logo if it fails
-    }
-  }
-
-  // Right side: Company Details
-  if (orgSettings) {
-    pdf.setFontSize(10);
-    pdf.setFont(undefined, 'bold');
-    
-    let detailY = headerY;
-    const rightX = rightMargin;
-    
-    // Company Name
-    pdf.text(orgSettings.name, rightX, detailY, { align: 'right' });
-    detailY += 5;
-    
-    pdf.setFont(undefined, 'normal');
-    pdf.setFontSize(9);
-    
-    // Address
-    if (orgSettings.address) {
-      const addressLines = pdf.splitTextToSize(orgSettings.address, 80);
-      addressLines.forEach((line: string) => {
-        pdf.text(line, rightX, detailY, { align: 'right' });
-        detailY += 4;
-      });
-    }
-    
-    // Telephone
-    if (orgSettings.telephone) {
-      pdf.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
-      detailY += 4;
-    }
-    
-    // Website
-    if (orgSettings.website) {
-      pdf.text(`Web: ${orgSettings.website}`, rightX, detailY, { align: 'right' });
-      detailY += 4;
-    }
-    
-    // Email
-    if (orgSettings.email) {
-      pdf.text(`Email: ${orgSettings.email}`, rightX, detailY, { align: 'right' });
-      detailY += 4;
-    }
-  }
-
-  // Move to next section (ensure we're past the logo area)
-  let currentY = Math.max(headerY + 30, 50);
-
-  // Add horizontal line separator
-  pdf.setDrawColor(200, 200, 200);
-  pdf.line(leftMargin, currentY, rightMargin, currentY);
-  currentY += 10;
-
+  // === PAGE 1: HEADER ===
+  let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+  
   // === REPORT TITLE ===
   pdf.setFontSize(18);
   pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(50, 50, 50);
+  pdf.setTextColor(30, 30, 30);
   pdf.text('Event Details Report', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 8;
-
-  pdf.setFontSize(10);
+  currentY += 7;
+  
+  pdf.setFontSize(9);
   pdf.setFont(undefined, 'normal');
   pdf.setTextColor(100, 100, 100);
-  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 15;
-
-  // Reset text color and font for body content
+  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, pageWidth / 2, currentY, { align: 'center' });
+  currentY += 12;
+  
+  // Reset text color
   pdf.setTextColor(0, 0, 0);
-  pdf.setFont(undefined, 'normal');
+
+  // Helper to add section header with background
+  const addSectionHeader = async (title: string) => {
+    // Check if we need a new page
+    if (currentY > 240) {
+      pdf.addPage();
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+    }
+    
+    // Section header with background
+    pdf.setFillColor(245, 247, 250);
+    pdf.rect(leftMargin, currentY - 5, rightMargin - leftMargin, 10, 'F');
+    
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(40, 40, 40);
+    pdf.text(title, leftMargin + 3, currentY);
+    currentY += 8;
+    
+    // Reset
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(0, 0, 0);
+  };
   
   // === BASIC EVENT DETAILS ===
-  pdf.setFontSize(14);
-  pdf.setFont(undefined, 'bold');
-  pdf.text('Event Information', 20, currentY);
-  currentY += 5;
+  await addSectionHeader('Event Information');
   
   const basicEventData = [
-    ['Title', event.title || ''],
-    ['Client', event.client_name || ''],
-    ['Event Type', event.event_type || ''],
-    ['Category', event.category || ''],
-    ['Severity', event.severity || ''],
-    ['Status', event.status || ''],
-    ['Reporter', event.reporter || ''],
+    ['Event ID', event.id?.substring(0, 13) + '...' || 'N/A'],
+    ['Title', event.title || 'N/A'],
+    ['Client', event.client_name || 'N/A'],
+    ['Event Type', event.event_type || 'N/A'],
+    ['Category', event.category || 'N/A'],
+    ['Severity', event.severity || 'N/A'],
+    ['Status', event.status || 'N/A'],
+    ['Reporter', event.reporter || 'N/A'],
     ['Location', event.location || 'Not specified'],
-    ['Event Date', event.event_date || ''],
-    ['Event Time', event.event_time || ''],
+    ['Event Date', event.event_date || 'N/A'],
+    ['Event Time', event.event_time || 'N/A'],
     ['Recorded Date', format(new Date(event.created_at), 'PPP')],
-    ['Recorded By', event.recorded_by_staff_name || ''],
+    ['Recorded By', event.recorded_by_staff_name || 'N/A'],
     ['Last Updated', event.updated_at ? format(new Date(event.updated_at), 'PPP p') : 'N/A']
   ];
 
   autoTable(pdf, {
-    head: [['Field', 'Value']],
     body: basicEventData,
     startY: currentY,
-    theme: 'grid',
-    styles: { fontSize: 9 },
-    columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-    margin: { left: 20, right: 20 }
+    theme: 'striped',
+    styles: { 
+      fontSize: 9,
+      cellPadding: 3
+    },
+    columnStyles: { 
+      0: { 
+        fontStyle: 'bold', 
+        fillColor: [240, 243, 246],
+        cellWidth: 55,
+        textColor: [40, 40, 40]
+      },
+      1: {
+        cellWidth: 115
+      }
+    },
+    margin: { left: leftMargin, right: rightMargin }
   });
 
   currentY = (pdf as any).lastAutoTable.finalY + 10;
   
   // === DESCRIPTION ===
   if (event.description) {
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Description', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Event Description');
+    
+    // Add description in a bordered box
+    pdf.setDrawColor(220, 220, 220);
+    pdf.setFillColor(252, 252, 252);
     
     pdf.setFontSize(9);
     pdf.setFont(undefined, 'normal');
-    const splitDescription = pdf.splitTextToSize(event.description, 170);
-    pdf.text(splitDescription, 20, currentY);
-    currentY += (splitDescription.length * 5) + 10;
+    const splitDescription = pdf.splitTextToSize(event.description, 160);
+    
+    const boxHeight = (splitDescription.length * 5) + 10;
+    pdf.rect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 'FD');
+    
+    pdf.text(splitDescription, leftMargin + 5, currentY + 7);
+    currentY += boxHeight + 10;
   }
   
   // === STAFF INFORMATION ===
@@ -888,16 +959,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
       (event.staff_aware && event.staff_aware.length > 0) || 
       (event.other_people_present && event.other_people_present.length > 0)) {
     
-    // Check if we need a new page
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Staff & People Information', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Staff & People Information');
     
     const staffData = [];
     if (event.staff_present && event.staff_present.length > 0) {
@@ -916,10 +978,20 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: staffData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -927,15 +999,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === FOLLOW-UP INFORMATION ===
   if (event.action_required || event.follow_up_date || event.follow_up_assigned_to || event.follow_up_notes) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Follow-Up Details', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Follow-Up Details');
     
     const followUpData = [
       ['Action Required', event.action_required ? 'Yes' : 'No'],
@@ -947,10 +1011,20 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: followUpData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -958,15 +1032,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === ACTIONS TAKEN ===
   if (event.immediate_actions_taken || event.investigation_required || event.lessons_learned) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Actions & Investigation', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Actions & Investigation');
     
     const actionsData = [];
     if (event.immediate_actions_taken) {
@@ -986,10 +1052,20 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: actionsData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -997,15 +1073,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === RISK ASSESSMENT ===
   if (event.risk_level || event.contributing_factors || event.environmental_factors || event.preventable !== undefined) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Risk Assessment', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Risk Assessment');
     
     const riskData = [
       ['Risk Level', event.risk_level || 'Not assessed'],
@@ -1025,10 +1093,20 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: riskData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1036,15 +1114,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === COMPLIANCE & NOTIFICATIONS ===
   if (event.family_notified || event.gp_notified || event.insurance_notified || event.external_reporting_required) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Compliance & Notifications', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Compliance & Notifications');
     
     const complianceData = [];
     
@@ -1080,10 +1150,20 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: complianceData,
       startY: currentY,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      columnStyles: { 0: { fontStyle: 'bold', fillColor: [240, 240, 240], cellWidth: 50 } },
-      margin: { left: 20, right: 20 }
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 55,
+          textColor: [40, 40, 40]
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1093,13 +1173,10 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   if (event.body_map_front_image_url || event.body_map_back_image_url) {
     if (currentY > 180) {
       pdf.addPage();
-      currentY = 20;
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
     }
     
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Body Map', 20, currentY);
-    currentY += 10;
+    await addSectionHeader('Body Map');
     
     if (event.body_map_front_image_url) {
       try {
@@ -1124,7 +1201,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     
     if (event.body_map_back_image_url && currentY > 180) {
       pdf.addPage();
-      currentY = 20;
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
     }
     
     if (event.body_map_back_image_url) {
@@ -1151,20 +1228,20 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === ATTACHMENTS INFO ===
   if (event.attachments && event.attachments.length > 0) {
-    if (currentY > 240) {
-      pdf.addPage();
-      currentY = 20;
-    }
-    
-    pdf.setFontSize(14);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('Attachments', 20, currentY);
-    currentY += 5;
+    await addSectionHeader('Attachments');
     
     pdf.setFontSize(9);
     pdf.setFont(undefined, 'normal');
-    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, 20, currentY);
+    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, leftMargin, currentY);
     currentY += 10;
+  }
+
+  // === ADD FOOTERS TO ALL PAGES ===
+  const totalPages = pdf.internal.pages.length - 1;
+  
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    addPDFFooter(pdf, orgSettings, i, totalPages);
   }
   
   // Return as Blob for sharing
