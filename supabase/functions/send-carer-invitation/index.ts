@@ -48,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('[send-carer-invitation] Sending invitation to:', email, 'for staff:', staff_id);
 
     // Create the invitation URL using proper site URL
-    const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'medinfinite.com') || 'https://medinfinite.com';
+    const siteUrl = Deno.env.get('SITE_URL') || Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'med-infinite.care') || 'https://med-infinite.care';
     const invitationUrl = `${siteUrl}/carer-invitation?token=${invitation_token}`;
 
     // Generate branded email content

@@ -46,7 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('[send-password-reset] Attempting to generate reset link...');
 
     // Generate password reset link with custom redirect
-    const defaultRedirectTo = `${Deno.env.get("VITE_SITE_URL") || "https://medinfinite.com"}/reset-password`;
+    const defaultRedirectTo = `${Deno.env.get("VITE_SITE_URL") || "https://med-infinite.care"}/reset-password`;
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: email,
@@ -108,7 +108,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "Med-Infinite <noreply@medinfinite.com>",
+      from: "Med-Infinite <noreply@med-infinite.care>",
       to: [email],
       subject: "Reset Your Med-Infinite Password",
       html: brandedHTML,

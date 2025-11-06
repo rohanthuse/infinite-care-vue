@@ -21,12 +21,12 @@ export const getBaseUrl = (): string => {
       if (supabaseUrl) {
         // Extract the project ID and use the custom domain format
         const projectId = supabaseUrl.split('//')[1]?.split('.')[0];
-        return `https://${projectId}.medinfinite.com`;
+        return `https://${projectId}.med-infinite.care`;
       }
     } catch (e) {
       // Ignore errors when Deno is not available
     }
-    return 'https://medinfinite.com';
+    return 'https://med-infinite.care';
   }
 
   // For client-side code, prioritize VITE_SITE_URL environment variable
@@ -44,7 +44,7 @@ export const getBaseUrl = (): string => {
   }
 
   // For all other environments (including preview), use the custom domain
-  return 'https://medinfinite.com';
+  return 'https://med-infinite.care';
 };
 
 /**
