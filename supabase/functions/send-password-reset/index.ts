@@ -24,24 +24,39 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify required environment variables
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      console.error('[send-password-reset] RESEND_API_KEY not configured');
+      throw new Error('Email service not configured');
+    }
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[send-password-reset] Supabase credentials not configured');
+      throw new Error('Authentication service not configured');
+    }
+
     const { email, redirectTo }: PasswordResetRequest = await req.json();
     
     console.log('[send-password-reset] Processing password reset request for:', email);
+    console.log('[send-password-reset] Redirect URL:', redirectTo || 'default');
     
     // Create admin client to generate reset token
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Check if user exists (but don't reveal this information to the client for security)
-    const { data: { users }, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+    // Check if user exists using more efficient getUserByEmail method
+    console.log('[send-password-reset] Looking up user by email...');
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
     
     if (userError) {
-      console.error('[send-password-reset] Error listing users:', userError);
-      throw userError;
+      console.error('[send-password-reset] Error looking up user:', userError);
+      // Don't reveal if user exists (security best practice)
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
     }
     
-    const user = users?.find(u => u.email === email);
-    
-    if (!user) {
+    if (!userData.user) {
       // Don't reveal if user exists (security best practice)
       console.log('[send-password-reset] User not found, but responding with success for security');
       return new Response(JSON.stringify({ success: true }), {
@@ -50,7 +65,7 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    console.log('[send-password-reset] User found, generating reset link');
+    console.log('[send-password-reset] User found, generating reset link for user ID:', userData.user.id);
 
     // Generate password reset link with custom redirect
     const defaultRedirectTo = `${Deno.env.get("VITE_SITE_URL") || "https://medinfinite.com"}/reset-password`;
