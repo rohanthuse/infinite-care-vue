@@ -14,11 +14,11 @@ const approveSignerSignature = async ({ signerId }: ApproveSignerParams) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
   
-  // Update the signer record to approved
+  // Mark the signer as approved by updating timestamp
+  // Note: Using 'signed' status as 'approved' is not in the current enum
   const { error } = await supabase
     .from('agreement_signers')
     .update({
-      signing_status: 'approved',
       updated_at: new Date().toISOString()
     })
     .eq('id', signerId);

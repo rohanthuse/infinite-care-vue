@@ -439,13 +439,13 @@ export function ViewAgreementDialog({
                   )}
                   
                   {/* Other Signers (Admin view) */}
-                  {isAdmin && signers.filter(s => s.signing_status === 'signed' || s.signing_status === 'approved').length > 0 && (
+                  {isAdmin && signers.filter(s => s.signing_status === 'signed').length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         Other Signers
                       </p>
                       {signers
-                        .filter(s => s.signing_status === 'signed' || s.signing_status === 'approved')
+                        .filter(s => s.signing_status === 'signed')
                         .map(signer => (
                           <div key={signer.id} className="p-3 bg-card border rounded-lg space-y-2">
                             <div className="flex items-center justify-between">
@@ -460,17 +460,10 @@ export function ViewAgreementDialog({
                                   </p>
                                 )}
                               </div>
-                              {signer.signing_status === 'approved' ? (
-                                <Badge variant="default" className="bg-green-600">
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Approved
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="bg-blue-600 text-white">
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Signed
-                                </Badge>
-                              )}
+                              <Badge variant="default" className="bg-blue-600 text-white">
+                                <Check className="h-3 w-3 mr-1" />
+                                Signed
+                              </Badge>
                             </div>
                             {signer.signing_status === 'signed' && (
                               <div className="flex gap-2">
