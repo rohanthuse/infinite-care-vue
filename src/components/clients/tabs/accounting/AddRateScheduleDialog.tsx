@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
 import { useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
 import { useTenant } from '@/contexts/TenantContext';
@@ -23,7 +25,7 @@ const rateScheduleSchema = z.object({
   time_until: createTimeValidation('Time until'),
   rate_category: z.enum(['standard', 'adult', 'cyp']).default('standard'),
   pay_based_on: z.enum(['service', 'hours_minutes', 'daily_flat_rate']).default('service'),
-  charge_type: z.enum(['flat_rate', 'pro_rata', 'hourly_rate', 'hour_minutes', 'rate_per_hour', 'rate_per_minutes_pro_rata', 'rate_per_minutes_flat_rate', 'daily_flat_rate']).default('hourly_rate'),
+  charge_type: z.enum(['flat_rate', 'pro_rata', 'hourly_rate', 'hour_minutes', 'rate_per_hour', 'rate_per_minutes_pro_rata', 'rate_per_minutes_flat_rate', 'daily_flat_rate']).optional().default('hourly_rate'),
   base_rate: z.number().min(0.01, 'Base rate must be greater than 0'),
   rate_15_minutes: z.number().optional(),
   rate_30_minutes: z.number().optional(),
@@ -85,6 +87,22 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   });
   const selectedPayBasedOn = form.watch('pay_based_on');
   const selectedChargeType = form.watch('charge_type');
+
+  // Auto-set charge_type based on pay_based_on
+  React.useEffect(() => {
+    const currentPayBasedOn = form.getValues('pay_based_on');
+    
+    if (currentPayBasedOn === 'hours_minutes') {
+      const currentChargeType = form.getValues('charge_type');
+      if (!currentChargeType || !['rate_per_hour', 'rate_per_minutes_pro_rata', 'rate_per_minutes_flat_rate'].includes(currentChargeType)) {
+        form.setValue('charge_type', 'rate_per_hour');
+      }
+    } else if (currentPayBasedOn === 'service') {
+      form.setValue('charge_type', 'hourly_rate');
+    } else if (currentPayBasedOn === 'daily_flat_rate') {
+      form.setValue('charge_type', 'daily_flat_rate');
+    }
+  }, [selectedPayBasedOn, form]);
 
   const onSubmit = (data: RateScheduleFormData) => {
     const scheduleData = {
@@ -148,7 +166,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       form.setValue('days_covered', currentDays.filter(d => d !== day));
     }
   };
-  const showIncrementalRates = selectedChargeType.includes('rate_per_minutes') || selectedChargeType === 'hour_minutes';
+  const showIncrementalRates = selectedPayBasedOn === 'hours_minutes';
   return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -261,7 +279,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Rate Configuration</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="rate_category" render={({
                 field
               }) => <FormItem>
@@ -300,25 +318,49 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                       <FormMessage />
                     </FormItem>} />
 
-                <FormField control={form.control} name="charge_type" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Charge Type *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select charge type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.entries(chargeTypeLabels).map(([value, label]) => <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>} />
               </div>
+
+              {/* Rate Type Selection - Only visible when Hours/Minutes selected */}
+              {selectedPayBasedOn === 'hours_minutes' && (
+                <div className="col-span-full">
+                  <FormField
+                    control={form.control}
+                    name="charge_type"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Rate Type *</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            className="flex flex-col space-y-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="rate_per_hour" id="rate-per-hour" />
+                              <Label htmlFor="rate-per-hour" className="font-normal cursor-pointer">
+                                Rate Per Hour
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="rate_per_minutes_pro_rata" id="rate-per-minutes-pro" />
+                              <Label htmlFor="rate-per-minutes-pro" className="font-normal cursor-pointer">
+                                Rate Per Minutes (Pro Rate)
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="rate_per_minutes_flat_rate" id="rate-per-minutes-flat" />
+                              <Label htmlFor="rate-per-minutes-flat" className="font-normal cursor-pointer">
+                                Rate Per Minutes (Flat Rate)
+                              </Label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="base_rate" render={({
