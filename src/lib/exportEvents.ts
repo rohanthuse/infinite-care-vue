@@ -66,6 +66,54 @@ const loadImageAsBase64 = async (imageUrl: string): Promise<string | null> => {
   }
 };
 
+// Helper function to fetch organization/company settings
+const fetchOrganizationSettings = async (branchId: string): Promise<{
+  name: string;
+  address: string | null;
+  telephone: string | null;
+  website: string | null;
+  email: string | null;
+  logo_url: string | null;
+} | null> => {
+  try {
+    // First get the organization_id from the branch
+    const { data: branchData, error: branchError } = await supabase
+      .from('branches')
+      .select('organization_id')
+      .eq('id', branchId)
+      .single();
+
+    if (branchError || !branchData?.organization_id) {
+      console.error('Error fetching branch organization:', branchError);
+      return null;
+    }
+
+    // Then fetch organization details
+    const { data: orgData, error: orgError } = await supabase
+      .from('organizations')
+      .select('name, address, contact_phone, website, contact_email, logo_url')
+      .eq('id', branchData.organization_id)
+      .single();
+
+    if (orgError) {
+      console.error('Error fetching organization settings:', orgError);
+      return null;
+    }
+
+    return {
+      name: orgData.name || 'Company Name',
+      address: orgData.address,
+      telephone: orgData.contact_phone,
+      website: orgData.website,
+      email: orgData.contact_email,
+      logo_url: orgData.logo_url
+    };
+  } catch (error) {
+    console.error('Error in fetchOrganizationSettings:', error);
+    return null;
+  }
+};
+
 export interface ExportableEvent {
   // Basic fields
   id: string;
@@ -263,19 +311,98 @@ export const exportEventsToCSV = async (events: ExportableEvent[], filename: str
 
 export const exportEventToPDF = async (event: ExportableEvent, filename?: string) => {
   const pdf = new jsPDF();
-  let currentY = 20;
   
-  // Fetch staff names if branch_id is available
+  // Fetch staff names and organization settings if branch_id is available
   const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
-  
-  // Header
-  pdf.setFontSize(20);
-  pdf.text('Event Log Report', 20, currentY);
+  const orgSettings = event.branch_id ? await fetchOrganizationSettings(event.branch_id) : null;
+
+  // === HEADER SECTION WITH COMPANY BRANDING ===
+  let headerY = 15;
+  const pageWidth = pdf.internal.pageSize.width;
+  const leftMargin = 20;
+  const rightMargin = pageWidth - 20;
+
+  // Left side: Company Logo
+  if (orgSettings?.logo_url) {
+    try {
+      const logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+      if (logoBase64) {
+        // Add logo with proper aspect ratio (max width: 50, max height: 25)
+        pdf.addImage(logoBase64, 'PNG', leftMargin, headerY, 50, 25);
+      }
+    } catch (error) {
+      console.error('Error loading logo:', error);
+      // Continue without logo if it fails
+    }
+  }
+
+  // Right side: Company Details
+  if (orgSettings) {
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    
+    let detailY = headerY;
+    const rightX = rightMargin;
+    
+    // Company Name
+    pdf.text(orgSettings.name, rightX, detailY, { align: 'right' });
+    detailY += 5;
+    
+    pdf.setFont(undefined, 'normal');
+    pdf.setFontSize(9);
+    
+    // Address
+    if (orgSettings.address) {
+      const addressLines = pdf.splitTextToSize(orgSettings.address, 80);
+      addressLines.forEach((line: string) => {
+        pdf.text(line, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      });
+    }
+    
+    // Telephone
+    if (orgSettings.telephone) {
+      pdf.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+    }
+    
+    // Website
+    if (orgSettings.website) {
+      pdf.text(`Web: ${orgSettings.website}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+    }
+    
+    // Email
+    if (orgSettings.email) {
+      pdf.text(`Email: ${orgSettings.email}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+    }
+  }
+
+  // Move to next section (ensure we're past the logo area)
+  let currentY = Math.max(headerY + 30, 50);
+
+  // Add horizontal line separator
+  pdf.setDrawColor(200, 200, 200);
+  pdf.line(leftMargin, currentY, rightMargin, currentY);
   currentY += 10;
-  
-  pdf.setFontSize(12);
-  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, 20, currentY);
+
+  // === REPORT TITLE ===
+  pdf.setFontSize(18);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(50, 50, 50);
+  pdf.text('Event Details Report', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 8;
+
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(100, 100, 100);
+  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, pageWidth / 2, currentY, { align: 'center' });
   currentY += 15;
+
+  // Reset text color and font for body content
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont(undefined, 'normal');
   
   // === BASIC EVENT DETAILS ===
   pdf.setFontSize(14);
@@ -615,19 +742,98 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
 
 export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob> => {
   const pdf = new jsPDF();
-  let currentY = 20;
   
-  // Fetch staff names if branch_id is available
+  // Fetch staff names and organization settings if branch_id is available
   const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
-  
-  // Header
-  pdf.setFontSize(20);
-  pdf.text('Event Log Report', 20, currentY);
+  const orgSettings = event.branch_id ? await fetchOrganizationSettings(event.branch_id) : null;
+
+  // === HEADER SECTION WITH COMPANY BRANDING ===
+  let headerY = 15;
+  const pageWidth = pdf.internal.pageSize.width;
+  const leftMargin = 20;
+  const rightMargin = pageWidth - 20;
+
+  // Left side: Company Logo
+  if (orgSettings?.logo_url) {
+    try {
+      const logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+      if (logoBase64) {
+        // Add logo with proper aspect ratio (max width: 50, max height: 25)
+        pdf.addImage(logoBase64, 'PNG', leftMargin, headerY, 50, 25);
+      }
+    } catch (error) {
+      console.error('Error loading logo:', error);
+      // Continue without logo if it fails
+    }
+  }
+
+  // Right side: Company Details
+  if (orgSettings) {
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    
+    let detailY = headerY;
+    const rightX = rightMargin;
+    
+    // Company Name
+    pdf.text(orgSettings.name, rightX, detailY, { align: 'right' });
+    detailY += 5;
+    
+    pdf.setFont(undefined, 'normal');
+    pdf.setFontSize(9);
+    
+    // Address
+    if (orgSettings.address) {
+      const addressLines = pdf.splitTextToSize(orgSettings.address, 80);
+      addressLines.forEach((line: string) => {
+        pdf.text(line, rightX, detailY, { align: 'right' });
+        detailY += 4;
+      });
+    }
+    
+    // Telephone
+    if (orgSettings.telephone) {
+      pdf.text(`Tel: ${orgSettings.telephone}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+    }
+    
+    // Website
+    if (orgSettings.website) {
+      pdf.text(`Web: ${orgSettings.website}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+    }
+    
+    // Email
+    if (orgSettings.email) {
+      pdf.text(`Email: ${orgSettings.email}`, rightX, detailY, { align: 'right' });
+      detailY += 4;
+    }
+  }
+
+  // Move to next section (ensure we're past the logo area)
+  let currentY = Math.max(headerY + 30, 50);
+
+  // Add horizontal line separator
+  pdf.setDrawColor(200, 200, 200);
+  pdf.line(leftMargin, currentY, rightMargin, currentY);
   currentY += 10;
-  
-  pdf.setFontSize(12);
-  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, 20, currentY);
+
+  // === REPORT TITLE ===
+  pdf.setFontSize(18);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(50, 50, 50);
+  pdf.text('Event Details Report', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 8;
+
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(100, 100, 100);
+  pdf.text(`Generated: ${format(new Date(), 'PPP')}`, pageWidth / 2, currentY, { align: 'center' });
   currentY += 15;
+
+  // Reset text color and font for body content
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont(undefined, 'normal');
   
   // === BASIC EVENT DETAILS ===
   pdf.setFontSize(14);
