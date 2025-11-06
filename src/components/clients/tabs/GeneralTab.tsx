@@ -32,6 +32,7 @@ import {
 } from '@/types/clientAccounting';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { PrivateAccountingSettings } from './accounting/PrivateAccountingSettings';
 
 const formSchema = z.object({
   core_lead_id: z.string().nullable(),
@@ -592,21 +593,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
         </TabsContent>
         
         <TabsContent value="private-accounting" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Private Accounting Setting
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">
-                  Private accounting settings will be added here...
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <PrivateAccountingSettings clientId={clientId} branchId={branchId || ''} />
         </TabsContent>
       </Tabs>
     </div>
