@@ -14,6 +14,7 @@ import { BackButton } from "@/components/navigation/BackButton";
 import { ClientSideTabNav } from "./ClientSideTabNav";
 import { ClientOverviewTab } from "./tabs/ClientOverviewTab";
 import { PersonalInfoTab } from "./tabs/PersonalInfoTab";
+import { GeneralTab } from "./tabs/GeneralTab";
 import { NotesTab } from "./tabs/NotesTab";
 import MessagesTab from "./tabs/MessagesTab";
 import { SuspendTab } from "./tabs/SuspendTab";
@@ -244,6 +245,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                     onSave={handleSave}
                     isSaving={updateClientMutation.isPending}
                   />
+                </TabsContent>
+                
+                <TabsContent value="general" className="p-6 m-0">
+                  <GeneralTab clientId={client.id} branchId={branchId} />
                 </TabsContent>
                 
                 <TabsContent value="notes" className="p-6 m-0">
