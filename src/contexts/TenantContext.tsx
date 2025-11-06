@@ -227,7 +227,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         root.style.setProperty('--secondary', '210 40% 96%');
       }
       
-      // Update document title to include organization name
+      // Update document title to include organisation name
       document.title = `${organization.name} - Care Management System`;
     }
   }, [organization]);

@@ -75,7 +75,7 @@ export const TenantsTable = ({
         <CardContent className="p-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading tenant organizations...</p>
+            <p className="text-muted-foreground">Loading tenant organisations...</p>
           </div>
         </CardContent>
       </Card>;
@@ -89,7 +89,7 @@ export const TenantsTable = ({
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No Tenants Found</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Create your first tenant organization to get started with the multi-tenant system.
+              Create your first tenant organisation to get started with the multi-tenant system.
             </p>
             <Button onClick={onAddTenant} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -103,9 +103,9 @@ export const TenantsTable = ({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold">All Tenant Organizations</CardTitle>
+            <CardTitle className="text-lg font-semibold">All Tenant Organisations</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage and monitor tenant organizations ({filteredTenants.length} of {tenants?.length || 0})
+              Manage and monitor tenant organisations ({filteredTenants.length} of {tenants?.length || 0})
             </p>
           </div>
           <div className="flex items-center gap-2">

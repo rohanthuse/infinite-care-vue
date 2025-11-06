@@ -20,7 +20,7 @@ export const TenantError: React.FC = () => {
             </div>
             <CardTitle>Tenant Error</CardTitle>
             <CardDescription>
-              An error occurred while trying to access the tenant organization.
+              An error occurred while trying to access the tenant organisation.
             </CardDescription>
           </CardHeader>
           <CardContent>

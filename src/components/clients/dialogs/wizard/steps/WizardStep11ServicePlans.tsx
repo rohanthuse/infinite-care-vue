@@ -153,7 +153,7 @@ export function WizardStep11ServicePlans({ form }: WizardStep11ServicePlansProps
                     <FormItem>
                       <FormLabel>Provider Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter provider or organization name" {...field} />
+                        <Input placeholder="Enter provider or organisation name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

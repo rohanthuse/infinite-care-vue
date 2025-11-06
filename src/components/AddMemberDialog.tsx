@@ -39,7 +39,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   const addMember = useMutation({
     mutationFn: async () => {
       if (!organization?.id) {
-        throw new Error("Missing organization information");
+        throw new Error("Missing organisation information");
       }
 
       // First, create auth user with Supabase Auth

@@ -258,7 +258,7 @@ export const DemoRequestsTable: React.FC = () => {
                                   <p className="text-sm text-muted-foreground">{selectedRequest.full_name}</p>
                                 </div>
                                 <div>
-                                  <Label className="text-sm font-medium">Organization</Label>
+                                  <Label className="text-sm font-medium">Organisation</Label>
                                   <p className="text-sm text-muted-foreground">
                                     {selectedRequest.company_name || "Not specified"}
                                   </p>

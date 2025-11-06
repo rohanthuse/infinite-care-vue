@@ -102,7 +102,7 @@ export const DevTenantSwitcher: React.FC = () => {
           Development Tools
         </CardTitle>
         <CardDescription>
-          Switch between tenant organizations for testing (path-based routing)
+          Switch between tenant organisations for testing (path-based routing)
         </CardDescription>
       </CardHeader>
       
@@ -159,10 +159,10 @@ export const DevTenantSwitcher: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          <Label>Available Organizations</Label>
+          <Label>Available Organisations</Label>
           <Select onValueChange={handleTenantChange} disabled={isLoading}>
             <SelectTrigger>
-              <SelectValue placeholder={isLoading ? "Loading..." : "Select organization"} />
+              <SelectValue placeholder={isLoading ? "Loading..." : "Select organisation"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">Clear (Main Site)</SelectItem>

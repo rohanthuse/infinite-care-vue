@@ -141,11 +141,11 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
               </Select>
             </div>
 
-            {/* Organization Assignments */}
+            {/* Organisation Assignments */}
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Organization Assignments</Label>
+                <Label className="text-sm font-medium">Organisation Assignments</Label>
               </div>
               
               {/* Current Assignments */}
@@ -168,7 +168,7 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
                 <div className="col-span-2">
                   <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select organization" />
+                      <SelectValue placeholder="Select organisation" />
                     </SelectTrigger>
                     <SelectContent>
                       {organizations?.map((org) => (
@@ -200,7 +200,7 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
                 className="w-full"
               >
                 {assignUserToOrg.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Assign to Organization
+                Assign to Organisation
               </CustomButton>
             </div>
 

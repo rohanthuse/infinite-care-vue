@@ -34,7 +34,7 @@ export const useAssignUserToOrganization = () => {
   return useMutation({
     mutationFn: assignUserToOrganization,
     onSuccess: () => {
-      toast.success('User assigned to organization successfully');
+      toast.success('User assigned to organisation successfully');
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
       queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });

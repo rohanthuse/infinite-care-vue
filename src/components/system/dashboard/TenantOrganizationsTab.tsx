@@ -20,7 +20,7 @@ export const TenantOrganizationsTab: React.FC = () => {
       <SystemTenantsStats stats={stats} isLoading={isLoading} />
 
       <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-lg font-semibold mb-4">Tenant Organizations</h3>
+        <h3 className="text-lg font-semibold mb-4">Tenant Organisations</h3>
         {(isLoading || isLoadingUsers) && (
           <p className="text-muted-foreground">Loading tenants...</p>
         )}
@@ -99,7 +99,7 @@ export const TenantOrganizationsTab: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground">No tenant organizations found.</p>
+              <p className="text-muted-foreground">No tenant organisations found.</p>
             )}
           </>
         )}

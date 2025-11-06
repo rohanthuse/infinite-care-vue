@@ -107,7 +107,7 @@ export function EditOrganizationMemberPermissionsDialog({
       onSuccess: () => {
         toast({
           title: "Member Removed",
-          description: `${memberName} has been removed from the organization.`,
+          description: `${memberName} has been removed from the organisation.`,
         });
         setShowRemoveMemberAlert(false);
         onClose();
@@ -375,7 +375,7 @@ export function EditOrganizationMemberPermissionsDialog({
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center">
               <Trash2 className="h-5 w-5 mr-2 text-red-600" />
-              Remove Organization Member
+              Remove Organisation Member
             </AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to remove <strong>{memberName}</strong> from the organization? 

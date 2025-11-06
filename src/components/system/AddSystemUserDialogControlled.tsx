@@ -178,7 +178,7 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organization">Organization</Label>
+            <Label htmlFor="organization">Organisation</Label>
             <SearchableOrganizationSelect
               organizations={organizations || []}
               value={formData.organization_id}

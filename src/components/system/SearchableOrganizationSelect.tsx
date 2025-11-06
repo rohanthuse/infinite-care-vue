@@ -30,9 +30,9 @@ export const SearchableOrganizationSelect: React.FC<SearchableOrganizationSelect
         options={options}
         value={value}
         onValueChange={onValueChange}
-        placeholder="Select organization..."
-        searchPlaceholder="Search organizations..."
-        emptyText={isLoading ? "Loading organizations..." : "No organizations found"}
+        placeholder="Select organisation..."
+        searchPlaceholder="Search organisations..."
+        emptyText={isLoading ? "Loading organisations..." : "No organisations found"}
         className={error ? 'border-red-500' : ''}
       />
     </div>

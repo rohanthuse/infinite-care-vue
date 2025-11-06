@@ -42,18 +42,18 @@ export const SystemReports: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Tenant Organizations Section */}
+      {/* Tenant Organisations Section */}
       <section>
         <div className="border-b border-border/50 pb-4 mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Building className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">Tenant Organizations</h3>
+            <h3 className="text-lg font-semibold text-foreground">Tenant Organisations</h3>
             <Badge variant="secondary" className="text-xs">
               {totalTenants} total
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Overview of all tenant organizations and their user activity
+            Overview of all tenant organisations and their user activity
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export const SystemReports: React.FC = () => {
             ) : topTenants.length === 0 ? (
               <div className="text-center py-8">
                 <Building className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">No tenant organizations found</p>
+                <p className="text-muted-foreground">No tenant organisations found</p>
               </div>
             ) : (
               <div className="space-y-3">

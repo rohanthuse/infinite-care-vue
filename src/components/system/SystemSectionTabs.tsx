@@ -28,7 +28,7 @@ export const SystemSectionTabs: React.FC<SystemSectionTabsProps> = ({ value }) =
         data-active={value === "tenants"}
         onClick={() => navigate("/system-dashboard/tenants")}
       >
-        Tenant Organizations
+        Tenant Organisations
       </TabsTrigger>
       <TabsTrigger
         value="users"

@@ -170,10 +170,10 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organization">Organization <span aria-hidden="true">*</span></Label>
+            <Label htmlFor="organization">Organisation <span aria-hidden="true">*</span></Label>
             <Select value={formData.organization_id} onValueChange={(value) => handleInputChange('organization_id', value)}>
               <SelectTrigger aria-required="true">
-                <SelectValue placeholder={orgLoading ? 'Loading...' : 'Select organization'} />
+                <SelectValue placeholder={orgLoading ? 'Loading...' : 'Select organisation'} />
               </SelectTrigger>
               <SelectContent>
                 {organizations?.map((org) => (

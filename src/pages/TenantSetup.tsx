@@ -106,9 +106,9 @@ export const TenantSetup: React.FC = () => {
           <div className="flex justify-center mb-4">
             <Building className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Create Your Organization</CardTitle>
+          <CardTitle className="text-2xl">Create Your Organisation</CardTitle>
           <CardDescription>
-            Set up your organization to get started with the care management system
+            Set up your organisation to get started with the care management system
           </CardDescription>
         </CardHeader>
         
@@ -116,7 +116,7 @@ export const TenantSetup: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Organization Name *</Label>
+                <Label htmlFor="name">Organisation Name *</Label>
                 <Input
                   id="name"
                   placeholder="e.g., ABC Care Services"
@@ -127,7 +127,7 @@ export const TenantSetup: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="slug">Organization Slug *</Label>
+                <Label htmlFor="slug">Organisation Slug *</Label>
                 <Input
                   id="slug"
                   placeholder="abc-care"
@@ -137,7 +137,7 @@ export const TenantSetup: React.FC = () => {
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  Your organization will be accessible at: med-infinite.care/{formData.slug || 'your-org-slug'}
+                  Your organisation will be accessible at: med-infinite.care/{formData.slug || 'your-org-slug'}
                 </p>
               </div>
             </div>
@@ -215,8 +215,8 @@ export const TenantSetup: React.FC = () => {
 
           <div className="mt-6 pt-6 border-t">
             <p className="text-xs text-muted-foreground text-center">
-              By creating an organization, you agree to our Terms of Service and Privacy Policy.
-              You will be set as the organization owner and can invite other team members later.
+              By creating an organisation, you agree to our Terms of Service and Privacy Policy.
+              You will be set as the organisation owner and can invite other team members later.
             </p>
           </div>
         </CardContent>
