@@ -10,6 +10,7 @@ export interface ClientAccountingSettings {
   invoice_method: InvoiceMethod;
   invoice_display_type: string;
   billing_address_same_as_personal: boolean;
+  billing_address?: string | null;
   pay_method?: string;
   rate_type: RateCategory;
   mileage_rule_no_payment: boolean;
@@ -85,6 +86,8 @@ export interface ClientRateSchedule {
 
 export type InvoiceMethod = 'per_visit' | 'weekly' | 'monthly';
 
+export type InvoiceDisplayType = 'per_visit' | 'summary' | 'detailed';
+
 export type BillingFrequency = 'weekly' | 'fortnightly' | 'monthly' | 'on_demand';
 
 export type RateCategory = 'standard' | 'adult' | 'cyp';
@@ -120,6 +123,12 @@ export const invoiceMethodLabels: Record<InvoiceMethod, string> = {
   per_visit: 'Per Visit',
   weekly: 'Weekly',
   monthly: 'Monthly'
+};
+
+export const invoiceDisplayTypeLabels: Record<InvoiceDisplayType, string> = {
+  per_visit: 'Per Visit',
+  summary: 'Summary',
+  detailed: 'Detailed'
 };
 
 export const billingFrequencyLabels: Record<BillingFrequency, string> = {

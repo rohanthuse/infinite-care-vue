@@ -16,6 +16,22 @@ import { useSignedAgreements } from "@/data/hooks/agreements";
 import { useClientGeneralSettings } from "@/hooks/useClientGeneralSettings";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { toast } from "sonner";
+import { 
+  useClientAccountingSettings, 
+  useCreateOrUpdateClientAccountingSettings 
+} from '@/hooks/useClientAccounting';
+import {
+  invoiceMethodLabels,
+  invoiceDisplayTypeLabels,
+  rateCategoryLabels,
+  servicePayerLabels,
+  InvoiceMethod,
+  InvoiceDisplayType,
+  RateCategory,
+  ServicePayer
+} from '@/types/clientAccounting';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   core_lead_id: z.string().nullable(),
@@ -27,6 +43,18 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+const accountingFormSchema = z.object({
+  invoice_method: z.enum(['per_visit', 'weekly', 'monthly']),
+  invoice_display_type: z.string(),
+  billing_address_same_as_personal: z.boolean(),
+  billing_address: z.string().nullable(),
+  rate_type: z.enum(['standard', 'adult', 'cyp']),
+  mileage_rule_no_payment: z.boolean(),
+  service_payer: z.enum(['authorities', 'direct_payment', 'self_funder', 'other']),
+});
+
+type AccountingFormValues = z.infer<typeof accountingFormSchema>;
 
 interface GeneralTabProps {
   clientId: string;
@@ -46,8 +74,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
     dateFilter: 'all',
     partyFilter: 'all',
   });
+  const { data: accountingSettings, isLoading: accountingLoading } = useClientAccountingSettings(clientId);
   
   const updateClient = useUpdateClient();
+  const updateAccountingSettings = useCreateOrUpdateClientAccountingSettings();
   
   // Initialize form
   const form = useForm<FormValues>({
@@ -61,6 +91,21 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
       enable_geo_fencing: false,
     },
   });
+
+  const accountingForm = useForm<AccountingFormValues>({
+    resolver: zodResolver(accountingFormSchema),
+    defaultValues: {
+      invoice_method: 'per_visit',
+      invoice_display_type: 'per_visit',
+      billing_address_same_as_personal: true,
+      billing_address: null,
+      rate_type: 'standard',
+      mileage_rule_no_payment: false,
+      service_payer: 'authorities',
+    },
+  });
+
+  const billingAddressSameAsPersonal = accountingForm.watch('billing_address_same_as_personal');
   
   // Load data into form when available
   useEffect(() => {
@@ -75,6 +120,21 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
       });
     }
   }, [settings, form]);
+
+  // Load accounting settings into form
+  useEffect(() => {
+    if (accountingSettings) {
+      accountingForm.reset({
+        invoice_method: (accountingSettings.invoice_method as InvoiceMethod) || 'per_visit',
+        invoice_display_type: accountingSettings.invoice_display_type || 'per_visit',
+        billing_address_same_as_personal: accountingSettings.billing_address_same_as_personal ?? true,
+        billing_address: accountingSettings.billing_address || null,
+        rate_type: (accountingSettings.rate_type as RateCategory) || 'standard',
+        mileage_rule_no_payment: accountingSettings.mileage_rule_no_payment || false,
+        service_payer: (accountingSettings.service_payer as ServicePayer) || 'authorities',
+      });
+    }
+  }, [accountingSettings, accountingForm]);
   
   // Handle form submission
   const onSubmit = async (values: FormValues) => {
@@ -93,6 +153,30 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
       toast.success("General settings updated successfully");
     } catch (error) {
       toast.error("Failed to update general settings");
+      console.error(error);
+    }
+  };
+
+  const onAccountingSubmit = async (values: AccountingFormValues) => {
+    try {
+      await updateAccountingSettings.mutateAsync({
+        client_id: clientId,
+        branch_id: branchId || '',
+        organization_id: accountingSettings?.organization_id || '',
+        invoice_method: values.invoice_method as InvoiceMethod,
+        invoice_display_type: values.invoice_display_type,
+        billing_address_same_as_personal: values.billing_address_same_as_personal,
+        billing_address: values.billing_address_same_as_personal ? null : values.billing_address,
+        rate_type: values.rate_type as RateCategory,
+        mileage_rule_no_payment: values.mileage_rule_no_payment,
+        service_payer: values.service_payer as ServicePayer,
+        show_in_task_matrix: accountingSettings?.show_in_task_matrix || false,
+        show_in_form_matrix: accountingSettings?.show_in_form_matrix || false,
+        enable_geo_fencing: accountingSettings?.enable_geo_fencing || false,
+      });
+      toast.success('Accounting settings updated successfully');
+    } catch (error) {
+      toast.error('Failed to update accounting settings');
       console.error(error);
     }
   };
@@ -293,11 +377,216 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">
-                  General accounting settings will be added here...
-                </p>
-              </div>
+              {accountingLoading ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-muted-foreground">Loading...</p>
+                </div>
+              ) : (
+                <Form {...accountingForm}>
+                  <form onSubmit={accountingForm.handleSubmit(onAccountingSubmit)} className="space-y-6">
+                    
+                    {/* Invoice Method */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="invoice_method"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Invoice Method</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select invoice method" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(invoiceMethodLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Invoice Display Type */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="invoice_display_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Invoice Display Type</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select display type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(invoiceDisplayTypeLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Billing Address Same as Personal */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="billing_address_same_as_personal"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Is billing address the same as personal address?</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              value={field.value ? "yes" : "no"}
+                              onValueChange={(value) => field.onChange(value === "yes")}
+                              className="flex gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="yes" id="billing-yes" />
+                                <Label htmlFor="billing-yes" className="font-normal cursor-pointer">
+                                  Yes
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="no" id="billing-no" />
+                                <Label htmlFor="billing-no" className="font-normal cursor-pointer">
+                                  No
+                                </Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Billing Address - Conditional Field */}
+                    {!billingAddressSameAsPersonal && (
+                      <FormField
+                        control={accountingForm.control}
+                        name="billing_address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Billing Address</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Enter billing address..."
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                rows={4}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    {/* Rate Type */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="rate_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Rate Type</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select rate type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(rateCategoryLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* No Mileage Paid to Staff */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="mileage_rule_no_payment"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>No mileage paid to staff when visiting this client</FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              value={field.value ? "yes" : "no"}
+                              onValueChange={(value) => field.onChange(value === "yes")}
+                              className="flex gap-4"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="no" id="mileage-no" />
+                                <Label htmlFor="mileage-no" className="font-normal cursor-pointer">
+                                  No
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="yes" id="mileage-yes" />
+                                <Label htmlFor="mileage-yes" className="font-normal cursor-pointer">
+                                  Yes
+                                </Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Who Pays for the Service */}
+                    <FormField
+                      control={accountingForm.control}
+                      name="service_payer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Who pays for the service</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select service payer" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(servicePayerLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Submit Button */}
+                    <div className="flex justify-end pt-4">
+                      <Button 
+                        type="submit" 
+                        disabled={updateAccountingSettings.isPending || !accountingForm.formState.isDirty}
+                      >
+                        {updateAccountingSettings.isPending ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
