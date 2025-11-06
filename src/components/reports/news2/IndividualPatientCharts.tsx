@@ -5,10 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Info, TrendingUp, User, Activity } from "lucide-react";
+import { Info, TrendingUp, User, Activity, Brain } from "lucide-react";
 import { useNews2Patients } from "@/hooks/useNews2Data";
 import { format } from "date-fns";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { GenerateAIDialog } from "./GenerateAIDialog";
+import { toast } from "sonner";
 
 interface IndividualPatientChartsProps {
   branchId: string;
@@ -37,6 +39,8 @@ export function IndividualPatientCharts({ branchId }: IndividualPatientChartsPro
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [showAllPatients, setShowAllPatients] = useState(false);
   const [expandedPatients, setExpandedPatients] = useState<Set<string>>(new Set());
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [selectedPatientForAI, setSelectedPatientForAI] = useState<any>(null);
 
   const togglePatientExpansion = (patientId: string) => {
     const newExpanded = new Set(expandedPatients);
@@ -46,6 +50,17 @@ export function IndividualPatientCharts({ branchId }: IndividualPatientChartsPro
       newExpanded.add(patientId);
     }
     setExpandedPatients(newExpanded);
+  };
+
+  const handleGenerateAI = (patient: any) => {
+    if (!patient.latest_observation) {
+      toast.error("No observations available", {
+        description: "This patient doesn't have any NEWS2 observations yet."
+      });
+      return;
+    }
+    setSelectedPatientForAI(patient);
+    setAiDialogOpen(true);
   };
 
   const getRiskColor = (score: number) => {
@@ -142,6 +157,14 @@ export function IndividualPatientCharts({ branchId }: IndividualPatientChartsPro
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleGenerateAI(patient)}
+                  >
+                    <Brain className="h-4 w-4 mr-2" />
+                    AI Insights
+                  </Button>
                   <div className="text-center">
                     <div className="text-sm text-gray-500">Current NEWS2</div>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg`} 
@@ -392,6 +415,15 @@ export function IndividualPatientCharts({ branchId }: IndividualPatientChartsPro
           </Card>
         )}
       </div>
+
+      {selectedPatientForAI && (
+        <GenerateAIDialog
+          open={aiDialogOpen}
+          onOpenChange={setAiDialogOpen}
+          patient={selectedPatientForAI}
+          latestObservation={selectedPatientForAI.latest_observation}
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users, User, CheckCircle, Eye } from "lucide-react";
+import { Activity, AlertTriangle, ArrowDown, ArrowUp, Clock, Filter, Search, FileText, BarChart3, Users, User, CheckCircle, Eye, Brain } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +13,7 @@ import { useNews2Patients, useNews2Alerts } from "@/hooks/useNews2Data";
 import { News2AnalyticsDashboard } from "./News2AnalyticsDashboard";
 import { IndividualPatientCharts } from "./IndividualPatientCharts";
 import { AlertManagementDialog } from "./AlertManagementDialog";
+import { GenerateAIDialog } from "./GenerateAIDialog";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { generateNews2PDF } from "@/utils/pdfGenerator";
@@ -28,6 +29,8 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
   const [alertFilter, setAlertFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [selectedPatientForAI, setSelectedPatientForAI] = useState<any>(null);
   
   const { data: patients = [], isLoading, error } = useNews2Patients(branchId);
   const { data: alerts = [], isLoading: alertsLoading } = useNews2Alerts(branchId);
@@ -76,6 +79,17 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
         description: "There was a problem exporting the report"
       });
     }
+  };
+
+  const handleGenerateAI = (patient: any) => {
+    if (!patient.latest_observation) {
+      toast.error("No observations available", {
+        description: "This patient doesn't have any NEWS2 observations yet."
+      });
+      return;
+    }
+    setSelectedPatientForAI(patient);
+    setAiDialogOpen(true);
   };
   
   const getRiskBadge = (score: number) => {
@@ -326,6 +340,14 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
+                                  onClick={() => handleGenerateAI(patient)}
+                                >
+                                  <Brain className="h-4 w-4 mr-1" />
+                                  AI Insights
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
                                   onClick={() => handleExportPatient(patient)}
                                 >
                                   <FileText className="h-4 w-4 mr-1" />
@@ -514,6 +536,16 @@ export const News2Dashboard = ({ branchId, branchName }: News2DashboardProps) =>
           alert={selectedAlert}
           patient={patients.find(p => p.id === selectedAlert.news2_patient_id)}
           onClose={() => setSelectedAlert(null)}
+        />
+      )}
+
+      {/* AI Recommendations Dialog */}
+      {selectedPatientForAI && (
+        <GenerateAIDialog
+          open={aiDialogOpen}
+          onOpenChange={setAiDialogOpen}
+          patient={selectedPatientForAI}
+          latestObservation={selectedPatientForAI.latest_observation}
         />
       )}
     </div>
