@@ -28,7 +28,7 @@ import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
 import { useServiceRates } from "@/hooks/useAccountingData";
 import { useToast } from "@/hooks/use-toast";
-import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus, BarChart3, Clock, PoundSterling, Activity, MessageCircle, CreditCard } from "lucide-react";
+import { User, Phone, Users, Stethoscope, FileText, Mail, MapPin, Calendar, UserCheck, X, Plus, BarChart3, Clock, PoundSterling, Activity, MessageCircle, CreditCard, Settings } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -79,6 +79,7 @@ export function AdminClientDetailsDialog({
 }: AdminClientDetailsDialogProps) {
   const [activeMainTab, setActiveMainTab] = useState("overview");
   const [activeSubTab, setActiveSubTab] = useState("profile");
+  const [activeGeneralSubTab, setActiveGeneralSubTab] = useState("general-setting");
   
   // Use controlled dialog for proper cleanup and route change handling
   const dialogId = `admin-client-details-${client?.id || 'unknown'}`;
@@ -943,6 +944,70 @@ export function AdminClientDetailsDialog({
                           </div>
                         </form>
                       </Form>
+                    </TabsContent>
+                  </Tabs>
+                </TabsContent>
+
+                <TabsContent value="general" className="mt-0 p-6">
+                  <Tabs value={activeGeneralSubTab} onValueChange={setActiveGeneralSubTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="general-setting">General Setting</TabsTrigger>
+                      <TabsTrigger value="general-accounting">General Accounting Settings</TabsTrigger>
+                      <TabsTrigger value="private-accounting">Private Accounting Setting</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="general-setting" className="mt-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <Settings className="h-4 w-4" />
+                            General Setting
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center py-8">
+                            <p className="text-sm text-muted-foreground">
+                              General settings configuration will be added here...
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="general-accounting" className="mt-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <PoundSterling className="h-4 w-4" />
+                            General Accounting Settings
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center py-8">
+                            <p className="text-sm text-muted-foreground">
+                              General accounting settings will be added here...
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                    
+                    <TabsContent value="private-accounting" className="mt-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            Private Accounting Setting
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center py-8">
+                            <p className="text-sm text-muted-foreground">
+                              Private accounting settings will be added here...
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                   </Tabs>
                 </TabsContent>
