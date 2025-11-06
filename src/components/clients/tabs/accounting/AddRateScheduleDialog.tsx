@@ -160,7 +160,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       rate_45_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_45_minutes || null) : null,
       rate_60_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_60_minutes || null) : null,
       consecutive_hours_rate: data.pay_based_on === 'hours_minutes' ? (data.consecutive_hours_rate || null) : null,
-      bank_holiday_multiplier: data.pay_based_on === 'hours_minutes' ? null : (data.bank_holiday_multiplier || null),
+      bank_holiday_multiplier: data.bank_holiday_multiplier || null,
       is_vatable: data.is_vatable
     };
     createSchedule.mutate(scheduleData, {
@@ -397,39 +397,40 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                 </div>
               )}
 
-              {/* Base Rate and Bank Holiday Multiplier - Hidden for Hours/Minutes */}
-              {selectedPayBasedOn !== 'hours_minutes' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Base Rate - Hidden for Hours/Minutes only */}
+                {selectedPayBasedOn !== 'hours_minutes' && (
                   <FormField control={form.control} name="base_rate" render={({
-                  field
-                }) => <FormItem>
+                    field
+                  }) => <FormItem>
                         <FormLabel>Base Rate (£) *</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>} />
+                )}
 
-                  <FormField control={form.control} name="bank_holiday_multiplier" render={({
+                {/* Bank Holiday Multiplier - Always visible */}
+                <FormField control={form.control} name="bank_holiday_multiplier" render={({
                   field
                 }) => <FormItem>
-                        <FormLabel>Bank Holiday Multiplier</FormLabel>
-                        <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select multiplier" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="1">1x (Normal Rate)</SelectItem>
-                            <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
-                            <SelectItem value="2">2x (Double Time)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>} />
-                </div>
-              )}
+                      <FormLabel>Bank Holiday Multiplier</FormLabel>
+                      <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select multiplier" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1">1x (Normal Rate)</SelectItem>
+                          <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
+                          <SelectItem value="2">2x (Double Time)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>} />
+              </div>
 
               {/* Incremental Rates */}
               {showIncrementalRates && <div className="space-y-4">
