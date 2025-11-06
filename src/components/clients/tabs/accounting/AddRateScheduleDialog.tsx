@@ -26,13 +26,13 @@ const rateScheduleSchema = z.object({
   rate_category: z.enum(['standard', 'adult', 'cyp']).default('standard'),
   pay_based_on: z.enum(['service', 'hours_minutes', 'daily_flat_rate']).default('service'),
   charge_type: z.enum(['flat_rate', 'pro_rata', 'hourly_rate', 'hour_minutes', 'rate_per_hour', 'rate_per_minutes_pro_rata', 'rate_per_minutes_flat_rate', 'daily_flat_rate']).optional().default('hourly_rate'),
-  base_rate: z.number().min(0.01, 'Base rate must be greater than 0'),
+  base_rate: z.number().optional(),
   rate_15_minutes: z.number().optional(),
   rate_30_minutes: z.number().optional(),
   rate_45_minutes: z.number().optional(),
   rate_60_minutes: z.number().optional(),
   consecutive_hours_rate: z.number().optional(),
-  bank_holiday_multiplier: z.number().min(1).max(3).default(1),
+  bank_holiday_multiplier: z.number().min(1).max(3).optional(),
   is_vatable: z.boolean()
 }).refine(data => {
   if (data.time_from && data.time_until) {
@@ -44,6 +44,40 @@ const rateScheduleSchema = z.object({
 }, {
   message: "Time until must be after time from",
   path: ["time_until"]
+}).refine(data => {
+  // Validate base_rate is required when NOT hours_minutes
+  if (data.pay_based_on !== 'hours_minutes') {
+    return data.base_rate && data.base_rate > 0;
+  }
+  return true;
+}, {
+  message: "Base rate is required and must be greater than 0",
+  path: ["base_rate"]
+}).refine(data => {
+  // Validate 30 min rate is required when hours_minutes
+  if (data.pay_based_on === 'hours_minutes') {
+    return data.rate_30_minutes && data.rate_30_minutes > 0;
+  }
+  return true;
+}, {
+  message: "Rate at 30 min is required when using Hours/Minutes",
+  path: ["rate_30_minutes"]
+}).refine(data => {
+  if (data.pay_based_on === 'hours_minutes') {
+    return data.rate_45_minutes && data.rate_45_minutes > 0;
+  }
+  return true;
+}, {
+  message: "Rate at 45 min is required when using Hours/Minutes",
+  path: ["rate_45_minutes"]
+}).refine(data => {
+  if (data.pay_based_on === 'hours_minutes') {
+    return data.rate_60_minutes && data.rate_60_minutes > 0;
+  }
+  return true;
+}, {
+  message: "Rate at 60 min is required when using Hours/Minutes",
+  path: ["rate_60_minutes"]
 });
 type RateScheduleFormData = z.infer<typeof rateScheduleSchema>;
 interface AddRateScheduleDialogProps {
@@ -119,13 +153,14 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       rate_category: data.rate_category,
       pay_based_on: data.pay_based_on,
       charge_type: data.charge_type,
-      base_rate: data.base_rate,
-      rate_15_minutes: data.rate_15_minutes || null,
-      rate_30_minutes: data.rate_30_minutes || null,
-      rate_45_minutes: data.rate_45_minutes || null,
-      rate_60_minutes: data.rate_60_minutes || null,
-      consecutive_hours_rate: data.consecutive_hours_rate || null,
-      bank_holiday_multiplier: data.bank_holiday_multiplier,
+      // Conditionally include base_rate and bank_holiday_multiplier
+      base_rate: data.pay_based_on === 'hours_minutes' ? null : (data.base_rate || null),
+      rate_15_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_15_minutes || null) : null,
+      rate_30_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_30_minutes || null) : null,
+      rate_45_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_45_minutes || null) : null,
+      rate_60_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_60_minutes || null) : null,
+      consecutive_hours_rate: data.pay_based_on === 'hours_minutes' ? (data.consecutive_hours_rate || null) : null,
+      bank_holiday_multiplier: data.pay_based_on === 'hours_minutes' ? null : (data.bank_holiday_multiplier || null),
       is_vatable: data.is_vatable
     };
     createSchedule.mutate(scheduleData, {
@@ -362,36 +397,39 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="base_rate" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Base Rate (£) *</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>} />
-
-                <FormField control={form.control} name="bank_holiday_multiplier" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Bank Holiday Multiplier</FormLabel>
-                      <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
+              {/* Base Rate and Bank Holiday Multiplier - Hidden for Hours/Minutes */}
+              {selectedPayBasedOn !== 'hours_minutes' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="base_rate" render={({
+                  field
+                }) => <FormItem>
+                        <FormLabel>Base Rate (£) *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select multiplier" />
-                          </SelectTrigger>
+                          <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">1x (Normal Rate)</SelectItem>
-                          <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
-                          <SelectItem value="2">2x (Double Time)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>} />
-              </div>
+                        <FormMessage />
+                      </FormItem>} />
+
+                  <FormField control={form.control} name="bank_holiday_multiplier" render={({
+                  field
+                }) => <FormItem>
+                        <FormLabel>Bank Holiday Multiplier</FormLabel>
+                        <Select onValueChange={value => field.onChange(parseFloat(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select multiplier" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">1x (Normal Rate)</SelectItem>
+                            <SelectItem value="1.5">1.5x (Time and Half)</SelectItem>
+                            <SelectItem value="2">2x (Double Time)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>} />
+                </div>
+              )}
 
               {/* Incremental Rates */}
               {showIncrementalRates && <div className="space-y-4">
@@ -410,7 +448,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                     <FormField control={form.control} name="rate_30_minutes" render={({
                   field
                 }) => <FormItem>
-                          <FormLabel>Rate at 30 min (£)</FormLabel>
+                          <FormLabel>Rate at 30 min (£) *</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                           </FormControl>
@@ -420,7 +458,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                     <FormField control={form.control} name="rate_45_minutes" render={({
                   field
                 }) => <FormItem>
-                          <FormLabel>Rate at 45 min (£)</FormLabel>
+                          <FormLabel>Rate at 45 min (£) *</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                           </FormControl>
@@ -430,7 +468,7 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                     <FormField control={form.control} name="rate_60_minutes" render={({
                   field
                 }) => <FormItem>
-                          <FormLabel>Rate at 60 min (£)</FormLabel>
+                          <FormLabel>Rate at 60 min (£) *</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || undefined)} />
                           </FormControl>
