@@ -3906,6 +3906,7 @@ export type Database = {
           additional_information: string | null
           address: string | null
           age_group: Database["public"]["Enums"]["age_group"]
+          agreement_id: string | null
           auth_user_id: string | null
           authority_id: string | null
           auto_generate_invoices: boolean | null
@@ -3914,12 +3915,15 @@ export type Database = {
           branch_id: string | null
           client_id: string | null
           communication_preferences: string | null
+          core_lead_id: string | null
           country_code: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           emergency_contact: string | null
           emergency_phone: string | null
+          enable_geo_fencing: boolean | null
+          expiry_date: string | null
           first_name: string
           funding_type: string | null
           gender: string | null
@@ -3942,6 +3946,8 @@ export type Database = {
           referral_route: string | null
           region: string | null
           registered_on: string | null
+          show_in_form_matrix: boolean | null
+          show_in_task_matrix: boolean | null
           status: string | null
           telephone_number: string | null
           temporary_password: string | null
@@ -3952,6 +3958,7 @@ export type Database = {
           additional_information?: string | null
           address?: string | null
           age_group?: Database["public"]["Enums"]["age_group"]
+          agreement_id?: string | null
           auth_user_id?: string | null
           authority_id?: string | null
           auto_generate_invoices?: boolean | null
@@ -3960,12 +3967,15 @@ export type Database = {
           branch_id?: string | null
           client_id?: string | null
           communication_preferences?: string | null
+          core_lead_id?: string | null
           country_code?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
+          enable_geo_fencing?: boolean | null
+          expiry_date?: string | null
           first_name: string
           funding_type?: string | null
           gender?: string | null
@@ -3988,6 +3998,8 @@ export type Database = {
           referral_route?: string | null
           region?: string | null
           registered_on?: string | null
+          show_in_form_matrix?: boolean | null
+          show_in_task_matrix?: boolean | null
           status?: string | null
           telephone_number?: string | null
           temporary_password?: string | null
@@ -3998,6 +4010,7 @@ export type Database = {
           additional_information?: string | null
           address?: string | null
           age_group?: Database["public"]["Enums"]["age_group"]
+          agreement_id?: string | null
           auth_user_id?: string | null
           authority_id?: string | null
           auto_generate_invoices?: boolean | null
@@ -4006,12 +4019,15 @@ export type Database = {
           branch_id?: string | null
           client_id?: string | null
           communication_preferences?: string | null
+          core_lead_id?: string | null
           country_code?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           emergency_contact?: string | null
           emergency_phone?: string | null
+          enable_geo_fencing?: boolean | null
+          expiry_date?: string | null
           first_name?: string
           funding_type?: string | null
           gender?: string | null
@@ -4034,6 +4050,8 @@ export type Database = {
           referral_route?: string | null
           region?: string | null
           registered_on?: string | null
+          show_in_form_matrix?: boolean | null
+          show_in_task_matrix?: boolean | null
           status?: string | null
           telephone_number?: string | null
           temporary_password?: string | null
@@ -4041,6 +4059,13 @@ export type Database = {
           uninvoiced_bookings_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_authority_id_fkey"
             columns: ["authority_id"]
@@ -4053,6 +4078,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clients_core_lead_id_fkey"
+            columns: ["core_lead_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
           {

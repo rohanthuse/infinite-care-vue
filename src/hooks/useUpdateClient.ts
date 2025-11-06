@@ -27,6 +27,12 @@ interface UpdateClientParams {
     registered_on?: string;
     referral_route?: string;
     status?: string;
+    core_lead_id?: string | null;
+    agreement_id?: string | null;
+    expiry_date?: string | null;
+    show_in_task_matrix?: boolean;
+    show_in_form_matrix?: boolean;
+    enable_geo_fencing?: boolean;
   };
 }
 
@@ -40,7 +46,10 @@ const updateClient = async ({ clientId, updates }: UpdateClientParams) => {
   
   // Sanitize updates object
   const sanitizedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
-    if (typeof value === 'string') {
+    // Boolean fields should not be trimmed
+    if (typeof value === 'boolean') {
+      acc[key] = value;
+    } else if (typeof value === 'string') {
       const trimmedValue = value.trim();
       acc[key] = trimmedValue === '' ? null : trimmedValue;
     } else {
@@ -114,6 +123,7 @@ export const useUpdateClient = () => {
       // Invalidate all relevant queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
       queryClient.invalidateQueries({ queryKey: ['client-profile', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['client-general-settings', clientId] });
       queryClient.invalidateQueries({ queryKey: ['admin-client-detail', clientId] });
       queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
       queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
