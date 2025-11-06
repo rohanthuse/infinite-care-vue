@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Calendar, Mail, Link2, Share2, Clock, User, Building2 } from "lucide-react";
+import { exportClientProfileToPDF } from "@/lib/exportEvents";
 import {
   Dialog,
   DialogContent,
@@ -95,20 +96,13 @@ export function ClientProfileSharingDialog({
     });
   };
 
-  const handleExportAndShare = () => {
-    generatePDF({
-      id: client.id,
-      title: `Client Profile for ${client.name}`,
-      date: client.registeredOn,
-      status: client.status,
-      signedBy: "System Generated"
-    });
-
-    toast({
-      title: "Success",
-      description: "Client profile exported successfully. You can now share the PDF file.",
-    });
-    onOpenChange(false);
+  const handleExportAndShare = async () => {
+    try {
+      await exportClientProfileToPDF(client.id);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Export error:', error);
+    }
   };
 
   const generateShareableLink = () => {

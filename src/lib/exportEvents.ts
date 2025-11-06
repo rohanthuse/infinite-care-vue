@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 // Helper function to fetch staff names for a branch
 const fetchStaffNames = async (branchId: string): Promise<Map<string, string>> => {
@@ -1341,4 +1342,689 @@ export const exportEventsListToPDF = (events: ExportableEvent[], filename: strin
   }
 
   pdf.save(`${filename}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+};
+
+// Export Client Profile to PDF with comprehensive information
+export const exportClientProfileToPDF = async (clientId: string, filename?: string) => {
+  const pdf = new jsPDF();
+  
+  try {
+    // Step 1: Fetch client data
+    const { data: clientData, error: clientError } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('id', clientId)
+      .single();
+    
+    if (clientError || !clientData) {
+      console.error('Error fetching client:', clientError);
+      toast({
+        title: "Error",
+        description: "Failed to fetch client data for export",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Step 2: Fetch personal information
+    const { data: personalInfo } = await supabase
+      .from('client_personal_info')
+      .select('*')
+      .eq('client_id', clientId)
+      .maybeSingle();
+    
+    // Step 3: Fetch medical information
+    const { data: medicalInfo } = await supabase
+      .from('client_medical_info')
+      .select('*')
+      .eq('client_id', clientId)
+      .maybeSingle();
+    
+    // Step 4: Fetch organization settings
+    const orgSettings = clientData.branch_id 
+      ? await fetchOrganizationSettings(clientData.branch_id) 
+      : null;
+    
+    // Step 5: Pre-load logo
+    let logoBase64: string | null = null;
+    if (orgSettings?.logo_url) {
+      try {
+        logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+      } catch (error) {
+        console.error('Error loading logo:', error);
+      }
+    }
+    
+    const pageWidth = pdf.internal.pageSize.width;
+    const leftMargin = 20;
+    const rightMargin = pageWidth - 20;
+    
+    // Step 6: Add header
+    let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+    
+    // Step 7: Add report title
+    pdf.setFontSize(18);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(30, 30, 30);
+    pdf.text('Client Profile Report', pageWidth / 2, currentY, { align: 'center' });
+    currentY += 7;
+    
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 12;
+    
+    pdf.setTextColor(0, 0, 0);
+    
+    // Helper to add section header
+    const addSectionHeader = async (title: string) => {
+      if (currentY > 240) {
+        pdf.addPage();
+        currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+      }
+      
+      pdf.setFillColor(245, 247, 250);
+      pdf.rect(leftMargin, currentY - 5, rightMargin - leftMargin, 10, 'F');
+      
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(40, 40, 40);
+      pdf.text(title, leftMargin + 3, currentY);
+      currentY += 8;
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(0, 0, 0);
+    };
+    
+    // Helper to calculate age
+    const calculateAge = (dob: string) => {
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    };
+    
+    // Section 1: Basic Client Information
+    await addSectionHeader('Basic Client Information');
+    
+    const basicClientData = [
+      ['Client ID', clientData.id],
+      ['Full Name', `${clientData.title || ''} ${clientData.first_name || ''} ${clientData.middle_name || ''} ${clientData.last_name || ''}`.trim()],
+      ['Preferred Name', clientData.preferred_name || 'Not provided'],
+      ['Pronouns', clientData.pronouns || 'Not provided'],
+      ['Date of Birth', clientData.date_of_birth ? format(new Date(clientData.date_of_birth), 'PPP') : 'Not provided'],
+      ['Age', clientData.date_of_birth ? `${calculateAge(clientData.date_of_birth)} years` : 'N/A'],
+      ['Gender', clientData.gender || 'Not provided'],
+      ['Other Identifier', clientData.other_identifier || 'Not provided'],
+      ['Status', clientData.status || 'Not provided'],
+      ['Registered On', clientData.registered_on ? format(new Date(clientData.registered_on), 'PPP') : 'Not provided'],
+      ['Referral Route', clientData.referral_route || 'Not provided']
+    ];
+
+    autoTable(pdf, {
+      body: basicClientData,
+      startY: currentY,
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 60,
+          textColor: [40, 40, 40]
+        },
+        1: {
+          cellWidth: 110
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
+    });
+
+    currentY = (pdf as any).lastAutoTable.finalY + 10;
+    
+    // Section 2: Contact Information
+    await addSectionHeader('Contact Information');
+    
+    const contactData = [
+      ['Email', clientData.email || 'Not provided'],
+      ['Phone', clientData.phone || 'Not provided'],
+      ['Telephone', clientData.telephone_number || 'Not provided'],
+      ['Country Code', clientData.country_code || 'Not provided'],
+      ['Full Address', clientData.address || 'Not provided'],
+      ['Region', clientData.region || 'Not provided']
+    ];
+
+    autoTable(pdf, {
+      body: contactData,
+      startY: currentY,
+      theme: 'striped',
+      styles: { 
+        fontSize: 9,
+        cellPadding: 3
+      },
+      columnStyles: { 
+        0: { 
+          fontStyle: 'bold', 
+          fillColor: [240, 243, 246],
+          cellWidth: 60,
+          textColor: [40, 40, 40]
+        },
+        1: {
+          cellWidth: 110
+        }
+      },
+      margin: { left: leftMargin, right: rightMargin }
+    });
+
+    currentY = (pdf as any).lastAutoTable.finalY + 10;
+    
+    // Section 3: Emergency Contact (if available)
+    if (personalInfo) {
+      await addSectionHeader('Emergency Contact Information');
+      
+      const emergencyData = [
+        ['Emergency Contact Name', personalInfo.emergency_contact_name || 'Not provided'],
+        ['Emergency Contact Phone', personalInfo.emergency_contact_phone || 'Not provided'],
+        ['Relationship', personalInfo.emergency_contact_relationship || 'Not provided'],
+        ['Next of Kin Name', personalInfo.next_of_kin_name || 'Not provided'],
+        ['Next of Kin Phone', personalInfo.next_of_kin_phone || 'Not provided'],
+        ['Next of Kin Relationship', personalInfo.next_of_kin_relationship || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: emergencyData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 4: Personal Background
+      await addSectionHeader('Personal Background & Identity');
+      
+      const backgroundData = [
+        ['Ethnicity', personalInfo.ethnicity || 'Not provided'],
+        ['Sexual Orientation', personalInfo.sexual_orientation || 'Not provided'],
+        ['Gender Identity', personalInfo.gender_identity || 'Not provided'],
+        ['Nationality', personalInfo.nationality || 'Not provided'],
+        ['Primary Language', personalInfo.primary_language || 'Not provided'],
+        ['Interpreter Required', personalInfo.interpreter_required ? 'Yes' : 'No'],
+        ['Preferred Interpreter Language', personalInfo.preferred_interpreter_language || 'Not provided'],
+        ['Religion', personalInfo.religion || 'Not provided'],
+        ['Marital Status', personalInfo.marital_status || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: backgroundData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 5: Home Information
+      await addSectionHeader('Home Information');
+      
+      const homeData = [
+        ['Property Type', personalInfo.property_type || 'Not provided'],
+        ['Living Arrangement', personalInfo.living_arrangement || 'Not provided'],
+        ['Home Accessibility', personalInfo.home_accessibility || 'Not provided'],
+        ['Pets', personalInfo.pets || 'Not provided'],
+        ['Key Safe Location', personalInfo.key_safe_location || 'Not provided'],
+        ['Parking Availability', personalInfo.parking_availability || 'Not provided'],
+        ['Emergency Access', personalInfo.emergency_access || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: homeData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 6: Accessibility & Communication
+      await addSectionHeader('Accessibility & Communication');
+      
+      const accessibilityData = [
+        ['Sensory Impairment', personalInfo.sensory_impairment || 'Not provided'],
+        ['Communication Aids', personalInfo.communication_aids || 'Not provided'],
+        ['Preferred Communication Method', personalInfo.preferred_communication_method || 'Not provided'],
+        ['Hearing Difficulties', personalInfo.hearing_difficulties ? 'Yes' : 'No'],
+        ['Vision Difficulties', personalInfo.vision_difficulties ? 'Yes' : 'No'],
+        ['Speech Difficulties', personalInfo.speech_difficulties ? 'Yes' : 'No'],
+        ['Cognitive Impairment', personalInfo.cognitive_impairment ? 'Yes' : 'No'],
+        ['Mobility Aids', personalInfo.mobility_aids || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: accessibilityData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 7: GP & Medical Services
+      await addSectionHeader('GP & Medical Services');
+      
+      const gpData = [
+        ['GP Name', personalInfo.gp_name || 'Not provided'],
+        ['GP Surgery Name', personalInfo.gp_surgery_name || 'Not provided'],
+        ['GP Surgery Address', personalInfo.gp_surgery_address || 'Not provided'],
+        ['GP Surgery Phone', personalInfo.gp_surgery_phone || 'Not provided'],
+        ['GP Surgery ODS Code', personalInfo.gp_surgery_ods_code || 'Not provided'],
+        ['Pharmacy Name', personalInfo.pharmacy_name || 'Not provided'],
+        ['Pharmacy Address', personalInfo.pharmacy_address || 'Not provided'],
+        ['Pharmacy Phone', personalInfo.pharmacy_phone || 'Not provided'],
+        ['Pharmacy ODS Code', personalInfo.pharmacy_ods_code || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: gpData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 8: Care Preferences
+      await addSectionHeader('Care Preferences');
+      
+      const preferencesData = [
+        ['Cultural Preferences', personalInfo.cultural_preferences || 'Not provided'],
+        ['Language Preferences', personalInfo.language_preferences || 'Not provided'],
+        ['Preferred Communication', personalInfo.preferred_communication || 'Not provided']
+      ];
+
+      autoTable(pdf, {
+        body: preferencesData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 9: Likes & Preferences (Do's & Don'ts)
+      if (personalInfo.likes_preferences || personalInfo.dislikes_restrictions || personalInfo.dos || personalInfo.donts) {
+        await addSectionHeader("Do's & Don'ts");
+        
+        if (personalInfo.likes_preferences) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Likes & Preferences:', leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(9);
+          const likesLines = pdf.splitTextToSize(personalInfo.likes_preferences, 160);
+          pdf.text(likesLines, leftMargin + 5, currentY);
+          currentY += (likesLines.length * 5) + 5;
+        }
+        
+        if (personalInfo.dislikes_restrictions) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Dislikes & Restrictions:', leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(9);
+          const dislikesLines = pdf.splitTextToSize(personalInfo.dislikes_restrictions, 160);
+          pdf.text(dislikesLines, leftMargin + 5, currentY);
+          currentY += (dislikesLines.length * 5) + 5;
+        }
+        
+        if (personalInfo.dos) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text("Do's:", leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(9);
+          const dosLines = pdf.splitTextToSize(personalInfo.dos, 160);
+          pdf.text(dosLines, leftMargin + 5, currentY);
+          currentY += (dosLines.length * 5) + 5;
+        }
+        
+        if (personalInfo.donts) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text("Don'ts:", leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(9);
+          const dontsLines = pdf.splitTextToSize(personalInfo.donts, 160);
+          pdf.text(dontsLines, leftMargin + 5, currentY);
+          currentY += (dontsLines.length * 5) + 10;
+        }
+      }
+      
+      // Section 10: Goals & Outcomes
+      if (personalInfo.personal_goals || personalInfo.desired_outcomes || personalInfo.success_measures || personalInfo.priority_areas) {
+        await addSectionHeader('Goals & Desired Outcomes');
+        
+        const goalsData = [];
+        if (personalInfo.personal_goals) goalsData.push(['Personal Goals', personalInfo.personal_goals]);
+        if (personalInfo.desired_outcomes) goalsData.push(['Desired Outcomes', personalInfo.desired_outcomes]);
+        if (personalInfo.success_measures) goalsData.push(['Success Measures', personalInfo.success_measures]);
+        if (personalInfo.priority_areas) goalsData.push(['Priority Areas', personalInfo.priority_areas]);
+
+        autoTable(pdf, {
+          body: goalsData,
+          startY: currentY,
+          theme: 'striped',
+          styles: { 
+            fontSize: 9,
+            cellPadding: 3
+          },
+          columnStyles: { 
+            0: { 
+              fontStyle: 'bold', 
+              fillColor: [240, 243, 246],
+              cellWidth: 60,
+              textColor: [40, 40, 40]
+            },
+            1: {
+              cellWidth: 110
+            }
+          },
+          margin: { left: leftMargin, right: rightMargin }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+      
+      // Section 11: General Care Information
+      await addSectionHeader('General Care Information');
+      
+      const generalData = [
+        ['Main Reasons for Care', personalInfo.main_reasons_for_care || 'Not provided'],
+        ['Used Other Care Providers', personalInfo.used_other_care_providers ? 'Yes' : 'No'],
+        ['Fallen in Past 6 Months', personalInfo.fallen_past_six_months ? 'Yes' : 'No'],
+        ['Has Assistance Device', personalInfo.has_assistance_device ? 'Yes' : 'No'],
+        ['Arrange Assistance Device', personalInfo.arrange_assistance_device ? 'Yes' : 'No'],
+        ['Bereavement in Past 2 Years', personalInfo.bereavement_past_two_years ? 'Yes' : 'No']
+      ];
+
+      autoTable(pdf, {
+        body: generalData,
+        startY: currentY,
+        theme: 'striped',
+        styles: { 
+          fontSize: 9,
+          cellPadding: 3
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [240, 243, 246],
+            cellWidth: 60,
+            textColor: [40, 40, 40]
+          },
+          1: {
+            cellWidth: 110
+          }
+        },
+        margin: { left: leftMargin, right: rightMargin }
+      });
+
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+      
+      // Section 12: Warnings & Instructions
+      if ((Array.isArray(personalInfo.warnings) && personalInfo.warnings.length > 0) || (Array.isArray(personalInfo.instructions) && personalInfo.instructions.length > 0)) {
+        await addSectionHeader('Warnings & Instructions');
+        
+        if (Array.isArray(personalInfo.warnings) && personalInfo.warnings.length > 0) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Warnings:', leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(9);
+          personalInfo.warnings.forEach((warning: string) => {
+            pdf.text(`• ${warning}`, leftMargin + 5, currentY);
+            currentY += 5;
+          });
+          currentY += 5;
+        }
+        
+        if (Array.isArray(personalInfo.instructions) && personalInfo.instructions.length > 0) {
+          pdf.setFontSize(10);
+          pdf.setFont(undefined, 'bold');
+          pdf.text('Instructions:', leftMargin, currentY);
+          currentY += 5;
+          
+          pdf.setFont(undefined, 'normal');
+          pdf.setFontSize(9);
+          personalInfo.instructions.forEach((instruction: string) => {
+            pdf.text(`• ${instruction}`, leftMargin + 5, currentY);
+            currentY += 5;
+          });
+          currentY += 5;
+        }
+      }
+      
+      // Section 13: Important Occasions
+      if (personalInfo.important_occasions && Array.isArray(personalInfo.important_occasions) && personalInfo.important_occasions.length > 0) {
+        await addSectionHeader('Important Occasions');
+        
+        const occasionsData = personalInfo.important_occasions.map((occasion: any) => [
+          occasion.occasion || 'Not specified',
+          occasion.date ? format(new Date(occasion.date), 'PPP') : 'No date provided'
+        ]);
+
+        autoTable(pdf, {
+          head: [['Occasion', 'Date']],
+          body: occasionsData,
+          startY: currentY,
+          theme: 'striped',
+          styles: { 
+            fontSize: 9,
+            cellPadding: 3
+          },
+          headStyles: {
+            fillColor: [240, 243, 246],
+            textColor: [40, 40, 40],
+            fontStyle: 'bold'
+          },
+          margin: { left: leftMargin, right: rightMargin }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+    
+    // Section 14: Medical Information (if available)
+    if (medicalInfo) {
+      await addSectionHeader('Medical Information');
+      
+      const medicalData = [];
+      if (medicalInfo.allergies && Array.isArray(medicalInfo.allergies) && medicalInfo.allergies.length > 0) {
+        medicalData.push(['Allergies', medicalInfo.allergies.join(', ')]);
+      }
+      if (medicalInfo.current_medications && Array.isArray(medicalInfo.current_medications) && medicalInfo.current_medications.length > 0) {
+        medicalData.push(['Current Medications', medicalInfo.current_medications.join(', ')]);
+      }
+      if (medicalInfo.medical_conditions && Array.isArray(medicalInfo.medical_conditions) && medicalInfo.medical_conditions.length > 0) {
+        medicalData.push(['Medical Conditions', medicalInfo.medical_conditions.join(', ')]);
+      }
+      if (medicalInfo.mobility_status) medicalData.push(['Mobility Status', medicalInfo.mobility_status]);
+
+      if (medicalData.length > 0) {
+        autoTable(pdf, {
+          body: medicalData,
+          startY: currentY,
+          theme: 'striped',
+          styles: { 
+            fontSize: 9,
+            cellPadding: 3
+          },
+          columnStyles: { 
+            0: { 
+              fontStyle: 'bold', 
+              fillColor: [240, 243, 246],
+              cellWidth: 60,
+              textColor: [40, 40, 40]
+            },
+            1: {
+              cellWidth: 110
+            }
+          },
+          margin: { left: leftMargin, right: rightMargin }
+        });
+
+        currentY = (pdf as any).lastAutoTable.finalY + 10;
+      }
+    }
+    
+    // Section 15: Additional Notes
+    if (clientData.additional_information) {
+      await addSectionHeader('Additional Notes');
+      
+      pdf.setDrawColor(220, 220, 220);
+      pdf.setFillColor(252, 252, 252);
+      
+      pdf.setFontSize(9);
+      pdf.setFont(undefined, 'normal');
+      const splitNotes = pdf.splitTextToSize(clientData.additional_information, 160);
+      
+      const boxHeight = (splitNotes.length * 5) + 10;
+      pdf.rect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 'FD');
+      
+      pdf.text(splitNotes, leftMargin + 5, currentY + 7);
+      currentY += boxHeight + 10;
+    }
+    
+    // Add footers to all pages
+    const totalPages = pdf.internal.pages.length - 1;
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      addPDFFooter(pdf, orgSettings, i, totalPages);
+    }
+    
+    // Save PDF
+    const pdfFilename = filename || `client-profile-${clientData.first_name}-${clientData.last_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    pdf.save(pdfFilename);
+    
+    toast({
+      title: "Success",
+      description: "Client profile exported successfully.",
+    });
+    
+  } catch (error) {
+    console.error('Error generating client profile PDF:', error);
+    toast({
+      title: "Error",
+      description: "Failed to generate PDF. Please try again.",
+      variant: "destructive"
+    });
+  }
 };
