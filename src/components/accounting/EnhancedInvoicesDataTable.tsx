@@ -483,6 +483,7 @@ const EnhancedInvoicesDataTable: React.FC<EnhancedInvoicesDataTableProps> = ({
         open={expensesDialogOpen}
         onOpenChange={setExpensesDialogOpen}
         invoiceId={selectedInvoiceForExpenses}
+        branchId={branchId}
       />
 
       {/* Empty State */}
