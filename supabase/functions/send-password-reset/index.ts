@@ -43,29 +43,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Create admin client to generate reset token
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Check if user exists using more efficient getUserByEmail method
-    console.log('[send-password-reset] Looking up user by email...');
-    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-    
-    if (userError) {
-      console.error('[send-password-reset] Error looking up user:', userError);
-      // Don't reveal if user exists (security best practice)
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders }
-      });
-    }
-    
-    if (!userData.user) {
-      // Don't reveal if user exists (security best practice)
-      console.log('[send-password-reset] User not found, but responding with success for security');
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders }
-      });
-    }
-
-    console.log('[send-password-reset] User found, generating reset link for user ID:', userData.user.id);
+    console.log('[send-password-reset] Attempting to generate reset link...');
 
     // Generate password reset link with custom redirect
     const defaultRedirectTo = `${Deno.env.get("VITE_SITE_URL") || "https://medinfinite.com"}/reset-password`;
