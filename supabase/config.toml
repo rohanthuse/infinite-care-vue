@@ -72,3 +72,6 @@ verify_jwt = false
 
 [functions.news2-ai-recommendations]
 verify_jwt = true
+
+[functions.send-password-reset]
+verify_jwt = false

@@ -13,6 +13,7 @@ import { AuthErrorBoundary } from "@/components/AuthErrorBoundary";
 import { NavigationGuard } from "@/components/NavigationGuard";
 import Index from "./pages/Index";
 import UnifiedLogin from "./components/UnifiedLogin";
+import ResetPassword from "./pages/ResetPassword";
 import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -76,6 +77,7 @@ const AppContent = () => {
     '/', 
     '/demo-request',
     '/login',
+    '/reset-password',
     '/branch-admin-login',
     '/branch-selection',
     '/client-login', 
@@ -111,6 +113,7 @@ const AppContent = () => {
               <Route path="/" element={<Index />} />
               <Route path="/demo-request" element={<DemoRequest />} />
               <Route path="/login" element={<UnifiedLogin />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               {/* Redirect old super-admin route to main page */}
               <Route path="/super-admin" element={<Index />} />
               <Route path="/branch-admin-login" element={<BranchAdminLogin />} />

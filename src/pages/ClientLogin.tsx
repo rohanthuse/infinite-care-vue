@@ -15,6 +15,7 @@ const ClientLogin = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -82,6 +83,44 @@ const ClientLogin = () => {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address first",
+      });
+      return;
+    }
+    
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: { 
+          email, 
+          redirectTo: `${window.location.origin}/reset-password` 
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email Sent",
+        description: "Password reset link sent to your email. Please check your inbox.",
+      });
+    } catch (error: any) {
+      console.error('[ClientLogin] Password reset error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to send reset email. Please try again.",
+      });
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
@@ -164,8 +203,10 @@ const ClientLogin = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-500">
-                  Forgot password?
+                <a href="#" 
+                   className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                   onClick={handleForgotPassword}>
+                  {resetLoading ? "Sending..." : "Forgot password?"}
                 </a>
               </div>
               <div className="relative">

@@ -504,17 +504,21 @@ const UnifiedLogin = () => {
 
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: {
+          email: email,
+          redirectTo: `${window.location.origin}/reset-password`
+        }
       });
 
       if (error) {
         throw error;
       }
 
-      toast.success("Password reset link sent to your email");
+      toast.success("Password reset link sent to your email. Please check your inbox.");
     } catch (error: any) {
-      toast.error(error.message || "Failed to send reset email");
+      console.error('[UnifiedLogin] Password reset error:', error);
+      toast.error(error.message || "Failed to send reset email. Please try again.");
     } finally {
       setResetLoading(false);
     }

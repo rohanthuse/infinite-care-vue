@@ -14,6 +14,7 @@ const BranchAdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -192,6 +193,44 @@ const BranchAdminLogin = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address first",
+      });
+      return;
+    }
+    
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: { 
+          email, 
+          redirectTo: `${window.location.origin}/reset-password` 
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Email Sent",
+        description: "Password reset link sent to your email. Please check your inbox.",
+      });
+    } catch (error: any) {
+      console.error('[BranchAdminLogin] Password reset error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to send reset email. Please try again.",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <div className="login-page-light min-h-screen flex">
       {/* Left Side - Blue Gradient */}
@@ -289,9 +328,9 @@ const BranchAdminLogin = () => {
                 <a
                   href="#"
                   className="text-sm text-primary hover:text-primary/80"
-                  onClick={(e) => e.preventDefault()}
+                  onClick={handleForgotPassword}
                 >
-                  Forgot password?
+                  {resetLoading ? "Sending..." : "Forgot password?"}
                 </a>
               </div>
               <div className="relative mt-1">
