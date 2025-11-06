@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, FileCheck, Clock, History, AlertCircle, Users, PenLine, FileText, Eye, Check } from "lucide-react";
+import { Download, FileCheck, Clock, AlertCircle, Users, PenLine, FileText, Eye, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,9 @@ import { useAgreementSigners } from "@/hooks/useAgreementSigners";
 import { useSignAgreementBySigner } from "@/hooks/useSignAgreementBySigner";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
 import { EnhancedSignatureCanvas } from "./EnhancedSignatureCanvas";
-import { AdminApprovalPanel } from "./AdminApprovalPanel";
+import { ViewSignatureModal } from "./ViewSignatureModal";
+import { useApproveSignerSignature } from "@/hooks/useApproveSignerSignature";
+import { useSignatureFile } from "@/hooks/useSignatureFile";
 import {
   Select,
   SelectContent,
@@ -67,9 +69,16 @@ export function ViewAgreementDialog({
   const [showSigningCanvas, setShowSigningCanvas] = useState(false);
   const [currentSignature, setCurrentSignature] = useState("");
   const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [viewSignatureModal, setViewSignatureModal] = useState<{
+    open: boolean;
+    signerName: string;
+    signatureFileId: string | null;
+  }>({ open: false, signerName: '', signatureFileId: null });
 
   const { data: signers = [], isLoading: signersLoading } = useAgreementSigners(agreement?.id);
   const signMutation = useSignAgreementBySigner();
+  const approveSignerMutation = useApproveSignerSignature();
+  const { data: signatureUrl } = useSignatureFile(viewSignatureModal.signatureFileId);
   
   // Fetch user roles
   useEffect(() => {
@@ -114,6 +123,22 @@ export function ViewAgreementDialog({
       onOpenChange(false);
     } catch (error) {
       console.error('Error signing agreement:', error);
+    }
+  };
+  
+  const handleViewSignature = (signerName: string, signatureFileId: string | null) => {
+    setViewSignatureModal({
+      open: true,
+      signerName,
+      signatureFileId
+    });
+  };
+  
+  const handleApproveSigner = async (signerId: string, signerName: string) => {
+    try {
+      await approveSignerMutation.mutateAsync({ signerId, signerName });
+    } catch (error) {
+      console.error('Error approving signer:', error);
     }
   };
   
@@ -261,9 +286,6 @@ export function ViewAgreementDialog({
                 <div className="flex gap-2 pt-4 border-t">
                   <Button variant="outline" size="sm" onClick={() => setShowStatusForm(true)}>
                     <FileCheck className="mr-2 h-4 w-4" /> Change Status
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
-                    <History className="mr-2 h-4 w-4" /> View History
                   </Button>
                 </div>
               )}
@@ -417,29 +439,61 @@ export function ViewAgreementDialog({
                   )}
                   
                   {/* Other Signers (Admin view) */}
-                  {isAdmin && signers.filter(s => s.signing_status === 'signed').length > 0 && (
+                  {isAdmin && signers.filter(s => s.signing_status === 'signed' || s.signing_status === 'approved').length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         Other Signers
                       </p>
                       {signers
-                        .filter(s => s.signing_status === 'signed')
+                        .filter(s => s.signing_status === 'signed' || s.signing_status === 'approved')
                         .map(signer => (
-                          <div key={signer.id} className="p-3 bg-muted/30 border rounded-lg">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="font-medium text-sm">{signer.signer_name}</p>
-                              <Badge variant="success" className="text-xs">
-                                <Check className="h-3 w-3 mr-1" />
-                                Signed
-                              </Badge>
+                          <div key={signer.id} className="p-3 bg-card border rounded-lg space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{signer.signer_name}</p>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                  {signer.signer_type}
+                                </p>
+                                {signer.signed_at && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
+                                  </p>
+                                )}
+                              </div>
+                              {signer.signing_status === 'approved' ? (
+                                <Badge variant="default" className="bg-green-600">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Approved
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="bg-blue-600 text-white">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Signed
+                                </Badge>
+                              )}
                             </div>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {signer.signer_type}
-                            </p>
-                            {signer.signed_at && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
-                              </p>
+                            {signer.signing_status === 'signed' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => handleViewSignature(signer.signer_name, signer.signature_file_id)}
+                                >
+                                  <Eye className="mr-1 h-3 w-3" />
+                                  View Signature
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => handleApproveSigner(signer.id, signer.signer_name)}
+                                  disabled={approveSignerMutation.isPending}
+                                >
+                                  <Check className="mr-1 h-3 w-3" />
+                                  Approve
+                                </Button>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -513,50 +567,13 @@ export function ViewAgreementDialog({
           </div>
         )}
         
-        {/* History Modal */}
-        {showHistory && (agreement.statusHistory?.length || 0) > 0 && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center" onClick={() => setShowHistory(false)}>
-            <div className="bg-white rounded-lg p-6 space-y-4 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center">
-                <h3 className="font-medium text-lg">Status History</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowHistory(false)}
-                >
-                  Close
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {agreement.statusHistory?.map((change, index) => (
-                  <div key={index} className="border-b pb-2 last:border-0">
-                    <div className="flex justify-between">
-                      <Badge 
-                        variant={getStatusBadgeVariant(change.status)}
-                      >
-                        {change.status}
-                      </Badge>
-                      <span className="text-sm text-gray-500">{change.date}</span>
-                    </div>
-                    <div className="text-sm mt-1">
-                      <span className="font-medium">Reason:</span> {change.reason}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Changed by: {change.changedBy}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Admin Approval Panel */}
-        {isAdmin && agreement && (
-          <div className="px-6 pb-4 border-t pt-4">
-            <AdminApprovalPanel agreement={agreement} onClose={() => onOpenChange(false)} />
-          </div>
-        )}
+        {/* Signature View Modal */}
+        <ViewSignatureModal
+          open={viewSignatureModal.open}
+          onOpenChange={(open) => setViewSignatureModal(prev => ({ ...prev, open }))}
+          signerName={viewSignatureModal.signerName}
+          signatureUrl={signatureUrl || null}
+        />
         
         <DialogFooter className="sticky bottom-0 w-full px-6 py-4 border-t bg-white">
           <Button 

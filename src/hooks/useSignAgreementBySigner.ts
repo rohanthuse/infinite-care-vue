@@ -14,12 +14,61 @@ const signAgreementBySigner = async (params: SignAgreementParams) => {
   
   console.log('[useSignAgreementBySigner] Signing agreement:', { agreementId, signerId });
   
+  let finalSignatureFileId = signatureFileId;
+  
+  // If signature data is provided but no file ID, save the signature
+  if (signatureData && !signatureFileId) {
+    try {
+      // Convert base64 to blob
+      const base64Response = await fetch(signatureData);
+      const blob = await base64Response.blob();
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Upload to storage
+      const fileName = `signature_${signerId}_${Date.now()}.png`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('agreement-files')
+        .upload(`signatures/${fileName}`, blob, {
+          contentType: 'image/png',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        console.error('[useSignAgreementBySigner] Upload error:', uploadError);
+      } else if (uploadData) {
+        // Create agreement_files record
+        const { data: fileRecord, error: fileError } = await supabase
+          .from('agreement_files')
+          .insert({
+            agreement_id: agreementId,
+            file_name: fileName,
+            file_type: 'image/png',
+            file_size: blob.size,
+            storage_path: uploadData.path,
+            file_category: 'signature',
+            uploaded_by: user?.id
+          })
+          .select('id')
+          .single();
+        
+        if (!fileError && fileRecord) {
+          finalSignatureFileId = fileRecord.id;
+          console.log('[useSignAgreementBySigner] Signature file created:', fileRecord.id);
+        }
+      }
+    } catch (error) {
+      console.error('[useSignAgreementBySigner] Error saving signature file:', error);
+    }
+  }
+  
   // Update the signer record
   const { error: signerError } = await supabase
     .from('agreement_signers')
     .update({
       signed_at: new Date().toISOString(),
-      signature_file_id: signatureFileId || null,
+      signature_file_id: finalSignatureFileId || null,
       signing_status: 'signed'
     })
     .eq('id', signerId);
