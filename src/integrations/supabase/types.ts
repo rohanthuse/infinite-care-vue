@@ -7637,6 +7637,44 @@ export type Database = {
           },
         ]
       }
+      staff_notes: {
+        Row: {
+          author: string
+          content: string
+          created_at: string
+          id: string
+          staff_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author: string
+          content: string
+          created_at?: string
+          id?: string
+          staff_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          content?: string
+          created_at?: string
+          id?: string
+          staff_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_notes_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_performance_reviews: {
         Row: {
           action_items: Json | null

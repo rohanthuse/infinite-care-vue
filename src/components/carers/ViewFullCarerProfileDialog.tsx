@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { 
   User, Mail, Phone, Briefcase, Calendar, CheckCircle, Share2,
   AlertTriangle, Star, GraduationCap, FileText, UserPlus, ClipboardList,
-  Award, Heart, DollarSign, Settings
+  Award, Heart, DollarSign, Settings, MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +35,7 @@ import { CarerMeetingsTab } from "@/components/carer-profile/CarerMeetingsTab";
 import { CarerDocumentsTab } from "@/components/carer-profile/CarerDocumentsTab";
 import { CarerRateTab } from "@/components/carer-profile/CarerRateTab";
 import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
+import { CarerNotesTab } from "@/components/carer-profile/CarerNotesTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 
 interface ViewFullCarerProfileDialogProps {
@@ -60,6 +61,7 @@ export function ViewFullCarerProfileDialog({
     { value: "personal", label: "Personal", icon: User },
     { value: "communication", label: "Communication", icon: Mail },
     { value: "suspend", label: "Suspend", icon: AlertTriangle },
+    { value: "notes", label: "Notes", icon: MessageCircle },
     { value: "quality", label: "Quality", icon: Star },
     { value: "attendance", label: "Attendance", icon: Calendar },
     { value: "essentials", label: "Essentials", icon: CheckCircle },
@@ -232,6 +234,7 @@ export function ViewFullCarerProfileDialog({
                     {activeTab === "personal" && <CarerPersonalDetailsTab carerId={carerId} />}
                     {activeTab === "communication" && <CarerCommunicationTab carerId={carerId} />}
                     {activeTab === "suspend" && <CarerSuspendTab carerId={carerId} />}
+                    {activeTab === "notes" && <CarerNotesTab carerId={carerId} />}
                     {activeTab === "quality" && <CarerQualityAssuranceTab carerId={carerId} />}
                     {activeTab === "attendance" && <CarerAttendanceTab carerId={carerId} />}
                     {activeTab === "essentials" && <CarerEssentialsTab carerId={carerId} />}
