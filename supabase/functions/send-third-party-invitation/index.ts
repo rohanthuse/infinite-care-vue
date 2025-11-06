@@ -94,7 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
-      from: "Med-Infinite <onboarding@resend.dev>",
+      from: "Med-Infinite <noreply@med-infinite.care>",
       to: [request.email],
       subject: "Third-Party Access Invitation - Med-Infinite",
       html,

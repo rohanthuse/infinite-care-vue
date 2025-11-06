@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send the invitation email
     const emailResponse = await resend.emails.send({
-      from: "Med-Infinite <onboarding@resend.dev>",
+      from: "Med-Infinite <noreply@med-infinite.care>",
       to: [email],
       subject: "Welcome to Med-Infinite - Complete Your Carer Account Setup",
       html,

@@ -132,7 +132,7 @@ serve(async (req) => {
 
         // Send email using Resend
         const { error: sendError } = await resend.emails.send({
-          from: "Med-Infinite <onboarding@resend.dev>",
+          from: "Med-Infinite <noreply@med-infinite.care>",
           to: [email.recipient_email],
           subject: email.subject,
           html,

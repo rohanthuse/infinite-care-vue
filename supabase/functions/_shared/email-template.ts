@@ -34,8 +34,10 @@ export const generateMedInfiniteEmailHTML = (props: EmailTemplateProps): string 
       <div class="email-container">
         <!-- Header -->
         <div class="header">
-          <h1 class="logo-text">Med-Infinite</h1>
-          <p class="tagline">Healthcare Management System</p>
+          <img src="https://med-infinite.care/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" 
+               alt="Med-Infinite Logo" 
+               style="height: 48px; margin-bottom: 12px;" />
+          <p class="tagline">Care Management Platform</p>
         </div>
         
         <!-- Content -->
@@ -45,7 +47,7 @@ export const generateMedInfiniteEmailHTML = (props: EmailTemplateProps): string 
         
         <!-- Footer -->
         <div class="footer">
-          <p class="footer-text"><strong>Med-Infinite Healthcare Management</strong></p>
+          <p class="footer-text"><strong>Med-Infinite</strong></p>
           <p class="footer-text">
             <a href="https://med-infinite.care" class="footer-link">www.med-infinite.care</a>
           </p>
