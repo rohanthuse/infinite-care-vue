@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { generateMedInfiniteEmailHTML } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -41,150 +42,145 @@ interface TrainingMetricsEmailData {
   subject?: string;
 }
 
-const generateTrainingMetricsHTML = (data: TrainingMetricsEmailData) => {
+const generateTrainingMetricsContent = (data: TrainingMetricsEmailData) => {
   const { branchName, metrics, reportDate } = data;
   
   return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Training Metrics Report - ${branchName}</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-        .container { max-width: 800px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #4f46e5; padding-bottom: 20px; }
-        .logo { font-size: 24px; font-weight: bold; color: #4f46e5; margin-bottom: 10px; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
-        .metric-card { background: #f8fafc; padding: 15px; border-radius: 6px; text-align: center; border-left: 4px solid #4f46e5; }
-        .metric-value { font-size: 24px; font-weight: bold; color: #1e293b; }
-        .metric-label { font-size: 12px; color: #64748b; margin-top: 5px; }
-        .section { margin: 30px 0; }
-        .section-title { font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
-        th { background-color: #f8fafc; font-weight: 600; color: #374151; }
-        .compliance-high { color: #059669; font-weight: bold; }
-        .compliance-medium { color: #d97706; font-weight: bold; }
-        .compliance-low { color: #dc2626; font-weight: bold; }
-        .alert-section { background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 15px; margin: 20px 0; }
-        .alert-title { color: #dc2626; font-weight: bold; margin-bottom: 10px; }
-        .overdue-item { margin: 5px 0; padding: 8px; background: white; border-radius: 4px; }
-        .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 12px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <div class="logo">Training Metrics Report</div>
-          <h1>${branchName}</h1>
-          <p>Generated on ${new Date(reportDate).toLocaleDateString('en-GB', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}</p>
-        </div>
+    <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+      <h2 style="color: #1e40af; margin: 0 0 8px 0;">Training Metrics Report</h2>
+      <p style="color: #1e40af; margin: 0; font-size: 18px; font-weight: 600;">${branchName}</p>
+      <p style="color: #64748b; margin: 8px 0 0 0; font-size: 14px;">
+        Generated on ${new Date(reportDate).toLocaleDateString('en-GB', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })}
+      </p>
+    </div>
 
-        <div class="section">
-          <div class="section-title">Executive Summary</div>
-          <div class="summary-grid">
-            <div class="metric-card">
-              <div class="metric-value">${metrics.summary.totalStaff}</div>
-              <div class="metric-label">Total Staff</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value ${metrics.summary.overallComplianceRate >= 80 ? 'compliance-high' : metrics.summary.overallComplianceRate >= 60 ? 'compliance-medium' : 'compliance-low'}">${metrics.summary.overallComplianceRate}%</div>
-              <div class="metric-label">Overall Compliance</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value" style="color: ${metrics.summary.overdueTrainings > 0 ? '#dc2626' : '#059669'}">${metrics.summary.overdueTrainings}</div>
-              <div class="metric-label">Overdue Trainings</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value" style="color: ${metrics.summary.expiringTrainings > 0 ? '#d97706' : '#059669'}">${metrics.summary.expiringTrainings}</div>
-              <div class="metric-label">Expiring Soon</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value">${metrics.summary.completedThisMonth}</div>
-              <div class="metric-label">Completed This Month</div>
-            </div>
+    <div style="margin: 24px 0;">
+      <h3 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+        Executive Summary
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+        <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border-left: 4px solid #2563eb;">
+          <div style="font-size: 24px; font-weight: bold; color: #1e293b;">${metrics.summary.totalStaff}</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Total Staff</div>
+        </div>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border-left: 4px solid ${metrics.summary.overallComplianceRate >= 80 ? '#059669' : metrics.summary.overallComplianceRate >= 60 ? '#d97706' : '#dc2626'};">
+          <div style="font-size: 24px; font-weight: bold; color: ${metrics.summary.overallComplianceRate >= 80 ? '#059669' : metrics.summary.overallComplianceRate >= 60 ? '#d97706' : '#dc2626'};">
+            ${metrics.summary.overallComplianceRate}%
           </div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Overall Compliance</div>
         </div>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border-left: 4px solid ${metrics.summary.overdueTrainings > 0 ? '#dc2626' : '#059669'};">
+          <div style="font-size: 24px; font-weight: bold; color: ${metrics.summary.overdueTrainings > 0 ? '#dc2626' : '#059669'};">
+            ${metrics.summary.overdueTrainings}
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Overdue Trainings</div>
+        </div>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border-left: 4px solid ${metrics.summary.expiringTrainings > 0 ? '#d97706' : '#059669'};">
+          <div style="font-size: 24px; font-weight: bold; color: ${metrics.summary.expiringTrainings > 0 ? '#d97706' : '#059669'};">
+            ${metrics.summary.expiringTrainings}
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Expiring Soon</div>
+        </div>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 6px; border-left: 4px solid #2563eb;">
+          <div style="font-size: 24px; font-weight: bold; color: #1e293b;">${metrics.summary.completedThisMonth}</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Completed This Month</div>
+        </div>
+      </div>
+    </div>
 
-        ${metrics.summary.overdueTrainings > 0 ? `
-        <div class="alert-section">
-          <div class="alert-title">⚠️ Urgent Action Required</div>
-          <p><strong>${metrics.summary.overdueTrainings}</strong> training records are overdue and require immediate attention.</p>
-          <div>
-            ${metrics.staffMetrics.filter(s => s.overdue > 0).map(staff => `
-              <div class="overdue-item">
-                <strong>${staff.staffName}</strong> - ${staff.overdue} overdue training(s)
-                ${staff.overdueTrainings.map(t => `
-                  <div style="margin-left: 20px; color: #dc2626;">• ${t.trainingTitle} (${t.daysPastDue} days overdue)</div>
-                `).join('')}
+    ${metrics.summary.overdueTrainings > 0 ? `
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 24px 0; border-left: 4px solid #dc2626;">
+      <div style="color: #dc2626; font-weight: bold; margin-bottom: 12px; font-size: 16px;">⚠️ Urgent Action Required</div>
+      <p style="margin: 0 0 16px 0; color: #991b1b; font-size: 14px;">
+        <strong>${metrics.summary.overdueTrainings}</strong> training records are overdue and require immediate attention.
+      </p>
+      <div>
+        ${metrics.staffMetrics.filter(s => s.overdue > 0).map(staff => `
+          <div style="margin: 8px 0; padding: 12px; background: white; border-radius: 6px;">
+            <strong style="color: #1f2937;">${staff.staffName}</strong> - <span style="color: #dc2626;">${staff.overdue} overdue training(s)</span>
+            ${staff.overdueTrainings.map(t => `
+              <div style="margin-left: 20px; color: #dc2626; font-size: 13px; margin-top: 4px;">
+                • ${t.trainingTitle} <span style="font-weight: bold;">(${t.daysPastDue} days overdue)</span>
               </div>
             `).join('')}
           </div>
-        </div>
-        ` : ''}
-
-        <div class="section">
-          <div class="section-title">Staff Training Compliance</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Staff Member</th>
-                <th>Specialization</th>
-                <th>Compliance Rate</th>
-                <th>Overdue</th>
-                <th>Expiring Soon</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${metrics.staffMetrics.map(staff => `
-                <tr>
-                  <td><strong>${staff.staffName}</strong></td>
-                  <td>${staff.specialization || 'General'}</td>
-                  <td class="${staff.complianceRate >= 80 ? 'compliance-high' : staff.complianceRate >= 60 ? 'compliance-medium' : 'compliance-low'}">${staff.complianceRate}%</td>
-                  <td style="color: ${staff.overdue > 0 ? '#dc2626' : '#059669'}">${staff.overdue}</td>
-                  <td style="color: ${staff.expiring > 0 ? '#d97706' : '#059669'}">${staff.expiring}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Training Category Performance</div>
-          <table>
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th>Compliance Rate</th>
-                <th>Overdue Records</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${metrics.categoryMetrics.map(category => `
-                <tr>
-                  <td><strong>${category.category}</strong></td>
-                  <td class="${category.complianceRate >= 80 ? 'compliance-high' : category.complianceRate >= 60 ? 'compliance-medium' : 'compliance-low'}">${category.complianceRate}%</td>
-                  <td style="color: ${category.overdue > 0 ? '#dc2626' : '#059669'}">${category.overdue}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="footer">
-          <p>This report was generated automatically by the Training Management System.</p>
-          <p>For questions or concerns, please contact your system administrator.</p>
-        </div>
+        `).join('')}
       </div>
-    </body>
-    </html>
+    </div>
+    ` : ''}
+
+    <div style="margin: 32px 0;">
+      <h3 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+        Staff Training Compliance
+      </h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #f8fafc;">
+            <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Staff Member</th>
+            <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Specialization</th>
+            <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Compliance</th>
+            <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Overdue</th>
+            <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Expiring</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${metrics.staffMetrics.map(staff => `
+            <tr>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>${staff.staffName}</strong></td>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${staff.specialization || 'General'}</td>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: ${staff.complianceRate >= 80 ? '#059669' : staff.complianceRate >= 60 ? '#d97706' : '#dc2626'}; font-weight: bold;">
+                ${staff.complianceRate}%
+              </td>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: ${staff.overdue > 0 ? '#dc2626' : '#059669'}; font-weight: bold;">
+                ${staff.overdue}
+              </td>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: ${staff.expiring > 0 ? '#d97706' : '#059669'}; font-weight: bold;">
+                ${staff.expiring}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin: 32px 0;">
+      <h3 style="color: #1f2937; margin: 0 0 16px 0; font-size: 18px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+        Training Category Performance
+      </h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #f8fafc;">
+            <th style="text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Category</th>
+            <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Compliance Rate</th>
+            <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151;">Overdue Records</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${metrics.categoryMetrics.map(category => `
+            <tr>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;"><strong>${category.category}</strong></td>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: ${category.complianceRate >= 80 ? '#059669' : category.complianceRate >= 60 ? '#d97706' : '#dc2626'}; font-weight: bold;">
+                ${category.complianceRate}%
+              </td>
+              <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: ${category.overdue > 0 ? '#dc2626' : '#059669'}; font-weight: bold;">
+                ${category.overdue}
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="background-color: #f0f9ff; padding: 16px; border-radius: 8px; margin-top: 32px;">
+      <p style="margin: 0; font-size: 13px; color: #1e40af;">
+        This report was generated automatically by the Med-Infinite Training Management System. For questions or concerns, please contact your system administrator.
+      </p>
+    </div>
   `;
 };
 
@@ -199,13 +195,19 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending training metrics email for branch:", data.branchName);
 
     const subject = data.subject || `Training Metrics Report - ${data.branchName} - ${new Date(data.reportDate).toLocaleDateString('en-GB')}`;
-    const htmlContent = generateTrainingMetricsHTML(data);
+    const content = generateTrainingMetricsContent(data);
+
+    const html = generateMedInfiniteEmailHTML({
+      title: `Training Metrics Report - ${data.branchName}`,
+      previewText: `Training compliance report for ${data.branchName} - ${data.metrics.summary.overallComplianceRate}% overall compliance`,
+      content,
+    });
 
     const emailResponse = await resend.emails.send({
-      from: "Training Management <training@yourdomain.com>",
+      from: "Med-Infinite Training <onboarding@resend.dev>",
       to: data.recipients,
       subject: subject,
-      html: htmlContent,
+      html,
     });
 
     console.log("Training metrics email sent successfully:", emailResponse);
