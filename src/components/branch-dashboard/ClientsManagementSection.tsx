@@ -24,6 +24,7 @@ export function ClientsManagementSection({
   onEditClient 
 }: ClientsManagementSectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [postCodeSearch, setPostCodeSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'pin_code' | 'region' | 'created_at' | 'client_id'>('created_at');
@@ -38,6 +39,7 @@ export function ClientsManagementSection({
   const { data: clientsData, isLoading, error } = useBranchClients({
     branchId,
     searchTerm,
+    postCodeSearch,
     statusFilter,
     regionFilter,
     sortBy,
@@ -140,9 +142,18 @@ export function ClientsManagementSection({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search clients by name, email, post code, or Client ID..."
+                  placeholder="Search by name, email, or Client ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="relative sm:w-[200px]">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search by Post Code"
+                  value={postCodeSearch}
+                  onChange={(e) => setPostCodeSearch(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -152,9 +163,11 @@ export function ClientsManagementSection({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="New Enquiries">New Enquiries</SelectItem>
+                  <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
+                  <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
+                  <SelectItem value="Former">Former</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={regionFilter} onValueChange={setRegionFilter}>
@@ -163,10 +176,10 @@ export function ClientsManagementSection({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Regions</SelectItem>
-                  <SelectItem value="north">North</SelectItem>
-                  <SelectItem value="south">South</SelectItem>
-                  <SelectItem value="east">East</SelectItem>
-                  <SelectItem value="west">West</SelectItem>
+                  <SelectItem value="North">North</SelectItem>
+                  <SelectItem value="South">South</SelectItem>
+                  <SelectItem value="East">East</SelectItem>
+                  <SelectItem value="West">West</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -306,8 +319,8 @@ export function ClientsManagementSection({
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                            {client.status || 'pending'}
+                          <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
+                            {client.status || 'N/A'}
                           </Badge>
                         </td>
                         <td className="py-3 px-4 text-sm">{client.region || 'N/A'}</td>
@@ -367,8 +380,8 @@ export function ClientsManagementSection({
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
-                            {client.status || 'pending'}
+                          <Badge variant={client.status === 'Active' ? 'default' : 'secondary'}>
+                            {client.status || 'N/A'}
                           </Badge>
                           <DropdownMenu open={dropdownOpen === `mobile-${client.id}`} onOpenChange={(open) => setDropdownOpen(open ? `mobile-${client.id}` : null)}>
                             <DropdownMenuTrigger asChild>
