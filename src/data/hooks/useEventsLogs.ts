@@ -30,6 +30,8 @@ export interface EventLog {
   client_last_name?: string;
   // Staff information
   recorded_by_staff_name?: string;
+  // Branch information
+  branch_name?: string;
   // Enhanced fields
   staff_present?: string[];
   staff_aware?: string[];
@@ -110,11 +112,15 @@ export const useEventsLogs = (branchId?: string, filters?: {
           *,
           clients!inner(
             first_name,
-            last_name
+            last_name,
+            branch_id
           ),
           staff:recorded_by_staff_id(
             first_name,
             last_name
+          ),
+          branches!branch_id(
+            name
           )
         `);
       
@@ -165,6 +171,7 @@ export const useEventsLogs = (branchId?: string, filters?: {
         client_first_name: event.clients?.first_name,
         client_last_name: event.clients?.last_name,
         recorded_by_staff_name: event.staff ? `${event.staff.first_name} ${event.staff.last_name}` : 'Unknown Staff',
+        branch_name: event.branches?.name || 'Unknown Branch'
       })) || [];
       
       console.log('Fetched events logs:', transformedData.length, 'records');

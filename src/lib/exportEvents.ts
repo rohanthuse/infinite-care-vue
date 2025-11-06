@@ -76,6 +76,7 @@ export interface ExportableEvent {
   status: string;
   reporter: string;
   client_name?: string;
+  client_id?: string;
   location?: string;
   description?: string;
   event_date?: string;
@@ -83,7 +84,9 @@ export interface ExportableEvent {
   created_at: string;
   updated_at?: string;
   recorded_by_staff_name?: string;
+  recorded_by_staff_id?: string;
   branch_id?: string;
+  branch_name?: string;
   
   // Body map
   body_map_points?: any;
@@ -130,40 +133,123 @@ export interface ExportableEvent {
   attachments?: any[];
 }
 
-export const exportEventsToCSV = (events: ExportableEvent[], filename: string = 'events-logs') => {
+export const exportEventsToCSV = async (events: ExportableEvent[], filename: string = 'events-logs') => {
+  // Fetch staff names if we have a branch_id
+  const branchId = events[0]?.branch_id;
+  const staffMap = branchId ? await fetchStaffNames(branchId) : new Map();
+  
   const headers = [
+    'Event ID',
     'Title',
-    'Client',
-    'Type',
+    'Client Name',
+    'Client ID',
+    'Branch Name',
+    'Event Type',
     'Category',
-    'Severity', 
+    'Severity',
     'Status',
     'Reporter',
+    'Recorded By Staff',
+    'Staff ID',
     'Location',
     'Event Date',
     'Event Time',
     'Recorded Date',
-    'Recorded By',
-    'Description'
+    'Last Updated',
+    'Description',
+    'Staff Present',
+    'Staff Aware',
+    'Other People Present',
+    'Action Required',
+    'Follow-up Date',
+    'Follow-up Assigned To',
+    'Follow-up Notes',
+    'Immediate Actions Taken',
+    'Investigation Required',
+    'Investigation Assigned To',
+    'Expected Resolution Date',
+    'Lessons Learned',
+    'Risk Level',
+    'Contributing Factors',
+    'Environmental Factors',
+    'Preventable',
+    'Similar Incidents',
+    'Family Notified',
+    'Family Notification Date',
+    'Family Notification Method',
+    'GP Notified',
+    'GP Notification Date',
+    'Insurance Notified',
+    'Insurance Notification Date',
+    'External Reporting Required',
+    'External Reporting Details',
+    'Body Map Points Count',
+    'Has Front Body Map',
+    'Has Back Body Map',
+    'Attachments Count'
   ];
 
   const csvData = events.map(event => [
+    event.id || '',
     event.title || '',
     event.client_name || '',
+    event.client_id || '',
+    event.branch_name || event.branch_id || '',
     event.event_type || '',
     event.category || '',
     event.severity || '',
     event.status || '',
     event.reporter || '',
+    event.recorded_by_staff_name || '',
+    event.recorded_by_staff_id || '',
     event.location || '',
     event.event_date || '',
     event.event_time || '',
     format(new Date(event.created_at), 'yyyy-MM-dd HH:mm'),
-    event.recorded_by_staff_name || '',
-    (event.description || '').replace(/[\r\n]+/g, ' ')
+    event.updated_at ? format(new Date(event.updated_at), 'yyyy-MM-dd HH:mm') : '',
+    (event.description || '').replace(/[\r\n]+/g, ' '),
+    // Staff information
+    Array.isArray(event.staff_present) ? resolveStaffNames(event.staff_present, staffMap) : '',
+    Array.isArray(event.staff_aware) ? resolveStaffNames(event.staff_aware, staffMap) : '',
+    Array.isArray(event.other_people_present) 
+      ? event.other_people_present.map((p: any) => `${p.name} (${p.relationship})`).join('; ') 
+      : '',
+    // Follow-up
+    event.action_required ? 'Yes' : 'No',
+    event.follow_up_date || '',
+    resolveStaffName(event.follow_up_assigned_to, staffMap),
+    (event.follow_up_notes || '').replace(/[\r\n]+/g, ' '),
+    // Actions
+    (event.immediate_actions_taken || '').replace(/[\r\n]+/g, ' '),
+    event.investigation_required ? 'Yes' : 'No',
+    resolveStaffName(event.investigation_assigned_to, staffMap),
+    event.expected_resolution_date || '',
+    (event.lessons_learned || '').replace(/[\r\n]+/g, ' '),
+    // Risk assessment
+    event.risk_level || '',
+    Array.isArray(event.contributing_factors) ? event.contributing_factors.join('; ') : '',
+    (event.environmental_factors || '').replace(/[\r\n]+/g, ' '),
+    event.preventable === true ? 'Yes' : event.preventable === false ? 'No' : '',
+    (event.similar_incidents || '').replace(/[\r\n]+/g, ' '),
+    // Compliance
+    event.family_notified ? 'Yes' : 'No',
+    event.family_notification_date || '',
+    event.family_notification_method || '',
+    event.gp_notified ? 'Yes' : 'No',
+    event.gp_notification_date || '',
+    event.insurance_notified ? 'Yes' : 'No',
+    event.insurance_notification_date || '',
+    event.external_reporting_required ? 'Yes' : 'No',
+    (event.external_reporting_details || '').replace(/[\r\n]+/g, ' '),
+    // Body map and attachments
+    event.body_map_points ? (Array.isArray(event.body_map_points) ? event.body_map_points.length.toString() : '0') : '0',
+    event.body_map_front_image_url ? 'Yes' : 'No',
+    event.body_map_back_image_url ? 'Yes' : 'No',
+    event.attachments ? (Array.isArray(event.attachments) ? event.attachments.length.toString() : '0') : '0'
   ]);
 
-  const csvContent = [headers, ...csvData]
+  // Add UTF-8 BOM for Excel compatibility
+  const csvContent = '\uFEFF' + [headers, ...csvData]
     .map(row => row.map(field => `"${field}"`).join(','))
     .join('\n');
 
@@ -880,43 +966,96 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
 };
 
 export const exportEventsListToPDF = (events: ExportableEvent[], filename: string = 'events-logs') => {
-  const pdf = new jsPDF();
+  const pdf = new jsPDF('landscape');
   
-  // Header
+  // Header with statistics
   pdf.setFontSize(20);
   pdf.text('Events & Logs Report', 20, 20);
   
   pdf.setFontSize(12);
   pdf.text(`Generated: ${format(new Date(), 'PPP')}`, 20, 30);
-  pdf.text(`Total Events: ${events.length}`, 20, 40);
+  pdf.text(`Total Events: ${events.length}`, 20, 37);
+  
+  // Calculate statistics
+  const criticalCount = events.filter(e => e.severity === 'critical').length;
+  const highCount = events.filter(e => e.severity === 'high').length;
+  const openCount = events.filter(e => e.status === 'open').length;
+  const inProgressCount = events.filter(e => e.status === 'in-progress').length;
+  
+  pdf.setFontSize(10);
+  pdf.text(`Critical: ${criticalCount} | High: ${highCount} | Open: ${openCount} | In Progress: ${inProgressCount}`, 20, 44);
 
-  // Events table
+  // Events table with comprehensive columns
   const tableData = events.map(event => [
+    event.id.substring(0, 8) + '...',  // Short ID
     event.title || '',
     event.client_name || '',
     event.event_type || '',
+    event.category || '',
     event.severity || '',
     event.status || '',
+    event.reporter || '',
+    event.location || '',
     event.event_date || '',
-    format(new Date(event.created_at), 'MM/dd/yy')
+    event.event_time || '',
+    format(new Date(event.created_at), 'MM/dd/yy HH:mm'),
+    event.action_required ? 'Yes' : 'No',
+    event.investigation_required ? 'Yes' : 'No'
   ]);
 
   autoTable(pdf, {
-    head: [['Title', 'Client', 'Type', 'Severity', 'Status', 'Event Date', 'Recorded']],
+    head: [[
+      'ID',
+      'Title',
+      'Client',
+      'Type',
+      'Category',
+      'Severity',
+      'Status',
+      'Reporter',
+      'Location',
+      'Event Date',
+      'Time',
+      'Recorded',
+      'Action Req.',
+      'Investigation'
+    ]],
     body: tableData,
-    startY: 50,
+    startY: 52,
     theme: 'grid',
-    styles: { fontSize: 8 },
+    styles: { fontSize: 7 },
+    headStyles: { fillColor: [66, 139, 202], fontStyle: 'bold' },
     columnStyles: { 
-      0: { cellWidth: 40 },
-      1: { cellWidth: 25 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 15 },
-      4: { cellWidth: 15 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 20 }
-    }
+      0: { cellWidth: 15 },  // ID
+      1: { cellWidth: 35 },  // Title
+      2: { cellWidth: 25 },  // Client
+      3: { cellWidth: 20 },  // Type
+      4: { cellWidth: 18 },  // Category
+      5: { cellWidth: 15 },  // Severity
+      6: { cellWidth: 15 },  // Status
+      7: { cellWidth: 22 },  // Reporter
+      8: { cellWidth: 20 },  // Location
+      9: { cellWidth: 18 },  // Event Date
+      10: { cellWidth: 12 }, // Time
+      11: { cellWidth: 20 }, // Recorded
+      12: { cellWidth: 10 }, // Action
+      13: { cellWidth: 15 }  // Investigation
+    },
+    margin: { left: 10, right: 10 }
   });
+  
+  // Add footer with page numbers
+  const pageCount = (pdf as any).internal.pages.length - 1;
+  pdf.setFontSize(8);
+  for (let i = 1; i <= pageCount; i++) {
+    pdf.setPage(i);
+    pdf.text(
+      `Page ${i} of ${pageCount} | Generated: ${format(new Date(), 'PPP p')}`,
+      pdf.internal.pageSize.width / 2,
+      pdf.internal.pageSize.height - 10,
+      { align: 'center' }
+    );
+  }
 
   pdf.save(`${filename}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };

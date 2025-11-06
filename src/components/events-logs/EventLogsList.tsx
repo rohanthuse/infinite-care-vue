@@ -123,6 +123,26 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
     }
   };
 
+  const handleExportCSV = async () => {
+    try {
+      await exportEventsToCSV(events);
+      toast.success('CSV export completed successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export CSV');
+    }
+  };
+
+  const handleExportPDF = () => {
+    try {
+      exportEventsListToPDF(events);
+      toast.success('PDF export completed successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export PDF');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -155,7 +175,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportEventsToCSV(events)}
+                onClick={handleExportCSV}
                 disabled={events.length === 0}
               >
                 <Download className="h-4 w-4 mr-1" />
@@ -164,7 +184,7 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportEventsListToPDF(events)}
+                onClick={handleExportPDF}
                 disabled={events.length === 0}
               >
                 <FileText className="h-4 w-4 mr-1" />
