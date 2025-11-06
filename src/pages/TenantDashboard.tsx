@@ -50,6 +50,7 @@ const TenantDashboard = () => {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   // Clear navigation intent flags once we've reached the dashboard
   useEffect(() => {
@@ -181,221 +182,107 @@ const TenantDashboard = () => {
     return null;
   }
 
-  // Check if user has admin role (owner/admin/super_admin) to show old-style dashboard
-  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin');
+  // Check if user should be redirected based on their role
+  useEffect(() => {
+    const checkRoleAndRedirect = async () => {
+      if (!userRole || !user || !organization || !tenantSlug) return;
 
-  // If user is organization admin, show the old Dashboard style interface
-  if (isOrganizationAdmin) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-        <DashboardHeader />
-        <DashboardNavbar />
-        
-        <motion.main 
-          className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Organization Branch Navigation */}
-          <TenantBranchNavigation organizationId={organization.id} />
+      // Define which roles can access the organization management dashboard
+      const isOrganizationManager = 
+        userRole.role === 'owner' || 
+        userRole.role === 'admin' || 
+        userRole.role === 'super_admin';
+
+      // If user is an organization manager, don't redirect
+      if (isOrganizationManager) {
+        setShouldRedirect(false);
+        return;
+      }
+
+      // User is not an organization manager, check for appropriate redirect
+      console.log('[TenantDashboard] User is not an organization manager, checking role:', userRole.role);
+      setShouldRedirect(true);
+
+      // Handle redirects based on role
+      if (userRole.role === 'branch_admin') {
+        // Check if user is a branch admin and find their branch
+        try {
+          const { data: branchAdminData } = await supabase
+            .from('admin_branches')
+            .select('branch_id')
+            .eq('admin_id', user.id)
+            .limit(1)
+            .maybeSingle();
           
-          <div className="flex justify-between items-center mb-6 md:mb-8">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
-                {organization.name} - Organization Management
-              </h1>
-              <p className="text-gray-500 mt-2 font-medium">
-                Manage and monitor all {organization.name} administrators and branches.
-              </p>
-            </div>
-          </div>
+          if (branchAdminData?.branch_id) {
+            // Fetch branch name separately
+            const { data: branchData } = await supabase
+              .from('branches')
+              .select('name')
+              .eq('id', branchAdminData.branch_id)
+              .single();
+            
+            const encodedBranchName = encodeURIComponent(branchData?.name || 'branch');
+            navigate(`/${tenantSlug}/branch-dashboard/${branchAdminData.branch_id}/${encodedBranchName}`, { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking branch admin:', error);
+        }
+      }
 
-          <OrganizationAdminsTable organizationId={organization.id} />
-        </motion.main>
+      // For member role or any other role without proper access
+      toast({
+        title: 'Access Denied',
+        description: 'You don\'t have permission to access this dashboard. Please contact your administrator.',
+        variant: 'destructive',
+      });
+      await signOut();
+      navigate('/', { replace: true });
+    };
+
+    checkRoleAndRedirect();
+  }, [userRole, user, organization, tenantSlug, navigate, toast, signOut]);
+
+  // Show loading while checking and redirecting
+  if (shouldRedirect) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="animate-pulse">
+          <div className="w-8 h-8 bg-blue-600 rounded-full"></div>
+        </div>
       </div>
     );
   }
 
-  // Regular tenant dashboard for non-admin users
-  const quickActions = [
-    {
-      title: 'User Management',
-      description: 'Manage organization users and permissions',
-      icon: Users,
-      href: `/${tenantSlug}/users`,
-      color: 'bg-blue-500',
-    },
-    {
-      title: 'Analytics',
-      description: 'View organization performance metrics',
-      icon: BarChart3,
-      href: `/${tenantSlug}/analytics`,
-      color: 'bg-green-500',
-    },
-    {
-      title: 'Calendar',
-      description: 'Manage schedules and appointments',
-      icon: Calendar,
-      href: `/${tenantSlug}/calendar`,
-      color: 'bg-purple-500',
-    },
-    {
-      title: 'Reports',
-      description: 'Generate and view reports',
-      icon: FileText,
-      href: `/${tenantSlug}/reports`,
-      color: 'bg-orange-500',
-    },
-    {
-      title: 'Settings',
-      description: 'Configure organization settings',
-      icon: Settings,
-      href: `/${tenantSlug}/settings`,
-      color: 'bg-gray-500',
-    },
-    {
-      title: 'Security',
-      description: 'Manage security and compliance',
-      icon: Shield,
-      href: `/${tenantSlug}/security`,
-      color: 'bg-red-500',
-    },
-  ];
-
+  // For organization managers (owner/admin/super_admin), show the proper dashboard
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                {organization.logo_url ? (
-                  <img 
-                    src={organization.logo_url} 
-                    alt={`${organization.name} logo`}
-                    className="w-6 h-6 object-contain"
-                  />
-                ) : (
-                  <Building2 className="w-6 h-6 text-primary" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{organization.name}</h1>
-                <p className="text-sm text-gray-500 capitalize">{userRole.role.replace('_', ' ')}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Bell className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-600">Welcome, {user?.email}</span>
-              </div>
-              <CustomButton 
-                variant="outline" 
-                size="sm"
-                onClick={handleSignOut}
-                className="flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sign Out</span>
-              </CustomButton>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to {organization.name}
-            </h2>
-            <p className="text-gray-600">
-              Manage your organization efficiently with our comprehensive dashboard.
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <DashboardHeader />
+      <DashboardNavbar />
+      
+      <motion.main 
+        className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Organization Branch Navigation */}
+        <TenantBranchNavigation organizationId={organization.id} />
+        
+        <div className="flex justify-between items-center mb-6 md:mb-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+              {organization.name} - Organization Management
+            </h1>
+            <p className="text-gray-500 mt-2 font-medium">
+              Manage and monitor all {organization.name} administrators and branches.
             </p>
           </div>
+        </div>
 
-          {/* Organization Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Subscription Plan</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold capitalize">{organization.subscription_plan}</div>
-                <p className="text-xs text-muted-foreground">
-                  Status: <span className="capitalize">{organization.subscription_status}</span>
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Your Role</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold capitalize">{userRole.role.replace('_', ' ')}</div>
-                <p className="text-xs text-muted-foreground">
-                  Status: Active
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Organization ID</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm font-mono">{organization.id.slice(0, 8)}...</div>
-                <p className="text-xs text-muted-foreground">
-                  Slug: /{organization.slug}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quickActions.map((action, index) => (
-                <motion.div
-                  key={action.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => navigate(action.href)}>
-                    <CardHeader className="flex flex-row items-center space-y-0 pb-2">
-                      <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mr-4`}>
-                        <action.icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{action.title}</CardTitle>
-                        <CardDescription className="text-sm">
-                          {action.description}
-                        </CardDescription>
-                      </div>
-                    </CardHeader>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-      </main>
+        <OrganizationAdminsTable organizationId={organization.id} />
+      </motion.main>
     </div>
   );
 };

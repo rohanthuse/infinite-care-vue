@@ -134,20 +134,49 @@ const TenantLogin = () => {
         sessionStorage.setItem('target_dashboard', targetPath);
         navigate(targetPath, { replace: true });
       } else if (memberData.role === 'owner' || memberData.role === 'admin') {
-        // Organization admin - go to tenant dashboard which will show old-style admin interface
+        // Organization admin - go to tenant dashboard (will show branch navigation)
         const targetPath = `/${tenantSlug}/dashboard`;
         sessionStorage.setItem('target_dashboard', targetPath);
         navigate(targetPath, { replace: true });
       } else if (memberData.role === 'branch_admin') {
-        // Branch admin - redirect to branch selection or specific branch
-        const targetPath = `/${tenantSlug}/branches`;
-        sessionStorage.setItem('target_dashboard', targetPath);
-        navigate(targetPath, { replace: true });
+        // Branch admin - check their assigned branch and redirect
+        const { data: branchData } = await supabase
+          .from('admin_branches')
+          .select('branch_id')
+          .eq('admin_id', authData.user.id)
+          .limit(1)
+          .maybeSingle();
+        
+        if (branchData?.branch_id) {
+          // Fetch branch name separately
+          const { data: branchInfo } = await supabase
+            .from('branches')
+            .select('name')
+            .eq('id', branchData.branch_id)
+            .single();
+          
+          const encodedBranchName = encodeURIComponent(branchInfo?.name || 'branch');
+          const targetPath = `/${tenantSlug}/branch-dashboard/${branchData.branch_id}/${encodedBranchName}`;
+          sessionStorage.setItem('target_dashboard', targetPath);
+          navigate(targetPath, { replace: true });
+        } else {
+          // No branch assigned yet
+          toast({
+            title: 'No Branch Assigned',
+            description: 'Please contact your administrator to assign you a branch.',
+            variant: 'destructive',
+          });
+          await supabase.auth.signOut();
+        }
       } else {
-        // Regular member - go to regular tenant dashboard
-        const targetPath = `/${tenantSlug}/dashboard`;
-        sessionStorage.setItem('target_dashboard', targetPath);
-        navigate(targetPath, { replace: true });
+        // For 'member' role or unknown roles, they shouldn't access tenant dashboard
+        toast({
+          title: 'Access Denied',
+          description: 'You don\'t have permission to access the admin dashboard.',
+          variant: 'destructive',
+        });
+        await supabase.auth.signOut();
+        navigate(`/${tenantSlug}/login`, { replace: true });
       }
     } catch (error: any) {
       console.error('Login error:', error);
