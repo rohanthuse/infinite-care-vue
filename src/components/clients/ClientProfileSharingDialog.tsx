@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useThirdPartyAccess, CreateThirdPartyAccessData } from "@/hooks/useThirdPartyAccess";
-import { generatePDF } from "@/utils/pdfGenerator";
+
 import { toast } from "@/hooks/use-toast";
 import { generateShareableUrl } from "@/utils/domain";
 

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { exportClientProfileToPDF } from "@/lib/exportEvents";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
 import { useClientSuspensions } from "@/hooks/useClientSuspensions";
@@ -95,14 +95,21 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
     `${realClientData.preferred_name || realClientData.first_name || ''} ${realClientData.last_name || ''}`.trim() : 
     client.name;
 
-  const handlePrintClientProfile = () => {
-    generatePDF({
-      id: client.id,
-      title: `Client Profile for ${displayName}`,
-      date: client.registeredOn,
-      status: client.status,
-      signedBy: "System Generated"
-    });
+  const handlePrintClientProfile = async () => {
+    try {
+      await exportClientProfileToPDF(client.id);
+      toast({
+        title: "Success",
+        description: "Client profile exported successfully.",
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export client profile. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async (updatedData: any) => {
