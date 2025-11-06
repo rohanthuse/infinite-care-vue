@@ -11,10 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
 import { useCreateClientRateSchedule } from '@/hooks/useClientAccounting';
-import { useServices } from '@/data/hooks/useServices';
 import { useTenant } from '@/contexts/TenantContext';
 import { RateCategory, PayBasedOn, ChargeType, rateCategoryLabels, payBasedOnLabels, chargeTypeLabels, dayLabels } from '@/types/clientAccounting';
-import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 const rateScheduleSchema = z.object({
   authority_type: z.string().min(1, 'Authority type is required'),
   service_type_codes: z.array(z.string()).default([]),
@@ -61,9 +59,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   const {
     organization
   } = useTenant();
-  const {
-    data: services
-  } = useServices();
   const createSchedule = useCreateClientRateSchedule();
   const form = useForm<RateScheduleFormData>({
     resolver: zodResolver(rateScheduleSchema),
@@ -90,12 +85,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
   });
   const selectedPayBasedOn = form.watch('pay_based_on');
   const selectedChargeType = form.watch('charge_type');
-  
-  const serviceTypeOptions: MultiSelectOption[] = services?.map(service => ({
-    label: service.title,
-    value: service.code,
-    description: undefined
-  })) || [];
 
   const onSubmit = (data: RateScheduleFormData) => {
     const scheduleData = {
@@ -193,26 +182,6 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
                       </SelectContent>
                     </Select>
                     <FormMessage />
-                  </FormItem>} />
-
-              <FormField control={form.control} name="service_type_codes" render={({
-              field
-            }) => <FormItem>
-                    <FormLabel>Service Types</FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        options={serviceTypeOptions}
-                        selected={field.value || []}
-                        onSelectionChange={field.onChange}
-                        placeholder="Select service types..."
-                        searchPlaceholder="Search services..."
-                        emptyText="No services found."
-                        maxDisplay={2}
-                        showSelectAll={true}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all services</p>
                   </FormItem>} />
 
               <FormField control={form.control} name="start_date" render={({

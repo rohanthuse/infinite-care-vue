@@ -11,7 +11,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { createDateValidation, createTimeValidation } from '@/utils/validationUtils';
 import { useUpdateClientRateSchedule } from '@/hooks/useClientAccounting';
-import { useServices } from '@/data/hooks/useServices';
 import { 
   ClientRateSchedule,
   rateCategoryLabels,
@@ -19,7 +18,6 @@ import {
   chargeTypeLabels,
   dayLabels
 } from '@/types/clientAccounting';
-import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 
 const editRateScheduleSchema = z.object({
   authority_type: z.string().min(1, 'Authority type is required'),
@@ -62,14 +60,7 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
   clientId,
   branchId
 }) => {
-  const { data: services } = useServices();
   const updateSchedule = useUpdateClientRateSchedule();
-
-  const serviceTypeOptions: MultiSelectOption[] = services?.map(service => ({
-    label: service.title,
-    value: service.code,
-    description: undefined
-  })) || [];
 
   const form = useForm<EditRateScheduleFormData>({
     resolver: zodResolver(editRateScheduleSchema),
@@ -179,30 +170,6 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
                       </SelectContent>
                     </Select>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="service_type_codes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Types</FormLabel>
-                    <FormControl>
-                      <MultiSelect
-                        options={serviceTypeOptions}
-                        selected={field.value || []}
-                        onSelectionChange={field.onChange}
-                        placeholder="Select service types..."
-                        searchPlaceholder="Search services..."
-                        emptyText="No services found."
-                        maxDisplay={2}
-                        showSelectAll={true}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    <p className="text-xs text-muted-foreground mt-1">Leave empty to apply to all services</p>
                   </FormItem>
                 )}
               />
