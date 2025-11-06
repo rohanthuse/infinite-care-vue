@@ -132,8 +132,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                         <FormItem>
                           <FormLabel>Core Lead</FormLabel>
                           <Select
-                            value={field.value || ""}
-                            onValueChange={(value) => field.onChange(value || null)}
+                            value={field.value || "none"}
+                            onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -141,7 +141,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {staffList.map((staff) => (
                                 <SelectItem key={staff.id} value={staff.id}>
                                   {staff.first_name} {staff.last_name}
@@ -162,8 +162,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                         <FormItem>
                           <FormLabel>Agreement</FormLabel>
                           <Select
-                            value={field.value || ""}
-                            onValueChange={(value) => field.onChange(value || null)}
+                            value={field.value || "none"}
+                            onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -171,7 +171,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({ clientId, branchId }) =>
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="none">None</SelectItem>
                               {agreements.map((agreement) => (
                                 <SelectItem key={agreement.id} value={agreement.id}>
                                   {agreement.title}
