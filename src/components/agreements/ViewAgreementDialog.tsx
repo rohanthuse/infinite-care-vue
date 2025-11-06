@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Download, FileCheck, Clock, AlertCircle, Users, PenLine, FileText, Eye, Check } from "lucide-react";
+import { Download, FileCheck, Clock, AlertCircle, Users, PenLine, FileText, Eye, Check, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +74,7 @@ export function ViewAgreementDialog({
     signerName: string;
     signatureFileId: string | null;
   }>({ open: false, signerName: '', signatureFileId: null });
+  const [approvingSigners, setApprovingSigners] = useState<Set<string>>(new Set());
 
   const { data: signers = [], isLoading: signersLoading } = useAgreementSigners(agreement?.id);
   const signMutation = useSignAgreementBySigner();
@@ -95,9 +96,9 @@ export function ViewAgreementDialog({
   
   const isAdmin = userRoles.includes('super_admin') || userRoles.includes('branch_admin');
   
-  // Find current user's signer record (if they're a pending signer)
+  // Find current user's signer record (if they're a signer)
   const currentUserSigner = signers.find(
-    s => s.signer_auth_user_id === user?.id && s.signing_status === 'pending'
+    s => s.signer_auth_user_id === user?.id
   );
 
   if (!agreement) {
@@ -135,10 +136,17 @@ export function ViewAgreementDialog({
   };
   
   const handleApproveSigner = async (signerId: string, signerName: string) => {
+    setApprovingSigners(prev => new Set(prev).add(signerId));
     try {
       await approveSignerMutation.mutateAsync({ signerId, signerName });
     } catch (error) {
       console.error('Error approving signer:', error);
+    } finally {
+      setApprovingSigners(prev => {
+        const next = new Set(prev);
+        next.delete(signerId);
+        return next;
+      });
     }
   };
   
@@ -224,14 +232,34 @@ export function ViewAgreementDialog({
               
               {/* Your Status (for non-admins) */}
               {!isAdmin && currentUserSigner && (
-                <div className="p-4 bg-muted/30 rounded-lg border">
+                <div className="p-4 bg-muted/30 rounded-lg border space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground mb-2">Your Status</h3>
-                  <Badge 
-                    variant={currentUserSigner.signing_status === 'signed' ? 'success' : 'outline'} 
-                    className="text-sm"
-                  >
-                    {currentUserSigner.signing_status === 'signed' ? 'Signed ✓' : 'Pending Signature'}
-                  </Badge>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge 
+                      variant={currentUserSigner.signing_status === 'signed' ? 'success' : 'outline'} 
+                      className="text-sm"
+                    >
+                      {currentUserSigner.signing_status === 'signed' ? 'Signed ✓' : 'Pending Signature'}
+                    </Badge>
+                    {currentUserSigner.signing_status === 'signed' && currentUserSigner.admin_approved && (
+                      <Badge variant="default" className="text-sm bg-green-600 text-white">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Approved by Admin
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {currentUserSigner.signing_status === 'signed' && currentUserSigner.admin_approved && currentUserSigner.approved_at && (
+                    <p className="text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
+                      ✓ Your signature was approved on {format(new Date(currentUserSigner.approved_at), 'dd MMM yyyy, HH:mm')}
+                    </p>
+                  )}
+                  
+                  {currentUserSigner.signing_status === 'signed' && !currentUserSigner.admin_approved && (
+                    <p className="text-xs text-blue-700 bg-blue-50 p-2 rounded border border-blue-200">
+                      ⏳ Pending admin approval
+                    </p>
+                  )}
                 </div>
               )}
               
@@ -295,7 +323,7 @@ export function ViewAgreementDialog({
             <div className="space-y-6 lg:border-l lg:pl-6">
               
               {/* Action Required Banner (if pending signature) */}
-              {currentUserSigner && agreement.status === 'Pending' && (
+              {currentUserSigner && currentUserSigner.signing_status === 'pending' && agreement.status === 'Pending' && (
                 <div className="sticky top-0 z-10 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg space-y-3">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-blue-600" />
@@ -446,26 +474,32 @@ export function ViewAgreementDialog({
                       </p>
                       {signers
                         .filter(s => s.signing_status === 'signed')
-                        .map(signer => (
-                          <div key={signer.id} className="p-3 bg-card border rounded-lg space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <p className="font-medium text-sm">{signer.signer_name}</p>
-                                <p className="text-xs text-muted-foreground capitalize">
-                                  {signer.signer_type}
-                                </p>
-                                {signer.signed_at && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
+                        .map(signer => {
+                          const isApproved = signer.admin_approved;
+                          const isApproving = approvingSigners.has(signer.id);
+                          
+                          return (
+                            <div key={signer.id} className="p-3 bg-card border rounded-lg space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{signer.signer_name}</p>
+                                  <p className="text-xs text-muted-foreground capitalize">
+                                    {signer.signer_type}
                                   </p>
-                                )}
+                                  {signer.signed_at && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {format(new Date(signer.signed_at), 'dd MMM yyyy, HH:mm')}
+                                    </p>
+                                  )}
+                                </div>
+                                <Badge 
+                                  variant={isApproved ? "default" : "secondary"} 
+                                  className={isApproved ? "bg-green-600 text-white" : "bg-blue-600 text-white"}
+                                >
+                                  <Check className="h-3 w-3 mr-1" />
+                                  {isApproved ? 'Approved' : 'Signed'}
+                                </Badge>
                               </div>
-                              <Badge variant="default" className="bg-blue-600 text-white">
-                                <Check className="h-3 w-3 mr-1" />
-                                Signed
-                              </Badge>
-                            </div>
-                            {signer.signing_status === 'signed' && (
                               <div className="flex gap-2">
                                 <Button
                                   variant="outline"
@@ -477,19 +511,28 @@ export function ViewAgreementDialog({
                                   View Signature
                                 </Button>
                                 <Button
-                                  variant="default"
+                                  variant={isApproved ? "secondary" : "default"}
                                   size="sm"
-                                  className="flex-1"
+                                  className={isApproved ? "flex-1 bg-green-100 text-green-700 hover:bg-green-100" : "flex-1"}
                                   onClick={() => handleApproveSigner(signer.id, signer.signer_name)}
-                                  disabled={approveSignerMutation.isPending}
+                                  disabled={isApproved || isApproving}
                                 >
-                                  <Check className="mr-1 h-3 w-3" />
-                                  Approve
+                                  {isApproving ? (
+                                    <>
+                                      <Clock className="mr-1 h-3 w-3 animate-spin" />
+                                      Approving...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Check className="mr-1 h-3 w-3" />
+                                      {isApproved ? 'Approved ✓' : 'Approve'}
+                                    </>
+                                  )}
                                 </Button>
                               </div>
-                            )}
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                     </div>
                   )}
                 </div>
@@ -577,7 +620,7 @@ export function ViewAgreementDialog({
           </Button>
           
           {/* Save Button - Only shown when user needs to sign */}
-          {currentUserSigner && agreement.status === 'Pending' && (
+          {currentUserSigner && currentUserSigner.signing_status === 'pending' && agreement.status === 'Pending' && (
             <Button 
               onClick={handleSignAgreement}
               disabled={!currentSignature || signMutation.isPending}

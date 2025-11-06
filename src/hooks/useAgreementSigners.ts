@@ -14,6 +14,9 @@ export interface AgreementSigner {
   signing_status: 'pending' | 'signed' | 'declined';
   created_at: string;
   updated_at: string;
+  admin_approved: boolean;
+  approved_by: string | null;
+  approved_at: string | null;
 }
 
 interface CreateSignerData {

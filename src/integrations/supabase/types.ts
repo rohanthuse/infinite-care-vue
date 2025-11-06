@@ -297,7 +297,10 @@ export type Database = {
       }
       agreement_signers: {
         Row: {
+          admin_approved: boolean | null
           agreement_id: string
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           id: string
           signature_file_id: string | null
@@ -310,7 +313,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_approved?: boolean | null
           agreement_id: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           signature_file_id?: string | null
@@ -323,7 +329,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_approved?: boolean | null
           agreement_id?: string
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           id?: string
           signature_file_id?: string | null

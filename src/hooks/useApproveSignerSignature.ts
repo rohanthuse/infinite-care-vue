@@ -7,26 +7,43 @@ interface ApproveSignerParams {
   signerName: string;
 }
 
-const approveSignerSignature = async ({ signerId }: ApproveSignerParams) => {
+const approveSignerSignature = async ({ signerId, signerName }: ApproveSignerParams) => {
   console.log('[useApproveSignerSignature] Approving signer:', signerId);
   
   // Get current user (admin)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
   
-  // Mark the signer as approved by updating timestamp
-  // Note: Using 'signed' status as 'approved' is not in the current enum
-  const { error } = await supabase
+  // Check if already approved
+  const { data: existingSigner } = await supabase
+    .from('agreement_signers')
+    .select('admin_approved')
+    .eq('id', signerId)
+    .single();
+  
+  if (existingSigner?.admin_approved) {
+    throw new Error("Signer already approved");
+  }
+  
+  // Mark the signer as approved
+  const { data, error } = await supabase
     .from('agreement_signers')
     .update({
+      admin_approved: true,
+      approved_by: user.id,
+      approved_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    .eq('id', signerId);
+    .eq('id', signerId)
+    .select()
+    .single();
   
   if (error) {
     console.error('[useApproveSignerSignature] Error:', error);
     throw new Error(error.message);
   }
+  
+  return { ...data, signerName };
 };
 
 export const useApproveSignerSignature = () => {
@@ -34,16 +51,20 @@ export const useApproveSignerSignature = () => {
   
   return useMutation({
     mutationFn: approveSignerSignature,
-    onSuccess: (_, variables) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agreements'] });
       queryClient.invalidateQueries({ queryKey: ['agreement_signers'] });
       queryClient.invalidateQueries({ queryKey: ['signed_agreements'] });
       
-      toast.success('Signature approved successfully');
+      toast.success(`Agreement approved successfully for ${data.signerName}`);
     },
     onError: (error: any) => {
-      console.error('[useApproveSignerSignature] Error:', error);
-      toast.error(`Failed to approve signature: ${error.message}`);
+      if (error.message === "Signer already approved") {
+        toast.info('This signature has already been approved');
+      } else {
+        console.error('[useApproveSignerSignature] Error:', error);
+        toast.error(`Failed to approve signature: ${error.message}`);
+      }
     }
   });
 };
