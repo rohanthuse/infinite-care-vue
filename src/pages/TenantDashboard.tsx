@@ -154,7 +154,7 @@ const TenantDashboard = () => {
     };
 
     fetchTenantData();
-  }, [user, tenantSlug, navigate, toast, signOut]);
+  }, [user, tenantSlug, navigate, toast, signOut, systemUserRole]);
 
   const handleSignOut = async () => {
     try {

@@ -75,8 +75,12 @@ const Index = () => {
       let redirectPath = '/dashboard'; // Default fallback
       
       if (userRole.role === 'super_admin') {
-        // Super admins ALWAYS go to main admin dashboard (no tenant slug)
-        redirectPath = '/dashboard';
+        // Super admins go to tenant dashboard if organization available, otherwise main dashboard
+        if (userRole.organizationSlug) {
+          redirectPath = `/${userRole.organizationSlug}/dashboard`;
+        } else {
+          redirectPath = '/dashboard';
+        }
       } else if (userRole.role === 'app_admin') {
         redirectPath = '/system-dashboard';
       } else if (userRole.organizationSlug) {

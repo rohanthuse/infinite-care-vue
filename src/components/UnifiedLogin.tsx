@@ -366,18 +366,32 @@ const UnifiedLogin = () => {
         }
       }
 
-      // For super admins, always route to main admin dashboard (no tenant slug)
+      // For super admins, route to tenant-specific dashboard if orgSlug available
       if (userRole === 'super_admin') {
-        console.log('[LOGIN DEBUG] Super admin detected, redirecting to main admin dashboard');
-        toast.success("Welcome back, Super Administrator!");
-        
-        sessionStorage.setItem('redirect_in_progress', 'true');
-        sessionStorage.setItem('navigating_to_dashboard', 'true');
-        sessionStorage.setItem('target_dashboard', '/dashboard');
-        setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
-        
-        window.location.href = '/dashboard';
-        return;
+        if (orgSlug) {
+          console.log('[LOGIN DEBUG] Super admin detected, redirecting to tenant dashboard:', `/${orgSlug}/dashboard`);
+          toast.success("Welcome back, Super Administrator!");
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', `/${orgSlug}/dashboard`);
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
+          window.location.href = `/${orgSlug}/dashboard`;
+          return;
+        } else {
+          // Fallback: if no organization found, redirect to main dashboard
+          console.log('[LOGIN DEBUG] Super admin without organization, redirecting to main dashboard');
+          toast.success("Welcome back, Super Administrator!");
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', '/dashboard');
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
+          window.location.href = '/dashboard';
+          return;
+        }
       }
 
       // For app_admin (system administrators), route to system dashboard
