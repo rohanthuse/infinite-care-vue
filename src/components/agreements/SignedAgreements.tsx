@@ -17,6 +17,8 @@ import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements
 import { Agreement, AgreementPartyFilter, ApprovalStatusFilter } from "@/types/agreements";
 import { format } from "date-fns";
 import type { VariantProps } from "class-variance-authority";
+import { UnifiedShareDialog } from "@/components/sharing/UnifiedShareDialog";
+import { Share2 } from "lucide-react";
 
 type SignedAgreementsProps = {
   searchQuery?: string;
@@ -79,6 +81,8 @@ export function SignedAgreements({
 }: SignedAgreementsProps) {
   const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
   const [partyFilter, setPartyFilter] = useState<AgreementPartyFilter>("all");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [agreementToShare, setAgreementToShare] = useState<Agreement | null>(null);
   
   const { data: agreements, isLoading, isError, error } = useSignedAgreements({
     searchQuery,
@@ -96,6 +100,28 @@ export function SignedAgreements({
     if(window.confirm("Are you sure you want to delete this agreement?")) {
       deleteAgreementMutation.mutate(id);
     }
+  };
+
+  const handleShareAgreement = (agreement: Agreement) => {
+    setAgreementToShare(agreement);
+    setShareDialogOpen(true);
+  };
+
+  const handleGenerateAgreementPDF = async (): Promise<Blob> => {
+    if (!agreementToShare) return new Blob();
+    
+    const agreementData = {
+      id: agreementToShare.id,
+      title: agreementToShare.title,
+      date: agreementToShare.signed_at || agreementToShare.created_at,
+      status: agreementToShare.status,
+      signedBy: agreementToShare.signed_by_name || 'Not signed',
+    };
+    
+    await generatePDF(agreementData);
+    
+    // Generate a simple PDF blob for now
+    return new Blob(['Agreement PDF content'], { type: 'application/pdf' });
   };
 
   const viewingAgreement = agreements?.find(a => a.id === viewingAgreementId);
@@ -244,7 +270,7 @@ export function SignedAgreements({
                       >
                         <Eye className="h-4 w-4 text-primary" />
                       </Button>
-                      <Button 
+                       <Button 
                         size="sm"
                         variant="ghost"
                         className="h-8 w-8 p-0"
@@ -253,6 +279,14 @@ export function SignedAgreements({
                         <Download className="h-4 w-4 text-primary" />
                       </Button>
                       <Button 
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleShareAgreement(agreement)}
+                      >
+                        <Share2 className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button
                         size="sm"
                         variant="ghost"
                         className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
@@ -288,6 +322,18 @@ export function SignedAgreements({
         agreement={viewingAgreement}
         onDownload={handleDownload}
       />
+
+      {agreementToShare && (
+        <UnifiedShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          contentId={agreementToShare.id}
+          contentType="agreement"
+          contentTitle={agreementToShare.title}
+          branchId={branchId || agreementToShare.branch_id || ''}
+          onGeneratePDF={handleGenerateAgreementPDF}
+        />
+      )}
     </>
   );
 }

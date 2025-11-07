@@ -1,10 +1,14 @@
 
-import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ChartContainer } from "@/components/ui/chart";
 import { BarChart, XAxis, YAxis, Bar, Legend, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useClientReportsData, transformChartData } from "@/hooks/useReportsData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Share2 } from "lucide-react";
+import { useState } from "react";
+import { UnifiedShareDialog } from "@/components/sharing/UnifiedShareDialog";
+import { ReportExporter } from "@/utils/reportExporter";
 
 interface ClientReportsProps {
   branchId: string;
@@ -40,8 +44,9 @@ const fallbackServiceData = [
 
 export function ClientReports({ branchId, branchName }: ClientReportsProps) {
   const [activeTab, setActiveTab] = useState<ClientReportTab>("activity");
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   
-  const { data: reportData, isLoading, error } = useClientReportsData({ 
+  const { data: reportData, isLoading, error } = useClientReportsData({
     branchId,
     startDate: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 6 months ago
     endDate: new Date().toISOString().split('T')[0] // today
@@ -57,6 +62,27 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
   const clientActivityData = transformChartData(reportData?.clientActivity, fallbackActivityData);
   const clientDemographicsData = transformChartData(reportData?.demographics, fallbackDemographicsData);
   const clientServiceTypeData = transformChartData(reportData?.serviceUtilization, fallbackServiceData);
+
+  const handleGenerateReportPDF = async (): Promise<Blob> => {
+    const reportTypeLabel = activeTab === 'activity' ? 'Client Activity Report' : 
+                            activeTab === 'demographics' ? 'Demographics Report' : 
+                            'Service Utilization Report';
+    
+    const currentData = activeTab === 'activity' ? clientActivityData : 
+                       activeTab === 'demographics' ? clientDemographicsData : 
+                       clientServiceTypeData;
+    
+    // Generate PDF using ReportExporter
+    const pdfBlob = await ReportExporter.exportToPDFBlob({
+      title: reportTypeLabel,
+      branchName: branchName,
+      data: currentData,
+      columns: Object.keys(currentData[0] || {}),
+      fileName: `${reportTypeLabel.replace(/\s+/g, '_')}.pdf`,
+    });
+    
+    return pdfBlob;
+  };
 
   if (error) {
     return (
@@ -80,20 +106,30 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
   
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 mb-4">
-        {tabOptions.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === tab.id
-                ? "bg-blue-100 text-blue-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex flex-wrap gap-2 mb-4 justify-between items-center">
+        <div className="flex flex-wrap gap-2">
+          {tabOptions.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShareDialogOpen(true)}
+        >
+          <Share2 className="h-4 w-4 mr-2" />
+          Share Report
+        </Button>
       </div>
 
       {isLoading ? (
@@ -211,6 +247,18 @@ export function ClientReports({ branchId, branchName }: ClientReportsProps) {
           )}
         </>
       )}
+
+      <UnifiedShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        contentId={branchId}
+        contentType="report"
+        contentTitle={`Client ${activeTab === 'activity' ? 'Activity' : activeTab === 'demographics' ? 'Demographics' : 'Service Utilization'} Report`}
+        branchId={branchId}
+        reportType="client"
+        reportData={{ type: activeTab, branchName }}
+        onGeneratePDF={handleGenerateReportPDF}
+      />
     </div>
   );
 }

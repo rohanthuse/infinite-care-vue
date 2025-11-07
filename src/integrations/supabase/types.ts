@@ -295,6 +295,50 @@ export type Database = {
           },
         ]
       }
+      agreement_shares: {
+        Row: {
+          agreement_id: string | null
+          created_at: string | null
+          id: string
+          share_method: string | null
+          share_note: string | null
+          shared_by: string | null
+          shared_with: string[] | null
+          viewed_at: string[] | null
+          viewed_by: string[] | null
+        }
+        Insert: {
+          agreement_id?: string | null
+          created_at?: string | null
+          id?: string
+          share_method?: string | null
+          share_note?: string | null
+          shared_by?: string | null
+          shared_with?: string[] | null
+          viewed_at?: string[] | null
+          viewed_by?: string[] | null
+        }
+        Update: {
+          agreement_id?: string | null
+          created_at?: string | null
+          id?: string
+          share_method?: string | null
+          share_note?: string | null
+          shared_by?: string | null
+          shared_with?: string[] | null
+          viewed_at?: string[] | null
+          viewed_by?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agreement_shares_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "agreements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agreement_signers: {
         Row: {
           admin_approved: boolean | null
@@ -4410,6 +4454,44 @@ export type Database = {
         }
         Relationships: []
       }
+      event_shares: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          id: string
+          share_method: string | null
+          share_note: string | null
+          shared_by: string | null
+          shared_with: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          share_method?: string | null
+          share_note?: string | null
+          shared_by?: string | null
+          shared_with?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          share_method?: string | null
+          share_note?: string | null
+          shared_by?: string | null
+          shared_with?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shares_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "client_events_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_types: {
         Row: {
           amount: number
@@ -6402,6 +6484,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      report_shares: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          file_format: string | null
+          id: string
+          report_data: Json | null
+          report_type: string
+          share_method: string | null
+          share_note: string | null
+          shared_by: string | null
+          shared_with: string[] | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          file_format?: string | null
+          id?: string
+          report_data?: Json | null
+          report_type: string
+          share_method?: string | null
+          share_note?: string | null
+          shared_by?: string | null
+          shared_with?: string[] | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          file_format?: string | null
+          id?: string
+          report_data?: Json | null
+          report_type?: string
+          share_method?: string | null
+          share_note?: string | null
+          shared_by?: string | null
+          shared_with?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_shares_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       report_types: {
         Row: {

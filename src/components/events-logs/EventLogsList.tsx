@@ -13,6 +13,7 @@ import { EventLog } from '@/data/hooks/useEventsLogs';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import { exportEventsToCSV, exportEventsListToPDF, exportEventToPDFBlob } from '@/lib/exportEvents';
+import { UnifiedShareDialog } from '@/components/sharing/UnifiedShareDialog';
 
 interface EventLogsListProps {
   branchId: string;
@@ -27,6 +28,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   const [assignedToMe, setAssignedToMe] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventLog | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [eventToShare, setEventToShare] = useState<EventLog | null>(null);
 
   const { data: userRole } = useUserRole();
 
@@ -89,38 +92,8 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
   };
 
   const handleShareEvent = async (event: EventLog) => {
-    try {
-      // Generate PDF blob (now async)
-      const pdfBlob = await exportEventToPDFBlob(event);
-      const fileName = `event-${event.title.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-
-      // Try Web Share API first (mobile/modern browsers)
-      if (navigator.share && navigator.canShare) {
-        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-        
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: `Event Log: ${event.title}`,
-            text: `Event log details for ${event.client_name || 'client'}`,
-            files: [file]
-          });
-          toast.success('Event shared successfully');
-          return;
-        }
-      }
-
-      // Fallback: Download the PDF
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success('Event PDF downloaded');
-    } catch (error) {
-      console.error('Error sharing event:', error);
-      toast.error('Failed to share event');
-    }
+    setEventToShare(event);
+    setShareDialogOpen(true);
   };
 
   const handleExportCSV = async () => {
@@ -435,6 +408,18 @@ export function EventLogsList({ branchId }: EventLogsListProps) {
         open={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
       />
+
+      {eventToShare && (
+        <UnifiedShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          contentId={eventToShare.id}
+          contentType="event"
+          contentTitle={eventToShare.title}
+          branchId={branchId}
+          onGeneratePDF={async () => await exportEventToPDFBlob(eventToShare)}
+        />
+      )}
     </div>
   );
 }
