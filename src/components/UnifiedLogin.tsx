@@ -366,30 +366,17 @@ const UnifiedLogin = () => {
         }
       }
 
-      // For super admins, route to tenant-specific dashboard if organization found
+      // For super admins, always route to main admin dashboard (no tenant slug)
       if (userRole === 'super_admin') {
-        console.log('[LOGIN DEBUG] Super admin detected, orgSlug:', orgSlug);
+        console.log('[LOGIN DEBUG] Super admin detected, redirecting to main admin dashboard');
         toast.success("Welcome back, Super Administrator!");
         
-        if (orgSlug) {
-          console.log('[LOGIN DEBUG] Redirecting super admin to tenant dashboard:', `/${orgSlug}/dashboard`);
-          
-          sessionStorage.setItem('redirect_in_progress', 'true');
-          sessionStorage.setItem('navigating_to_dashboard', 'true');
-          sessionStorage.setItem('target_dashboard', `/${orgSlug}/dashboard`);
-          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
-          
-          window.location.href = `/${orgSlug}/dashboard`;
-        } else {
-          console.log('[LOGIN DEBUG] No organization found for super admin, redirecting to global dashboard');
-          
-          sessionStorage.setItem('redirect_in_progress', 'true');
-          sessionStorage.setItem('navigating_to_dashboard', 'true');
-          sessionStorage.setItem('target_dashboard', '/dashboard');
-          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
-          
-          window.location.href = '/dashboard';
-        }
+        sessionStorage.setItem('redirect_in_progress', 'true');
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
+        sessionStorage.setItem('target_dashboard', '/dashboard');
+        setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+        
+        window.location.href = '/dashboard';
         return;
       }
 
