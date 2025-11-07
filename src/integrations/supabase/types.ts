@@ -9983,6 +9983,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      generate_invoice_number: { Args: never; Returns: string }
       generate_temporary_password: { Args: never; Returns: string }
       get_admin_user_details: {
         Args: { user_ids: string[] }
@@ -10332,6 +10333,10 @@ export type Database = {
           organizations: Json
           role: string
         }[]
+      }
+      map_booking_status_to_invoice_status: {
+        Args: { booking_status: string }
+        Returns: string
       }
       map_org_role_to_system_role: {
         Args: { org_role: string }
