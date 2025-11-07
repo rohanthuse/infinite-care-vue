@@ -265,6 +265,13 @@ const UnifiedLogin = () => {
     console.log('[LOGIN DEBUG] Setting loading state to true');
     setLoading(true);
 
+    // Clear any stale navigation data
+    sessionStorage.removeItem('navigating_to_dashboard');
+    sessionStorage.removeItem('target_dashboard');
+    sessionStorage.removeItem('redirect_in_progress');
+    localStorage.removeItem('currentBranchId');
+    localStorage.removeItem('currentBranchName');
+
     // Add timeout to force loading reset after 15 seconds
     const timeoutId = setTimeout(() => {
       console.warn('[LOGIN DEBUG] Login timeout reached, resetting loading state');
@@ -328,6 +335,12 @@ const UnifiedLogin = () => {
         const redeemResult = await redeemThirdPartyInvite(authData.user.id, authData.user.email);
         if (redeemResult) {
           toast.success("Third-party access activated successfully!");
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', '/third-party/workspace');
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
           window.location.href = '/third-party/workspace';
           return;
         } else {
@@ -360,9 +373,21 @@ const UnifiedLogin = () => {
         
         if (orgSlug) {
           console.log('[LOGIN DEBUG] Redirecting super admin to tenant dashboard:', `/${orgSlug}/dashboard`);
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', `/${orgSlug}/dashboard`);
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
           window.location.href = `/${orgSlug}/dashboard`;
         } else {
           console.log('[LOGIN DEBUG] No organization found for super admin, redirecting to global dashboard');
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', '/dashboard');
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
           window.location.href = '/dashboard';
         }
         return;
@@ -372,6 +397,12 @@ const UnifiedLogin = () => {
       if (userRole === 'app_admin') {
         console.log('[LOGIN DEBUG] App admin detected, redirecting to system dashboard');
         toast.success("Welcome back, System Administrator!");
+        
+        sessionStorage.setItem('redirect_in_progress', 'true');
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
+        sessionStorage.setItem('target_dashboard', '/system-dashboard');
+        setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+        
         window.location.href = '/system-dashboard';
         return;
       }
@@ -431,6 +462,11 @@ const UnifiedLogin = () => {
 
       console.log('[LOGIN DEBUG] Final redirect to:', dashboardPath);
       console.log('[CARER_LOGIN] Redirecting to:', dashboardPath);
+      
+      sessionStorage.setItem('redirect_in_progress', 'true');
+      sessionStorage.setItem('navigating_to_dashboard', 'true');
+      sessionStorage.setItem('target_dashboard', dashboardPath);
+      setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
       
       // Use window.location.href for more reliable navigation after authentication
       window.location.href = dashboardPath;
