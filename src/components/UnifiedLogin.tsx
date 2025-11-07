@@ -373,7 +373,34 @@ const UnifiedLogin = () => {
       // For super admins, route to tenant-specific dashboard if orgSlug available
       if (userRole === 'super_admin') {
         if (orgSlug) {
-          console.log('[LOGIN DEBUG] Super admin detected, redirecting to tenant dashboard:', `/${orgSlug}/dashboard`);
+          console.log('[LOGIN DEBUG] Super admin detected, pre-caching org data');
+          
+          // PRE-CACHE: Fetch and store organization data
+          try {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('*')
+              .eq('slug', orgSlug)
+              .single();
+            
+            if (orgData) {
+              sessionStorage.setItem('cached_org_data', JSON.stringify(orgData));
+              sessionStorage.setItem('cached_org_timestamp', Date.now().toString());
+              
+              // Also cache the user's role for faster access
+              sessionStorage.setItem('cached_user_role', JSON.stringify({
+                role: 'super_admin',
+                status: 'active'
+              }));
+              
+              console.log('[LOGIN DEBUG] Organization data cached successfully');
+            }
+          } catch (error) {
+            console.warn('[LOGIN DEBUG] Failed to pre-cache org data:', error);
+            // Continue anyway - dashboard will fetch as fallback
+          }
+          
+          console.log('[LOGIN DEBUG] Redirecting to tenant dashboard:', `/${orgSlug}/dashboard`);
           toast.success("Welcome back, Super Administrator!");
           
           sessionStorage.setItem('redirect_in_progress', 'true');
@@ -427,6 +454,27 @@ const UnifiedLogin = () => {
       
       switch (userRole) {
         case 'branch_admin':
+          // PRE-CACHE organization data for branch admin
+          try {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('*')
+              .eq('slug', orgSlug)
+              .single();
+            
+            if (orgData) {
+              sessionStorage.setItem('cached_org_data', JSON.stringify(orgData));
+              sessionStorage.setItem('cached_org_timestamp', Date.now().toString());
+              sessionStorage.setItem('cached_user_role', JSON.stringify({
+                role: 'branch_admin',
+                status: 'active'
+              }));
+              console.log('[LOGIN DEBUG] Branch admin - organization data cached');
+            }
+          } catch (error) {
+            console.warn('[LOGIN DEBUG] Failed to pre-cache org data:', error);
+          }
+          
           dashboardPath = `/${orgSlug}/dashboard`;
           console.log('[LOGIN DEBUG] Branch admin - redirect to org dashboard');
           toast.success("Welcome back, Branch Administrator!");

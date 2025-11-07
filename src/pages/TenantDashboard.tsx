@@ -65,6 +65,66 @@ const TenantDashboard = () => {
   }, []);
 
   useEffect(() => {
+    const loadCachedDataIfAvailable = () => {
+      // Check if we have recently cached data (within last 10 seconds)
+      const cachedOrgData = sessionStorage.getItem('cached_org_data');
+      const cachedTimestamp = sessionStorage.getItem('cached_org_timestamp');
+      const cachedUserRole = sessionStorage.getItem('cached_user_role');
+      
+      if (cachedOrgData && cachedTimestamp && cachedUserRole) {
+        const age = Date.now() - parseInt(cachedTimestamp);
+        
+        // Use cached data if it's less than 10 seconds old (fresh from login)
+        if (age < 10000) {
+          console.log('[TenantDashboard] Using cached organization data from login');
+          
+          try {
+            const orgData = JSON.parse(cachedOrgData);
+            const roleData = JSON.parse(cachedUserRole);
+            
+            setOrganization(orgData);
+            setUserRole(roleData);
+            setLoading(false);
+            
+            // Apply branding immediately
+            try {
+              if (orgData.primary_color) {
+                const primaryHsl = normalizeToHslVar(orgData.primary_color);
+                document.documentElement.style.setProperty('--primary', primaryHsl);
+              }
+              if (orgData.secondary_color) {
+                const secondaryHsl = normalizeToHslVar(orgData.secondary_color);
+                document.documentElement.style.setProperty('--secondary', secondaryHsl);
+              }
+            } catch (colorError) {
+              console.error('Error applying organization colors:', colorError);
+              document.documentElement.style.setProperty('--primary', '222.2 84% 4.9%');
+              document.documentElement.style.setProperty('--secondary', '210 40% 96%');
+            }
+            
+            document.title = `${orgData.name} - Dashboard`;
+            
+            // Clear cached data after use
+            sessionStorage.removeItem('cached_org_data');
+            sessionStorage.removeItem('cached_org_timestamp');
+            sessionStorage.removeItem('cached_user_role');
+            
+            return true; // Cached data was used
+          } catch (error) {
+            console.error('[TenantDashboard] Error parsing cached data:', error);
+          }
+        } else {
+          console.log('[TenantDashboard] Cached data too old, fetching fresh data');
+          // Clear old cache
+          sessionStorage.removeItem('cached_org_data');
+          sessionStorage.removeItem('cached_org_timestamp');
+          sessionStorage.removeItem('cached_user_role');
+        }
+      }
+      
+      return false; // No cached data available
+    };
+
     const fetchTenantData = async () => {
       if (!user || !tenantSlug) {
         navigate('/');
@@ -153,7 +213,11 @@ const TenantDashboard = () => {
       }
     };
 
-    fetchTenantData();
+    // Try to use cached data first, otherwise fetch
+    const usedCache = loadCachedDataIfAvailable();
+    if (!usedCache) {
+      fetchTenantData();
+    }
   }, [user, tenantSlug, navigate, toast, signOut, systemUserRole]);
 
   const handleSignOut = async () => {
