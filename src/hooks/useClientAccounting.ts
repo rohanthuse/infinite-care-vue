@@ -171,7 +171,7 @@ export const useClientRateSchedules = (clientId: string) => {
         .from('client_rate_schedules')
         .select('*')
         .eq('client_id', clientId)
-        .eq('is_active', true)
+        .order('is_active', { ascending: false })
         .order('start_date', { ascending: false });
       
       if (error) throw error;
