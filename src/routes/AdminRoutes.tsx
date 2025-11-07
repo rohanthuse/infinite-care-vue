@@ -39,6 +39,7 @@ import TenantLogin from "@/pages/TenantLogin";
 import { BranchSidebarProvider } from "@/components/branch-dashboard/BranchSidebarProvider";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import StaffFormsManagement from "@/pages/StaffFormsManagement";
+import CarerFillForm from "@/pages/carer/CarerFillForm";
 
 const BranchAdminRedirector = () => {
   const { data: userRole } = useUserRole();
@@ -166,6 +167,7 @@ const AdminRoutes = () => [
           <Route path="attendance" element={<Attendance />} />
           <Route path="form-builder" element={<FormBuilder />} />
           <Route path="form-builder/:formId" element={<FormBuilder />} />
+          <Route path="forms/fill/:formId" element={<CarerFillForm />} />
           <Route path="documents" element={<Documents />} />
           <Route path="library" element={<Library />} />
           <Route path="third-party" element={<ThirdPartyAccess />} />

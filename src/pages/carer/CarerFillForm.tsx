@@ -19,17 +19,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, Save, Send, FileText, AlertCircle, Clock, CheckCircle, Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
+import { useTenant } from '@/contexts/TenantContext';
 import { FileUploadDropzone } from '@/components/agreements/FileUploadDropzone';
 import { SignatureCanvas } from '@/components/ui/signature-canvas';
 import type { FormElement } from '@/types/form-builder';
 import { format } from 'date-fns';
 
 const CarerFillForm = () => {
-  const { formId } = useParams<{ formId: string }>();
+  const { formId, branchId: urlBranchId, branchName: urlBranchName } = useParams<{ 
+    formId: string;
+    branchId?: string; 
+    branchName?: string; 
+  }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { navigateToCarerPage } = useCarerNavigation();
+  const { tenantSlug } = useTenant();
   
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -40,8 +46,10 @@ const CarerFillForm = () => {
   
   // Check if submitting on behalf of someone
   const searchParams = new URLSearchParams(location.search);
-  const onBehalfOfUserId = searchParams.get('onBehalfOf');
-  const staffName = searchParams.get('staffName');
+  // Support both parameter names for backwards compatibility
+  const onBehalfOfUserId = searchParams.get('proxyFor') || searchParams.get('onBehalfOf');
+  const staffName = searchParams.get('proxyName') || searchParams.get('staffName');
+  const returnTo = searchParams.get('returnTo');
   const isProxySubmission = !!onBehalfOfUserId;
 
   // Get the form details
@@ -63,6 +71,20 @@ const CarerFillForm = () => {
   });
 
   const branchId = currentForm?.branch_id || '';
+
+  // Smart navigation handler
+  const handleBackNavigation = () => {
+    if (returnTo === 'forms' && urlBranchId && urlBranchName) {
+      // Navigating back to branch forms page
+      const branchFormsPath = tenantSlug
+        ? `/${tenantSlug}/branch-dashboard/${urlBranchId}/${urlBranchName}/forms`
+        : `/branch-dashboard/${urlBranchId}/${urlBranchName}/forms`;
+      navigate(branchFormsPath);
+    } else {
+      // Default to carer forms page
+      navigateToCarerPage('/forms');
+    }
+  };
 
   const { uiElements: elements, isLoading: isLoadingElements, error: elementsError } = useFormElements(formId || '');
   const { createSubmission, isCreating } = useFormSubmissions(branchId, formId);
@@ -199,7 +221,7 @@ const CarerFillForm = () => {
 
       // Don't navigate immediately, let the mutation handle success
       if (status === 'completed') {
-        setTimeout(() => navigateToCarerPage('/forms'), 1000);
+        setTimeout(() => handleBackNavigation(), 1000);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -587,7 +609,7 @@ const CarerFillForm = () => {
               <p className="text-muted-foreground mb-4">
                 There was an error loading the form elements. Please try again later.
               </p>
-              <Button onClick={() => navigateToCarerPage('/forms')} variant="outline">
+              <Button onClick={handleBackNavigation} variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Forms
               </Button>
@@ -604,7 +626,7 @@ const CarerFillForm = () => {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => navigateToCarerPage('/forms')}
+          onClick={handleBackNavigation}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Forms
