@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientSuspensionForBilling } from "@/services/SuspensionAwareInvoiceService";
+import { useGenerateBookingInvoice } from "@/hooks/useGenerateBookingInvoice";
 
 export interface CreateBookingInput {
   branch_id: string;
@@ -64,6 +65,8 @@ export async function createBooking(input: CreateBookingInput) {
 
 export function useCreateBooking(branchId?: string) {
   const queryClient = useQueryClient();
+  const { generateInvoiceForBooking } = useGenerateBookingInvoice();
+  
   return useMutation({
     mutationFn: createBooking,
     onSuccess: async (data) => {
@@ -122,6 +125,41 @@ export function useCreateBooking(branchId?: string) {
         }
 
         console.log('[useCreateBooking] All query invalidations completed');
+
+        // NEW: Auto-generate invoice for the booking
+        console.log('[useCreateBooking] Auto-generating invoice for booking:', data.id);
+        
+        try {
+          // Get organization_id from branch
+          const { data: branch } = await supabase
+            .from('branches')
+            .select('organization_id')
+            .eq('id', bookingBranchId)
+            .single();
+
+          if (branch?.organization_id) {
+            await generateInvoiceForBooking({
+              bookingId: data.id,
+              branchId: bookingBranchId,
+              organizationId: branch.organization_id
+            });
+            
+            console.log('[useCreateBooking] ✅ Invoice auto-generated successfully');
+            
+            // Invalidate invoice queries
+            await Promise.all([
+              invalidateWithRetry(['branch-invoices', bookingBranchId]),
+              invalidateWithRetry(['branch-booking-invoices', bookingBranchId]),
+              invalidateWithRetry(['client-billing', data.client_id])
+            ]);
+          } else {
+            console.warn('[useCreateBooking] ⚠️ Could not get organization_id for invoice generation');
+          }
+        } catch (invoiceError) {
+          console.error('[useCreateBooking] ❌ Failed to auto-generate invoice:', invoiceError);
+          // Don't fail the booking creation if invoice generation fails
+          // Admin can manually generate invoice later
+        }
       } catch (error) {
         console.error('[useCreateBooking] Error during query invalidation:', error);
         // Force a hard refetch as fallback
