@@ -55,10 +55,21 @@ const TenantLogin = () => {
 
     setIsSubmitting(true);
 
-    // Set navigation intent BEFORE auth to ensure it's ready for routing
-    sessionStorage.setItem('navigating_to_dashboard', 'true');
-
     try {
+      // PHASE 4: Clear any stale navigation data before login
+      console.log('[TenantLogin] Clearing stale navigation data');
+      sessionStorage.removeItem('navigating_to_dashboard');
+      sessionStorage.removeItem('target_dashboard');
+      sessionStorage.removeItem('redirect_in_progress');
+      localStorage.removeItem('currentBranchId');
+      localStorage.removeItem('currentBranchName');
+
+      // PHASE 7: Set redirect lock to prevent double redirects
+      sessionStorage.setItem('redirect_in_progress', 'true');
+      setTimeout(() => {
+        sessionStorage.removeItem('redirect_in_progress');
+      }, 5000);
+
       // Authenticate with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
@@ -72,6 +83,12 @@ const TenantLogin = () => {
       if (!authData.user) {
         throw new Error('Authentication failed');
       }
+
+      console.log('[TenantLogin] Authentication successful, determining role and target dashboard');
+
+      // PHASE 3: Store tenant context
+      localStorage.setItem('current_tenant_slug', tenantSlug || '');
+      localStorage.setItem('current_organization_id', organization.id);
 
       // Check if user is a super admin first by joining through email
       const { data: systemUserRole, error: systemRoleError } = await supabase
@@ -96,6 +113,7 @@ const TenantLogin = () => {
 
         if (memberError || !orgMemberData) {
           await supabase.auth.signOut();
+          sessionStorage.removeItem('redirect_in_progress');
           toast({
             title: 'Access Denied',
             description: 'You don\'t have permission to access this organization.',
@@ -117,40 +135,55 @@ const TenantLogin = () => {
         memberData = orgMemberData || { role: 'admin', status: 'active' }; // Default super admin privileges
       }
 
-      // Success - redirect based on role
+      // Success - show welcome toast
       toast({
         title: 'Welcome!',
         description: `Successfully logged in to ${organization.name}.`,
       });
 
-      // Redirect based on user role within the organization
-      if (isSuperAdmin) {
-        // Super admin accessing organization - go to organization dashboard
-        toast({
-          title: 'Welcome, Super Administrator!',
-          description: `Accessing ${organization.name} organization dashboard.`,
-        });
-        const targetPath = `/${tenantSlug}/dashboard`;
-        sessionStorage.setItem('target_dashboard', targetPath);
-        navigate(targetPath, { replace: true });
-      } else if (memberData.role === 'owner' || memberData.role === 'admin') {
-        // Organization admin - go to tenant dashboard which will show old-style admin interface
-        const targetPath = `/${tenantSlug}/dashboard`;
-        sessionStorage.setItem('target_dashboard', targetPath);
-        navigate(targetPath, { replace: true });
+      // PHASE 3 & 6: Determine target path based on role with proper branch context
+      let targetPath: string;
+
+      if (isSuperAdmin || memberData.role === 'owner' || memberData.role === 'admin') {
+        targetPath = `/${tenantSlug}/dashboard`;
+        console.log('[TenantLogin] Admin role detected, redirecting to:', targetPath);
       } else if (memberData.role === 'branch_admin') {
-        // Branch admin - redirect to branch selection or specific branch
-        const targetPath = `/${tenantSlug}/branches`;
-        sessionStorage.setItem('target_dashboard', targetPath);
-        navigate(targetPath, { replace: true });
+        // PHASE 6: Fetch branch information for branch admins
+        console.log('[TenantLogin] Branch admin detected, fetching branch data');
+        const { data: adminBranches } = await supabase
+          .from('admin_branches')
+          .select('branch_id, branches!inner(name)')
+          .eq('admin_id', authData.user.id)
+          .limit(1)
+          .single();
+        
+        if (adminBranches) {
+          const branchId = adminBranches.branch_id;
+          const branchName = adminBranches.branches.name;
+          localStorage.setItem('currentBranchId', branchId);
+          localStorage.setItem('currentBranchName', branchName);
+          targetPath = `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
+          console.log('[TenantLogin] Branch admin redirecting to:', targetPath);
+        } else {
+          // Fallback to branches list if no branch found
+          targetPath = `/${tenantSlug}/branches`;
+          console.log('[TenantLogin] No branch found, redirecting to branches list');
+        }
       } else {
-        // Regular member - go to regular tenant dashboard
-        const targetPath = `/${tenantSlug}/dashboard`;
-        sessionStorage.setItem('target_dashboard', targetPath);
-        navigate(targetPath, { replace: true });
+        // Regular member - go to tenant dashboard
+        targetPath = `/${tenantSlug}/dashboard`;
+        console.log('[TenantLogin] Regular member, redirecting to:', targetPath);
       }
+
+      // PHASE 1 & 3: Set navigation flags and navigate
+      sessionStorage.setItem('navigating_to_dashboard', 'true');
+      sessionStorage.setItem('target_dashboard', targetPath);
+      console.log('[TenantLogin] Navigation flags set, navigating to:', targetPath);
+      
+      navigate(targetPath, { replace: true });
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('[TenantLogin] Login error:', error);
+      sessionStorage.removeItem('redirect_in_progress');
       toast({
         title: 'Login Failed',
         description: error.message || 'Invalid email or password.',

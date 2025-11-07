@@ -40,8 +40,22 @@ const Index = () => {
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
 
-  // Background redirect (non-blocking) - runs after page renders
+  // PHASE 2 & 7: Background redirect with protection against double redirects
   useEffect(() => {
+    // PHASE 7: Check if redirect is already in progress
+    const redirectInProgress = sessionStorage.getItem('redirect_in_progress') === 'true';
+    if (redirectInProgress) {
+      console.log('[Index] Redirect in progress, skipping Index redirect logic');
+      return;
+    }
+
+    // PHASE 2: Check if user is being navigated from login
+    const isNavigatingFromLogin = sessionStorage.getItem('navigating_to_dashboard') === 'true';
+    if (isNavigatingFromLogin) {
+      console.log('[Index] Navigation from login in progress, skipping Index redirect logic');
+      return;
+    }
+
     const currentPath = window.location.pathname;
     
     // CRITICAL: Only redirect if user is actually on the Index page (/)

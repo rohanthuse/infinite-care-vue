@@ -51,10 +51,17 @@ const TenantDashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Clear navigation intent flags once we've reached the dashboard
+  // PHASE 1: Clear navigation intent flags AFTER dashboard is fully loaded
   useEffect(() => {
-    sessionStorage.removeItem('navigating_to_dashboard');
-    sessionStorage.removeItem('target_dashboard');
+    // Delay clearing to ensure navigation is complete
+    const timer = setTimeout(() => {
+      console.log('[TenantDashboard] Clearing navigation flags after successful load');
+      sessionStorage.removeItem('navigating_to_dashboard');
+      sessionStorage.removeItem('target_dashboard');
+      sessionStorage.removeItem('redirect_in_progress');
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
