@@ -1,7 +1,5 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useEffect } from "react";
 import Dashboard from "@/pages/Dashboard";
 import Services from "@/pages/Services";
 import Settings from "@/pages/Settings";
@@ -42,38 +40,7 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import StaffFormsManagement from "@/pages/StaffFormsManagement";
 import CarerFillForm from "@/pages/carer/CarerFillForm";
 
-const BranchAdminRedirector = () => {
-  const { data: userRole } = useUserRole();
-  
-  useEffect(() => {
-    // Only redirect branch admins to their specific branch
-    // Super admins should stay on the main dashboard
-    if (userRole?.role === 'branch_admin' && userRole?.branchId) {
-      const branchId = userRole.branchId;
-      const branchName = localStorage.getItem("currentBranchName") || "Branch";
-      const encodedBranchName = encodeURIComponent(branchName);
-      
-      // Redirect to their assigned branch dashboard - will need tenant context
-      const tenantSlug = window.location.pathname.split('/')[1];
-      if (tenantSlug) {
-        window.location.replace(`/${tenantSlug}/branch-dashboard/${branchId}/${encodedBranchName}`);
-      } else {
-        // Fallback - this shouldn't happen in path-based routing
-        window.location.replace(`/branch-dashboard/${branchId}/${encodedBranchName}`);
-      }
-    }
-  }, [userRole]);
-
-  // Show loading while checking user role
-  if (!userRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // For both super admins and branch admins, render the tenant dashboard
+const TenantDashboardWrapper = () => {
   return <TenantDashboard />;
 };
 
@@ -98,8 +65,8 @@ const RequireAdminAuth = () => {
 const AdminRoutes = () => [
   <Route key="admin-auth" element={<RequireAdminAuth />}>
     {/* Tenant-specific routes - these work within a tenant context */}
-    <Route path="admin" element={<BranchAdminRedirector />} />
-    <Route path="dashboard" element={<BranchAdminRedirector />} />
+    <Route path="admin" element={<TenantDashboardWrapper />} />
+    <Route path="dashboard" element={<TenantDashboardWrapper />} />
     <Route path="notifications" element={<Notifications />} />
     <Route path="notifications/:categoryId" element={<Notifications />} />
     <Route path="services" element={<Services />} />
