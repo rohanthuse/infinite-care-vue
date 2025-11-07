@@ -211,15 +211,6 @@ const AppContent = () => {
                 </TenantProvider>
               } />
               
-              {/* Tenant Dashboard Route */}
-              <Route path="/:tenantSlug/dashboard" element={
-                <TenantProvider>
-                  <TenantErrorWrapper>
-                    <TenantDashboard />
-                  </TenantErrorWrapper>
-                </TenantProvider>
-              } />
-              
               {/* Tenant-specific Protected Routes */}
               <Route path="/:tenantSlug/*" element={
                 <TenantProvider>

@@ -36,6 +36,7 @@ import BookingApprovals from "@/pages/BookingApprovals";
 import Accounting from "@/pages/Accounting";
 import OrganizationCalendar from "@/pages/OrganizationCalendar";
 import TenantLogin from "@/pages/TenantLogin";
+import TenantDashboard from "@/pages/TenantDashboard";
 import { BranchSidebarProvider } from "@/components/branch-dashboard/BranchSidebarProvider";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import StaffFormsManagement from "@/pages/StaffFormsManagement";
@@ -84,8 +85,8 @@ const BranchAdminRedirector = () => {
     );
   }
 
-  // For super admins, render the normal dashboard
-  return <Dashboard />;
+  // For super admins, render the tenant dashboard (organization members)
+  return <TenantDashboard />;
 };
 
 const RequireAdminAuth = () => {

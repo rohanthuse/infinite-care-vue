@@ -423,8 +423,38 @@ const UnifiedLogin = () => {
       
       switch (userRole) {
         case 'branch_admin':
-          dashboardPath += '/dashboard';
-          toast.success("Welcome back, Branch Administrator!");
+          console.log('[LOGIN DEBUG] Branch admin detected, fetching branch info');
+          
+          // Fetch branch admin's assigned branch
+          try {
+            const { data: branchAdminData } = await supabase
+              .from('admin_branches')
+              .select('branch_id, branches(id, name)')
+              .eq('admin_id', authData.user.id)
+              .single();
+            
+            if (branchAdminData?.branches) {
+              const branchId = branchAdminData.branches.id;
+              const branchName = branchAdminData.branches.name;
+              const encodedBranchName = encodeURIComponent(branchName);
+              
+              // Store for later use
+              localStorage.setItem('currentBranchId', branchId);
+              localStorage.setItem('currentBranchName', branchName);
+              
+              dashboardPath = `/${orgSlug}/branch-dashboard/${branchId}/${encodedBranchName}`;
+              console.log('[LOGIN DEBUG] Branch admin redirect path:', dashboardPath);
+              toast.success("Welcome back, Branch Administrator!");
+            } else {
+              console.error('[LOGIN DEBUG] No branch found for branch admin');
+              throw new Error("No branch assigned to your account");
+            }
+          } catch (branchError) {
+            console.error('[LOGIN DEBUG] Error fetching branch admin data:', branchError);
+            toast.error("Unable to load your branch information");
+            await supabase.auth.signOut();
+            return;
+          }
           break;
         case 'carer':
           console.log('[CARER_LOGIN] Carer role detected, pre-fetching profile');
