@@ -16,6 +16,7 @@ import { FilePlus, Search, MoreHorizontal, Eye, Edit, Trash, Copy, AlertCircle, 
 import { useFormManagement } from '@/hooks/useFormManagement';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 import { FormTemplatesContent } from './FormTemplatesContent';
+import { StaffFormsContent } from './StaffFormsContent';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { toast } from '@/hooks/use-toast';
 
@@ -467,6 +468,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
             <TabsTrigger value="all">All Forms ({forms.length})</TabsTrigger>
             <TabsTrigger value="published">Published ({forms.filter(f => f.published).length})</TabsTrigger>
             <TabsTrigger value="drafts">Drafts ({forms.filter(f => !f.published).length})</TabsTrigger>
+            <TabsTrigger value="staff-submissions">Staff Submissions</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
           </TabsList>
           
@@ -525,6 +527,10 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
         
         <TabsContent value="drafts" className="mt-6">
           {activeView === 'list' ? renderListView() : renderGridView()}
+        </TabsContent>
+        
+        <TabsContent value="staff-submissions" className="mt-6">
+          <StaffFormsContent branchId={branchId} branchName={branchName} />
         </TabsContent>
         
         <TabsContent value="templates" className="mt-6">
