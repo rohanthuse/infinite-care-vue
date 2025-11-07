@@ -34,7 +34,7 @@ export const useCreateOrUpdateClientAccountingSettings = () => {
         .from('client_accounting_settings')
         .select('id')
         .eq('client_id', settings.client_id!)
-        .single();
+        .maybeSingle();
       
       if (existing) {
         const { data, error } = await supabase

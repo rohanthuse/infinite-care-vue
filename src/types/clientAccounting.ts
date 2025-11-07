@@ -1,9 +1,9 @@
 export interface ClientAccountingSettings {
   id: string;
   client_id: string;
-  care_lead_id?: string;
-  agreement_type?: string;
-  expiry_date?: string;
+  care_lead_id?: string | null;
+  agreement_type?: string | null;
+  expiry_date?: string | null;
   show_in_task_matrix: boolean;
   show_in_form_matrix: boolean;
   enable_geo_fencing: boolean;

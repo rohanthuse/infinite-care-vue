@@ -126,21 +126,24 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
         });
       }
       
-      // Then update the accounting settings
+      // Sanitize data: convert empty strings to null for optional UUID fields
       updateSettings.mutate({
         client_id: clientId,
         branch_id: branchId,
         organization_id: organization?.id || '',
+        care_lead_id: data.care_lead_id || null,
+        agreement_type: data.agreement_type || null,
+        expiry_date: data.expiry_date || null,
         show_in_task_matrix: data.show_in_task_matrix || false,
         show_in_form_matrix: data.show_in_form_matrix || false,
         enable_geo_fencing: data.enable_geo_fencing || false,
         invoice_method: data.invoice_method || 'per_visit',
         invoice_display_type: data.invoice_display_type || 'per_visit',
         billing_address_same_as_personal: data.billing_address_same_as_personal ?? true,
+        pay_method: data.pay_method || null,
         rate_type: data.rate_type || 'standard',
         mileage_rule_no_payment: data.mileage_rule_no_payment || false,
         service_payer: data.service_payer || 'authorities',
-        ...data
       });
     } catch (error) {
       console.error('Error updating client settings:', error);
