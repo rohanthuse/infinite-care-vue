@@ -37,6 +37,12 @@ const CarerFillForm = () => {
 
   // Get form data from navigation state if available
   const passedFormData = location.state?.formData;
+  
+  // Check if submitting on behalf of someone
+  const searchParams = new URLSearchParams(location.search);
+  const onBehalfOfUserId = searchParams.get('onBehalfOf');
+  const staffName = searchParams.get('staffName');
+  const isProxySubmission = !!onBehalfOfUserId;
 
   // Get the form details
   const { data: currentForm, isLoading: isLoadingForm } = useQuery({
@@ -179,10 +185,16 @@ const CarerFillForm = () => {
     try {
       createSubmission({
         form_id: formId,
-        submitted_by: user.id,
+        submitted_by: isProxySubmission ? onBehalfOfUserId : user.id,
         submitted_by_type: 'carer',
         submission_data: formData,
-        status
+        status,
+        // Proxy submission metadata
+        ...(isProxySubmission && {
+          submitted_on_behalf_of: onBehalfOfUserId,
+          submitted_by_admin: user.id,
+          submission_type: 'admin_on_behalf' as const
+        })
       });
 
       // Don't navigate immediately, let the mutation handle success
@@ -598,6 +610,19 @@ const CarerFillForm = () => {
           Back to Forms
         </Button>
       </div>
+
+      {/* Proxy submission banner */}
+      {isProxySubmission && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-orange-900">
+            <AlertCircle className="h-5 w-5" />
+            <div>
+              <p className="font-semibold">Submitting on Behalf of Staff Member</p>
+              <p className="text-sm">You are filling this form for: {staffName || 'Staff Member'}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader>

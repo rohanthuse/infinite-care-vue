@@ -37,6 +37,8 @@ import Accounting from "@/pages/Accounting";
 import OrganizationCalendar from "@/pages/OrganizationCalendar";
 import TenantLogin from "@/pages/TenantLogin";
 import { BranchSidebarProvider } from "@/components/branch-dashboard/BranchSidebarProvider";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import StaffFormsManagement from "@/pages/StaffFormsManagement";
 
 const BranchAdminRedirector = () => {
   const { data: userRole } = useUserRole();
@@ -122,6 +124,7 @@ const AdminRoutes = () => [
     <Route path="branch-details/:id" element={<BranchDetails />} />
     <Route path="branch-admins" element={<BranchAdmins />} />
     <Route path="workflow" element={<Workflow />} />
+    <Route path="staff-forms" element={<StaffFormsManagement />} />
     <Route path="task-matrix" element={<TaskMatrix branchId="main" branchName="Main Branch" />} />
     <Route path="training-matrix" element={<TrainingMatrix branchId="main" branchName="Main Branch" />} />
     <Route path="key-parameters" element={<KeyParameters />} />

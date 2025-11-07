@@ -22,7 +22,8 @@ import {
   Save,
   Download,
   Eye,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertCircle
 } from 'lucide-react';
 
 interface FormSubmissionDetailProps {
@@ -327,15 +328,41 @@ export const FormSubmissionDetail: React.FC<FormSubmissionDetailProps> = ({
               <Badge className={getSubmitterTypeColor(submission.submitted_by_type)}>
                 {submission.submitted_by_type}
               </Badge>
+              {submission.submission_type === 'admin_on_behalf' && (
+                <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                  Submitted by Admin
+                </Badge>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent>
+          {/* Show proxy submission info if applicable */}
+          {submission.submission_type === 'admin_on_behalf' && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-orange-900">
+                    This form was submitted by an administrator on behalf of the staff member
+                  </p>
+                  {submission.submitted_by_admin && (
+                    <p className="text-xs text-orange-700 mt-1">
+                      Admin ID: {submission.submitted_by_admin}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm text-muted-foreground">Submitted by</p>
+                <p className="text-sm text-muted-foreground">
+                  {submission.submission_type === 'admin_on_behalf' ? 'Submitted for' : 'Submitted by'}
+                </p>
                 <p className="font-medium">{submission.submitter_name || `#${submission.id.slice(-8)}`}</p>
               </div>
             </div>

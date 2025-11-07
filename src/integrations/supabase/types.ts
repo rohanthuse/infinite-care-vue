@@ -4876,9 +4876,12 @@ export type Database = {
           reviewed_by: string | null
           status: string
           submission_data: Json
+          submission_type: string | null
           submitted_at: string
           submitted_by: string
+          submitted_by_admin: string | null
           submitted_by_type: string
+          submitted_on_behalf_of: string | null
         }
         Insert: {
           branch_id: string
@@ -4889,9 +4892,12 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           submission_data?: Json
+          submission_type?: string | null
           submitted_at?: string
           submitted_by: string
+          submitted_by_admin?: string | null
           submitted_by_type: string
+          submitted_on_behalf_of?: string | null
         }
         Update: {
           branch_id?: string
@@ -4902,9 +4908,12 @@ export type Database = {
           reviewed_by?: string | null
           status?: string
           submission_data?: Json
+          submission_type?: string | null
           submitted_at?: string
           submitted_by?: string
+          submitted_by_admin?: string | null
           submitted_by_type?: string
+          submitted_on_behalf_of?: string | null
         }
         Relationships: [
           {

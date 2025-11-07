@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, ListChecks, FileText, ClipboardCheck, Search, Filter, Download } from "lucide-react";
+import { Bell, ListChecks, FileText, ClipboardCheck, Search, Filter, Download, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { Button } from "@/components/ui/button";
@@ -163,6 +163,19 @@ const Workflow = () => {
                   </div>
                   <h3 className="font-semibold text-gray-800 text-lg">Care Plan</h3>
                   <p className="text-sm text-gray-500 mt-1">Patient care plans</p>
+                </CardContent>
+              </Card>
+
+              <Card 
+                className="bg-white hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200"
+                onClick={() => navigate('/staff-forms')}
+              >
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                    <Users className="h-8 w-8 text-emerald-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800 text-lg">Staff Forms</h3>
+                  <p className="text-sm text-gray-500 mt-1">Manage staff submissions</p>
                 </CardContent>
               </Card>
             </div>

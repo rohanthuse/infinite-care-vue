@@ -16,6 +16,10 @@ export interface FormSubmission {
   reviewed_at?: string;
   reviewed_by?: string;
   review_notes?: string;
+  // Proxy submission fields
+  submitted_on_behalf_of?: string;
+  submitted_by_admin?: string;
+  submission_type?: 'self_submitted' | 'admin_on_behalf';
 }
 
 export const useFormSubmissions = (branchId: string, formId?: string) => {
@@ -112,6 +116,10 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
       submitted_by_type: 'client' | 'staff' | 'carer';
       submission_data: Record<string, any>;
       status?: 'draft' | 'completed' | 'under_review' | 'approved' | 'rejected';
+      // Proxy submission fields
+      submitted_on_behalf_of?: string;
+      submitted_by_admin?: string;
+      submission_type?: 'self_submitted' | 'admin_on_behalf';
     }) => {
       // First check if a submission already exists
       const { data: existingSubmission } = await supabase
@@ -128,7 +136,10 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
           .update({
             submission_data: submissionData.submission_data,
             status: submissionData.status || existingSubmission.status,
-            submitted_at: submissionData.status === 'completed' ? new Date().toISOString() : undefined
+            submitted_at: submissionData.status === 'completed' ? new Date().toISOString() : undefined,
+            submitted_on_behalf_of: submissionData.submitted_on_behalf_of || null,
+            submitted_by_admin: submissionData.submitted_by_admin || null,
+            submission_type: submissionData.submission_type || 'self_submitted',
           })
           .eq('id', existingSubmission.id)
           .select()
@@ -147,6 +158,9 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
             submitted_by_type: submissionData.submitted_by_type,
             submission_data: submissionData.submission_data,
             status: submissionData.status || 'completed',
+            submitted_on_behalf_of: submissionData.submitted_on_behalf_of || null,
+            submitted_by_admin: submissionData.submitted_by_admin || null,
+            submission_type: submissionData.submission_type || 'self_submitted',
           }])
           .select()
           .single();
