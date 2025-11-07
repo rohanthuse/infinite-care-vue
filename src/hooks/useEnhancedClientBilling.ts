@@ -31,6 +31,18 @@ export interface EnhancedClientBilling {
   start_date?: string;
   end_date?: string;
   
+  // Booking relationship (populated via JOIN)
+  booking?: {
+    id: string;
+    start_time: string;
+    end_time: string;
+    status: string;
+    service_id?: string;
+    services?: {
+      title: string;
+    };
+  };
+  
   // Time tracking fields
   booked_time_minutes?: number;
   actual_time_minutes?: number;
@@ -124,7 +136,7 @@ export interface UninvoicedBooking {
   days_since_service?: number;  // computed
 }
 
-// Fetch enhanced billing data
+// Fetch enhanced billing data (only booking-linked invoices)
 export const useEnhancedClientBilling = (clientId: string) => {
   return useQuery({
     queryKey: ['enhanced-client-billing', clientId],
@@ -134,9 +146,18 @@ export const useEnhancedClientBilling = (clientId: string) => {
         .select(`
           *,
           line_items:invoice_line_items(*),
-          payment_records(*)
+          payment_records(*),
+          booking:bookings(
+            id,
+            start_time,
+            end_time,
+            status,
+            service_id,
+            services(title)
+          )
         `)
-        .eq('client_id', clientId);
+        .eq('client_id', clientId)
+        .not('booking_id', 'is', null);
       
       if (error) throw error;
       return data;

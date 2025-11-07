@@ -234,17 +234,11 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
       {/* Main Content */}
       <Card>
         <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-lg">Enhanced Billing & Invoicing</CardTitle>
-            </div>
-            <Button size="sm" className="gap-1" onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4" />
-              <span>Generate Invoice</span>
-            </Button>
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Invoices from Bookings</CardTitle>
           </div>
-          <CardDescription>Comprehensive invoicing system with payment tracking</CardDescription>
+          <CardDescription>View all invoices generated from completed bookings</CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -257,10 +251,10 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
               {billingItems.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <CreditCard className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm">No invoices available for this client</p>
-                  <Button className="mt-4" onClick={() => setIsCreateDialogOpen(true)}>
-                    Create First Invoice
-                  </Button>
+                  <p className="text-sm font-medium">No booking-linked invoices yet</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Invoices will appear here automatically when bookings are completed and invoiced
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -273,50 +267,28 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                     const total = subtotal - discounts + taxAmount;
 
                     return (
-                      <div key={invoice.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
-                        <div className="flex items-start justify-between">
+                      <div key={invoice.id} className="border rounded-lg p-4 hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-3">
                           <div className="space-y-2 flex-1">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 flex-wrap">
                               <h3 className="font-medium">Invoice #{invoice.invoice_number}</h3>
+                              {invoice.booking && (
+                                <span className="text-xs text-gray-500 font-mono">
+                                  Booking: {invoice.booking.id.slice(0, 8)}
+                                </span>
+                              )}
                               <Badge className={`${getStatusColor(invoice.status)} flex items-center gap-1`}>
                                 {getStatusIcon(invoice.status)}
                                 {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                               </Badge>
                               {invoice.generated_from_booking && (
-                                <Badge variant="outline" className="text-xs">Auto-generated</Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  <Check className="h-3 w-3 mr-1" />
+                                  From Booking
+                                </Badge>
                               )}
                             </div>
                             <p className="text-sm text-gray-600">{invoice.description}</p>
-                            <div className="flex items-center gap-6 text-sm text-gray-600">
-                              <div className="flex items-center gap-1">
-                                <PoundSterling className="h-4 w-4" />
-                                <span className="font-medium">{formatCurrency(total)}</span>
-                                {(invoice.tax_amount || 0) > 0 && (
-                                  <span className="text-xs">(+{invoice.tax_amount}% tax)</span>
-                                )}
-                                {discounts > 0 && (
-                                  <span className="text-xs">(-{formatCurrency(discounts)} discount)</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                <span>Due: {formatDateSafe(invoice.due_date)}</span>
-                              </div>
-                              {invoice.service_provided_date && (
-                                <div className="text-xs">
-                                  Service: {formatDateSafe(invoice.service_provided_date)}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>Created: {formatDateSafe(invoice.invoice_date)}</span>
-                              {invoice.sent_date && (
-                                <span>• Sent: {formatDateSafe(invoice.sent_date)}</span>
-                              )}
-                              {invoice.paid_date && (
-                                <span>• Paid: {formatDateSafe(invoice.paid_date)}</span>
-                              )}
-                            </div>
                           </div>
                           <div className="flex items-center gap-2 ml-4">
                             <Button variant="ghost" size="sm" onClick={() => handleViewInvoice(invoice)}>
@@ -348,6 +320,72 @@ export const EnhancedBillingTab: React.FC<EnhancedBillingTabProps> = ({ clientId
                             <Button variant="ghost" size="sm" onClick={() => handleDownloadInvoice(invoice)}>
                               <Download className="h-4 w-4" />
                             </Button>
+                          </div>
+                        </div>
+
+                        {/* Booking Details Section */}
+                        {invoice.booking && (
+                          <div className="mb-3 p-3 bg-blue-50/50 rounded-md border border-blue-100">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div>
+                                <span className="text-gray-500 block text-xs font-medium">Booking Date</span>
+                                <span className="font-medium text-gray-900">
+                                  {formatDateSafe(invoice.booking.start_time, 'dd/MM/yyyy HH:mm')}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block text-xs font-medium">Booking Status</span>
+                                <Badge variant="secondary" className="text-xs mt-1">
+                                  {invoice.booking.status || 'N/A'}
+                                </Badge>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block text-xs font-medium">Service</span>
+                                <span className="text-gray-900 truncate block">
+                                  {invoice.booking.services?.title || 'N/A'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500 block text-xs font-medium">Booking ID</span>
+                                <span className="font-mono text-xs text-gray-700">
+                                  {invoice.booking.id.slice(0, 13)}...
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Financial Details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-6 text-sm text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <PoundSterling className="h-4 w-4" />
+                              <span className="font-medium text-lg text-gray-900">{formatCurrency(total)}</span>
+                              {(invoice.tax_amount || 0) > 0 && (
+                                <span className="text-xs">(+{invoice.tax_amount}% tax)</span>
+                              )}
+                              {discounts > 0 && (
+                                <span className="text-xs">(-{formatCurrency(discounts)} discount)</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              <span>Due: {formatDateSafe(invoice.due_date)}</span>
+                            </div>
+                            {invoice.service_provided_date && (
+                              <div className="text-xs">
+                                Service: {formatDateSafe(invoice.service_provided_date)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Created: {formatDateSafe(invoice.invoice_date)}</span>
+                            {invoice.sent_date && (
+                              <span>• Sent: {formatDateSafe(invoice.sent_date)}</span>
+                            )}
+                            {invoice.paid_date && (
+                              <span>• Paid: {formatDateSafe(invoice.paid_date)}</span>
+                            )}
                           </div>
                         </div>
                       </div>
