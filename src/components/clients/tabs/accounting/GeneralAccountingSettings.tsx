@@ -130,7 +130,6 @@ export const GeneralAccountingSettings: React.FC<GeneralAccountingSettingsProps>
       updateSettings.mutate({
         client_id: clientId,
         branch_id: branchId,
-        organization_id: organization?.id || '',
         care_lead_id: data.care_lead_id || null,
         agreement_type: data.agreement_type || null,
         expiry_date: data.expiry_date || null,

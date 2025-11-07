@@ -1,6 +1,7 @@
 export interface ClientAccountingSettings {
   id: string;
   client_id: string;
+  organization_id?: string;
   care_lead_id?: string | null;
   agreement_type?: string | null;
   expiry_date?: string | null;
@@ -18,7 +19,6 @@ export interface ClientAccountingSettings {
   created_at: string;
   updated_at: string;
   branch_id: string;
-  organization_id: string;
   // Authority-specific fields
   authority_invoice_config?: string;
   consolidation_preference?: 'single' | 'split_by_client';
