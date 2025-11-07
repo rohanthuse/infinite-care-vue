@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useFormElements } from '@/hooks/useFormElements';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 import { useFormValidation } from '@/hooks/useFormValidation';
@@ -34,6 +35,7 @@ const CarerFillForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { data: userRoleData } = useUserRole();
   const { navigateToCarerPage } = useCarerNavigation();
   const { tenantSlug } = useTenant();
   
@@ -72,20 +74,43 @@ const CarerFillForm = () => {
 
   const branchId = currentForm?.branch_id || '';
 
-  // Smart navigation handler
+  // Smart navigation handler - role-aware back navigation
   const handleBackNavigation = () => {
+    const currentUserRole = userRoleData?.role;
+    
+    // SUPER ADMIN / BRANCH ADMIN: Go back to tenant dashboard
+    if (currentUserRole === 'super_admin' || currentUserRole === 'branch_admin') {
+      const tenantDashboardPath = tenantSlug
+        ? `/${tenantSlug}/dashboard`
+        : '/dashboard';
+      
+      console.log('[CarerFillForm] Super admin/branch admin navigating back to tenant dashboard:', tenantDashboardPath);
+      navigate(tenantDashboardPath);
+      return;
+    }
+    
+    // CARER: Navigate back to their forms page
+    if (currentUserRole === 'carer') {
+      console.log('[CarerFillForm] Carer navigating back to carer forms page');
+      navigateToCarerPage('/forms');
+      return;
+    }
+    
+    // FALLBACK: If role is unknown, try to use returnTo parameter with branch dashboard
     if (returnTo && urlBranchId && urlBranchName) {
-      // Navigating back to the page specified in returnTo parameter
       const branchBasePath = tenantSlug
         ? `/${tenantSlug}/branch-dashboard/${urlBranchId}/${urlBranchName}`
         : `/branch-dashboard/${urlBranchId}/${urlBranchName}`;
       
       const backPath = `${branchBasePath}/${returnTo}`;
+      console.log('[CarerFillForm] Fallback navigation to:', backPath);
       navigate(backPath);
-    } else {
-      // Default to carer forms page
-      navigateToCarerPage('/forms');
+      return;
     }
+    
+    // ULTIMATE FALLBACK: Go to carer forms page
+    console.warn('[CarerFillForm] No role detected, using fallback navigation to carer forms');
+    navigateToCarerPage('/forms');
   };
 
   const { uiElements: elements, isLoading: isLoadingElements, error: elementsError } = useFormElements(formId || '');
