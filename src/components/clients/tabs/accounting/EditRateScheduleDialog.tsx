@@ -34,13 +34,22 @@ const editRateScheduleSchema = z.object({
     'rate_per_hour', 'rate_per_minutes_pro_rata', 
     'rate_per_minutes_flat_rate', 'daily_flat_rate'
   ]).default('hourly_rate'),
-  base_rate: z.number().min(0.01, 'Base rate must be greater than 0'),
+  base_rate: z.number().optional(),
   rate_15_minutes: z.number().optional(),
   rate_30_minutes: z.number().optional(),
   rate_45_minutes: z.number().optional(),
   rate_60_minutes: z.number().optional(),
   consecutive_hours_rate: z.number().optional(),
   bank_holiday_multiplier: z.number().min(1).max(3).default(1)
+}).refine(data => {
+  // Validate base_rate is required when NOT hours_minutes
+  if (data.pay_based_on !== 'hours_minutes') {
+    return data.base_rate && data.base_rate > 0;
+  }
+  return true;
+}, {
+  message: "Base rate is required and must be greater than 0",
+  path: ["base_rate"]
 });
 
 type EditRateScheduleFormData = z.infer<typeof editRateScheduleSchema>;
@@ -114,7 +123,8 @@ export const EditRateScheduleDialog: React.FC<EditRateScheduleDialogProps> = ({
   const onSubmit = (data: EditRateScheduleFormData) => {
     updateSchedule.mutate({
       id: schedule.id,
-      ...data
+      ...data,
+      base_rate: data.pay_based_on === 'hours_minutes' ? 0 : (data.base_rate || 0),
     }, {
       onSuccess: () => {
         onOpenChange(false);

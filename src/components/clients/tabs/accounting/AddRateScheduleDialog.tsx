@@ -154,13 +154,13 @@ export const AddRateScheduleDialog: React.FC<AddRateScheduleDialogProps> = ({
       pay_based_on: data.pay_based_on,
       charge_type: data.charge_type,
       // Conditionally include base_rate and bank_holiday_multiplier
-      base_rate: data.pay_based_on === 'hours_minutes' ? null : (data.base_rate || null),
+      base_rate: data.pay_based_on === 'hours_minutes' ? 0 : (data.base_rate || 0),
       rate_15_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_15_minutes || null) : null,
       rate_30_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_30_minutes || null) : null,
       rate_45_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_45_minutes || null) : null,
       rate_60_minutes: data.pay_based_on === 'hours_minutes' ? (data.rate_60_minutes || null) : null,
       consecutive_hours_rate: data.pay_based_on === 'hours_minutes' ? (data.consecutive_hours_rate || null) : null,
-      bank_holiday_multiplier: data.bank_holiday_multiplier || null,
+      bank_holiday_multiplier: data.bank_holiday_multiplier || 1,
       is_vatable: data.is_vatable
     };
     createSchedule.mutate(scheduleData, {
