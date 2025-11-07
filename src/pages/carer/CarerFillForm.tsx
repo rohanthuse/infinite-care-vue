@@ -40,8 +40,8 @@ const CarerFillForm = () => {
   
   // Check if submitting on behalf of someone
   const searchParams = new URLSearchParams(location.search);
-  const onBehalfOfUserId = searchParams.get('proxyFor');
-  const staffName = searchParams.get('proxyName');
+  const onBehalfOfUserId = searchParams.get('onBehalfOf');
+  const staffName = searchParams.get('staffName');
   const isProxySubmission = !!onBehalfOfUserId;
 
   // Get the form details
@@ -199,17 +199,7 @@ const CarerFillForm = () => {
 
       // Don't navigate immediately, let the mutation handle success
       if (status === 'completed') {
-        const returnTo = searchParams.get('returnTo');
-        if (returnTo === 'forms' && branchId) {
-          const tenantSlug = window.location.pathname.split('/')[1];
-          const branchName = window.location.pathname.split('/')[4];
-          setTimeout(() => 
-            navigate(`/${tenantSlug}/branch-dashboard/${branchId}/${branchName}/forms`), 
-            1000
-          );
-        } else {
-          setTimeout(() => navigateToCarerPage('/forms'), 1000);
-        }
+        setTimeout(() => navigateToCarerPage('/forms'), 1000);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
