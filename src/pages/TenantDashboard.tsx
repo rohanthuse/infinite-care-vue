@@ -45,7 +45,7 @@ const TenantDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, signOut } = useAuth();
-  const { data: systemUserRole } = useUserRole();
+  const { data: systemUserRole, isLoading: isRoleLoading } = useUserRole();
   
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
@@ -174,7 +174,7 @@ const TenantDashboard = () => {
     }
   };
 
-  if (loading) {
+  if (loading || isRoleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="animate-pulse">
