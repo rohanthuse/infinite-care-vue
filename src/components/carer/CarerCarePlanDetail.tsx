@@ -436,6 +436,7 @@ export const CarerCarePlanDetail: React.FC<CarerCarePlanDetailProps> = ({
                     carePlanId={carePlan.id}
                     patientName={carePlan.clientName}
                     onAddEvent={() => setShowAddEventDialog(true)}
+                    branchId={branchId}
                   />
                 </TabsContent>
               </Tabs>

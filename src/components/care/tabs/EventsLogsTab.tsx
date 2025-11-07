@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { AlertTriangle, Clock, Plus, User, Eye } from "lucide-react";
+import { AlertTriangle, Clock, Plus, User, Eye, Share2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,23 +9,29 @@ import { useEventsLogs, useCreateEventLog } from "@/data/hooks/useEventsLogs";
 import { AddEventDialog } from "@/components/care/dialogs/AddEventDialog";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { UnifiedShareDialog } from "@/components/sharing/UnifiedShareDialog";
+import { exportEventToPDFBlob } from "@/lib/exportEvents";
 
 interface EventsLogsTabProps {
   clientId: string;
   carePlanId?: string;
   patientName?: string;
   onAddEvent?: () => void;
+  branchId?: string;
 }
 
 export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({ 
   clientId, 
   carePlanId, 
   patientName, 
-  onAddEvent 
+  onAddEvent,
+  branchId
 }) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [eventToShare, setEventToShare] = useState<any>(null);
   
   // Use events logs with client filter instead of client events
   const { data: events = [], isLoading } = useEventsLogs(undefined, { 
@@ -167,15 +173,28 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
                         )}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleViewDetails(event)}
-                      className="ml-4"
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
+                    <div className="flex gap-2 ml-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewDetails(event)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEventToShare(event);
+                          setShareDialogOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <Share2 className="h-4 w-4 mr-1" />
+                        Share
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -199,6 +218,17 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
         event={selectedEvent}
         open={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
+      />
+
+      {/* Share Dialog */}
+      <UnifiedShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        contentId={eventToShare?.id || ''}
+        contentType="event"
+        contentTitle={eventToShare?.title || ''}
+        branchId={branchId || ''}
+        onGeneratePDF={async () => await exportEventToPDFBlob(eventToShare)}
       />
     </div>
   );

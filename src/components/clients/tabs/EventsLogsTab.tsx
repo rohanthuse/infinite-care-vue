@@ -11,7 +11,7 @@ import { useClientEvents, useUpdateClientEventStatus } from "@/hooks/useClientEv
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
 import { EventLogForm } from "@/components/events-logs/EventLogForm";
 import { exportEventToPDFBlob } from "@/lib/exportEvents";
-import { toast } from "sonner";
+import { UnifiedShareDialog } from "@/components/sharing/UnifiedShareDialog";
 
 interface EventsLogsTabProps {
   clientId: string;
@@ -33,6 +33,8 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [eventToShare, setEventToShare] = useState<any>(null);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -67,36 +69,9 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
     }
   };
 
-  const handleShareEvent = async (event: any) => {
-    try {
-      const pdfBlob = await exportEventToPDFBlob(event);
-      const fileName = `event-${event.title.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-
-      if (navigator.share && navigator.canShare) {
-        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-        
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: `Event Log: ${event.title}`,
-            text: `Event log details for ${patientName || 'client'}`,
-            files: [file]
-          });
-          toast.success('Event shared successfully');
-          return;
-        }
-      }
-
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      link.click();
-      URL.revokeObjectURL(url);
-      toast.success('Event PDF downloaded');
-    } catch (error) {
-      console.error('Error sharing event:', error);
-      toast.error('Failed to share event');
-    }
+  const handleShareEvent = (event: any) => {
+    setEventToShare(event);
+    setShareDialogOpen(true);
   };
 
   if (isLoading) {
@@ -231,6 +206,17 @@ export const EventsLogsTab: React.FC<EventsLogsTabProps> = ({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Share Dialog */}
+      <UnifiedShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        contentId={eventToShare?.id || ''}
+        contentType="event"
+        contentTitle={eventToShare?.title || ''}
+        branchId={branchId || ''}
+        onGeneratePDF={async () => await exportEventToPDFBlob(eventToShare)}
+      />
     </div>
   );
 };

@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -25,14 +26,50 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { UnifiedShareDialog } from '@/components/sharing/UnifiedShareDialog';
 
 interface ServiceReportsTabProps {
   clientId: string;
+  branchId?: string;
 }
 
-export const ServiceReportsTab = memo(function ServiceReportsTab({ clientId }: ServiceReportsTabProps) {
+export const ServiceReportsTab = memo(function ServiceReportsTab({ clientId, branchId }: ServiceReportsTabProps) {
   const { data: reports = [], isLoading, error } = useApprovedServiceReports(clientId);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [reportToShare, setReportToShare] = useState<any>(null);
+
+  const handleGenerateReportPDF = async (report: any): Promise<Blob> => {
+    const content = `Service Report - ${format(new Date(report.service_date), 'MMMM d, yyyy')}
+    
+Carer: ${report.staff?.first_name} ${report.staff?.last_name}
+Duration: ${report.service_duration_minutes} minutes
+
+Services Provided:
+${report.services_provided?.join(', ') || 'N/A'}
+
+Tasks Completed:
+${report.tasks_completed?.join(', ') || 'N/A'}
+
+Client Mood: ${report.client_mood}
+Client Engagement: ${report.client_engagement}
+
+Activities Undertaken:
+${report.activities_undertaken || 'N/A'}
+
+${report.medication_administered ? 'Medication Administered:\n' + (report.medication_notes || 'Yes') : ''}
+
+${report.incident_occurred ? 'Incident Occurred:\n' + (report.incident_details || 'Yes') : ''}
+
+Carer Observations:
+${report.carer_observations || 'N/A'}
+
+${report.client_feedback ? 'Client Feedback:\n' + report.client_feedback : ''}
+
+${report.next_visit_preparations ? 'Next Visit Preparations:\n' + report.next_visit_preparations : ''}`;
+
+    return new Blob([content], { type: 'text/plain' });
+  };
 
   useEffect(() => {
     console.log('[ServiceReportsTab] Component mounted/updated', { clientId, reportsCount: reports?.length });
@@ -110,13 +147,14 @@ export const ServiceReportsTab = memo(function ServiceReportsTab({ clientId }: S
                     </span>
                   </CardDescription>
                 </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                  </DialogTrigger>
+                <div className="flex gap-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Service Report - {format(new Date(report.service_date), 'MMMM d, yyyy')}</DialogTitle>
@@ -126,7 +164,20 @@ export const ServiceReportsTab = memo(function ServiceReportsTab({ clientId }: S
                     </DialogHeader>
                     <ServiceReportDetails report={report} />
                   </DialogContent>
-                </Dialog>
+                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setReportToShare(report);
+                      setShareDialogOpen(true);
+                    }}
+                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    <Share2 className="h-4 w-4 mr-1" />
+                    Share
+                  </Button>
+                </div>
               </div>
             </CardHeader>
 
@@ -176,6 +227,19 @@ export const ServiceReportsTab = memo(function ServiceReportsTab({ clientId }: S
           </Card>
         ))}
       </div>
+
+      {/* Share Dialog */}
+      <UnifiedShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        contentId={reportToShare?.id || ''}
+        contentType="report"
+        contentTitle={`Service Report - ${reportToShare ? format(new Date(reportToShare.service_date), 'MMM d, yyyy') : ''}`}
+        branchId={branchId || ''}
+        onGeneratePDF={async () => await handleGenerateReportPDF(reportToShare)}
+        reportType="service"
+        reportData={reportToShare}
+      />
     </div>
   );
 });
