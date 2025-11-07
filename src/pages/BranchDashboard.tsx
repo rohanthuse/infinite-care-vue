@@ -213,7 +213,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
     if (!session) {
       console.log('[BranchDashboard] No session, redirecting to login');
       clearTimeout(loadingTimeout);
-      navigate('/branch-admin-login', { replace: true });
+      navigate('/login', { replace: true });
       return;
     }
 
@@ -403,7 +403,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
             }
           </p>
           <button
-            onClick={() => navigate('/branch-admin-login')}
+            onClick={() => navigate('/login')}
             className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90"
           >
             Return to Login

@@ -36,9 +36,9 @@ export const BranchDashboardRedirect: React.FC = () => {
       }
     }
 
-    // If no proper tenant context, redirect to branch login
-    console.warn('[BranchDashboardRedirect] No tenant context found, redirecting to branch login');
-    return <Navigate to="/branch-admin-login" replace />;
+    // If no proper tenant context, redirect to main login
+    console.warn('[BranchDashboardRedirect] No tenant context found, redirecting to main login');
+    return <Navigate to="/login" replace />;
   }
 
   // In production, we should have a proper tenant domain

@@ -17,8 +17,6 @@ import ResetPassword from "./pages/ResetPassword";
 import CarerInvitation from "./pages/CarerInvitation";
 import CarerOnboarding from "./pages/CarerOnboarding";
 import SuperAdminLogin from "./pages/SuperAdminLogin";
-import BranchAdminLogin from "./pages/BranchAdminLogin";
-import BranchSelection from "./pages/BranchSelection";
 import ClientLogin from "./pages/ClientLogin";
 import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
@@ -78,14 +76,12 @@ const AppContent = () => {
     '/demo-request',
     '/login',
     '/reset-password',
-    '/branch-admin-login',
-    '/branch-selection',
     '/client-login', 
     '/carer-invitation', 
     '/carer-onboarding',
     '/tenant-setup',
     '/system-login'
-  ].includes(window.location.pathname) || 
+  ].includes(window.location.pathname) ||
   window.location.pathname.includes('/login') ||
   window.location.pathname.startsWith('/shared/client/');
 
@@ -116,8 +112,6 @@ const AppContent = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* Redirect old super-admin route to main page */}
               <Route path="/super-admin" element={<Index />} />
-              <Route path="/branch-admin-login" element={<BranchAdminLogin />} />
-              <Route path="/branch-selection" element={<BranchSelection />} />
               <Route path="/carer-invitation" element={<CarerInvitation />} />
               <Route path="/carer-onboarding" element={<CarerOnboarding />} />
               <Route path="/client-login" element={<ClientLogin />} />

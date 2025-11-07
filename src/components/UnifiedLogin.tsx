@@ -270,8 +270,11 @@ const UnifiedLogin = () => {
     sessionStorage.removeItem('navigating_to_dashboard');
     sessionStorage.removeItem('target_dashboard');
     sessionStorage.removeItem('redirect_in_progress');
+    
+    // Remove obsolete localStorage keys from old branch selection flow
     localStorage.removeItem('currentBranchId');
     localStorage.removeItem('currentBranchName');
+    localStorage.removeItem('availableBranches');
 
     // Add timeout to force loading reset after 15 seconds
     const timeoutId = setTimeout(() => {

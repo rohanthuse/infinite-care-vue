@@ -59,9 +59,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
 
     // Skip system routes and public routes that should not be treated as tenant slugs
     const publicRoutes = [
-      'super-admin', 'branch-admin-login', 'branch-selection', 'carer-login', 
-      'client-login', 'carer-invitation', 'carer-onboarding', 'tenant-setup', 
-      'tenant-error', 'system-login', 'system-dashboard'
+      'super-admin', 'carer-login', 'client-login', 'carer-invitation', 
+      'carer-onboarding', 'tenant-setup', 'tenant-error', 'system-login', 
+      'system-dashboard'
     ];
     
     // Also skip standalone routes that might conflict with tenant slugs
