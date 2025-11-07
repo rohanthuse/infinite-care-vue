@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState, withProgressiveTimeout } from "@/utils/authRecovery";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
-import { BranchSelectionDialog } from "@/components/BranchSelectionDialog";
+
 
 
 const UnifiedLogin = () => {
@@ -21,10 +21,6 @@ const UnifiedLogin = () => {
   const [thirdPartyInfo, setThirdPartyInfo] = useState<any>(null);
   const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
-  const [showBranchSelection, setShowBranchSelection] = useState(false);
-  const [branchesForSelection, setBranchesForSelection] = useState<any[]>([]);
-  const [pendingOrgSlug, setPendingOrgSlug] = useState<string>("");
-  const [adminName, setAdminName] = useState<string>("");
   const navigate = useNavigate();
   const { getRoleWithOptimization, getOrganizationWithOptimization, clearOptimizationCache } = useOptimizedAuth();
 
@@ -428,65 +424,9 @@ const UnifiedLogin = () => {
       
       switch (userRole) {
         case 'branch_admin':
-          console.log('[LOGIN DEBUG] Branch admin detected, fetching branch info');
-          
-          // Fetch ALL branch admin's assigned branches
-          try {
-            const { data: branchAdminData, error: branchError } = await supabase
-              .from('admin_branches')
-              .select('branch_id, branches(id, name)')
-              .eq('admin_id', authData.user.id);
-            
-            if (branchError) {
-              console.error('[LOGIN DEBUG] Error fetching branch admin data:', branchError);
-              toast.error("Unable to load your branch information");
-              await supabase.auth.signOut();
-              return;
-            }
-            
-            if (!branchAdminData || branchAdminData.length === 0) {
-              console.error('[LOGIN DEBUG] No branches found for branch admin');
-              toast.error("No branches assigned to your account");
-              await supabase.auth.signOut();
-              return;
-            }
-            
-            // Get admin name for the dialog
-            const adminFullName = `${authData.user.user_metadata?.first_name || ''} ${authData.user.user_metadata?.last_name || ''}`.trim() || authData.user.email || 'Admin';
-            
-            if (branchAdminData.length === 1) {
-              // Single branch - redirect directly
-              const branchId = branchAdminData[0].branches.id;
-              const branchName = branchAdminData[0].branches.name;
-              const encodedBranchName = encodeURIComponent(branchName);
-              
-              localStorage.setItem('currentBranchId', branchId);
-              localStorage.setItem('currentBranchName', branchName);
-              
-              dashboardPath = `/${orgSlug}/branch-dashboard/${branchId}/${encodedBranchName}`;
-              console.log('[LOGIN DEBUG] Single branch - redirect to:', dashboardPath);
-              toast.success("Welcome back, Branch Administrator!");
-            } else {
-              // Multiple branches - show selection dialog
-              console.log('[LOGIN DEBUG] Multiple branches detected:', branchAdminData.length);
-              const branches = branchAdminData.map(item => ({
-                branch_id: item.branches.id,
-                branch_name: item.branches.name
-              }));
-              
-              setBranchesForSelection(branches);
-              setPendingOrgSlug(orgSlug);
-              setAdminName(adminFullName);
-              setShowBranchSelection(true);
-              setLoading(false);
-              return; // Don't navigate yet - wait for selection
-            }
-          } catch (branchError) {
-            console.error('[LOGIN DEBUG] Error in branch admin flow:', branchError);
-            toast.error("Unable to load your branch information");
-            await supabase.auth.signOut();
-            return;
-          }
+          dashboardPath = `/${orgSlug}/dashboard`;
+          console.log('[LOGIN DEBUG] Branch admin - redirect to org dashboard');
+          toast.success("Welcome back, Branch Administrator!");
           break;
         case 'carer':
           console.log('[CARER_LOGIN] Carer role detected, pre-fetching profile');
@@ -623,27 +563,6 @@ const UnifiedLogin = () => {
     }
   };
 
-  const handleBranchSelection = (branchId: string, branchName: string) => {
-    console.log('[LOGIN DEBUG] Branch selected:', branchId, branchName);
-    
-    // Store branch info
-    localStorage.setItem('currentBranchId', branchId);
-    localStorage.setItem('currentBranchName', branchName);
-    
-    // Navigate to the selected branch dashboard
-    const encodedBranchName = encodeURIComponent(branchName);
-    const dashboardPath = `/${pendingOrgSlug}/branch-dashboard/${branchId}/${encodedBranchName}`;
-    
-    toast.success("Welcome back, Branch Administrator!");
-    setShowBranchSelection(false);
-    
-    sessionStorage.setItem('redirect_in_progress', 'true');
-    sessionStorage.setItem('navigating_to_dashboard', 'true');
-    sessionStorage.setItem('target_dashboard', dashboardPath);
-    setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
-    
-    window.location.href = dashboardPath;
-  };
 
   return (
     <div className="login-page-light min-h-screen flex">
@@ -876,14 +795,6 @@ const UnifiedLogin = () => {
         </div>
       </div>
 
-      {/* Branch Selection Dialog */}
-      <BranchSelectionDialog
-        isOpen={showBranchSelection}
-        onClose={() => setShowBranchSelection(false)}
-        adminName={adminName}
-        branches={branchesForSelection}
-        onBranchSelect={handleBranchSelection}
-      />
     </div>
   );
 };

@@ -73,19 +73,7 @@ const BranchAdminRedirector = () => {
     );
   }
 
-  // If it's a branch admin, show redirecting message
-  if (userRole.role === 'branch_admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to your branch dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // For super admins, render the tenant dashboard (organization members)
+  // For both super admins and branch admins, render the tenant dashboard
   return <TenantDashboard />;
 };
 

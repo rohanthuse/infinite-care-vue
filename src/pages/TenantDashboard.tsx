@@ -188,8 +188,8 @@ const TenantDashboard = () => {
     return null;
   }
 
-  // Check if user has admin role (owner/admin/super_admin) to show old-style dashboard
-  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin');
+  // Check if user has admin role (owner/admin/super_admin/branch_admin) to show admin dashboard
+  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin' || userRole.role === 'branch_admin');
 
   // If user is organization admin, show the old Dashboard style interface
   if (isOrganizationAdmin) {
