@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { checkClientSuspensionForBilling } from "@/services/SuspensionAwareInvoiceService";
 import { useGenerateBookingInvoice } from "@/hooks/useGenerateBookingInvoice";
+import { toast } from "@/hooks/use-toast";
 
 export interface CreateBookingInput {
   branch_id: string;
@@ -138,27 +139,40 @@ export function useCreateBooking(branchId?: string) {
             .single();
 
           if (branch?.organization_id) {
-            await generateInvoiceForBooking({
+            const result = await generateInvoiceForBooking({
               bookingId: data.id,
               branchId: bookingBranchId,
               organizationId: branch.organization_id
             });
             
-            console.log('[useCreateBooking] ✅ Invoice auto-generated successfully');
-            
-            // Invalidate invoice queries
-            await Promise.all([
-              invalidateWithRetry(['branch-invoices', bookingBranchId]),
-              invalidateWithRetry(['branch-booking-invoices', bookingBranchId]),
-              invalidateWithRetry(['client-billing', data.client_id])
-            ]);
+            if (result.success) {
+              console.log('[useCreateBooking] ✅ Invoice auto-generated successfully');
+              
+              toast({
+                title: 'Booking Created',
+                description: `Invoice ${result.invoiceNumber} generated successfully`,
+              });
+              
+              // Invalidate invoice queries
+              await Promise.all([
+                invalidateWithRetry(['branch-invoices', bookingBranchId]),
+                invalidateWithRetry(['branch-booking-invoices', bookingBranchId]),
+                invalidateWithRetry(['client-billing', data.client_id])
+              ]);
+            } else {
+              console.warn('[useCreateBooking] ⚠️ Invoice generation skipped:', result.message);
+            }
           } else {
             console.warn('[useCreateBooking] ⚠️ Could not get organization_id for invoice generation');
           }
-        } catch (invoiceError) {
+        } catch (invoiceError: any) {
           console.error('[useCreateBooking] ❌ Failed to auto-generate invoice:', invoiceError);
-          // Don't fail the booking creation if invoice generation fails
-          // Admin can manually generate invoice later
+          
+          toast({
+            title: 'Invoice Generation Failed',
+            description: invoiceError.message || 'Failed to generate invoice. You can create it manually later.',
+            variant: 'destructive',
+          });
         }
       } catch (error) {
         console.error('[useCreateBooking] Error during query invalidation:', error);

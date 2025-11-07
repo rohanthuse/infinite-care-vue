@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { VisitBillingCalculator } from "@/utils/visitBillingCalculator";
 import type { Visit } from "@/types/clientAccounting";
+import { toast } from "@/hooks/use-toast";
 
 export interface GenerateBookingInvoiceInput {
   bookingId: string;
@@ -59,50 +60,55 @@ export const useGenerateBookingInvoice = () => {
   const generateInvoiceForBooking = async (input: GenerateBookingInvoiceInput) => {
     console.log('[generateInvoiceForBooking] Starting invoice generation for booking:', input.bookingId);
 
-    // 1. Fetch booking details
-    const { data: booking, error: bookingError } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        clients!inner(first_name, last_name),
-        services(title)
-      `)
-      .eq('id', input.bookingId)
-      .single();
+    try {
+      // 1. Fetch booking details
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          clients!inner(first_name, last_name),
+          services(title)
+        `)
+        .eq('id', input.bookingId)
+        .single();
 
-    if (bookingError) {
-      console.error('[generateInvoiceForBooking] Error fetching booking:', bookingError);
-      throw new Error(`Failed to fetch booking: ${bookingError.message}`);
-    }
+      if (bookingError) {
+        console.error('[generateInvoiceForBooking] Error fetching booking:', bookingError);
+        throw new Error(`Failed to fetch booking details`);
+      }
 
-    if (!booking) {
-      throw new Error('Booking not found');
-    }
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
 
-    const typedBooking = booking as unknown as BookingDetails;
+      const typedBooking = booking as unknown as BookingDetails;
 
-    // 2. Check if booking already has an invoice
-    if (typedBooking.is_invoiced) {
-      console.warn('[generateInvoiceForBooking] Booking already has an invoice:', typedBooking.included_in_invoice_id);
-      throw new Error('Invoice already exists for this booking');
-    }
+      // 2. Check if booking already has an invoice
+      if (typedBooking.is_invoiced) {
+        console.warn('[generateInvoiceForBooking] Booking already has an invoice:', typedBooking.included_in_invoice_id);
+        return {
+          success: false,
+          message: 'Invoice already exists for this booking',
+          invoice: null
+        };
+      }
 
-    // 3. Fetch client's active rate schedules
-    const { data: rateSchedules, error: rateError } = await supabase
-      .from('client_rate_schedules')
-      .select('*')
-      .eq('client_id', typedBooking.client_id)
-      .eq('is_active', true);
+      // 3. Fetch client's active rate schedules
+      const { data: rateSchedules, error: rateError } = await supabase
+        .from('client_rate_schedules')
+        .select('*')
+        .eq('client_id', typedBooking.client_id)
+        .eq('is_active', true);
 
-    if (rateError) {
-      console.error('[generateInvoiceForBooking] Error fetching rate schedules:', rateError);
-      throw new Error(`Failed to fetch rate schedules: ${rateError.message}`);
-    }
+      if (rateError) {
+        console.error('[generateInvoiceForBooking] Error fetching rate schedules:', rateError);
+        throw new Error(`Failed to fetch rate schedules`);
+      }
 
-    if (!rateSchedules || rateSchedules.length === 0) {
-      console.warn('[generateInvoiceForBooking] No active rate schedule found for client');
-      throw new Error('No active rate schedule found for this client');
-    }
+      if (!rateSchedules || rateSchedules.length === 0) {
+        console.warn('[generateInvoiceForBooking] No active rate schedule found for client');
+        throw new Error('No active rate schedule found for this client. Please set up a rate schedule first.');
+      }
 
     // 4. Convert booking to Visit format
     const visit: Visit = {
@@ -210,19 +216,24 @@ export const useGenerateBookingInvoice = () => {
       // Don't fail - invoice is already created
     }
 
-    console.log('[generateInvoiceForBooking] Successfully generated invoice for booking:', {
-      bookingId: typedBooking.id,
-      invoiceId: invoice.id,
-      invoiceNumber,
-      amount: billingSummary.total_amount
-    });
+      console.log('[generateInvoiceForBooking] Successfully generated invoice for booking:', {
+        bookingId: typedBooking.id,
+        invoiceId: invoice.id,
+        invoiceNumber,
+        amount: billingSummary.total_amount
+      });
 
-    return {
-      invoice,
-      invoiceNumber,
-      amount: billingSummary.total_amount,
-      lineItemCount: lineItemsData.length
-    };
+      return {
+        success: true,
+        invoice,
+        invoiceNumber,
+        amount: billingSummary.total_amount,
+        lineItemCount: lineItemsData.length
+      };
+    } catch (error: any) {
+      console.error('[generateInvoiceForBooking] Error:', error);
+      throw error;
+    }
   };
 
   return { generateInvoiceForBooking };
