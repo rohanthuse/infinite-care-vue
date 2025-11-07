@@ -14,6 +14,7 @@ interface FillFormOnBehalfDialogProps {
   formTitle: string;
   branchId: string;
   branchName: string;
+  returnPath?: string;
 }
 
 export const FillFormOnBehalfDialog: React.FC<FillFormOnBehalfDialogProps> = ({
@@ -25,6 +26,7 @@ export const FillFormOnBehalfDialog: React.FC<FillFormOnBehalfDialogProps> = ({
   formTitle,
   branchId,
   branchName,
+  returnPath = 'forms',
 }) => {
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
@@ -33,13 +35,13 @@ export const FillFormOnBehalfDialog: React.FC<FillFormOnBehalfDialogProps> = ({
     if (open) {
       // Navigate to the form fill page with proxy parameters
       const fullPath = tenantSlug
-        ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/forms/fill/${formId}?proxyFor=${staffId}&proxyName=${encodeURIComponent(staffName)}&returnTo=forms`
-        : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/forms/fill/${formId}?proxyFor=${staffId}&proxyName=${encodeURIComponent(staffName)}&returnTo=forms`;
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/forms/fill/${formId}?proxyFor=${staffId}&proxyName=${encodeURIComponent(staffName)}&returnTo=${returnPath}`
+        : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}/forms/fill/${formId}?proxyFor=${staffId}&proxyName=${encodeURIComponent(staffName)}&returnTo=${returnPath}`;
       
       navigate(fullPath);
       onOpenChange(false);
     }
-  }, [open, formId, staffId, staffName, branchId, branchName, tenantSlug, navigate, onOpenChange]);
+  }, [open, formId, staffId, staffName, branchId, branchName, tenantSlug, navigate, onOpenChange, returnPath]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

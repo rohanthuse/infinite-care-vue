@@ -191,6 +191,7 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
           formTitle={selectedForm.formTitle}
           branchId={branchId}
           branchName={branchName}
+          returnPath="form-builder"
         />
       )}
     </div>

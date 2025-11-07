@@ -74,12 +74,14 @@ const CarerFillForm = () => {
 
   // Smart navigation handler
   const handleBackNavigation = () => {
-    if (returnTo === 'forms' && urlBranchId && urlBranchName) {
-      // Navigating back to branch forms page
-      const branchFormsPath = tenantSlug
-        ? `/${tenantSlug}/branch-dashboard/${urlBranchId}/${urlBranchName}/forms`
-        : `/branch-dashboard/${urlBranchId}/${urlBranchName}/forms`;
-      navigate(branchFormsPath);
+    if (returnTo && urlBranchId && urlBranchName) {
+      // Navigating back to the page specified in returnTo parameter
+      const branchBasePath = tenantSlug
+        ? `/${tenantSlug}/branch-dashboard/${urlBranchId}/${urlBranchName}`
+        : `/branch-dashboard/${urlBranchId}/${urlBranchName}`;
+      
+      const backPath = `${branchBasePath}/${returnTo}`;
+      navigate(backPath);
     } else {
       // Default to carer forms page
       navigateToCarerPage('/forms');
