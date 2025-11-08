@@ -53,6 +53,7 @@ interface CreateServiceReportDialogProps {
   preSelectedDate?: string;
   visitRecordId?: string;
   bookingId?: string;
+  preSelectedBooking?: any;
 }
 
 const moodOptions = [
@@ -75,6 +76,7 @@ export function CreateServiceReportDialog({
   preSelectedDate,
   visitRecordId,
   bookingId,
+  preSelectedBooking,
 }: CreateServiceReportDialogProps) {
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
@@ -102,6 +104,18 @@ export function CreateServiceReportDialog({
       client_feedback: '',
     },
   });
+
+  // Auto-fill form fields when preSelectedBooking is provided
+  React.useEffect(() => {
+    if (preSelectedBooking) {
+      const duration = Math.round(
+        (new Date(preSelectedBooking.end_time).getTime() - 
+         new Date(preSelectedBooking.start_time).getTime()) / 60000
+      );
+      form.setValue('service_duration_minutes', duration);
+      form.setValue('service_date', format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd'));
+    }
+  }, [preSelectedBooking, form]);
   
   const selectedClientId = form.watch('client_id');
   const { data: completedBookings = [] } = useClientCompletedBookings(
@@ -181,12 +195,111 @@ export function CreateServiceReportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Create Service Report
+            {preSelectedClient ? (
+              <>Create Service Report for {preSelectedClient.name}</>
+            ) : (
+              <>Create Service Report</>
+            )}
           </DialogTitle>
           <DialogDescription>
             Complete this report after providing care services to the client.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Booking Details Summary */}
+        {preSelectedBooking && (
+          <div className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                Appointment Details
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Date */}
+              <div>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Date</p>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {format(new Date(preSelectedBooking.start_time), 'MMM dd, yyyy')}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Time */}
+              <div>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Time</p>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    {format(new Date(preSelectedBooking.start_time), 'HH:mm')} - 
+                    {format(new Date(preSelectedBooking.end_time), 'HH:mm')}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Duration */}
+              <div>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Duration</p>
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  {Math.round(
+                    (new Date(preSelectedBooking.end_time).getTime() - 
+                     new Date(preSelectedBooking.start_time).getTime()) / 60000
+                  )} minutes
+                </p>
+              </div>
+              
+              {/* Service Type */}
+              <div>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Service</p>
+                <Badge variant="secondary" className="text-xs">
+                  {preSelectedBooking.service_name || 'General Service'}
+                </Badge>
+              </div>
+            </div>
+            
+            {/* Booking Notes Section */}
+            {preSelectedBooking.notes && (
+              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">
+                  Booking Notes
+                </p>
+                <p className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap">
+                  {preSelectedBooking.notes}
+                </p>
+              </div>
+            )}
+            
+            {/* Client Contact Info */}
+            {preSelectedBooking.clients && (
+              <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-2">
+                  Client Contact
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {preSelectedBooking.clients.phone && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <span className="text-blue-600">📞</span>
+                      <span className="text-blue-900 dark:text-blue-100">
+                        {preSelectedBooking.clients.phone}
+                      </span>
+                    </div>
+                  )}
+                  {preSelectedBooking.clients.email && (
+                    <div className="flex items-center gap-1 text-sm">
+                      <span className="text-blue-600">✉️</span>
+                      <span className="text-blue-900 dark:text-blue-100 truncate">
+                        {preSelectedBooking.clients.email}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -226,14 +339,14 @@ export function CreateServiceReportDialog({
             </div>
 
             {/* Client Information */}
-            {preSelectedClient && (
+            {preSelectedClient && !preSelectedBooking && (
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium">Client: {preSelectedClient.name}</p>
               </div>
             )}
 
             {/* Booking Selection */}
-            {preSelectedClient && completedBookings.length > 0 && (
+            {preSelectedClient && completedBookings.length > 0 && !preSelectedBooking && (
               <FormField
                 control={form.control}
                 name="booking_id"

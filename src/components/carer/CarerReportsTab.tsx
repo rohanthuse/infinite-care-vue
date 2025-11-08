@@ -563,19 +563,20 @@ export function CarerReportsTab() {
 
       {/* Create Report from Booking Dialog */}
       {selectedBookingForReport && (
-        <CreateServiceReportDialog
-          open={bookingReportDialogOpen}
-          onOpenChange={(open) => {
-            setBookingReportDialogOpen(open);
-            if (!open) setSelectedBookingForReport(null);
-          }}
-          preSelectedClient={{
-            id: selectedBookingForReport.client_id,
-            name: `${selectedBookingForReport.clients?.first_name} ${selectedBookingForReport.clients?.last_name}`
-          }}
-          preSelectedDate={format(new Date(selectedBookingForReport.start_time), 'yyyy-MM-dd')}
-          bookingId={selectedBookingForReport.id}
-        />
+      <CreateServiceReportDialog
+        open={bookingReportDialogOpen}
+        onOpenChange={(open) => {
+          setBookingReportDialogOpen(open);
+          if (!open) setSelectedBookingForReport(null);
+        }}
+        preSelectedClient={{
+          id: selectedBookingForReport.client_id,
+          name: `${selectedBookingForReport.clients?.first_name} ${selectedBookingForReport.clients?.last_name}`
+        }}
+        preSelectedDate={format(new Date(selectedBookingForReport.start_time), 'yyyy-MM-dd')}
+        bookingId={selectedBookingForReport.id}
+        preSelectedBooking={selectedBookingForReport}
+      />
       )}
     </div>
   );
