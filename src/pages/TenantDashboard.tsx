@@ -274,7 +274,7 @@ const TenantDashboard = () => {
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
-                {organization.name} - Organization Management
+                {organization.name} - Organisation Management
               </h1>
               <p className="text-gray-500 mt-2 font-medium">
                 Manage and monitor all {organization.name} administrators and branches.
