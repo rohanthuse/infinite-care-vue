@@ -46,6 +46,7 @@ export function mapDBCarerToCarer(db: any): Carer {
     id: db.id,
     name: safeName(firstName, lastName),
     initials: safeInitials(firstName, lastName),
+    status: db.status,
     bookings: [],
     bookingCount: 0,
   };

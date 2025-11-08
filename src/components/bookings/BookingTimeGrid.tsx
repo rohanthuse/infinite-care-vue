@@ -58,6 +58,7 @@ export interface Carer {
   id: string;
   name: string;
   initials: string;
+  status?: string;
   bookingCount: number;
   bookings?: Booking[];
 }

@@ -22,9 +22,10 @@ export const useBranchStaffAndClients = (branchId: string) => {
 
       const { data, error } = await supabase
         .from('staff')
-        .select('id, first_name, last_name, email, specialization')
+        .select('id, first_name, last_name, email, specialization, status')
         .eq('branch_id', branchId)
-        .eq('status', 'Active');
+        .order('status', { ascending: false })
+        .order('first_name', { ascending: true });
 
       if (error) throw error;
       return data || [];

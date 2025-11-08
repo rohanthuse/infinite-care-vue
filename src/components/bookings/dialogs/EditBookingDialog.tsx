@@ -90,7 +90,7 @@ interface EditBookingDialogProps {
   booking: any;
   services: Array<{ id: string; title: string }>;
   branchId?: string;
-  carers?: Array<{ id: string; name: string }>;
+  carers?: Array<{ id: string; name: string; status?: string }>;
   onSuccess?: (bookingId: string) => void;
 }
 
@@ -636,11 +636,15 @@ export function EditBookingDialog({
                                   <div className="p-1">
                                     {carers.map((carer) => {
                                       const isSelected = field.value?.includes(carer.id);
+                                      const isActive = carer.status === 'Active';
+                                      const statusColor = isActive 
+                                        ? 'bg-success text-white'
+                                        : 'bg-warning text-white';
                                       
                                       return (
                                         <div
                                           key={carer.id}
-                                          className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                          className="flex items-center justify-between space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
                                           onClick={() => {
                                             const currentValue = field.value || [];
                                             if (isSelected) {
@@ -652,11 +656,19 @@ export function EditBookingDialog({
                                             setValidationResult(null);
                                           }}
                                         >
-                                          <Checkbox
-                                            checked={isSelected}
-                                            className="pointer-events-none"
-                                          />
-                                          <span className="flex-1">{carer.name}</span>
+                                          <div className="flex items-center space-x-2 flex-1">
+                                            <Checkbox
+                                              checked={isSelected}
+                                              className="pointer-events-none"
+                                            />
+                                            <span className="flex-1">{carer.name}</span>
+                                          </div>
+                                          <Badge 
+                                            variant={isActive ? "success" : "warning"} 
+                                            className={cn("text-xs", statusColor)}
+                                          >
+                                            {carer.status || 'Active'}
+                                          </Badge>
                                         </div>
                                       );
                                     })}
@@ -691,6 +703,34 @@ export function EditBookingDialog({
                                 );
                               })}
                             </div>
+                          )}
+                          
+                          {/* Warning for non-active carers */}
+                          {field.value && field.value.length > 0 && (
+                            (() => {
+                              const nonActiveCarers = field.value
+                                .map(id => carers.find(c => c.id === id))
+                                .filter(c => c && c.status !== 'Active');
+                              
+                              if (nonActiveCarers.length > 0) {
+                                return (
+                                  <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-sm mt-2">
+                                    <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                    <div>
+                                      <p className="font-medium text-yellow-800 dark:text-yellow-300">
+                                        Unavailable Carer Selected
+                                      </p>
+                                      <p className="text-yellow-700 dark:text-yellow-400 text-xs mt-1">
+                                        {nonActiveCarers.map(c => c.name).join(', ')} 
+                                        {' '}is currently {nonActiveCarers[0]?.status}. 
+                                        Consider selecting an active carer instead.
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            })()
                           )}
                         </div>
                       </FormControl>

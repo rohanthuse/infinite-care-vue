@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Plus, X, ChevronDown, AlertCircle } from "lucide-react";
 
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 
@@ -121,7 +121,7 @@ interface NewBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreateBooking: (data: any, carers: any[]) => void;
-  carers: Array<{ id: string; name?: string; first_name?: string; last_name?: string; initials?: string }>;
+  carers: Array<{ id: string; name?: string; first_name?: string; last_name?: string; initials?: string; status?: string }>;
   services: Array<{ id: string; title: string }>;
   branchId?: string;
   prefilledData?: {
@@ -156,20 +156,30 @@ export function NewBookingDialog({
 
   // Filter carers based on search query
   const filteredCarers = useMemo(() => {
-    if (!searchQuery.trim()) {
-      // Additional safety: ensure all carers are from the current branch
-      return carers.filter(carer => {
-        if (!branchId) return true; // If no branchId, allow all (fallback)
-        // Check if carer has branch context or validate via branch staff
-        return true; // The carers prop should already be branch-filtered from parent
+    let filtered = carers;
+    
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = carers.filter(carer => {
+        const carerName = (carer.name || `${carer.first_name} ${carer.last_name}`).toLowerCase();
+        return carerName.includes(query);
       });
     }
-    const query = searchQuery.toLowerCase();
-    return carers.filter(carer => {
-      const carerName = (carer.name || `${carer.first_name} ${carer.last_name}`).toLowerCase();
-      return carerName.includes(query);
+    
+    // Sort: Active carers first, then by name
+    return filtered.sort((a, b) => {
+      // Active status first
+      const aActive = a.status === 'Active';
+      const bActive = b.status === 'Active';
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+      
+      // Then alphabetically
+      const aName = a.name || `${a.first_name} ${a.last_name}`;
+      const bName = b.name || `${b.first_name} ${b.last_name}`;
+      return aName.localeCompare(bName);
     });
-  }, [carers, searchQuery, branchId]);
+  }, [carers, searchQuery]);
 
   // Filter clients based on search query
   const filteredClients = useMemo(() => {
@@ -641,11 +651,15 @@ export function NewBookingDialog({
                                   {filteredCarers.map((carer) => {
                                     const isSelected = field.value?.includes(carer.id);
                                     const carerName = carer.name || `${carer.first_name} ${carer.last_name}`;
+                                    const isActive = carer.status === 'Active';
+                                    const statusColor = isActive 
+                                      ? 'bg-success text-white'
+                                      : 'bg-warning text-white';
                                     
                                     return (
                                       <div
                                         key={carer.id}
-                                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                                        className="flex items-center justify-between space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
                                         onClick={() => {
                                           const currentValue = field.value || [];
                                           if (isSelected) {
@@ -655,11 +669,19 @@ export function NewBookingDialog({
                                           }
                                         }}
                                       >
-                                        <Checkbox
-                                          checked={isSelected}
-                                          className="pointer-events-none"
-                                        />
-                                        <span className="flex-1">{carerName}</span>
+                                        <div className="flex items-center space-x-2 flex-1">
+                                          <Checkbox
+                                            checked={isSelected}
+                                            className="pointer-events-none"
+                                          />
+                                          <span className="flex-1">{carerName}</span>
+                                        </div>
+                                        <Badge 
+                                          variant={isActive ? "success" : "warning"} 
+                                          className={cn("text-xs", statusColor)}
+                                        >
+                                          {carer.status || 'Active'}
+                                        </Badge>
                                       </div>
                                     );
                                   })}
@@ -694,6 +716,34 @@ export function NewBookingDialog({
                               );
                             })}
                           </div>
+                        )}
+                        
+                        {/* Warning for non-active carers */}
+                        {field.value && field.value.length > 0 && (
+                          (() => {
+                            const nonActiveCarers = field.value
+                              .map(id => carers.find(c => c.id === id))
+                              .filter(c => c && c.status !== 'Active');
+                            
+                            if (nonActiveCarers.length > 0) {
+                              return (
+                                <div className="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-md text-sm mt-2">
+                                  <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                  <div>
+                                    <p className="font-medium text-yellow-800 dark:text-yellow-300">
+                                      Unavailable Carer Selected
+                                    </p>
+                                    <p className="text-yellow-700 dark:text-yellow-400 text-xs mt-1">
+                                      {nonActiveCarers.map(c => c.name || `${c.first_name} ${c.last_name}`).join(', ')} 
+                                      {' '}is currently {nonActiveCarers[0]?.status}. 
+                                      Consider selecting an active carer instead.
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()
                         )}
                       </div>
                       <FormMessage />
