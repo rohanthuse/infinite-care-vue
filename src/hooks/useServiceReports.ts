@@ -248,3 +248,70 @@ export const useApprovedServiceReports = (clientId?: string) => {
     gcTime: 300000, // 5 minutes
   });
 };
+
+// Hook to fetch ALL service reports for a branch with optional filters (admin view)
+export const useBranchServiceReports = (
+  branchId?: string, 
+  filters?: {
+    status?: string[];
+    startDate?: string;
+    endDate?: string;
+    clientId?: string;
+    staffId?: string;
+  }
+) => {
+  return useQuery({
+    queryKey: ['branch-service-reports', branchId, filters],
+    queryFn: async () => {
+      if (!branchId) throw new Error('Branch ID is required');
+      
+      let query = supabase
+        .from('client_service_reports')
+        .select(`
+          *,
+          clients!inner (
+            id,
+            first_name,
+            last_name,
+            email
+          ),
+          staff!inner (
+            id,
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('branch_id', branchId);
+
+      // Apply filters
+      if (filters?.status && filters.status.length > 0) {
+        query = query.in('status', filters.status);
+      }
+      
+      if (filters?.startDate) {
+        query = query.gte('service_date', filters.startDate);
+      }
+      
+      if (filters?.endDate) {
+        query = query.lte('service_date', filters.endDate);
+      }
+      
+      if (filters?.clientId) {
+        query = query.eq('client_id', filters.clientId);
+      }
+      
+      if (filters?.staffId) {
+        query = query.eq('staff_id', filters.staffId);
+      }
+      
+      query = query.order('service_date', { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: Boolean(branchId),
+    staleTime: 30000, // 30 seconds
+  });
+};
