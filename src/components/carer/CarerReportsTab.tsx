@@ -137,19 +137,7 @@ export function CarerReportsTab() {
       </div>
 
       {/* Status Overview */}
-      <div className="grid grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <ClipboardList className="h-4 w-4 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{completedBookings.length}</p>
-                <p className="text-xs text-muted-foreground">Need Reports</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -211,11 +199,11 @@ export function CarerReportsTab() {
         </Card>
       </div>
 
-      <Tabs defaultValue="completed" className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="completed" className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" />
-            Completed ({completedBookings.length})
+      <Tabs defaultValue="past" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="past" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Past ({pastAppointments.length})
           </TabsTrigger>
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
@@ -233,171 +221,7 @@ export function CarerReportsTab() {
             <XCircle className="h-4 w-4" />
             Rejected ({rejectedReports.length})
           </TabsTrigger>
-          <TabsTrigger value="past" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Past ({pastAppointments.length})
-          </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="completed" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5" />
-                Completed Appointments Without Reports
-              </CardTitle>
-              <CardDescription>
-                Create service reports for your completed appointments. Reports help maintain quality records of care provided.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {bookingsLoading ? (
-                <div className="flex items-center justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : completedBookings.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
-                  <p className="text-lg font-medium">All caught up!</p>
-                  <p className="text-sm">All your completed appointments have service reports.</p>
-                  
-                  {/* Debug info */}
-                  <div className="mt-4 p-4 bg-muted rounded-md text-left text-xs max-w-md mx-auto">
-                    <p className="font-semibold mb-2">Debug Information:</p>
-                    <div className="font-mono space-y-1">
-                      <p>Carer ID: {carerContext?.staffProfile?.id || 'NOT SET'}</p>
-                      <p>Has Context: {String(!!carerContext)}</p>
-                      <p>Has Staff Profile: {String(!!carerContext?.staffProfile)}</p>
-                      <p>Bookings Loading: {String(bookingsLoading)}</p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        Check console logs for detailed query results
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Booking ID</TableHead>
-                        <TableHead>Client Name</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completedBookings.map((booking) => {
-                        const startTime = new Date(booking.start_time);
-                        const endTime = new Date(booking.end_time);
-                        const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
-                        
-                        return (
-                          <TableRow key={booking.id}>
-                            <TableCell className="font-mono text-xs">
-                              #{booking.id.slice(0, 8)}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                {booking.clients?.first_name} {booking.clients?.last_name}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="text-xs">
-                                {booking.services?.title || 'General Service'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-muted-foreground" />
-                                {format(startTime, 'MMM dd, yyyy')}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                {format(startTime, 'HH:mm')}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {durationMinutes} min
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedBookingForReport(booking);
-                                  setBookingReportDialogOpen(true);
-                                }}
-                                className="flex items-center gap-2"
-                              >
-                                <Plus className="h-4 w-4" />
-                                Add Report
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="pending" className="space-y-4">
-          {pendingReports.length === 0 ? (
-            <EmptyState message="No pending reports" />
-          ) : (
-            pendingReports.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                canEdit={false}
-              />
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="revision" className="space-y-4">
-          {revisionReports.length === 0 ? (
-            <EmptyState message="No reports requiring revision" />
-          ) : (
-            revisionReports.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                canEdit={true}
-                onEdit={() => handleEditReport(report)}
-              />
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="approved" className="space-y-4">
-          {approvedReports.length === 0 ? (
-            <EmptyState message="No approved reports" />
-          ) : (
-            approvedReports.map((report) => (
-              <ReportCard key={report.id} report={report} />
-            ))
-          )}
-        </TabsContent>
-
-        <TabsContent value="rejected" className="space-y-4">
-          {rejectedReports.length === 0 ? (
-            <EmptyState message="No rejected reports" />
-          ) : (
-            rejectedReports.map((report) => (
-              <ReportCard key={report.id} report={report} />
-            ))
-          )}
-        </TabsContent>
 
         <TabsContent value="past" className="space-y-4">
           <Card>
@@ -535,6 +359,55 @@ export function CarerReportsTab() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="pending" className="space-y-4">
+          {pendingReports.length === 0 ? (
+            <EmptyState message="No pending reports" />
+          ) : (
+            pendingReports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                canEdit={false}
+              />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="revision" className="space-y-4">
+          {revisionReports.length === 0 ? (
+            <EmptyState message="No reports requiring revision" />
+          ) : (
+            revisionReports.map((report) => (
+              <ReportCard
+                key={report.id}
+                report={report}
+                canEdit={true}
+                onEdit={() => handleEditReport(report)}
+              />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="approved" className="space-y-4">
+          {approvedReports.length === 0 ? (
+            <EmptyState message="No approved reports" />
+          ) : (
+            approvedReports.map((report) => (
+              <ReportCard key={report.id} report={report} />
+            ))
+          )}
+        </TabsContent>
+
+        <TabsContent value="rejected" className="space-y-4">
+          {rejectedReports.length === 0 ? (
+            <EmptyState message="No rejected reports" />
+          ) : (
+            rejectedReports.map((report) => (
+              <ReportCard key={report.id} report={report} />
+            ))
+          )}
         </TabsContent>
       </Tabs>
 
