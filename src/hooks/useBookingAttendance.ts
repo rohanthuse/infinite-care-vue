@@ -35,7 +35,7 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       
       try {
         // Update booking status
-        const newStatus = data.action === 'start_visit' ? 'in_progress' : 'completed';
+        const newStatus = data.action === 'start_visit' ? 'in_progress' : 'done';
         
         console.log('[useBookingAttendance] Updating booking status to:', newStatus);
         const { error: bookingError } = await supabase
@@ -85,6 +85,7 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['today-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-completed-bookings'] });
       
       // Only show success toast if not in silent mode
       if (!options?.silent) {

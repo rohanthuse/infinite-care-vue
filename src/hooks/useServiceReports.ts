@@ -114,6 +114,7 @@ export const useCreateServiceReport = () => {
       queryClient.invalidateQueries({ queryKey: ['client-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['carer-service-reports'] });
       queryClient.invalidateQueries({ queryKey: ['pending-service-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-completed-bookings'] });
       
       toast.success('Service report submitted successfully');
     },
