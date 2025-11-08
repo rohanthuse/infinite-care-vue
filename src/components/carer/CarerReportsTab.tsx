@@ -35,6 +35,15 @@ export function CarerReportsTab() {
   const [selectedBookingForReport, setSelectedBookingForReport] = useState<any>(null);
   const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
 
+  // Debug logging
+  console.log('[CarerReportsTab] Carer context:', {
+    hasContext: !!carerContext,
+    hasStaffProfile: !!carerContext?.staffProfile,
+    staffId: carerContext?.staffProfile?.id,
+    bookingsLoading,
+    completedBookingsCount: completedBookings.length
+  });
+
   if (!carerContext?.staffProfile) {
     return (
       <Card className="p-6">
@@ -219,6 +228,20 @@ export function CarerReportsTab() {
                   <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
                   <p className="text-lg font-medium">All caught up!</p>
                   <p className="text-sm">All your completed appointments have service reports.</p>
+                  
+                  {/* Debug info */}
+                  <div className="mt-4 p-4 bg-muted rounded-md text-left text-xs max-w-md mx-auto">
+                    <p className="font-semibold mb-2">Debug Information:</p>
+                    <div className="font-mono space-y-1">
+                      <p>Carer ID: {carerContext?.staffProfile?.id || 'NOT SET'}</p>
+                      <p>Has Context: {String(!!carerContext)}</p>
+                      <p>Has Staff Profile: {String(!!carerContext?.staffProfile)}</p>
+                      <p>Bookings Loading: {String(bookingsLoading)}</p>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        Check console logs for detailed query results
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-md border">
