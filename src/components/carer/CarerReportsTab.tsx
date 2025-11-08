@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCarerServiceReports } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerCompletedBookings } from '@/hooks/useCarerCompletedBookings';
+import { useCarerBookings } from '@/hooks/useCarerBookings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,9 @@ export function CarerReportsTab() {
   const { data: carerContext } = useCarerContext();
   const { data: reports = [], isLoading, error } = useCarerServiceReports(carerContext?.staffProfile?.id);
   const { data: completedBookings = [], isLoading: bookingsLoading } = useCarerCompletedBookings(
+    carerContext?.staffProfile?.id
+  );
+  const { data: allBookings = [], isLoading: allBookingsLoading } = useCarerBookings(
     carerContext?.staffProfile?.id
   );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -78,6 +82,18 @@ export function CarerReportsTab() {
   const approvedReports = reports.filter(r => r.status === 'approved');
   const rejectedReports = reports.filter(r => r.status === 'rejected');
   const revisionReports = reports.filter(r => r.status === 'requires_revision');
+  
+  // Filter past appointments (completed or done status, before current time)
+  const pastAppointments = allBookings.filter(booking => {
+    const startTime = new Date(booking.start_time);
+    return (booking.status === 'done' || booking.status === 'completed') && startTime < new Date();
+  });
+  
+  // Cross-reference with reports to check which appointments have reports
+  const pastAppointmentsWithReportStatus = pastAppointments.map(booking => {
+    const hasReport = reports.some(report => report.booking_id === booking.id);
+    return { ...booking, has_report: hasReport };
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -121,7 +137,7 @@ export function CarerReportsTab() {
       </div>
 
       {/* Status Overview */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -181,10 +197,22 @@ export function CarerReportsTab() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-4 w-4 text-purple-500" />
+              <div>
+                <p className="text-2xl font-bold">{pastAppointments.length}</p>
+                <p className="text-xs text-muted-foreground">Past Appointments</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="completed" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="completed" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" />
             Completed ({completedBookings.length})
@@ -204,6 +232,10 @@ export function CarerReportsTab() {
           <TabsTrigger value="rejected" className="flex items-center gap-2">
             <XCircle className="h-4 w-4" />
             Rejected ({rejectedReports.length})
+          </TabsTrigger>
+          <TabsTrigger value="past" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Past ({pastAppointments.length})
           </TabsTrigger>
         </TabsList>
 
@@ -365,6 +397,144 @@ export function CarerReportsTab() {
               <ReportCard key={report.id} report={report} />
             ))
           )}
+        </TabsContent>
+
+        <TabsContent value="past" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                All Past Appointments
+              </CardTitle>
+              <CardDescription>
+                View all your completed appointments and their service report status. Easily identify which appointments need reports.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {allBookingsLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : pastAppointments.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-lg font-medium">No past appointments</p>
+                  <p className="text-sm">Your completed appointments will appear here.</p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Client Name</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Report Status</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pastAppointmentsWithReportStatus
+                        .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+                        .map((booking) => {
+                          const startTime = new Date(booking.start_time);
+                          const endTime = new Date(booking.end_time);
+                          const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+                          
+                          return (
+                            <TableRow key={booking.id}>
+                              <TableCell className="font-mono text-xs">
+                                #{booking.id.slice(0, 8)}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  {booking.client_first_name} {booking.client_last_name}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {booking.service_name || 'General Service'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                                  {format(startTime, 'MMM dd, yyyy')}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-muted-foreground" />
+                                  {format(startTime, 'HH:mm')}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {durationMinutes} min
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="success" className="text-xs">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  {booking.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {booking.has_report ? (
+                                  <Badge variant="success" className="text-xs">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Has Report
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="warning" className="text-xs">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Needs Report
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {booking.has_report ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      const report = reports.find(r => r.booking_id === booking.id);
+                                      if (report) {
+                                        setSelectedReport(report);
+                                        setEditDialogOpen(true);
+                                      }
+                                    }}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    View Report
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedBookingForReport(booking);
+                                      setBookingReportDialogOpen(true);
+                                    }}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                    Add Report
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
