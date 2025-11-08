@@ -439,7 +439,7 @@ export function SignAgreementDialog({
                 <Alert className="border-blue-200 bg-blue-50">
                   <AlertCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription className="text-blue-900">
-                    This is an <strong>organization-level agreement</strong> for Med Infinite. 
+                    This is an <strong>organisation-level agreement</strong> for Med Infinite. 
                     It is not associated with specific clients or staff members.
                   </AlertDescription>
                 </Alert>

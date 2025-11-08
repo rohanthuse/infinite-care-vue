@@ -39,8 +39,8 @@ export const TenantNotFound: React.FC<TenantNotFoundProps> = ({ subdomain }) => 
             <p>This could happen if:</p>
             <ul className="list-disc list-inside mt-2 space-y-1 text-left">
               <li>The subdomain doesn't exist</li>
-              <li>The organization is inactive</li>
-              <li>You don't have access to this organization</li>
+              <li>The organisation is inactive</li>
+              <li>You don't have access to this organisation</li>
               <li>There's a configuration issue</li>
             </ul>
           </div>

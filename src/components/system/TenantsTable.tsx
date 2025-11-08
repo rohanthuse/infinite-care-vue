@@ -140,7 +140,7 @@ export const TenantsTable = ({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Organization</TableHead>
+                <TableHead className="font-semibold">Organisation</TableHead>
                 <TableHead className="font-semibold">URL Slug</TableHead>
                 <TableHead className="font-semibold">Plan</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>

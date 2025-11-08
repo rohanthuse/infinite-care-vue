@@ -117,7 +117,7 @@ export const NewLeaveDialog: React.FC<NewLeaveDialogProps> = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Leave/Holiday</DialogTitle>
-          <DialogDescription>Add a new leave entry or holiday to the organization calendar.</DialogDescription>
+          <DialogDescription>Add a new leave entry or holiday to the organisation calendar.</DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4">

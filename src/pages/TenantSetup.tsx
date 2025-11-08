@@ -61,7 +61,7 @@ export const TenantSetup: React.FC = () => {
       return org;
     },
     onSuccess: (org) => {
-      toast.success('Organization created successfully!');
+      toast.success('Organisation created successfully!');
       
       // For development, store tenant in localStorage
       if (window.location.hostname === 'localhost') {
@@ -73,8 +73,8 @@ export const TenantSetup: React.FC = () => {
       }
     },
     onError: (error) => {
-      console.error('Error creating organization:', error);
-      toast.error('Failed to create organization. Please try again.');
+      console.error('Error creating organisation:', error);
+      toast.error('Failed to create organisation. Please try again.');
     },
   });
 
@@ -83,12 +83,12 @@ export const TenantSetup: React.FC = () => {
     
     // Validate slug
     if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      toast.error('Organization slug can only contain lowercase letters, numbers, and hyphens');
+      toast.error('Organisation slug can only contain lowercase letters, numbers, and hyphens');
       return;
     }
 
     if (formData.slug.length < 3) {
-      toast.error('Organization slug must be at least 3 characters long');
+      toast.error('Organisation slug must be at least 3 characters long');
       return;
     }
 
@@ -202,12 +202,12 @@ export const TenantSetup: React.FC = () => {
               {createOrganization.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Organization...
+                  Creating Organisation...
                 </>
               ) : (
                 <>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Organization
+                  Create Organisation
                 </>
               )}
             </Button>

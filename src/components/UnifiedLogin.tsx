@@ -72,7 +72,7 @@ const UnifiedLogin = () => {
         accessUntil: accessUntil?.toLocaleDateString(),
         firstName: request.first_name,
         lastName: request.surname,
-        companyName: request.organisation || 'Third-party Organization'
+        companyName: request.organisation || 'Third-party Organisation'
       });
 
       // Pre-fill email if provided
@@ -439,10 +439,10 @@ const UnifiedLogin = () => {
         return;
       }
 
-      // For non-super admin users, organization is required
+      // For non-super admin users, organisation is required
       if (!orgSlug) {
-        console.error('[LOGIN DEBUG] No organization found for user role:', userRole);
-        toast.error("No organization access found for your account");
+        console.error('[LOGIN DEBUG] No organisation found for user role:', userRole);
+        toast.error("No organisation access found for your account");
         await supabase.auth.signOut();
         return;
       }

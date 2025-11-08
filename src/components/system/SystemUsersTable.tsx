@@ -83,7 +83,7 @@ export const SystemUsersTable: React.FC = () => {
           <TableRow className="bg-muted/30">
             <TableHead>User</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Organizations</TableHead>
+            <TableHead>Organisations</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Created</TableHead>
             <TableHead className="w-[70px]">Actions</TableHead>
@@ -180,7 +180,7 @@ export const SystemUsersTable: React.FC = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handleEditUser(user)} className="flex items-center space-x-2">
                       <Building2 className="h-4 w-4" />
-                      <span>Manage Organizations</span>
+                      <span>Manage Organisations</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => handleToggleStatus(user.id, user.is_active)}

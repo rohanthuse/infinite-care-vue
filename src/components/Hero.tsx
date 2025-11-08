@@ -161,7 +161,7 @@ const Hero = () => {
         <div className="container mx-auto px-5 lg:px-8">
           <div className="flex flex-col items-center mb-8">
             <div className="h-px w-16 bg-gray-200 mb-6"></div>
-            <p className="text-center text-gray-500 text-sm font-medium uppercase tracking-wider">Trusted by Leading Healthcare Organizations</p>
+            <p className="text-center text-gray-500 text-sm font-medium uppercase tracking-wider">Trusted by Leading Healthcare Organisations</p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 items-center justify-items-center">

@@ -433,8 +433,8 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
   const handleNewEvent = (eventType: 'booking' | 'agreement' | 'training' | 'leave' | 'meeting') => {
     // Ensure user is properly authenticated
     if (!organization?.id) {
-      console.error('No organization found:', organization);
-      toast.error('Please ensure you are logged in and have access to this organization');
+      console.error('No organisation found:', organization);
+      toast.error('Please ensure you are logged in and have access to this organisation');
       return;
     }
     console.log('🔍 handleNewEvent called with:', eventType, 'prefilledDate:', prefilledDate);
@@ -708,7 +708,7 @@ export const OrganizationCalendarView = ({ defaultBranchId }: OrganizationCalend
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Organization Calendar</h1>
+            <h1 className="text-2xl font-bold text-foreground">Organisation Calendar</h1>
           </div>
           <Badge variant="secondary" className="text-sm">
             {format(currentDate, 'MMMM yyyy')}

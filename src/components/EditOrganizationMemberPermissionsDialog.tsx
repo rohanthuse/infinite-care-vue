@@ -378,8 +378,8 @@ export function EditOrganizationMemberPermissionsDialog({
               Remove Organisation Member
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{memberName}</strong> from the organization? 
-              They will lose access to all organization resources and this action cannot be undone.
+              Are you sure you want to remove <strong>{memberName}</strong> from the organisation? 
+              They will lose access to all organisation resources and this action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

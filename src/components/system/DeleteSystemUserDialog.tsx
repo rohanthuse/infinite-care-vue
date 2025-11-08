@@ -81,7 +81,7 @@ export const DeleteSystemUserDialog: React.FC<DeleteSystemUserDialogProps> = ({
               <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                 <li>All user sessions will be terminated</li>
                 <li>User roles and permissions will be removed</li>
-                <li>Organization assignments will be deleted</li>
+                <li>Organisation assignments will be deleted</li>
                 <li>User data will be permanently deleted</li>
               </ul>
             </div>

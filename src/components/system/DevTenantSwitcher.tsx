@@ -80,7 +80,7 @@ export const DevTenantSwitcher: React.FC = () => {
       if (result) {
         toast.success(`✅ Connectivity test passed for ${currentTenantSlug}`);
       } else {
-        toast.error(`❌ No organization found with slug: ${currentTenantSlug}`);
+        toast.error(`❌ No organisation found with slug: ${currentTenantSlug}`);
       }
     } catch (error: any) {
       toast.error(`❌ Connectivity test failed: ${error.message}`);
@@ -120,7 +120,7 @@ export const DevTenantSwitcher: React.FC = () => {
               <span className="font-mono">{contextTenantSlug || '(none)'}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span>Organization:</span>
+              <span>Organisation:</span>
               <div className="flex items-center gap-1">
                 {organization ? (
                   <>

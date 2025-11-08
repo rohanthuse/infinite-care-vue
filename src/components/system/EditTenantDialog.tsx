@@ -75,12 +75,12 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
         <form onSubmit={onSubmit} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Edit tenant</DialogTitle>
-            <DialogDescription>Update the organization details.</DialogDescription>
+            <DialogDescription>Update the organisation details.</DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Organization name</Label>
+              <Label htmlFor="name">Organisation name</Label>
               <Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>

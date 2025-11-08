@@ -59,13 +59,13 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       }
       
       if (!result?.success) {
-        throw new Error(result?.error || 'Failed to create organization');
+        throw new Error(result?.error || 'Failed to create organisation');
       }
       
       return result.data;
     },
     onSuccess: (org) => {
-      toast.success(`Organization "${org.name}" created successfully!`);
+      toast.success(`Organisation "${org.name}" created successfully!`);
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
       queryClient.invalidateQueries({ queryKey: ['tenant-stats'] });
       queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
@@ -75,11 +75,11 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       onSuccess?.();
     },
     onError: (error: any) => {
-      console.error('Error creating organization:', error);
+      console.error('Error creating organisation:', error);
       if (error.message?.includes('slug')) {
         toast.error('URL slug already exists. Please choose a different slug.');
       } else {
-        toast.error('Failed to create organization. Please try again.');
+        toast.error('Failed to create organisation. Please try again.');
       }
     },
   });
@@ -125,17 +125,17 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building className="h-5 w-5" />
-            Create New Tenant Organization
+            Create New Tenant Organisation
           </DialogTitle>
           <DialogDescription>
-            Create a new tenant organization in the system
+            Create a new tenant organisation in the system
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Organization Name *</Label>
+              <Label htmlFor="name">Organisation Name *</Label>
               <Input
                 id="name"
                 placeholder="e.g., ABC Care Services"
@@ -156,7 +156,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
                 required
               />
               <p className="text-xs text-muted-foreground">
-                Organization will be accessible at: med-infinite.care/{formData.slug || 'slug'}
+                Organisation will be accessible at: med-infinite.care/{formData.slug || 'slug'}
               </p>
             </div>
           </div>

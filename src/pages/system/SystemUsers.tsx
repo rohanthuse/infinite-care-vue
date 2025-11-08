@@ -60,10 +60,10 @@ export default function SystemUsers() {
                 <Users className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">System Users</h1>
-                <p className="text-muted-foreground mt-1">
-                  Manage organization super admins
-                </p>
+            <h1 className="text-2xl font-bold text-foreground">System Users</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage organisation super admins
+            </p>
                 <div className="flex items-center gap-4 mt-3">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="flex items-center gap-1">
@@ -91,7 +91,7 @@ export default function SystemUsers() {
         <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl">
           <div className="p-6 border-b border-border/50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Organization Super Admin Users</h2>
+              <h2 className="text-lg font-semibold text-foreground">Organisation Super Admin Users</h2>
               <p className="text-sm text-muted-foreground">Manage system user accounts and permissions</p>
             </div>
             <AddSystemUserDialog />

@@ -31,12 +31,12 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Tenant details</DialogTitle>
-          <DialogDescription>Review the organization information.</DialogDescription>
+          <DialogDescription>Review the organisation information.</DialogDescription>
         </DialogHeader>
         {tenant && (
           <div className="space-y-3">
             <div>
-              <div className="text-sm text-muted-foreground">Organization</div>
+              <div className="text-sm text-muted-foreground">Organisation</div>
               <div className="font-medium">{tenant.name}</div>
             </div>
             <div>

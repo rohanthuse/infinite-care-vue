@@ -63,7 +63,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
   const { data: members = [], isLoading, error, refetch } = useQuery({
     queryKey: ['organization-members', organizationId],
     queryFn: async () => {
-      console.log('Fetching organization members for:', organizationId);
+      console.log('Fetching organisation members for:', organizationId);
       
       // Get organization members
       const { data: orgMembers, error: membersError } = await supabase
@@ -80,12 +80,12 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         .eq('status', 'active');
 
       if (membersError) {
-        console.error('Error fetching organization members:', membersError);
+        console.error('Error fetching organisation members:', membersError);
         throw membersError;
       }
 
       if (!orgMembers || orgMembers.length === 0) {
-        console.log('No organization members found');
+        console.log('No organisation members found');
         return [];
       }
 
@@ -142,7 +142,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         throw error;
       }
 
-      toast.success(`Removed ${userEmail} from organization`);
+      toast.success(`Removed ${userEmail} from organisation`);
       refetch();
     } catch (error: any) {
       console.error('Remove member error:', error);
@@ -159,7 +159,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
   if (error) {
     return (
       <div className="p-4 text-center">
-        <p className="text-red-600">Error loading organization members: {error.message}</p>
+        <p className="text-red-600">Error loading organisation members: {error.message}</p>
         <Button onClick={() => refetch()} className="mt-2">
           Try Again
         </Button>
@@ -174,7 +174,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search organization members..."
+            placeholder="Search organisation members..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -202,14 +202,14 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                 <TableCell colSpan={6} className="text-center py-8">
                   <div className="flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                    Loading organization members...
+                    Loading organisation members...
                   </div>
                 </TableCell>
               </TableRow>
             ) : filteredMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  {searchTerm ? "No members match your search." : "No organization members found."}
+                  {searchTerm ? "No members match your search." : "No organisation members found."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -275,8 +275,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                           <AlertDialogHeader>
                             <AlertDialogTitle>Remove Member</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to remove this member from the organization? 
-                              They will lose access to all organization resources.
+                              Are you sure you want to remove this member from the organisation? 
+                              They will lose access to all organisation resources.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

@@ -189,7 +189,7 @@ export const DemoRequestsTable: React.FC = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Contact</TableHead>
-                  <TableHead>Organization</TableHead>
+                  <TableHead>Organisation</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Submitted</TableHead>
                   <TableHead>Actions</TableHead>
