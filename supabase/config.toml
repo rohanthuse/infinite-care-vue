@@ -75,3 +75,6 @@ verify_jwt = true
 
 [functions.send-password-reset]
 verify_jwt = false
+
+[functions.create-organization-member]
+verify_jwt = true

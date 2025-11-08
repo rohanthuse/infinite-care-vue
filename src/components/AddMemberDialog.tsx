@@ -42,41 +42,26 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
         throw new Error("Missing organisation information");
       }
 
-      // First, create auth user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          },
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
-
-      // Use the new database function to create organization member with proper role assignment
-      const { data, error } = await supabase.rpc('create_organization_member_with_role', {
-        p_organization_id: organization.id,
-        p_user_id: authData.user.id,
-        p_role: role,
-        p_permissions: permissions as any,
-        p_invited_by: (await supabase.auth.getUser()).data.user?.id,
+      // Use edge function to handle member creation
+      const { data, error } = await supabase.functions.invoke('create-organization-member', {
+        body: {
+          email,
+          password,
+          firstName,
+          lastName,
+          role,
+          permissions,
+          organizationId: organization.id
+        }
       });
 
       if (error) throw error;
       
-      // Return a mock object for consistency
-      return { 
-        id: data, 
-        organization_id: organization.id, 
-        user_id: authData.user.id, 
-        role,
-        status: 'active'
-      };
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to add member');
+      }
+      
+      return data;
     },
     onSuccess: () => {
       toast({
