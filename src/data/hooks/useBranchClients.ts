@@ -108,8 +108,12 @@ export function useDeleteClient() {
     
     return useMutation({
         mutationFn: deleteClient,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+        onSuccess: async () => {
+            // Force immediate refetch instead of just invalidating
+            await queryClient.refetchQueries({ 
+                queryKey: ['branch-clients'],
+                type: 'active'
+            });
             queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
             queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
             toast({
@@ -155,8 +159,12 @@ export function useDeleteMultipleClients() {
     
     return useMutation({
         mutationFn: deleteMultipleClients,
-        onSuccess: (_, clientIds) => {
-            queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+        onSuccess: async (_, clientIds) => {
+            // Force immediate refetch instead of just invalidating
+            await queryClient.refetchQueries({ 
+                queryKey: ['branch-clients'],
+                type: 'active'
+            });
             queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
             queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
             toast({
