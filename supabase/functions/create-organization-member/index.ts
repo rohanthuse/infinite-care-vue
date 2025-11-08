@@ -120,6 +120,7 @@ serve(async (req) => {
               status: 'active',
               role: role,
               permissions: permissions,
+              joined_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
             .eq('id', existingMember.id);
