@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
+import { Resend } from "npm:resend@2.0.0";
+import { generateMedInfiniteEmailHTML } from "../_shared/email-template.ts";
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +27,17 @@ serve(async (req) => {
     const { email, password, firstName, lastName, role, permissions, organizationId } = await req.json();
 
     console.log('Request params:', { email, role, organizationId });
+
+    // Fetch organization details for email
+    const { data: orgData } = await supabaseAdmin
+      .from('organizations')
+      .select('name')
+      .eq('id', organizationId)
+      .single();
+    
+    const organizationName = orgData?.name || 'Med-Infinite';
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://med-infinite.care';
+    const loginUrl = `${siteUrl}/login`;
 
     // Validate required fields
     if (!email || !password || !firstName || !lastName || !role || !organizationId) {
@@ -114,6 +129,46 @@ serve(async (req) => {
             throw updateError;
           }
 
+          // Send reactivation email
+          try {
+            const emailHtml = generateMedInfiniteEmailHTML({
+              title: 'Account Reactivated',
+              previewText: `Your ${organizationName} account has been reactivated`,
+              content: `
+                <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 16px;">Welcome Back, ${firstName}!</h2>
+                <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 16px;">
+                  Great news! Your account with <strong>${organizationName}</strong> has been reactivated on Med-Infinite.
+                </p>
+                <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+                  You can now log in and access all platform features with your existing credentials.
+                </p>
+                <div style="background-color: #f3f4f6; border-left: 4px solid #2563eb; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+                  <p style="color: #1f2937; font-size: 14px; margin: 0; font-weight: 600;">Login Email:</p>
+                  <p style="color: #4b5563; font-size: 14px; margin: 4px 0 0 0;">${email}</p>
+                </div>
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${loginUrl}" class="button">Log In to Your Account</a>
+                </div>
+                <p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-top: 24px;">
+                  If you have any questions or need assistance, please don't hesitate to contact your organization administrator.
+                </p>
+              `,
+              footerText: 'You received this email because your account was reactivated by an administrator.'
+            });
+
+            await resend.emails.send({
+              from: 'Med-Infinite <onboarding@resend.dev>',
+              to: [email],
+              subject: `Your ${organizationName} Account Has Been Reactivated`,
+              html: emailHtml,
+            });
+
+            console.log('Reactivation email sent successfully to:', email);
+          } catch (emailError) {
+            console.error('Failed to send reactivation email:', emailError);
+            // Don't block the reactivation if email fails
+          }
+
           return new Response(
             JSON.stringify({ 
               success: true, 
@@ -168,6 +223,55 @@ serve(async (req) => {
       if (profileError && profileError.code !== '23505') { // Ignore duplicate key errors
         console.error('Error creating profile:', profileError);
         // Don't throw - profile might already exist
+      }
+
+      // Send welcome email for new user
+      try {
+        const emailHtml = generateMedInfiniteEmailHTML({
+          title: 'Welcome to Med-Infinite',
+          previewText: `You've been added to ${organizationName}`,
+          content: `
+            <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 16px;">Welcome, ${firstName}!</h2>
+            <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 16px;">
+              You've been added to <strong>${organizationName}</strong> on the Med-Infinite Care Management Platform.
+            </p>
+            <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+              Your account has been created and is ready to use. Below are your login credentials:
+            </p>
+            <div style="background-color: #f3f4f6; border-left: 4px solid #2563eb; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+              <p style="color: #1f2937; font-size: 14px; margin: 0; font-weight: 600;">Login Email:</p>
+              <p style="color: #4b5563; font-size: 14px; margin: 4px 0 12px 0;">${email}</p>
+              <p style="color: #1f2937; font-size: 14px; margin: 0; font-weight: 600;">Password:</p>
+              <p style="color: #4b5563; font-size: 14px; margin: 4px 0 0 0;">The password provided to you by your administrator</p>
+            </div>
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${loginUrl}" class="button">Log In to Med-Infinite</a>
+            </div>
+            <h3 style="color: #1f2937; font-size: 18px; margin: 32px 0 16px 0;">Getting Started</h3>
+            <ul style="color: #4b5563; font-size: 14px; line-height: 24px; margin: 0; padding-left: 20px;">
+              <li style="margin-bottom: 8px;">Complete your profile with additional information</li>
+              <li style="margin-bottom: 8px;">Explore the dashboard and familiarize yourself with the platform</li>
+              <li style="margin-bottom: 8px;">Review your role and permissions with your administrator</li>
+              <li style="margin-bottom: 8px;">Access training resources and documentation</li>
+            </ul>
+            <p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-top: 24px;">
+              If you have any questions or need assistance getting started, please contact your organization administrator.
+            </p>
+          `,
+          footerText: 'You received this email because you were added as a member of an organization on Med-Infinite.'
+        });
+
+        await resend.emails.send({
+          from: 'Med-Infinite <onboarding@resend.dev>',
+          to: [email],
+          subject: `Welcome to ${organizationName} on Med-Infinite`,
+          html: emailHtml,
+        });
+
+        console.log('Welcome email sent successfully to:', email);
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't block the member creation if email fails
       }
     }
 
