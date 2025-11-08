@@ -16,13 +16,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateServiceReport } from '@/hooks/useServiceReports';
+import { useClientCompletedBookings } from '@/hooks/useClientCompletedBookings';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { format } from 'date-fns';
-import { Calendar, CalendarIcon, Clock, Plus, X } from 'lucide-react';
+import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
+  booking_id: z.string().optional(),
   service_date: z.string().min(1, 'Service date is required'),
   service_duration_minutes: z.number().min(1, 'Duration is required'),
   services_provided: z.array(z.string()).min(1, 'At least one service must be provided'),
@@ -78,6 +80,7 @@ export function CreateServiceReportDialog({
   const createServiceReport = useCreateServiceReport();
   const [newService, setNewService] = useState('');
   const [newTask, setNewTask] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -99,6 +102,11 @@ export function CreateServiceReportDialog({
       client_feedback: '',
     },
   });
+  
+  const selectedClientId = form.watch('client_id');
+  const { data: completedBookings = [] } = useClientCompletedBookings(
+    preSelectedClient?.id || selectedClientId
+  );
 
   const handleAddService = () => {
     if (newService.trim()) {
@@ -133,6 +141,7 @@ export function CreateServiceReportDialog({
 
     const reportData = {
       client_id: data.client_id,
+      booking_id: bookingId || data.booking_id || null,
       service_date: data.service_date,
       service_duration_minutes: data.service_duration_minutes,
       services_provided: data.services_provided,
@@ -150,7 +159,6 @@ export function CreateServiceReportDialog({
       staff_id: carerContext.staffProfile.id,
       branch_id: carerContext.staffProfile.branch_id,
       visit_record_id: visitRecordId,
-      booking_id: bookingId,
       created_by: carerContext.staffProfile.id,
     };
 
@@ -221,6 +229,66 @@ export function CreateServiceReportDialog({
             {preSelectedClient && (
               <div className="p-4 bg-muted rounded-lg">
                 <p className="font-medium">Client: {preSelectedClient.name}</p>
+              </div>
+            )}
+
+            {/* Booking Selection */}
+            {preSelectedClient && completedBookings.length > 0 && (
+              <FormField
+                control={form.control}
+                name="booking_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Link to Completed Booking (Optional)</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        const booking = completedBookings.find(b => b.id === value);
+                        if (booking) {
+                          setSelectedBooking(booking);
+                          form.setValue('service_date', format(new Date(booking.start_time), 'yyyy-MM-dd'));
+                          const duration = Math.round(
+                            (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
+                          );
+                          form.setValue('service_duration_minutes', duration);
+                        }
+                      }} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a completed booking (optional)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {completedBookings.map((booking: any) => (
+                          <SelectItem key={booking.id} value={booking.id}>
+                            {format(new Date(booking.start_time), 'MMM dd, yyyy HH:mm')} - 
+                            {booking.services?.title || 'Service'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Link this report to a specific completed booking. This will auto-fill date and duration.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {selectedBooking && (
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-900 dark:text-blue-100">Booking Linked</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Service details have been auto-filled from the selected booking.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 

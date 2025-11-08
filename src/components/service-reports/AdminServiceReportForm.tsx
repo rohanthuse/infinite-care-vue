@@ -16,14 +16,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServiceReports';
+import { useClientCompletedBookings } from '@/hooks/useClientCompletedBookings';
 import { format } from 'date-fns';
-import { Plus, X, Save, FileText } from 'lucide-react';
+import { Plus, X, Save, FileText, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
   staff_id: z.string().min(1, 'Staff member is required'),
+  booking_id: z.string().optional(),
   service_date: z.string().min(1, 'Service date is required'),
   service_duration_minutes: z.number().min(1, 'Duration is required'),
   services_provided: z.array(z.string()).min(1, 'At least one service must be provided'),
@@ -80,6 +82,7 @@ export function AdminServiceReportForm({
   const updateServiceReport = useUpdateServiceReport();
   const [newService, setNewService] = useState('');
   const [newTask, setNewTask] = useState('');
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -104,6 +107,9 @@ export function AdminServiceReportForm({
       status: 'approved',
     },
   });
+  
+  const selectedClientId = form.watch('client_id');
+  const { data: completedBookings = [] } = useClientCompletedBookings(selectedClientId);
 
   // Populate form with existing report data when editing
   useEffect(() => {
@@ -157,6 +163,7 @@ export function AdminServiceReportForm({
       const reportData = {
         client_id: data.client_id,
         staff_id: data.staff_id,
+        booking_id: data.booking_id || null,
         service_date: data.service_date,
         service_duration_minutes: data.service_duration_minutes,
         services_provided: data.services_provided,
@@ -286,6 +293,78 @@ export function AdminServiceReportForm({
                   </FormItem>
                 )}
               />
+
+              {/* Booking Selection (shown after client selected) */}
+              {selectedClientId && (
+                <FormField
+                  control={form.control}
+                  name="booking_id"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Link to Completed Booking (Optional)</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          const booking = completedBookings.find(b => b.id === value);
+                          if (booking) {
+                            setSelectedBooking(booking);
+                            // Auto-fill date and staff from booking
+                            form.setValue('service_date', format(new Date(booking.start_time), 'yyyy-MM-dd'));
+                            if (booking.staff?.id) {
+                              form.setValue('staff_id', booking.staff.id);
+                            }
+                            // Calculate duration
+                            const duration = Math.round(
+                              (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
+                            );
+                            form.setValue('service_duration_minutes', duration);
+                          }
+                        }} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a completed booking (optional)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {completedBookings.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                              No completed bookings without reports
+                            </div>
+                          ) : (
+                            completedBookings.map((booking: any) => (
+                              <SelectItem key={booking.id} value={booking.id}>
+                                {format(new Date(booking.start_time), 'MMM dd, yyyy HH:mm')} - 
+                                {booking.services?.title || 'Service'} 
+                                {booking.staff && ` (${booking.staff.first_name} ${booking.staff.last_name})`}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Link this report to a specific completed booking. This will auto-fill date, staff, and duration.
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {selectedBooking && (
+                <div className="col-span-2 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-blue-900 dark:text-blue-100">Booking Linked</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">
+                        Service details have been auto-filled from the selected booking. You can still modify them if needed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <FormField
                 control={form.control}
