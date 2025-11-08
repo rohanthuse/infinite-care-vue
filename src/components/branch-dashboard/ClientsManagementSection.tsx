@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useBranchClients } from "@/data/hooks/useBranchClients";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useBranchClients, useDeleteClient, useDeleteMultipleClients } from "@/data/hooks/useBranchClients";
 import { SetClientPasswordDialog } from "@/components/clients/SetClientPasswordDialog";
 
 interface ClientsManagementSectionProps {
@@ -33,8 +35,14 @@ export function ClientsManagementSection({
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [selectedClients, setSelectedClients] = useState<any[]>([]);
+  const [deletingClient, setDeletingClient] = useState<any>(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   
   const itemsPerPage = 10;
+  
+  const deleteMutation = useDeleteClient();
+  const deleteMultipleMutation = useDeleteMultipleClients();
 
   const { data: clientsData, isLoading, error } = useBranchClients({
     branchId,
@@ -84,6 +92,53 @@ export function ClientsManagementSection({
     return sortOrder === 'asc' 
       ? <ArrowUp className="h-4 w-4 text-blue-600" />
       : <ArrowDown className="h-4 w-4 text-blue-600" />;
+  };
+
+  const handleDelete = async () => {
+    if (!deletingClient) return;
+    
+    try {
+      await deleteMutation.mutateAsync(deletingClient.id);
+      setDeletingClient(null);
+      setSelectedClients(prev => prev.filter(c => c.id !== deletingClient.id));
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedClients.length === 0) return;
+    
+    try {
+      const clientIds = selectedClients.map(c => c.id);
+      await deleteMultipleMutation.mutateAsync(clientIds);
+      setSelectedClients([]);
+      setShowBulkDeleteDialog(false);
+    } catch (error) {
+      // Error is handled by the mutation
+    }
+  };
+
+  const handleClientSelection = (client: any, checked: boolean) => {
+    setSelectedClients(prev => {
+      if (checked) {
+        return prev.some(c => c.id === client.id) ? prev : [...prev, client];
+      } else {
+        return prev.filter(c => c.id !== client.id);
+      }
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedClients(clients);
+    } else {
+      setSelectedClients([]);
+    }
+  };
+
+  const isClientSelected = (client: any) => {
+    return selectedClients.some(c => c.id === client.id);
   };
 
   if (!branchId) {
@@ -212,6 +267,42 @@ export function ClientsManagementSection({
         </CardContent>
       </Card>
 
+      {/* Bulk Actions Bar */}
+      {selectedClients.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={selectedClients.length === clients.length && clients.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="font-medium text-blue-900">
+                  {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedClients([])}
+                >
+                  Clear Selection
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Clients Table */}
       <Card>
         <CardHeader>
@@ -235,6 +326,13 @@ export function ClientsManagementSection({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
+                      <th className="text-left py-3 px-4 w-12">
+                        <Checkbox
+                          checked={selectedClients.length === clients.length && clients.length > 0}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all clients"
+                        />
+                      </th>
                       <th className="text-left py-3 px-4 font-medium">
                         <button 
                           onClick={() => handleSort('client_id')}
@@ -291,6 +389,13 @@ export function ClientsManagementSection({
                   <tbody>
                     {clients.map((client) => (
                       <tr key={client.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <Checkbox
+                            checked={isClientSelected(client)}
+                            onCheckedChange={(checked) => handleClientSelection(client, checked as boolean)}
+                            aria-label={`Select ${client.first_name} ${client.last_name}`}
+                          />
+                        </td>
                         <td className="py-3 px-4 text-sm">
                           <span className="font-mono text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-xs font-medium">
                             {client.client_id || 'N/A'}
@@ -347,6 +452,16 @@ export function ClientsManagementSection({
                                 <Key className="h-4 w-4 mr-2" />
                                 Set Password
                               </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setDropdownOpen(null);
+                                  setTimeout(() => setDeletingClient(client), 50);
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Client
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -363,6 +478,11 @@ export function ClientsManagementSection({
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
+                          <Checkbox
+                            checked={isClientSelected(client)}
+                            onCheckedChange={(checked) => handleClientSelection(client, checked as boolean)}
+                            aria-label={`Select ${client.first_name} ${client.last_name}`}
+                          />
                           <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                             <span className="text-sm font-medium text-blue-600">
                               {client.avatar_initials || `${client.first_name?.[0]}${client.last_name?.[0]}`}
@@ -401,6 +521,16 @@ export function ClientsManagementSection({
                               <DropdownMenuItem onClick={() => handleSetPassword(client)}>
                                 <Key className="h-4 w-4 mr-2" />
                                 Set Password
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  setDropdownOpen(null);
+                                  setTimeout(() => setDeletingClient(client), 50);
+                                }}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Client
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -457,6 +587,52 @@ export function ClientsManagementSection({
         onOpenChange={setPasswordDialogOpen}
         client={selectedClient}
       />
+
+      {/* Delete Single Client Dialog */}
+      <AlertDialog open={!!deletingClient} onOpenChange={(open) => !open && setDeletingClient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {deletingClient?.first_name} {deletingClient?.last_name}? 
+              This action cannot be undone and will remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Multiple Clients Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Multiple Clients</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedClients.length} client{selectedClients.length !== 1 ? 's' : ''}? 
+              This action cannot be undone and will remove all associated data for these clients.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteMultipleMutation.isPending}
+            >
+              {deleteMultipleMutation.isPending ? 'Deleting...' : `Delete ${selectedClients.length} Client${selectedClients.length !== 1 ? 's' : ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

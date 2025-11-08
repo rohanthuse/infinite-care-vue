@@ -1,7 +1,8 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { toast } from '@/hooks/use-toast';
 
 export type ClientFromDB = Tables<'clients'>;
 
@@ -83,3 +84,93 @@ export const useBranchClients = (params: UseBranchClientsParams) => {
         enabled: !!params.branchId,
     });
 };
+
+// Delete single client
+export async function deleteClient(clientId: string) {
+    console.log('[deleteClient] Deleting client:', clientId);
+    
+    const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+
+    if (error) {
+        console.error('[deleteClient] Error:', error);
+        throw error;
+    }
+    
+    console.log('[deleteClient] Deleted client successfully');
+}
+
+// Hook for deleting single client
+export function useDeleteClient() {
+    const queryClient = useQueryClient();
+    
+    return useMutation({
+        mutationFn: deleteClient,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+            queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
+            toast({
+                title: "Success",
+                description: "Client deleted successfully",
+            });
+        },
+        onError: (error: any) => {
+            console.error('[useDeleteClient] Error:', error);
+            let errorMessage = "Failed to delete client";
+            if (error.message?.includes('permission') || error.message?.includes('access')) {
+                errorMessage = "Access denied: You do not have permission to delete this client";
+            }
+            toast({
+                title: "Error",
+                description: errorMessage,
+                variant: "destructive",
+            });
+        }
+    });
+}
+
+// Delete multiple clients
+export async function deleteMultipleClients(clientIds: string[]) {
+    console.log('[deleteMultipleClients] Deleting clients:', clientIds);
+    
+    const { error } = await supabase
+        .from('clients')
+        .delete()
+        .in('id', clientIds);
+
+    if (error) {
+        console.error('[deleteMultipleClients] Error:', error);
+        throw error;
+    }
+    
+    console.log('[deleteMultipleClients] Deleted clients successfully');
+}
+
+// Hook for deleting multiple clients
+export function useDeleteMultipleClients() {
+    const queryClient = useQueryClient();
+    
+    return useMutation({
+        mutationFn: deleteMultipleClients,
+        onSuccess: (_, clientIds) => {
+            queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+            queryClient.invalidateQueries({ queryKey: ['branch-dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['branch-statistics'] });
+            toast({
+                title: "Success",
+                description: `${clientIds.length} client${clientIds.length > 1 ? 's' : ''} deleted successfully`,
+            });
+        },
+        onError: (error: any) => {
+            console.error('[useDeleteMultipleClients] Error:', error);
+            toast({
+                title: "Error",
+                description: "Failed to delete clients",
+                variant: "destructive",
+            });
+        }
+    });
+}
