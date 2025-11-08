@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useCarerServiceReports } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
+import { useCarerCompletedBookings } from '@/hooks/useCarerCompletedBookings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CreateServiceReportDialog } from '../service-reports/CreateServiceReportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
   FileText, 
   Plus, 
@@ -16,16 +18,22 @@ import {
   Edit,
   Eye,
   Calendar,
-  User
+  User,
+  ClipboardList
 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function CarerReportsTab() {
   const { data: carerContext } = useCarerContext();
   const { data: reports = [], isLoading, error } = useCarerServiceReports(carerContext?.staffProfile?.id);
+  const { data: completedBookings = [], isLoading: bookingsLoading } = useCarerCompletedBookings(
+    carerContext?.staffProfile?.id
+  );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [selectedBookingForReport, setSelectedBookingForReport] = useState<any>(null);
+  const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
 
   if (!carerContext?.staffProfile) {
     return (
@@ -104,7 +112,19 @@ export function CarerReportsTab() {
       </div>
 
       {/* Status Overview */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <ClipboardList className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-2xl font-bold">{completedBookings.length}</p>
+                <p className="text-xs text-muted-foreground">Need Reports</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -154,8 +174,12 @@ export function CarerReportsTab() {
         </Card>
       </div>
 
-      <Tabs defaultValue="pending" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="completed" className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="completed" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" />
+            Completed ({completedBookings.length})
+          </TabsTrigger>
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             Pending ({pendingReports.length})
@@ -173,6 +197,103 @@ export function CarerReportsTab() {
             Rejected ({rejectedReports.length})
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="completed" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Completed Appointments Without Reports
+              </CardTitle>
+              <CardDescription>
+                Create service reports for your completed appointments. Reports help maintain quality records of care provided.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bookingsLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : completedBookings.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <CheckCircle className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                  <p className="text-lg font-medium">All caught up!</p>
+                  <p className="text-sm">All your completed appointments have service reports.</p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Booking ID</TableHead>
+                        <TableHead>Client Name</TableHead>
+                        <TableHead>Service</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Time</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {completedBookings.map((booking) => {
+                        const startTime = new Date(booking.start_time);
+                        const endTime = new Date(booking.end_time);
+                        const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+                        
+                        return (
+                          <TableRow key={booking.id}>
+                            <TableCell className="font-mono text-xs">
+                              #{booking.id.slice(0, 8)}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                {booking.clients?.first_name} {booking.clients?.last_name}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {booking.services?.title || 'General Service'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                {format(startTime, 'MMM dd, yyyy')}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                {format(startTime, 'HH:mm')}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {durationMinutes} min
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedBookingForReport(booking);
+                                  setBookingReportDialogOpen(true);
+                                }}
+                                className="flex items-center gap-2"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Add Report
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="pending" className="space-y-4">
           {pendingReports.length === 0 ? (
@@ -244,6 +365,23 @@ export function CarerReportsTab() {
           }}
           preSelectedDate={selectedReport.service_date}
           bookingId={selectedReport.booking_id}
+        />
+      )}
+
+      {/* Create Report from Booking Dialog */}
+      {selectedBookingForReport && (
+        <CreateServiceReportDialog
+          open={bookingReportDialogOpen}
+          onOpenChange={(open) => {
+            setBookingReportDialogOpen(open);
+            if (!open) setSelectedBookingForReport(null);
+          }}
+          preSelectedClient={{
+            id: selectedBookingForReport.client_id,
+            name: `${selectedBookingForReport.clients?.first_name} ${selectedBookingForReport.clients?.last_name}`
+          }}
+          preSelectedDate={format(new Date(selectedBookingForReport.start_time), 'yyyy-MM-dd')}
+          bookingId={selectedBookingForReport.id}
         />
       )}
     </div>
