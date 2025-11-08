@@ -21,6 +21,7 @@ import { useCarerContext } from '@/hooks/useCarerContext';
 import { format } from 'date-fns';
 import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useServices } from '@/data/hooks/useServices';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
@@ -64,11 +65,6 @@ const engagementOptions = [
   'Very Engaged', 'Engaged', 'Somewhat Engaged', 'Limited Engagement', 'Not Engaged'
 ];
 
-const commonServices = [
-  'Personal Care', 'Medication Support', 'Meal Preparation', 'Companionship',
-  'Mobility Support', 'Household Tasks', 'Transport', 'Shopping', 'Health Monitoring'
-];
-
 export function CreateServiceReportDialog({
   open,
   onOpenChange,
@@ -80,6 +76,7 @@ export function CreateServiceReportDialog({
 }: CreateServiceReportDialogProps) {
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
+  const { data: availableServices = [], isLoading: servicesLoading } = useServices();
   const [newService, setNewService] = useState('');
   const [newTask, setNewTask] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -114,6 +111,14 @@ export function CreateServiceReportDialog({
       );
       form.setValue('service_duration_minutes', duration);
       form.setValue('service_date', format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd'));
+      
+      // Auto-select the booked service
+      if (preSelectedBooking.service_name) {
+        const currentServices = form.getValues('services_provided') || [];
+        if (!currentServices.includes(preSelectedBooking.service_name)) {
+          form.setValue('services_provided', [preSelectedBooking.service_name]);
+        }
+      }
     }
   }, [preSelectedBooking, form]);
   
@@ -253,9 +258,9 @@ export function CreateServiceReportDialog({
               
               {/* Service Type */}
               <div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Service</p>
-                <Badge variant="secondary" className="text-xs">
-                  {preSelectedBooking.service_name || 'General Service'}
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Booked Service</p>
+                <Badge variant="default" className="text-xs">
+                  ⭐ {preSelectedBooking.service_name || 'General Service'}
                 </Badge>
               </div>
             </div>
@@ -405,28 +410,53 @@ export function CreateServiceReportDialog({
               </div>
             )}
 
-            {/* Services Provided */}
-            <div className="space-y-4">
-              <FormLabel>Services Provided</FormLabel>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {commonServices.map((service) => (
-                  <Badge
-                    key={service}
-                    variant={servicesProvided.includes(service) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      const current = form.getValues('services_provided') || [];
-                      if (current.includes(service)) {
-                        form.setValue('services_provided', current.filter(s => s !== service));
-                      } else {
-                        form.setValue('services_provided', [...current, service]);
-                      }
-                    }}
-                  >
-                    {service}
-                  </Badge>
-                ))}
-              </div>
+                {/* Services Provided */}
+                <div className="space-y-4">
+                  <FormLabel>Services Provided</FormLabel>
+                  
+                  {/* Loading State */}
+                  {servicesLoading && (
+                    <p className="text-sm text-muted-foreground">Loading services...</p>
+                  )}
+                  
+                  {/* Dynamic Service Badges */}
+                  {!servicesLoading && availableServices.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {availableServices.map((service) => {
+                        const isSelected = servicesProvided.includes(service.title);
+                        const isBookedService = preSelectedBooking?.service_name === service.title;
+                        
+                        return (
+                          <Badge
+                            key={service.id}
+                            variant={isSelected ? "default" : "outline"}
+                            className={`cursor-pointer transition-all ${
+                              isBookedService ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                            }`}
+                            onClick={() => {
+                              const current = form.getValues('services_provided') || [];
+                              if (current.includes(service.title)) {
+                                form.setValue('services_provided', current.filter(s => s !== service.title));
+                              } else {
+                                form.setValue('services_provided', [...current, service.title]);
+                              }
+                            }}
+                          >
+                            {isBookedService && '⭐ '}
+                            {service.title}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Booked Service Indicator */}
+                  {preSelectedBooking?.service_name && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                      <span>⭐</span>
+                      <span>Star indicates the originally booked service</span>
+                    </p>
+                  )}
               
               <div className="flex gap-2">
                 <Input
