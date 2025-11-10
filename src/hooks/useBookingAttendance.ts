@@ -86,6 +86,9 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['today-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['carer-completed-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-booking-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['client-billing'] });
       
       // Only show success toast if not in silent mode
       if (!options?.silent) {
