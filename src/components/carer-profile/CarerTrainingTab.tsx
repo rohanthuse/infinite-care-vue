@@ -49,8 +49,10 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
   const { assignTraining, isAssigning } = useTrainingManagement(branchId);
 
   // Handler for assigning training
-  const handleAssignTraining = (courseId: string, staffIds: string[]) => {
-    assignTraining({ courseId, staffIds });
+  const handleAssignTraining = (courseIds: string[], staffIds: string[]) => {
+    courseIds.forEach(courseId => {
+      assignTraining({ courseId, staffIds });
+    });
     setAssignTrainingOpen(false);
   };
 
@@ -343,7 +345,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
         <AssignTrainingDialog
           open={assignTrainingOpen}
           onOpenChange={setAssignTrainingOpen}
-          onAssign={(courseId, staffIds) => handleAssignTraining(courseId, staffIds)}
+          onAssign={(courseIds, staffIds) => handleAssignTraining(courseIds, staffIds)}
           isAssigning={isAssigning}
           trainingCourses={trainingCourses}
           staff={[{

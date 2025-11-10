@@ -275,12 +275,20 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     setAddTrainingOpen(false);
   };
 
-  const handleAssignTraining = (courseId: string, staffIds: string[]) => {
+  const handleAssignTraining = (courseIds: string[], staffIds: string[]) => {
     // Track which cells are newly assigned for animation
     const newCells = new Set<string>();
-    staffIds.forEach(staffId => {
-      newCells.add(`${staffId}-${courseId}`);
+    
+    // For each course-staff combination
+    courseIds.forEach(courseId => {
+      staffIds.forEach(staffId => {
+        newCells.add(`${staffId}-${courseId}`);
+      });
+      
+      // Assign the training course to all selected staff
+      assignTraining({ staffIds, courseId });
     });
+    
     setNewlyAssignedCells(newCells);
     
     // Clear the animation after 3 seconds
@@ -288,7 +296,6 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
       setNewlyAssignedCells(new Set());
     }, 3000);
     
-    assignTraining({ staffIds, courseId });
     setAssignTrainingOpen(false);
   };
 
