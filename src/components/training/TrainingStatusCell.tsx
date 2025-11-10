@@ -12,6 +12,7 @@ interface TrainingStatusCellProps {
   data: TrainingCell;
   title: string;
   onClick?: () => void;
+  isNewlyAssigned?: boolean;
 }
 
 const getStatusColor = (status: TrainingStatus): string => {
@@ -23,7 +24,7 @@ const getStatusColor = (status: TrainingStatus): string => {
     case 'expired':
       return 'bg-red-100 text-red-700 border-red-200';
     case 'not-started':
-      return 'bg-gray-100 text-gray-700 border-gray-200';
+      return 'bg-cyan-50 text-cyan-700 border-cyan-300 border-2';
     default:
       return 'bg-gray-100 text-gray-700 border-gray-200';
   }
@@ -57,7 +58,8 @@ const formatDate = (dateString?: string): string => {
 const TrainingStatusCell: React.FC<TrainingStatusCellProps> = ({ 
   data, 
   title,
-  onClick 
+  onClick,
+  isNewlyAssigned = false
 }) => {
   const { status, completionDate, expiryDate, score, maxScore } = data;
   
@@ -67,9 +69,10 @@ const TrainingStatusCell: React.FC<TrainingStatusCellProps> = ({
         <TooltipTrigger asChild>
           <div 
             className={cn(
-              "p-2 border rounded-md flex flex-col items-center justify-center min-h-[70px] min-w-[70px] cursor-pointer transition-colors",
+              "p-2 border rounded-md flex flex-col items-center justify-center min-h-[70px] min-w-[70px] cursor-pointer transition-all duration-300",
               getStatusColor(status),
-              "hover:opacity-90"
+              "hover:opacity-90 hover:scale-105",
+              isNewlyAssigned && status === 'not-started' && "animate-pulse"
             )}
             onClick={onClick}
           >
@@ -77,7 +80,7 @@ const TrainingStatusCell: React.FC<TrainingStatusCellProps> = ({
               {getStatusIcon(status)}
             </div>
             <div className="text-xs font-medium capitalize">
-              {status.replace('-', ' ')}
+              {status === 'not-started' ? 'Assigned' : status.replace('-', ' ')}
             </div>
             {score !== undefined && maxScore !== undefined && (
               <div className="flex items-center text-xs mt-1">
@@ -97,9 +100,9 @@ const TrainingStatusCell: React.FC<TrainingStatusCellProps> = ({
                 status === 'completed' && "bg-green-100 text-green-700",
                 status === 'in-progress' && "bg-blue-100 text-blue-700",
                 status === 'expired' && "bg-red-100 text-red-700",
-                status === 'not-started' && "bg-gray-100 text-gray-700"
+                status === 'not-started' && "bg-cyan-100 text-cyan-700"
               )}>
-                {status.replace('-', ' ')}
+                {status === 'not-started' ? 'Assigned - Not Started' : status.replace('-', ' ')}
               </span>
             </p>
             {completionDate && (

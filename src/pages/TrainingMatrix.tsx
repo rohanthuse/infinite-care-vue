@@ -71,6 +71,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [trainingToDelete, setTrainingToDelete] = useState<string | null>(null);
+  const [newlyAssignedCells, setNewlyAssignedCells] = useState<Set<string>>(new Set());
   
   // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<{
@@ -99,27 +100,24 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const matrixData = React.useMemo(() => {
     const data: Record<string, Record<string, any>> = {};
     
-    // Initialize data structure
+    // Initialize EMPTY data structure (no pre-population)
     staff.forEach(staffMember => {
       data[staffMember.id] = {};
-      trainingCourses.forEach(course => {
-        data[staffMember.id][course.id] = {
-          status: 'not-started' as TrainingStatus
-        };
-      });
     });
 
-    // Populate with actual training records
+    // Populate ONLY with actual training records from database
     trainingRecords.forEach(record => {
-      if (data[record.staff_id] && data[record.staff_id][record.training_course_id]) {
-        data[record.staff_id][record.training_course_id] = {
-          status: record.status as TrainingStatus,
-          completionDate: record.completion_date,
-          expiryDate: record.expiry_date,
-          score: record.score,
-          maxScore: record.training_course.max_score
-        };
+      if (!data[record.staff_id]) {
+        data[record.staff_id] = {};
       }
+      
+      data[record.staff_id][record.training_course_id] = {
+        status: record.status as TrainingStatus,
+        completionDate: record.completion_date,
+        expiryDate: record.expiry_date,
+        score: record.score,
+        maxScore: record.training_course.max_score
+      };
     });
 
     return data;
@@ -278,6 +276,18 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   };
 
   const handleAssignTraining = (courseId: string, staffIds: string[]) => {
+    // Track which cells are newly assigned for animation
+    const newCells = new Set<string>();
+    staffIds.forEach(staffId => {
+      newCells.add(`${staffId}-${courseId}`);
+    });
+    setNewlyAssignedCells(newCells);
+    
+    // Clear the animation after 3 seconds
+    setTimeout(() => {
+      setNewlyAssignedCells(new Set());
+    }, 3000);
+    
     assignTraining({ staffIds, courseId });
     setAssignTrainingOpen(false);
   };
@@ -447,16 +457,22 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
             <span className="text-sm text-gray-700">In Progress</span>
           </div>
           <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded border-2 border-cyan-300 bg-cyan-50 flex items-center justify-center">
+              <CircleDashed className="h-3 w-3 text-cyan-700" />
+            </div>
+            <span className="text-sm text-gray-700 font-medium">Assigned (Not Started)</span>
+          </div>
+          <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
               <XCircle className="h-4 w-4 text-red-600" />
             </div>
             <span className="text-sm text-gray-700">Expired</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 flex items-center justify-center">
-              <CircleDashed className="h-4 w-4 text-gray-600" />
+            <div className="w-4 h-4 flex items-center justify-center opacity-40">
+              <CircleDashed className="h-4 w-4 text-gray-400" />
             </div>
-            <span className="text-sm text-gray-700">Not Started</span>
+            <span className="text-sm text-gray-500">Not Assigned</span>
           </div>
         </div>
       </div>
@@ -594,12 +610,16 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                           data={matrixData[staffMember.id][training.id]} 
                           title={training.title}
                           onClick={() => handleCellClick(staffMember.id, training.id)}
+                          isNewlyAssigned={newlyAssignedCells.has(`${staffMember.id}-${training.id}`)}
                         />
                       ) : (
-                        <div className="p-2 border rounded-md bg-gray-100 flex flex-col items-center justify-center min-h-[70px] min-w-[70px]">
+                        <div 
+                          className="p-2 border border-dashed rounded-md bg-gray-50 flex flex-col items-center justify-center min-h-[70px] min-w-[70px] opacity-40 hover:opacity-60 transition-opacity"
+                          title="Not assigned"
+                        >
                           <CircleDashed className="h-4 w-4 text-gray-400" />
                           <div className="text-xs font-medium text-gray-400 mt-1">
-                            N/A
+                            Not Assigned
                           </div>
                         </div>
                       )}
