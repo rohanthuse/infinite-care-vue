@@ -197,7 +197,10 @@ export const useCreateClientRateSchedule = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client-rate-schedules'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['client-rate-schedules'],
+        exact: false
+      });
       toast({
         title: "Rate Schedule Created",
         description: "New rate schedule has been created successfully."
@@ -230,7 +233,10 @@ export const useUpdateClientRateSchedule = () => {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client-rate-schedules'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['client-rate-schedules'],
+        exact: false
+      });
       toast({
         title: "Rate Schedule Updated",
         description: "Rate schedule has been updated successfully."
@@ -260,7 +266,10 @@ export const useDeleteClientRateSchedule = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['client-rate-schedules'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['client-rate-schedules'],
+        exact: false
+      });
       toast({
         title: "Rate Schedule Deleted",
         description: "Rate schedule has been deactivated successfully."
