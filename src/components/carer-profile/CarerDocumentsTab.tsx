@@ -103,7 +103,7 @@ const uploadStaffDocument = async (file: File, carerId: string, documentType: st
   }
 };
 
-// Document delete function
+// Document delete function with better error handling
 const deleteStaffDocument = async (documentId: string, filePath: string | undefined) => {
   console.log('[CarerDocumentsTab] Starting delete for document:', documentId);
   
@@ -113,70 +113,93 @@ const deleteStaffDocument = async (documentId: string, filePath: string | undefi
   }
 
   try {
-    // Delete file from storage if it exists
+    // Try to delete file from storage, but don't fail if it doesn't exist
     if (filePath && filePath.trim() !== '') {
-      console.log('[CarerDocumentsTab] Deleting file from storage:', filePath);
+      console.log('[CarerDocumentsTab] Attempting to delete file from storage:', filePath);
+      
       const { error: storageError } = await supabase.storage
         .from('staff-documents')
         .remove([filePath]);
 
       if (storageError) {
-        console.error('[CarerDocumentsTab] Storage delete error:', storageError);
-        // Continue with database deletion even if storage fails (file might already be deleted)
+        // Log error but continue - file might already be deleted
+        console.warn('[CarerDocumentsTab] Storage delete warning:', storageError.message);
       } else {
-        console.log('[CarerDocumentsTab] File deleted from storage');
+        console.log('[CarerDocumentsTab] File deleted from storage successfully');
       }
     }
 
-    // Delete from database
-    console.log('[CarerDocumentsTab] Deleting record from database');
-    const { error: dbError } = await supabase
+    // Delete from database with better error messages
+    console.log('[CarerDocumentsTab] Deleting database record for ID:', documentId);
+    
+    const { error: dbError, count } = await supabase
       .from('staff_documents')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', documentId);
 
     if (dbError) {
       console.error('[CarerDocumentsTab] Database delete error:', dbError);
-      throw new Error(`Failed to delete document: ${dbError.message}`);
+      throw new Error(`Failed to delete document from database: ${dbError.message}`);
     }
 
-    console.log('[CarerDocumentsTab] Document deleted successfully');
+    if (count === 0) {
+      console.warn('[CarerDocumentsTab] No rows deleted - document may have been already deleted');
+    } else {
+      console.log('[CarerDocumentsTab] Successfully deleted', count, 'database record(s)');
+    }
+
   } catch (error) {
-    console.error('[CarerDocumentsTab] Delete failed:', error);
+    console.error('[CarerDocumentsTab] Delete operation failed:', error);
     throw error;
   }
 };
 
-// Document download function
+// Document download function with signed URLs and better error handling
 const downloadDocument = async (filePath: string, fileName: string, sourceType: 'document' | 'training_certification') => {
   try {
     console.log('[CarerDocumentsTab] Downloading file:', filePath);
     
-    // Validate file path
     if (!filePath || filePath.trim() === '') {
       throw new Error('Invalid file path');
     }
 
-    // Determine correct bucket based on source type
     const bucketName = sourceType === 'training_certification' 
-      ? 'training-evidence'
+      ? 'staff-documents'
       : 'staff-documents';
 
-    const { data, error } = await supabase.storage
+    // First check if file exists
+    const pathParts = filePath.split('/');
+    const folder = pathParts.length > 1 ? pathParts[0] : '';
+    const searchName = pathParts.length > 1 ? pathParts[pathParts.length - 1] : filePath;
+
+    const { data: fileList, error: listError } = await supabase.storage
       .from(bucketName)
-      .download(filePath);
+      .list(folder, {
+        search: searchName
+      });
 
-    if (error) {
-      console.error('[CarerDocumentsTab] Download error:', error);
-      throw new Error(`Failed to download file: ${error.message}`);
+    if (listError || !fileList || fileList.length === 0) {
+      throw new Error('File not found in storage. It may have been deleted or never uploaded.');
     }
 
-    if (!data) {
-      throw new Error('No file data received');
+    // Use signed URL for private buckets
+    const { data: urlData, error: urlError } = await supabase.storage
+      .from(bucketName)
+      .createSignedUrl(filePath, 60); // 60 second expiry
+
+    if (urlError || !urlData) {
+      console.error('[CarerDocumentsTab] Signed URL error:', urlError);
+      throw new Error(`Failed to generate download link: ${urlError?.message || 'Unknown error'}`);
     }
 
-    // Create download link
-    const url = URL.createObjectURL(data);
+    // Download via signed URL
+    const response = await fetch(urlData.signedUrl);
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = fileName;
@@ -262,18 +285,34 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
     },
   });
 
-  // Delete mutation
+  // Delete mutation with better cache handling
   const deleteMutation = useMutation({
-    mutationFn: ({ documentId, filePath }: { documentId: string; filePath?: string }) => 
-      deleteStaffDocument(documentId, filePath),
-    onSuccess: () => {
+    mutationFn: async ({ documentId, filePath }: { documentId: string; filePath?: string }) => {
+      await deleteStaffDocument(documentId, filePath);
+    },
+    onSuccess: async () => {
       toast({
         title: "Success",
         description: "Document deleted successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['carer-documents', carerId] });
-      setDeleteDialogOpen(false);
-      setDocumentToDelete(null);
+      
+      // More aggressive cache invalidation
+      await queryClient.invalidateQueries({ 
+        queryKey: ['carer-documents', carerId],
+        exact: true 
+      });
+      
+      // Force refetch immediately
+      await queryClient.refetchQueries({ 
+        queryKey: ['carer-documents', carerId],
+        exact: true 
+      });
+      
+      // Small delay before closing dialog to ensure UI updates
+      setTimeout(() => {
+        setDeleteDialogOpen(false);
+        setDocumentToDelete(null);
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
