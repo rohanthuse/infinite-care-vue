@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests } from "@/hooks/useLeaveManagement";
 import { useStaffUtilizationAnalytics, useEnhancedStaffSchedule } from "@/hooks/useStaffUtilizationAnalytics";
@@ -603,19 +604,21 @@ export function StaffScheduleCalendar({
 
       {/* Schedule Grid */}
       {viewType === 'monthly' ? (
-        <BookingsMonthView
-          date={date}
-          bookings={bookings}
-          clients={clients}
-          carers={carers}
-          isLoading={false}
-          onBookingClick={onViewBooking}
-          onCreateBooking={(date, time, clientId, carerId) => {
-            if (carerId && onCreateBooking) {
-              onCreateBooking(carerId, time);
-            }
-          }}
-        />
+        <ScrollArea className="h-full">
+          <BookingsMonthView
+            date={date}
+            bookings={bookings}
+            clients={clients}
+            carers={carers}
+            isLoading={false}
+            onBookingClick={onViewBooking}
+            onCreateBooking={(date, time, clientId, carerId) => {
+              if (carerId && onCreateBooking) {
+                onCreateBooking(carerId, time);
+              }
+            }}
+          />
+        </ScrollArea>
       ) : (
         <div className="flex-1 min-h-0">
         <div className="schedule-scroll border rounded-lg flex flex-col h-full min-h-0 max-w-full overflow-x-hidden">
