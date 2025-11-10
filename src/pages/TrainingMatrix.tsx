@@ -43,6 +43,7 @@ import { useStaffTrainingRecords } from "@/hooks/useStaffTrainingRecords";
 import { useBranchStaffAndClients } from "@/hooks/useBranchStaffAndClients";
 import { useTrainingManagement } from "@/hooks/useTrainingManagement";
 import { TrainingMetricsEmailButton } from "@/components/training/TrainingMetricsEmailButton";
+import { useDialogManager } from "@/hooks/useDialogManager";
 
 export interface TrainingMatrixProps {
   branchId?: string;
@@ -89,6 +90,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const { records: trainingRecords = [], isLoading: isLoadingRecords } = useStaffTrainingRecords(branchId);
   const { staff = [], isLoading: isLoadingStaff } = useBranchStaffAndClients(branchId);
   const { createCourse, assignTraining, deleteCourse, isCreating, isAssigning, isDeleting } = useTrainingManagement(branchId);
+  const { closeAllDropdowns } = useDialogManager();
 
   const isLoading = isLoadingCourses || isLoadingRecords || isLoadingStaff;
 
@@ -299,13 +301,29 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     setAssignTrainingOpen(false);
   };
 
+  const handleDeleteClick = (training: any) => {
+    // Step 1: Set which training to delete
+    setTrainingToDelete(training.id);
+    
+    // Step 2: Close all dropdowns first (critical!)
+    closeAllDropdowns();
+    
+    // Step 3: Wait for dropdown to fully close, then open dialog
+    setTimeout(() => {
+      setDeleteDialogOpen(true);
+    }, 150);
+  };
+
   const handleDeleteTraining = () => {
     if (trainingToDelete) {
+      // Close dialog immediately
       setDeleteDialogOpen(false);
+      
+      // Execute delete after small delay to allow dialog to close
       setTimeout(() => {
         deleteCourse(trainingToDelete);
         setTrainingToDelete(null);
-      }, 100);
+      }, 150);
     }
   };
   
@@ -496,61 +514,31 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                   className="text-center min-w-[100px] p-1"
                 >
                   <div className="flex flex-col items-center p-1 relative">
-                    {/* Three-dot menu in top right */}
+                    {/* Three-dot menu - NO AlertDialog wrapping */}
                     <div className="absolute top-0 right-0">
-                      <AlertDialog 
-                        open={deleteDialogOpen && trainingToDelete === training.id}
-                        onOpenChange={(open) => {
-                          setDeleteDialogOpen(open);
-                          if (!open) setTrainingToDelete(null);
-                        }}
-                      >
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-6 w-6 opacity-50 hover:opacity-100"
-                            >
-                              <MoreVertical className="h-3 w-3" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              className="text-red-600 focus:text-red-700 cursor-pointer"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setTrainingToDelete(training.id);
-                                setDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Training
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        {/* Confirmation Dialog */}
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription className="space-y-2">
-                              <p>This will permanently delete <strong>{training.title}</strong> and all associated training records for staff members.</p>
-                              <p className="text-red-600 font-medium">This action cannot be undone!</p>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={handleDeleteTraining}
-                              className="bg-red-600 hover:bg-red-700"
-                              disabled={isDeleting}
-                            >
-                              {isDeleting ? "Deleting..." : "Yes, Delete Training"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 opacity-50 hover:opacity-100"
+                          >
+                            <MoreVertical className="h-3 w-3" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem 
+                            className="text-red-600 focus:text-red-700 cursor-pointer"
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              handleDeleteClick(training);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Training
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     {/* Training title and badge */}
@@ -638,6 +626,39 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Single Delete Confirmation Dialog - Outside all loops */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                This will permanently delete{' '}
+                <strong>
+                  {trainingToDelete 
+                    ? filteredTrainings.find(t => t.id === trainingToDelete)?.title 
+                    : 'this training'}
+                </strong>{' '}
+                and all associated training records for staff members.
+              </p>
+              <p className="text-red-600 font-medium">This action cannot be undone!</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTrainingToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTraining}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Yes, Delete Training"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
