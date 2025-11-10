@@ -63,6 +63,7 @@ export function ViewFullCarerProfileDialog({
     { value: "suspend", label: "Suspend", icon: AlertTriangle },
     { value: "notes", label: "Notes", icon: MessageCircle },
     { value: "quality", label: "Quality", icon: Star },
+    { value: "documents", label: "Documents", icon: FileText },
     { value: "attendance", label: "Attendance", icon: Calendar },
     { value: "essentials", label: "Essentials", icon: CheckCircle },
     { value: "employment", label: "Employment", icon: Briefcase },
@@ -74,7 +75,6 @@ export function ViewFullCarerProfileDialog({
     { value: "work-type", label: "Work Type", icon: Briefcase },
     { value: "hobbies", label: "Hobbies", icon: Heart },
     { value: "meetings", label: "Meetings", icon: Calendar },
-    { value: "documents", label: "Files", icon: FileText },
     { value: "rate", label: "Rate", icon: DollarSign },
     { value: "settings", label: "Settings", icon: Settings },
   ];

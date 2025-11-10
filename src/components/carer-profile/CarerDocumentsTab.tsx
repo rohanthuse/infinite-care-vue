@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Eye, Download, Plus, X, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Eye, Download, Plus, X, AlertCircle, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,16 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { 
   Select,
   SelectContent,
@@ -93,6 +103,41 @@ const uploadStaffDocument = async (file: File, carerId: string, documentType: st
   }
 };
 
+// Document delete function
+const deleteStaffDocument = async (documentId: string, filePath: string | undefined) => {
+  console.log('[CarerDocumentsTab] Starting delete for document:', documentId);
+  
+  try {
+    // Delete file from storage if it exists
+    if (filePath) {
+      const { error: storageError } = await supabase.storage
+        .from('staff-documents')
+        .remove([filePath]);
+
+      if (storageError) {
+        console.error('[CarerDocumentsTab] Storage delete error:', storageError);
+        // Continue with database deletion even if storage fails
+      }
+    }
+
+    // Delete from database
+    const { error: dbError } = await supabase
+      .from('staff_documents')
+      .delete()
+      .eq('id', documentId);
+
+    if (dbError) {
+      console.error('[CarerDocumentsTab] Database delete error:', dbError);
+      throw new Error(`Failed to delete document: ${dbError.message}`);
+    }
+
+    console.log('[CarerDocumentsTab] Document deleted successfully');
+  } catch (error) {
+    console.error('[CarerDocumentsTab] Delete failed:', error);
+    throw error;
+  }
+};
+
 // Document download function
 const downloadDocument = async (filePath: string, fileName: string) => {
   try {
@@ -125,6 +170,8 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{ id: string; filePath?: string; name: string } | null>(null);
 
   // Fetch documents using existing hook
   const { data: documents = [], isLoading } = useCarerDocuments(carerId);
@@ -171,6 +218,28 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
     },
   });
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: ({ documentId, filePath }: { documentId: string; filePath?: string }) => 
+      deleteStaffDocument(documentId, filePath),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['carer-documents', carerId] });
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUploadSubmit = () => {
     if (!selectedFile || !documentType) {
       toast({
@@ -201,6 +270,25 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
     downloadMutation.mutate({ 
       filePath: doc.file_path, 
       fileName 
+    });
+  };
+
+  const handleDeleteClick = (doc: any) => {
+    setDocumentToDelete({
+      id: doc.id,
+      filePath: doc.file_path,
+      name: doc.source_type === 'training_certification' 
+        ? (doc.file_name || doc.training_course_name)
+        : doc.document_type
+    });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!documentToDelete) return;
+    deleteMutation.mutate({ 
+      documentId: documentToDelete.id, 
+      filePath: documentToDelete.filePath 
     });
   };
 
@@ -323,6 +411,18 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
                         Download
                       </Button>
                     )}
+                    {doc.source_type === 'document' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(doc)}
+                        disabled={deleteMutation.isPending}
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -432,6 +532,54 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <AlertDialogTitle>Delete Document?</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to delete <strong>{documentToDelete?.name}</strong>?
+              </p>
+              <p className="text-destructive font-medium">
+                This action cannot be undone.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                The file will be removed from storage and the document record will be deleted.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmDelete();
+              }}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Document
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
