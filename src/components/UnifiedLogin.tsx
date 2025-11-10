@@ -17,6 +17,7 @@ const UnifiedLogin = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Signing in...");
   const [searchParams] = useSearchParams();
   const [thirdPartyInfo, setThirdPartyInfo] = useState<any>(null);
   const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
@@ -265,11 +266,14 @@ const UnifiedLogin = () => {
 
     console.log('[LOGIN DEBUG] Setting loading state to true');
     setLoading(true);
+    setLoadingMessage("Signing in...");
+
+    // Set navigation flags IMMEDIATELY to prevent Index page interference
+    sessionStorage.setItem('redirect_in_progress', 'true');
+    sessionStorage.setItem('navigating_to_dashboard', 'true');
 
     // Clear any stale navigation data
-    sessionStorage.removeItem('navigating_to_dashboard');
     sessionStorage.removeItem('target_dashboard');
-    sessionStorage.removeItem('redirect_in_progress');
     
     // Remove obsolete localStorage keys from old branch selection flow
     localStorage.removeItem('currentBranchId');
@@ -303,35 +307,60 @@ const UnifiedLogin = () => {
       }
 
       console.log('[LOGIN DEBUG] Authentication successful, user ID:', authData.user.id);
+      setLoadingMessage("Verifying access level...");
 
-      // Try optimized role detection first, fallback to direct call
+      // Add longer timeout and better error handling for role detection
       let userRole = null;
-      try {
-        console.log('[LOGIN DEBUG] Attempting optimized role detection');
-        const roleData = await getRoleWithOptimization(authData.user.id);
-        userRole = roleData?.role;
-        console.log('[LOGIN DEBUG] Optimized role detection result:', userRole);
-      } catch (optimizedError) {
-        console.warn('[LOGIN DEBUG] Optimized role detection failed, using fallback:', optimizedError);
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      while (!userRole && retryCount < maxRetries) {
         try {
-          const fallbackResult = await supabase.rpc('get_user_highest_role', { p_user_id: authData.user.id }).single();
-          if (fallbackResult.error) {
-            throw fallbackResult.error;
+          console.log(`[LOGIN DEBUG] Role detection attempt ${retryCount + 1}/${maxRetries}`);
+          const roleData = await getRoleWithOptimization(authData.user.id);
+          userRole = roleData?.role;
+          
+          if (userRole) {
+            console.log('[LOGIN DEBUG] Role detected:', userRole);
+            break;
           }
-          userRole = fallbackResult.data?.role;
-          console.log('[LOGIN DEBUG] Fallback role detection result:', userRole);
-        } catch (fallbackError) {
-          console.error('[LOGIN DEBUG] Both role detection methods failed:', fallbackError);
-          throw new Error("Unable to determine your access level. Please contact support.");
+        } catch (optimizedError) {
+          console.warn(`[LOGIN DEBUG] Optimized detection failed (attempt ${retryCount + 1}):`, optimizedError);
+        }
+        
+        // If optimization failed, try fallback
+        if (!userRole) {
+          try {
+            const fallbackResult = await supabase.rpc('get_user_highest_role', { 
+              p_user_id: authData.user.id 
+            }).single();
+            
+            if (!fallbackResult.error && fallbackResult.data?.role) {
+              userRole = fallbackResult.data.role;
+              console.log('[LOGIN DEBUG] Fallback role detection succeeded:', userRole);
+              break;
+            }
+          } catch (fallbackError) {
+            console.error(`[LOGIN DEBUG] Fallback failed (attempt ${retryCount + 1}):`, fallbackError);
+          }
+        }
+        
+        retryCount++;
+        if (retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retry
         }
       }
 
       if (!userRole) {
-        console.error('[LOGIN DEBUG] No role found for user');
-        throw new Error("No access role found for your account");
+        clearTimeout(timeoutId);
+        setLoading(false);
+        toast.error("Unable to determine your access level. Please try again or contact support.");
+        await supabase.auth.signOut();
+        return;
       }
 
       console.log('[LOGIN DEBUG] Final user role:', userRole);
+      setLoadingMessage("Loading your workspace...");
 
       // Handle third-party access redemption first
       if (thirdPartyInfo) {
@@ -369,6 +398,8 @@ const UnifiedLogin = () => {
           // Don't throw here - some users might not need organization detection
         }
       }
+
+      setLoadingMessage("Redirecting to dashboard...");
 
       // For super admins, route to tenant-specific dashboard if orgSlug available
       if (userRole === 'super_admin') {
@@ -441,10 +472,27 @@ const UnifiedLogin = () => {
 
       // For non-super admin users, organisation is required
       if (!orgSlug) {
-        console.error('[LOGIN DEBUG] No organisation found for user role:', userRole);
-        toast.error("No organisation access found for your account");
-        await supabase.auth.signOut();
-        return;
+        console.warn('[LOGIN DEBUG] No organisation found on first attempt for role:', userRole);
+        
+        // Retry organization detection once more before giving up
+        try {
+          console.log('[LOGIN DEBUG] Retrying organization detection...');
+          orgSlug = await detectUserOrganization(authData.user.id);
+          
+          if (!orgSlug) {
+            console.error('[LOGIN DEBUG] No organisation found after retry for user role:', userRole);
+            toast.error("No organisation access found for your account. Please contact support.");
+            await supabase.auth.signOut();
+            return;
+          }
+          
+          console.log('[LOGIN DEBUG] Organization found on retry:', orgSlug);
+        } catch (retryError) {
+          console.error('[LOGIN DEBUG] Organization retry failed:', retryError);
+          toast.error("Unable to verify organization access. Please try again.");
+          await supabase.auth.signOut();
+          return;
+        }
       }
 
       // Route to appropriate dashboard based on role
@@ -649,7 +697,17 @@ const UnifiedLogin = () => {
       </div>
 
       {/* Right Column - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white relative">
+        {/* Loading Overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-3"></div>
+              <p className="text-sm font-medium text-gray-700">{loadingMessage}</p>
+            </div>
+          </div>
+        )}
+        
         <div className="w-full max-w-md space-y-8">
           {/* Back to Home Button */}
           <div className="flex justify-start">

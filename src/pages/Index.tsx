@@ -18,11 +18,16 @@ const Index = () => {
   
   // If navigating, return loading immediately - don't execute ANY other code
   if (isNavigating && targetDashboard) {
-    // Safety: Clear flags after 3 seconds to prevent infinite loading
+    // Safety: Clear flags after 1 second to prevent infinite loading
     setTimeout(() => {
-      sessionStorage.removeItem('navigating_to_dashboard');
-      sessionStorage.removeItem('target_dashboard');
-    }, 3000);
+      const stillNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
+      if (stillNavigating) {
+        console.warn('[Index] Navigation timeout, clearing flags');
+        sessionStorage.removeItem('navigating_to_dashboard');
+        sessionStorage.removeItem('target_dashboard');
+        sessionStorage.removeItem('redirect_in_progress');
+      }
+    }, 1000);
     
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
