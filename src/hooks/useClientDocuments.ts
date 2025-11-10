@@ -302,3 +302,88 @@ export const useDownloadClientDocument = () => {
     },
   });
 };
+
+// Bulk delete client documents
+export const useBulkDeleteClientDocuments = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (documentIds: string[]) => {
+      const results = {
+        successful: 0,
+        failed: 0,
+        errors: [] as string[]
+      };
+
+      console.log('[useBulkDeleteClientDocuments] Starting bulk delete for', documentIds.length, 'documents');
+
+      for (const documentId of documentIds) {
+        try {
+          // Get document info first
+          const { data: docInfo, error: fetchError } = await supabase
+            .from('client_documents')
+            .select('file_path, name')
+            .eq('id', documentId)
+            .single();
+
+          if (fetchError) {
+            console.error('Error fetching document:', documentId, fetchError);
+            results.failed++;
+            results.errors.push(`Failed to fetch ${documentId}`);
+            continue;
+          }
+
+          // Delete file from storage if it exists
+          if (docInfo.file_path) {
+            const { error: storageError } = await supabase.storage
+              .from('client-documents')
+              .remove([docInfo.file_path]);
+
+            if (storageError) {
+              console.error('Storage delete error for:', documentId, storageError);
+              // Continue with database deletion even if storage fails
+            }
+          }
+
+          // Delete from database
+          const { error: dbError } = await supabase
+            .from('client_documents')
+            .delete()
+            .eq('id', documentId);
+
+          if (dbError) {
+            console.error('Database delete error for:', documentId, dbError);
+            results.failed++;
+            results.errors.push(`Failed to delete ${docInfo.name}`);
+          } else {
+            results.successful++;
+            console.log('[useBulkDeleteClientDocuments] Successfully deleted:', docInfo.name);
+          }
+        } catch (error) {
+          console.error('Unexpected error deleting document:', documentId, error);
+          results.failed++;
+          results.errors.push(`Unexpected error for ${documentId}`);
+        }
+      }
+
+      console.log('[useBulkDeleteClientDocuments] Bulk delete completed:', results);
+      return results;
+    },
+    onSuccess: (results) => {
+      // Show appropriate toast message
+      if (results.failed === 0) {
+        toast.success(`Successfully deleted ${results.successful} client document${results.successful > 1 ? 's' : ''}`);
+      } else if (results.successful === 0) {
+        toast.error(`Failed to delete all ${results.failed} documents`);
+      } else {
+        toast.warning(`Deleted ${results.successful} documents, ${results.failed} failed`);
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+    },
+    onError: (error) => {
+      console.error('Bulk delete error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete documents');
+    },
+  });
+};

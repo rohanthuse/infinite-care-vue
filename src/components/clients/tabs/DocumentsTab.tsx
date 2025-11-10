@@ -1,18 +1,22 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { File, FileText, FilePlus, Clock, Download, Eye, Edit, Trash2 } from "lucide-react";
+import { File, FileText, FilePlus, Clock, Download, Eye, Edit, Trash2, CheckSquare } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UploadDocumentDialog } from "../dialogs/UploadDocumentDialog";
 import { EditDocumentDialog } from "../dialogs/EditDocumentDialog";
 import { DeleteDocumentDialog } from "../dialogs/DeleteDocumentDialog";
+import { ClientDocumentBulkActionsBar } from "../ClientDocumentBulkActionsBar";
+import { BulkDeleteClientDocumentsDialog } from "../BulkDeleteClientDocumentsDialog";
 import { 
   useClientDocuments, 
   useUploadClientDocument, 
   useUpdateClientDocument, 
   useDeleteClientDocument,
+  useBulkDeleteClientDocuments,
   useViewClientDocument,
   useDownloadClientDocument,
   ClientDocument 
@@ -28,11 +32,14 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<ClientDocument | null>(null);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   
   const { data: documents = [], isLoading } = useClientDocuments(clientId);
   const uploadDocumentMutation = useUploadClientDocument();
   const updateDocumentMutation = useUpdateClientDocument();
   const deleteDocumentMutation = useDeleteClientDocument();
+  const bulkDeleteMutation = useBulkDeleteClientDocuments();
   const viewDocumentMutation = useViewClientDocument();
   const downloadDocumentMutation = useDownloadClientDocument();
 
@@ -120,6 +127,49 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
     }
   }, [selectedDocument, deleteDocumentMutation]);
 
+  // Handle individual document selection
+  const handleSelectDocument = (documentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDocumentIds(prev => [...prev, documentId]);
+    } else {
+      setSelectedDocumentIds(prev => prev.filter(id => id !== documentId));
+    }
+  };
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedDocumentIds(documents.map(doc => doc.id));
+    } else {
+      setSelectedDocumentIds([]);
+    }
+  };
+
+  // Clear selection
+  const handleClearSelection = () => {
+    setSelectedDocumentIds([]);
+  };
+
+  // Open bulk delete dialog
+  const handleBulkDelete = () => {
+    if (selectedDocumentIds.length > 0) {
+      setBulkDeleteDialogOpen(true);
+    }
+  };
+
+  // Confirm bulk delete
+  const handleConfirmBulkDelete = async () => {
+    try {
+      await bulkDeleteMutation.mutateAsync(selectedDocumentIds);
+      setBulkDeleteDialogOpen(false);
+      setSelectedDocumentIds([]);
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    }
+  };
+
+  const allSelected = documents.length > 0 && selectedDocumentIds.length === documents.length;
+
   const getDocIcon = (type: string) => {
     switch(type.toLowerCase()) {
       case 'medical report': 
@@ -165,75 +215,104 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
               <p className="text-sm">No documents available for this client</p>
             </div>
           ) : (
-            <div className="divide-y">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-md group">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-gray-100 rounded-md">
-                      {getDocIcon(doc.type)}
-                    </div>
-                    <div>
-                      <p className="font-medium">{doc.name}</p>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <span>{doc.uploaded_by}</span>
-                        <span className="mx-1">•</span>
-                        <Clock className="h-3 w-3 mr-1" />
-                        <span>{format(new Date(doc.upload_date), 'MMM dd, yyyy')}</span>
-                        {doc.file_size && (
-                          <>
+            <>
+              {/* Select All Row */}
+              <div className="flex items-center gap-3 py-2 px-2 bg-gray-50 rounded-md mb-2">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all documents"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Select All ({documents.length} document{documents.length > 1 ? 's' : ''})
+                </span>
+              </div>
+              
+              {/* Document List */}
+              <div className="divide-y">
+                {documents.map((doc) => {
+                  const isSelected = selectedDocumentIds.includes(doc.id);
+                  
+                  return (
+                    <div 
+                      key={doc.id} 
+                      className={`flex items-center justify-between py-3 px-2 rounded-md group transition-colors ${
+                        isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => handleSelectDocument(doc.id, checked as boolean)}
+                          aria-label={`Select ${doc.name}`}
+                        />
+                        <div className="p-2 bg-gray-100 rounded-md">
+                          {getDocIcon(doc.type)}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{doc.name}</p>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <span>{doc.uploaded_by}</span>
                             <span className="mx-1">•</span>
-                            <span>{doc.file_size}</span>
-                          </>
+                            <Clock className="h-3 w-3 mr-1" />
+                            <span>{format(new Date(doc.upload_date), 'MMM dd, yyyy')}</span>
+                            {doc.file_size && (
+                              <>
+                                <span className="mx-1">•</span>
+                                <span>{doc.file_size}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge>{doc.type}</Badge>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          title="View Document"
+                          onClick={() => handleViewDocument(doc)}
+                          disabled={viewDocumentMutation.isPending}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          title="Download Document"
+                          onClick={() => handleDownloadDocument(doc)}
+                          disabled={downloadDocumentMutation.isPending}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        {canManageDocuments && (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleEditDocument(doc)}
+                              title="Edit Document"
+                              className="h-8 w-8 hover:bg-blue-50"
+                            >
+                              <Edit className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDeleteDocument(doc)}
+                              title="Delete Document"
+                              className="h-8 w-8 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge>{doc.type}</Badge>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      title="View Document"
-                      onClick={() => handleViewDocument(doc)}
-                      disabled={viewDocumentMutation.isPending}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      title="Download Document"
-                      onClick={() => handleDownloadDocument(doc)}
-                      disabled={downloadDocumentMutation.isPending}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    {canManageDocuments && (
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleEditDocument(doc)}
-                          title="Edit Document"
-                          className="h-8 w-8 hover:bg-blue-50"
-                        >
-                          <Edit className="h-4 w-4 text-blue-600" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteDocument(doc)}
-                          title="Delete Document"
-                          className="h-8 w-8 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -256,6 +335,23 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ clientId }) => {
         onOpenChange={handleDeleteDialogChange}
         onConfirm={handleConfirmDelete}
         document={selectedDocument}
+      />
+
+      {/* Bulk Actions Bar */}
+      <ClientDocumentBulkActionsBar
+        selectedCount={selectedDocumentIds.length}
+        onClearSelection={handleClearSelection}
+        onBulkDelete={handleBulkDelete}
+        isDeleting={bulkDeleteMutation.isPending}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteClientDocumentsDialog
+        documentCount={selectedDocumentIds.length}
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        onConfirm={handleConfirmBulkDelete}
+        isLoading={bulkDeleteMutation.isPending}
       />
     </div>
   );
