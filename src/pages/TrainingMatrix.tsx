@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { TrainingCategory, TrainingStatus, StaffMember } from "@/types/training";
 import { 
-  Search, Plus, Users, CheckCircle2, Clock, XCircle, CircleDashed, UserPlus
+  Search, Plus, Users, CheckCircle2, Clock, XCircle, CircleDashed, UserPlus, Trash2, MoreVertical
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import TrainingStatusCell from "@/components/training/TrainingStatusCell";
 import TrainingFilter from "@/components/training/TrainingFilter";
 import TrainingSort, { SortOption } from "@/components/training/TrainingSort";
@@ -68,7 +85,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   const { data: trainingCourses = [], isLoading: isLoadingCourses } = useTrainingCourses(branchId);
   const { records: trainingRecords = [], isLoading: isLoadingRecords } = useStaffTrainingRecords(branchId);
   const { staff = [], isLoading: isLoadingStaff } = useBranchStaffAndClients(branchId);
-  const { createCourse, assignTraining, isCreating, isAssigning } = useTrainingManagement(branchId);
+  const { createCourse, assignTraining, deleteCourse, isCreating, isAssigning, isDeleting } = useTrainingManagement(branchId);
 
   const isLoading = isLoadingCourses || isLoadingRecords || isLoadingStaff;
 
@@ -262,6 +279,10 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     assignTraining({ staffIds, courseId });
     setAssignTrainingOpen(false);
   };
+
+  const handleDeleteTraining = (trainingId: string) => {
+    deleteCourse(trainingId);
+  };
   
   const handleApplyFilters = (filters: {
     categories: TrainingCategory[];
@@ -433,7 +454,56 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                   key={training.id} 
                   className="text-center min-w-[100px] p-1"
                 >
-                  <div className="flex flex-col items-center p-1">
+                  <div className="flex flex-col items-center p-1 relative">
+                    {/* Three-dot menu in top right */}
+                    <div className="absolute top-0 right-0">
+                      <AlertDialog>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 opacity-50 hover:opacity-100"
+                            >
+                              <MoreVertical className="h-3 w-3" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem 
+                                className="text-red-600 focus:text-red-700 cursor-pointer"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Training
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Confirmation Dialog */}
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription className="space-y-2">
+                              <p>This will permanently delete <strong>{training.title}</strong> and all associated training records for staff members.</p>
+                              <p className="text-red-600 font-medium">This action cannot be undone!</p>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTraining(training.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? "Deleting..." : "Yes, Delete Training"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+
+                    {/* Training title and badge */}
                     <span className="text-xs font-medium truncate max-w-[100px]" title={training.title}>
                       {training.title}
                     </span>

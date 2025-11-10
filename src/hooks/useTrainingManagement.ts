@@ -104,10 +104,39 @@ export const useTrainingManagement = (branchId: string) => {
     },
   });
 
+  const deleteCourseMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      const { error } = await supabase
+        .from('training_courses')
+        .delete()
+        .eq('id', courseId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['training-courses', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
+      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      toast({
+        title: "Training deleted successfully!",
+        description: "The training course has been removed from the system.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete training course: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     createCourse: createCourseMutation.mutate,
     assignTraining: assignTrainingMutation.mutate,
+    deleteCourse: deleteCourseMutation.mutate,
     isCreating: createCourseMutation.isPending,
     isAssigning: assignTrainingMutation.isPending,
+    isDeleting: deleteCourseMutation.isPending,
   };
 };
