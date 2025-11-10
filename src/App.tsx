@@ -48,6 +48,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { LoginNavigationInterceptor } from "@/components/LoginNavigationInterceptor";
+import { useNotificationEmailSender } from "@/hooks/useNotificationEmailSender";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -67,6 +68,9 @@ const RoutingErrorFallback = () => (
 // Inner app component that uses auth context
 const AppContent = () => {
   const { loading, error, user } = useAuth();
+  
+  // Initialize email notification sender for high-priority notifications
+  useNotificationEmailSender();
 
   console.log('[App] Auth state:', { loading, error: !!error, user: !!user, pathname: window.location.pathname });
 

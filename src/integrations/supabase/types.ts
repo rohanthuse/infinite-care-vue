@@ -6104,6 +6104,7 @@ export type Database = {
           category: string
           created_at: string
           data: Json | null
+          email_sent: boolean | null
           expires_at: string | null
           id: string
           message: string
@@ -6120,6 +6121,7 @@ export type Database = {
           category: string
           created_at?: string
           data?: Json | null
+          email_sent?: boolean | null
           expires_at?: string | null
           id?: string
           message: string
@@ -6136,6 +6138,7 @@ export type Database = {
           category?: string
           created_at?: string
           data?: Json | null
+          email_sent?: boolean | null
           expires_at?: string | null
           id?: string
           message?: string
