@@ -69,27 +69,36 @@ const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> =>
     file_size: doc.file_size?.toString()
   }));
 
-  // Transform training certifications
+  // Transform training certifications - with validation
   const trainingCertifications: CarerDocument[] = [];
   
   if (trainingData) {
     trainingData.forEach(training => {
-      if (training.evidence_files && Array.isArray(training.evidence_files)) {
+      // Validate that evidence_files is an array and not empty
+      if (training.evidence_files && 
+          Array.isArray(training.evidence_files) && 
+          training.evidence_files.length > 0) {
+        
         training.evidence_files.forEach((file: any, index: number) => {
-          trainingCertifications.push({
-            id: `${training.id}-cert-${index}`,
-            staff_id: training.staff_id,
-            document_type: 'Training Certification',
-            status: training.status || 'active',
-            created_at: training.completion_date || new Date().toISOString(),
-            source_type: 'training_certification' as const,
-            training_course_name: training.training_courses?.title,
-            completion_date: training.completion_date,
-            training_id: training.id,
-            file_name: file.name || `Training Certificate ${index + 1}`,
-            file_path: file.path,
-            file_size: file.size?.toString()
-          });
+          // Validate that file has required properties
+          if (file && file.path && file.name) {
+            trainingCertifications.push({
+              id: `${training.id}-cert-${index}`,
+              staff_id: training.staff_id,
+              document_type: 'Training Certification',
+              status: training.status || 'active',
+              created_at: training.completion_date || new Date().toISOString(),
+              source_type: 'training_certification' as const,
+              training_course_name: training.training_courses?.title,
+              completion_date: training.completion_date,
+              training_id: training.id,
+              file_name: file.name,
+              file_path: file.path,
+              file_size: file.size?.toString()
+            });
+          } else {
+            console.warn('[fetchCarerDocuments] Invalid evidence file for training:', training.id, file);
+          }
         });
       }
     });

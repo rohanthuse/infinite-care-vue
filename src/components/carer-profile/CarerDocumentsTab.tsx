@@ -107,20 +107,29 @@ const uploadStaffDocument = async (file: File, carerId: string, documentType: st
 const deleteStaffDocument = async (documentId: string, filePath: string | undefined) => {
   console.log('[CarerDocumentsTab] Starting delete for document:', documentId);
   
+  // Validate document ID format (should not be a training cert ID)
+  if (documentId.includes('-cert-')) {
+    throw new Error('Training certifications cannot be deleted from this screen');
+  }
+
   try {
     // Delete file from storage if it exists
-    if (filePath) {
+    if (filePath && filePath.trim() !== '') {
+      console.log('[CarerDocumentsTab] Deleting file from storage:', filePath);
       const { error: storageError } = await supabase.storage
         .from('staff-documents')
         .remove([filePath]);
 
       if (storageError) {
         console.error('[CarerDocumentsTab] Storage delete error:', storageError);
-        // Continue with database deletion even if storage fails
+        // Continue with database deletion even if storage fails (file might already be deleted)
+      } else {
+        console.log('[CarerDocumentsTab] File deleted from storage');
       }
     }
 
     // Delete from database
+    console.log('[CarerDocumentsTab] Deleting record from database');
     const { error: dbError } = await supabase
       .from('staff_documents')
       .delete()
@@ -139,14 +148,31 @@ const deleteStaffDocument = async (documentId: string, filePath: string | undefi
 };
 
 // Document download function
-const downloadDocument = async (filePath: string, fileName: string) => {
+const downloadDocument = async (filePath: string, fileName: string, sourceType: 'document' | 'training_certification') => {
   try {
+    console.log('[CarerDocumentsTab] Downloading file:', filePath);
+    
+    // Validate file path
+    if (!filePath || filePath.trim() === '') {
+      throw new Error('Invalid file path');
+    }
+
+    // Determine correct bucket based on source type
+    const bucketName = sourceType === 'training_certification' 
+      ? 'training-evidence'
+      : 'staff-documents';
+
     const { data, error } = await supabase.storage
-      .from('staff-documents')
+      .from(bucketName)
       .download(filePath);
 
     if (error) {
+      console.error('[CarerDocumentsTab] Download error:', error);
       throw new Error(`Failed to download file: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error('No file data received');
     }
 
     // Create download link
@@ -158,6 +184,8 @@ const downloadDocument = async (filePath: string, fileName: string) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    console.log('[CarerDocumentsTab] Download successful');
   } catch (error) {
     console.error('[CarerDocumentsTab] Download failed:', error);
     throw error;
@@ -172,6 +200,7 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
   const [documentType, setDocumentType] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string; filePath?: string; name: string } | null>(null);
+  const [downloadingDocIds, setDownloadingDocIds] = useState<Set<string>>(new Set());
 
   // Fetch documents using existing hook
   const { data: documents = [], isLoading } = useCarerDocuments(carerId);
@@ -199,17 +228,32 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
     },
   });
 
-  // Download mutation
+  // Download mutation - now tracks individual documents
   const downloadMutation = useMutation({
-    mutationFn: ({ filePath, fileName }: { filePath: string; fileName: string }) => 
-      downloadDocument(filePath, fileName),
-    onSuccess: () => {
+    mutationFn: ({ filePath, fileName, sourceType }: { 
+      filePath: string; 
+      fileName: string;
+      sourceType: 'document' | 'training_certification';
+    }) => downloadDocument(filePath, fileName, sourceType),
+    onSuccess: (_, variables) => {
+      // Remove from downloading set
+      setDownloadingDocIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(variables.filePath);
+        return newSet;
+      });
       toast({
         title: "Download Started",
         description: "File download has begun",
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables) => {
+      // Remove from downloading set
+      setDownloadingDocIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(variables.filePath);
+        return newSet;
+      });
       toast({
         title: "Download Failed",
         description: error.message,
@@ -254,32 +298,45 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
   };
 
   const handleDownload = (doc: any) => {
-    if (!doc.file_path) {
+    // Validate file path exists
+    if (!doc.file_path || doc.file_path.trim() === '') {
       toast({
         title: "Download Error",
-        description: "File path not available",
+        description: "File path not available for this document",
         variant: "destructive",
       });
       return;
     }
 
+    // Add to downloading set
+    setDownloadingDocIds(prev => new Set(prev).add(doc.file_path));
+
     const fileName = doc.source_type === 'training_certification' 
-      ? (doc.file_name || `${doc.training_course_name}_certificate.pdf`)
-      : `${doc.document_type}.pdf`;
+      ? (doc.file_name || `${doc.training_course_name}_certificate`)
+      : doc.document_type;
 
     downloadMutation.mutate({ 
       filePath: doc.file_path, 
-      fileName 
+      fileName,
+      sourceType: doc.source_type
     });
   };
 
   const handleDeleteClick = (doc: any) => {
+    // Double-check that we can only delete regular documents
+    if (doc.source_type !== 'document') {
+      toast({
+        title: "Cannot Delete",
+        description: "Training certifications cannot be deleted from here. Manage them in the Training section.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setDocumentToDelete({
       id: doc.id,
       filePath: doc.file_path,
-      name: doc.source_type === 'training_certification' 
-        ? (doc.file_name || doc.training_course_name)
-        : doc.document_type
+      name: doc.document_type
     });
     setDeleteDialogOpen(true);
   };
@@ -399,16 +456,25 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
                     >
                       {doc.status}
                     </Badge>
-                    {doc.file_path && (
+                    {doc.file_path && doc.file_path.trim() !== '' && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDownload(doc)}
-                        disabled={downloadMutation.isPending}
+                        disabled={downloadingDocIds.has(doc.file_path)}
                         className="flex items-center gap-1"
                       >
-                        <Download className="h-3 w-3" />
-                        Download
+                        {downloadingDocIds.has(doc.file_path) ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                            Downloading...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-3 w-3" />
+                            Download
+                          </>
+                        )}
                       </Button>
                     )}
                     {doc.source_type === 'document' && (
