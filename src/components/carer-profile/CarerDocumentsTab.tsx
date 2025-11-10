@@ -103,6 +103,50 @@ const uploadStaffDocument = async (file: File, carerId: string, documentType: st
   }
 };
 
+// Check if user has permission to delete staff documents
+const checkDeletePermission = async (staffId: string): Promise<boolean> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  // Check if user is super admin
+  const { data: roles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id);
+  
+  if (roles?.some(r => r.role === 'super_admin')) {
+    return true;
+  }
+
+  // Check if user is branch admin for this staff member's branch
+  const { data: staff } = await supabase
+    .from('staff')
+    .select('branch_id')
+    .eq('id', staffId)
+    .single();
+
+  if (staff) {
+    const { data: adminBranch } = await supabase
+      .from('admin_branches')
+      .select('branch_id')
+      .eq('admin_id', user.id)
+      .eq('branch_id', staff.branch_id)
+      .single();
+    
+    if (adminBranch) return true;
+  }
+
+  // Check if user is the staff member themselves
+  const { data: ownStaff } = await supabase
+    .from('staff')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .eq('id', staffId)
+    .single();
+
+  return !!ownStaff;
+};
+
 // Document delete function with better error handling
 const deleteStaffDocument = async (documentId: string, filePath: string | undefined) => {
   console.log('[CarerDocumentsTab] Starting delete for document:', documentId);
@@ -143,10 +187,11 @@ const deleteStaffDocument = async (documentId: string, filePath: string | undefi
     }
 
     if (count === 0) {
-      console.warn('[CarerDocumentsTab] No rows deleted - document may have been already deleted');
-    } else {
-      console.log('[CarerDocumentsTab] Successfully deleted', count, 'database record(s)');
+      console.error('[CarerDocumentsTab] No rows deleted - permission denied or document not found');
+      throw new Error('Unable to delete document. You may not have permission or the document may not exist.');
     }
+
+    console.log('[CarerDocumentsTab] Successfully deleted', count, 'database record(s)');
 
   } catch (error) {
     console.error('[CarerDocumentsTab] Delete operation failed:', error);
@@ -315,11 +360,13 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
       }, 300);
     },
     onError: (error: Error) => {
+      console.error('[CarerDocumentsTab] Delete failed:', error);
       toast({
         title: "Delete Failed",
-        description: error.message,
+        description: error.message || "Failed to delete document",
         variant: "destructive",
       });
+      setDeleteDialogOpen(false);
     },
   });
 
@@ -361,12 +408,23 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
     });
   };
 
-  const handleDeleteClick = (doc: any) => {
+  const handleDeleteClick = async (doc: any) => {
     // Double-check that we can only delete regular documents
     if (doc.source_type !== 'document') {
       toast({
         title: "Cannot Delete",
         description: "Training certifications cannot be deleted from here. Manage them in the Training section.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check permission before showing delete dialog
+    const hasPermission = await checkDeletePermission(doc.staff_id);
+    if (!hasPermission) {
+      toast({
+        title: "Permission Denied",
+        description: "You don't have permission to delete this staff member's documents.",
         variant: "destructive",
       });
       return;
