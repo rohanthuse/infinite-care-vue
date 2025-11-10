@@ -23,6 +23,7 @@ const Documents = () => {
     uploadDocument,
     isUploading,
     deleteDocument,
+    deleteBulkDocuments,
     downloadDocument,
     viewDocument
   } = useUnifiedDocuments(id || '');
@@ -84,6 +85,10 @@ const Documents = () => {
     }
   };
 
+  const handleBulkDeleteDocuments = async (documentIds: string[]) => {
+    await deleteBulkDocuments(documentIds);
+  };
+
   return (
     <BranchLayout onUploadDocument={() => setIsUploadDialogOpen(true)}>
       <div className="mb-6">
@@ -118,6 +123,7 @@ const Documents = () => {
               documents={documents}
               isLoading={documentsLoading}
               onDeleteDocument={handleDeleteDocument}
+              onBulkDeleteDocuments={handleBulkDeleteDocuments}
               onDownloadDocument={downloadDocument}
               onViewDocument={viewDocument}
               branchId={id || ""}

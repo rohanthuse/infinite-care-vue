@@ -433,6 +433,82 @@ export const useUnifiedDocuments = (branchId: string) => {
     }
   };
 
+  // Bulk delete documents mutation
+  const deleteBulkDocuments = async (documentIds: string[]) => {
+    const results = {
+      successful: 0,
+      failed: 0,
+      errors: [] as string[]
+    };
+
+    console.log('[useUnifiedDocuments] Starting bulk delete for', documentIds.length, 'documents');
+
+    for (const documentId of documentIds) {
+      try {
+        // Get document info first
+        const { data: docInfo, error: fetchError } = await supabase
+          .from('documents')
+          .select('file_path, name')
+          .eq('id', documentId)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching document:', documentId, fetchError);
+          results.failed++;
+          results.errors.push(`Failed to fetch ${documentId}`);
+          continue;
+        }
+
+        // Delete file from storage if it exists
+        if (docInfo.file_path) {
+          const { error: storageError } = await supabase.storage
+            .from('documents')
+            .remove([docInfo.file_path]);
+
+          if (storageError) {
+            console.error('Storage delete error for:', documentId, storageError);
+            // Continue with database deletion even if storage fails
+          }
+        }
+
+        // Delete from database
+        const { error: dbError } = await supabase
+          .from('documents')
+          .delete()
+          .eq('id', documentId);
+
+        if (dbError) {
+          console.error('Database delete error for:', documentId, dbError);
+          results.failed++;
+          results.errors.push(`Failed to delete ${docInfo.name}`);
+        } else {
+          results.successful++;
+          console.log('[useUnifiedDocuments] Successfully deleted:', docInfo.name);
+        }
+      } catch (error) {
+        console.error('Unexpected error deleting document:', documentId, error);
+        results.failed++;
+        results.errors.push(`Unexpected error for ${documentId}`);
+      }
+    }
+
+    console.log('[useUnifiedDocuments] Bulk delete completed:', results);
+
+    // Show appropriate toast message
+    if (results.failed === 0) {
+      toast.success(`Successfully deleted ${results.successful} document${results.successful > 1 ? 's' : ''}`);
+    } else if (results.successful === 0) {
+      toast.error(`Failed to delete all ${results.failed} documents`);
+    } else {
+      toast.warning(`Deleted ${results.successful} documents, ${results.failed} failed`);
+    }
+
+    // Invalidate and refetch documents
+    queryClient.invalidateQueries({ queryKey: ['unified-documents', branchId] });
+
+    return results;
+  };
+
   // Download document
   const downloadDocument = async (filePath: string, fileName: string) => {
     try {
@@ -509,6 +585,7 @@ export const useUnifiedDocuments = (branchId: string) => {
     isLoading,
     uploadDocument,
     deleteDocument,
+    deleteBulkDocuments,
     downloadDocument,
     viewDocument,
     isUploading

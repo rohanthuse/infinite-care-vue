@@ -23,12 +23,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnifiedDocument } from "@/hooks/useUnifiedDocuments";
 import { ShareWithCarerDialog } from "./ShareWithCarerDialog";
+import { DocumentBulkActionsBar } from "./DocumentBulkActionsBar";
+import { BulkDeleteDocumentsDialog } from "./BulkDeleteDocumentsDialog";
 
 interface UnifiedDocumentsListProps {
   documents: UnifiedDocument[];
@@ -36,6 +39,7 @@ interface UnifiedDocumentsListProps {
   onDownloadDocument: (filePath: string, fileName: string) => void;
   onEditDocument?: (document: UnifiedDocument) => void;
   onDeleteDocument: (documentId: string) => void;
+  onBulkDeleteDocuments?: (documentIds: string[]) => void;
   isLoading?: boolean;
   branchId: string;
   onDocumentShared?: () => void;
@@ -47,6 +51,7 @@ export function UnifiedDocumentsList({
   onDownloadDocument, 
   onEditDocument,
   onDeleteDocument,
+  onBulkDeleteDocuments,
   isLoading = false,
   branchId,
   onDocumentShared
@@ -58,6 +63,9 @@ export function UnifiedDocumentsList({
   const [activeTab, setActiveTab] = useState("all");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [documentToShare, setDocumentToShare] = useState<UnifiedDocument | null>(null);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get unique values for filters, filtering out empty/null/undefined values
   const { categories, entities, sources } = useMemo(() => {
@@ -187,6 +195,64 @@ export function UnifiedDocumentsList({
     onDocumentShared?.();
   };
 
+  // Handle individual document selection
+  const handleSelectDocument = (documentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedDocumentIds(prev => [...prev, documentId]);
+    } else {
+      setSelectedDocumentIds(prev => prev.filter(id => id !== documentId));
+    }
+  };
+
+  // Handle select all
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Select only documents from 'documents' table (can be deleted)
+      const selectableDocIds = filteredDocuments
+        .filter(doc => doc.source_table === 'documents')
+        .map(doc => doc.id);
+      setSelectedDocumentIds(selectableDocIds);
+    } else {
+      setSelectedDocumentIds([]);
+    }
+  };
+
+  // Clear selection
+  const handleClearSelection = () => {
+    setSelectedDocumentIds([]);
+  };
+
+  // Open bulk delete dialog
+  const handleBulkDelete = () => {
+    if (selectedDocumentIds.length > 0) {
+      setBulkDeleteDialogOpen(true);
+    }
+  };
+
+  // Confirm bulk delete
+  const handleConfirmBulkDelete = async () => {
+    if (!onBulkDeleteDocuments) {
+      console.error('Bulk delete handler not provided');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await onBulkDeleteDocuments(selectedDocumentIds);
+      setBulkDeleteDialogOpen(false);
+      setSelectedDocumentIds([]);
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Check if all selectable documents are selected
+  const selectableDocuments = filteredDocuments.filter(doc => doc.source_table === 'documents');
+  const allSelected = selectableDocuments.length > 0 && 
+                      selectedDocumentIds.length === selectableDocuments.length;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -304,6 +370,15 @@ export function UnifiedDocumentsList({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-12">
+                        {selectableDocuments.length > 0 && (
+                          <Checkbox
+                            checked={allSelected}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Select all documents"
+                          />
+                        )}
+                      </TableHead>
                       <TableHead className="w-[300px]">Document</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Related To</TableHead>
@@ -314,8 +389,21 @@ export function UnifiedDocumentsList({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDocuments.map((doc) => (
-                      <TableRow key={`${doc.source_table}-${doc.id}`}>
+                    {filteredDocuments.map((doc) => {
+                      const isSelectable = doc.source_table === 'documents';
+                      const isSelected = selectedDocumentIds.includes(doc.id);
+                      
+                      return (
+                        <TableRow key={`${doc.source_table}-${doc.id}`}>
+                          <TableCell>
+                            {isSelectable && (
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => handleSelectDocument(doc.id, checked as boolean)}
+                                aria-label={`Select ${doc.name}`}
+                              />
+                            )}
+                          </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-3">
                             <div className="p-2 bg-gray-100 rounded-md">
@@ -435,8 +523,9 @@ export function UnifiedDocumentsList({
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
@@ -444,6 +533,23 @@ export function UnifiedDocumentsList({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Bulk Actions Bar */}
+      <DocumentBulkActionsBar
+        selectedCount={selectedDocumentIds.length}
+        onClearSelection={handleClearSelection}
+        onBulkDelete={handleBulkDelete}
+        isDeleting={isDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <BulkDeleteDocumentsDialog
+        documentCount={selectedDocumentIds.length}
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        onConfirm={handleConfirmBulkDelete}
+        isLoading={isDeleting}
+      />
 
       {/* Share with Carer Dialog */}
       <ShareWithCarerDialog
