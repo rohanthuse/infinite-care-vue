@@ -81,3 +81,6 @@ verify_jwt = true
 
 [functions.create-service-report-notifications]
 verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = true
