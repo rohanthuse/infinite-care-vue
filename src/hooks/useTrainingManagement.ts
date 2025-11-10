@@ -12,7 +12,7 @@ export const useTrainingManagement = (branchId: string) => {
 
   const createCourseMutation = useMutation({
     mutationFn: async (courseData: Omit<TrainingCourse, 'id' | 'created_at' | 'updated_at'>) => {
-      // First, create the training course
+      // Create the training course
       const { data: newCourse, error: courseError } = await supabase
         .from('training_courses')
         .insert({
@@ -24,37 +24,17 @@ export const useTrainingManagement = (branchId: string) => {
 
       if (courseError) throw courseError;
 
-      // Then, automatically assign it to all active staff in the branch
-      if (branchStaff && branchStaff.length > 0) {
-        const trainingRecords = branchStaff.map(staff => ({
-          staff_id: staff.id,
-          training_course_id: newCourse.id,
-          branch_id: branchId,
-          status: 'not-started' as const,
-          assigned_date: new Date().toISOString().split('T')[0]
-        }));
-
-        const { error: assignmentError } = await supabase
-          .from('staff_training_records')
-          .insert(trainingRecords);
-
-        if (assignmentError) {
-          console.warn('Failed to auto-assign training to staff:', assignmentError);
-          // Don't throw here - course was created successfully
-        }
-      }
-
       return newCourse;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['training-courses', branchId] });
-      queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
-      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['training-courses', branchId],
+        refetchType: 'active'
+      });
       
-      const staffCount = branchStaff?.length || 0;
       toast({
-        title: "Training course created",
-        description: `New training course has been created and assigned to ${staffCount} staff members.`,
+        title: "Training course created successfully!",
+        description: "Use the 'Assign Training' button to assign this course to staff members.",
       });
     },
     onError: (error) => {
