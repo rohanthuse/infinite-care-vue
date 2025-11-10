@@ -34,6 +34,7 @@ import { CarerMeetingsTab } from "@/components/carer-profile/CarerMeetingsTab";
 import { CarerRateTab } from "@/components/carer-profile/CarerRateTab";
 import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
 import { CarerNotesTab } from "@/components/carer-profile/CarerNotesTab";
+import { CarerComplianceTab } from "@/components/carer-profile/CarerComplianceTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 
@@ -256,6 +257,7 @@ const CarerProfilePage: React.FC = () => {
                   <TabsTrigger value="suspend">Suspend</TabsTrigger>
                   <TabsTrigger value="notes">Notes</TabsTrigger>
                   <TabsTrigger value="quality">Quality</TabsTrigger>
+                  <TabsTrigger value="compliance">Compliance</TabsTrigger>
                   <TabsTrigger value="attendance">Attendance</TabsTrigger>
                   <TabsTrigger value="essentials">Essentials</TabsTrigger>
                   <TabsTrigger value="employment">Employment</TabsTrigger>
@@ -279,6 +281,7 @@ const CarerProfilePage: React.FC = () => {
               <TabsContent value="suspend"><CarerSuspendTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="notes"><CarerNotesTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="quality"><CarerQualityAssuranceTab carerId={carerId || ''} /></TabsContent>
+              <TabsContent value="compliance"><CarerComplianceTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="attendance"><CarerAttendanceTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="essentials"><CarerEssentialsTab carerId={carerId || ''} /></TabsContent>
               <TabsContent value="employment"><CarerEmploymentHistoryTab carerId={carerId || ''} /></TabsContent>
