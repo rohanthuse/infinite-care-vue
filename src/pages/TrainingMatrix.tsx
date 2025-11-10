@@ -69,6 +69,8 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     trainingTitle: string;
   } | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>({ field: "name", direction: "asc" });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [trainingToDelete, setTrainingToDelete] = useState<string | null>(null);
   
   // Advanced filter state
   const [advancedFilters, setAdvancedFilters] = useState<{
@@ -280,8 +282,14 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
     setAssignTrainingOpen(false);
   };
 
-  const handleDeleteTraining = (trainingId: string) => {
-    deleteCourse(trainingId);
+  const handleDeleteTraining = () => {
+    if (trainingToDelete) {
+      setDeleteDialogOpen(false);
+      setTimeout(() => {
+        deleteCourse(trainingToDelete);
+        setTrainingToDelete(null);
+      }, 100);
+    }
   };
   
   const handleApplyFilters = (filters: {
@@ -315,6 +323,16 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+      {isDeleting && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-4 shadow-lg border">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+              <span className="text-sm font-medium">Deleting training...</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Training Program</h1>
         <p className="text-gray-500 mt-2">Track and manage staff training requirements and completion status</p>
@@ -457,7 +475,13 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                   <div className="flex flex-col items-center p-1 relative">
                     {/* Three-dot menu in top right */}
                     <div className="absolute top-0 right-0">
-                      <AlertDialog>
+                      <AlertDialog 
+                        open={deleteDialogOpen && trainingToDelete === training.id}
+                        onOpenChange={(open) => {
+                          setDeleteDialogOpen(open);
+                          if (!open) setTrainingToDelete(null);
+                        }}
+                      >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
@@ -469,14 +493,17 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem 
-                                className="text-red-600 focus:text-red-700 cursor-pointer"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Training
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
+                            <DropdownMenuItem 
+                              className="text-red-600 focus:text-red-700 cursor-pointer"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setTrainingToDelete(training.id);
+                                setDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Training
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
 
@@ -492,7 +519,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleDeleteTraining(training.id)}
+                              onClick={handleDeleteTraining}
                               className="bg-red-600 hover:bg-red-700"
                               disabled={isDeleting}
                             >

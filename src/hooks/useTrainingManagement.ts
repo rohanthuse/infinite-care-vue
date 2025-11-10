@@ -114,9 +114,18 @@ export const useTrainingManagement = (branchId: string) => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['training-courses', branchId] });
-      queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
-      queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['training-courses', branchId],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['staff-training-records', branchId],
+        refetchType: 'active'
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['carer-training'],
+        refetchType: 'active'
+      });
       toast({
         title: "Training deleted successfully!",
         description: "The training course has been removed from the system.",
