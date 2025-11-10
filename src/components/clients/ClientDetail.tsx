@@ -30,6 +30,7 @@ import { ClientMedicationsTab } from "./tabs/ClientMedicationsTab";
 import { ClientNews2Tab } from "./tabs/ClientNews2Tab";
 import { VisitRecordsTab } from "./tabs/VisitRecordsTab";
 import { ActivitiesTab } from "./tabs/ActivitiesTab";
+import { ClientComplianceTab } from "./tabs/ClientComplianceTab";
 import { ServiceReportsTab } from "../service-reports/ServiceReportsTab";
 import { ServiceReportsErrorBoundary } from "../service-reports/ServiceReportsErrorBoundary";
 import { useAdminClientDetail, useAdminUpdateClient } from "@/hooks/useAdminClientData";
@@ -249,6 +250,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="general" className="p-6 m-0">
                   <GeneralTab clientId={client.id} branchId={branchId} />
+                </TabsContent>
+                
+                <TabsContent value="compliance" className="p-6 m-0">
+                  <ClientComplianceTab clientId={client.id} />
                 </TabsContent>
                 
                 <TabsContent value="notes" className="p-6 m-0">
