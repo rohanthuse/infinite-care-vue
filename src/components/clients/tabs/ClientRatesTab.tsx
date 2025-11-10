@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Eye, Edit, Trash2, Calendar, DollarSign } from "lucide-react";
 import { format } from "date-fns";
-import { useClientRateSchedules, useDeleteClientRateSchedule } from "@/hooks/useClientAccounting";
+import { useClientRateSchedules, useDeleteClientRateSchedule, useUpdateClientRateSchedule } from "@/hooks/useClientAccounting";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { AddRateScheduleDialog } from "@/components/clients/tabs/accounting/AddRateScheduleDialog";
@@ -31,6 +32,7 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
 
   const { data: rateSchedules = [], isLoading } = useClientRateSchedules(clientId);
   const deleteRateSchedule = useDeleteClientRateSchedule();
+  const updateRateSchedule = useUpdateClientRateSchedule();
 
   console.log('[ClientRatesTab] Client-specific rate schedules:', rateSchedules.length);
 
@@ -47,6 +49,13 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
   const handleDeleteRate = (schedule: ClientRateSchedule) => {
     setSelectedSchedule(schedule);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleToggleActive = (schedule: ClientRateSchedule, newValue: boolean) => {
+    updateRateSchedule.mutate({
+      id: schedule.id,
+      is_active: newValue
+    });
   };
 
   const confirmDelete = async () => {
@@ -197,7 +206,31 @@ export const ClientRatesTab: React.FC<ClientRatesTabProps> = ({ clientId, branch
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(schedule.is_active, schedule.start_date, schedule.end_date)}
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={schedule.is_active}
+                        onCheckedChange={(checked) => handleToggleActive(schedule, checked)}
+                        disabled={updateRateSchedule.isPending}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {schedule.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        {schedule.is_active && (
+                          <span className="text-xs text-muted-foreground">
+                            {(() => {
+                              const today = new Date();
+                              const startDate = new Date(schedule.start_date);
+                              const endDate = schedule.end_date ? new Date(schedule.end_date) : null;
+                              
+                              if (startDate > today) return 'Starts soon';
+                              if (endDate && endDate < today) return 'Expired';
+                              return 'In use';
+                            })()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
