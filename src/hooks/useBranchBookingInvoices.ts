@@ -56,7 +56,7 @@ const fetchBookingInvoices = async (
         pin_code,
         branch_id
       ),
-      booking:bookings!inner(
+      booking:bookings!client_billing_booking_id_fkey(
         id,
         start_time,
         end_time,
