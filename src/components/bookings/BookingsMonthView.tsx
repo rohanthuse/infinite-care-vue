@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isSameMonth, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DayBookingsDialog } from "./DayBookingsDialog";
 
 export interface Booking {
   id: string;
@@ -56,6 +57,10 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
   onBookingClick,
   onCreateBooking,
 }) => {
+  // State for day bookings dialog
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [isDayDialogOpen, setIsDayDialogOpen] = useState(false);
+
   // Generate calendar days for the month
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
@@ -85,6 +90,12 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
       suspended: "bg-orange-500 border-orange-600",
     };
     return colors[status] || "bg-gray-500 border-gray-600";
+  };
+
+  // Handle showing more bookings for a day
+  const handleShowMoreBookings = (day: Date, dayBookings: Booking[]) => {
+    setSelectedDay(day);
+    setIsDayDialogOpen(true);
   };
 
   // Loading state
@@ -197,9 +208,15 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
 
                   {/* Overflow indicator */}
                   {overflowCount > 0 && (
-                    <div className="text-[10px] text-muted-foreground font-medium px-1.5 py-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShowMoreBookings(day, dayBookings);
+                      }}
+                      className="text-[10px] text-primary hover:text-primary/80 font-medium px-1.5 py-1 cursor-pointer hover:underline transition-colors w-full text-left"
+                    >
                       +{overflowCount} more
-                    </div>
+                    </button>
                   )}
 
                   {/* Empty state - add booking button */}
@@ -217,6 +234,17 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
           })}
         </div>
       </div>
+
+      {/* Day Bookings Dialog */}
+      {selectedDay && (
+        <DayBookingsDialog
+          open={isDayDialogOpen}
+          onOpenChange={setIsDayDialogOpen}
+          date={selectedDay}
+          bookings={getBookingsForDay(selectedDay)}
+          onBookingClick={onBookingClick}
+        />
+      )}
     </div>
   );
 };
