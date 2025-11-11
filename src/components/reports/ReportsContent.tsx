@@ -12,6 +12,7 @@ import { StaffComplianceMatrixReport } from "./StaffComplianceMatrixReport";
 import { ClientComplianceReport } from "./ClientComplianceReport";
 import { IncidentSummaryReport } from "./IncidentSummaryReport";
 import { MissedCallsLateArrivalsReport } from "./MissedCallsLateArrivalsReport";
+import { CarePlanCompletionReport } from "./CarePlanCompletionReport";
 import { ReportsHeader } from "./ReportsHeader";
 import { 
   Users, 
@@ -36,6 +37,7 @@ type ReportType =
   | "client-compliance-matrix"
   | "incident-summary"
   | "missed-calls-late-arrivals"
+  | "care-plan-completion"
   | "client" 
   | "staff" 
   | "service" 
@@ -78,6 +80,12 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       title: "Missed Calls & Late Arrivals",
       description: "Track missed bookings and punctuality metrics",
       icon: <PhoneOff className="h-6 w-6" />
+    },
+    {
+      id: "care-plan-completion",
+      title: "Care Plan Completion",
+      description: "Track care plan status, goals, and review compliance",
+      icon: <ClipboardCheck className="h-6 w-6" />
     },
     {
       id: "client",
@@ -133,6 +141,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
         return <IncidentSummaryReport branchId={branchId} branchName={branchName} />;
       case "missed-calls-late-arrivals":
         return <MissedCallsLateArrivalsReport branchId={branchId} branchName={branchName} />;
+      case "care-plan-completion":
+        return <CarePlanCompletionReport branchId={branchId} branchName={branchName} />;
       case "client":
         return <ClientReports branchId={branchId} branchName={branchName} />;
       case "staff":
