@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
@@ -14,23 +14,28 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if we have a valid access token from the reset link
     const checkToken = async () => {
-      const accessToken = searchParams.get('access_token');
-      const type = searchParams.get('type');
+      // First, check if Supabase has set the session from the hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
 
-      console.log('[ResetPassword] Checking token:', { accessToken: !!accessToken, type });
+      console.log('[ResetPassword] Checking for session/token:', { 
+        hasAccessToken: !!accessToken, 
+        type,
+        hasHash: !!window.location.hash
+      });
 
+      // If we have tokens in the hash, set the session explicitly
       if (accessToken && type === 'recovery') {
-        setIsValidToken(true);
-        // The token is automatically set in the session by Supabase
+        console.log('[ResetPassword] Found recovery tokens in hash, setting session');
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: searchParams.get('refresh_token') || '',
+          refresh_token: refreshToken || '',
         });
 
         if (error) {
@@ -43,10 +48,26 @@ const ResetPassword = () => {
             }
           });
           setTimeout(() => navigate('/login'), 5000);
+          return;
         }
+      }
+
+      // Now check if we have a valid session (either from hash or existing)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log('[ResetPassword] Session check:', { 
+        hasSession: !!session, 
+        error: sessionError 
+      });
+
+      if (session) {
+        // Valid session exists, allow password reset
+        console.log('[ResetPassword] Valid session found, allowing password reset');
+        setIsValidToken(true);
       } else {
-        console.error('[ResetPassword] Missing token or invalid type:', { hasToken: !!accessToken, type });
-        toast.error("Invalid reset link. Please request a new password reset.", {
+        // No valid session
+        console.error('[ResetPassword] No valid session found');
+        toast.error("Invalid or expired reset link. Please request a new password reset.", {
           duration: 5000,
           action: {
             label: "Go to Login",
@@ -58,7 +79,22 @@ const ResetPassword = () => {
     };
 
     checkToken();
-  }, [searchParams, navigate]);
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[ResetPassword] Auth state changed:', event);
+      if (event === 'TOKEN_REFRESHED') {
+        setIsValidToken(true);
+      } else if (event === 'SIGNED_OUT') {
+        toast.error("Session expired. Please request a new reset link.");
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const validatePassword = (pwd: string): boolean => {
     if (pwd.length < 8) {
