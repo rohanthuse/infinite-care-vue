@@ -17,6 +17,7 @@ import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingsMonthView } from "./BookingsMonthView";
+import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
 
 interface StaffScheduleCalendarProps {
   date: Date;
@@ -268,9 +269,28 @@ export function StaffScheduleCalendar({
           const endMinutes = endHour * 60 + endMin;
           const durationMinutes = endMinutes - startMinutes;
           
-          let statusType: StaffStatus['type'] = 'assigned';
-          if (booking.status === 'departed') statusType = 'in-progress';
-          else if (booking.status === 'done') statusType = 'done';
+          let statusType: StaffStatus['type'] = 'assigned'; // default
+          switch (booking.status) {
+            case 'assigned':
+              statusType = 'assigned';
+              break;
+            case 'unassigned':
+              statusType = 'assigned'; // Show as assigned but will use unassigned color
+              break;
+            case 'done':
+              statusType = 'done';
+              break;
+            case 'in-progress':
+            case 'departed':
+              statusType = 'in-progress';
+              break;
+            case 'cancelled':
+              statusType = 'done'; // Map to done type but use cancelled color
+              break;
+            case 'suspended':
+              statusType = 'unavailable';
+              break;
+          }
           
           const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
           
@@ -353,13 +373,19 @@ export function StaffScheduleCalendar({
   }, [viewType, staff, bookings, date, leaveRequests, timeSlots, searchTerm, filters, timeInterval]);
 
   const getStatusColor = (status: StaffStatus) => {
+    // If there's a booking, use its actual status for color
+    if (status.booking) {
+      return getBookingStatusColor(status.booking.status, 'light');
+    }
+    
+    // Default colors for status types
     switch (status.type) {
       case 'assigned':
-        return 'bg-blue-100 border-blue-300 text-blue-800';
-      case 'in-progress':
-        return 'bg-orange-100 border-orange-300 text-orange-800';
-      case 'done':
         return 'bg-green-100 border-green-300 text-green-800';
+      case 'in-progress':
+        return 'bg-purple-100 border-purple-300 text-purple-800';
+      case 'done':
+        return 'bg-blue-100 border-blue-300 text-blue-800';
       case 'leave':
         return 'bg-red-100 border-red-300 text-red-800';
       case 'unavailable':
@@ -404,12 +430,15 @@ export function StaffScheduleCalendar({
     }
     
     if (status.booking) {
+      const statusLabel = getBookingStatusLabel(status.booking.status);
+      const statusColor = getBookingStatusColor(status.booking.status, 'light');
+      
       return (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-medium">{staffName}</p>
-            <Badge className={getStatusColor(status).replace('border-', 'border-').replace('bg-', 'bg-').replace('text-', 'text-')}>
-              {status.type}
+            <Badge className={statusColor}>
+              {statusLabel}
             </Badge>
           </div>
           <div className="space-y-1 text-sm">

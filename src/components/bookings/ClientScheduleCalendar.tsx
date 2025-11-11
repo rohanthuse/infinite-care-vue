@@ -12,6 +12,7 @@ import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { BookingsMonthView } from "./BookingsMonthView";
+import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
 
 interface ClientScheduleCalendarProps {
   date: Date;
@@ -249,10 +250,28 @@ export function ClientScheduleCalendar({
           const endMinutes = endHour * 60 + endMin;
           const durationMinutes = endMinutes - startMinutes;
           
-          let statusType: ClientStatus['type'] = 'scheduled';
-          if (booking.status === 'departed') statusType = 'in-progress';
-          else if (booking.status === 'done') statusType = 'completed';
-          else if (booking.status === 'cancelled') statusType = 'cancelled';
+          let statusType: ClientStatus['type'] = 'scheduled'; // default
+          switch (booking.status) {
+            case 'assigned':
+              statusType = 'scheduled';
+              break;
+            case 'unassigned':
+              statusType = 'scheduled'; // Show as scheduled but will use unassigned color
+              break;
+            case 'done':
+              statusType = 'completed';
+              break;
+            case 'in-progress':
+            case 'departed':
+              statusType = 'in-progress';
+              break;
+            case 'cancelled':
+              statusType = 'cancelled';
+              break;
+            case 'suspended':
+              statusType = 'cancelled'; // Show as cancelled-like status
+              break;
+          }
           
           const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
           
@@ -316,11 +335,17 @@ export function ClientScheduleCalendar({
   }, [viewType, clients, bookings, date, timeSlots, searchTerm, filters, timeInterval]);
 
   const getStatusColor = (status: ClientStatus) => {
+    // If there's a booking, use its actual status for color
+    if (status.booking) {
+      return getBookingStatusColor(status.booking.status, 'light');
+    }
+    
+    // Default colors for status types
     switch (status.type) {
       case 'scheduled':
         return 'bg-blue-100 border-blue-300 text-blue-800';
       case 'in-progress':
-        return 'bg-orange-100 border-orange-300 text-orange-800';
+        return 'bg-purple-100 border-purple-300 text-purple-800';
       case 'completed':
         return 'bg-green-100 border-green-300 text-green-800';
       case 'cancelled':
@@ -362,12 +387,15 @@ export function ClientScheduleCalendar({
     }
     
     if (status.booking) {
+      const statusLabel = getBookingStatusLabel(status.booking.status);
+      const statusColor = getBookingStatusColor(status.booking.status, 'light');
+      
       return (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="font-medium">{clientName}</p>
-            <Badge className={getStatusColor(status).replace('border-', 'border-').replace('bg-', 'bg-').replace('text-', 'text-')}>
-              {status.type}
+            <Badge className={statusColor}>
+              {statusLabel}
             </Badge>
           </div>
           <div className="space-y-1 text-sm">
