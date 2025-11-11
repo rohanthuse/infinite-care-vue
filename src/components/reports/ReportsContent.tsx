@@ -9,8 +9,9 @@ import { OperationalReports } from "./OperationalReports";
 import { ComplianceReports } from "./ComplianceReports";
 import { ClinicalReports } from "./ClinicalReports";
 import { StaffComplianceMatrixReport } from "./StaffComplianceMatrixReport";
+import { ClientComplianceReport } from "./ClientComplianceReport";
 import { ReportsHeader } from "./ReportsHeader";
-import { 
+import {
   Users, 
   Briefcase, 
   ClipboardCheck, 
@@ -28,6 +29,7 @@ interface ReportsContentProps {
 
 type ReportType = 
   | "staff-compliance-matrix"
+  | "client-compliance-matrix"
   | "client" 
   | "staff" 
   | "service" 
@@ -52,6 +54,12 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       title: "Staff Compliance Matrix",
       description: "Comprehensive staff compliance tracking and analytics",
       icon: <ClipboardList className="h-6 w-6" />
+    },
+    {
+      id: "client-compliance-matrix",
+      title: "Client Compliance Matrix",
+      description: "Track medication, visits, appointments & health monitoring",
+      icon: <Users className="h-6 w-6" />
     },
     {
       id: "client",
@@ -101,6 +109,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
     switch (activeReport) {
       case "staff-compliance-matrix":
         return <StaffComplianceMatrixReport branchId={branchId} branchName={branchName} />;
+      case "client-compliance-matrix":
+        return <ClientComplianceReport branchId={branchId} branchName={branchName} />;
       case "client":
         return <ClientReports branchId={branchId} branchName={branchName} />;
       case "staff":
