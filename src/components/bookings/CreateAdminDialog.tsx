@@ -90,7 +90,7 @@ export const CreateAdminDialog: React.FC<CreateAdminDialogProps> = ({
             }
           }
           
-          toast.success("Admin user created successfully!");
+          toast.success("Admin user created successfully! Welcome email sent to " + formData.email);
           setFormData({ email: "", first_name: "", last_name: "", password: "" });
           onOpenChange(false);
         },

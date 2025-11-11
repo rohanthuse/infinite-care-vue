@@ -186,6 +186,28 @@ Deno.serve(async (req) => {
 
       console.log('Branch admin creation completed successfully');
 
+      // Step 6: Send welcome email
+      try {
+        const emailResponse = await supabaseAdmin.functions.invoke('send-welcome-email', {
+          body: {
+            email,
+            first_name,
+            last_name,
+            temporary_password: password,
+            role: 'Branch Administrator',
+          },
+        });
+
+        if (emailResponse.error) {
+          console.warn('Failed to send welcome email:', emailResponse.error);
+          // Don't fail the entire operation if email fails
+        } else {
+          console.log('Welcome email sent successfully');
+        }
+      } catch (emailError) {
+        console.warn('Email sending error (non-fatal):', emailError);
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
