@@ -73,7 +73,7 @@ export const CalendarShareDialog: React.FC<CalendarShareDialogProps> = ({
       ];
 
       // Generate PDF blob for sharing
-      const pdfBlob = ReportExporter.exportToPDFBlob({
+      const pdfBlob = await ReportExporter.exportToPDFBlob({
         title: 'Organisation Calendar Report',
         data: exportData,
         columns,

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Download, Eye, FileText, Calendar, User, Users } from 'lucide-react';
 import { useClientAgreements } from '@/data/hooks/useClientAgreements';
 import { ViewAgreementDialog } from '@/components/agreements/ViewAgreementDialog';
-import { generatePDF } from '@/utils/pdfGenerator';
+import { exportAgreementToPDF } from '@/lib/agreementPdfExport';
 import { Agreement } from '@/types/agreements';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -51,20 +51,8 @@ const ClientAgreements = () => {
         }
       }
       
-      // Fallback to generating PDF
-      const signers = agreement.agreement_signers || [];
-      const signersText = signers.length > 0 
-        ? signers.map(s => s.signer_name).join(', ')
-        : (agreement.signed_by_name || 'N/A');
-      
-      const pdfData = {
-        id: agreement.id,
-        title: agreement.title,
-        date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : format(new Date(agreement.created_at), 'dd MMM yyyy'),
-        status: agreement.status,
-        signedBy: signersText
-      };
-      generatePDF(pdfData);
+      // Fallback to generating comprehensive PDF
+      await exportAgreementToPDF(agreement.id);
       toast.success('Agreement generated and downloaded successfully');
     } catch (error) {
       console.error('Failed to download agreement:', error);

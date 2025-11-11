@@ -1,56 +1,95 @@
-
 import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { WeeklyStat } from "@/data/hooks/useBranchChartData";
-
+import { 
+  fetchOrganizationSettings, 
+  loadImageAsBase64, 
+  addPDFHeader, 
+  addPDFFooter,
+  addSectionHeader,
+  addDocumentTitle,
+  PDF_COLORS
+} from "@/lib/pdfExportHelpers";
 export interface ExportOptions {
   title: string;
   data: any[];
   columns: string[];
   fileName?: string;
   branchName?: string;
+  branchId?: string;
   dateRange?: { from: Date; to: Date } | null;
 }
 
 export class ReportExporter {
-  static exportToPDF(options: ExportOptions) {
-    const { title, data, columns, fileName, branchName, dateRange } = options;
+  static async exportToPDF(options: ExportOptions) {
+    const { title, data, columns, fileName, branchName, dateRange, branchId } = options;
     const doc = new jsPDF();
     
-    // Add header
-    doc.setFontSize(20);
-    doc.text(title, 20, 20);
+    // Fetch organization settings if branchId provided
+    const orgSettings = branchId ? await fetchOrganizationSettings(branchId) : null;
     
-    if (branchName) {
-      doc.setFontSize(12);
-      doc.text(`Branch: ${branchName}`, 20, 30);
+    // Load company logo
+    let logoBase64: string | null = null;
+    if (orgSettings?.logo_url) {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
     }
     
-    if (dateRange) {
-      doc.setFontSize(10);
-      doc.text(`Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, 20, 40);
+    const pageWidth = doc.internal.pageSize.width;
+    const leftMargin = 20;
+    
+    // Add professional header
+    let currentY = await addPDFHeader(doc, orgSettings, logoBase64);
+    
+    // Add document title
+    const subtitle = [
+      branchName ? `Branch: ${branchName}` : '',
+      dateRange ? `Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}` : ''
+    ].filter(Boolean).join(' | ');
+    
+    currentY = addDocumentTitle(doc, title, subtitle, currentY);
+    
+    // Add summary statistics box if data is available
+    if (data.length > 0) {
+      currentY = addSectionHeader(doc, 'Summary', currentY);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text(`Total Records: ${data.length}`, leftMargin, currentY);
+      currentY += 8;
     }
     
-    // Add table
+    // Add data table with enhanced styling
+    currentY = addSectionHeader(doc, 'Report Data', currentY);
+    
     autoTable(doc, {
       head: [columns],
       body: data.map(row => columns.map(col => row[col] || '')),
-      startY: dateRange ? 50 : 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
+      startY: currentY,
+      theme: 'striped',
+      styles: { 
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [PDF_COLORS.gray[200].r, PDF_COLORS.gray[200].g, PDF_COLORS.gray[200].b],
+        lineWidth: 0.1
+      },
+      headStyles: { 
+        fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b],
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      alternateRowStyles: {
+        fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b]
+      },
+      margin: { left: leftMargin, right: leftMargin }
     });
     
-    // Add footer
+    // Add professional footers to all pages
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(
-        `Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Page ${i} of ${pageCount}`,
-        20,
-        doc.internal.pageSize.height - 10
-      );
+      addPDFFooter(doc, orgSettings, i, pageCount);
     }
     
     // Save the PDF
@@ -58,43 +97,58 @@ export class ReportExporter {
     doc.save(finalFileName);
   }
 
-  static exportToPDFBlob(options: ExportOptions): Blob {
-    const { title, data, columns, branchName, dateRange } = options;
+  static async exportToPDFBlob(options: ExportOptions): Promise<Blob> {
+    const { title, data, columns, branchName, dateRange, branchId } = options;
     const doc = new jsPDF();
     
-    // Add header
-    doc.setFontSize(20);
-    doc.text(title, 20, 20);
+    // Fetch organization settings if branchId provided
+    const orgSettings = branchId ? await fetchOrganizationSettings(branchId) : null;
     
-    if (branchName) {
-      doc.setFontSize(12);
-      doc.text(`Branch: ${branchName}`, 20, 30);
+    // Load company logo
+    let logoBase64: string | null = null;
+    if (orgSettings?.logo_url) {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
     }
     
-    if (dateRange) {
-      doc.setFontSize(10);
-      doc.text(`Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, 20, 40);
-    }
+    const leftMargin = 20;
     
-    // Add table
+    // Add professional header
+    let currentY = await addPDFHeader(doc, orgSettings, logoBase64);
+    
+    // Add document title
+    const subtitle = [
+      branchName ? `Branch: ${branchName}` : '',
+      dateRange ? `Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}` : ''
+    ].filter(Boolean).join(' | ');
+    
+    currentY = addDocumentTitle(doc, title, subtitle, currentY);
+    
+    // Add data table with enhanced styling
     autoTable(doc, {
       head: [columns],
       body: data.map(row => columns.map(col => row[col] || '')),
-      startY: dateRange ? 50 : 40,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] },
+      startY: currentY,
+      theme: 'striped',
+      styles: { 
+        fontSize: 8,
+        cellPadding: 3
+      },
+      headStyles: { 
+        fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b]
+      },
+      margin: { left: leftMargin, right: leftMargin }
     });
     
-    // Add footer
+    // Add professional footers to all pages
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-      doc.setFontSize(8);
-      doc.text(
-        `Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Page ${i} of ${pageCount}`,
-        20,
-        doc.internal.pageSize.height - 10
-      );
+      addPDFFooter(doc, orgSettings, i, pageCount);
     }
     
     // Return as Blob instead of saving

@@ -10,7 +10,7 @@ import {
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { generatePDF } from "@/utils/pdfGenerator";
+import { exportAgreementToPDF, exportAgreementToPDFBlob } from "@/lib/agreementPdfExport";
 import { ViewAgreementDialog } from "./ViewAgreementDialog";
 import { ExpiryBadge } from "./ExpiryBadge";
 import { useSignedAgreements, useDeleteAgreement } from "@/data/hooks/agreements";
@@ -110,37 +110,29 @@ export function SignedAgreements({
   const handleGenerateAgreementPDF = async (): Promise<Blob> => {
     if (!agreementToShare) return new Blob();
     
-    const agreementData = {
-      id: agreementToShare.id,
-      title: agreementToShare.title,
-      date: agreementToShare.signed_at || agreementToShare.created_at,
-      status: agreementToShare.status,
-      signedBy: agreementToShare.signed_by_name || 'Not signed',
-    };
-    
-    await generatePDF(agreementData);
-    
-    // Generate a simple PDF blob for now
-    return new Blob(['Agreement PDF content'], { type: 'application/pdf' });
+    try {
+      // Use the new comprehensive PDF exporter
+      const blob = await exportAgreementToPDFBlob(agreementToShare.id);
+      return blob;
+    } catch (error) {
+      console.error('Error generating agreement PDF:', error);
+      toast.error('Failed to generate agreement PDF');
+      return new Blob();
+    }
   };
 
   const viewingAgreement = agreements?.find(a => a.id === viewingAgreementId);
 
-  const handleDownload = (agreement: Agreement) => {
+  const handleDownload = async (agreement: Agreement) => {
     if (!agreement) return;
-    const signers = agreement.agreement_signers || [];
-    const signersText = signers.length > 0 
-      ? signers.map(s => s.signer_name).join(', ')
-      : (agreement.signed_by_name || 'N/A');
     
-    generatePDF({
-      id: agreement.id,
-      title: agreement.title,
-      date: agreement.signed_at ? format(new Date(agreement.signed_at), 'dd MMM yyyy') : 'N/A',
-      status: agreement.status,
-      signedBy: signersText,
-    });
-    toast.success(`Downloaded ${agreement.title}`);
+    try {
+      await exportAgreementToPDF(agreement.id);
+      toast.success(`Downloaded ${agreement.title}`);
+    } catch (error) {
+      console.error('Error downloading agreement:', error);
+      toast.error('Failed to download agreement');
+    }
   };
 
   if (isLoading) {
