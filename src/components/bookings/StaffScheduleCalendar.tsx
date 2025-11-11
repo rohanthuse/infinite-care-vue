@@ -179,12 +179,15 @@ export function StaffScheduleCalendar({
 
   // Helper function to calculate booking block position
   const calculateBookingPosition = (startMinutes: number, durationMinutes: number): { left: number; width: number } => {
+    // Safety check: ensure duration is never negative
+    const safeDuration = Math.max(0, durationMinutes);
+    
     // Calculate position based on start time as fraction of time slots
     const slotsFromStart = startMinutes / timeInterval;
     const left = slotsFromStart * SLOT_WIDTH;
     
     // Calculate width based on duration
-    const durationInSlots = durationMinutes / timeInterval;
+    const durationInSlots = safeDuration / timeInterval;
     const width = durationInSlots * SLOT_WIDTH;
     
     return { left, width };
@@ -216,7 +219,12 @@ export function StaffScheduleCalendar({
         const totalWeekHours = staffBookings.reduce((sum, b) => {
           const [startH, startM] = b.startTime.split(':').map(Number);
           const [endH, endM] = b.endTime.split(':').map(Number);
-          const duration = (endH * 60 + endM - startH * 60 - startM) / 60;
+          let durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+          // Handle midnight crossing
+          if (durationMinutes < 0) {
+            durationMinutes += 1440; // Add 24 hours
+          }
+          const duration = durationMinutes / 60;
           return sum + duration;
         }, 0);
         
@@ -267,7 +275,13 @@ export function StaffScheduleCalendar({
           
           const startMinutes = startHour * 60 + startMin;
           const endMinutes = endHour * 60 + endMin;
-          const durationMinutes = endMinutes - startMinutes;
+          
+          // Handle bookings that cross midnight (end time < start time)
+          let durationMinutes = endMinutes - startMinutes;
+          if (durationMinutes < 0) {
+            // Booking crosses midnight, add 24 hours (1440 minutes)
+            durationMinutes += 1440;
+          }
           
           let statusType: StaffStatus['type'] = 'assigned'; // default
           switch (booking.status) {
