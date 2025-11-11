@@ -5,11 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useSafeguardingReportsData } from '@/hooks/useSafeguardingReportsData';
-import { Download, Search, Shield, AlertTriangle, Clock, CheckCircle, XCircle, TrendingUp } from 'lucide-react';
+import { Download, Search, Shield, AlertTriangle, Clock, CheckCircle, XCircle, TrendingUp, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { DetailDialog, type DetailField } from '@/components/reports/shared/DetailDialog';
+import { AdvancedExportMenu, type ExportColumn } from '@/components/reports/shared/AdvancedExportMenu';
+import type { ExportOptions as AdvancedExportOptions } from '@/components/reports/shared/AdvancedExportMenu';
+import { ReportExporter } from '@/utils/reportExporter';
+import { toast } from 'sonner';
 
 interface SafeguardingReportProps {
   branchId: string;
@@ -21,6 +26,8 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
   const [searchTerm, setSearchTerm] = useState('');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedConcern, setSelectedConcern] = useState<any>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
   const COLORS = {
     critical: 'hsl(var(--destructive))',
@@ -79,6 +86,112 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
       .sort((a, b) => b.value - a.value)
       .slice(0, 8); // Top 8 types
   }, [filteredData]);
+
+  // Export columns configuration
+  const exportColumns: ExportColumn[] = [
+    { key: 'client_name', label: 'Client Name', included: true },
+    { key: 'concern_type', label: 'Concern Type', included: true },
+    { key: 'severity', label: 'Severity', included: true },
+    { key: 'risk_level', label: 'Risk Level', included: true },
+    { key: 'investigation_status', label: 'Status', included: true },
+    { key: 'reported_date', label: 'Reported Date', included: true },
+    { key: 'reported_by', label: 'Reported By', included: true },
+    { key: 'description', label: 'Description', included: false },
+    { key: 'investigation_notes', label: 'Investigation Notes', included: false },
+    { key: 'action_taken', label: 'Action Taken', included: false },
+    { key: 'resolution_date', label: 'Resolution Date', included: false },
+    { key: 'days_to_resolve', label: 'Days to Resolve', included: false },
+  ];
+
+  const handleAdvancedExport = async (exportFormat: 'pdf' | 'csv' | 'excel', options: AdvancedExportOptions) => {
+    const dataToExport = filteredData;
+    
+    // Prepare data based on selected columns
+    const exportData = dataToExport.map(concern => {
+      const row: any = {};
+      options.selectedColumns.forEach(col => {
+        if (col === 'reported_date' && concern.reported_date) {
+          row[col] = format(new Date(concern.reported_date), 'dd/MM/yyyy');
+        } else if (col === 'resolution_date' && concern.resolution_date) {
+          row[col] = format(new Date(concern.resolution_date), 'dd/MM/yyyy');
+        } else {
+          row[col] = concern[col as keyof typeof concern] || '';
+        }
+      });
+      return row;
+    });
+
+    const exportOptions = {
+      title: 'Safeguarding & Concerns Report',
+      data: exportData,
+      columns: options.selectedColumns,
+      branchName,
+      branchId,
+      metadata: options.includeMetadata ? {
+        filters: {
+          'Search Term': searchTerm || 'None',
+          'Severity': severityFilter,
+          'Status': statusFilter,
+        },
+        totalRecords: data?.concerns.length || 0,
+        exportedRecords: dataToExport.length,
+      } : undefined,
+    };
+
+    if (exportFormat === 'pdf') {
+      await ReportExporter.exportToPDF(exportOptions);
+    } else if (exportFormat === 'csv') {
+      ReportExporter.exportToCSV(exportOptions);
+    } else {
+      ReportExporter.exportToExcel(exportOptions);
+    }
+  };
+
+  const handleRowClick = (concern: any) => {
+    setSelectedConcern(concern);
+    setDetailDialogOpen(true);
+  };
+
+  const handleCardClick = (filterType: 'severity' | 'status', value: string) => {
+    if (filterType === 'severity') {
+      setSeverityFilter(value);
+    } else {
+      setStatusFilter(value);
+    }
+    toast.info(`Filtered by ${filterType}: ${value}`);
+  };
+
+  const handleChartClick = (data: any, filterType: 'severity' | 'status') => {
+    if (data && data.name) {
+      const filterValue = data.name.toLowerCase().replace(/ /g, '-');
+      if (filterType === 'severity') {
+        setSeverityFilter(filterValue);
+      } else {
+        setStatusFilter(filterValue);
+      }
+      toast.info(`Filtered by: ${data.name}`);
+    }
+  };
+
+  const getDetailFields = (concern: any): DetailField[] => {
+    if (!concern) return [];
+    
+    return [
+      { label: 'Client Name', value: concern.client_name, section: 'General Information' },
+      { label: 'Concern Type', value: concern.concern_type, section: 'General Information' },
+      { label: 'Severity', value: concern.severity.toUpperCase(), type: 'badge', badgeVariant: concern.severity === 'critical' ? 'destructive' : 'default', section: 'General Information' },
+      { label: 'Risk Level', value: concern.risk_level, section: 'General Information' },
+      { label: 'Investigation Status', value: concern.investigation_status.replace(/-/g, ' '), type: 'badge', section: 'General Information' },
+      { label: 'Reported Date', value: concern.reported_date, type: 'date', section: 'Timeline' },
+      { label: 'Reported By', value: concern.reported_by, section: 'Timeline' },
+      { label: 'Resolution Date', value: concern.resolution_date, type: 'date', section: 'Timeline' },
+      { label: 'Days to Resolve', value: concern.days_to_resolve ? `${concern.days_to_resolve} days` : 'Ongoing', section: 'Timeline' },
+      { label: 'Description', value: concern.description, type: 'longtext', section: 'Details' },
+      { label: 'Investigation Notes', value: concern.investigation_notes, type: 'longtext', section: 'Investigation' },
+      { label: 'Action Taken', value: concern.action_taken, type: 'longtext', section: 'Resolution' },
+      { label: 'Status', value: concern.is_open ? 'Open' : 'Closed', type: 'badge', badgeVariant: concern.is_open ? 'destructive' : 'default', section: 'General Information' },
+    ];
+  };
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -222,9 +335,16 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
+      {/* Summary Cards - Now Clickable */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:border-primary transition-colors"
+          onClick={() => {
+            setSeverityFilter('all');
+            setStatusFilter('all');
+            toast.info('Showing all concerns');
+          }}
+        >
           <CardHeader className="pb-2">
             <CardDescription>Total Concerns</CardDescription>
             <CardTitle className="text-3xl">{data?.stats.total_concerns || 0}</CardTitle>
@@ -232,12 +352,15 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <Shield className="h-4 w-4 mr-1" />
-              All safeguarding concerns
+              Click to view all
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:border-destructive transition-colors"
+          onClick={() => handleCardClick('status', 'awaiting-action')}
+        >
           <CardHeader className="pb-2">
             <CardDescription>Open Concerns</CardDescription>
             <CardTitle className="text-3xl text-destructive">{data?.stats.open_concerns || 0}</CardTitle>
@@ -245,12 +368,15 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <AlertTriangle className="h-4 w-4 mr-1" />
-              Requiring attention
+              Click to filter
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:border-destructive transition-colors"
+          onClick={() => handleCardClick('status', 'under-investigation')}
+        >
           <CardHeader className="pb-2">
             <CardDescription>Overdue Investigations</CardDescription>
             <CardTitle className="text-3xl text-destructive">{data?.stats.overdue_investigations || 0}</CardTitle>
@@ -258,12 +384,15 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="h-4 w-4 mr-1" />
-              Open &gt; 7 days
+              Click to filter
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:border-primary transition-colors"
+          onClick={() => handleCardClick('status', 'resolved')}
+        >
           <CardHeader className="pb-2">
             <CardDescription>Avg Resolution Time</CardDescription>
             <CardTitle className="text-3xl">{data?.stats.avg_resolution_days || 0}</CardTitle>
@@ -271,18 +400,18 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
           <CardContent>
             <div className="flex items-center text-sm text-muted-foreground">
               <TrendingUp className="h-4 w-4 mr-1" />
-              Days to resolve
+              Click to view resolved
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
+      {/* Charts - Now Interactive */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Severity Distribution</CardTitle>
-            <CardDescription>Concerns by severity level</CardDescription>
+            <CardDescription>Click segments to filter concerns by severity</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -296,6 +425,8 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  onClick={(data) => handleChartClick(data, 'severity')}
+                  style={{ cursor: 'pointer' }}
                 >
                   {severityChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -310,16 +441,16 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
         <Card>
           <CardHeader>
             <CardTitle>Investigation Status</CardTitle>
-            <CardDescription>Current status of all concerns</CardDescription>
+            <CardDescription>Click bars to filter concerns by status</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={statusChartData}>
+              <BarChart data={statusChartData} onClick={(data) => data?.activePayload && handleChartClick(data.activePayload[0].payload, 'status')}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="value" fill={COLORS.investigating} />
+                <Bar dataKey="value" fill={COLORS.investigating} style={{ cursor: 'pointer' }} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -391,15 +522,21 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
 
             <Button onClick={exportToPDF} variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export PDF
+              Quick Export PDF
             </Button>
             <Button onClick={exportToCSV} variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Quick Export CSV
             </Button>
+            <AdvancedExportMenu
+              columns={exportColumns}
+              onExport={handleAdvancedExport}
+              filterApplied={searchTerm !== '' || severityFilter !== 'all' || statusFilter !== 'all'}
+              totalRowCount={data?.concerns.length || 0}
+            />
           </div>
 
-          {/* Table */}
+          {/* Table - Now with clickable rows */}
           <div className="border rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -412,12 +549,13 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
                     <th className="px-4 py-3 text-left text-sm font-medium">Reported Date</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Reported By</th>
                     <th className="px-4 py-3 text-center text-sm font-medium">Days Open</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filteredData.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                         No safeguarding concerns found matching your filters
                       </td>
                     </tr>
@@ -428,7 +566,7 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
                       );
                       
                       return (
-                        <tr key={concern.id} className="hover:bg-muted/50">
+                        <tr key={concern.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => handleRowClick(concern)}>
                           <td className="px-4 py-3 text-sm font-medium">{concern.client_name}</td>
                           <td className="px-4 py-3 text-sm">{concern.concern_type}</td>
                           <td className="px-4 py-3 text-center">{getSeverityBadge(concern.severity)}</td>
@@ -448,6 +586,19 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
                               </span>
                             )}
                           </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowClick(concern);
+                              }}
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
                         </tr>
                       );
                     })
@@ -459,9 +610,56 @@ export function SafeguardingReport({ branchId, branchName }: SafeguardingReportP
 
           <div className="text-sm text-muted-foreground">
             Showing {filteredData.length} of {data?.concerns.length || 0} concerns
+            {(searchTerm || severityFilter !== 'all' || statusFilter !== 'all') && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm('');
+                  setSeverityFilter('all');
+                  setStatusFilter('all');
+                }}
+                className="ml-2"
+              >
+                Clear Filters
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Detail Dialog */}
+      <DetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        title={`Safeguarding Concern: ${selectedConcern?.concern_type || ''}`}
+        subtitle={`Client: ${selectedConcern?.client_name || ''}`}
+        fields={getDetailFields(selectedConcern)}
+        onExport={() => {
+          if (selectedConcern) {
+            const exportData = [selectedConcern].map(concern => ({
+              'Client Name': concern.client_name,
+              'Concern Type': concern.concern_type,
+              'Severity': concern.severity,
+              'Risk Level': concern.risk_level,
+              'Status': concern.investigation_status,
+              'Reported Date': format(new Date(concern.reported_date), 'dd/MM/yyyy'),
+              'Reported By': concern.reported_by,
+              'Description': concern.description,
+              'Investigation Notes': concern.investigation_notes || '',
+              'Action Taken': concern.action_taken || '',
+            }));
+            
+            ReportExporter.exportToCSV({
+              title: 'Safeguarding Concern Detail',
+              data: exportData,
+              columns: Object.keys(exportData[0]),
+            });
+            
+            toast.success('Concern details exported');
+          }
+        }}
+      />
     </div>
   );
 }

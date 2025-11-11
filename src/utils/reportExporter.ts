@@ -19,11 +19,17 @@ export interface ExportOptions {
   branchName?: string;
   branchId?: string;
   dateRange?: { from: Date; to: Date } | null;
+  metadata?: {
+    filters?: Record<string, any>;
+    exportedBy?: string;
+    totalRecords?: number;
+    exportedRecords?: number;
+  };
 }
 
 export class ReportExporter {
   static async exportToPDF(options: ExportOptions) {
-    const { title, data, columns, fileName, branchName, dateRange, branchId } = options;
+    const { title, data, columns, fileName, branchName, dateRange, branchId, metadata } = options;
     const doc = new jsPDF();
     
     // Fetch organization settings if branchId provided
@@ -49,14 +55,43 @@ export class ReportExporter {
     
     currentY = addDocumentTitle(doc, title, subtitle, currentY);
     
-    // Add summary statistics box if data is available
-    if (data.length > 0) {
-      currentY = addSectionHeader(doc, 'Summary', currentY);
+    // Add summary statistics and metadata if available
+    if (data.length > 0 || metadata) {
+      currentY = addSectionHeader(doc, 'Export Information', currentY);
       
       doc.setFontSize(9);
       doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-      doc.text(`Total Records: ${data.length}`, leftMargin, currentY);
-      currentY += 8;
+      
+      // Add metadata information
+      if (metadata) {
+        if (metadata.exportedBy) {
+          doc.text(`Exported By: ${metadata.exportedBy}`, leftMargin, currentY);
+          currentY += 6;
+        }
+        if (metadata.totalRecords !== undefined) {
+          doc.text(`Total Available Records: ${metadata.totalRecords}`, leftMargin, currentY);
+          currentY += 6;
+        }
+        if (metadata.exportedRecords !== undefined) {
+          doc.text(`Records in Export: ${metadata.exportedRecords}`, leftMargin, currentY);
+          currentY += 6;
+        }
+        if (metadata.filters && Object.keys(metadata.filters).length > 0) {
+          doc.text('Active Filters:', leftMargin, currentY);
+          currentY += 6;
+          Object.entries(metadata.filters).forEach(([key, value]) => {
+            if (value && value !== 'all') {
+              doc.text(`  • ${key}: ${value}`, leftMargin + 5, currentY);
+              currentY += 6;
+            }
+          });
+        }
+      } else {
+        doc.text(`Total Records: ${data.length}`, leftMargin, currentY);
+        currentY += 6;
+      }
+      
+      currentY += 2;
     }
     
     // Add data table with enhanced styling
@@ -156,9 +191,34 @@ export class ReportExporter {
   }
 
   static exportToCSV(options: ExportOptions) {
-    const { title, data, columns, fileName } = options;
+    const { title, data, columns, fileName, metadata } = options;
     
-    // Create CSV content
+    // Create CSV content with optional metadata header
+    const metadataRows: string[] = [];
+    if (metadata) {
+      metadataRows.push(`Report: ${title}`);
+      metadataRows.push(`Exported: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`);
+      if (metadata.exportedBy) {
+        metadataRows.push(`Exported By: ${metadata.exportedBy}`);
+      }
+      if (metadata.totalRecords !== undefined) {
+        metadataRows.push(`Total Available Records: ${metadata.totalRecords}`);
+      }
+      if (metadata.exportedRecords !== undefined) {
+        metadataRows.push(`Records in Export: ${metadata.exportedRecords}`);
+      }
+      if (metadata.filters && Object.keys(metadata.filters).length > 0) {
+        const activeFilters = Object.entries(metadata.filters)
+          .filter(([_, value]) => value && value !== 'all')
+          .map(([key, value]) => `${key}: ${value}`)
+          .join('; ');
+        if (activeFilters) {
+          metadataRows.push(`Active Filters: ${activeFilters}`);
+        }
+      }
+      metadataRows.push(''); // Empty row separator
+    }
+    
     const csvHeaders = columns.join(',');
     const csvRows = data.map(row => 
       columns.map(col => {
@@ -170,7 +230,7 @@ export class ReportExporter {
       }).join(',')
     );
     
-    const csvContent = [csvHeaders, ...csvRows].join('\n');
+    const csvContent = [...metadataRows, csvHeaders, ...csvRows].join('\n');
     
     // Create and download file
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
