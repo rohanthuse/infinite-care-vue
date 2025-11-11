@@ -11,6 +11,7 @@ import { ClinicalReports } from "./ClinicalReports";
 import { StaffComplianceMatrixReport } from "./StaffComplianceMatrixReport";
 import { ClientComplianceReport } from "./ClientComplianceReport";
 import { IncidentSummaryReport } from "./IncidentSummaryReport";
+import { MissedCallsLateArrivalsReport } from "./MissedCallsLateArrivalsReport";
 import { ReportsHeader } from "./ReportsHeader";
 import { 
   Users, 
@@ -21,7 +22,8 @@ import {
   ShieldCheck, 
   Stethoscope,
   ClipboardList,
-  AlertTriangle
+  AlertTriangle,
+  PhoneOff
 } from "lucide-react";
 
 interface ReportsContentProps {
@@ -33,6 +35,7 @@ type ReportType =
   | "staff-compliance-matrix"
   | "client-compliance-matrix"
   | "incident-summary"
+  | "missed-calls-late-arrivals"
   | "client" 
   | "staff" 
   | "service" 
@@ -69,6 +72,12 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       title: "Incident Summary",
       description: "Analyze incidents with trends and resolution tracking",
       icon: <AlertTriangle className="h-6 w-6" />
+    },
+    {
+      id: "missed-calls-late-arrivals",
+      title: "Missed Calls & Late Arrivals",
+      description: "Track missed bookings and punctuality metrics",
+      icon: <PhoneOff className="h-6 w-6" />
     },
     {
       id: "client",
@@ -122,6 +131,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
         return <ClientComplianceReport branchId={branchId} branchName={branchName} />;
       case "incident-summary":
         return <IncidentSummaryReport branchId={branchId} branchName={branchName} />;
+      case "missed-calls-late-arrivals":
+        return <MissedCallsLateArrivalsReport branchId={branchId} branchName={branchName} />;
       case "client":
         return <ClientReports branchId={branchId} branchName={branchName} />;
       case "staff":
