@@ -95,7 +95,7 @@ const SuperAdminLogin = () => {
       const { error } = await supabase.functions.invoke('send-password-reset', {
         body: { 
           email, 
-          redirectTo: `${window.location.origin}/reset-password` 
+          redirectTo: 'https://med-infinite.care/reset-password' 
         }
       });
       
