@@ -10,8 +10,9 @@ import { ComplianceReports } from "./ComplianceReports";
 import { ClinicalReports } from "./ClinicalReports";
 import { StaffComplianceMatrixReport } from "./StaffComplianceMatrixReport";
 import { ClientComplianceReport } from "./ClientComplianceReport";
+import { IncidentSummaryReport } from "./IncidentSummaryReport";
 import { ReportsHeader } from "./ReportsHeader";
-import {
+import { 
   Users, 
   Briefcase, 
   ClipboardCheck, 
@@ -19,7 +20,8 @@ import {
   BarChart3, 
   ShieldCheck, 
   Stethoscope,
-  ClipboardList
+  ClipboardList,
+  AlertTriangle
 } from "lucide-react";
 
 interface ReportsContentProps {
@@ -30,6 +32,7 @@ interface ReportsContentProps {
 type ReportType = 
   | "staff-compliance-matrix"
   | "client-compliance-matrix"
+  | "incident-summary"
   | "client" 
   | "staff" 
   | "service" 
@@ -60,6 +63,12 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       title: "Client Compliance Matrix",
       description: "Track medication, visits, appointments & health monitoring",
       icon: <Users className="h-6 w-6" />
+    },
+    {
+      id: "incident-summary",
+      title: "Incident Summary",
+      description: "Analyze incidents with trends and resolution tracking",
+      icon: <AlertTriangle className="h-6 w-6" />
     },
     {
       id: "client",
@@ -111,6 +120,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
         return <StaffComplianceMatrixReport branchId={branchId} branchName={branchName} />;
       case "client-compliance-matrix":
         return <ClientComplianceReport branchId={branchId} branchName={branchName} />;
+      case "incident-summary":
+        return <IncidentSummaryReport branchId={branchId} branchName={branchName} />;
       case "client":
         return <ClientReports branchId={branchId} branchName={branchName} />;
       case "staff":
