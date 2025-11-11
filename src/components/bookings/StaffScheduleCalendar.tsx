@@ -205,12 +205,22 @@ export function StaffScheduleCalendar({
       // Weekly view data structure
       const scheduleData = staff.map(member => {
         const weekBookings: Record<string, Booking[]> = {};
+        const weekLeave: Record<string, any> = {};
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         
         // Initialize each weekday
         for (let i = 0; i < 7; i++) {
           const dayDate = format(addDays(weekStart, i), 'yyyy-MM-dd');
           weekBookings[dayDate] = [];
+          
+          // Check for approved leave on this day
+          const dayLeave = leaveRequests.find(leave => 
+            leave.staff_id === member.id &&
+            leave.status === 'approved' &&
+            leave.start_date <= dayDate &&
+            leave.end_date >= dayDate
+          );
+          weekLeave[dayDate] = dayLeave || null;
         }
         
         // Group bookings by day
@@ -240,6 +250,7 @@ export function StaffScheduleCalendar({
           email: member.email,
           specialization: member.specialization,
           weekBookings,
+          weekLeave,
           totalWeekHours,
           contractedHours: 40
         };
@@ -738,7 +749,7 @@ export function StaffScheduleCalendar({
             {/* Status Legend */}
             <Card>
               <CardContent className="pt-4">
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-wrap items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300"></div>
                     <span>Assigned</span>
@@ -752,8 +763,10 @@ export function StaffScheduleCalendar({
                     <span>Done</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-red-100 border border-red-300"></div>
-                    <span>Leave</span>
+                    <div className="w-4 h-4 rounded bg-red-100 border border-red-300 flex items-center justify-center text-red-800 font-bold text-xs">
+                      A
+                    </div>
+                    <span>Leave (A=Annual, S=Sick, P=Personal, M=Maternity, PT=Paternity, E=Emergency)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-gray-100 border border-gray-300"></div>
@@ -773,6 +786,7 @@ export function StaffScheduleCalendar({
             bookings={bookings}
             clients={clients}
             carers={carers}
+            leaveRequests={leaveRequests}
             isLoading={false}
             onBookingClick={onViewBooking}
             onCreateBooking={(date, time, clientId, carerId) => {
@@ -869,6 +883,25 @@ export function StaffScheduleCalendar({
                       className="border-r last:border-r-0 p-2 min-h-[64px] flex-shrink-0 space-y-1"
                       style={{ width: SLOT_WIDTH }}
                     >
+                      {/* Show leave indicator if staff is on leave */}
+                      {staffMember.weekLeave && staffMember.weekLeave[header.dateString] && (
+                        <div className="mb-2 p-2 rounded bg-red-100 border border-red-300 text-center">
+                          <div className="text-xs font-semibold text-red-800">
+                            {staffMember.weekLeave[header.dateString].leave_type === 'annual' ? 'A' :
+                             staffMember.weekLeave[header.dateString].leave_type === 'sick' ? 'S' :
+                             staffMember.weekLeave[header.dateString].leave_type === 'personal' ? 'P' :
+                             staffMember.weekLeave[header.dateString].leave_type === 'maternity' ? 'M' :
+                             staffMember.weekLeave[header.dateString].leave_type === 'paternity' ? 'PT' :
+                             staffMember.weekLeave[header.dateString].leave_type === 'emergency' ? 'E' : 'L'}
+                          </div>
+                          <div className="text-[9px] text-red-700 mt-0.5">
+                            {staffMember.weekLeave[header.dateString].leave_type.charAt(0).toUpperCase() + 
+                             staffMember.weekLeave[header.dateString].leave_type.slice(1)} Leave
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Show bookings */}
                       {(staffMember.weekBookings[header.dateString] || []).map((booking: Booking) => (
                         <Tooltip key={booking.id}>
                           <TooltipTrigger asChild>
@@ -889,7 +922,10 @@ export function StaffScheduleCalendar({
                           </TooltipContent>
                         </Tooltip>
                       ))}
-                      {(staffMember.weekBookings[header.dateString] || []).length === 0 && (
+                      
+                      {/* Show "Available" only if no bookings AND no leave */}
+                      {(staffMember.weekBookings[header.dateString] || []).length === 0 && 
+                       (!staffMember.weekLeave || !staffMember.weekLeave[header.dateString]) && (
                         <div className="text-xs text-muted-foreground text-center pt-4">Available</div>
                       )}
                     </div>

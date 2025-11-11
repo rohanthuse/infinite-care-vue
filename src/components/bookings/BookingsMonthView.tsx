@@ -35,11 +35,21 @@ export interface Carer {
   bookings?: Booking[];
 }
 
+interface LeaveRequest {
+  staff_id: string;
+  staff_name?: string;
+  leave_type: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+}
+
 interface BookingsMonthViewProps {
   date: Date;
   bookings: Booking[];
   clients: Client[];
   carers: Carer[];
+  leaveRequests?: LeaveRequest[];
   isLoading?: boolean;
   onBookingClick?: (booking: Booking) => void;
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
@@ -53,6 +63,7 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
   bookings,
   clients,
   carers,
+  leaveRequests = [],
   isLoading = false,
   onBookingClick,
   onCreateBooking,
@@ -76,6 +87,24 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
   const getBookingsForDay = (day: Date): Booking[] => {
     const dayString = format(day, "yyyy-MM-dd");
     return bookings.filter((booking) => booking.date === dayString);
+  };
+
+  // Get leave for a specific day (for staff members)
+  const getLeaveForDay = (day: Date): Array<{staffName: string, leaveType: string, staffId: string}> => {
+    if (!leaveRequests) return [];
+    
+    const dayString = format(day, "yyyy-MM-dd");
+    return leaveRequests
+      .filter((leave) => 
+        leave.status === 'approved' &&
+        leave.start_date <= dayString &&
+        leave.end_date >= dayString
+      )
+      .map(leave => ({
+        staffName: leave.staff_name || 'Unknown',
+        leaveType: leave.leave_type,
+        staffId: leave.staff_id
+      }));
   };
 
   // Get status color for booking
@@ -146,6 +175,7 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
         <div className="grid grid-cols-7 gap-2">
           {calendarDays.map((day) => {
             const dayBookings = getBookingsForDay(day);
+            const dayLeave = getLeaveForDay(day);
             const isCurrentMonth = isSameMonth(day, date);
             const isTodayDate = isToday(day);
             const visibleBookings = dayBookings.slice(0, MAX_VISIBLE_BOOKINGS);
@@ -176,15 +206,40 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                   >
                     {format(day, "d")}
                   </span>
-                  {dayBookings.length > 0 && (
+                  {(dayBookings.length > 0 || dayLeave.length > 0) && (
                     <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                      {dayBookings.length}
+                      {dayBookings.length + dayLeave.length}
                     </span>
                   )}
                 </div>
 
-                {/* Bookings list */}
+                {/* Bookings and Leave list */}
                 <div className="space-y-1">
+                  {/* Leave indicators */}
+                  {dayLeave.map((leave) => (
+                    <div
+                      key={leave.staffId}
+                      className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm text-white border-l-2 bg-red-400 border-red-600"
+                      title={`${leave.staffName} - ${leave.leaveType} leave`}
+                    >
+                      <div className="font-semibold truncate flex items-center gap-1">
+                        <span className="bg-white text-red-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          {leave.leaveType === 'annual' ? 'A' :
+                           leave.leaveType === 'sick' ? 'S' :
+                           leave.leaveType === 'personal' ? 'P' :
+                           leave.leaveType === 'maternity' ? 'M' :
+                           leave.leaveType === 'paternity' ? 'PT' :
+                           leave.leaveType === 'emergency' ? 'E' : 'L'}
+                        </span>
+                        <span className="truncate">{leave.staffName}</span>
+                      </div>
+                      <div className="text-[10px] opacity-90 ml-5">
+                        {leave.leaveType.charAt(0).toUpperCase() + leave.leaveType.slice(1)} Leave
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Bookings */}
                   {visibleBookings.map((booking) => (
                     <div
                       key={booking.id}
@@ -220,7 +275,7 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                   )}
 
                   {/* Empty state - add booking button */}
-                  {dayBookings.length === 0 && isCurrentMonth && (
+                  {dayBookings.length === 0 && dayLeave.length === 0 && isCurrentMonth && (
                     <button
                       onClick={() => onCreateBooking?.(day, "08:00", undefined, undefined)}
                       className="w-full text-[10px] text-muted-foreground hover:text-primary px-1.5 py-1 rounded border border-dashed border-border hover:border-primary transition-colors opacity-0 hover:opacity-100"
