@@ -56,11 +56,14 @@ const fetchSafeguardingData = async (branchId: string): Promise<{
       recorded_by_staff_id,
       clients!inner (
         id,
-        full_name,
+        first_name,
+        last_name,
         branch_id
       ),
       staff:recorded_by_staff_id (
-        full_name
+        id,
+        first_name,
+        last_name
       )
     `)
     .eq('clients.branch_id', branchId)
@@ -121,12 +124,16 @@ const fetchSafeguardingData = async (branchId: string): Promise<{
     return {
       id: event.id,
       client_id: event.client_id,
-      client_name: (event.clients as any)?.full_name || 'Unknown',
+      client_name: event.clients 
+        ? `${event.clients.first_name} ${event.clients.last_name}`.trim() 
+        : 'Unknown',
       concern_type: event.event_type.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       severity: event.severity,
       description: event.description || 'No description provided',
       reported_date: event.created_at,
-      reported_by: (event.staff as any)?.full_name || 'Unknown',
+      reported_by: event.staff 
+        ? `${event.staff.first_name} ${event.staff.last_name}`.trim() 
+        : 'Unknown',
       investigation_status: investigationStatus,
       investigation_notes: undefined,
       action_plan: undefined,

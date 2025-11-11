@@ -51,7 +51,8 @@ const fetchCarePlanCompletionData = async (branchId: string): Promise<{
       review_date,
       clients!inner (
         id,
-        full_name,
+        first_name,
+        last_name,
         branch_id
       )
     `)
@@ -96,7 +97,9 @@ const fetchCarePlanCompletionData = async (branchId: string): Promise<{
     return {
       id: cp.id,
       client_id: cp.client_id,
-      client_name: (cp.clients as any)?.full_name || 'Unknown',
+      client_name: (cp.clients as any) 
+        ? `${(cp.clients as any).first_name} ${(cp.clients as any).last_name}`.trim() 
+        : 'Unknown',
       status: cp.status,
       created_at: cp.created_at,
       updated_at: cp.updated_at,
