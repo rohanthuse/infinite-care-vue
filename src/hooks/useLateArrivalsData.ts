@@ -79,7 +79,7 @@ export const useLateArrivalsData = ({
         query = query.lte('booking.start_time', endDate);
       }
 
-      const { data: visits, error } = await query.order('booking.start_time', { ascending: false });
+      const { data: visits, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('[useLateArrivalsData] Error:', error);
@@ -100,6 +100,12 @@ export const useLateArrivalsData = ({
           recentLateArrivals: [],
         };
       }
+
+      // Sort by booking start time (most recent first)
+      visits.sort((a, b) => {
+        if (!a.booking?.[0]?.start_time || !b.booking?.[0]?.start_time) return 0;
+        return new Date(b.booking[0].start_time).getTime() - new Date(a.booking[0].start_time).getTime();
+      });
 
       // Calculate late arrivals (more than 15 minutes late)
       const lateThresholdMinutes = 15;
