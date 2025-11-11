@@ -3,6 +3,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInte
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DayBookingsDialog } from "./DayBookingsDialog";
+import { AnnualLeave } from "@/hooks/useLeaveManagement";
 
 export interface Booking {
   id: string;
@@ -50,6 +51,7 @@ interface BookingsMonthViewProps {
   clients: Client[];
   carers: Carer[];
   leaveRequests?: LeaveRequest[];
+  holidays?: AnnualLeave[];
   isLoading?: boolean;
   onBookingClick?: (booking: Booking) => void;
   onCreateBooking?: (date: Date, time: string, clientId?: string, carerId?: string) => void;
@@ -64,6 +66,7 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
   clients,
   carers,
   leaveRequests = [],
+  holidays = [],
   isLoading = false,
   onBookingClick,
   onCreateBooking,
@@ -105,6 +108,14 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
         leaveType: leave.leave_type,
         staffId: leave.staff_id
       }));
+  };
+
+  // Get holiday for a specific day
+  const getHolidayForDay = (day: Date): AnnualLeave | null => {
+    if (!holidays) return null;
+    
+    const dayString = format(day, "yyyy-MM-dd");
+    return holidays.find(holiday => holiday.leave_date === dayString) || null;
   };
 
   // Get status color for booking
@@ -204,19 +215,43 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                         : "text-muted-foreground"
                     )}
                   >
-                    {format(day, "d")}
+                  {format(day, "d")}
+                </span>
+                {(dayBookings.length > 0 || dayLeave.length > 0 || getHolidayForDay(day)) && (
+                  <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                    {dayBookings.length + dayLeave.length + (getHolidayForDay(day) ? 1 : 0)}
                   </span>
-                  {(dayBookings.length > 0 || dayLeave.length > 0) && (
-                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                      {dayBookings.length + dayLeave.length}
-                    </span>
-                  )}
-                </div>
+                )}
+              </div>
 
-                {/* Bookings and Leave list */}
-                <div className="space-y-1">
-                  {/* Leave indicators */}
-                  {dayLeave.map((leave) => (
+              {/* Bookings, Holidays, and Leave list */}
+              <div className="space-y-1">
+                {/* Holiday indicator (FIRST) */}
+                {(() => {
+                  const dayHoliday = getHolidayForDay(day);
+                  if (dayHoliday) {
+                    return (
+                      <div
+                        className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm border-l-2 bg-purple-400 border-purple-600 text-white"
+                        title={`${dayHoliday.leave_name}${dayHoliday.is_company_wide ? ' (Company-wide)' : ''}`}
+                      >
+                        <div className="font-semibold truncate flex items-center gap-1">
+                          <span className="bg-white text-purple-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                            H
+                          </span>
+                          <span className="truncate">{dayHoliday.leave_name}</span>
+                        </div>
+                        {dayHoliday.is_company_wide && (
+                          <div className="text-[10px] opacity-90 ml-5">Company-wide Holiday</div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+                
+                {/* Leave indicators (SECOND) */}
+                {dayLeave.map((leave) => (
                     <div
                       key={leave.staffId}
                       className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm text-white border-l-2 bg-red-400 border-red-600"
@@ -274,16 +309,16 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                     </button>
                   )}
 
-                  {/* Empty state - add booking button */}
-                  {dayBookings.length === 0 && dayLeave.length === 0 && isCurrentMonth && (
-                    <button
-                      onClick={() => onCreateBooking?.(day, "08:00", undefined, undefined)}
-                      className="w-full text-[10px] text-muted-foreground hover:text-primary px-1.5 py-1 rounded border border-dashed border-border hover:border-primary transition-colors opacity-0 hover:opacity-100"
-                    >
-                      + Add
-                    </button>
-                  )}
-                </div>
+                {/* Empty state - add booking button */}
+                {dayBookings.length === 0 && dayLeave.length === 0 && !getHolidayForDay(day) && isCurrentMonth && (
+                  <button
+                    onClick={() => onCreateBooking?.(day, "08:00", undefined, undefined)}
+                    className="w-full text-[10px] text-muted-foreground hover:text-primary px-1.5 py-1 rounded border border-dashed border-border hover:border-primary transition-colors opacity-0 hover:opacity-100"
+                  >
+                    + Add
+                  </button>
+                )}
+              </div>
               </div>
             );
           })}

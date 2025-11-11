@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
-import { useLeaveRequests } from "@/hooks/useLeaveManagement";
+import { useLeaveRequests, useAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
 import { useStaffUtilizationAnalytics, useEnhancedStaffSchedule } from "@/hooks/useStaffUtilizationAnalytics";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
@@ -133,6 +133,7 @@ export function StaffScheduleCalendar({
   // Fetch staff and leave data
   const { data: staff = [], isLoading: isLoadingStaff } = useBranchStaff(branchId || '');
   const { data: leaveRequests = [], isLoading: isLoadingLeave } = useLeaveRequests(branchId);
+  const { data: holidays = [], isLoading: isLoadingHolidays } = useAnnualLeave(branchId);
   
   // Fetch enhanced utilization data
   const { data: utilizationData = [], isLoading: isLoadingUtilization } = useStaffUtilizationAnalytics(branchId, date);
@@ -206,6 +207,7 @@ export function StaffScheduleCalendar({
       const scheduleData = staff.map(member => {
         const weekBookings: Record<string, Booking[]> = {};
         const weekLeave: Record<string, any> = {};
+        const weekHolidays: Record<string, AnnualLeave | null> = {};
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         
         // Initialize each weekday
@@ -221,6 +223,12 @@ export function StaffScheduleCalendar({
             leave.end_date >= dayDate
           );
           weekLeave[dayDate] = dayLeave || null;
+          
+          // Check for holidays on this day
+          const dayHoliday = holidays.find(holiday => 
+            holiday.leave_date === dayDate
+          );
+          weekHolidays[dayDate] = dayHoliday || null;
         }
         
         // Group bookings by day
@@ -244,16 +252,17 @@ export function StaffScheduleCalendar({
           return sum + duration;
         }, 0);
         
-        return {
-          id: member.id,
-          name: `${member.first_name} ${member.last_name}`,
-          email: member.email,
-          specialization: member.specialization,
-          weekBookings,
-          weekLeave,
-          totalWeekHours,
-          contractedHours: 40
-        };
+      return {
+        id: member.id,
+        name: `${member.first_name} ${member.last_name}`,
+        email: member.email,
+        specialization: member.specialization,
+        weekBookings,
+        weekLeave,
+        weekHolidays,
+        totalWeekHours,
+        contractedHours: 40
+      };
       });
       
       // Apply filters
@@ -763,6 +772,12 @@ export function StaffScheduleCalendar({
                     <span>Done</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-purple-100 border border-purple-300 flex items-center justify-center text-purple-800 font-bold text-xs">
+                      H
+                    </div>
+                    <span>Holiday</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-red-100 border border-red-300 flex items-center justify-center text-red-800 font-bold text-xs">
                       A
                     </div>
@@ -781,20 +796,21 @@ export function StaffScheduleCalendar({
       {/* Schedule Grid */}
       {viewType === 'monthly' ? (
         <ScrollArea className="h-full">
-          <BookingsMonthView
-            date={date}
-            bookings={bookings}
-            clients={clients}
-            carers={carers}
-            leaveRequests={leaveRequests}
-            isLoading={false}
-            onBookingClick={onViewBooking}
-            onCreateBooking={(date, time, clientId, carerId) => {
-              if (carerId && onCreateBooking) {
-                onCreateBooking(carerId, time);
-              }
-            }}
-          />
+        <BookingsMonthView
+          date={date}
+          bookings={bookings}
+          clients={clients}
+          carers={carers}
+          leaveRequests={leaveRequests}
+          holidays={holidays}
+          isLoading={false}
+          onBookingClick={onViewBooking}
+          onCreateBooking={(date, time, clientId, carerId) => {
+            if (carerId && onCreateBooking) {
+              onCreateBooking(carerId, time);
+            }
+          }}
+        />
         </ScrollArea>
       ) : (
         <div className="flex-1 min-h-0">
@@ -883,6 +899,23 @@ export function StaffScheduleCalendar({
                       className="border-r last:border-r-0 p-2 min-h-[64px] flex-shrink-0 space-y-1"
                       style={{ width: SLOT_WIDTH }}
                     >
+                      {/* Show holiday indicator (FIRST - at the very top) */}
+                      {staffMember.weekHolidays && staffMember.weekHolidays[header.dateString] && (
+                        <div className="mb-1 p-1.5 rounded bg-purple-100 border border-purple-300 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-xs font-semibold text-purple-800 bg-white rounded-full w-4 h-4 flex items-center justify-center">
+                              H
+                            </span>
+                            <span className="text-[9px] text-purple-700 truncate">
+                              {staffMember.weekHolidays[header.dateString].leave_name}
+                            </span>
+                          </div>
+                          {staffMember.weekHolidays[header.dateString].is_company_wide && (
+                            <div className="text-[8px] text-purple-600 mt-0.5">Company-wide</div>
+                          )}
+                        </div>
+                      )}
+                      
                       {/* Show leave indicator if staff is on leave */}
                       {staffMember.weekLeave && staffMember.weekLeave[header.dateString] && (
                         <div className="mb-2 p-2 rounded bg-red-100 border border-red-300 text-center">
@@ -923,9 +956,10 @@ export function StaffScheduleCalendar({
                         </Tooltip>
                       ))}
                       
-                      {/* Show "Available" only if no bookings AND no leave */}
+                       {/* Show "Available" only if no bookings, no leave, AND no holiday */}
                       {(staffMember.weekBookings[header.dateString] || []).length === 0 && 
-                       (!staffMember.weekLeave || !staffMember.weekLeave[header.dateString]) && (
+                       (!staffMember.weekLeave || !staffMember.weekLeave[header.dateString]) &&
+                       (!staffMember.weekHolidays || !staffMember.weekHolidays[header.dateString]) && (
                         <div className="text-xs text-muted-foreground text-center pt-4">Available</div>
                       )}
                     </div>
