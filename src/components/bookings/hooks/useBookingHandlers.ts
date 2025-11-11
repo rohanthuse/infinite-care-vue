@@ -293,8 +293,20 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     });
     
     // Enhanced validation first
+    console.log('[useBookingHandlers] Validating booking data:', {
+      fromDate: bookingData.fromDate,
+      schedules: bookingData.schedules.map((s: any) => ({
+        startTime: s.startTime,
+        endTime: s.endTime,
+        isOvernightCheck: s.startTime > s.endTime
+      }))
+    });
+    
     const validation = validateBookingFormData(bookingData);
+    console.log('[useBookingHandlers] Validation result:', validation);
+    
     if (!validation.isValid) {
+      console.error('[useBookingHandlers] Validation failed:', validation.errors);
       validation.errors.forEach(error => {
         toast.error("Booking Validation Failed", { description: error });
       });

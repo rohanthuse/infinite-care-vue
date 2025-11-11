@@ -58,17 +58,31 @@ export function validateBookingSchedule(schedule: BookingSchedule): BookingValid
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
     
-    if (startMinutes >= endMinutes) {
-      errors.push(`Start time (${schedule.startTime}) must be before end time (${schedule.endTime})`);
+    // Calculate duration (handle overnight bookings)
+    let durationMinutes = endMinutes - startMinutes;
+    const isOvernightBooking = durationMinutes < 0;
+    
+    if (isOvernightBooking) {
+      durationMinutes += 1440; // Add 24 hours (1440 minutes)
     }
     
-    // Check for reasonable booking duration
-    const durationMinutes = endMinutes - startMinutes;
+    // Validate: Duration must be at least 15 minutes and max 24 hours
     if (durationMinutes < 15) {
-      warnings.push(`Very short booking duration: ${durationMinutes} minutes`);
+      errors.push(`Booking duration too short: ${durationMinutes} minutes. Minimum is 15 minutes.`);
     }
-    if (durationMinutes > 480) { // 8 hours
-      warnings.push(`Very long booking duration: ${Math.round(durationMinutes / 60)} hours`);
+    
+    if (durationMinutes > 1440) {
+      errors.push(`Booking duration too long: ${Math.round(durationMinutes / 60)} hours. Maximum is 24 hours.`);
+    }
+    
+    // Check for reasonable booking duration - adjusted for overnight shifts
+    if (durationMinutes < 30 && durationMinutes >= 15) {
+      warnings.push(`Short booking duration: ${durationMinutes} minutes`);
+    }
+    
+    // For overnight bookings, provide helpful info
+    if (isOvernightBooking) {
+      console.log(`[validateBookingSchedule] Overnight booking detected: ${schedule.startTime} - ${schedule.endTime}, Duration: ${durationMinutes} minutes (${(durationMinutes / 60).toFixed(2)} hours)`);
     }
   }
   
@@ -204,8 +218,19 @@ export function validateBookingUpdate(updateData: {
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
     
-    if (startMinutes >= endMinutes) {
-      errors.push('Start time must be before end time');
+    // Calculate duration (handle overnight bookings)
+    let durationMinutes = endMinutes - startMinutes;
+    if (durationMinutes < 0) {
+      durationMinutes += 1440; // Add 24 hours for overnight bookings
+    }
+    
+    // Validate duration
+    if (durationMinutes < 15) {
+      errors.push('Booking duration must be at least 15 minutes');
+    }
+    
+    if (durationMinutes > 1440) {
+      errors.push('Booking duration cannot exceed 24 hours');
     }
   }
   
