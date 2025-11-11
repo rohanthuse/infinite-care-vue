@@ -142,7 +142,7 @@ export function ViewBookingDialog({
   const startTimeDate = booking?.start_time ? parseISO(booking.start_time) : null;
   const endTimeDate = booking?.end_time ? parseISO(booking.end_time) : null;
 
-  // Calculate duration from time strings to avoid timezone issues
+  // Calculate duration from time strings to avoid timezone issues (handles overnight bookings)
   const durationInMinutes = React.useMemo(() => {
     if (!startTimeStr || !endTimeStr) return null;
     
@@ -153,7 +153,14 @@ export function ViewBookingDialog({
       const startMinutes = startHour * 60 + startMin;
       const endMinutes = endHour * 60 + endMin;
       
-      return endMinutes - startMinutes;
+      let durationMinutes = endMinutes - startMinutes;
+      
+      // Handle overnight bookings (when end time is earlier than start time)
+      if (durationMinutes < 0) {
+        durationMinutes += 1440; // Add 24 hours (1440 minutes)
+      }
+      
+      return durationMinutes;
     } catch (error) {
       console.error('[ViewBookingDialog] Error calculating duration:', error);
       return null;
@@ -414,11 +421,25 @@ export function ViewBookingDialog({
                 </span>
               </div>
               {durationInMinutes && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Duration:</span>
-                  <span className="text-sm font-medium">
-                    {durationInMinutes} minutes
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">
+                      {Math.floor(durationInMinutes / 60)}h {durationInMinutes % 60 > 0 ? `${durationInMinutes % 60}m` : ''}
+                    </span>
+                    {(() => {
+                      const [startHour] = (startTimeStr || '').split(':').map(Number);
+                      const [endHour] = (endTimeStr || '').split(':').map(Number);
+                      if (endHour < startHour) {
+                        return (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            Overnight
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                 </div>
               )}
             </div>
