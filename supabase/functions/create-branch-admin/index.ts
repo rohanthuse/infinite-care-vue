@@ -73,35 +73,51 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Step 1: Create the auth user
-    const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true, // Auto-confirm for admins
-      user_metadata: {
-        first_name,
-        last_name,
-      },
-    });
+    // Step 1: Check if user already exists, create if not
+    let newUserId: string;
+    let isNewUser = false;
 
-    if (createUserError || !authData.user) {
-      console.error('Failed to create user:', createUserError);
-      return new Response(
-        JSON.stringify({ error: `Failed to create user: ${createUserError?.message || 'Unknown error'}` }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // First, try to find existing user by email
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
+
+    if (existingUser) {
+      console.log('User already exists, using existing user:', existingUser.id);
+      newUserId = existingUser.id;
+    } else {
+      // Create new user
+      const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true, // Auto-confirm for admins
+        user_metadata: {
+          first_name,
+          last_name,
+        },
+      });
+
+      if (createUserError || !authData.user) {
+        console.error('Failed to create user:', createUserError);
+        return new Response(
+          JSON.stringify({ error: `Failed to create user: ${createUserError?.message || 'Unknown error'}` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      newUserId = authData.user.id;
+      isNewUser = true;
+      console.log('User created successfully:', newUserId);
     }
 
-    const newUserId = authData.user.id;
-    console.log('User created successfully:', newUserId);
-
     try {
-      // Step 2: Assign branch_admin role
+      // Step 2: Assign branch_admin role (upsert to handle existing users)
       const { error: roleAssignError } = await supabaseAdmin
         .from('user_roles')
-        .insert({
+        .upsert({
           user_id: newUserId,
           role: 'branch_admin',
+        }, {
+          onConflict: 'user_id,role'
         });
 
       if (roleAssignError) {
@@ -111,7 +127,7 @@ Deno.serve(async (req) => {
 
       console.log('Role assigned successfully');
 
-      // Step 3: Create admin-branch associations
+      // Step 3: Create admin-branch associations (upsert to handle existing associations)
       const branchAssociations = branch_ids.map(branchId => ({
         admin_id: newUserId,
         branch_id: branchId,
@@ -119,14 +135,16 @@ Deno.serve(async (req) => {
 
       const { error: branchAssocError } = await supabaseAdmin
         .from('admin_branches')
-        .insert(branchAssociations);
+        .upsert(branchAssociations, {
+          onConflict: 'admin_id,branch_id'
+        });
 
       if (branchAssocError) {
         console.error('Failed to create branch associations:', branchAssocError);
         throw new Error(`Failed to create branch associations: ${branchAssocError.message}`);
       }
 
-      console.log(`Branch associations created for ${branch_ids.length} branches`);
+      console.log(`Branch associations created/updated for ${branch_ids.length} branches`);
 
       // Step 4: Get organization IDs and create organization memberships
       const { data: branchData, error: branchDataError } = await supabaseAdmin
@@ -150,12 +168,14 @@ Deno.serve(async (req) => {
 
           const { error: orgMemberError } = await supabaseAdmin
             .from('organization_members')
-            .insert(orgMemberships);
+            .upsert(orgMemberships, {
+              onConflict: 'organization_id,user_id'
+            });
 
           if (orgMemberError) {
             console.warn('Organization membership creation warning:', orgMemberError);
           } else {
-            console.log(`Organization memberships created for ${uniqueOrgIds.length} organizations`);
+            console.log(`Organization memberships created/updated for ${uniqueOrgIds.length} organizations`);
           }
         }
       }
@@ -170,62 +190,69 @@ Deno.serve(async (req) => {
       if (!existingProfile) {
         const { error: profileError } = await supabaseAdmin
           .from('profiles')
-          .insert({
+          .upsert({
             id: newUserId,
             email,
             first_name,
             last_name,
+          }, {
+            onConflict: 'id'
           });
 
         if (profileError) {
           console.warn('Profile creation warning:', profileError);
         } else {
-          console.log('Profile created successfully');
+          console.log('Profile created/updated successfully');
         }
       }
 
-      console.log('Branch admin creation completed successfully');
+      console.log('Branch admin setup completed successfully');
 
-      // Step 6: Send welcome email
-      try {
-        const emailResponse = await supabaseAdmin.functions.invoke('send-welcome-email', {
-          body: {
-            email,
-            first_name,
-            last_name,
-            temporary_password: password,
-            role: 'Branch Administrator',
-          },
-        });
+      // Step 6: Send welcome email (only for new users)
+      if (isNewUser) {
+        try {
+          const emailResponse = await supabaseAdmin.functions.invoke('send-welcome-email', {
+            body: {
+              email,
+              first_name,
+              last_name,
+              temporary_password: password,
+              role: 'Branch Administrator',
+            },
+          });
 
-        if (emailResponse.error) {
-          console.warn('Failed to send welcome email:', emailResponse.error);
-          // Don't fail the entire operation if email fails
-        } else {
-          console.log('Welcome email sent successfully');
+          if (emailResponse.error) {
+            console.warn('Failed to send welcome email:', emailResponse.error);
+            // Don't fail the entire operation if email fails
+          } else {
+            console.log('Welcome email sent successfully');
+          }
+        } catch (emailError) {
+          console.warn('Email sending error (non-fatal):', emailError);
         }
-      } catch (emailError) {
-        console.warn('Email sending error (non-fatal):', emailError);
       }
 
       return new Response(
         JSON.stringify({
           success: true,
           user_id: newUserId,
-          message: 'Branch admin created successfully',
+          message: isNewUser ? 'Branch admin created successfully' : 'Branch admin updated successfully',
+          is_new_user: isNewUser,
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
     } catch (error) {
-      // Cleanup: Delete the user if any step fails
+      // Cleanup: Delete the user if any step fails (only for newly created users)
       console.error('Error during admin setup, attempting cleanup:', error);
       
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(newUserId);
-        console.log('User deleted during cleanup');
-      } catch (deleteError) {
-        console.error('Failed to delete user during cleanup:', deleteError);
+      if (isNewUser) {
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(newUserId);
+          console.log('User deleted during cleanup');
+        } catch (deleteError) {
+          console.error('Failed to delete user during cleanup:', deleteError);
+        }
       }
 
       throw error;
