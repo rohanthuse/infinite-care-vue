@@ -58,6 +58,7 @@ export function AdminServiceReportsTab({
   });
   const [reviewNotes, setReviewNotes] = useState('');
   const [visibleToClient, setVisibleToClient] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [createReportOpen, setCreateReportOpen] = useState(false);
   const [editReportDialog, setEditReportDialog] = useState<{ open: boolean; report: any }>({
     open: false,
@@ -89,16 +90,23 @@ export function AdminServiceReportsTab({
   const revisionReports = reports.filter(r => r.status === 'requires_revision');
 
   const handleReview = (report: any, status: 'approved' | 'rejected' | 'requires_revision') => {
+    console.log('[handleReview] Called with:', { reportId: report?.id, status });
+    
     // Safety check
     if (!report || !report.id) {
-      console.error('Invalid report data');
+      console.error('[handleReview] Invalid report data:', report);
       return;
     }
     
-    // Prevent multiple simultaneous calls
-    if (reviewReport.isPending) {
+    // Prevent multiple simultaneous calls with local lock
+    if (isSubmitting || reviewReport.isPending) {
+      console.warn('[handleReview] Already submitting, ignoring click');
       return;
     }
+    
+    // Set local lock immediately
+    setIsSubmitting(true);
+    console.log('[handleReview] Lock acquired, starting mutation');
     
     reviewReport.mutate({
       id: report.id,
@@ -106,13 +114,32 @@ export function AdminServiceReportsTab({
       reviewNotes: reviewNotes || undefined,
       visibleToClient: status === 'approved' ? visibleToClient : false
     }, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        console.log('[handleReview] Success:', data);
         setReviewDialog({ open: false, report: null });
         setReviewNotes('');
         setVisibleToClient(true);
+        setIsSubmitting(false);
+      },
+      onError: (error: any) => {
+        console.error('[handleReview] Error:', error);
+        setIsSubmitting(false);
+      },
+      onSettled: () => {
+        console.log('[handleReview] Settled, releasing lock');
+        setIsSubmitting(false);
       }
     });
   };
+
+  // Reset state when dialog closes
+  React.useEffect(() => {
+    if (!reviewDialog.open) {
+      setIsSubmitting(false);
+      setReviewNotes('');
+      setVisibleToClient(true);
+    }
+  }, [reviewDialog.open]);
 
   const openReviewDialog = (report: any) => {
     setReviewDialog({ open: true, report });
@@ -226,9 +253,27 @@ export function AdminServiceReportsTab({
       {/* Review Dialog */}
       <Dialog 
         open={reviewDialog.open} 
-        onOpenChange={(open) => setReviewDialog({ open, report: null })}
+        onOpenChange={(open) => {
+          if (!open && (isSubmitting || reviewReport.isPending)) {
+            console.warn('Cannot close dialog while submitting');
+            return;
+          }
+          setReviewDialog({ open, report: null });
+          setReviewNotes('');
+          setVisibleToClient(true);
+          setIsSubmitting(false);
+        }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto relative">
+          {(isSubmitting || reviewReport.isPending) && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
+              <div className="text-center space-y-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm font-medium">Processing review...</p>
+              </div>
+            </div>
+          )}
+          
           <DialogHeader>
             <DialogTitle>Review Service Report</DialogTitle>
             <DialogDescription>
@@ -284,14 +329,14 @@ export function AdminServiceReportsTab({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (reviewDialog.report && !reviewReport.isPending) {
+                if (reviewDialog.report && !isSubmitting && !reviewReport.isPending) {
                   handleReview(reviewDialog.report, 'rejected');
                 }
               }}
-              disabled={reviewReport.isPending}
+              disabled={isSubmitting || reviewReport.isPending}
             >
               <XCircle className="h-4 w-4 mr-2" />
-              {reviewReport.isPending ? 'Processing...' : 'Reject'}
+              {(isSubmitting || reviewReport.isPending) ? 'Processing...' : 'Reject'}
             </Button>
             <Button
               type="button"
@@ -299,28 +344,28 @@ export function AdminServiceReportsTab({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (reviewDialog.report && !reviewReport.isPending) {
+                if (reviewDialog.report && !isSubmitting && !reviewReport.isPending) {
                   handleReview(reviewDialog.report, 'requires_revision');
                 }
               }}
-              disabled={reviewReport.isPending}
+              disabled={isSubmitting || reviewReport.isPending}
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
-              {reviewReport.isPending ? 'Processing...' : 'Request Revision'}
+              {(isSubmitting || reviewReport.isPending) ? 'Processing...' : 'Request Revision'}
             </Button>
             <Button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (reviewDialog.report && !reviewReport.isPending) {
+                if (reviewDialog.report && !isSubmitting && !reviewReport.isPending) {
                   handleReview(reviewDialog.report, 'approved');
                 }
               }}
-              disabled={reviewReport.isPending}
+              disabled={isSubmitting || reviewReport.isPending}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {reviewReport.isPending ? 'Processing...' : 'Approve'}
+              {(isSubmitting || reviewReport.isPending) ? 'Processing...' : 'Approve'}
             </Button>
           </DialogFooter>
         </DialogContent>
