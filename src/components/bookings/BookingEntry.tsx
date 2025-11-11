@@ -64,11 +64,18 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     });
   };
   
-  // Calculate booking duration
+  // Calculate booking duration (handles overnight bookings)
   const calculateDuration = () => {
     const [startHour, startMin] = booking.startTime.split(':').map(Number);
     const [endHour, endMin] = booking.endTime.split(':').map(Number);
-    const durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+    
+    let durationMinutes = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+    
+    // Handle overnight bookings (when end time is earlier than start time)
+    if (durationMinutes < 0) {
+      durationMinutes += 1440; // Add 24 hours (1440 minutes)
+    }
+    
     const hours = Math.floor(durationMinutes / 60);
     const minutes = durationMinutes % 60;
     return `${hours}h ${minutes > 0 ? `${minutes}m` : ''}`.trim();

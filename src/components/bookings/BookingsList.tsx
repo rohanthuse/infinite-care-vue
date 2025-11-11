@@ -289,12 +289,18 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     try {
       // Format bookings data for export
       const exportData = filteredBookings.map(booking => {
-        // Calculate duration
+        // Calculate duration (handle overnight bookings)
         const startParts = booking.startTime.split(':').map(Number);
         const endParts = booking.endTime.split(':').map(Number);
         const startMins = startParts[0] * 60 + startParts[1];
         const endMins = endParts[0] * 60 + endParts[1];
-        const durationMins = endMins - startMins;
+        
+        let durationMins = endMins - startMins;
+        // Handle overnight bookings
+        if (durationMins < 0) {
+          durationMins += 1440; // Add 24 hours
+        }
+        
         const hours = Math.floor(durationMins / 60);
         const mins = durationMins % 60;
         const duration = `${hours}h ${mins > 0 ? `${mins}m` : ''}`.trim();
@@ -417,12 +423,18 @@ export const BookingsList: React.FC<BookingsListProps> = ({
           <TableBody>
             {paginatedBookings.length > 0 ? (
               paginatedBookings.map((booking) => {
-                // Calculate duration in minutes
+                // Calculate duration in minutes (handle overnight bookings)
                 const startParts = booking.startTime.split(':').map(Number);
                 const endParts = booking.endTime.split(':').map(Number);
                 const startMins = startParts[0] * 60 + startParts[1];
                 const endMins = endParts[0] * 60 + endParts[1];
-                const durationMins = endMins - startMins;
+                
+                let durationMins = endMins - startMins;
+                // Handle overnight bookings
+                if (durationMins < 0) {
+                  durationMins += 1440; // Add 24 hours
+                }
+                
                 const hours = Math.floor(durationMins / 60);
                 const mins = durationMins % 60;
                 const durationText = `${hours}h ${mins > 0 ? `${mins}m` : ''}`;
