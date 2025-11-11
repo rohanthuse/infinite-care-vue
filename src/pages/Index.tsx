@@ -57,6 +57,13 @@ const Index = () => {
 
   // PHASE 2 & 7: Background redirect with protection against double redirects
   useEffect(() => {
+    // CRITICAL: Skip redirect logic if recovery tokens are present
+    const hash = window.location.hash;
+    if (hash.includes('type=recovery') && hash.includes('access_token')) {
+      console.log('[Index] Recovery tokens detected, skipping authenticated redirect logic');
+      return; // Exit early - let the recovery redirect handle this
+    }
+
     // PHASE 7: Check if redirect is already in progress
     const redirectInProgress = sessionStorage.getItem('redirect_in_progress') === 'true';
     if (redirectInProgress) {
