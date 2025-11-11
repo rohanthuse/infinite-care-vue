@@ -102,8 +102,8 @@ const SuperAdminLogin = () => {
       if (error) throw error;
       
       toast({
-        title: "Email Sent",
-        description: "Password reset link sent to your email. Please check your inbox.",
+        title: "Password Reset Email Sent",
+        description: "Check your email and click the reset link within 1 hour. Don't forget to check your spam folder.",
       });
     } catch (error: any) {
       console.error('[SuperAdminLogin] Password reset error:', error);

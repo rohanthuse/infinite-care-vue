@@ -35,12 +35,25 @@ const ResetPassword = () => {
 
         if (error) {
           console.error('[ResetPassword] Session error:', error);
-          toast.error("Invalid or expired reset link");
-          setTimeout(() => navigate('/login'), 2000);
+          toast.error("Invalid or expired reset link. Please request a new one.", {
+            duration: 5000,
+            action: {
+              label: "Request New Link",
+              onClick: () => navigate('/login')
+            }
+          });
+          setTimeout(() => navigate('/login'), 5000);
         }
       } else {
-        toast.error("Invalid reset link");
-        setTimeout(() => navigate('/login'), 2000);
+        console.error('[ResetPassword] Missing token or invalid type:', { hasToken: !!accessToken, type });
+        toast.error("Invalid reset link. Please request a new password reset.", {
+          duration: 5000,
+          action: {
+            label: "Go to Login",
+            onClick: () => navigate('/login')
+          }
+        });
+        setTimeout(() => navigate('/login'), 5000);
       }
     };
 
@@ -111,9 +124,15 @@ const ResetPassword = () => {
 
     } catch (error: any) {
       console.error('[ResetPassword] Error:', error);
-      if (error.message?.includes('session')) {
-        toast.error("Session expired. Please request a new password reset link.");
-        setTimeout(() => navigate('/login'), 2000);
+      if (error.message?.includes('session') || error.message?.includes('token') || error.message?.includes('expired')) {
+        toast.error("Your reset link has expired. Please request a new one.", {
+          duration: 5000,
+          action: {
+            label: "Request New Link",
+            onClick: () => navigate('/login')
+          }
+        });
+        setTimeout(() => navigate('/login'), 5000);
       } else {
         toast.error(error.message || "Failed to reset password. Please try again.");
       }

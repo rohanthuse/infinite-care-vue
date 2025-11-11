@@ -47,11 +47,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Generate password reset link with custom redirect
     const defaultRedirectTo = `${Deno.env.get("SITE_URL") || "https://med-infinite.care"}/reset-password`;
+    const finalRedirectUrl = redirectTo || defaultRedirectTo;
+    
+    console.log('[send-password-reset] Using redirect URL:', finalRedirectUrl);
+    
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: email,
       options: {
-        redirectTo: redirectTo || defaultRedirectTo
+        redirectTo: finalRedirectUrl
       }
     });
 
@@ -62,6 +66,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     const resetLink = data.properties.action_link;
     console.log('[send-password-reset] Reset link generated successfully');
+    console.log('[send-password-reset] Reset link structure:', {
+      hasToken: resetLink.includes('token='),
+      hasType: resetLink.includes('type=recovery'),
+      redirectUrl: finalRedirectUrl
+    });
 
     // Create branded email content
     const emailContent = `
