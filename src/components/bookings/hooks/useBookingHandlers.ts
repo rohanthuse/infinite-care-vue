@@ -236,7 +236,23 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         payload.start_time = createBookingDateTime(bookingToUpdate.date, bookingToUpdate.startTime);
     }
     if (bookingToUpdate.date && bookingToUpdate.endTime) {
-        payload.end_time = createBookingDateTime(bookingToUpdate.date, bookingToUpdate.endTime);
+        // Check if overnight booking (end time before start time)
+        const [startHour] = bookingToUpdate.startTime.split(':').map(Number);
+        const [endHour] = bookingToUpdate.endTime.split(':').map(Number);
+        
+        let endDate = bookingToUpdate.date;
+        if (endHour < startHour || (endHour === startHour && bookingToUpdate.endTime < bookingToUpdate.startTime)) {
+          // Overnight booking - add one day to end date
+          const dateObj = new Date(bookingToUpdate.date + 'T00:00:00');
+          dateObj.setDate(dateObj.getDate() + 1);
+          endDate = format(dateObj, 'yyyy-MM-dd');
+          console.log('[useBookingHandlers] Overnight booking detected, adjusting end date:', { 
+            originalDate: bookingToUpdate.date, 
+            adjustedEndDate: endDate 
+          });
+        }
+        
+        payload.end_time = createBookingDateTime(endDate, bookingToUpdate.endTime);
     }
 
     updateBookingMutation.mutate({ bookingId: bookingToUpdate.id, updatedData: payload }, {

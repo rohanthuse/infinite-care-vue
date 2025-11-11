@@ -137,29 +137,50 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
       return true;
     }
 
-    // CRITICAL: Validate time range
-    if (startTime && endTime && startTime >= endTime) {
-      setHasValidationErrors(true);
-      setValidationMessage("End time must be after start time");
-      return false;
-    }
-
-    // Check business hours
-    if (startTime) {
-      const [hour] = startTime.split(':').map(Number);
-      if (hour < 6 || hour >= 22) {
+    // CRITICAL: Validate time range with overnight booking support
+    if (startTime && endTime) {
+      const [startHour, startMin] = startTime.split(':').map(Number);
+      const [endHour, endMin] = endTime.split(':').map(Number);
+      
+      const startMinutes = startHour * 60 + startMin;
+      const endMinutes = endHour * 60 + endMin;
+      
+      // Check if this is an overnight booking (crosses midnight)
+      const isOvernightBooking = endMinutes < startMinutes;
+      
+      // Calculate duration
+      let durationMinutes = endMinutes - startMinutes;
+      if (isOvernightBooking) {
+        durationMinutes += 1440; // Add 24 hours (1440 minutes)
+      }
+      
+      // Validate: Duration must be at least 30 minutes and max 24 hours
+      if (durationMinutes < 30) {
         setHasValidationErrors(true);
-        setValidationMessage("Bookings must be between 06:00 and 22:00");
+        setValidationMessage("Booking duration must be at least 30 minutes");
         return false;
       }
-    }
-
-    if (endTime) {
-      const [hour] = endTime.split(':').map(Number);
-      if (hour > 22) {
+      
+      if (durationMinutes > 1440) {
         setHasValidationErrors(true);
-        setValidationMessage("Bookings must end by 22:00");
+        setValidationMessage("Booking duration cannot exceed 24 hours");
         return false;
+      }
+      
+      // Business hours validation (only for start time)
+      if (startHour < 6 || startHour >= 22) {
+        setHasValidationErrors(true);
+        setValidationMessage("Bookings must start between 06:00 and 22:00");
+        return false;
+      }
+      
+      // For overnight bookings, log for debugging
+      if (isOvernightBooking) {
+        console.log('[EditBookingDialog] Overnight booking detected:', {
+          startTime,
+          endTime,
+          durationHours: (durationMinutes / 60).toFixed(2)
+        });
       }
     }
 
@@ -229,33 +250,33 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
     }
   };
   
-  // Calculate duration between start and end times
+  // Calculate duration between start and end times (handles overnight bookings)
   const calculateDuration = (): string => {
     if (!startTime || !endTime) return "";
     
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
     
-    let durationHours = endHour - startHour;
-    let durationMinutes = endMin - startMin;
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
     
+    // Calculate duration with overnight support
+    let durationMinutes = endMinutes - startMinutes;
     if (durationMinutes < 0) {
-      durationHours -= 1;
-      durationMinutes += 60;
+      durationMinutes += 1440; // Add 24 hours for overnight bookings
     }
     
-    if (durationHours < 0) {
-      durationHours += 24;
+    const hours = Math.floor(durationMinutes / 60);
+    const minutes = durationMinutes % 60;
+    
+    const hoursText = hours > 0 ? `${hours} hour${hours !== 1 ? 's' : ''}` : '';
+    const minutesText = minutes > 0 ? `${minutes} minute${minutes !== 1 ? 's' : ''}` : '';
+    
+    if (hoursText && minutesText) {
+      return `${hoursText} and ${minutesText}`;
     }
     
-    const hours = durationHours > 0 ? `${durationHours} hour${durationHours !== 1 ? 's' : ''}` : '';
-    const minutes = durationMinutes > 0 ? `${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''}` : '';
-    
-    if (hours && minutes) {
-      return `${hours} and ${minutes}`;
-    }
-    
-    return hours || minutes || "0 minutes";
+    return hoursText || minutesText || "0 minutes";
   };
   
   // CRITICAL: Handle save button click with strict validation
@@ -431,6 +452,35 @@ export const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Overnight Booking Indicator */}
+                  {startTime && endTime && (() => {
+                    const [startHour, startMin] = startTime.split(':').map(Number);
+                    const [endHour, endMin] = endTime.split(':').map(Number);
+                    const startMinutes = startHour * 60 + startMin;
+                    const endMinutes = endHour * 60 + endMin;
+                    const isOvernight = endMinutes < startMinutes;
+                    
+                    if (isOvernight) {
+                      const durationMinutes = endMinutes - startMinutes + 1440;
+                      const hours = Math.floor(durationMinutes / 60);
+                      const minutes = durationMinutes % 60;
+                      
+                      return (
+                        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg mt-2">
+                          <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <div className="text-sm text-blue-700 dark:text-blue-300">
+                            <span className="font-medium">Overnight Booking</span>
+                            <span className="ml-2">Duration: {hours}h {minutes}m</span>
+                            <span className="block text-xs text-blue-600 dark:text-blue-400 mt-1">
+                              This booking crosses midnight into the next day
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
               

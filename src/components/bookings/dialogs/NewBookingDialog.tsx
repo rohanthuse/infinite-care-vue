@@ -60,6 +60,25 @@ const scheduleSchema = z.object({
   fri: z.boolean().optional(),
   sat: z.boolean().optional(),
   sun: z.boolean().optional(),
+}).refine((data) => {
+  // Parse times
+  const [startHour, startMin] = data.startTime.split(':').map(Number);
+  const [endHour, endMin] = data.endTime.split(':').map(Number);
+  
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  
+  // Calculate duration (handle overnight bookings)
+  let durationMinutes = endMinutes - startMinutes;
+  if (durationMinutes < 0) {
+    durationMinutes += 1440; // Add 24 hours
+  }
+  
+  // Minimum 30 minutes, maximum 24 hours
+  return durationMinutes >= 30 && durationMinutes <= 1440;
+}, {
+  message: "Booking duration must be between 30 minutes and 24 hours",
+  path: ["endTime"]
 });
 
 const formSchema = z.object({
