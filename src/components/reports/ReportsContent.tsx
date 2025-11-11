@@ -8,6 +8,7 @@ import { FinancialReports } from "./FinancialReports";
 import { OperationalReports } from "./OperationalReports";
 import { ComplianceReports } from "./ComplianceReports";
 import { ClinicalReports } from "./ClinicalReports";
+import { StaffComplianceMatrixReport } from "./StaffComplianceMatrixReport";
 import { ReportsHeader } from "./ReportsHeader";
 import { 
   Users, 
@@ -16,7 +17,8 @@ import {
   PoundSterling, 
   BarChart3, 
   ShieldCheck, 
-  Stethoscope 
+  Stethoscope,
+  ClipboardList
 } from "lucide-react";
 
 interface ReportsContentProps {
@@ -25,6 +27,7 @@ interface ReportsContentProps {
 }
 
 type ReportType = 
+  | "staff-compliance-matrix"
   | "client" 
   | "staff" 
   | "service" 
@@ -41,9 +44,15 @@ interface ReportOption {
 }
 
 export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
-  const [activeReport, setActiveReport] = useState<ReportType>("client");
+  const [activeReport, setActiveReport] = useState<ReportType>("staff-compliance-matrix");
   
   const reportOptions: ReportOption[] = [
+    {
+      id: "staff-compliance-matrix",
+      title: "Staff Compliance Matrix",
+      description: "Comprehensive staff compliance tracking and analytics",
+      icon: <ClipboardList className="h-6 w-6" />
+    },
     {
       id: "client",
       title: "Client Reports",
@@ -90,6 +99,8 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
   
   const renderActiveReport = () => {
     switch (activeReport) {
+      case "staff-compliance-matrix":
+        return <StaffComplianceMatrixReport branchId={branchId} branchName={branchName} />;
       case "client":
         return <ClientReports branchId={branchId} branchName={branchName} />;
       case "staff":
@@ -105,7 +116,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       case "clinical":
         return <ClinicalReports branchId={branchId} branchName={branchName} />;
       default:
-        return <ClientReports branchId={branchId} branchName={branchName} />;
+        return <StaffComplianceMatrixReport branchId={branchId} branchName={branchName} />;
     }
   };
   
@@ -124,7 +135,7 @@ export function ReportsContent({ branchId, branchName }: ReportsContentProps) {
       
       {activeReport ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {reportOptions.map((option) => (
               <Card 
                 key={option.id}
