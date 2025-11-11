@@ -6,11 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { Search, Plus, Eye, Edit, MoreHorizontal, Key, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Archive, CheckCircle, XCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useBranchClients, useDeleteClient, useDeleteMultipleClients } from "@/data/hooks/useBranchClients";
 import { SetClientPasswordDialog } from "@/components/clients/SetClientPasswordDialog";
+import { useUpdateClientStatus } from "@/hooks/useUpdateClientStatus";
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 interface ClientsManagementSectionProps {
   branchId?: string;
@@ -38,11 +40,15 @@ export function ClientsManagementSection({
   const [selectedClients, setSelectedClients] = useState<any[]>([]);
   const [deletingClient, setDeletingClient] = useState<any>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [archivingClient, setArchivingClient] = useState<any>(null);
+  const [activatingClient, setActivatingClient] = useState<any>(null);
+  const [deactivatingClient, setDeactivatingClient] = useState<any>(null);
   
   const itemsPerPage = 10;
   
   const deleteMutation = useDeleteClient();
   const deleteMultipleMutation = useDeleteMultipleClients();
+  const updateStatusMutation = useUpdateClientStatus();
 
   const { data: clientsData, isLoading, error } = useBranchClients({
     branchId,
@@ -75,6 +81,48 @@ export function ClientsManagementSection({
       setSelectedClient(client);
       setPasswordDialogOpen(true);
     }, 50);
+  };
+
+  const handleArchiveClient = (client: any) => {
+    setDropdownOpen(null);
+    setTimeout(() => setArchivingClient(client), 50);
+  };
+
+  const handleActivateClient = (client: any) => {
+    setDropdownOpen(null);
+    setTimeout(() => setActivatingClient(client), 50);
+  };
+
+  const handleDeactivateClient = (client: any) => {
+    setDropdownOpen(null);
+    setTimeout(() => setDeactivatingClient(client), 50);
+  };
+
+  const confirmArchive = async () => {
+    if (!archivingClient) return;
+    await updateStatusMutation.mutateAsync({
+      clientId: archivingClient.id,
+      newStatus: 'Archived'
+    });
+    setArchivingClient(null);
+  };
+
+  const confirmActivate = async () => {
+    if (!activatingClient) return;
+    await updateStatusMutation.mutateAsync({
+      clientId: activatingClient.id,
+      newStatus: 'Active'
+    });
+    setActivatingClient(null);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!deactivatingClient) return;
+    await updateStatusMutation.mutateAsync({
+      clientId: deactivatingClient.id,
+      newStatus: 'Inactive'
+    });
+    setDeactivatingClient(null);
   };
 
   const handleSort = (column: 'name' | 'email' | 'pin_code' | 'region' | 'created_at' | 'client_id') => {
@@ -219,10 +267,12 @@ export function ClientsManagementSection({
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
                   <SelectItem value="New Enquiries">New Enquiries</SelectItem>
                   <SelectItem value="Actively Assessing">Actively Assessing</SelectItem>
                   <SelectItem value="Closed Enquiries">Closed Enquiries</SelectItem>
                   <SelectItem value="Former">Former</SelectItem>
+                  <SelectItem value="Archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={regionFilter} onValueChange={setRegionFilter}>
@@ -448,6 +498,35 @@ export function ClientsManagementSection({
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Client
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {client.status !== 'Active' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleActivateClient(client)}
+                                  className="text-green-600 focus:text-green-600"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Activate
+                                </DropdownMenuItem>
+                              )}
+                              {client.status === 'Active' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeactivateClient(client)}
+                                  className="text-orange-600 focus:text-orange-600"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  De-Activate
+                                </DropdownMenuItem>
+                              )}
+                              {client.status !== 'Archived' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleArchiveClient(client)}
+                                  className="text-gray-600 focus:text-gray-600"
+                                >
+                                  <Archive className="h-4 w-4 mr-2" />
+                                  Archive
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleSetPassword(client)}>
                                 <Key className="h-4 w-4 mr-2" />
                                 Set Password
@@ -518,6 +597,35 @@ export function ClientsManagementSection({
                                 <Edit className="h-4 w-4 mr-2" />
                                 Edit Client
                               </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {client.status !== 'Active' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleActivateClient(client)}
+                                  className="text-green-600 focus:text-green-600"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Activate
+                                </DropdownMenuItem>
+                              )}
+                              {client.status === 'Active' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeactivateClient(client)}
+                                  className="text-orange-600 focus:text-orange-600"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  De-Activate
+                                </DropdownMenuItem>
+                              )}
+                              {client.status !== 'Archived' && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleArchiveClient(client)}
+                                  className="text-gray-600 focus:text-gray-600"
+                                >
+                                  <Archive className="h-4 w-4 mr-2" />
+                                  Archive
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleSetPassword(client)}>
                                 <Key className="h-4 w-4 mr-2" />
                                 Set Password
@@ -629,6 +737,63 @@ export function ClientsManagementSection({
               disabled={deleteMultipleMutation.isPending}
             >
               {deleteMultipleMutation.isPending ? 'Deleting...' : `Delete ${selectedClients.length} Client${selectedClients.length !== 1 ? 's' : ''}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Archive Client Dialog */}
+      <AlertDialog open={!!archivingClient} onOpenChange={(open) => !open && setArchivingClient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to archive {archivingClient?.first_name} {archivingClient?.last_name}? 
+              Archived clients will be hidden from active lists but can be restored later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmArchive} disabled={updateStatusMutation.isPending}>
+              {updateStatusMutation.isPending ? 'Archiving...' : 'Archive'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Activate Client Dialog */}
+      <AlertDialog open={!!activatingClient} onOpenChange={(open) => !open && setActivatingClient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Activate Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to activate {activatingClient?.first_name} {activatingClient?.last_name}? 
+              This will change their status to Active.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmActivate} disabled={updateStatusMutation.isPending}>
+              {updateStatusMutation.isPending ? 'Activating...' : 'Activate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* De-Activate Client Dialog */}
+      <AlertDialog open={!!deactivatingClient} onOpenChange={(open) => !open && setDeactivatingClient(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>De-Activate Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to de-activate {deactivatingClient?.first_name} {deactivatingClient?.last_name}? 
+              This will change their status to Inactive. They can be re-activated later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeactivate} disabled={updateStatusMutation.isPending}>
+              {updateStatusMutation.isPending ? 'De-activating...' : 'De-Activate'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

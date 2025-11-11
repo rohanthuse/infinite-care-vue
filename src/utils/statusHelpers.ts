@@ -2,10 +2,12 @@
 // Comprehensive status system for clients and care plans
 export const CLIENT_STATUSES = {
   ACTIVE: "Active",
+  INACTIVE: "Inactive",
   NEW_ENQUIRIES: "New Enquiries", 
   ACTIVELY_ASSESSING: "Actively Assessing",
   CLOSED_ENQUIRIES: "Closed Enquiries",
-  FORMER: "Former"
+  FORMER: "Former",
+  ARCHIVED: "Archived"
 } as const;
 
 export const CARE_PLAN_STATUSES = {
@@ -39,6 +41,8 @@ export const getStatusBadgeClass = (status: string) => {
     // Client statuses
     case CLIENT_STATUSES.ACTIVE:
       return "text-green-600 bg-green-50 border-green-200";
+    case CLIENT_STATUSES.INACTIVE:
+      return "text-orange-600 bg-orange-50 border-orange-200";
     case CLIENT_STATUSES.NEW_ENQUIRIES:
       return "text-blue-600 bg-blue-50 border-blue-200";
     case CLIENT_STATUSES.ACTIVELY_ASSESSING:
@@ -47,6 +51,8 @@ export const getStatusBadgeClass = (status: string) => {
       return "text-gray-600 bg-gray-50 border-gray-200";
     case CLIENT_STATUSES.FORMER:
       return "text-red-600 bg-red-50 border-red-200";
+    case CLIENT_STATUSES.ARCHIVED:
+      return "text-gray-600 bg-gray-50 border-gray-200";
     
     // Care plan statuses
     case CARE_PLAN_STATUSES.DRAFT:
@@ -75,6 +81,8 @@ export const getStatusBadgeClass = (status: string) => {
     // Legacy/fallback statuses (case insensitive)
     case "active":
       return "text-green-600 bg-green-50 border-green-200";
+    case "inactive":
+      return "text-orange-600 bg-orange-50 border-orange-200";
     case "new enquiries":
     case "new_enquiries":
       return "text-blue-600 bg-blue-50 border-blue-200";
@@ -150,10 +158,12 @@ export const normalizeStatus = (status: string): string => {
 export const getClientStatusOptions = () => [
   { value: "all", label: "All Statuses" },
   { value: CLIENT_STATUSES.ACTIVE, label: CLIENT_STATUSES.ACTIVE },
+  { value: CLIENT_STATUSES.INACTIVE, label: CLIENT_STATUSES.INACTIVE },
   { value: CLIENT_STATUSES.NEW_ENQUIRIES, label: CLIENT_STATUSES.NEW_ENQUIRIES },
   { value: CLIENT_STATUSES.ACTIVELY_ASSESSING, label: CLIENT_STATUSES.ACTIVELY_ASSESSING },
   { value: CLIENT_STATUSES.CLOSED_ENQUIRIES, label: CLIENT_STATUSES.CLOSED_ENQUIRIES },
-  { value: CLIENT_STATUSES.FORMER, label: CLIENT_STATUSES.FORMER }
+  { value: CLIENT_STATUSES.FORMER, label: CLIENT_STATUSES.FORMER },
+  { value: CLIENT_STATUSES.ARCHIVED, label: CLIENT_STATUSES.ARCHIVED }
 ];
 
 // Get all available care plan statuses for filters/dropdowns
