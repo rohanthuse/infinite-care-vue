@@ -45,6 +45,16 @@ const Index = () => {
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
 
+  // CRITICAL: Intercept password recovery tokens on Index and redirect to reset page
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('type=recovery') && hash.includes('access_token')) {
+      console.log('[Index] Recovery tokens detected in hash, redirecting to /reset-password');
+      // Preserve the hash when redirecting
+      navigate('/reset-password' + hash, { replace: true });
+    }
+  }, [navigate]);
+
   // PHASE 2 & 7: Background redirect with protection against double redirects
   useEffect(() => {
     // PHASE 7: Check if redirect is already in progress
