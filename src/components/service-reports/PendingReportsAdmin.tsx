@@ -45,6 +45,17 @@ export function PendingReportsAdmin({ branchId }: PendingReportsAdminProps) {
   const [visibleToClient, setVisibleToClient] = useState(true);
 
   const handleReview = (report: any, status: 'approved' | 'rejected' | 'requires_revision') => {
+    // Safety check
+    if (!report || !report.id) {
+      console.error('Invalid report data');
+      return;
+    }
+    
+    // Prevent multiple simultaneous calls
+    if (reviewReport.isPending) {
+      return;
+    }
+    
     reviewReport.mutate({
       id: report.id,
       status,
@@ -266,33 +277,59 @@ export function PendingReportsAdmin({ branchId }: PendingReportsAdminProps) {
 
           <DialogFooter className="gap-2">
             <Button
+              type="button"
               variant="outline"
-              onClick={() => setReviewDialog({ open: false, report: null })}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setReviewDialog({ open: false, report: null });
+              }}
             >
               Cancel
             </Button>
             <Button
+              type="button"
               variant="destructive"
-              onClick={() => handleReview(reviewDialog.report, 'rejected')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (reviewDialog.report && !reviewReport.isPending) {
+                  handleReview(reviewDialog.report, 'rejected');
+                }
+              }}
               disabled={reviewReport.isPending}
             >
               <XCircle className="h-4 w-4 mr-2" />
-              Reject
+              {reviewReport.isPending ? 'Processing...' : 'Reject'}
             </Button>
             <Button
+              type="button"
               variant="outline"
-              onClick={() => handleReview(reviewDialog.report, 'requires_revision')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (reviewDialog.report && !reviewReport.isPending) {
+                  handleReview(reviewDialog.report, 'requires_revision');
+                }
+              }}
               disabled={reviewReport.isPending}
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Request Revision
+              {reviewReport.isPending ? 'Processing...' : 'Request Revision'}
             </Button>
             <Button
-              onClick={() => handleReview(reviewDialog.report, 'approved')}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (reviewDialog.report && !reviewReport.isPending) {
+                  handleReview(reviewDialog.report, 'approved');
+                }
+              }}
               disabled={reviewReport.isPending}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              Approve
+              {reviewReport.isPending ? 'Processing...' : 'Approve'}
             </Button>
           </DialogFooter>
         </DialogContent>
