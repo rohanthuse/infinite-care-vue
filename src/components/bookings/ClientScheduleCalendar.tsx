@@ -40,12 +40,18 @@ interface ClientStatus {
 }
 
 interface BookingBlock {
-  booking: Booking;
+  booking: Booking & {
+    originalStartTime?: string;
+    originalEndTime?: string;
+    splitIndicator?: 'continues-next-day' | 'continued-from-previous-day';
+  };
   startMinutes: number;
   durationMinutes: number;
   leftPosition: number;
   width: number;
   status: ClientStatus['type'];
+  isSplit?: boolean;
+  splitType?: 'first' | 'second';
 }
 
 interface ClientScheduleRow {
@@ -257,12 +263,8 @@ export function ClientScheduleCalendar({
           const startMinutes = startHour * 60 + startMin;
           const endMinutes = endHour * 60 + endMin;
           
-          // Handle bookings that cross midnight (end time < start time)
-          let durationMinutes = endMinutes - startMinutes;
-          if (durationMinutes < 0) {
-            // Booking crosses midnight, add 24 hours (1440 minutes)
-            durationMinutes += 1440;
-          }
+          // Detect midnight crossing BEFORE we adjust duration
+          const crossesMidnight = endMinutes < startMinutes;
           
           let statusType: ClientStatus['type'] = 'scheduled'; // default
           switch (booking.status) {
@@ -287,31 +289,149 @@ export function ClientScheduleCalendar({
               break;
           }
           
-          const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
-          
-          bookingBlocks.push({
-            booking,
-            startMinutes,
-            durationMinutes,
-            leftPosition: left,
-            width,
-            status: statusType
-          });
-          
-          timeSlots.forEach(slot => {
-            const [slotHour, slotMin] = slot.split(':').map(Number);
-            const slotMinutes = slotHour * 60 + slotMin;
-            const nextSlotMinutes = slotMinutes + timeInterval;
+          if (crossesMidnight) {
+            // Block 1: From start time to end of day (23:59)
+            const minutesUntilMidnight = 1440 - startMinutes; // 1440 = 24 hours in minutes
+            const { left: left1, width: width1 } = calculateBookingPosition(startMinutes, minutesUntilMidnight);
             
-            if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
-              schedule[slot] = {
-                type: statusType,
-                booking
-              };
-            }
-          });
+            bookingBlocks.push({
+              booking: {
+                ...booking,
+                endTime: '23:59',
+                originalEndTime: booking.endTime,
+                splitIndicator: 'continues-next-day'
+              },
+              startMinutes,
+              durationMinutes: minutesUntilMidnight,
+              leftPosition: left1,
+              width: width1,
+              status: statusType,
+              isSplit: true,
+              splitType: 'first'
+            });
+            
+            // Mark time slots only until end of day
+            timeSlots.forEach(slot => {
+              const [slotHour, slotMin] = slot.split(':').map(Number);
+              const slotMinutes = slotHour * 60 + slotMin;
+              const nextSlotMinutes = slotMinutes + timeInterval;
+              
+              if (startMinutes < nextSlotMinutes && 1440 > slotMinutes) {
+                schedule[slot] = {
+                  type: statusType,
+                  booking
+                };
+              }
+            });
+            
+            // Update total hours calculation to use the portion on THIS day only
+            totalCareHours += minutesUntilMidnight / 60;
+            
+          } else {
+            // Normal booking (doesn't cross midnight)
+            const durationMinutes = endMinutes - startMinutes;
+            const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
+            
+            bookingBlocks.push({
+              booking,
+              startMinutes,
+              durationMinutes,
+              leftPosition: left,
+              width,
+              status: statusType
+            });
+            
+            timeSlots.forEach(slot => {
+              const [slotHour, slotMin] = slot.split(':').map(Number);
+              const slotMinutes = slotHour * 60 + slotMin;
+              const nextSlotMinutes = slotMinutes + timeInterval;
+              
+              if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
+                schedule[slot] = {
+                  type: statusType,
+                  booking
+                };
+              }
+            });
+            
+            totalCareHours += durationMinutes / 60;
+          }
+        });
 
-          totalCareHours += durationMinutes / 60;
+        // Check for bookings from previous day that cross into current day
+        const previousDayDate = format(addDays(date, -1), 'yyyy-MM-dd');
+        const previousDayBookings = bookings.filter(booking => 
+          booking.clientId === client.id && 
+          booking.date === previousDayDate
+        );
+
+        previousDayBookings.forEach(booking => {
+          const [startHour, startMin] = booking.startTime.split(':').map(Number);
+          const [endHour, endMin] = booking.endTime.split(':').map(Number);
+          
+          const startMinutes = startHour * 60 + startMin;
+          const endMinutes = endHour * 60 + endMin;
+          
+          // If end time is less than start time, it crosses midnight
+          if (endMinutes < startMinutes) {
+            let statusType: ClientStatus['type'] = 'scheduled';
+            switch (booking.status) {
+              case 'assigned':
+                statusType = 'scheduled';
+                break;
+              case 'unassigned':
+                statusType = 'scheduled';
+                break;
+              case 'done':
+                statusType = 'completed';
+                break;
+              case 'in-progress':
+              case 'departed':
+                statusType = 'in-progress';
+                break;
+              case 'cancelled':
+                statusType = 'cancelled';
+                break;
+              case 'suspended':
+                statusType = 'cancelled';
+                break;
+            }
+            
+            // Block 2: From midnight (0) to actual end time
+            const { left, width } = calculateBookingPosition(0, endMinutes);
+            
+            bookingBlocks.push({
+              booking: {
+                ...booking,
+                startTime: '00:00',
+                originalStartTime: booking.startTime,
+                splitIndicator: 'continued-from-previous-day'
+              },
+              startMinutes: 0,
+              durationMinutes: endMinutes,
+              leftPosition: left,
+              width,
+              status: statusType,
+              isSplit: true,
+              splitType: 'second'
+            });
+            
+            // Mark time slots from midnight to end time
+            timeSlots.forEach(slot => {
+              const [slotHour, slotMin] = slot.split(':').map(Number);
+              const slotMinutes = slotHour * 60 + slotMin;
+              const nextSlotMinutes = slotMinutes + timeInterval;
+              
+              if (0 < nextSlotMinutes && endMinutes > slotMinutes) {
+                schedule[slot] = {
+                  type: statusType,
+                  booking
+                };
+              }
+            });
+            
+            totalCareHours += endMinutes / 60;
+          }
         });
 
         return {
@@ -719,6 +839,9 @@ export function ClientScheduleCalendar({
                     {/* Booking blocks - absolutely positioned overlays */}
                     {client.bookingBlocks?.map((block: BookingBlock, idx: number) => {
                       const colorClass = getStatusColor({ type: block.status, booking: block.booking });
+                      const isSplitFirst = block.isSplit && block.splitType === 'first';
+                      const isSplitSecond = block.isSplit && block.splitType === 'second';
+                      
                       return (
                         <Tooltip key={`${block.booking.id}-${idx}`}>
                           <TooltipTrigger asChild>
@@ -726,6 +849,8 @@ export function ClientScheduleCalendar({
                               className={`
                                 absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
                                 ${colorClass}
+                                ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
+                                ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
                               `}
                               style={{ 
                                 left: `${block.leftPosition}px`,
@@ -739,14 +864,26 @@ export function ClientScheduleCalendar({
                                 <div className="font-semibold truncate w-full text-center">
                                   {block.booking.carerName}
                                 </div>
-                                <div className="text-[10px] opacity-75">
-                                  {block.booking.startTime}-{block.booking.endTime}
+                                <div className="text-[10px] opacity-75 flex items-center justify-center gap-1">
+                                  {isSplitSecond && <span className="text-blue-600">←</span>}
+                                  <span>{block.booking.startTime}-{block.booking.endTime}</span>
+                                  {isSplitFirst && <span className="text-blue-600">→</span>}
                                 </div>
                               </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
                             {renderTooltipContent({ type: block.status, booking: block.booking }, client.name)}
+                            {block.booking.splitIndicator === 'continues-next-day' && (
+                              <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                                ⚠️ Continues to next day until {block.booking.originalEndTime}
+                              </div>
+                            )}
+                            {block.booking.splitIndicator === 'continued-from-previous-day' && (
+                              <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                                ⚠️ Started previous day at {block.booking.originalStartTime}
+                              </div>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                       );
