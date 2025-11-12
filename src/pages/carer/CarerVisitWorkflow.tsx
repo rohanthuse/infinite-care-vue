@@ -579,8 +579,7 @@ const CarerVisitWorkflow = () => {
       case "tasks":
         return true; // Allow progression regardless of task completion status
       case "medication":
-        return medications ? 
-          medications.length === 0 || medications.every(med => med.is_administered || med.missed_reason) : true;
+        return true; // Allow progression regardless of medication completion status
       case "news2":
         return news2Readings ? news2Readings.length > 0 : false; // Optional but good to have
       case "events":
