@@ -42,7 +42,6 @@ import { useCreateMedication } from "@/hooks/useMedications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
-import { useMedicationNavigation } from "@/hooks/useMedicationNavigation";
 
 interface AddMedicationDialogProps {
   open: boolean;
@@ -76,7 +75,6 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const createMedication = useCreateMedication();
   const queryClient = useQueryClient();
   const { id: branchId } = useBranchDashboardNavigation();
-  const { navigateToClientProfile } = useMedicationNavigation();
 
   // Fetch all clients in the current branch with inclusive filtering
   const { data: clients = [] } = useQuery({
@@ -225,13 +223,8 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
       
       console.log('[AddMedicationDialog] Medication created successfully');
       form.reset();
-      onOpenChange(false);
-      
-      // Navigate to client profile after successful medication creation
       toast.success(`Medication added successfully for ${selectedClient?.first_name} ${selectedClient?.last_name}`);
-      setTimeout(() => {
-        navigateToClientProfile(values.client_id);
-      }, 1000);
+      onOpenChange(false);
       
     } catch (error) {
       console.error('[AddMedicationDialog] Error in medication creation process:', error);
