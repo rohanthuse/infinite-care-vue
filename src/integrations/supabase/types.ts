@@ -9480,7 +9480,7 @@ export type Database = {
       visit_records: {
         Row: {
           actual_duration_minutes: number | null
-          booking_id: string
+          booking_id: string | null
           branch_id: string
           client_id: string
           client_signature_data: string | null
@@ -9501,7 +9501,7 @@ export type Database = {
         }
         Insert: {
           actual_duration_minutes?: number | null
-          booking_id: string
+          booking_id?: string | null
           branch_id: string
           client_id: string
           client_signature_data?: string | null
@@ -9522,7 +9522,7 @@ export type Database = {
         }
         Update: {
           actual_duration_minutes?: number | null
-          booking_id?: string
+          booking_id?: string | null
           branch_id?: string
           client_id?: string
           client_signature_data?: string | null
@@ -9542,6 +9542,13 @@ export type Database = {
           visit_summary?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "visit_records_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "visit_records_organization_id_fkey"
             columns: ["organization_id"]
