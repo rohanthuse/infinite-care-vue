@@ -319,15 +319,19 @@ const ServiceReportDetails = memo(function ServiceReportDetails({ report }: { re
 
         {/* Medication */}
         {report.medication_administered && (
-          <div>
+          <div className="space-y-3">
             <h4 className="font-medium mb-2 flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
               Medication Administration
             </h4>
+            
             {report.medication_notes && (
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {report.medication_notes}
-              </p>
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs text-blue-700 font-medium mb-1">Summary:</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {report.medication_notes}
+                </p>
+              </div>
             )}
           </div>
         )}

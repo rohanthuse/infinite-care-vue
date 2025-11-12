@@ -23,6 +23,8 @@ import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle } from 'lucide-reac
 import { Badge } from '@/components/ui/badge';
 import { useServices } from '@/data/hooks/useServices';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
@@ -87,6 +89,24 @@ export function CreateServiceReportDialog({
   const [newTask, setNewTask] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
+  // Fetch visit medications when visitRecordId is provided
+  const { data: visitMedications = [] } = useQuery({
+    queryKey: ['visit-medications', visitRecordId],
+    queryFn: async () => {
+      if (!visitRecordId) return [];
+      
+      const { data, error } = await supabase
+        .from('visit_medications')
+        .select('*')
+        .eq('visit_record_id', visitRecordId)
+        .order('prescribed_time', { ascending: true });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!visitRecordId && open,
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -127,6 +147,38 @@ export function CreateServiceReportDialog({
       }
     }
   }, [preSelectedBooking, form]);
+
+  // Auto-populate medication summary from visit medications
+  React.useEffect(() => {
+    if (visitRecordId && visitMedications && visitMedications.length > 0 && open) {
+      const administeredMeds = visitMedications.filter(m => m.is_administered);
+      const missedMeds = visitMedications.filter(m => !m.is_administered);
+      
+      let summary = '';
+      if (administeredMeds.length > 0) {
+        summary += `Administered:\n${administeredMeds.map(m => `• ${m.medication_name} (${m.dosage})`).join('\n')}\n\n`;
+        
+        // Add notes if any
+        const medsWithNotes = administeredMeds.filter(m => m.administration_notes);
+        if (medsWithNotes.length > 0) {
+          summary += `Notes:\n`;
+          medsWithNotes.forEach(med => {
+            summary += `• ${med.medication_name}: ${med.administration_notes}\n`;
+          });
+        }
+      }
+      
+      if (missedMeds.length > 0) {
+        if (summary) summary += '\n';
+        summary += `Not administered:\n${missedMeds.map(m => `• ${m.medication_name}${m.missed_reason ? ` - ${m.missed_reason}` : ''}`).join('\n')}`;
+      }
+      
+      if (summary) {
+        form.setValue('medication_notes', summary.trim());
+        form.setValue('medication_administered', administeredMeds.length > 0);
+      }
+    }
+  }, [visitRecordId, visitMedications, open, form]);
 
   // Populate form with existing report data when editing
   React.useEffect(() => {

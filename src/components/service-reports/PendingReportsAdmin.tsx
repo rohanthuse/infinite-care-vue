@@ -459,15 +459,19 @@ function ServiceReportDetails({ report }: { report: any }) {
 
       {/* Medication */}
       {report.medication_administered && (
-        <div className="p-3 bg-blue-50 rounded-lg">
-          <h4 className="font-medium mb-1 flex items-center gap-2">
+        <div className="space-y-3">
+          <h4 className="font-medium text-sm text-blue-900 flex items-center gap-2">
             <CheckCircle className="h-4 w-4 text-blue-500" />
             Medication Administration
           </h4>
+          
           {report.medication_notes && (
-            <p className="text-sm text-blue-700 whitespace-pre-wrap">
-              {report.medication_notes}
-            </p>
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <p className="text-xs text-blue-700 font-medium mb-1">Summary:</p>
+              <p className="text-sm text-blue-900 whitespace-pre-wrap">
+                {report.medication_notes}
+              </p>
+            </div>
           )}
         </div>
       )}
