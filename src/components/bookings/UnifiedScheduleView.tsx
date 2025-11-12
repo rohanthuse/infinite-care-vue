@@ -110,6 +110,24 @@ export function UnifiedScheduleView({
     const SLOT_WIDTH = timeInterval === 60 ? 64 : 32;
     const slotIndex = Math.floor(xPosition / SLOT_WIDTH);
     
+    console.log('[DragDrop] Debug info:', {
+      mouseX: window._dragDropPointerX,
+      rectLeft: rect.left,
+      rectWidth: rect.width,
+      xPosition,
+      timeInterval,
+      SLOT_WIDTH,
+      slotIndex,
+      calculatedTime: timeInterval === 60 
+        ? `${Math.min(23, Math.max(0, slotIndex)).toString().padStart(2, '0')}:00`
+        : (() => {
+            const totalMinutes = slotIndex * 30;
+            const hours = Math.min(23, Math.floor(totalMinutes / 60));
+            const minutes = totalMinutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          })()
+    });
+    
     // Convert slot index to time
     let newStartTime: string;
     if (timeInterval === 60) {
@@ -283,7 +301,7 @@ export function UnifiedScheduleView({
             onViewBooking={onViewBooking}
             onCreateBooking={(clientId, timeSlot) => onCreateBooking(clientId, undefined, timeSlot)}
             hideControls={true}
-            timeInterval={60}
+            timeInterval={timeInterval}
             selectedBookings={selectedBookings}
             onBookingSelect={handleBookingSelect}
           />
@@ -314,7 +332,7 @@ export function UnifiedScheduleView({
             onViewBooking={onViewBooking}
             onCreateBooking={(staffId, timeSlot) => onCreateBooking(undefined, staffId, timeSlot)}
             hideControls={true}
-            timeInterval={60}
+            timeInterval={timeInterval}
             enableDragDrop={true}
             selectedBookings={selectedBookings}
             onBookingSelect={handleBookingSelect}
