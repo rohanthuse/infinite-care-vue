@@ -32,6 +32,11 @@ export interface MissedCallTrend {
   missRate: number;
 }
 
+export interface ReasonTrend {
+  month: string;
+  [reason: string]: number | string;
+}
+
 export interface MissedCallsData {
   summary: {
     totalMissedCalls: number;
@@ -43,6 +48,7 @@ export interface MissedCallsData {
   byStaff: MissedCallByStaff[];
   byReason: MissedCallByReason[];
   trends: MissedCallTrend[];
+  reasonTrends: ReasonTrend[];
   recentMissedCalls: MissedCallDetail[];
 }
 
@@ -135,6 +141,7 @@ export const useMissedCallsData = ({
           byStaff: [],
           byReason: [],
           trends: [],
+          reasonTrends: [],
           recentMissedCalls: [],
         };
       }
@@ -230,6 +237,42 @@ export const useMissedCallsData = ({
         .slice(0, 6)
         .reverse();
 
+      // Generate reason trends (missed calls by reason over time)
+      const reasonByMonthMap = new Map<string, Map<string, number>>();
+      
+      missedCalls.forEach((call) => {
+        const date = new Date(call.start_time);
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const reason = call.cancellation_reason 
+          ? call.cancellation_reason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+          : (call.notes || 'No reason provided');
+        
+        if (!reasonByMonthMap.has(monthKey)) {
+          reasonByMonthMap.set(monthKey, new Map());
+        }
+        const monthReasons = reasonByMonthMap.get(monthKey)!;
+        monthReasons.set(reason, (monthReasons.get(reason) || 0) + 1);
+      });
+
+      // Get all unique reasons for consistent chart structure
+      const allReasons = new Set<string>();
+      byReason.slice(0, 5).forEach(r => allReasons.add(r.reason));
+
+      const reasonTrends: ReasonTrend[] = Array.from(monthMap.keys())
+        .reverse()
+        .slice(0, 6)
+        .reverse()
+        .map((month) => {
+          const trend: ReasonTrend = { month };
+          const monthReasons = reasonByMonthMap.get(month) || new Map();
+          
+          allReasons.forEach((reason) => {
+            trend[reason] = monthReasons.get(reason) || 0;
+          });
+          
+          return trend;
+        });
+
       // Recent missed calls
       const recentMissedCalls: MissedCallDetail[] = missedCalls.slice(0, 20).map((call) => {
         const scheduledDate = new Date(call.start_time);
@@ -268,6 +311,7 @@ export const useMissedCallsData = ({
         byStaff,
         byReason,
         trends,
+        reasonTrends,
         recentMissedCalls,
       };
     },

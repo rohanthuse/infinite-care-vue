@@ -29,6 +29,17 @@ export interface LateArrivalTrend {
   lateRate: number;
 }
 
+export interface LateArrivalByReason {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
+export interface LateArrivalReasonTrend {
+  month: string;
+  [reason: string]: number | string;
+}
+
 export interface LateArrivalsData {
   summary: {
     totalLateArrivals: number;
@@ -38,7 +49,9 @@ export interface LateArrivalsData {
     topStaffWithLateArrivals: string;
   };
   byStaff: LateArrivalByStaff[];
+  byReason: LateArrivalByReason[];
   trends: LateArrivalTrend[];
+  reasonTrends: LateArrivalReasonTrend[];
   recentLateArrivals: LateArrivalDetail[];
 }
 
@@ -99,7 +112,9 @@ export const useLateArrivalsData = ({
             topStaffWithLateArrivals: 'N/A',
           },
           byStaff: [],
+          byReason: [],
           trends: [],
+          reasonTrends: [],
           recentLateArrivals: [],
         };
       }
@@ -218,6 +233,61 @@ export const useLateArrivalsData = ({
         .slice(0, 6)
         .reverse();
 
+      // Group by reason
+      const reasonMap = new Map<string, number>();
+      lateArrivals.forEach((visit) => {
+        const reason = visit.late_arrival_reason 
+          ? visit.late_arrival_reason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+          : 'No reason provided';
+        reasonMap.set(reason, (reasonMap.get(reason) || 0) + 1);
+      });
+
+      const byReason: LateArrivalByReason[] = Array.from(reasonMap.entries())
+        .map(([reason, count]) => ({ 
+          reason, 
+          count,
+          percentage: totalLateArrivals > 0 ? Math.round((count / totalLateArrivals) * 100) : 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Generate reason trends (late arrivals by reason over time)
+      const reasonByMonthMap = new Map<string, Map<string, number>>();
+      
+      lateArrivals.forEach((visit) => {
+        if (!visit.booking?.start_time) return;
+        const date = new Date(visit.booking.start_time);
+        const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const reason = visit.late_arrival_reason 
+          ? visit.late_arrival_reason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+          : 'No reason provided';
+        
+        if (!reasonByMonthMap.has(monthKey)) {
+          reasonByMonthMap.set(monthKey, new Map());
+        }
+        const monthReasons = reasonByMonthMap.get(monthKey)!;
+        monthReasons.set(reason, (monthReasons.get(reason) || 0) + 1);
+      });
+
+      // Get all unique reasons for consistent chart structure
+      const allReasons = new Set<string>();
+      byReason.slice(0, 5).forEach(r => allReasons.add(r.reason));
+
+      const reasonTrends: LateArrivalReasonTrend[] = Array.from(monthMap.keys())
+        .reverse()
+        .slice(0, 6)
+        .reverse()
+        .map((month) => {
+          const trend: LateArrivalReasonTrend = { month };
+          const monthReasons = reasonByMonthMap.get(month) || new Map();
+          
+          allReasons.forEach((reason) => {
+            trend[reason] = monthReasons.get(reason) || 0;
+          });
+          
+          return trend;
+        });
+
       // Recent late arrivals
       const recentLateArrivals: LateArrivalDetail[] = lateArrivals.slice(0, 20).map((visit) => {
         const scheduled = new Date(visit.booking.start_time);
@@ -264,7 +334,9 @@ export const useLateArrivalsData = ({
           topStaffWithLateArrivals,
         },
         byStaff,
+        byReason,
         trends,
+        reasonTrends,
         recentLateArrivals,
       };
     },

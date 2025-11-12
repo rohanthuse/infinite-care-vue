@@ -18,6 +18,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Calendar } from "lucide-react";
 import { DateRange } from "react-day-picker";
+import { ReasonTrendChart } from "@/components/reports/analytics/ReasonTrendChart";
+import { ReasonBreakdownCard } from "@/components/reports/analytics/ReasonBreakdownCard";
+import { ExpandableTableRow } from "@/components/reports/shared/ExpandableTableRow";
+import { StaffPerformanceDrillDown } from "@/components/reports/analytics/StaffPerformanceDrillDown";
 
 interface MissedCallsLateArrivalsReportProps {
   branchId: string;
@@ -254,6 +258,18 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                 </DropdownMenu>
               </div>
 
+              {/* Reason Trend Chart */}
+              <ReasonTrendChart 
+                data={missedCallsData?.reasonTrends || []}
+                title="Cancellation Reasons Over Time"
+              />
+
+              {/* Reason Breakdown */}
+              <ReasonBreakdownCard 
+                data={missedCallsData?.byReason || []}
+                title="Cancellation Reasons"
+              />
+
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
@@ -309,16 +325,17 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                 </Card>
               </div>
 
-              {/* Staff Table */}
+              {/* Staff Table with Drill-Down */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Missed Calls by Staff</CardTitle>
+                  <CardTitle>Missed Calls by Staff (Click to Expand)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[400px]">
+                  <ScrollArea className="h-[500px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-12"></TableHead>
                           <TableHead>Staff Member</TableHead>
                           <TableHead className="text-center">Missed Calls</TableHead>
                           <TableHead className="text-center">Reliability Rate</TableHead>
@@ -326,24 +343,44 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                       </TableHeader>
                       <TableBody>
                         {missedCallsData?.byStaff && missedCallsData.byStaff.length > 0 ? (
-                          missedCallsData.byStaff.map((staff) => (
-                            <TableRow key={staff.staffId}>
-                              <TableCell className="font-medium">{staff.staffName}</TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant={staff.missedCallsCount > 5 ? "destructive" : "secondary"}>
-                                  {staff.missedCallsCount}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant={staff.reliabilityRate >= 95 ? "default" : staff.reliabilityRate >= 85 ? "secondary" : "destructive"}>
-                                  {staff.reliabilityRate}%
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                          missedCallsData.byStaff.map((staff) => {
+                            const staffTrends = (missedCallsData.trends || []).map(trend => ({
+                              month: trend.month,
+                              count: 0, // Would need individual staff trend data
+                              branchAverage: trend.missedCalls / (missedCallsData.byStaff.length || 1)
+                            }));
+                            const avgMissedCalls = missedCallsData.summary.totalMissedCalls / (missedCallsData.byStaff.length || 1);
+
+                            return (
+                              <ExpandableTableRow
+                                key={staff.staffId}
+                                expandedContent={
+                                  <StaffPerformanceDrillDown
+                                    staffName={staff.staffName}
+                                    trendData={staffTrends}
+                                    currentCount={staff.missedCallsCount}
+                                    averageCount={avgMissedCalls}
+                                    type="missed-calls"
+                                  />
+                                }
+                              >
+                                <TableCell className="font-medium">{staff.staffName}</TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={staff.missedCallsCount > 5 ? "destructive" : "secondary"}>
+                                    {staff.missedCallsCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={staff.reliabilityRate >= 95 ? "default" : staff.reliabilityRate >= 85 ? "secondary" : "destructive"}>
+                                    {staff.reliabilityRate}%
+                                  </Badge>
+                                </TableCell>
+                              </ExpandableTableRow>
+                            );
+                          })
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                               No missed calls data available
                             </TableCell>
                           </TableRow>
@@ -430,6 +467,19 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                 </DropdownMenu>
               </div>
 
+              {/* Reason Trend Chart */}
+              <ReasonTrendChart 
+                data={lateArrivalsData?.reasonTrends || []}
+                title="Late Arrival Reasons Over Time"
+              />
+
+              {/* Reason Breakdown */}
+              <ReasonBreakdownCard 
+                data={lateArrivalsData?.byReason || []}
+                title="Late Arrival Reasons"
+                showPercentages={true}
+              />
+
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
@@ -473,16 +523,17 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                 </Card>
               </div>
 
-              {/* Staff Table */}
+              {/* Staff Table with Drill-Down */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Late Arrivals by Staff</CardTitle>
+                  <CardTitle>Late Arrivals by Staff (Click to Expand)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[400px]">
+                  <ScrollArea className="h-[500px]">
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead className="w-12"></TableHead>
                           <TableHead>Staff Member</TableHead>
                           <TableHead className="text-center">Late Count</TableHead>
                           <TableHead className="text-center">Avg Minutes Late</TableHead>
@@ -491,25 +542,45 @@ export function MissedCallsLateArrivalsReport({ branchId, branchName }: MissedCa
                       </TableHeader>
                       <TableBody>
                         {lateArrivalsData?.byStaff && lateArrivalsData.byStaff.length > 0 ? (
-                          lateArrivalsData.byStaff.map((staff) => (
-                            <TableRow key={staff.staffId}>
-                              <TableCell className="font-medium">{staff.staffName}</TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant={staff.lateArrivalsCount > 5 ? "destructive" : "secondary"}>
-                                  {staff.lateArrivalsCount}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center">{staff.averageMinutesLate} min</TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant={staff.punctualityRate >= 95 ? "default" : staff.punctualityRate >= 85 ? "secondary" : "destructive"}>
-                                  {staff.punctualityRate}%
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))
+                          lateArrivalsData.byStaff.map((staff) => {
+                            const staffTrends = (lateArrivalsData.trends || []).map(trend => ({
+                              month: trend.month,
+                              count: 0, // Would need individual staff trend data
+                              branchAverage: trend.lateArrivals / (lateArrivalsData.byStaff.length || 1)
+                            }));
+                            const avgLateArrivals = lateArrivalsData.summary.totalLateArrivals / (lateArrivalsData.byStaff.length || 1);
+
+                            return (
+                              <ExpandableTableRow
+                                key={staff.staffId}
+                                expandedContent={
+                                  <StaffPerformanceDrillDown
+                                    staffName={staff.staffName}
+                                    trendData={staffTrends}
+                                    currentCount={staff.lateArrivalsCount}
+                                    averageCount={avgLateArrivals}
+                                    type="late-arrivals"
+                                  />
+                                }
+                              >
+                                <TableCell className="font-medium">{staff.staffName}</TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={staff.lateArrivalsCount > 5 ? "destructive" : "secondary"}>
+                                    {staff.lateArrivalsCount}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-center">{staff.averageMinutesLate} min</TableCell>
+                                <TableCell className="text-center">
+                                  <Badge variant={staff.punctualityRate >= 95 ? "default" : staff.punctualityRate >= 85 ? "secondary" : "destructive"}>
+                                    {staff.punctualityRate}%
+                                  </Badge>
+                                </TableCell>
+                              </ExpandableTableRow>
+                            );
+                          })
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                               No late arrivals data available
                             </TableCell>
                           </TableRow>
