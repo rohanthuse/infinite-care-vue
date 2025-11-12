@@ -28,6 +28,7 @@ interface UnifiedScheduleViewProps {
   selectedCarer: string;
   selectedStatus: string;
   viewType: "daily" | "weekly" | "monthly";
+  timeInterval?: 30 | 60;
   onViewBooking: (booking: Booking) => void;
   onCreateBooking: (clientId: string | undefined, staffId: string | undefined, timeSlot: string) => void;
 }
@@ -45,7 +46,7 @@ interface PendingBookingMove {
 // Track mouse position for drag-and-drop
 declare global {
   interface Window {
-    _dragDropPointerY?: number;
+    _dragDropPointerX?: number;
   }
 }
 
@@ -59,6 +60,7 @@ export function UnifiedScheduleView({
   selectedCarer,
   selectedStatus,
   viewType,
+  timeInterval = 60,
   onViewBooking,
   onCreateBooking,
 }: UnifiedScheduleViewProps) {
@@ -73,12 +75,12 @@ export function UnifiedScheduleView({
   // Track mouse position for precise drop detection
   React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      window._dragDropPointerY = e.clientY;
+      window._dragDropPointerX = e.clientX;
     };
     window.addEventListener("mousemove", handleMouseMove);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
-      delete window._dragDropPointerY;
+      delete window._dragDropPointerX;
     };
   }, []);
 
@@ -97,15 +99,30 @@ export function UnifiedScheduleView({
     
     if (!destStaffId) return;
 
-    // Get droppable element to calculate Y position
+    // Get droppable element to calculate X position
     const droppableEl = document.querySelector(`[data-rbd-droppable-id="${destination.droppableId}"]`);
     if (!droppableEl) return;
 
     const rect = droppableEl.getBoundingClientRect();
-    const yPosition = (window._dragDropPointerY || rect.top) - rect.top;
+    const xPosition = (window._dragDropPointerX || rect.left) - rect.left;
     
-    // Calculate new start time from Y position (60px per hour, 30min intervals)
-    const newStartTime = calculateTimeFromPosition(yPosition, 60, 30);
+    // Calculate which slot was dropped on based on horizontal position
+    const SLOT_WIDTH = timeInterval === 60 ? 64 : 32;
+    const slotIndex = Math.floor(xPosition / SLOT_WIDTH);
+    
+    // Convert slot index to time
+    let newStartTime: string;
+    if (timeInterval === 60) {
+      // For 60-minute intervals: slot 0 = 00:00, slot 1 = 01:00, etc.
+      const hours = Math.min(23, Math.max(0, slotIndex));
+      newStartTime = `${hours.toString().padStart(2, '0')}:00`;
+    } else {
+      // For 30-minute intervals: slot 0 = 00:00, slot 1 = 00:30, slot 2 = 01:00, etc.
+      const totalMinutes = slotIndex * 30;
+      const hours = Math.min(23, Math.floor(totalMinutes / 60));
+      const minutes = totalMinutes % 60;
+      newStartTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
     
     // Calculate duration and new end time
     const duration = calculateDuration(booking.startTime, booking.endTime);
@@ -160,7 +177,7 @@ export function UnifiedScheduleView({
         onSuccess: () => {
           setDialogOpen(false);
           setPendingMove(null);
-          delete window._dragDropPointerY;
+          delete window._dragDropPointerX;
           // Success toast is already shown by useUpdateBooking
         },
         onError: () => {
@@ -168,7 +185,7 @@ export function UnifiedScheduleView({
           setDragDropKey(prev => prev + 1);
           setDialogOpen(false);
           setPendingMove(null);
-          delete window._dragDropPointerY;
+          delete window._dragDropPointerX;
         }
       }
     );
@@ -177,7 +194,7 @@ export function UnifiedScheduleView({
   const handleCancelMove = () => {
     setDialogOpen(false);
     setPendingMove(null);
-    delete window._dragDropPointerY;
+    delete window._dragDropPointerX;
     
     // Force complete reset of drag-drop context
     setDragDropKey(prev => prev + 1);
