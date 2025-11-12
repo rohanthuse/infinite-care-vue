@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { useTenant } from "@/contexts/TenantContext";
+import { BranchSearchDialog } from "@/components/search/BranchSearchDialog";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export function DashboardHeader() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   
   // Check if we're in a branch dashboard context where sidebar should be available
   const isBranchDashboard = location.pathname.includes('/branch-dashboard/');
@@ -203,10 +205,20 @@ export function DashboardHeader() {
           <div className="relative max-w-md w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search..." 
+              placeholder="Search clients, carers, bookings, documents..." 
               className="pl-10 pr-4 py-2 rounded-full bg-background border-border w-full transition-all duration-300"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchValue.trim().length >= 2) {
+                  setSearchDialogOpen(true);
+                }
+              }}
+              onFocus={() => {
+                if (searchValue.trim().length >= 2) {
+                  setSearchDialogOpen(true);
+                }
+              }}
             />
           </div>
         </div>
@@ -258,10 +270,20 @@ export function DashboardHeader() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search..." 
+                placeholder="Search clients, carers, bookings, documents..." 
                 className="pl-10 pr-4 py-2 rounded-full bg-background border-border"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchValue.trim().length >= 2) {
+                    setSearchDialogOpen(true);
+                  }
+                }}
+                onFocus={() => {
+                  if (searchValue.trim().length >= 2) {
+                    setSearchDialogOpen(true);
+                  }
+                }}
               />
             </div>
             <div className="ml-2 flex items-center gap-2">
@@ -297,5 +319,17 @@ export function DashboardHeader() {
           </div>
         </div>
       </div>
+
+      {/* Search Dialog */}
+      {isBranchContext && branchId && (
+        <BranchSearchDialog
+          open={searchDialogOpen}
+          onOpenChange={setSearchDialogOpen}
+          searchValue={searchValue}
+          onSearchValueChange={setSearchValue}
+          branchId={branchId}
+          branchName={branchName}
+        />
+      )}
     </header>;
 }
