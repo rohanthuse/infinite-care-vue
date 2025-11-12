@@ -25,6 +25,7 @@ interface BookingReassignDialogProps {
   newEndTime: string;
   hasConflict?: boolean;
   conflictMessage?: string;
+  isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -40,6 +41,7 @@ export function BookingReassignDialog({
   newEndTime,
   hasConflict = false,
   conflictMessage,
+  isLoading = false,
   onConfirm,
   onCancel,
 }: BookingReassignDialogProps) {
@@ -105,12 +107,14 @@ export function BookingReassignDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel} disabled={isLoading}>
+            Cancel & Undo Move
+          </AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
-            disabled={hasConflict}
+            disabled={hasConflict || isLoading}
           >
-            Confirm Reassignment
+            {isLoading ? "Moving..." : "Confirm Reassignment"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

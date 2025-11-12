@@ -61,6 +61,7 @@ export function UnifiedScheduleView({
 }: UnifiedScheduleViewProps) {
   const [pendingMove, setPendingMove] = useState<PendingBookingMove | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dragDropKey, setDragDropKey] = useState(0);
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
 
   // Track mouse position for precise drop detection
@@ -140,24 +141,43 @@ export function UnifiedScheduleView({
 
     const { booking, newStaffId, newStartTime, newEndTime } = pendingMove;
 
-    updateBooking({
-      bookingId: booking.id,
-      updatedData: {
-        staff_id: newStaffId,
-        start_time: newStartTime,
-        end_time: newEndTime,
+    updateBooking(
+      {
+        bookingId: booking.id,
+        updatedData: {
+          staff_id: newStaffId,
+          start_time: newStartTime,
+          end_time: newEndTime,
+        }
+      },
+      {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setPendingMove(null);
+          delete window._dragDropPointerY;
+          // Success toast is already shown by useUpdateBooking
+        },
+        onError: () => {
+          // Reset visual position on error
+          setDragDropKey(prev => prev + 1);
+          setDialogOpen(false);
+          setPendingMove(null);
+          delete window._dragDropPointerY;
+        }
       }
-    });
-
-    setDialogOpen(false);
-    setPendingMove(null);
-    delete window._dragDropPointerY;
+    );
   };
 
   const handleCancelMove = () => {
     setDialogOpen(false);
     setPendingMove(null);
     delete window._dragDropPointerY;
+    
+    // Force complete reset of drag-drop context
+    setDragDropKey(prev => prev + 1);
+    
+    // Show feedback
+    toast.info("Booking move cancelled - returned to original position");
   };
 
   const oldStaff = pendingMove 
@@ -165,7 +185,7 @@ export function UnifiedScheduleView({
     : null;
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DragDropContext key={dragDropKey} onDragEnd={handleDragEnd}>
       <div className="flex flex-col gap-4 w-full">
       {/* Left Panel - Client Schedule */}
       <div className="border-2 border-blue-500 rounded-lg flex flex-col h-[500px] max-w-full overflow-hidden">
@@ -238,6 +258,7 @@ export function UnifiedScheduleView({
         newEndTime={pendingMove?.newEndTime || ""}
         hasConflict={pendingMove?.hasConflict || false}
         conflictMessage={pendingMove?.conflictMessage}
+        isLoading={isUpdating}
         onConfirm={handleConfirmMove}
         onCancel={handleCancelMove}
       />
