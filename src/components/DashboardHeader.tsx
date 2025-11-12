@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { useTenant } from "@/contexts/TenantContext";
-import { BranchSearchDialog } from "@/components/search/BranchSearchDialog";
+import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -33,7 +33,9 @@ export function DashboardHeader() {
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   
   // Check if we're in a branch dashboard context where sidebar should be available
   const isBranchDashboard = location.pathname.includes('/branch-dashboard/');
@@ -205,21 +207,39 @@ export function DashboardHeader() {
           <div className="relative max-w-md w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
+              ref={searchInputRef}
               placeholder="Search clients, carers, bookings, documents..." 
               className="pl-10 pr-4 py-2 rounded-full bg-background border-border w-full transition-all duration-300"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchValue.trim().length >= 2) {
-                  setSearchDialogOpen(true);
+              onChange={(e) => {
+                setSearchValue(e.target.value);
+                if (e.target.value.trim().length >= 2) {
+                  setSearchDropdownOpen(true);
+                } else {
+                  setSearchDropdownOpen(false);
                 }
               }}
               onFocus={() => {
                 if (searchValue.trim().length >= 2) {
-                  setSearchDialogOpen(true);
+                  setSearchDropdownOpen(true);
                 }
               }}
             />
+            
+            {/* Dropdown renders here */}
+            {searchDropdownOpen && searchValue.trim().length >= 2 && isBranchContext && branchId && (
+              <BranchSearchDropdown
+                searchValue={searchValue}
+                onClose={() => setSearchDropdownOpen(false)}
+                onResultClick={() => {
+                  setSearchValue("");
+                  setSearchDropdownOpen(false);
+                }}
+                branchId={branchId}
+                branchName={branchName}
+                anchorRef={searchInputRef}
+              />
+            )}
           </div>
         </div>
         
@@ -270,21 +290,39 @@ export function DashboardHeader() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
+                ref={mobileSearchInputRef}
                 placeholder="Search clients, carers, bookings, documents..." 
                 className="pl-10 pr-4 py-2 rounded-full bg-background border-border"
                 value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchValue.trim().length >= 2) {
-                    setSearchDialogOpen(true);
+                onChange={(e) => {
+                  setSearchValue(e.target.value);
+                  if (e.target.value.trim().length >= 2) {
+                    setSearchDropdownOpen(true);
+                  } else {
+                    setSearchDropdownOpen(false);
                   }
                 }}
                 onFocus={() => {
                   if (searchValue.trim().length >= 2) {
-                    setSearchDialogOpen(true);
+                    setSearchDropdownOpen(true);
                   }
                 }}
               />
+              
+              {/* Mobile Dropdown */}
+              {searchDropdownOpen && searchValue.trim().length >= 2 && isBranchContext && branchId && (
+                <BranchSearchDropdown
+                  searchValue={searchValue}
+                  onClose={() => setSearchDropdownOpen(false)}
+                  onResultClick={() => {
+                    setSearchValue("");
+                    setSearchDropdownOpen(false);
+                  }}
+                  branchId={branchId}
+                  branchName={branchName}
+                  anchorRef={mobileSearchInputRef}
+                />
+              )}
             </div>
             <div className="ml-2 flex items-center gap-2">
               <NotificationDropdown 
@@ -320,16 +358,5 @@ export function DashboardHeader() {
         </div>
       </div>
 
-      {/* Search Dialog */}
-      {isBranchContext && branchId && (
-        <BranchSearchDialog
-          open={searchDialogOpen}
-          onOpenChange={setSearchDialogOpen}
-          searchValue={searchValue}
-          onSearchValueChange={setSearchValue}
-          branchId={branchId}
-          branchName={branchName}
-        />
-      )}
     </header>;
 }

@@ -1,6 +1,7 @@
 import { useBranchBookings } from "@/data/hooks/useBranchBookings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useMemo } from "react";
 
 export interface SearchResult {
   id: string;
@@ -14,7 +15,7 @@ export interface SearchResult {
 
 export function useBranchSearch(branchId: string | null, searchTerm: string) {
   const enabled = !!branchId && searchTerm.trim().length >= 2;
-  const term = searchTerm.trim().toLowerCase();
+  const term = useMemo(() => searchTerm.trim().toLowerCase(), [searchTerm]);
 
   // Search clients directly
   const clientsQuery = useQuery({
@@ -33,6 +34,7 @@ export function useBranchSearch(branchId: string | null, searchTerm: string) {
       return data || [];
     },
     enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Search staff directly
@@ -52,6 +54,7 @@ export function useBranchSearch(branchId: string | null, searchTerm: string) {
       return data || [];
     },
     enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch and filter bookings
@@ -75,6 +78,7 @@ export function useBranchSearch(branchId: string | null, searchTerm: string) {
       return data || [];
     },
     enabled,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Transform results
