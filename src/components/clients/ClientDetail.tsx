@@ -270,7 +270,11 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({
                 
                 <TabsContent value="service-reports" className="p-6 m-0">
                   <ServiceReportsErrorBoundary clientId={client.id}>
-                    <AdminServiceReportsTab clientId={client.id} branchId={branchId} />
+                    <AdminServiceReportsTab 
+                      clientId={client.id} 
+                      branchId={branchId} 
+                      clientName={client.name}
+                    />
                   </ServiceReportsErrorBoundary>
                 </TabsContent>
                 

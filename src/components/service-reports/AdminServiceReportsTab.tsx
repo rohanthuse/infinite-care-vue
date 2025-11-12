@@ -8,14 +8,16 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminServiceReportForm } from './AdminServiceReportForm';
-import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, ThumbsUp, ThumbsDown, AlertCircle, MessageSquare, Plus, Edit } from 'lucide-react';
+import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, ThumbsUp, ThumbsDown, AlertCircle, MessageSquare, Plus, Edit, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ExportServiceReportsDialog } from './ExportServiceReportsDialog';
 interface AdminServiceReportsTabProps {
   clientId: string;
   branchId: string;
+  clientName?: string;
   clients?: Array<{
     id: string;
     first_name: string;
@@ -30,6 +32,7 @@ interface AdminServiceReportsTabProps {
 export function AdminServiceReportsTab({
   clientId,
   branchId,
+  clientName = "Client",
   clients = [],
   staff = []
 }: AdminServiceReportsTabProps) {
@@ -57,6 +60,7 @@ export function AdminServiceReportsTab({
     open: false,
     report: null
   });
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // Reset state when dialog closes - MUST be before any conditional returns
   React.useEffect(() => {
@@ -153,7 +157,13 @@ export function AdminServiceReportsTab({
             Review and manage service reports for this client
           </p>
         </div>
-        
+        <Button
+          variant="outline"
+          onClick={() => setExportDialogOpen(true)}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Export Service Reports
+        </Button>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
@@ -303,6 +313,15 @@ export function AdminServiceReportsTab({
       first_name: 'Selected',
       last_name: 'Client'
     }]} staff={staff} existingReport={editReportDialog.report} mode="edit" />
+
+      {/* Export Dialog */}
+      <ExportServiceReportsDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        clientId={clientId}
+        branchId={branchId}
+        clientName={clientName}
+      />
     </div>;
 }
 
