@@ -9482,14 +9482,14 @@ export type Database = {
           actual_duration_minutes: number | null
           booking_id: string | null
           branch_id: string
-          client_id: string
+          client_id: string | null
           client_signature_data: string | null
           completion_percentage: number | null
           created_at: string
           id: string
           location_data: Json | null
           organization_id: string | null
-          staff_id: string
+          staff_id: string | null
           staff_signature_data: string | null
           status: string
           updated_at: string
@@ -9503,14 +9503,14 @@ export type Database = {
           actual_duration_minutes?: number | null
           booking_id?: string | null
           branch_id: string
-          client_id: string
+          client_id?: string | null
           client_signature_data?: string | null
           completion_percentage?: number | null
           created_at?: string
           id?: string
           location_data?: Json | null
           organization_id?: string | null
-          staff_id: string
+          staff_id?: string | null
           staff_signature_data?: string | null
           status?: string
           updated_at?: string
@@ -9524,14 +9524,14 @@ export type Database = {
           actual_duration_minutes?: number | null
           booking_id?: string | null
           branch_id?: string
-          client_id?: string
+          client_id?: string | null
           client_signature_data?: string | null
           completion_percentage?: number | null
           created_at?: string
           id?: string
           location_data?: Json | null
           organization_id?: string | null
-          staff_id?: string
+          staff_id?: string | null
           staff_signature_data?: string | null
           status?: string
           updated_at?: string
@@ -9550,10 +9550,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "visit_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "visit_records_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]

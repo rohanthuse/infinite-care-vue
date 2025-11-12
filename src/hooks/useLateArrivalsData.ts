@@ -57,21 +57,27 @@ export const useLateArrivalsData = ({
     queryFn: async (): Promise<LateArrivalsData> => {
       console.log('[useLateArrivalsData] Fetching data for branch:', branchId);
 
-      // Fetch visit records with booking_id (workaround for PostgREST cache issue)
+      // Fetch visit records with proper PostgREST joins
       let query = supabase
         .from('visit_records')
         .select(`
           id,
           branch_id,
-          booking_id,
           visit_start_time,
           created_at,
+          booking:bookings!inner(start_time),
           staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
         `)
         .eq('branch_id', branchId)
-        .not('visit_start_time', 'is', null)
-        .not('booking_id', 'is', null);
+        .not('visit_start_time', 'is', null);
+
+      if (startDate) {
+        query = query.gte('created_at', startDate);
+      }
+      if (endDate) {
+        query = query.lte('created_at', endDate);
+      }
 
       const { data: visits, error } = await query.order('created_at', { ascending: false });
 
@@ -95,52 +101,7 @@ export const useLateArrivalsData = ({
         };
       }
 
-      // Fetch bookings separately
-      const bookingIds = [...new Set(visits.map(v => v.booking_id).filter(Boolean))];
-      let bookingsQuery = supabase
-        .from('bookings')
-        .select('id, start_time')
-        .in('id', bookingIds);
-
-      if (startDate) {
-        bookingsQuery = bookingsQuery.gte('start_time', startDate);
-      }
-      if (endDate) {
-        bookingsQuery = bookingsQuery.lte('start_time', endDate);
-      }
-
-      const { data: bookings, error: bookingsError } = await bookingsQuery;
-
-      if (bookingsError) {
-        console.error('[useLateArrivalsData] Error fetching bookings:', bookingsError);
-        throw bookingsError;
-      }
-
-      // Create booking map for quick lookup
-      const bookingMap = new Map(bookings?.map(b => [b.id, b]) || []);
-
-      // Merge bookings with visits and filter by date range
-      const visitsWithBookings = visits
-        .map(visit => ({
-          ...visit,
-          booking: bookingMap.get(visit.booking_id!)
-        }))
-        .filter(visit => visit.booking?.start_time);
-
-      if (visitsWithBookings.length === 0) {
-        return {
-          summary: {
-            totalLateArrivals: 0,
-            totalVisits: 0,
-            lateRate: 0,
-            averageMinutesLate: 0,
-            topStaffWithLateArrivals: 'N/A',
-          },
-          byStaff: [],
-          trends: [],
-          recentLateArrivals: [],
-        };
-      }
+      const visitsWithBookings = visits;
 
       // Sort by booking start time (most recent first)
       visitsWithBookings.sort((a, b) => {
@@ -166,7 +127,7 @@ export const useLateArrivalsData = ({
 
       // Calculate average minutes late
       const totalMinutesLate = lateArrivals.reduce((sum, visit) => {
-        const scheduled = new Date(visit.booking!.start_time);
+        const scheduled = new Date(visit.booking.start_time);
         const actual = new Date(visit.visit_start_time!);
         const diffMinutes = Math.floor((actual.getTime() - scheduled.getTime()) / (1000 * 60));
         return sum + diffMinutes;
@@ -196,7 +157,7 @@ export const useLateArrivalsData = ({
           if (current) {
             current.late += 1;
             
-            const scheduled = new Date(visit.booking!.start_time);
+            const scheduled = new Date(visit.booking.start_time);
             const actual = new Date(visit.visit_start_time!);
             const diffMinutes = Math.floor((actual.getTime() - scheduled.getTime()) / (1000 * 60));
             current.totalMinutesLate += diffMinutes;
@@ -256,7 +217,7 @@ export const useLateArrivalsData = ({
 
       // Recent late arrivals
       const recentLateArrivals: LateArrivalDetail[] = lateArrivals.slice(0, 20).map((visit) => {
-        const scheduled = new Date(visit.booking!.start_time);
+        const scheduled = new Date(visit.booking.start_time);
         const actual = new Date(visit.visit_start_time!);
         const minutesLate = Math.floor((actual.getTime() - scheduled.getTime()) / (1000 * 60));
 
