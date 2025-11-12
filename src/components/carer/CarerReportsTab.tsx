@@ -405,7 +405,12 @@ export function CarerReportsTab() {
             <EmptyState message="No rejected reports" />
           ) : (
             rejectedReports.map((report) => (
-              <ReportCard key={report.id} report={report} />
+              <ReportCard 
+                key={report.id} 
+                report={report}
+                canEdit={true}
+                onEdit={() => handleEditReport(report)}
+              />
             ))
           )}
         </TabsContent>
@@ -431,6 +436,8 @@ export function CarerReportsTab() {
           }}
           preSelectedDate={selectedReport.service_date}
           bookingId={selectedReport.booking_id}
+          existingReport={selectedReport}
+          mode="edit"
         />
       )}
 
@@ -568,12 +575,27 @@ function ReportCard({
 
           {/* Review notes if any */}
           {report.review_notes && (
-            <div className="p-3 bg-muted rounded-lg">
+            <div className={`p-3 rounded-lg ${
+              report.status === 'rejected' ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800' :
+              report.status === 'requires_revision' ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800' :
+              'bg-muted'
+            }`}>
               <div className="flex items-center gap-2 mb-1">
-                <Eye className="h-4 w-4" />
-                <span className="text-sm font-medium">Admin Feedback:</span>
+                {report.status === 'rejected' && <XCircle className="h-4 w-4 text-red-500" />}
+                {report.status === 'requires_revision' && <AlertTriangle className="h-4 w-4 text-orange-500" />}
+                {report.status !== 'rejected' && report.status !== 'requires_revision' && <Eye className="h-4 w-4" />}
+                <span className="text-sm font-medium">
+                  {report.status === 'rejected' ? 'Rejection Reason:' : 
+                   report.status === 'requires_revision' ? 'Admin Feedback:' : 
+                   'Admin Feedback:'}
+                </span>
               </div>
               <p className="text-sm text-muted-foreground">{report.review_notes}</p>
+              {(report.status === 'rejected' || report.status === 'requires_revision') && (
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  Click "Edit" above to revise and resubmit this report.
+                </p>
+              )}
             </div>
           )}
         </div>

@@ -15,13 +15,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateServiceReport } from '@/hooks/useServiceReports';
+import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServiceReports';
 import { useClientCompletedBookings } from '@/hooks/useClientCompletedBookings';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { format } from 'date-fns';
 import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useServices } from '@/data/hooks/useServices';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
@@ -55,6 +56,8 @@ interface CreateServiceReportDialogProps {
   visitRecordId?: string;
   bookingId?: string;
   preSelectedBooking?: any;
+  existingReport?: any;
+  mode?: 'create' | 'edit';
 }
 
 const moodOptions = [
@@ -73,9 +76,12 @@ export function CreateServiceReportDialog({
   visitRecordId,
   bookingId,
   preSelectedBooking,
+  existingReport,
+  mode = 'create',
 }: CreateServiceReportDialogProps) {
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
+  const updateServiceReport = useUpdateServiceReport();
   const { data: availableServices = [], isLoading: servicesLoading } = useServices();
   const [newService, setNewService] = useState('');
   const [newTask, setNewTask] = useState('');
@@ -121,6 +127,30 @@ export function CreateServiceReportDialog({
       }
     }
   }, [preSelectedBooking, form]);
+
+  // Populate form with existing report data when editing
+  React.useEffect(() => {
+    if (mode === 'edit' && existingReport && open) {
+      form.reset({
+        client_id: existingReport.client_id,
+        booking_id: existingReport.booking_id || '',
+        service_date: existingReport.service_date,
+        service_duration_minutes: existingReport.service_duration_minutes,
+        services_provided: existingReport.services_provided || [],
+        tasks_completed: existingReport.tasks_completed || [],
+        client_mood: existingReport.client_mood || '',
+        client_engagement: existingReport.client_engagement || '',
+        activities_undertaken: existingReport.activities_undertaken || '',
+        medication_administered: existingReport.medication_administered || false,
+        medication_notes: existingReport.medication_notes || '',
+        incident_occurred: existingReport.incident_occurred || false,
+        incident_details: existingReport.incident_details || '',
+        next_visit_preparations: existingReport.next_visit_preparations || '',
+        carer_observations: existingReport.carer_observations || '',
+        client_feedback: existingReport.client_feedback || '',
+      });
+    }
+  }, [mode, existingReport, open, form]);
   
   const selectedClientId = form.watch('client_id');
   const { data: completedBookings = [] } = useClientCompletedBookings(
@@ -181,12 +211,33 @@ export function CreateServiceReportDialog({
       created_by: carerContext.staffProfile.id,
     };
 
-    createServiceReport.mutate(reportData, {
-      onSuccess: () => {
-        onOpenChange(false);
-        form.reset();
-      },
-    });
+    if (mode === 'edit' && existingReport) {
+      // Update existing report and reset status to pending for re-review
+      updateServiceReport.mutate({
+        id: existingReport.id,
+        updates: {
+          ...reportData,
+          status: 'pending',
+          reviewed_at: null,
+          reviewed_by: null,
+          review_notes: null,
+        }
+      }, {
+        onSuccess: () => {
+          onOpenChange(false);
+          form.reset();
+          toast.success('Service report resubmitted for review');
+        },
+      });
+    } else {
+      // Create new report
+      createServiceReport.mutate(reportData, {
+        onSuccess: () => {
+          onOpenChange(false);
+          form.reset();
+        },
+      });
+    }
   };
 
   const servicesProvided = form.watch('services_provided') || [];
@@ -200,14 +251,19 @@ export function CreateServiceReportDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            {preSelectedClient ? (
+            {mode === 'edit' ? (
+              <>Edit Service Report{preSelectedClient ? ` for ${preSelectedClient.name}` : ''}</>
+            ) : preSelectedClient ? (
               <>Create Service Report for {preSelectedClient.name}</>
             ) : (
               <>Create Service Report</>
             )}
           </DialogTitle>
           <DialogDescription>
-            Complete this report after providing care services to the client.
+            {mode === 'edit' 
+              ? 'Update your service report and resubmit for admin review.'
+              : 'Complete this report after providing care services to the client.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -735,8 +791,11 @@ export function CreateServiceReportDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createServiceReport.isPending}>
-                {createServiceReport.isPending ? 'Submitting...' : 'Submit Report'}
+              <Button type="submit" disabled={createServiceReport.isPending || updateServiceReport.isPending}>
+                {mode === 'edit' 
+                  ? (updateServiceReport.isPending ? 'Resubmitting...' : 'Update & Resubmit')
+                  : (createServiceReport.isPending ? 'Submitting...' : 'Submit Report')
+                }
               </Button>
             </div>
           </form>
