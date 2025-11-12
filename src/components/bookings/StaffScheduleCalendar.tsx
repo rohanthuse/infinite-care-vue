@@ -18,6 +18,7 @@ import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookingsMonthView } from "./BookingsMonthView";
 import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
+import { StaffScheduleDraggable } from "./StaffScheduleDraggable";
 
 interface StaffScheduleCalendarProps {
   date: Date;
@@ -37,6 +38,7 @@ interface StaffScheduleCalendarProps {
   onStatusChange?: (status: string) => void;
   hideControls?: boolean;
   timeInterval?: 30 | 60;
+  enableDragDrop?: boolean;
 }
 
 interface StaffStatus {
@@ -89,6 +91,7 @@ export function StaffScheduleCalendar({
   onStatusChange,
   hideControls = false,
   timeInterval = 30,
+  enableDragDrop = false,
 }: StaffScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -964,8 +967,23 @@ export function StaffScheduleCalendar({
                       )}
                     </div>
                   ))
+                ) : enableDragDrop ? (
+                  // Daily view with drag-and-drop enabled
+                  <StaffScheduleDraggable
+                    staffId={staffMember.id}
+                    staffName={staffMember.name}
+                    timeSlots={timeSlots}
+                    schedule={staffMember.schedule}
+                    bookingBlocks={staffMember.bookingBlocks}
+                    slotWidth={SLOT_WIDTH}
+                    onViewBooking={onViewBooking}
+                    onCellClick={handleCellClick}
+                    getStatusColor={getStatusColor}
+                    getStatusLabel={getStatusLabel}
+                    renderTooltipContent={renderTooltipContent}
+                  />
                 ) : (
-                  // Daily view: Time-based booking blocks
+                  // Daily view: Time-based booking blocks (standard)
                   <div className="relative flex">
                     {timeSlots.map(slot => {
                       const status = staffMember.schedule[slot];
