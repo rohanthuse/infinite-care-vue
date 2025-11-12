@@ -65,6 +65,15 @@ export function AdminServiceReportsTab({
     report: null
   });
 
+  // Reset state when dialog closes - MUST be before any conditional returns
+  React.useEffect(() => {
+    if (!reviewDialog.open) {
+      setIsSubmitting(false);
+      setReviewNotes('');
+      setVisibleToClient(true);
+    }
+  }, [reviewDialog.open]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -131,15 +140,6 @@ export function AdminServiceReportsTab({
       }
     });
   };
-
-  // Reset state when dialog closes
-  React.useEffect(() => {
-    if (!reviewDialog.open) {
-      setIsSubmitting(false);
-      setReviewNotes('');
-      setVisibleToClient(true);
-    }
-  }, [reviewDialog.open]);
 
   const openReviewDialog = (report: any) => {
     setReviewDialog({ open: true, report });
@@ -264,7 +264,7 @@ export function AdminServiceReportsTab({
           setIsSubmitting(false);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto relative">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
           {(isSubmitting || reviewReport.isPending) && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
               <div className="text-center space-y-2">
@@ -274,44 +274,46 @@ export function AdminServiceReportsTab({
             </div>
           )}
           
-          <DialogHeader>
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Review Service Report</DialogTitle>
             <DialogDescription>
               Review and approve/reject the service report submitted by the carer.
             </DialogDescription>
           </DialogHeader>
 
-          {reviewDialog.report && (
-            <div className="space-y-6">
-              <ServiceReportDetails report={reviewDialog.report} />
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <Label htmlFor="reviewNotes">Review Notes (Optional)</Label>
-                <Textarea
-                  id="reviewNotes"
-                  placeholder="Add any notes about this review decision..."
-                  value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
-                  rows={3}
-                />
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {reviewDialog.report && (
+              <div className="space-y-6 pr-2">
+                <ServiceReportDetails report={reviewDialog.report} />
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="visibleToClient"
-                    checked={visibleToClient}
-                    onCheckedChange={(checked) => setVisibleToClient(checked === true)}
+                <Separator />
+                
+                <div className="space-y-4">
+                  <Label htmlFor="reviewNotes">Review Notes (Optional)</Label>
+                  <Textarea
+                    id="reviewNotes"
+                    placeholder="Add any notes about this review decision..."
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    rows={3}
                   />
-                  <Label htmlFor="visibleToClient">
-                    Make visible to client when approved
-                  </Label>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="visibleToClient"
+                      checked={visibleToClient}
+                      onCheckedChange={(checked) => setVisibleToClient(checked === true)}
+                    />
+                    <Label htmlFor="visibleToClient">
+                      Make visible to client when approved
+                    </Label>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="flex-shrink-0 gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -531,8 +533,7 @@ function ServiceReportCard({
 
 function ServiceReportDetails({ report }: { report: any }) {
   return (
-    <ScrollArea className="max-h-[50vh]">
-      <div className="space-y-4">
+    <div className="space-y-4">
         {/* Basic Information */}
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
@@ -615,7 +616,6 @@ function ServiceReportDetails({ report }: { report: any }) {
           </div>
         )}
       </div>
-    </ScrollArea>
   );
 }
 
