@@ -62,13 +62,14 @@ export const useLateArrivalsData = ({
         .from('visit_records')
         .select(`
           id,
+          branch_id,
           visit_start_time,
           created_at,
           booking:bookings!inner(start_time),
-          staff:staff!inner(id, first_name, last_name, branch_id),
+          staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
         `)
-        .eq('staff.branch_id', branchId)
+        .eq('branch_id', branchId)
         .not('visit_start_time', 'is', null)
         .not('booking.start_time', 'is', null);
 

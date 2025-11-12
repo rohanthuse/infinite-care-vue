@@ -67,14 +67,15 @@ export const useMissedCallsData = ({
         .from('bookings')
         .select(`
           id,
+          branch_id,
           start_time,
           end_time,
           status,
           notes,
-          staff:staff!inner(id, first_name, last_name, branch_id),
+          staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
         `)
-        .eq('staff.branch_id', branchId);
+        .eq('branch_id', branchId);
 
       if (startDate) {
         allBookingsQuery = allBookingsQuery.gte('start_time', startDate);
@@ -95,14 +96,15 @@ export const useMissedCallsData = ({
         .from('bookings')
         .select(`
           id,
+          branch_id,
           start_time,
           end_time,
           status,
           notes,
-          staff:staff!inner(id, first_name, last_name, branch_id),
+          staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
         `)
-        .eq('staff.branch_id', branchId)
+        .eq('branch_id', branchId)
         .in('status', ['cancelled', 'no-show']);
 
       if (startDate) {
