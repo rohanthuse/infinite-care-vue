@@ -74,12 +74,10 @@ export function addMinutesToTime(time: string, minutes: number): string {
  * @returns Staff ID
  */
 export function extractStaffIdFromDroppableId(droppableId: string): string {
-  const parts = droppableId.split('-');
   // Format: "staff-{uuid}"
-  if (parts.length >= 2 && parts[0] === 'staff') {
-    return parts[1];
-  }
-  return '';
+  // Since UUIDs contain hyphens, we need to remove only the "staff-" prefix
+  const match = droppableId.match(/^staff-(.+)$/);
+  return match ? match[1] : '';
 }
 
 /**
