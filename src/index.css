@@ -46,6 +46,16 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Chart colors for analytics */
+    --chart-1: 217 91% 60%;
+    --chart-2: 173 80% 45%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 32 95% 58%;
+    --chart-5: 142 76% 36%;
+    --chart-6: 346 77% 50%;
+    --chart-7: 48 96% 53%;
+    --chart-8: 280 85% 60%;
   }
 
   .dark {
@@ -87,6 +97,16 @@
     --sidebar-accent-foreground: 220 15% 85%;
     --sidebar-border: 220 15% 12%;
     --sidebar-ring: 210 100% 60%;
+
+    /* Chart colors for analytics - Dark theme optimized */
+    --chart-1: 217 91% 70%;
+    --chart-2: 173 80% 55%;
+    --chart-3: 262 83% 68%;
+    --chart-4: 32 95% 65%;
+    --chart-5: 142 76% 46%;
+    --chart-6: 346 77% 60%;
+    --chart-7: 48 96% 63%;
+    --chart-8: 280 85% 70%;
   }
 }
 
