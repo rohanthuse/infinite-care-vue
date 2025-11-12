@@ -843,6 +843,9 @@ export type Database = {
       bookings: {
         Row: {
           branch_id: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           client_id: string | null
           created_at: string | null
           end_time: string
@@ -860,6 +863,9 @@ export type Database = {
         }
         Insert: {
           branch_id?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           client_id?: string | null
           created_at?: string | null
           end_time: string
@@ -877,6 +883,9 @@ export type Database = {
         }
         Update: {
           branch_id?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           client_id?: string | null
           created_at?: string | null
           end_time?: string
@@ -9480,6 +9489,7 @@ export type Database = {
       visit_records: {
         Row: {
           actual_duration_minutes: number | null
+          arrival_delay_minutes: number | null
           booking_id: string | null
           branch_id: string
           client_id: string | null
@@ -9487,6 +9497,7 @@ export type Database = {
           completion_percentage: number | null
           created_at: string
           id: string
+          late_arrival_reason: string | null
           location_data: Json | null
           organization_id: string | null
           staff_id: string | null
@@ -9501,6 +9512,7 @@ export type Database = {
         }
         Insert: {
           actual_duration_minutes?: number | null
+          arrival_delay_minutes?: number | null
           booking_id?: string | null
           branch_id: string
           client_id?: string | null
@@ -9508,6 +9520,7 @@ export type Database = {
           completion_percentage?: number | null
           created_at?: string
           id?: string
+          late_arrival_reason?: string | null
           location_data?: Json | null
           organization_id?: string | null
           staff_id?: string | null
@@ -9522,6 +9535,7 @@ export type Database = {
         }
         Update: {
           actual_duration_minutes?: number | null
+          arrival_delay_minutes?: number | null
           booking_id?: string | null
           branch_id?: string
           client_id?: string | null
@@ -9529,6 +9543,7 @@ export type Database = {
           completion_percentage?: number | null
           created_at?: string
           id?: string
+          late_arrival_reason?: string | null
           location_data?: Json | null
           organization_id?: string | null
           staff_id?: string | null

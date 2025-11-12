@@ -14,6 +14,8 @@ export interface BookingAttendanceData {
     latitude: number;
     longitude: number;
   };
+  lateArrivalReason?: string;
+  arrivalDelayMinutes?: number;
 }
 
 export const useBookingAttendance = (options?: { silent?: boolean }) => {
@@ -51,6 +53,60 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
         }
 
         console.log('[useBookingAttendance] Booking updated successfully');
+
+        // If starting visit and late arrival data provided, create/update visit record with late arrival info
+        if (data.action === 'start_visit' && (data.lateArrivalReason || data.arrivalDelayMinutes)) {
+          console.log('[useBookingAttendance] Recording late arrival information');
+          
+          // Check if visit record exists
+          const { data: existingVisit } = await supabase
+            .from('visit_records')
+            .select('id')
+            .eq('booking_id', data.bookingId)
+            .single();
+
+          if (existingVisit) {
+            // Update existing visit record
+            const { error: visitError } = await supabase
+              .from('visit_records')
+              .update({
+                late_arrival_reason: data.lateArrivalReason,
+                arrival_delay_minutes: data.arrivalDelayMinutes,
+              })
+              .eq('id', existingVisit.id);
+
+            if (visitError) {
+              console.error('[useBookingAttendance] Error updating visit record:', visitError);
+            }
+          } else {
+            // Create new visit record with late arrival info
+            const { data: booking } = await supabase
+              .from('bookings')
+              .select('client_id, staff_id, branch_id, start_time')
+              .eq('id', data.bookingId)
+              .single();
+
+            if (booking) {
+              const { error: createError } = await supabase
+                .from('visit_records')
+                .insert({
+                  booking_id: data.bookingId,
+                  client_id: booking.client_id,
+                  staff_id: booking.staff_id,
+                  branch_id: booking.branch_id,
+                  visit_date: format(new Date(booking.start_time), 'yyyy-MM-dd'),
+                  visit_start_time: new Date().toISOString(),
+                  status: 'in_progress',
+                  late_arrival_reason: data.lateArrivalReason,
+                  arrival_delay_minutes: data.arrivalDelayMinutes,
+                });
+
+              if (createError) {
+                console.error('[useBookingAttendance] Error creating visit record:', createError);
+              }
+            }
+          }
+        }
 
         // Process attendance automatically with retry logic
         const attendanceData: AutoAttendanceData = {

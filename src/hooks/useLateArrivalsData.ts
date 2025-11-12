@@ -11,6 +11,7 @@ export interface LateArrivalDetail {
   actualArrivalTime: string;
   minutesLate: number;
   date: string;
+  reason?: string;
 }
 
 export interface LateArrivalByStaff {
@@ -65,6 +66,8 @@ export const useLateArrivalsData = ({
           branch_id,
           visit_start_time,
           created_at,
+          late_arrival_reason,
+          arrival_delay_minutes,
           booking:bookings!inner(start_time),
           staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
@@ -219,7 +222,7 @@ export const useLateArrivalsData = ({
       const recentLateArrivals: LateArrivalDetail[] = lateArrivals.slice(0, 20).map((visit) => {
         const scheduled = new Date(visit.booking.start_time);
         const actual = new Date(visit.visit_start_time!);
-        const minutesLate = Math.floor((actual.getTime() - scheduled.getTime()) / (1000 * 60));
+        const minutesLate = visit.arrival_delay_minutes || Math.floor((actual.getTime() - scheduled.getTime()) / (1000 * 60));
 
         const staffData = Array.isArray(visit.staff) && visit.staff.length > 0 ? visit.staff[0] : null;
         const clientData = Array.isArray(visit.client) && visit.client.length > 0 ? visit.client[0] : null;
@@ -244,6 +247,9 @@ export const useLateArrivalsData = ({
             month: 'short',
             day: 'numeric',
           }),
+          reason: visit.late_arrival_reason
+            ? visit.late_arrival_reason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+            : undefined,
         };
       });
 

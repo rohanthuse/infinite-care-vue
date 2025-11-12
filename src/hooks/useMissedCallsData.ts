@@ -72,6 +72,7 @@ export const useMissedCallsData = ({
           end_time,
           status,
           notes,
+          cancellation_reason,
           staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
         `)
@@ -101,6 +102,7 @@ export const useMissedCallsData = ({
           end_time,
           status,
           notes,
+          cancellation_reason,
           staff:staff!inner(id, first_name, last_name),
           client:clients!inner(id, first_name, last_name)
         `)
@@ -181,10 +183,12 @@ export const useMissedCallsData = ({
       const topStaffWithMissedCalls =
         byStaff.length > 0 ? `${byStaff[0].staffName} (${byStaff[0].missedCallsCount})` : 'N/A';
 
-      // Group by reason
+      // Group by reason (prioritize cancellation_reason field)
       const reasonMap = new Map<string, number>();
       missedCalls.forEach((call) => {
-        const reason = call.notes || 'No reason provided';
+        const reason = call.cancellation_reason 
+          ? call.cancellation_reason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+          : (call.notes || 'No reason provided');
         reasonMap.set(reason, (reasonMap.get(reason) || 0) + 1);
       });
 
@@ -244,7 +248,9 @@ export const useMissedCallsData = ({
             hour: '2-digit',
             minute: '2-digit',
           }),
-          reason: call.notes || 'No reason provided',
+          reason: call.cancellation_reason
+            ? call.cancellation_reason.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
+            : (call.notes || 'No reason provided'),
           status: call.status || 'cancelled',
         };
       });

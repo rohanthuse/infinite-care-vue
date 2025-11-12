@@ -16,6 +16,8 @@ import { useBookingAttendance } from "@/hooks/useBookingAttendance";
 import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { toast } from "sonner";
+import { LateArrivalDialog } from "@/components/bookings/dialogs/LateArrivalDialog";
+import { useLateArrivalDetection } from "@/hooks/useLateArrivalDetection";
 
 const CarerAppointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,6 +28,16 @@ const CarerAppointments: React.FC = () => {
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
+  
+  // Late arrival detection
+  const {
+    checkLateArrival,
+    promptForLateArrivalReason,
+    showLateArrivalDialog,
+    lateArrivalInfo,
+    pendingBookingId,
+    clearLateArrivalDialog,
+  } = useLateArrivalDetection();
 
   // Get appointments from database
   const { data: appointments = [], isLoading } = useQuery({
@@ -196,6 +208,15 @@ const CarerAppointments: React.FC = () => {
 
       console.log('[handleStartVisit] Using branch ID:', branchId);
 
+      // Check for late arrival
+      const lateCheck = await checkLateArrival(appointment.id);
+      
+      if (lateCheck.isLate) {
+        // Show late arrival dialog
+        promptForLateArrivalReason(appointment.id, lateCheck);
+        return; // Wait for user to provide reason
+      }
+
       // Show loading state
       toast.loading('Starting visit...', { id: 'start-visit' });
 
@@ -220,6 +241,47 @@ const CarerAppointments: React.FC = () => {
       console.error('[handleStartVisit] Error starting visit:', error);
       toast.dismiss('start-visit');
       // Error toast is now handled in the hook
+    }
+  };
+
+  // Handle late arrival confirmation
+  const handleLateArrivalConfirm = async (reason: string, details?: string) => {
+    if (!pendingBookingId || !carerContext?.staffId) return;
+
+    try {
+      // Find the appointment
+      const appointment = appointments.find(a => a.id === pendingBookingId);
+      if (!appointment) return;
+
+      const branchId = appointment.branch_id || carerContext?.branchInfo?.id;
+      if (!branchId) return;
+
+      clearLateArrivalDialog();
+
+      // Show loading state
+      toast.loading('Starting visit...', { id: 'start-visit' });
+
+      // Process booking attendance with late arrival data
+      await bookingAttendance.mutateAsync({
+        bookingId: pendingBookingId,
+        staffId: carerContext.staffId,
+        branchId: branchId,
+        action: 'start_visit',
+        location: {
+          latitude: 0,
+          longitude: 0
+        },
+        lateArrivalReason: reason,
+        arrivalDelayMinutes: lateArrivalInfo?.minutesLate || 0,
+      });
+
+      toast.dismiss('start-visit');
+
+      // Navigate to visit workflow
+      navigate(createCarerPath(`/visit/${pendingBookingId}`));
+    } catch (error) {
+      console.error('[handleLateArrivalConfirm] Error:', error);
+      toast.dismiss('start-visit');
     }
   };
 
@@ -519,6 +581,19 @@ const CarerAppointments: React.FC = () => {
         onStartVisit={handleStartVisit}
         onContinueVisit={(appointment) => navigate(createCarerPath(`/visit/${appointment.id}`))}
       />
+
+      {/* Late Arrival Dialog */}
+      {lateArrivalInfo && (
+        <LateArrivalDialog
+          open={showLateArrivalDialog}
+          onOpenChange={(open) => {
+            if (!open) clearLateArrivalDialog();
+          }}
+          onConfirm={handleLateArrivalConfirm}
+          minutesLate={lateArrivalInfo.minutesLate}
+          staffName={lateArrivalInfo.staffName}
+        />
+      )}
     </div>
   );
 };
