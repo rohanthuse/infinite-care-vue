@@ -104,7 +104,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
-          <Command>
+          <Command shouldFilter={false}>
             <div className="flex items-center border-b px-3">
               <Search className="h-4 w-4 shrink-0 opacity-50 mr-2" />
               <CommandInput 
@@ -120,7 +120,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                 {filteredEntities.map((entity) => (
                   <CommandItem
                     key={entity.id}
-                    value={entity.id}
+                    value={`${entity.name} ${entity.id}`.toLowerCase()}
                     onSelect={() => handleSelectEntity(entity.id)}
                     className="flex items-center py-2"
                     data-testid={`${type}-option-${entity.id}`}
