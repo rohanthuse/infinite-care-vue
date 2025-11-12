@@ -39,6 +39,8 @@ interface StaffScheduleCalendarProps {
   hideControls?: boolean;
   timeInterval?: 30 | 60;
   enableDragDrop?: boolean;
+  selectedBookings?: Booking[];
+  onBookingSelect?: (booking: Booking, selected: boolean) => void;
 }
 
 interface StaffStatus {
@@ -92,6 +94,8 @@ export function StaffScheduleCalendar({
   hideControls = false,
   timeInterval = 30,
   enableDragDrop = false,
+  selectedBookings = [],
+  onBookingSelect,
 }: StaffScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -981,6 +985,8 @@ export function StaffScheduleCalendar({
                     getStatusColor={getStatusColor}
                     getStatusLabel={getStatusLabel}
                     renderTooltipContent={renderTooltipContent}
+                    selectedBookings={selectedBookings}
+                    onBookingSelect={onBookingSelect}
                   />
                 ) : (
                   // Daily view: Time-based booking blocks (standard)

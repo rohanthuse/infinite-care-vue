@@ -1,7 +1,9 @@
 import React from "react";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getBookingStatusColor } from "./utils/bookingColors";
+import { Booking } from "./BookingTimeGrid";
 
 interface BookingBlock {
   booking: any;
@@ -26,6 +28,8 @@ interface StaffScheduleDraggableProps {
   getStatusLabel: (status: any) => string;
   renderTooltipContent: (status: any, staffName: string) => React.ReactNode;
   staffName: string;
+  selectedBookings?: Booking[];
+  onBookingSelect?: (booking: Booking, selected: boolean) => void;
 }
 
 export function StaffScheduleDraggable({
@@ -39,7 +43,9 @@ export function StaffScheduleDraggable({
   getStatusColor,
   getStatusLabel,
   renderTooltipContent,
-  staffName
+  staffName,
+  selectedBookings = [],
+  onBookingSelect
 }: StaffScheduleDraggableProps) {
   return (
     <Droppable droppableId={`staff-${staffId}`} type="booking">
@@ -80,6 +86,7 @@ export function StaffScheduleDraggable({
             const colorClass = getStatusColor({ type: block.status, booking: block.booking });
             const isSplitFirst = block.isSplit && block.splitType === 'first';
             const isSplitSecond = block.isSplit && block.splitType === 'second';
+            const isSelected = selectedBookings.some(b => b.id === block.booking.id);
             
             return (
               <Draggable 
@@ -98,12 +105,13 @@ export function StaffScheduleDraggable({
                       ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
                       ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
                       ${snapshot.isDragging ? 'shadow-xl opacity-95 rotate-2 scale-105 ring-2 ring-primary' : ''}
+                      ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
                     `}
                     style={{ 
                       left: `${block.leftPosition}px`,
                       width: `${Math.max(block.width, 20)}px`,
                       height: '64px',
-                      zIndex: snapshot.isDragging ? 1000 : 1,
+                      zIndex: snapshot.isDragging ? 1000 : (isSelected ? 2 : 1),
                       ...provided.draggableProps.style
                     }}
                     onClick={(e) => {
@@ -113,6 +121,20 @@ export function StaffScheduleDraggable({
                       }
                     }}
                   >
+                    {onBookingSelect && (
+                      <div 
+                        className="absolute top-1 left-1 z-10 pointer-events-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onBookingSelect(block.booking, !isSelected);
+                        }}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          className="h-4 w-4 bg-background border-2"
+                        />
+                      </div>
+                    )}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex flex-col items-center justify-center px-1 w-full pointer-events-none">

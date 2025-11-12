@@ -32,6 +32,8 @@ interface ClientScheduleCalendarProps {
   onStatusChange?: (status: string) => void;
   hideControls?: boolean;
   timeInterval?: 30 | 60;
+  selectedBookings?: Booking[];
+  onBookingSelect?: (booking: Booking, selected: boolean) => void;
 }
 
 interface ClientStatus {
@@ -83,6 +85,8 @@ export function ClientScheduleCalendar({
   onStatusChange,
   hideControls = false,
   timeInterval = 30,
+  selectedBookings = [],
+  onBookingSelect,
 }: ClientScheduleCalendarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
@@ -841,6 +845,7 @@ export function ClientScheduleCalendar({
                       const colorClass = getStatusColor({ type: block.status, booking: block.booking });
                       const isSplitFirst = block.isSplit && block.splitType === 'first';
                       const isSplitSecond = block.isSplit && block.splitType === 'second';
+                      const isSelected = selectedBookings.some(b => b.id === block.booking.id);
                       
                       return (
                         <Tooltip key={`${block.booking.id}-${idx}`}>
@@ -851,15 +856,35 @@ export function ClientScheduleCalendar({
                                 ${colorClass}
                                 ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
                                 ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
+                                ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
                               `}
                               style={{ 
                                 left: `${block.leftPosition}px`,
                                 width: `${Math.max(block.width, 20)}px`,
                                 height: '80px',
-                                zIndex: 1
+                                zIndex: isSelected ? 2 : 1
                               }}
-                              onClick={() => onViewBooking && onViewBooking(block.booking)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onViewBooking) {
+                                  onViewBooking(block.booking);
+                                }
+                              }}
                             >
+                              {onBookingSelect && (
+                                <div 
+                                  className="absolute top-1 left-1 z-10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onBookingSelect(block.booking, !isSelected);
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    className="h-4 w-4 bg-background border-2"
+                                  />
+                                </div>
+                              )}
                               <div className="flex flex-col items-center justify-center px-1 w-full">
                                 <div className="font-semibold truncate w-full text-center">
                                   {block.booking.carerName}

@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
 import { BookingReassignDialog } from "./drag-drop/BookingReassignDialog";
+import { BookingReassignActionsBar } from "./BookingReassignActionsBar";
+import { BookingBatchReassignDialog } from "./BookingBatchReassignDialog";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { 
   calculateTimeFromPosition, 
@@ -14,6 +16,7 @@ import {
   doBookingsOverlap
 } from "./drag-drop/dragDropHelpers";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
+import { useUpdateMultipleBookings } from "@/hooks/useUpdateMultipleBookings";
 
 interface UnifiedScheduleViewProps {
   date: Date;
@@ -62,7 +65,10 @@ export function UnifiedScheduleView({
   const [pendingMove, setPendingMove] = useState<PendingBookingMove | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dragDropKey, setDragDropKey] = useState(0);
+  const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
+  const [batchReassignOpen, setBatchReassignOpen] = useState(false);
   const { mutate: updateBooking, isPending: isUpdating } = useUpdateBooking(branchId);
+  const { mutate: updateMultipleBookings, isPending: isBatchUpdating } = useUpdateMultipleBookings(branchId);
 
   // Track mouse position for precise drop detection
   React.useEffect(() => {
@@ -180,6 +186,55 @@ export function UnifiedScheduleView({
     toast.info("Booking move cancelled - returned to original position");
   };
 
+  const handleBookingSelect = (booking: Booking, selected: boolean) => {
+    setSelectedBookings(prev => {
+      if (selected) {
+        return [...prev, booking];
+      } else {
+        return prev.filter(b => b.id !== booking.id);
+      }
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedBookings([]);
+  };
+
+  const handleBulkReassign = () => {
+    setBatchReassignOpen(true);
+  };
+
+  const handleBatchReassignConfirm = (newStaffId: string) => {
+    if (isBatchUpdating) return;
+
+    updateMultipleBookings(
+      {
+        bookingIds: selectedBookings.map(b => b.id),
+        bookings: selectedBookings.map(b => ({
+          id: b.id,
+          clientId: b.clientId,
+          staffId: b.carerId
+        })),
+        updatedData: {
+          staff_id: newStaffId
+        }
+      },
+      {
+        onSuccess: () => {
+          setBatchReassignOpen(false);
+          setSelectedBookings([]);
+        },
+        onError: () => {
+          setBatchReassignOpen(false);
+        }
+      }
+    );
+  };
+
+  const handleBatchReassignCancel = () => {
+    setBatchReassignOpen(false);
+  };
+
   const oldStaff = pendingMove 
     ? carers.find(c => c.id === pendingMove.booking.carerId)
     : null;
@@ -212,6 +267,8 @@ export function UnifiedScheduleView({
             onCreateBooking={(clientId, timeSlot) => onCreateBooking(clientId, undefined, timeSlot)}
             hideControls={true}
             timeInterval={60}
+            selectedBookings={selectedBookings}
+            onBookingSelect={handleBookingSelect}
           />
         </div>
       </div>
@@ -242,6 +299,8 @@ export function UnifiedScheduleView({
             hideControls={true}
             timeInterval={60}
             enableDragDrop={true}
+            selectedBookings={selectedBookings}
+            onBookingSelect={handleBookingSelect}
           />
         </div>
       </div>
@@ -261,6 +320,24 @@ export function UnifiedScheduleView({
         isLoading={isUpdating}
         onConfirm={handleConfirmMove}
         onCancel={handleCancelMove}
+      />
+
+      {/* Batch Reassignment Dialog */}
+      <BookingBatchReassignDialog
+        open={batchReassignOpen}
+        selectedBookings={selectedBookings}
+        carers={carers}
+        existingBookings={bookings}
+        isLoading={isBatchUpdating}
+        onConfirm={handleBatchReassignConfirm}
+        onCancel={handleBatchReassignCancel}
+      />
+
+      {/* Bulk Actions Bar */}
+      <BookingReassignActionsBar
+        selectedBookings={selectedBookings}
+        onClearSelection={handleClearSelection}
+        onBulkReassign={handleBulkReassign}
       />
     </div>
     </DragDropContext>
