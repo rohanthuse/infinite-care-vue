@@ -9871,6 +9871,10 @@ export type Database = {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
       }
+      can_access_visit_record: {
+        Args: { _user_id: string; _visit_record_id: string }
+        Returns: boolean
+      }
       check_auth_schema_health: { Args: never; Returns: Json }
       check_carer_auth_health: { Args: never; Returns: Json }
       check_document_upload_access: {
@@ -10328,6 +10332,10 @@ export type Database = {
       is_authenticated_admin: { Args: never; Returns: boolean }
       is_current_staff_member: {
         Args: { staff_id_param: string }
+        Returns: boolean
+      }
+      is_staff_in_branch: {
+        Args: { _branch_id: string; _user_id: string }
         Returns: boolean
       }
       is_system_admin: { Args: { user_id_param: string }; Returns: boolean }
