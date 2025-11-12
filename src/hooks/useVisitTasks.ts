@@ -54,9 +54,10 @@ export const useVisitTasks = (visitRecordId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecordId] });
     },
-    onError: (error) => {
-      console.error('Error adding task:', error);
-      toast.error('Failed to add task');
+    onError: (error: any) => {
+      console.error('[useVisitTasks] Error adding task:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to add task: ${errorMessage}`, { duration: 5000 });
     },
   });
 
@@ -98,9 +99,10 @@ export const useVisitTasks = (visitRecordId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit-tasks', visitRecordId] });
     },
-    onError: (error) => {
-      console.error('Error updating task:', error);
-      toast.error('Failed to update task');
+    onError: (error: any) => {
+      console.error('[useVisitTasks] Error updating task:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to update task: ${errorMessage}`, { duration: 5000 });
     },
   });
 

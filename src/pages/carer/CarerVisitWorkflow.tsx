@@ -371,36 +371,52 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleTaskToggle = (taskId: string) => {
+    console.log('[handleTaskToggle] Called', { taskId, isViewOnly, visitRecordId: visitRecord?.id });
+    
     if (isViewOnly) {
       toast.info("Task details are read-only for completed visits");
       return;
     }
     
     const task = tasks?.find(t => t.id === taskId);
+    console.log('[handleTaskToggle] Task found:', task);
+    
     if (task) {
+      console.log('[handleTaskToggle] Calling mutation to toggle task');
       updateTask.mutate({
         taskId,
         isCompleted: !task.is_completed,
         notes: `Task ${task.is_completed ? 'unchecked' : 'completed'} at ${format(new Date(), 'HH:mm')}`,
-        completionTimeMinutes: task.is_completed ? undefined : 15, // Estimated time
+        completionTimeMinutes: task.is_completed ? undefined : 15,
       });
+    } else {
+      console.error('[handleTaskToggle] Task not found!', { taskId, tasksCount: tasks?.length });
+      toast.error('Task not found. Please refresh the page.');
     }
   };
   
   const handleMedicationToggle = (medId: string, customNotes?: string) => {
+    console.log('[handleMedicationToggle] Called', { medId, customNotes, isViewOnly, visitRecordId: visitRecord?.id });
+    
     if (isViewOnly) {
       toast.info("Medication records are read-only for completed visits");
       return;
     }
     
     const medication = medications?.find(m => m.id === medId);
+    console.log('[handleMedicationToggle] Medication found:', medication);
+    
     if (medication) {
+      console.log('[handleMedicationToggle] Calling mutation to toggle medication');
       administerMedication.mutate({
         medicationId: medId,
         isAdministered: !medication.is_administered,
         notes: customNotes || `Medication ${medication.is_administered ? 'not administered' : 'administered'} at ${format(new Date(), 'HH:mm')}`,
         administeredBy: user?.id,
       });
+    } else {
+      console.error('[handleMedicationToggle] Medication not found!', { medId, medicationsCount: medications?.length });
+      toast.error('Medication not found. Please refresh the page.');
     }
   };
   
@@ -459,11 +475,29 @@ const CarerVisitWorkflow = () => {
   };
   
   const recordNews2Reading = () => {
+    console.log('[recordNews2Reading] Called', { 
+      visitRecordId: visitRecord?.id, 
+      clientId: currentAppointment?.client_id,
+      isViewOnly,
+      readingData: { respRate, spo2, systolicBP, diastolicBP, pulse, consciousness, temperature, o2Therapy }
+    });
+    
+    if (isViewOnly) {
+      toast.info("Cannot record readings for completed visits");
+      return;
+    }
+    
     if (!visitRecord || !currentAppointment?.client_id) {
-      toast.error("Visit record not found");
+      console.error('[recordNews2Reading] Missing required data', { 
+        visitRecord: visitRecord?.id, 
+        appointmentId: currentAppointment?.id,
+        clientId: currentAppointment?.client_id 
+      });
+      toast.error("Visit record not found. Please refresh the page.");
       return;
     }
 
+    console.log('[recordNews2Reading] Calling mutation with data');
     recordNEWS2.mutate({
       respiratory_rate: respRate,
       oxygen_saturation: spo2,
@@ -1158,7 +1192,7 @@ const CarerVisitWorkflow = () => {
                               checked={task.is_completed}
                               onCheckedChange={() => handleTaskToggle(task.id)}
                               className="flex-shrink-0"
-                              disabled={isViewOnly}
+                              disabled={isViewOnly || updateTask.isPending}
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -1304,7 +1338,7 @@ const CarerVisitWorkflow = () => {
                                 handleMedicationToggle(med.id, medicationNotes[med.id]);
                               }}
                               className="flex-shrink-0"
-                              disabled={isViewOnly}
+                              disabled={isViewOnly || administerMedication.isPending}
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
@@ -1548,9 +1582,21 @@ const CarerVisitWorkflow = () => {
                   </div>
                   
                   <div className="flex justify-center">
-                    <Button onClick={recordNews2Reading}>
-                      <Activity className="w-4 h-4 mr-2" />
-                      Record Reading
+                    <Button 
+                      onClick={recordNews2Reading}
+                      disabled={isViewOnly || recordNEWS2.isPending}
+                    >
+                      {recordNEWS2.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Recording...
+                        </>
+                      ) : (
+                        <>
+                          <Activity className="w-4 h-4 mr-2" />
+                          Record Reading
+                        </>
+                      )}
                     </Button>
                   </div>
                   

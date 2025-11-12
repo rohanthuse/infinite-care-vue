@@ -57,9 +57,10 @@ export const useVisitMedications = (visitRecordId?: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecordId] });
     },
-    onError: (error) => {
-      console.error('Error adding medication:', error);
-      toast.error('Failed to add medication');
+    onError: (error: any) => {
+      console.error('[useVisitMedications] Error adding medication:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to add medication: ${errorMessage}`, { duration: 5000 });
     },
   });
 
@@ -109,9 +110,10 @@ export const useVisitMedications = (visitRecordId?: string) => {
       queryClient.invalidateQueries({ queryKey: ['visit-medications', visitRecordId] });
       toast.success('Medication record updated');
     },
-    onError: (error) => {
-      console.error('Error updating medication:', error);
-      toast.error('Failed to update medication record');
+    onError: (error: any) => {
+      console.error('[useVisitMedications] Error updating medication:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to update medication: ${errorMessage}`, { duration: 5000 });
     },
   });
 

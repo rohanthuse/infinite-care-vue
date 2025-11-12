@@ -77,10 +77,10 @@ export const useVisitVitals = (visitRecordId?: string, clientId?: string) => {
         toast.success('Vital signs recorded successfully');
       }
     },
-    onError: (error) => {
-      console.error('Error recording vitals:', error);
-      const errorMessage = error?.message || 'Failed to record vital signs';
-      toast.error(`Failed to record vital signs: ${errorMessage}`);
+    onError: (error: any) => {
+      console.error('[useVisitVitals] Error recording vitals:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      toast.error(`Failed to record vital signs: ${errorMessage}`, { duration: 5000 });
     },
   });
 
