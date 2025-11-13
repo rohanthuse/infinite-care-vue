@@ -811,8 +811,20 @@ const CarerVisitWorkflow = () => {
       // Generate and create service report
       const serviceReportData = generateServiceReportFromVisit({
         visitRecord: {
-          ...completedVisit,
+          id: completedVisit.id,
+          booking_id: completedVisit.booking_id,
+          client_id: completedVisit.client_id,
+          staff_id: completedVisit.staff_id,
+          branch_id: completedVisit.branch_id,
           organization_id: bookingData?.branches?.organization_id,
+          visit_start_time: completedVisit.visit_start_time,
+          visit_end_time: completedVisit.visit_end_time,
+          actual_duration_minutes: completedVisit.actual_duration_minutes,
+          visit_notes: completedVisit.visit_notes,
+          visit_summary: completedVisit.visit_summary,
+          client_signature_data: completedVisit.client_signature_data,
+          staff_signature_data: completedVisit.staff_signature_data,
+          visit_photos: Array.isArray(completedVisit.visit_photos) ? completedVisit.visit_photos : [],
         },
         tasks: tasks || [],
         medications: medications || [],
@@ -2189,7 +2201,7 @@ const CarerVisitWorkflow = () => {
                       Back
                     </Button>
                     <Button 
-                      onClick={handleCompleteVisit} 
+                      onClick={() => handleCompleteVisit()} 
                       size="lg"
                       disabled={isCompletingVisit || !carerSignature}
                     >

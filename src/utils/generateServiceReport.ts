@@ -15,7 +15,7 @@ export interface GenerateServiceReportData {
     visit_summary?: string;
     client_signature_data?: string;
     staff_signature_data?: string;
-    visit_photos?: string[];
+    visit_photos?: string[] | any;
   };
   tasks?: Array<{
     task_name: string;
