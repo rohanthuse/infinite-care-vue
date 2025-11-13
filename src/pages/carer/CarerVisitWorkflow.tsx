@@ -706,18 +706,9 @@ const CarerVisitWorkflow = () => {
   };
   
   const handleNextStep = () => {
-    // Auto-save visit progress
-    if (visitRecord) {
-        updateVisitRecord.mutate({
-          id: visitRecord.id,
-          updates: {
-            completion_percentage: Math.round((currentStep / 9) * 100),
-            visit_notes: notes,
-            visit_photos: uploadedPhotos,
-          }
-        });
-    }
-
+    // Removed auto-save on tab navigation to reduce database load
+    // Data will be saved on Complete Visit action
+    
     // Check if current tab is completed
     if (!isTabCompleted(activeTab)) {
       let errorMessage = "";

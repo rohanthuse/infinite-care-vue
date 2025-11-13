@@ -197,31 +197,44 @@ export const useVisitRecord = (bookingId?: string) => {
     },
   });
 
-  // Complete visit
-  const completeVisit = useMutation({
-    mutationFn: async ({ 
-      visitRecordId, 
-      visitNotes, 
-      clientSignature, 
-      staffSignature,
-      visitSummary,
-      visitPhotos 
-    }: {
+  // Complete visit with retry logic
+  const completeVisit = useMutation<
+    VisitRecord, 
+    Error, 
+    {
       visitRecordId: string;
       visitNotes?: string;
       clientSignature?: string;
       staffSignature?: string;
       visitSummary?: string;
       visitPhotos?: string[];
+      retryCount?: number;
+    }
+  >({
+    mutationFn: async ({ 
+      visitRecordId, 
+      visitNotes, 
+      clientSignature, 
+      staffSignature,
+      visitSummary,
+      visitPhotos,
+      retryCount = 0
     }) => {
+      console.log('[completeVisit] Starting completion attempt', { retryCount });
+      
       const visitEndTime = new Date().toISOString();
       
       // Get visit start time to calculate duration
-      const { data: visitRecord } = await supabase
+      const { data: visitRecord, error: fetchError } = await supabase
         .from('visit_records')
         .select('visit_start_time')
         .eq('id', visitRecordId)
         .single();
+
+      if (fetchError) {
+        console.error('[completeVisit] Error fetching visit record:', fetchError);
+        throw fetchError;
+      }
 
       let actualDurationMinutes;
       if (visitRecord) {
@@ -230,25 +243,62 @@ export const useVisitRecord = (bookingId?: string) => {
         actualDurationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
       }
 
-      const { data, error } = await supabase
-        .from('visit_records')
-        .update({
-          status: 'completed',
-          visit_end_time: visitEndTime,
-          actual_duration_minutes: actualDurationMinutes,
-          visit_notes: visitNotes,
-          client_signature_data: clientSignature,
-          staff_signature_data: staffSignature,
-          visit_summary: visitSummary,
-          completion_percentage: 100,
-          visit_photos: visitPhotos,
-        })
-        .eq('id', visitRecordId)
-        .select()
-        .single();
+      const updateData = {
+        status: 'completed' as const,
+        visit_end_time: visitEndTime,
+        actual_duration_minutes: actualDurationMinutes,
+        visit_notes: visitNotes,
+        client_signature_data: clientSignature,
+        staff_signature_data: staffSignature,
+        visit_summary: visitSummary,
+        completion_percentage: 100,
+        visit_photos: visitPhotos,
+      };
 
-      if (error) throw error;
-      return data;
+      console.log('[completeVisit] Updating visit record with data:', updateData);
+
+      try {
+        const { data, error } = await supabase
+          .from('visit_records')
+          .update(updateData)
+          .eq('id', visitRecordId)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[completeVisit] Update error:', error);
+          
+          // Retry logic for timeout errors
+          if (error.code === '57014' && retryCount < 2) {
+            const delayMs = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s
+            console.log(`[completeVisit] Timeout detected, retrying after ${delayMs}ms...`);
+            toast.info(`Database busy, retrying in ${delayMs / 1000}s...`);
+            
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+            
+            // Recursive retry
+            const result = await completeVisit.mutateAsync({
+              visitRecordId,
+              visitNotes,
+              clientSignature,
+              staffSignature,
+              visitSummary,
+              visitPhotos,
+              retryCount: retryCount + 1
+            });
+            
+            return result;
+          }
+          
+          throw error;
+        }
+        
+        console.log('[completeVisit] Visit completed successfully:', data);
+        return data as VisitRecord;
+      } catch (error) {
+        console.error('[completeVisit] Unexpected error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visit-record'] });

@@ -81,7 +81,7 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
       } finally {
         setIsSaving(false);
       }
-    }, 2000); // Auto-save after 2 seconds of no typing
+    }, 5000); // Auto-save after 5 seconds of no typing
 
     return () => clearTimeout(timeoutId);
   }, [visitNotes, visitRecordId, visitRecord?.visit_summary, updateVisitRecord]);
