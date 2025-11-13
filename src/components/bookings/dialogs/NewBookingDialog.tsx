@@ -554,7 +554,7 @@ export function NewBookingDialog({
                                 className="h-8"
                               />
                             </div>
-                            <div className="max-h-60 overflow-y-auto">
+                            <div className="max-h-60 overflow-y-auto pointer-events-auto">
                               {isLoadingClients ? (
                                 <div className="p-4 text-center text-sm text-muted-foreground">
                                   Loading clients...
@@ -660,7 +660,7 @@ export function NewBookingDialog({
                                 </Button>
                               </div>
                             </div>
-                            <div className="max-h-60 overflow-y-auto">
+                            <div className="max-h-60 overflow-y-auto pointer-events-auto">
                               {filteredCarers.length === 0 ? (
                                 <div className="p-4 text-center text-sm text-muted-foreground">
                                   No carers found

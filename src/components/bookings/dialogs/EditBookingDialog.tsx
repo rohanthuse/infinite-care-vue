@@ -627,7 +627,7 @@ export function EditBookingDialog({
                                   Clear All
                                 </Button>
                               </div>
-                              <div className="max-h-60 overflow-y-auto">
+                              <div className="max-h-60 overflow-y-auto pointer-events-auto">
                                 {carers.length === 0 ? (
                                   <div className="p-4 text-center text-sm text-muted-foreground">
                                     No carers available
