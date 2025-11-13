@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Clock, XCircle, CircleDashed, Download, FileText } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, CircleDashed, Download, FileText, Upload } from "lucide-react";
 import { format } from "date-fns";
 import { useTrainingFileUpload } from "@/hooks/useTrainingFileUpload";
 import { StaffTrainingRecord, EvidenceFile } from "@/hooks/useStaffTrainingRecords";
 import { formatFileSize } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TrainingFileUpload } from "@/components/training/TrainingFileUpload";
 
 interface TrainingRecordDetailsDialogProps {
   open: boolean;
@@ -21,6 +23,7 @@ interface TrainingRecordDetailsDialogProps {
   record: StaffTrainingRecord | null;
   staffName: string;
   trainingTitle: string;
+  staffId: string;
 }
 
 const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = ({
@@ -29,8 +32,17 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
   record,
   staffName,
   trainingTitle,
+  staffId,
 }) => {
   const { getFileUrl } = useTrainingFileUpload();
+  const [evidenceFiles, setEvidenceFiles] = useState<any[]>(record?.evidence_files || []);
+
+  // Sync evidence files when record changes
+  useEffect(() => {
+    if (record?.evidence_files) {
+      setEvidenceFiles(record.evidence_files);
+    }
+  }, [record?.id, record?.evidence_files]);
 
   if (!record) {
     return null;
@@ -117,112 +129,139 @@ const TrainingRecordDetailsDialog: React.FC<TrainingRecordDetailsDialogProps> = 
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Status and Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-500">Status</label>
-              <div className="mt-1">
-                <Badge variant="outline" className={getStatusColor(record.status)}>
-                  {record.status.replace('-', ' ')}
-                </Badge>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Assigned Date</label>
-              <div className="mt-1 text-sm">
-                {format(new Date(record.assigned_date), 'MMM dd, yyyy')}
-              </div>
-            </div>
-          </div>
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="details">Training Details</TabsTrigger>
+              <TabsTrigger value="certificates">
+                Certificates ({evidenceFiles.length})
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Completion and Expiry Dates */}
-          {(record.completion_date || record.expiry_date) && (
-            <div className="grid grid-cols-2 gap-4">
-              {record.completion_date && (
+            {/* TAB 1: Training Details */}
+            <TabsContent value="details" className="space-y-6 mt-4">
+              {/* Status and Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Completion Date</label>
-                  <div className="mt-1 text-sm">
-                    {format(new Date(record.completion_date), 'MMM dd, yyyy')}
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <div className="mt-1">
+                    <Badge variant="outline" className={getStatusColor(record.status)}>
+                      {record.status.replace('-', ' ')}
+                    </Badge>
                   </div>
                 </div>
-              )}
-              {record.expiry_date && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Expiry Date</label>
+                  <label className="text-sm font-medium text-gray-500">Assigned Date</label>
                   <div className="mt-1 text-sm">
-                    {format(new Date(record.expiry_date), 'MMM dd, yyyy')}
+                    {format(new Date(record.assigned_date), 'MMM dd, yyyy')}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Score */}
-          {record.score !== null && (
-            <div>
-              <label className="text-sm font-medium text-gray-500">Score</label>
-              <div className="mt-1 text-sm">
-                {record.score} / {record.training_course.max_score}
               </div>
-            </div>
-          )}
 
-          {/* Notes */}
-          {record.notes && (
-            <div>
-              <label className="text-sm font-medium text-gray-500">Notes</label>
-              <div className="mt-1 text-sm bg-gray-50 p-3 rounded-md">
-                {record.notes}
-              </div>
-            </div>
-          )}
-
-          <Separator />
-
-          {/* Uploaded Certificates */}
-          <div>
-            <label className="text-sm font-medium text-gray-900 mb-3 block">
-              Uploaded Certificates ({normalizeEvidenceFiles(record.evidence_files || []).length})
-            </label>
-            
-            {(() => {
-              const evidenceFiles = normalizeEvidenceFiles(record.evidence_files || []);
-              return evidenceFiles.length > 0 ? (
-                <div className="space-y-2">
-                  {evidenceFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md border"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-gray-500" />
-                        <div>
-                          <div className="font-medium text-sm">{file.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {file.size > 0 ? formatFileSize(file.size) : 'Certificate file'}
-                          </div>
-                        </div>
+              {/* Completion and Expiry Dates */}
+              {(record.completion_date || record.expiry_date) && (
+                <div className="grid grid-cols-2 gap-4">
+                  {record.completion_date && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Completion Date</label>
+                      <div className="mt-1 text-sm">
+                        {format(new Date(record.completion_date), 'MMM dd, yyyy')}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadFile(file)}
-                        className="gap-2"
-                      >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
                     </div>
-                  ))}
+                  )}
+                  {record.expiry_date && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Expiry Date</label>
+                      <div className="mt-1 text-sm">
+                        {format(new Date(record.expiry_date), 'MMM dd, yyyy')}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="text-center py-6 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
-                  <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">No certificates uploaded yet</p>
+              )}
+
+              {/* Score */}
+              {record.score !== null && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Score</label>
+                  <div className="mt-1 text-sm">
+                    {record.score} / {record.training_course.max_score}
+                  </div>
                 </div>
-              );
-            })()}
-          </div>
+              )}
+
+              {/* Notes */}
+              {record.notes && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Notes</label>
+                  <div className="mt-1 text-sm bg-gray-50 p-3 rounded-md">
+                    {record.notes}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* TAB 2: Certificates with Upload */}
+            <TabsContent value="certificates" className="space-y-6 mt-4">
+              <div className="space-y-4">
+                {/* Upload Section */}
+                <div>
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload New Certificate
+                  </h4>
+                  <TrainingFileUpload
+                    trainingRecordId={record.id}
+                    staffId={staffId}
+                    evidenceFiles={evidenceFiles}
+                    onFilesUpdate={setEvidenceFiles}
+                  />
+                </div>
+
+                <Separator />
+
+                {/* View/Download Existing Certificates */}
+                <div>
+                  <h4 className="text-sm font-medium mb-3">
+                    Uploaded Certificates ({evidenceFiles.length})
+                  </h4>
+                  {evidenceFiles.length > 0 ? (
+                    <div className="space-y-2">
+                      {normalizeEvidenceFiles(evidenceFiles).map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-md border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-gray-500" />
+                            <div>
+                              <div className="font-medium text-sm">{file.name}</div>
+                              <div className="text-xs text-gray-500">
+                                {file.size > 0 ? formatFileSize(file.size) : 'Certificate file'}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadFile(file)}
+                            className="gap-2"
+                          >
+                            <Download className="h-4 w-4" />
+                            Download
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 bg-gray-50 rounded-md border-2 border-dashed border-gray-300">
+                      <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">No certificates uploaded yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </DialogContent>
     </Dialog>

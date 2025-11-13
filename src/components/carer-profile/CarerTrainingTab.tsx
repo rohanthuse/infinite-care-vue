@@ -367,6 +367,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
           record={selectedRecord as any}
           staffName={`${carerProfile?.first_name || ''} ${carerProfile?.last_name || ''}`.trim()}
           trainingTitle={selectedRecord.training_course?.title || 'Training'}
+          staffId={carerId}
         />
       )}
 

@@ -462,6 +462,7 @@ const TrainingMatrix: React.FC<TrainingMatrixProps> = (props) => {
               record={selectedTrainingRecord?.record || null}
               staffName={selectedTrainingRecord?.staffName || ''}
               trainingTitle={selectedTrainingRecord?.trainingTitle || ''}
+              staffId={selectedTrainingRecord?.record?.staff_id || ''}
             />
           </div>
         </div>
