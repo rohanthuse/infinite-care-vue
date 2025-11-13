@@ -9,7 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCarePlanGoals } from '@/hooks/useCarePlanGoals';
 import { useUpdateGoal } from '@/hooks/useCarePlanGoalsMutations';
-import { FileBarChart2, Target, TrendingUp, Clock, MessageCircle } from 'lucide-react';
+import { useVisitRecord } from '@/hooks/useVisitRecord';
+import { FileBarChart2, Target, TrendingUp, Clock, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -24,6 +25,11 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
 }) => {
   const [visitNotes, setVisitNotes] = useState('');
   const [goalUpdates, setGoalUpdates] = useState<Record<string, { progress: number; notes: string }>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  
+  // Get visit record hooks for saving
+  const { visitRecord, updateVisitRecord } = useVisitRecord(visitRecordId);
 
   // Fetch active care plan for the client
   const { data: carePlan, isLoading: carePlanLoading } = useQuery({
@@ -45,6 +51,40 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
   // Fetch care plan goals
   const { data: goals, isLoading: goalsLoading } = useCarePlanGoals(carePlan?.id);
   const updateGoal = useUpdateGoal();
+
+  // Load existing visit summary when component mounts
+  useEffect(() => {
+    if (visitRecord?.visit_summary) {
+      setVisitNotes(visitRecord.visit_summary);
+    }
+  }, [visitRecord?.visit_summary]);
+
+  // Auto-save visit notes with debouncing
+  useEffect(() => {
+    if (!visitRecordId || !visitNotes || visitNotes === visitRecord?.visit_summary) {
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSaving(true);
+      try {
+        await updateVisitRecord.mutateAsync({
+          id: visitRecordId,
+          updates: {
+            visit_summary: visitNotes
+          }
+        });
+        setLastSavedAt(new Date());
+        console.log('[VisitCarePlanUpdate] Auto-saved visit notes');
+      } catch (error) {
+        console.error('[VisitCarePlanUpdate] Error auto-saving visit notes:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    }, 2000); // Auto-save after 2 seconds of no typing
+
+    return () => clearTimeout(timeoutId);
+  }, [visitNotes, visitRecordId, visitRecord?.visit_summary, updateVisitRecord]);
 
   const handleGoalUpdate = async (goalId: string, progress: number, notes: string) => {
     try {
@@ -264,9 +304,23 @@ const VisitCarePlanUpdate: React.FC<VisitCarePlanUpdateProps> = ({
               />
             </div>
             
-            <div className="text-sm text-gray-500">
-              <Clock className="w-4 h-4 inline mr-1" />
-              These notes will be added to the care plan record
+            <div className="flex items-center justify-between text-sm">
+              <div className="text-gray-500">
+                <Clock className="w-4 h-4 inline mr-1" />
+                These notes will be added to the care plan record
+              </div>
+              {isSaving && (
+                <div className="text-blue-600 flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                  Saving...
+                </div>
+              )}
+              {lastSavedAt && !isSaving && (
+                <div className="text-green-600 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Saved at {format(lastSavedAt, 'HH:mm:ss')}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookingAttendance, BookingAttendanceData } from "@/hooks/useBookingAttendance";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
@@ -103,6 +103,7 @@ const CarerVisitWorkflow = () => {
   const { navigateToCarerPage } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
   const createServiceReport = useCreateServiceReport();
+  const queryClient = useQueryClient();
   
   // Get appointment data from location state or fetch from API
   const appointment = location.state?.appointment;
@@ -768,6 +769,38 @@ const CarerVisitWorkflow = () => {
   };
   
   const [isCompletingVisit, setIsCompletingVisit] = useState(false);
+
+  // Debug button state - helps identify why button is disabled
+  useEffect(() => {
+    console.log('[CompleteVisit Button] State Debug:', {
+      isCompletingVisit,
+      carerSignature: !!carerSignature,
+      visitLoading,
+      authLoading,
+      visitRecord: !!visitRecord,
+      visitRecordId: visitRecord?.id,
+      userId: !!user?.id,
+      isDisabled: isCompletingVisit || !carerSignature || visitLoading || authLoading || !visitRecord || !user?.id
+    });
+  }, [isCompletingVisit, carerSignature, visitLoading, authLoading, visitRecord, user?.id]);
+
+  // Helper function to determine why button is disabled
+  const getButtonDisabledReason = () => {
+    if (isCompletingVisit) return "Completing visit...";
+    if (!carerSignature) return "Carer signature required";
+    if (visitLoading) return "Loading visit data...";
+    if (authLoading) return "Loading user data...";
+    if (!visitRecord) return "Visit record not found";
+    if (!user?.id) return "User not authenticated";
+    return null;
+  };
+
+  const handleRefreshData = () => {
+    console.log('[CompleteVisit] Manually refreshing data...');
+    queryClient.invalidateQueries({ queryKey: ['visit-record', appointmentId] });
+    queryClient.invalidateQueries({ queryKey: ['appointment', appointmentId] });
+    toast.info('Refreshing data...');
+  };
 
   const handleCompleteVisit = async (retryCount = 0) => {
     console.log('Starting visit completion process...');
@@ -2212,35 +2245,52 @@ const CarerVisitWorkflow = () => {
                     >
                       Back
                     </Button>
-                    <Button 
-                      onClick={() => handleCompleteVisit()} 
-                      size="lg"
-                      disabled={
-                        isCompletingVisit || 
-                        !carerSignature || 
-                        visitLoading || 
-                        authLoading || 
-                        !visitRecord || 
-                        !user?.id
-                      }
-                    >
-                      {isCompletingVisit ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Completing...
-                        </>
-                      ) : (visitLoading || authLoading || !visitRecord) ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-5 h-5 mr-2" />
-                          Complete Visit
-                        </>
+                    <div className="flex flex-col items-end gap-2">
+                      {(visitLoading || authLoading) && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={handleRefreshData}
+                          className="text-xs"
+                        >
+                          Refresh Data
+                        </Button>
                       )}
-                    </Button>
+                      <Button 
+                        onClick={() => handleCompleteVisit()} 
+                        size="lg"
+                        disabled={
+                          isCompletingVisit || 
+                          !carerSignature || 
+                          visitLoading || 
+                          authLoading || 
+                          !visitRecord || 
+                          !user?.id
+                        }
+                      >
+                        {isCompletingVisit ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Completing...
+                          </>
+                        ) : (visitLoading || authLoading || !visitRecord) ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-5 h-5 mr-2" />
+                            Complete Visit
+                          </>
+                        )}
+                      </Button>
+                      {getButtonDisabledReason() && (
+                        <p className="text-xs text-muted-foreground">
+                          {getButtonDisabledReason()}
+                        </p>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="w-full flex justify-center">

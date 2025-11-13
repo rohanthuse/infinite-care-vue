@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,9 +26,10 @@ export interface VisitRecord {
 
 export const useVisitRecord = (bookingId?: string) => {
   const queryClient = useQueryClient();
+  const [isLoadingTimeout, setIsLoadingTimeout] = React.useState(false);
 
   // Get current visit record for a booking
-  const { data: visitRecord, isLoading } = useQuery({
+  const { data: visitRecord, isLoading: queryLoading } = useQuery({
     queryKey: ['visit-record', bookingId],
     queryFn: async () => {
       if (!bookingId) return null;
@@ -62,6 +64,22 @@ export const useVisitRecord = (bookingId?: string) => {
     },
     enabled: !!bookingId,
   });
+
+  // Timeout handling for loading state
+  React.useEffect(() => {
+    if (queryLoading) {
+      const timeoutId = setTimeout(() => {
+        console.warn('[useVisitRecord] Loading timeout reached after 10 seconds');
+        setIsLoadingTimeout(true);
+      }, 10000);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setIsLoadingTimeout(false);
+    }
+  }, [queryLoading]);
+
+  const isLoading = queryLoading && !isLoadingTimeout;
 
   // Auto-create visit record for in-progress bookings
   const autoCreateVisitRecord = useMutation({
