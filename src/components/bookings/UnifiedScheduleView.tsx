@@ -15,6 +15,7 @@ import {
   extractStaffIdFromDroppableId,
   doBookingsOverlap
 } from "./drag-drop/dragDropHelpers";
+import { createBookingDateTime } from "./utils/dateUtils";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 import { useUpdateMultipleBookings } from "@/hooks/useUpdateMultipleBookings";
 
@@ -181,14 +182,29 @@ export function UnifiedScheduleView({
     if (!pendingMove || isUpdating) return;
 
     const { booking, newStaffId, newStartTime, newEndTime } = pendingMove;
+    
+    // Convert date to YYYY-MM-DD format
+    const dateString = format(date, 'yyyy-MM-dd');
+    
+    // Create proper UTC timestamps using createBookingDateTime
+    const newStartTimeUTC = createBookingDateTime(dateString, newStartTime);
+    const newEndTimeUTC = createBookingDateTime(dateString, newEndTime);
+    
+    console.log('[UnifiedScheduleView] Converting times for update:', {
+      dateString,
+      newStartTime,
+      newEndTime,
+      newStartTimeUTC,
+      newEndTimeUTC
+    });
 
     updateBooking(
       {
         bookingId: booking.id,
         updatedData: {
           staff_id: newStaffId,
-          start_time: newStartTime,
-          end_time: newEndTime,
+          start_time: newStartTimeUTC,
+          end_time: newEndTimeUTC,
         }
       },
       {
