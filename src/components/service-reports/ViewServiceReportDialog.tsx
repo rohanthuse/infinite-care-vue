@@ -52,22 +52,20 @@ export function ViewServiceReportDialog({
   onOpenChange,
   report,
 }: ViewServiceReportDialogProps) {
-  // Early return if no report
-  if (!report) return null;
-
-  // Ensure nested objects have fallback empty objects to prevent crashes
-  const safeReport = {
+  // Create safeReport with fallbacks BEFORE any hooks
+  const safeReport = report ? {
     ...report,
     clients: report.clients || { first_name: '', last_name: '', email: '' },
     staff: report.staff || { first_name: '', last_name: '', email: '' },
     services_provided: report.services_provided || [],
-  };
+  } : null;
 
+  // ALL HOOKS MUST BE CALLED HERE - before any early returns
   // Fetch visit record data
   const { data: visitRecord, isLoading: visitRecordLoading } = useQuery({
-    queryKey: ['visit-record', safeReport.visit_record_id],
+    queryKey: ['visit-record', safeReport?.visit_record_id],
     queryFn: async () => {
-      if (!safeReport.visit_record_id) return null;
+      if (!safeReport?.visit_record_id) return null;
       
       const { data, error } = await supabase
         .from('visit_records')
@@ -78,16 +76,19 @@ export function ViewServiceReportDialog({
       if (error) throw error;
       return data;
     },
-    enabled: !!safeReport.visit_record_id && open,
+    enabled: !!safeReport?.visit_record_id && open && !!report,
   });
 
   // Fetch all related data using hooks - only if visit_record_id exists
-  const { tasks = [], isLoading: tasksLoading } = useVisitTasks(safeReport.visit_record_id);
-  const { medications = [], isLoading: medsLoading } = useVisitMedications(safeReport.visit_record_id);
-  const { vitals = [], news2Readings = [], latestNEWS2, isLoading: vitalsLoading } = useVisitVitals(safeReport.visit_record_id);
-  const { events = [], incidents = [], accidents = [], observations = [], isLoading: eventsLoading } = useVisitEvents(safeReport.visit_record_id);
+  const { tasks = [], isLoading: tasksLoading } = useVisitTasks(safeReport?.visit_record_id);
+  const { medications = [], isLoading: medsLoading } = useVisitMedications(safeReport?.visit_record_id);
+  const { vitals = [], news2Readings = [], latestNEWS2, isLoading: vitalsLoading } = useVisitVitals(safeReport?.visit_record_id);
+  const { events = [], incidents = [], accidents = [], observations = [], isLoading: eventsLoading } = useVisitEvents(safeReport?.visit_record_id);
 
   const isDataLoading = visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
+
+  // NOW we can do the early return - AFTER all hooks are called
+  if (!report || !safeReport) return null;
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; icon: any }> = {
