@@ -8415,6 +8415,76 @@ export type Database = {
           },
         ]
       }
+      staff_working_hours: {
+        Row: {
+          availability_type: string
+          branch_id: string
+          created_at: string | null
+          created_by: string | null
+          end_time: string
+          id: string
+          notes: string | null
+          organization_id: string
+          staff_id: string
+          start_time: string
+          status: string
+          updated_at: string | null
+          work_date: string
+        }
+        Insert: {
+          availability_type?: string
+          branch_id: string
+          created_at?: string | null
+          created_by?: string | null
+          end_time: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          staff_id: string
+          start_time: string
+          status?: string
+          updated_at?: string | null
+          work_date: string
+        }
+        Update: {
+          availability_type?: string
+          branch_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          end_time?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          staff_id?: string
+          start_time?: string
+          status?: string
+          updated_at?: string | null
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_working_hours_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_working_hours_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_working_hours_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string

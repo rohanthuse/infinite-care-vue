@@ -12,6 +12,9 @@ import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests, useAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
 import { useStaffUtilizationAnalytics, useEnhancedStaffSchedule } from "@/hooks/useStaffUtilizationAnalytics";
 import { useStaffScheduleEvents, StaffTrainingEvent, StaffAppointmentEvent } from "@/hooks/useStaffScheduleEvents";
+import { useStaffWorkingHours } from "@/hooks/useStaffWorkingHours";
+import { StaffWorkingHoursDialog } from "@/components/staff/StaffWorkingHoursDialog";
+import { useTenant } from "@/contexts/TenantContext";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
@@ -98,6 +101,7 @@ export function StaffScheduleCalendar({
   selectedBookings = [],
   onBookingSelect,
 }: StaffScheduleCalendarProps) {
+  const { organization } = useTenant();
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     showRuns: true,
@@ -105,6 +109,11 @@ export function StaffScheduleCalendar({
     travelTime: true,
     assignedOnly: false,
   });
+  const [workingHoursDialogOpen, setWorkingHoursDialogOpen] = useState(false);
+  const [selectedStaffForHours, setSelectedStaffForHours] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Export functionality
   const handleExport = () => {
@@ -158,6 +167,9 @@ export function StaffScheduleCalendar({
     date,
     staffIds
   );
+
+  // Fetch working hours for all staff on selected date
+  const { data: workingHours = [] } = useStaffWorkingHours(branchId || '', date, staffIds);
   
   // Safe helper to get initials from a name
   const getInitials = (fullName?: string): string => {
@@ -306,6 +318,31 @@ export function StaffScheduleCalendar({
         timeSlots.forEach(slot => {
           schedule[slot] = { type: 'available' };
         });
+
+        // Mark time slots outside working hours as unavailable (off-shift)
+        const staffWorkHours = workingHours.find(wh => wh.staff_id === member.id);
+        
+        if (staffWorkHours) {
+          // Staff has defined working hours - mark everything else as unavailable
+          const [workStartHour, workStartMin] = staffWorkHours.start_time.split(':').map(Number);
+          const [workEndHour, workEndMin] = staffWorkHours.end_time.split(':').map(Number);
+          
+          const workStartMinutes = workStartHour * 60 + workStartMin;
+          const workEndMinutes = workEndHour * 60 + workEndMin;
+          
+          timeSlots.forEach(slot => {
+            const [slotHour, slotMin] = slot.split(':').map(Number);
+            const slotMinutes = slotHour * 60 + slotMin;
+            
+            // Mark as off-shift if slot is outside working hours
+            if (slotMinutes < workStartMinutes || slotMinutes >= workEndMinutes) {
+              schedule[slot] = { 
+                type: 'unavailable',
+                leaveType: 'off-shift'
+              };
+            }
+          });
+        }
 
         // Add bookings for this staff member on this date
         const dayBookings = bookings.filter(booking => 
@@ -659,6 +696,11 @@ export function StaffScheduleCalendar({
   }, [viewType, staff, bookings, date, leaveRequests, timeSlots, searchTerm, filters, timeInterval, staffEvents]);
 
   const getStatusColor = (status: StaffStatus) => {
+    // Handle off-shift status
+    if (status.type === 'unavailable' && status.leaveType === 'off-shift') {
+      return getBookingStatusColor('off-shift', 'light');
+    }
+
     // If there's a booking, use its actual status for color
     if (status.booking) {
       return getBookingStatusColor(status.booking.status, 'light');
@@ -706,6 +748,15 @@ export function StaffScheduleCalendar({
   };
 
   const renderTooltipContent = (status: StaffStatus, staffName: string) => {
+    if (status.type === 'unavailable' && status.leaveType === 'off-shift') {
+      return (
+        <div className="space-y-1">
+          <p className="font-medium">{staffName}</p>
+          <p className="text-sm text-muted-foreground">Off-shift (not working)</p>
+        </div>
+      );
+    }
+
     if (status.type === 'available') {
       return (
         <div className="space-y-1">
@@ -999,7 +1050,24 @@ export function StaffScheduleCalendar({
                   className="p-3 border-r bg-background sticky left-0 z-10 flex-shrink-0 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.2)]"
                   style={{ width: LEFT_COL_WIDTH }}
                 >
-                  <div className="font-medium text-sm">{staffMember.name}</div>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="font-medium text-sm">{staffMember.name}</div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStaffForHours({
+                          id: staffMember.id,
+                          name: staffMember.name
+                        });
+                        setWorkingHoursDialogOpen(true);
+                      }}
+                      className="h-6 w-6 p-0"
+                      title="Set working hours"
+                    >
+                      <Clock className="h-3 w-3" />
+                    </Button>
+                  </div>
                   {staffMember.specialization && (
                     <div className="text-xs text-muted-foreground">{staffMember.specialization}</div>
                   )}
@@ -1279,6 +1347,19 @@ export function StaffScheduleCalendar({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Working Hours Dialog */}
+      {selectedStaffForHours && organization && (
+        <StaffWorkingHoursDialog
+          open={workingHoursDialogOpen}
+          onOpenChange={setWorkingHoursDialogOpen}
+          staffId={selectedStaffForHours.id}
+          staffName={selectedStaffForHours.name}
+          branchId={branchId || ''}
+          organizationId={organization.id}
+          initialDate={date}
+        />
+      )}
       </div>
     </TooltipProvider>
   );

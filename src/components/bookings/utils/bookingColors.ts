@@ -63,6 +63,11 @@ export function getBookingStatusColor(
   status: string, 
   variant: 'light' | 'solid' = 'light'
 ): string {
+  // Handle special pseudo-statuses for calendar events
+  if (status === 'off-shift') {
+    return 'bg-gray-100 text-gray-400 border-gray-200';
+  }
+
   const statusKey = status as BookingStatusType;
   return BOOKING_STATUS_COLORS[statusKey]?.[variant] || BOOKING_STATUS_COLORS.assigned[variant];
 }
