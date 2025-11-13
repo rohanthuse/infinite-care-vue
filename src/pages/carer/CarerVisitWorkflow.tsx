@@ -99,7 +99,7 @@ const CarerVisitWorkflow = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { user } = useCarerAuth();
+  const { user, loading: authLoading } = useCarerAuth();
   const { navigateToCarerPage } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
   const createServiceReport = useCreateServiceReport();
@@ -773,8 +773,20 @@ const CarerVisitWorkflow = () => {
     console.log('Starting visit completion process...');
     
     if (!currentAppointment || !user?.id || !visitRecord) {
-      console.error('Missing required data:', { currentAppointment: !!currentAppointment, userId: !!user?.id, visitRecord: !!visitRecord });
-      toast.error('Missing required data to complete visit');
+      const missingData = [];
+      if (!currentAppointment) missingData.push('appointment');
+      if (!user?.id) missingData.push('user ID');
+      if (!visitRecord) missingData.push('visit record');
+      
+      console.error('Missing required data:', {
+        missing: missingData,
+        currentAppointment: !!currentAppointment,
+        userId: !!user?.id,
+        visitRecord: !!visitRecord,
+        visitRecordId: visitRecord?.id
+      });
+      
+      toast.error(`Missing required data: ${missingData.join(', ')}`);
       return;
     }
 
@@ -2203,12 +2215,24 @@ const CarerVisitWorkflow = () => {
                     <Button 
                       onClick={() => handleCompleteVisit()} 
                       size="lg"
-                      disabled={isCompletingVisit || !carerSignature}
+                      disabled={
+                        isCompletingVisit || 
+                        !carerSignature || 
+                        visitLoading || 
+                        authLoading || 
+                        !visitRecord || 
+                        !user?.id
+                      }
                     >
                       {isCompletingVisit ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                           Completing...
+                        </>
+                      ) : (visitLoading || authLoading || !visitRecord) ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Loading...
                         </>
                       ) : (
                         <>
