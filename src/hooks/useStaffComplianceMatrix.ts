@@ -1,15 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface DocumentItem {
-  id: string;
-  name: string;
-  status: string;
-  expiry_date: string | null;
-  type: 'document' | 'essential';
-  required?: boolean;
-}
-
 export interface StaffComplianceRow {
   staffId: string;
   staffName: string;
@@ -20,12 +11,6 @@ export interface StaffComplianceRow {
   incidentsCount: number;
   overallScore: number;
   complianceLevel: 'compliant' | 'at-risk' | 'non-compliant';
-  detailedBreakdown: {
-    expiredItems: DocumentItem[];
-    expiringItems: DocumentItem[];
-    pendingItems: DocumentItem[];
-    compliantItems: DocumentItem[];
-  };
 }
 
 export interface StaffComplianceMatrixData {
@@ -105,16 +90,16 @@ export const useStaffComplianceMatrix = ({
           `)
           .eq('staff_id', staffId);
 
-        // Fetch documents with full details
+        // Fetch documents
         const { data: documents } = await supabase
           .from('staff_documents')
-          .select('id, document_type, expiry_date, status')
+          .select('expiry_date, status')
           .eq('staff_id', staffId);
 
-        // Fetch staff essentials checklist with full details
+        // Fetch staff essentials checklist
         const { data: essentials } = await supabase
           .from('staff_essentials_checklist')
-          .select('id, display_name, status, expiry_date, required, completion_date, document_id')
+          .select('status, expiry_date, required, completion_date, document_id')
           .eq('staff_id', staffId);
 
         console.log(`[Staff ${staffName}] Essentials: ${(essentials || []).length}, Documents: ${(documents || []).length}`);
@@ -149,56 +134,39 @@ export const useStaffComplianceMatrix = ({
             ? Math.round((compliantTraining.length / mandatoryTraining.length) * 100)
             : 100;
 
-        // Build detailed breakdown items
-        const allDetailedItems: DocumentItem[] = [
-          // Staff documents
+        // Calculate document status from BOTH staff_documents and essentials
+        const allDocuments = [
+          // Existing staff_documents
           ...(documents || []).map(d => ({
-            id: d.id,
-            name: d.document_type || 'Unnamed Document',
-            status: d.status || 'unknown',
             expiry_date: d.expiry_date,
-            type: 'document' as const,
+            status: d.status,
+            source: 'document'
           })),
-          // Essentials
+          // Essentials checklist items
           ...(essentials || []).map(e => ({
-            id: e.id,
-            name: e.display_name || 'Unnamed Essential',
-            status: e.status || 'pending',
             expiry_date: e.expiry_date,
-            type: 'essential' as const,
-            required: e.required,
+            status: e.status,
+            source: 'essential'
           }))
         ];
 
-        // Categorize items
-        const expiredItemsList = allDetailedItems.filter((item) => {
+        const expiredItems = allDocuments.filter((item) => {
           if (item.status === 'expired') return true;
           if (!item.expiry_date) return false;
           const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
           return daysUntilExpiry !== null && daysUntilExpiry < 0;
-        });
+        }).length;
 
-        const expiringItemsList = allDetailedItems.filter((item) => {
+        const expiringItems = allDocuments.filter((item) => {
           if (!item.expiry_date) return false;
           const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
           return daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
-        });
+        }).length;
 
-        const pendingItemsList = allDetailedItems.filter(
-          item => item.type === 'essential' && item.required && (item.status === 'pending' || item.status === null)
-        );
-
-        const compliantItemsList = allDetailedItems.filter((item) => {
-          // Not expired, not expiring, not pending
-          const isExpired = expiredItemsList.some(e => e.id === item.id);
-          const isExpiring = expiringItemsList.some(e => e.id === item.id);
-          const isPending = pendingItemsList.some(p => p.id === item.id);
-          return !isExpired && !isExpiring && !isPending;
-        });
-
-        const expiredItems = expiredItemsList.length;
-        const expiringItems = expiringItemsList.length;
-        const pendingEssentials = pendingItemsList.length;
+        // Also count pending/incomplete required essentials as non-compliant
+        const pendingEssentials = (essentials || []).filter(
+          e => e.required && (e.status === 'pending' || e.status === null)
+        ).length;
 
         let documentStatus: 'compliant' | 'at-risk' | 'non-compliant' = 'compliant';
         if (expiredItems > 0 || pendingEssentials > 0) {
@@ -223,7 +191,7 @@ export const useStaffComplianceMatrix = ({
         ).length;
 
         // Calculate overall score
-        const totalItems = allDetailedItems.length;
+        const totalItems = allDocuments.length;
         const documentScore = totalItems > 0
           ? ((totalItems - expiredItems - expiringItems * 0.5 - pendingEssentials) / totalItems) * 100
           : 100;
@@ -259,12 +227,6 @@ export const useStaffComplianceMatrix = ({
           incidentsCount,
           overallScore,
           complianceLevel,
-          detailedBreakdown: {
-            expiredItems: expiredItemsList,
-            expiringItems: expiringItemsList,
-            pendingItems: pendingItemsList,
-            compliantItems: compliantItemsList,
-          },
         };
       });
 
