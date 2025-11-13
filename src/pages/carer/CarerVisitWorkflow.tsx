@@ -11,6 +11,8 @@ import { useVisitMedications } from "@/hooks/useVisitMedications";
 import { useVisitEvents } from "@/hooks/useVisitEvents";
 import { useVisitVitals } from "@/hooks/useVisitVitals";
 import { useCarerTasks } from "@/hooks/useCarerTasks";
+import { useCreateServiceReport } from "@/hooks/useServiceReports";
+import { generateServiceReportFromVisit } from "@/utils/generateServiceReport";
 import {
   Clock,
   MapPin,
@@ -100,6 +102,7 @@ const CarerVisitWorkflow = () => {
   const { user } = useCarerAuth();
   const { navigateToCarerPage } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
+  const createServiceReport = useCreateServiceReport();
   
   // Get appointment data from location state or fetch from API
   const appointment = location.state?.appointment;
@@ -766,7 +769,7 @@ const CarerVisitWorkflow = () => {
   
   const [isCompletingVisit, setIsCompletingVisit] = useState(false);
 
-  const handleCompleteVisit = async () => {
+  const handleCompleteVisit = async (retryCount = 0) => {
     console.log('Starting visit completion process...');
     
     if (!currentAppointment || !user?.id || !visitRecord) {
@@ -785,9 +788,9 @@ const CarerVisitWorkflow = () => {
     setIsCompletingVisit(true);
     
     try {
-      console.log('Completing visit record...');
+      console.log('Step 1: Completing visit record...');
       // Complete the visit record with all final data
-      await completeVisit.mutateAsync({
+      const completedVisit = await completeVisit.mutateAsync({
         visitRecordId: visitRecord.id,
         visitNotes: notes,
         clientSignature: clientSignature || undefined,
@@ -796,7 +799,31 @@ const CarerVisitWorkflow = () => {
         visitPhotos: uploadedPhotos,
       });
 
-      console.log('Visit record completed, updating booking status...');
+      console.log('Step 2: Fetching organization ID for service report...');
+      // Fetch booking details for organization_id
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('branch_id, branches(organization_id)')
+        .eq('id', currentAppointment.id)
+        .single();
+
+      console.log('Step 3: Generating service report...');
+      // Generate and create service report
+      const serviceReportData = generateServiceReportFromVisit({
+        visitRecord: {
+          ...completedVisit,
+          organization_id: bookingData?.branches?.organization_id,
+        },
+        tasks: tasks || [],
+        medications: medications || [],
+        events: events || [],
+        createdBy: user.id,
+      });
+
+      console.log('Step 4: Creating service report in database...');
+      await createServiceReport.mutateAsync(serviceReportData);
+
+      console.log('Step 5: Updating booking status to completed...');
       // Mark booking as completed
       const attendanceData: BookingAttendanceData = {
         bookingId: currentAppointment.id,
@@ -809,24 +836,36 @@ const CarerVisitWorkflow = () => {
       await bookingAttendance.mutateAsync(attendanceData);
       
       console.log('Visit completion successful, navigating...');
-      toast.success('Visit completed successfully!');
+      toast.success('Visit and service report completed successfully!', {
+        description: 'Your report has been submitted for review.',
+      });
       
       // Delay navigation slightly to ensure all operations complete
       setTimeout(() => {
         navigateToCarerPage("");
       }, 500);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error completing visit:', error);
       
+      // Retry logic for timeout errors
+      if (error?.message?.includes('timeout') && retryCount < 2) {
+        toast.info('Retrying...');
+        await new Promise(r => setTimeout(r, 1000));
+        return handleCompleteVisit(retryCount + 1);
+      }
+      
       // More specific error handling
-      if (error instanceof Error) {
-        if (error.message.includes('policy')) {
+      if (error instanceof Error || error?.message) {
+        const message = error.message || error?.message;
+        if (message.includes('policy')) {
           toast.error('Permission denied. Please check your access rights.');
-        } else if (error.message.includes('network')) {
+        } else if (message.includes('network')) {
           toast.error('Network error. Please check your connection and try again.');
+        } else if (message.includes('timeout')) {
+          toast.error('Request timed out. Please try again.');
         } else {
-          toast.error(`Failed to complete visit: ${error.message}`);
+          toast.error(`Failed to complete visit: ${message}`);
         }
       } else {
         toast.error('Failed to complete visit. Please try again.');

@@ -238,9 +238,25 @@ export const useVisitRecord = (bookingId?: string) => {
       queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
       toast.success('Visit completed successfully');
     },
-    onError: (error) => {
-      console.error('Error completing visit:', error);
-      toast.error('Failed to complete visit');
+    onError: (error: any) => {
+      console.error('[completeVisit] Full error details:', {
+        error,
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
+      
+      // Check for specific error types
+      if (error?.message?.includes('timeout')) {
+        toast.error('Database timeout. Please try again in a moment.');
+      } else if (error?.message?.includes('policy')) {
+        toast.error('Permission error. Please contact support.');
+      } else if (error?.message?.includes('network')) {
+        toast.error('Network error. Please check your connection and try again.');
+      } else {
+        toast.error(`Failed to complete visit: ${error?.message || 'Unknown error'}`);
+      }
     },
   });
 
