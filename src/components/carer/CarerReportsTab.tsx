@@ -460,6 +460,18 @@ export function CarerReportsTab() {
         preSelectedBooking={selectedBookingForReport}
       />
       )}
+
+      {/* View Report Dialog */}
+      {selectedReport && (
+        <ViewServiceReportDialog
+          open={viewDialogOpen}
+          onOpenChange={(open) => {
+            setViewDialogOpen(open);
+            if (!open) setSelectedReport(null);
+          }}
+          report={selectedReport}
+        />
+      )}
     </div>
   );
 }
