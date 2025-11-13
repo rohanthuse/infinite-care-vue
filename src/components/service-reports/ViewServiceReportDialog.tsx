@@ -47,6 +47,31 @@ interface ViewServiceReportDialogProps {
   report: any;
 }
 
+// Safe date formatter that handles invalid dates gracefully
+const formatSafeDate = (dateValue: any, formatString: string, fallback: string = 'N/A'): string => {
+  try {
+    // Check if value exists and is not empty
+    if (!dateValue || dateValue === '') {
+      return fallback;
+    }
+    
+    // Create Date object
+    const date = new Date(dateValue);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.warn('[formatSafeDate] Invalid date value:', dateValue);
+      return fallback;
+    }
+    
+    // Format the valid date
+    return format(date, formatString);
+  } catch (error) {
+    console.error('[formatSafeDate] Error formatting date:', dateValue, error);
+    return fallback;
+  }
+};
+
 export function ViewServiceReportDialog({
   open,
   onOpenChange,
@@ -179,7 +204,7 @@ export function ViewServiceReportDialog({
                     <p className="text-sm text-muted-foreground">Service Date</p>
                     <p className="font-medium flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {safeReport.service_date ? format(new Date(safeReport.service_date), 'PPP') : 'N/A'}
+                      {formatSafeDate(safeReport.service_date, 'PPP')}
                     </p>
                   </div>
                   <div>
@@ -189,19 +214,19 @@ export function ViewServiceReportDialog({
                       {safeReport.service_duration_minutes || 0} minutes
                     </p>
                   </div>
-                  {visitRecord?.visit_start_time && (
+                  {visitRecord?.visit_start_time && formatSafeDate(visitRecord.visit_start_time, 'p') !== 'N/A' && (
                     <div>
                       <p className="text-sm text-muted-foreground">Start Time</p>
                       <p className="font-medium">
-                        {format(new Date(visitRecord.visit_start_time), 'p')}
+                        {formatSafeDate(visitRecord.visit_start_time, 'p')}
                       </p>
                     </div>
                   )}
-                  {visitRecord?.visit_end_time && (
+                  {visitRecord?.visit_end_time && formatSafeDate(visitRecord.visit_end_time, 'p') !== 'N/A' && (
                     <div>
                       <p className="text-sm text-muted-foreground">End Time</p>
                       <p className="font-medium">
-                        {format(new Date(visitRecord.visit_end_time), 'p')}
+                        {formatSafeDate(visitRecord.visit_end_time, 'p')}
                       </p>
                     </div>
                   )}
@@ -448,22 +473,22 @@ export function ViewServiceReportDialog({
                   <div>
                     <p className="text-muted-foreground">Report Created</p>
                     <p className="font-medium">
-                      {format(new Date(report.created_at), 'PPp')}
+                      {formatSafeDate(report.created_at, 'PPp')}
                     </p>
                   </div>
-                  {report.updated_at && (
+                  {formatSafeDate(report.updated_at, 'PPp') !== 'N/A' && (
                     <div>
                       <p className="text-muted-foreground">Last Updated</p>
                       <p className="font-medium">
-                        {format(new Date(report.updated_at), 'PPp')}
+                        {formatSafeDate(report.updated_at, 'PPp')}
                       </p>
                     </div>
                   )}
-                  {report.reviewed_at && (
+                  {formatSafeDate(report.reviewed_at, 'PPp') !== 'N/A' && (
                     <div>
                       <p className="text-muted-foreground">Reviewed At</p>
                       <p className="font-medium">
-                        {format(new Date(report.reviewed_at), 'PPp')}
+                        {formatSafeDate(report.reviewed_at, 'PPp')}
                       </p>
                     </div>
                   )}
