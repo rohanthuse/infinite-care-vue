@@ -53,10 +53,26 @@ export function useCarerAuth() {
     // Set up loading timeout to prevent stuck loading state
     const setLoadingTimeout = () => {
       clearTimeout(loadingTimeout);
-      loadingTimeout = setTimeout(() => {
+      loadingTimeout = setTimeout(async () => {
         if (mounted) {
-          console.log('[useCarerAuth] Loading timeout reached, resetting loading state');
-          setLoading(false);
+          console.log('[useCarerAuth] Loading timeout reached, attempting final session check');
+          
+          // Try one more time to get session before giving up
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              console.log('[useCarerAuth] Session found on timeout, setting user');
+              setSession(session);
+              setUser(session.user);
+              await checkCarerRole(session.user.id);
+            } else {
+              console.warn('[useCarerAuth] No session found after timeout');
+            }
+          } catch (error) {
+            console.error('[useCarerAuth] Error during timeout session check:', error);
+          } finally {
+            setLoading(false);
+          }
         }
       }, 10000); // 10 second timeout
     };
@@ -99,8 +115,8 @@ export function useCarerAuth() {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-    // Check for existing session
-    const initializeAuth = async () => {
+    // Check for existing session with retry logic
+    const initializeAuth = async (retryCount = 0) => {
       try {
         setLoadingTimeout(); // Start timeout
         
@@ -108,6 +124,14 @@ export function useCarerAuth() {
         
         if (error) {
           console.error('[useCarerAuth] Error getting session:', error);
+          
+          // Retry once if this is the first attempt
+          if (retryCount === 0) {
+            console.log('[useCarerAuth] Retrying session fetch after error...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return initializeAuth(1);
+          }
+          
           if (mounted) setLoading(false);
           return;
         }
@@ -124,9 +148,18 @@ export function useCarerAuth() {
           } catch (error) {
             console.error('[useCarerAuth] Error checking carer role during init:', error);
           }
+        } else {
+          console.warn('[useCarerAuth] No active session found');
         }
       } catch (error) {
         console.error('[useCarerAuth] Error during auth initialization:', error);
+        
+        // Retry once on unexpected errors
+        if (retryCount === 0) {
+          console.log('[useCarerAuth] Retrying after unexpected error...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return initializeAuth(1);
+        }
       } finally {
         clearTimeout(loadingTimeout);
         if (mounted) {

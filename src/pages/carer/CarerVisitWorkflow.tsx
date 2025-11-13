@@ -780,9 +780,12 @@ const CarerVisitWorkflow = () => {
       visitRecord: !!visitRecord,
       visitRecordId: visitRecord?.id,
       userId: !!user?.id,
+      userIdValue: user?.id,
+      userEmail: user?.email,
+      hasUserObject: !!user,
       isDisabled: isCompletingVisit || !carerSignature || visitLoading || authLoading || !visitRecord || !user?.id
     });
-  }, [isCompletingVisit, carerSignature, visitLoading, authLoading, visitRecord, user?.id]);
+  }, [isCompletingVisit, carerSignature, visitLoading, authLoading, visitRecord, user]);
 
   // Helper function to determine why button is disabled
   const getButtonDisabledReason = () => {
@@ -795,11 +798,38 @@ const CarerVisitWorkflow = () => {
     return null;
   };
 
-  const handleRefreshData = () => {
-    console.log('[CompleteVisit] Manually refreshing data...');
+  const handleRefreshData = async () => {
+    console.log('[CarerVisitWorkflow] Manually refreshing data...');
+    
+    // Refresh queries
     queryClient.invalidateQueries({ queryKey: ['visit-record', appointmentId] });
     queryClient.invalidateQueries({ queryKey: ['appointment', appointmentId] });
-    toast.info('Refreshing data...');
+    
+    // If user is missing, try to refresh the session
+    if (!user?.id) {
+      console.log('[CarerVisitWorkflow] User missing, refreshing auth session...');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('[CarerVisitWorkflow] Error refreshing session:', error);
+          toast.error('Failed to refresh authentication. Please try logging in again.');
+        } else if (session?.user) {
+          console.log('[CarerVisitWorkflow] Session refreshed successfully:', session.user.id);
+          toast.success('Authentication refreshed');
+          // Trigger a re-render by reloading
+          window.location.reload();
+        } else {
+          console.warn('[CarerVisitWorkflow] No session available');
+          toast.error('No active session. Please log in again.');
+          navigate('/carer-login');
+        }
+      } catch (error) {
+        console.error('[CarerVisitWorkflow] Unexpected error refreshing session:', error);
+        toast.error('Failed to refresh session');
+      }
+    } else {
+      toast.success('Data refreshed');
+    }
   };
 
   const handleCompleteVisit = async (retryCount = 0) => {
@@ -2246,14 +2276,14 @@ const CarerVisitWorkflow = () => {
                       Back
                     </Button>
                     <div className="flex flex-col items-end gap-2">
-                      {(visitLoading || authLoading) && (
+                      {(visitLoading || authLoading || !user?.id) && (
                         <Button 
-                          variant="ghost" 
+                          variant={!user?.id ? "default" : "ghost"}
                           size="sm"
                           onClick={handleRefreshData}
-                          className="text-xs"
+                          className={!user?.id ? "text-sm" : "text-xs"}
                         >
-                          Refresh Data
+                          {!user?.id ? "Refresh Authentication" : "Refresh Data"}
                         </Button>
                       )}
                       <Button 
