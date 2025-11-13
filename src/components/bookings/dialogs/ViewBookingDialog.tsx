@@ -550,7 +550,7 @@ export function ViewBookingDialog({
         <DialogFooter className="gap-2 sm:gap-0">
           <div className="flex justify-between w-full">
             <div className="flex gap-2">
-              {canDelete && !hasStarted && (
+              {canDelete && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
