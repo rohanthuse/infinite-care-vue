@@ -300,7 +300,7 @@ export class ReportExporter {
     };
   }) {
     const { reports, clientName, branchId, dateRange, fileName, metadata } = options;
-    const doc = new jsPDF('landscape'); // Use landscape for better column width
+    const doc = new jsPDF(); // Portrait mode for vertical card layout
     
     // Fetch organization settings
     const orgSettings = await fetchOrganizationSettings(branchId);
@@ -312,141 +312,424 @@ export class ReportExporter {
     }
     
     const leftMargin = 15;
+    const rightMargin = 15;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const contentWidth = pageWidth - leftMargin - rightMargin;
     
-    // Add professional header
+    // Add cover page
     let currentY = await addPDFHeader(doc, orgSettings, logoBase64);
+    currentY = addDocumentTitle(doc, 'Service Reports', 
+      `Client: ${clientName} | Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, 
+      currentY);
     
-    // Add document title
-    const subtitle = `Client: ${clientName} | Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`;
-    currentY = addDocumentTitle(doc, 'Service Reports', subtitle, currentY);
-    
-    // Add export information
-    currentY = addSectionHeader(doc, 'Export Information', currentY);
+    // Export information on cover page
+    currentY = addSectionHeader(doc, 'Export Summary', currentY);
     doc.setFontSize(9);
     doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
-    doc.text(`Total Records: ${metadata.totalRecords}`, leftMargin, currentY);
+    doc.text(`Total Reports in System: ${metadata.totalRecords}`, leftMargin, currentY);
     currentY += 6;
-    doc.text(`Exported Records: ${metadata.exportedRecords}`, leftMargin, currentY);
+    doc.text(`Reports in this Export: ${metadata.exportedRecords}`, leftMargin, currentY);
     currentY += 6;
     doc.text(`Export Date: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, leftMargin, currentY);
-    currentY += 10;
+    currentY += 6;
+    doc.text(`Date Range: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`, leftMargin, currentY);
+    currentY += 15;
     
-    // Add data table header
-    currentY = addSectionHeader(doc, 'Service Report Details', currentY);
-    
-    // Transform data for table
-    const tableData = reports.map((report) => [
-      format(new Date(report.service_date), "dd/MM/yyyy"),
-      format(new Date(report.submitted_at), "dd/MM/yyyy HH:mm"),
-      report.staff ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim() : "-",
-      report.service_duration_minutes ? `${report.service_duration_minutes} mins` : "-",
-      report.services_provided?.join(", ") || "-",
-      report.client_mood || "-",
-      report.client_engagement || "-",
-      report.status || "-",
-      report.medication_administered ? "✓" : "✗",
-      report.incident_occurred ? "✓" : "✗",
-      report.activities_undertaken || "-",
-      report.carer_observations || "-",
-      report.review_notes || "-",
-    ]);
-    
-    // Define columns with specific configuration
-    autoTable(doc, {
-      head: [[
-        'Service Date',
-        'Submitted',
-        'Carer Name',
-        'Duration',
-        'Services',
-        'Client Mood',
-        'Engagement',
-        'Status',
-        'Medication',
-        'Incident',
-        'Activities',
-        'Observations',
-        'Review Notes'
-      ]],
-      body: tableData,
-      startY: currentY,
-      theme: 'grid',
-      styles: { 
-        fontSize: 7,
-        cellPadding: 2,
-        lineColor: [PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b],
-        lineWidth: 0.1,
-        minCellHeight: 8,
-        valign: 'middle',
-        overflow: 'linebreak',
-      },
-      headStyles: { 
-        fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b],
-        textColor: 255,
-        fontStyle: 'bold',
-        halign: 'center',
-        valign: 'middle',
-        fontSize: 7,
-        cellPadding: 3,
-      },
-      alternateRowStyles: {
-        fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b]
-      },
-      columnStyles: {
-        0: { cellWidth: 20, halign: 'center' }, // Service Date
-        1: { cellWidth: 28, halign: 'center', fontSize: 6 }, // Submitted
-        2: { cellWidth: 25, halign: 'left' }, // Carer Name
-        3: { cellWidth: 15, halign: 'center' }, // Duration
-        4: { cellWidth: 30, halign: 'left', fontSize: 6 }, // Services
-        5: { cellWidth: 18, halign: 'center', fontSize: 6 }, // Client Mood
-        6: { cellWidth: 18, halign: 'center', fontSize: 6 }, // Engagement
-        7: { cellWidth: 16, halign: 'center', fontSize: 7 }, // Status
-        8: { cellWidth: 12, halign: 'center' }, // Medication
-        9: { cellWidth: 12, halign: 'center' }, // Incident
-        10: { cellWidth: 30, halign: 'left', fontSize: 6 }, // Activities
-        11: { cellWidth: 35, halign: 'left', fontSize: 6 }, // Observations
-        12: { cellWidth: 25, halign: 'left', fontSize: 6 }, // Review Notes
-      },
-      didParseCell: function(data) {
-        // Style status column with colors
-        if (data.column.index === 7 && data.section === 'body') {
-          const status = data.cell.text[0]?.toLowerCase();
-          if (status === 'approved') {
-            data.cell.styles.fillColor = [220, 252, 231]; // green-100
-            data.cell.styles.textColor = [21, 128, 61]; // green-700
-            data.cell.styles.fontStyle = 'bold';
-          } else if (status === 'pending') {
-            data.cell.styles.fillColor = [254, 249, 195]; // yellow-100
-            data.cell.styles.textColor = [161, 98, 7]; // yellow-700
-            data.cell.styles.fontStyle = 'bold';
-          } else if (status === 'rejected') {
-            data.cell.styles.fillColor = [254, 226, 226]; // red-100
-            data.cell.styles.textColor = [185, 28, 28]; // red-700
-            data.cell.styles.fontStyle = 'bold';
-          }
-        }
-        
-        // Style Yes/No columns (Medication and Incident)
-        if ((data.column.index === 8 || data.column.index === 9) && data.section === 'body') {
-          data.cell.styles.fontStyle = 'bold';
-          if (data.cell.text[0] === '✓') {
-            data.cell.styles.textColor = [21, 128, 61]; // green-700
-          } else {
-            data.cell.styles.textColor = [107, 114, 128]; // gray-500
-          }
-        }
-      },
-      margin: { left: leftMargin, right: leftMargin },
-      showHead: 'firstPage',
-      rowPageBreak: 'avoid',
+    // Table of contents
+    currentY = addSectionHeader(doc, 'Contents', currentY);
+    doc.setFontSize(9);
+    reports.forEach((report, index) => {
+      const reportDate = format(new Date(report.service_date), 'dd/MM/yyyy');
+      const carerName = report.staff ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim() : "Unknown";
+      doc.text(`${index + 1}. Service Report - ${reportDate} (${carerName})`, leftMargin + 5, currentY);
+      currentY += 6;
     });
     
-    // Add professional footers to all pages
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      addPDFFooter(doc, orgSettings, i, pageCount);
-    }
+    // Add footer to cover page
+    addPDFFooter(doc, orgSettings, 1, reports.length + 1);
+    
+    // Process each report on a new page
+    reports.forEach((report, reportIndex) => {
+      doc.addPage();
+      const pageNum = reportIndex + 2;
+      
+      currentY = 20;
+      
+      // Report header section
+      doc.setFillColor(PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b);
+      doc.rect(leftMargin, currentY, contentWidth, 15, 'F');
+      
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Service Report #${report.id?.slice(0, 8) || reportIndex + 1}`, leftMargin + 3, currentY + 6);
+      
+      doc.setFontSize(10);
+      const serviceDate = format(new Date(report.service_date), 'EEEE, dd MMMM yyyy');
+      doc.text(serviceDate, leftMargin + 3, currentY + 11);
+      
+      // Status badge
+      const status = (report.status || 'pending').toLowerCase();
+      let statusColor = PDF_COLORS.gray[500];
+      if (status === 'approved') statusColor = { r: 21, g: 128, b: 61 };
+      else if (status === 'pending') statusColor = { r: 161, g: 98, b: 7 };
+      else if (status === 'rejected') statusColor = { r: 185, g: 28, b: 28 };
+      
+      doc.setFillColor(statusColor.r, statusColor.g, statusColor.b);
+      doc.roundedRect(pageWidth - rightMargin - 30, currentY + 3, 25, 8, 2, 2, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text(status.charAt(0).toUpperCase() + status.slice(1), pageWidth - rightMargin - 27, currentY + 8.5);
+      
+      currentY += 20;
+      
+      // Service Details Section (2-column layout)
+      currentY = addSectionHeader(doc, 'Service Details', currentY);
+      
+      const colWidth = contentWidth / 2;
+      const labelColor = PDF_COLORS.gray[600];
+      const valueColor = PDF_COLORS.gray[900];
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      
+      // Left column
+      let leftY = currentY;
+      const rowHeight = 6;
+      
+      // Carer Name
+      doc.text('Carer Name:', leftMargin + 2, leftY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      const carerName = report.staff ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim() : "-";
+      doc.text(carerName, leftMargin + 30, leftY);
+      leftY += rowHeight;
+      
+      // Duration
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Duration:', leftMargin + 2, leftY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.text(report.service_duration_minutes ? `${report.service_duration_minutes} minutes` : "-", leftMargin + 30, leftY);
+      leftY += rowHeight;
+      
+      // Client Mood
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Client Mood:', leftMargin + 2, leftY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.text(report.client_mood || "-", leftMargin + 30, leftY);
+      leftY += rowHeight;
+      
+      // Client Engagement
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Client Engagement:', leftMargin + 2, leftY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.text(report.client_engagement || "-", leftMargin + 30, leftY);
+      leftY += rowHeight;
+      
+      // Right column
+      let rightY = currentY;
+      const rightColX = leftMargin + colWidth + 5;
+      
+      // Services Provided
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Services Provided:', rightColX, rightY);
+      rightY += rowHeight - 1;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.setFontSize(7);
+      const services = report.services_provided || [];
+      if (services.length > 0) {
+        services.forEach((service: string) => {
+          doc.text(`• ${service}`, rightColX + 2, rightY);
+          rightY += 4;
+        });
+      } else {
+        doc.text('-', rightColX + 2, rightY);
+        rightY += 4;
+      }
+      doc.setFontSize(8);
+      
+      // Medication Administered
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Medication Administered:', rightColX, rightY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.text(report.medication_administered ? '✓ Yes' : '✗ No', rightColX + 40, rightY);
+      rightY += rowHeight;
+      
+      // Incident Occurred
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Incident Occurred:', rightColX, rightY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.text(report.incident_occurred ? '✓ Yes' : '✗ No', rightColX + 40, rightY);
+      
+      currentY = Math.max(leftY, rightY) + 5;
+      
+      // Tasks Section
+      if (report.tasks && report.tasks.length > 0) {
+        if (currentY > pageHeight - 50) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        currentY = addSectionHeader(doc, 'Tasks Completed During Visit', currentY);
+        
+        const taskTableData = report.tasks.map((task: any) => [
+          task.task_name || '-',
+          task.task_category || '-',
+          task.is_completed ? '✓ Complete' : '○ Pending',
+          task.completed_at ? format(new Date(task.completed_at), 'HH:mm') : '-',
+          task.completion_notes || '-'
+        ]);
+        
+        autoTable(doc, {
+          head: [['Task', 'Category', 'Status', 'Completed At', 'Notes']],
+          body: taskTableData,
+          startY: currentY,
+          theme: 'grid',
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+            lineWidth: 0.1,
+            lineColor: [PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b],
+          },
+          headStyles: {
+            fillColor: [PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b],
+            textColor: 255,
+            fontStyle: 'bold',
+            fontSize: 8,
+          },
+          columnStyles: {
+            0: { cellWidth: 40 },
+            1: { cellWidth: 25 },
+            2: { cellWidth: 25, halign: 'center' },
+            3: { cellWidth: 20, halign: 'center' },
+            4: { cellWidth: 60 },
+          },
+          didParseCell: function(data) {
+            if (data.column.index === 2 && data.section === 'body') {
+              if (data.cell.text[0]?.includes('✓')) {
+                data.cell.styles.textColor = [21, 128, 61];
+                data.cell.styles.fontStyle = 'bold';
+              } else {
+                data.cell.styles.textColor = [107, 114, 128];
+              }
+            }
+          },
+          margin: { left: leftMargin, right: rightMargin },
+        });
+        
+        currentY = (doc as any).lastAutoTable.finalY + 8;
+      } else {
+        doc.setFontSize(9);
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.setFont('helvetica', 'italic');
+        doc.text('No tasks recorded for this visit', leftMargin + 2, currentY);
+        currentY += 10;
+      }
+      
+      // Medication Details Section
+      if (report.medications && report.medications.length > 0) {
+        if (currentY > pageHeight - 50) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        currentY = addSectionHeader(doc, 'Medication Details', currentY);
+        
+        report.medications.forEach((med: any, medIndex: number) => {
+          if (currentY > pageHeight - 40) {
+            doc.addPage();
+            currentY = 20;
+          }
+          
+          // Medication card background
+          const cardHeight = med.is_administered ? 22 : 20;
+          doc.setFillColor(249, 250, 251);
+          doc.roundedRect(leftMargin, currentY, contentWidth, cardHeight, 2, 2, 'F');
+          doc.setDrawColor(229, 231, 235);
+          doc.setLineWidth(0.3);
+          doc.roundedRect(leftMargin, currentY, contentWidth, cardHeight, 2, 2, 'S');
+          
+          // Medication icon and name
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
+          doc.text('💊', leftMargin + 2, currentY + 5);
+          doc.text(`${med.medication_name || 'Unknown'} - ${med.dosage || 'N/A'}`, leftMargin + 8, currentY + 5);
+          
+          // Details
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+          
+          let medY = currentY + 11;
+          doc.text('Scheduled Time:', leftMargin + 3, medY);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+          doc.text(med.prescribed_time || '-', leftMargin + 35, medY);
+          
+          medY += 5;
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+          doc.text('Administered:', leftMargin + 3, medY);
+          doc.setFont('helvetica', 'normal');
+          
+          if (med.is_administered) {
+            doc.setTextColor(21, 128, 61);
+            doc.text(`✓ Yes at ${med.administration_time || 'N/A'}`, leftMargin + 35, medY);
+            
+            if (med.administration_notes) {
+              medY += 5;
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+              doc.text('Notes:', leftMargin + 3, medY);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+              const notesLines = doc.splitTextToSize(med.administration_notes, contentWidth - 30);
+              doc.text(notesLines, leftMargin + 35, medY);
+            }
+          } else {
+            doc.setTextColor(185, 28, 28);
+            doc.text('✗ Missed', leftMargin + 35, medY);
+            
+            if (med.missed_reason) {
+              medY += 5;
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+              doc.text('Reason:', leftMargin + 3, medY);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(185, 28, 28);
+              const reasonLines = doc.splitTextToSize(med.missed_reason, contentWidth - 30);
+              doc.text(reasonLines, leftMargin + 35, medY);
+            }
+          }
+          
+          currentY += cardHeight + 3;
+        });
+        
+        currentY += 5;
+      } else {
+        doc.setFontSize(9);
+        doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
+        doc.setFont('helvetica', 'italic');
+        doc.text('No medications administered during this visit', leftMargin + 2, currentY);
+        currentY += 10;
+      }
+      
+      // Activities & Observations Section
+      if (currentY > pageHeight - 40) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      currentY = addSectionHeader(doc, 'Activities & Observations', currentY);
+      
+      // Activities Undertaken
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Activities Undertaken:', leftMargin + 2, currentY);
+      currentY += 6;
+      
+      doc.setFillColor(249, 250, 251);
+      const activitiesText = report.activities_undertaken || 'No activities recorded';
+      const activitiesLines = doc.splitTextToSize(activitiesText, contentWidth - 6);
+      const activitiesHeight = activitiesLines.length * 5 + 4;
+      doc.roundedRect(leftMargin, currentY - 3, contentWidth, activitiesHeight, 2, 2, 'FD');
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.setFontSize(8);
+      doc.text(activitiesLines, leftMargin + 3, currentY);
+      currentY += activitiesHeight + 5;
+      
+      // Carer Observations
+      if (currentY > pageHeight - 30) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+      doc.text('Carer Observations:', leftMargin + 2, currentY);
+      currentY += 6;
+      
+      doc.setFillColor(239, 246, 255);
+      const observationsText = report.carer_observations || 'No observations recorded';
+      const observationsLines = doc.splitTextToSize(observationsText, contentWidth - 6);
+      const observationsHeight = observationsLines.length * 5 + 4;
+      doc.roundedRect(leftMargin, currentY - 3, contentWidth, observationsHeight, 2, 2, 'FD');
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+      doc.setFontSize(8);
+      doc.text(observationsLines, leftMargin + 3, currentY);
+      currentY += observationsHeight + 5;
+      
+      // Additional Notes
+      if (report.review_notes || report.client_feedback) {
+        if (currentY > pageHeight - 25) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        currentY = addSectionHeader(doc, 'Additional Notes', currentY);
+        
+        if (report.review_notes) {
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(labelColor.r, labelColor.g, labelColor.b);
+          doc.text('Review Notes:', leftMargin + 2, currentY);
+          currentY += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
+          const reviewLines = doc.splitTextToSize(report.review_notes, contentWidth - 4);
+          doc.text(reviewLines, leftMargin + 2, currentY);
+          currentY += reviewLines.length * 4 + 5;
+        }
+      }
+      
+      // Incident Details (if applicable)
+      if (report.incident_occurred && report.incident_details) {
+        if (currentY > pageHeight - 25) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        doc.setDrawColor(220, 38, 38);
+        doc.setLineWidth(0.5);
+        doc.setFillColor(254, 242, 242);
+        doc.roundedRect(leftMargin, currentY, contentWidth, 20, 2, 2, 'FD');
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(185, 28, 28);
+        doc.text('⚠ Incident Report', leftMargin + 3, currentY + 6);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        currentY += 11;
+        const incidentLines = doc.splitTextToSize(report.incident_details, contentWidth - 6);
+        doc.text(incidentLines, leftMargin + 3, currentY);
+      }
+      
+      // Add footer to each report page
+      addPDFFooter(doc, orgSettings, pageNum, reports.length + 1);
+    });
     
     // Save the PDF
     doc.save(fileName);

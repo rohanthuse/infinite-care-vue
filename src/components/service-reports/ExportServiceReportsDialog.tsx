@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useApprovedServiceReports } from "@/hooks/useServiceReports";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ExportServiceReportsDialogProps {
   open: boolean;
@@ -60,9 +61,43 @@ export function ExportServiceReportsDialog({
         return;
       }
 
+      // Fetch detailed medication and task data for each report
+      const reportsWithDetails = await Promise.all(
+        filteredReports.map(async (report) => {
+          let medications = [];
+          let tasks = [];
+
+          if (report.visit_record_id) {
+            // Fetch medications
+            const { data: medsData } = await supabase
+              .from("visit_medications")
+              .select("*")
+              .eq("visit_record_id", report.visit_record_id)
+              .order("prescribed_time", { ascending: true });
+
+            if (medsData) medications = medsData;
+
+            // Fetch tasks
+            const { data: tasksData } = await supabase
+              .from("visit_tasks")
+              .select("*")
+              .eq("visit_record_id", report.visit_record_id)
+              .order("task_category", { ascending: true });
+
+            if (tasksData) tasks = tasksData;
+          }
+
+          return {
+            ...report,
+            medications,
+            tasks,
+          };
+        })
+      );
+
       // Export using the dedicated service reports PDF generator
       await ReportExporter.generateServiceReportsPDF({
-        reports: filteredReports,
+        reports: reportsWithDetails,
         clientName,
         branchId,
         dateRange: { from: startDate, to: endDate },
