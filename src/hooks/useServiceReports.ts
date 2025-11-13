@@ -49,6 +49,11 @@ export const useCarerServiceReports = (staffId?: string) => {
             first_name,
             last_name,
             email
+          ),
+          staff!inner (
+            first_name,
+            last_name,
+            email
           )
         `)
         .eq('staff_id', staffId)
