@@ -224,6 +224,51 @@ export function formatDateForBooking(date: Date): string {
 }
 
 /**
+ * Create end datetime for bookings, handling overnight shifts
+ * If endTime is earlier than startTime, assumes overnight shift and adds 1 day
+ * 
+ * @param dateString - Booking date in YYYY-MM-DD format
+ * @param startTime - Start time in HH:MM format
+ * @param endTime - End time in HH:MM format
+ * @returns ISO 8601 UTC timestamp for end time
+ */
+export function createBookingEndDateTime(
+  dateString: string, 
+  startTime: string, 
+  endTime: string
+): string {
+  console.log('[createBookingEndDateTime] Inputs:', { dateString, startTime, endTime });
+  
+  // Parse times to compare
+  const [startHour, startMin] = startTime.split(':').map(Number);
+  const [endHour, endMin] = endTime.split(':').map(Number);
+  
+  const startMinutes = startHour * 60 + startMin;
+  const endMinutes = endHour * 60 + endMin;
+  
+  // Check if this is an overnight shift
+  const isOvernightShift = endMinutes < startMinutes;
+  
+  if (isOvernightShift) {
+    console.log('[createBookingEndDateTime] Detected overnight shift - adding 1 day to end date');
+    // Add 1 day to the end date
+    const endDate = addDaysToDateString(dateString, 1);
+    const result = createUTCTimestamp(endDate, endTime);
+    console.log('[createBookingEndDateTime] Overnight result:', { 
+      originalDate: dateString, 
+      endDate, 
+      result 
+    });
+    return result;
+  } else {
+    // Same day shift
+    const result = createUTCTimestamp(dateString, endTime);
+    console.log('[createBookingEndDateTime] Same-day result:', result);
+    return result;
+  }
+}
+
+/**
  * Validate date range
  */
 export function isValidDateRange(startDate: string, endDate: string): boolean {

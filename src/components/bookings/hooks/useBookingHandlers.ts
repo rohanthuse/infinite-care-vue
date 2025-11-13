@@ -9,7 +9,7 @@ import { useCreateBooking } from "@/data/hooks/useCreateBooking";
 import { useUpdateBooking } from "@/data/hooks/useUpdateBooking";
 // Removed deprecated useBookingOverlapCheck - using useConsolidatedValidation instead
 import { useRealTimeOverlapCheck } from "./useRealTimeOverlapCheck";
-import { createBookingDateTime, formatDateForBooking } from "../utils/dateUtils";
+import { createBookingDateTime, createBookingEndDateTime, formatDateForBooking } from "../utils/dateUtils";
 import { useConsolidatedValidation } from "./useConsolidatedValidation";
 import { generateRecurringBookings, previewRecurringBookings } from "../utils/recurringBookingLogic";
 import { validateBookingFormData } from "../utils/bookingValidation";
@@ -235,24 +235,8 @@ export function useBookingHandlers(branchId?: string, user?: any) {
     if (bookingToUpdate.date && bookingToUpdate.startTime) {
         payload.start_time = createBookingDateTime(bookingToUpdate.date, bookingToUpdate.startTime);
     }
-    if (bookingToUpdate.date && bookingToUpdate.endTime) {
-        // Check if overnight booking (end time before start time)
-        const [startHour] = bookingToUpdate.startTime.split(':').map(Number);
-        const [endHour] = bookingToUpdate.endTime.split(':').map(Number);
-        
-        let endDate = bookingToUpdate.date;
-        if (endHour < startHour || (endHour === startHour && bookingToUpdate.endTime < bookingToUpdate.startTime)) {
-          // Overnight booking - add one day to end date
-          const dateObj = new Date(bookingToUpdate.date + 'T00:00:00');
-          dateObj.setDate(dateObj.getDate() + 1);
-          endDate = format(dateObj, 'yyyy-MM-dd');
-          console.log('[useBookingHandlers] Overnight booking detected, adjusting end date:', { 
-            originalDate: bookingToUpdate.date, 
-            adjustedEndDate: endDate 
-          });
-        }
-        
-        payload.end_time = createBookingDateTime(endDate, bookingToUpdate.endTime);
+    if (bookingToUpdate.date && bookingToUpdate.endTime && bookingToUpdate.startTime) {
+        payload.end_time = createBookingEndDateTime(bookingToUpdate.date, bookingToUpdate.startTime, bookingToUpdate.endTime);
     }
 
     updateBookingMutation.mutate({ bookingId: bookingToUpdate.id, updatedData: payload }, {
@@ -461,7 +445,7 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         client_id: bookingData.clientId,
         staff_id: bookingData.carerId || null,
         start_time: createBookingDateTime(bookingDateStr, schedule.startTime),
-        end_time: createBookingDateTime(bookingDateStr, schedule.endTime),
+        end_time: createBookingEndDateTime(bookingDateStr, schedule.startTime, schedule.endTime),
         service_id: schedule.services[0],
         status: bookingData.carerId ? "assigned" : "unassigned",
         notes: bookingData.notes || null,

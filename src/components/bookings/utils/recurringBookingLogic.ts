@@ -6,6 +6,7 @@ import {
   findDatesForDayOfWeek, 
   convertDaySelectionToNumbers, 
   createBookingDateTime,
+  createBookingEndDateTime,
   isValidDateString,
   isValidTimeString,
   formatDateForBooking 
@@ -146,7 +147,7 @@ export function generateRecurringBookings(
 
         for (const date of matchingDates) {
           const startDateTime = createBookingDateTime(date, startTime);
-          const endDateTime = createBookingDateTime(date, endTime);
+          const endDateTime = createBookingEndDateTime(date, startTime, endTime);
 
           console.log(`[generateRecurringBookings] 🎯 CREATING BOOKING FOR DATE: ${date} (${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]})`);
           console.log(`[generateRecurringBookings] 🎯 BOOKING DETAILS:`, {
