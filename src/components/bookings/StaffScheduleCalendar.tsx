@@ -105,7 +105,7 @@ export function StaffScheduleCalendar({
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     showRuns: true,
-    maxHours: true,
+    maxHours: false,
     travelTime: true,
     assignedOnly: false,
   });
