@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertTriangle, Activity, Thermometer, Heart, Wind } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatSafeDate } from '@/lib/dateUtils';
 
 import { VisitVital } from '@/hooks/useVisitVitals';
 
@@ -55,7 +55,7 @@ export function NEWS2Display({ news2Readings, latestNEWS2, otherVitals }: NEWS2D
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Recorded At</p>
-                <p className="font-medium">{format(new Date(latestNEWS2.reading_time), 'PPp')}</p>
+                <p className="font-medium">{formatSafeDate(latestNEWS2.reading_time, 'PPp')}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
@@ -137,7 +137,7 @@ export function NEWS2Display({ news2Readings, latestNEWS2, otherVitals }: NEWS2D
             <TableBody>
               {news2Readings.map((reading) => (
                 <TableRow key={reading.id}>
-                  <TableCell>{format(new Date(reading.reading_time), 'p')}</TableCell>
+                  <TableCell>{formatSafeDate(reading.reading_time, 'p')}</TableCell>
                   <TableCell className="font-bold">{reading.news2_total_score}</TableCell>
                   <TableCell>{getRiskBadge(reading.news2_risk_level)}</TableCell>
                   <TableCell>{reading.pulse_rate} bpm</TableCell>
@@ -170,7 +170,7 @@ export function NEWS2Display({ news2Readings, latestNEWS2, otherVitals }: NEWS2D
                   <p className="text-xs text-muted-foreground mt-1">{vital.notes}</p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {format(new Date(vital.reading_time), 'p')}
+                  {formatSafeDate(vital.reading_time, 'p')}
                 </p>
               </div>
             ))}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Clock, XCircle, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatSafeDate } from '@/lib/dateUtils';
 
 interface Medication {
   id: string;
@@ -97,7 +97,7 @@ export function MedicationsTable({ medications }: MedicationsTableProps) {
                 {medication.prescribed_time ? (
                   <span className="text-sm flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {format(new Date(medication.prescribed_time), 'p')}
+                    {formatSafeDate(medication.prescribed_time, 'p')}
                   </span>
                 ) : (
                   '-'
@@ -107,7 +107,7 @@ export function MedicationsTable({ medications }: MedicationsTableProps) {
               <TableCell>
                 {medication.administration_time ? (
                   <span className="text-sm">
-                    {format(new Date(medication.administration_time), 'p')}
+                    {formatSafeDate(medication.administration_time, 'p')}
                   </span>
                 ) : (
                   <span className="text-muted-foreground text-sm">-</span>

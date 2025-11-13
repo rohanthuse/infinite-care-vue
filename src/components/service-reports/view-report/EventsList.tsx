@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, AlertCircle, Eye, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatSafeDate } from '@/lib/dateUtils';
 
 import { VisitEvent } from '@/hooks/useVisitEvents';
 
@@ -50,7 +50,7 @@ export function EventsList({ incidents, accidents, observations }: EventsListPro
       <AlertDescription className="space-y-2 mt-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-3 w-3" />
-          {format(new Date(event.event_time), 'PPp')}
+          {formatSafeDate(event.event_time, 'PPp')}
         </div>
         <p className="text-sm">{event.event_description}</p>
         {event.follow_up_notes && (
