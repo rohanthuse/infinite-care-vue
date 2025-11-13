@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CreateServiceReportDialog } from '../service-reports/CreateServiceReportDialog';
+import { ViewServiceReportDialog } from '../service-reports/ViewServiceReportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
@@ -35,6 +36,7 @@ export function CarerReportsTab() {
   );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [selectedBookingForReport, setSelectedBookingForReport] = useState<any>(null);
   const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
@@ -328,7 +330,7 @@ export function CarerReportsTab() {
                                       const report = reports.find(r => r.booking_id === booking.id);
                                       if (report) {
                                         setSelectedReport(report);
-                                        setEditDialogOpen(true);
+                                        setViewDialogOpen(true);
                                       }
                                     }}
                                     className="flex items-center gap-2"
