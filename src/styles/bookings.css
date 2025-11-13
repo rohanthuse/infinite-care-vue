@@ -267,8 +267,16 @@
   cursor: pointer;
   overflow: hidden;
   border-left: 3px solid;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
   z-index: 5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .booking-item {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 3px solid;
+  }
 }
 
 .booking-item:hover {

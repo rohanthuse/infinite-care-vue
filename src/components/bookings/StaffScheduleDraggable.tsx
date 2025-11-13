@@ -101,6 +101,7 @@ export function StaffScheduleDraggable({
                     {...provided.dragHandleProps}
                     className={`
                       absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-grab active:cursor-grabbing transition-all
+                      border border-gray-300 dark:border-gray-600 rounded-sm
                       ${colorClass}
                       ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
                       ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
@@ -108,9 +109,10 @@ export function StaffScheduleDraggable({
                       ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
                     `}
                     style={{ 
-                      left: `${block.leftPosition}px`,
-                      width: `${Math.max(block.width, 20)}px`,
-                      height: '64px',
+                      left: `${block.leftPosition + 1}px`,
+                      width: `${Math.max(block.width - 2, 18)}px`,
+                      height: '62px',
+                      marginTop: '1px',
                       zIndex: snapshot.isDragging ? 1000 : (isSelected ? 2 : 1),
                       ...provided.draggableProps.style
                     }}
