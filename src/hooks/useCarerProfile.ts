@@ -113,7 +113,8 @@ export const useCarerProfileById = (carerId?: string) => {
           bank_account_name,
           bank_account_number,
           bank_sort_code,
-          invitation_accepted_at
+          invitation_accepted_at,
+          photo_url
         `)
         .eq('id', carerId)
         .maybeSingle();
