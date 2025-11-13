@@ -83,6 +83,12 @@ export const useUpdateCalendarEvent = () => {
         exact: false
       });
       
+      // Invalidate staff schedule events
+      queryClient.invalidateQueries({ 
+        queryKey: ['staff-schedule-events'],
+        exact: false
+      });
+      
       // If it's a booking, also invalidate branch-specific queries
       if (data.type === 'booking') {
         queryClient.invalidateQueries({ 
@@ -166,6 +172,12 @@ export const useDeleteCalendarEvent = () => {
       // Also invalidate stats queries
       queryClient.invalidateQueries({ 
         queryKey: ['organization-calendar-stats'],
+        exact: false
+      });
+      
+      // Invalidate staff schedule events
+      queryClient.invalidateQueries({ 
+        queryKey: ['staff-schedule-events'],
         exact: false
       });
       

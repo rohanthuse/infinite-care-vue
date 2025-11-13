@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBranchStaff } from "@/hooks/useBranchStaff";
 import { useLeaveRequests, useAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
 import { useStaffUtilizationAnalytics, useEnhancedStaffSchedule } from "@/hooks/useStaffUtilizationAnalytics";
+import { useStaffScheduleEvents, StaffTrainingEvent, StaffAppointmentEvent } from "@/hooks/useStaffScheduleEvents";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
@@ -147,6 +148,16 @@ export function StaffScheduleCalendar({
   
   // Enhanced staff schedule with utilization metrics
   const enhancedStaffData = useEnhancedStaffSchedule(staff, bookings, date);
+  
+  // Get staff IDs for event fetching
+  const staffIds = useMemo(() => staff.map(s => s.id), [staff]);
+  
+  // Fetch training and appointment events
+  const { data: staffEvents = [] } = useStaffScheduleEvents(
+    branchId,
+    date,
+    staffIds
+  );
   
   // Safe helper to get initials from a name
   const getInitials = (fullName?: string): string => {
@@ -500,6 +511,120 @@ export function StaffScheduleCalendar({
           });
         }
 
+        // Add training events
+        staffEvents
+          .filter(event => event.type === 'training' && event.staff_id === member.id)
+          .forEach(event => {
+            const trainingEvent = event as StaffTrainingEvent;
+            
+            // Parse time from training_notes or use defaults (9 AM - 5 PM)
+            const timeMatch = trainingEvent.training_notes?.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+            
+            let startHour = 9, startMin = 0, endHour = 17, endMin = 0;
+            if (timeMatch) {
+              startHour = Number(timeMatch[1]);
+              startMin = Number(timeMatch[2]);
+              endHour = Number(timeMatch[3]);
+              endMin = Number(timeMatch[4]);
+            }
+            
+            const startMinutes = startHour * 60 + startMin;
+            const endMinutes = endHour * 60 + endMin;
+            const durationMinutes = endMinutes - startMinutes;
+            
+            const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
+            
+            bookingBlocks.push({
+              booking: {
+                id: trainingEvent.id,
+                clientId: '',
+                clientName: trainingEvent.training_courses.title,
+                clientInitials: 'TR',
+                carerId: member.id,
+                carerName: `${member.first_name} ${member.last_name}`,
+                carerInitials: getInitials(`${member.first_name} ${member.last_name}`),
+                startTime: `${startHour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`,
+                endTime: `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`,
+                date: format(date, 'yyyy-MM-dd'),
+                status: 'training' as any,
+                notes: trainingEvent.training_notes || undefined,
+              },
+              startMinutes,
+              durationMinutes,
+              leftPosition: left,
+              width,
+              status: 'unavailable'
+            });
+            
+            // Mark time slots as unavailable
+            timeSlots.forEach(slot => {
+              const [slotHour, slotMin] = slot.split(':').map(Number);
+              const slotMinutes = slotHour * 60 + slotMin;
+              const nextSlotMinutes = slotMinutes + timeInterval;
+              
+              if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
+                schedule[slot] = {
+                  type: 'unavailable',
+                  booking: bookingBlocks[bookingBlocks.length - 1].booking
+                };
+              }
+            });
+          });
+
+        // Add appointment events
+        staffEvents
+          .filter(event => event.type === 'appointment' && event.staff_id === member.id)
+          .forEach(event => {
+            const appointmentEvent = event as StaffAppointmentEvent;
+            
+            // Parse appointment time
+            const [timeHour, timeMin] = appointmentEvent.appointment_time.split(':').map(Number);
+            const startMinutes = timeHour * 60 + timeMin;
+            const durationMinutes = 60; // Default 1 hour duration
+            const endMinutes = startMinutes + durationMinutes;
+            
+            const endHour = Math.floor(endMinutes / 60);
+            const endMin = endMinutes % 60;
+            
+            const { left, width } = calculateBookingPosition(startMinutes, durationMinutes);
+            
+            bookingBlocks.push({
+              booking: {
+                id: appointmentEvent.id,
+                clientId: '',
+                clientName: `${appointmentEvent.appointment_type} - ${appointmentEvent.provider_name}`,
+                clientInitials: 'MT',
+                carerId: member.id,
+                carerName: `${member.first_name} ${member.last_name}`,
+                carerInitials: getInitials(`${member.first_name} ${member.last_name}`),
+                startTime: appointmentEvent.appointment_time,
+                endTime: `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`,
+                date: appointmentEvent.appointment_date,
+                status: 'meeting' as any,
+                notes: appointmentEvent.notes || undefined,
+              },
+              startMinutes,
+              durationMinutes,
+              leftPosition: left,
+              width,
+              status: 'unavailable'
+            });
+            
+            // Mark time slots as unavailable
+            timeSlots.forEach(slot => {
+              const [slotHour, slotMin] = slot.split(':').map(Number);
+              const slotMinutes = slotHour * 60 + slotMin;
+              const nextSlotMinutes = slotMinutes + timeInterval;
+              
+              if (startMinutes < nextSlotMinutes && endMinutes > slotMinutes) {
+                schedule[slot] = {
+                  type: 'unavailable',
+                  booking: bookingBlocks[bookingBlocks.length - 1].booking
+                };
+              }
+            });
+          });
+
         return {
           id: member.id,
           name: `${member.first_name} ${member.last_name}`,
@@ -531,7 +656,7 @@ export function StaffScheduleCalendar({
       }
       return filteredData;
     }
-  }, [viewType, staff, bookings, date, leaveRequests, timeSlots, searchTerm, filters, timeInterval]);
+  }, [viewType, staff, bookings, date, leaveRequests, timeSlots, searchTerm, filters, timeInterval, staffEvents]);
 
   const getStatusColor = (status: StaffStatus) => {
     // If there's a booking, use its actual status for color

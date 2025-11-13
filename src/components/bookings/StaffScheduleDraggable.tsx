@@ -1,7 +1,7 @@
 import React from "react";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { StickyNote } from "lucide-react";
+import { StickyNote, GraduationCap, CalendarCheck } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getBookingStatusColor } from "./utils/bookingColors";
 import { Booking } from "./BookingTimeGrid";
@@ -94,6 +94,10 @@ export function StaffScheduleDraggable({
                 key={`${block.booking.id}-${idx}`} 
                 draggableId={block.booking.id} 
                 index={idx}
+                isDragDisabled={
+                  block.booking.status === 'training' || 
+                  block.booking.status === 'meeting'
+                }
               >
                 {(provided, snapshot) => (
                   <div
@@ -124,7 +128,7 @@ export function StaffScheduleDraggable({
                       }
                     }}
                   >
-                    {onBookingSelect && (
+                    {onBookingSelect && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
                       <div 
                         className="absolute top-1 left-1 z-10 pointer-events-auto"
                         onClick={(e) => {
@@ -139,7 +143,19 @@ export function StaffScheduleDraggable({
                       </div>
                     )}
 
-                    {block.booking.notes && (
+                    {block.booking.status === 'training' && (
+                      <div className="absolute top-1 left-1 z-10 pointer-events-none">
+                        <GraduationCap className="h-3 w-3 text-amber-700" />
+                      </div>
+                    )}
+
+                    {block.booking.status === 'meeting' && (
+                      <div className="absolute top-1 left-1 z-10 pointer-events-none">
+                        <CalendarCheck className="h-3 w-3 text-indigo-700" />
+                      </div>
+                    )}
+
+                    {block.booking.notes && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
                       <div 
                         className="absolute top-1 right-1 z-10 pointer-events-none"
                         title="Has notes"
@@ -164,7 +180,23 @@ export function StaffScheduleDraggable({
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-sm p-4 bg-popover text-popover-foreground border border-border shadow-lg rounded-md">
-                        {renderTooltipContent({ type: block.status, booking: block.booking }, staffName)}
+                        <div className="text-xs space-y-1">
+                          {block.booking.status === 'training' && (
+                            <div className="flex items-center gap-1 font-semibold text-amber-700 mb-2">
+                              <GraduationCap className="h-3 w-3" />
+                              <span>Training Session</span>
+                            </div>
+                          )}
+                          
+                          {block.booking.status === 'meeting' && (
+                            <div className="flex items-center gap-1 font-semibold text-indigo-700 mb-2">
+                              <CalendarCheck className="h-3 w-3" />
+                              <span>External Meeting</span>
+                            </div>
+                          )}
+                          
+                          {renderTooltipContent({ type: block.status, booking: block.booking }, staffName)}
+                        </div>
                         {block.booking.splitIndicator === 'continues-next-day' && (
                           <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
                             ⚠️ Continues to next day until {block.booking.originalEndTime}

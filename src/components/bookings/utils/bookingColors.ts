@@ -38,6 +38,16 @@ export const BOOKING_STATUS_COLORS = {
     light: "bg-gray-100 border-gray-300 text-gray-800",
     solid: "bg-gray-500 border-gray-600",
     label: "Suspended"
+  },
+  training: {
+    light: "bg-amber-50 border-amber-400 text-amber-900",
+    solid: "bg-amber-500 border-amber-600",
+    label: "Training"
+  },
+  meeting: {
+    light: "bg-indigo-50 border-indigo-400 text-indigo-900",
+    solid: "bg-indigo-500 border-indigo-600",
+    label: "Meeting"
   }
 } as const;
 
