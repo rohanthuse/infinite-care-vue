@@ -3,16 +3,13 @@ import { useClientServiceReports, useReviewServiceReport } from '@/hooks/useServ
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminServiceReportForm } from './AdminServiceReportForm';
-import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, ThumbsUp, ThumbsDown, AlertCircle, MessageSquare, Plus, Edit, Download } from 'lucide-react';
+import { ViewServiceReportDialog } from './ViewServiceReportDialog';
+import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, Plus, Edit, Download, AlertCircle, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ExportServiceReportsDialog } from './ExportServiceReportsDialog';
 interface AdminServiceReportsTabProps {
   clientId: string;
@@ -42,15 +39,13 @@ export function AdminServiceReportsTab({
     error
   } = useClientServiceReports(clientId);
   const reviewReport = useReviewServiceReport();
-  const [reviewDialog, setReviewDialog] = useState<{
+  const [viewReportDialog, setViewReportDialog] = useState<{
     open: boolean;
     report: any;
   }>({
     open: false,
     report: null
   });
-  const [reviewNotes, setReviewNotes] = useState('');
-  const [visibleToClient, setVisibleToClient] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createReportOpen, setCreateReportOpen] = useState(false);
   const [editReportDialog, setEditReportDialog] = useState<{
@@ -64,12 +59,10 @@ export function AdminServiceReportsTab({
 
   // Reset state when dialog closes - MUST be before any conditional returns
   React.useEffect(() => {
-    if (!reviewDialog.open) {
+    if (!viewReportDialog.open) {
       setIsSubmitting(false);
-      setReviewNotes('');
-      setVisibleToClient(true);
     }
-  }, [reviewDialog.open]);
+  }, [viewReportDialog.open]);
   if (isLoading) {
     return <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -87,10 +80,17 @@ export function AdminServiceReportsTab({
   const approvedReports = reports.filter(r => r.status === 'approved');
   const rejectedReports = reports.filter(r => r.status === 'rejected');
   const revisionReports = reports.filter(r => r.status === 'requires_revision');
-  const handleReview = (report: any, status: 'approved' | 'rejected' | 'requires_revision') => {
+  const handleReview = async (
+    report: any, 
+    status: 'approved' | 'rejected' | 'requires_revision',
+    notes: string,
+    visibleToClient: boolean
+  ) => {
     console.log('[handleReview] Called with:', {
       reportId: report?.id,
-      status
+      status,
+      notes,
+      visibleToClient
     });
 
     // Safety check
@@ -111,17 +111,15 @@ export function AdminServiceReportsTab({
     reviewReport.mutate({
       id: report.id,
       status,
-      reviewNotes: reviewNotes || undefined,
+      reviewNotes: notes || undefined,
       visibleToClient: status === 'approved' ? visibleToClient : false
     }, {
       onSuccess: data => {
         console.log('[handleReview] Success:', data);
-        setReviewDialog({
+        setViewReportDialog({
           open: false,
           report: null
         });
-        setReviewNotes('');
-        setVisibleToClient(true);
         setIsSubmitting(false);
       },
       onError: (error: any) => {
@@ -135,12 +133,10 @@ export function AdminServiceReportsTab({
     });
   };
   const openReviewDialog = (report: any) => {
-    setReviewDialog({
+    setViewReportDialog({
       open: true,
       report
     });
-    setReviewNotes('');
-    setVisibleToClient(true);
   };
   const openEditDialog = (report: any) => {
     setEditReportDialog({
@@ -203,99 +199,20 @@ export function AdminServiceReportsTab({
         </TabsContent>
       </Tabs>
 
-      {/* Review Dialog */}
-      <Dialog open={reviewDialog.open} onOpenChange={open => {
-      if (!open && (isSubmitting || reviewReport.isPending)) {
-        console.warn('Cannot close dialog while submitting');
-        return;
-      }
-      setReviewDialog({
-        open,
-        report: null
-      });
-      setReviewNotes('');
-      setVisibleToClient(true);
-      setIsSubmitting(false);
-    }}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
-          {(isSubmitting || reviewReport.isPending) && <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 rounded-lg">
-              <div className="text-center space-y-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-sm font-medium">Processing review...</p>
-              </div>
-            </div>}
-          
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle>Review Service Report</DialogTitle>
-            <DialogDescription>
-              Review and approve/reject the service report submitted by the carer.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {reviewDialog.report && <div className="space-y-6 pr-2">
-                <ServiceReportDetails report={reviewDialog.report} />
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <Label htmlFor="reviewNotes">Review Notes (Optional)</Label>
-                  <Textarea id="reviewNotes" placeholder="Add any notes about this review decision..." value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} rows={3} />
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="visibleToClient" checked={visibleToClient} onCheckedChange={checked => setVisibleToClient(checked === true)} />
-                    <Label htmlFor="visibleToClient">
-                      Make visible to client when approved
-                    </Label>
-                  </div>
-                </div>
-              </div>}
-          </div>
-
-          <DialogFooter className="flex-shrink-0 gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            setReviewDialog({
-              open: false,
-              report: null
-            });
-          }}>
-              Cancel
-            </Button>
-            <Button type="button" variant="destructive" onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (reviewDialog.report && !isSubmitting && !reviewReport.isPending) {
-              handleReview(reviewDialog.report, 'rejected');
-            }
-          }} disabled={isSubmitting || reviewReport.isPending}>
-              <XCircle className="h-4 w-4 mr-2" />
-              {isSubmitting || reviewReport.isPending ? 'Processing...' : 'Reject'}
-            </Button>
-            <Button type="button" variant="outline" onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (reviewDialog.report && !isSubmitting && !reviewReport.isPending) {
-              handleReview(reviewDialog.report, 'requires_revision');
-            }
-          }} disabled={isSubmitting || reviewReport.isPending}>
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              {isSubmitting || reviewReport.isPending ? 'Processing...' : 'Request Revision'}
-            </Button>
-            <Button type="button" onClick={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (reviewDialog.report && !isSubmitting && !reviewReport.isPending) {
-              handleReview(reviewDialog.report, 'approved');
-            }
-          }} disabled={isSubmitting || reviewReport.isPending}>
-              <CheckCircle className="h-4 w-4 mr-2" />
-              {isSubmitting || reviewReport.isPending ? 'Processing...' : 'Approve'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* View/Review Service Report Dialog */}
+      {viewReportDialog.report && (
+        <ViewServiceReportDialog
+          open={viewReportDialog.open}
+          onOpenChange={(open) => {
+            setViewReportDialog({ open, report: open ? viewReportDialog.report : null });
+          }}
+          report={viewReportDialog.report}
+          adminMode={true}
+          onAdminReview={async (status, notes, visibleToClient) => {
+            await handleReview(viewReportDialog.report, status, notes, visibleToClient);
+          }}
+        />
+      )}
 
       {/* Create Report Dialog */}
       <AdminServiceReportForm open={createReportOpen} onOpenChange={setCreateReportOpen} branchId={branchId} clients={clients.length > 0 ? clients : [{
@@ -386,7 +303,7 @@ function ServiceReportCard({
               </Button>}
             {showReviewButtons && onReview && <Button onClick={onReview} size="sm">
                 <Eye className="h-4 w-4 mr-1" />
-                Review
+                View & Review
               </Button>}
           </div>
         </div>
