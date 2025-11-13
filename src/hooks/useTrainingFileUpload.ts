@@ -46,16 +46,15 @@ export const useTrainingFileUpload = () => {
         throw new Error('File type not allowed. Please upload PDF, image, or document files.');
       }
 
-      // Verify staff access permissions
+      // Verify target staff exists
       const { data: staffData, error: staffError } = await supabase
         .from('staff')
-        .select('id, auth_user_id')
+        .select('id')
         .eq('id', options.staffId)
-        .eq('auth_user_id', user.id)
         .single();
 
       if (staffError || !staffData) {
-        throw new Error('You can only upload certificates for your own training records');
+        throw new Error('Target staff member not found');
       }
 
       // Generate unique file path for training evidence

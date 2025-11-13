@@ -14,6 +14,8 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TrainingFileUpload } from "@/components/training/TrainingFileUpload";
 
 interface EditTrainingStatusDialogProps {
   open: boolean;
@@ -25,6 +27,7 @@ interface EditTrainingStatusDialogProps {
     expiry_date: string | null;
     score: number | null;
     notes: string | null;
+    evidence_files: any[] | null;
     training_course: {
       id: string;
       title: string;
@@ -33,6 +36,7 @@ interface EditTrainingStatusDialogProps {
       valid_for_months: number | null;
     };
   };
+  staffId: string;
   onUpdate: (recordId: string, updates: any) => void;
   isUpdating: boolean;
 }
@@ -72,10 +76,12 @@ export function EditTrainingStatusDialog({
   open,
   onOpenChange,
   record,
+  staffId,
   onUpdate,
   isUpdating,
 }: EditTrainingStatusDialogProps) {
   const [showCompletionFields, setShowCompletionFields] = useState(record.status === "completed");
+  const [evidenceFiles, setEvidenceFiles] = useState(record.evidence_files || []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -108,6 +114,7 @@ export function EditTrainingStatusDialog({
         notes: record.notes || "",
       });
       setShowCompletionFields(record.status === "completed");
+      setEvidenceFiles(record.evidence_files || []);
     }
   }, [open, record, form]);
 
@@ -137,6 +144,7 @@ export function EditTrainingStatusDialog({
       expiry_date,
       score: values.score,
       notes: values.notes || null,
+      evidence_files: evidenceFiles,
     };
 
     onUpdate(record.id, updates);
@@ -181,136 +189,161 @@ export function EditTrainingStatusDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Status Field */}
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Training Status</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isUpdating}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="not-started">Not Started</SelectItem>
-                      <SelectItem value="in-progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="paused">Paused</SelectItem>
-                      <SelectItem value="under-review">Under Review</SelectItem>
-                      <SelectItem value="expired">Expired</SelectItem>
-                      <SelectItem value="failed">Failed</SelectItem>
-                      <SelectItem value="renewal-required">Renewal Required</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Tabs defaultValue="status" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="status">Status & Details</TabsTrigger>
+                <TabsTrigger value="certification">Certification</TabsTrigger>
+              </TabsList>
 
-            {/* Completion Date Field - Only shown when status is completed */}
-            {showCompletionFields && (
-              <>
+              <TabsContent value="status" className="space-y-4 mt-4">
+                {/* Status Field */}
                 <FormField
                   control={form.control}
-                  name="completion_date"
+                  name="status"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Completion Date *</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                              disabled={isUpdating}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                            className="pointer-events-auto"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem>
+                      <FormLabel>Training Status</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isUpdating}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="not-started">Not Started</SelectItem>
+                          <SelectItem value="in-progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="paused">Paused</SelectItem>
+                          <SelectItem value="under-review">Under Review</SelectItem>
+                          <SelectItem value="expired">Expired</SelectItem>
+                          <SelectItem value="failed">Failed</SelectItem>
+                          <SelectItem value="renewal-required">Renewal Required</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {/* Score Field - Only shown when status is completed */}
+                {/* Completion Date Field - Only shown when status is completed */}
+                {showCompletionFields && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="completion_date"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Completion Date *</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                  disabled={isUpdating}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value || undefined}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Score Field - Only shown when status is completed */}
+                    <FormField
+                      control={form.control}
+                      name="score"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            Score (Max: {record.training_course.max_score})
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="Enter score"
+                              min={0}
+                              max={record.training_course.max_score}
+                              disabled={isUpdating}
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                field.onChange(value === "" ? null : parseFloat(value));
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* Notes Field - Always shown */}
                 <FormField
                   control={form.control}
-                  name="score"
+                  name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Score (Max: {record.training_course.max_score})
-                      </FormLabel>
+                      <FormLabel>Admin Notes / Remarks</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Enter score"
-                          min={0}
-                          max={record.training_course.max_score}
+                        <Textarea
+                          placeholder="Add any notes or remarks about this training record..."
+                          className="min-h-[100px]"
                           disabled={isUpdating}
                           value={field.value ?? ""}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            field.onChange(value === "" ? null : parseFloat(value));
-                          }}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </>
-            )}
+              </TabsContent>
 
-            {/* Notes Field - Always shown */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Admin Notes / Remarks</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Add any notes or remarks about this training record..."
-                      className="min-h-[100px]"
-                      disabled={isUpdating}
-                      value={field.value ?? ""}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <TabsContent value="certification" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <FormLabel>Training Certificates & Evidence</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Upload certificates, completion documents, or other evidence
+                  </p>
+                </div>
+
+                <TrainingFileUpload
+                  trainingRecordId={record.id}
+                  staffId={staffId}
+                  evidenceFiles={evidenceFiles}
+                  onFilesUpdate={setEvidenceFiles}
+                />
+              </TabsContent>
+            </Tabs>
 
             <DialogFooter>
               <Button

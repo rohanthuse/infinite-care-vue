@@ -376,6 +376,7 @@ export const CarerTrainingTab: React.FC<CarerTrainingTabProps> = ({ carerId }) =
           open={editStatusDialogOpen}
           onOpenChange={setEditStatusDialogOpen}
           record={recordToEdit as any}
+          staffId={carerId}
           onUpdate={handleUpdateTrainingStatus}
           isUpdating={isUpdating}
         />
