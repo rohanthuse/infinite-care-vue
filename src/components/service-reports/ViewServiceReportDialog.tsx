@@ -71,10 +71,10 @@ export function ViewServiceReportDialog({
   });
 
   // Fetch all related data using hooks
-  const { tasks } = useVisitTasks(report?.visit_record_id);
-  const { medications } = useVisitMedications(report?.visit_record_id);
-  const { vitals, news2Readings, latestNEWS2 } = useVisitVitals(report?.visit_record_id);
-  const { events, incidents, accidents, observations } = useVisitEvents(report?.visit_record_id);
+  const { tasks = [] } = useVisitTasks(report?.visit_record_id);
+  const { medications = [] } = useVisitMedications(report?.visit_record_id);
+  const { vitals = [], news2Readings = [], latestNEWS2 } = useVisitVitals(report?.visit_record_id);
+  const { events = [], incidents, accidents, observations } = useVisitEvents(report?.visit_record_id);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; icon: any }> = {
