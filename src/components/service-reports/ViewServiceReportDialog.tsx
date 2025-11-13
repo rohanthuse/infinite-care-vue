@@ -83,6 +83,17 @@ export function ViewServiceReportDialog({
     clients: report.clients || { first_name: '', last_name: '', email: '' },
     staff: report.staff || { first_name: '', last_name: '', email: '' },
     services_provided: report.services_provided || [],
+    client_mood: report.client_mood || 'Neutral',
+    client_engagement: report.client_engagement || 'Not recorded',
+    carer_observations: report.carer_observations || '',
+    client_feedback: report.client_feedback || '',
+    activities_undertaken: report.activities_undertaken || '',
+    medication_notes: report.medication_notes || '',
+    incident_details: report.incident_details || '',
+    next_visit_preparations: report.next_visit_preparations || '',
+    review_notes: report.review_notes || '',
+    medication_administered: report.medication_administered ?? false,
+    incident_occurred: report.incident_occurred ?? false,
   } : null;
 
   // ALL HOOKS MUST BE CALLED HERE - before any early returns
@@ -343,21 +354,21 @@ export function ViewServiceReportDialog({
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Client Mood</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{getMoodIcon(report.client_mood)}</span>
-                      <Badge variant="outline">{report.client_mood}</Badge>
+                      <span className="text-2xl">{getMoodIcon(safeReport.client_mood)}</span>
+                      <Badge variant="outline">{safeReport.client_mood}</Badge>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Engagement Level</p>
-                    <Badge variant="secondary">{report.client_engagement}</Badge>
+                    <Badge variant="secondary">{safeReport.client_engagement}</Badge>
                   </div>
                 </div>
 
-                {report.activities_undertaken && (
+                {safeReport.activities_undertaken && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Activities Undertaken</p>
                     <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {report.activities_undertaken}
+                      {safeReport.activities_undertaken}
                     </p>
                   </div>
                 )}
@@ -379,67 +390,67 @@ export function ViewServiceReportDialog({
                     Carer Observations
                   </p>
                   <p className="text-sm bg-muted/50 p-3 rounded-md">
-                    {report.carer_observations || 'No observations recorded'}
+                    {safeReport.carer_observations || 'No observations recorded'}
                   </p>
                 </div>
 
                 {/* Client Feedback */}
-                {report.client_feedback && (
+                {safeReport.client_feedback && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">
                       Client Feedback
                     </p>
                     <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {report.client_feedback}
+                      {safeReport.client_feedback}
                     </p>
                   </div>
                 )}
 
                 {/* Medication Notes */}
-                {report.medication_administered && report.medication_notes && (
+                {safeReport.medication_administered && safeReport.medication_notes && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">
                       Medication Notes
                     </p>
                     <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {report.medication_notes}
+                      {safeReport.medication_notes}
                     </p>
                   </div>
                 )}
 
                 {/* Incident Details */}
-                {report.incident_occurred && report.incident_details && (
+                {safeReport.incident_occurred && safeReport.incident_details && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-amber-500" />
                       Incident Details
                     </p>
                     <p className="text-sm bg-amber-50 dark:bg-amber-950/20 p-3 rounded-md border border-amber-200 dark:border-amber-800">
-                      {report.incident_details}
+                      {safeReport.incident_details}
                     </p>
                   </div>
                 )}
 
                 {/* Next Visit Preparations */}
-                {report.next_visit_preparations && (
+                {safeReport.next_visit_preparations && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">
                       Next Visit Preparations
                     </p>
                     <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {report.next_visit_preparations}
+                      {safeReport.next_visit_preparations}
                     </p>
                   </div>
                 )}
 
                 {/* Review Notes (if any) */}
-                {report.review_notes && (
+                {safeReport.review_notes && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-2">
                       Review Notes (Admin)
                     </p>
                     <p className="text-sm bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md border border-blue-200 dark:border-blue-800">
-                      {report.review_notes}
+                      {safeReport.review_notes}
                     </p>
                   </div>
                 )}
@@ -458,9 +469,9 @@ export function ViewServiceReportDialog({
                 <CardContent>
                   <SignatureDisplay
                     carerSignature={visitRecord?.staff_signature_data}
-                    carerName={`${report.staff?.first_name} ${report.staff?.last_name}`}
+                    carerName={`${safeReport.staff?.first_name} ${safeReport.staff?.last_name}`}
                     clientSignature={visitRecord?.client_signature_data}
-                    clientName={`${report.clients?.first_name} ${report.clients?.last_name}`}
+                    clientName={`${safeReport.clients?.first_name} ${safeReport.clients?.last_name}`}
                   />
                 </CardContent>
               </Card>
