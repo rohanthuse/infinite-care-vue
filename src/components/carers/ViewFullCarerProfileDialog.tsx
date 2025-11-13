@@ -37,6 +37,7 @@ import { CarerRateTab } from "@/components/carer-profile/CarerRateTab";
 import { CarerSettingsTab } from "@/components/carer-profile/CarerSettingsTab";
 import { CarerNotesTab } from "@/components/carer-profile/CarerNotesTab";
 import { CarerProfileSharingDialog } from "@/components/carers/CarerProfileSharingDialog";
+import { CarerProfileSummaryCard } from "@/components/carer-profile/CarerProfileSummaryCard";
 
 interface ViewFullCarerProfileDialogProps {
   carerId: string;
@@ -55,6 +56,7 @@ export function ViewFullCarerProfileDialog({
 }: ViewFullCarerProfileDialogProps) {
   const [showSharingDialog, setShowSharingDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [photoKey, setPhotoKey] = useState(0);
 
   const tabs = [
     { value: "overview", label: "Overview", icon: User },
@@ -188,6 +190,15 @@ export function ViewFullCarerProfileDialog({
           <div className="flex h-[calc(95vh-80px)]">
             {/* Left Sidebar - Navigation */}
             <div className="w-80 border-r border-border bg-muted/30 flex flex-col">
+              {/* Profile Summary Section */}
+              <CarerProfileSummaryCard 
+                carerId={carerId}
+                carer={carer}
+                onPhotoUpdate={() => {
+                  setPhotoKey(prev => prev + 1);
+                }}
+              />
+              
               <ScrollArea className="flex-1 min-h-0">
                 <div className="p-6 space-y-1">
                   {tabs.map((tab) => {
