@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Download, TrendingUp, Users, AlertTriangle, CheckCircle } from "lucide-react";
+import { Loader2, Download, TrendingUp, Users, AlertTriangle, CheckCircle, Eye } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useStaffComplianceMatrix, StaffComplianceRow } from "@/hooks/useStaffComplianceMatrix";
+import { StaffComplianceBreakdownDialog } from "./StaffComplianceBreakdownDialog";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -23,6 +24,8 @@ type FilterLevel = "all" | "compliant" | "at-risk" | "non-compliant";
 
 export function StaffComplianceMatrixReport({ branchId, branchName }: StaffComplianceMatrixReportProps) {
   const [filterLevel, setFilterLevel] = useState<FilterLevel>("all");
+  const [selectedStaff, setSelectedStaff] = useState<StaffComplianceRow | null>(null);
+  const [breakdownDialogOpen, setBreakdownDialogOpen] = useState(false);
   
   const { data: matrixData, isLoading, error, refetch } = useStaffComplianceMatrix({
     branchId,
@@ -119,6 +122,11 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
     } else {
       return <Badge variant="destructive">{score}%</Badge>;
     }
+  };
+
+  const handleViewDetails = (staff: StaffComplianceRow) => {
+    setSelectedStaff(staff);
+    setBreakdownDialogOpen(true);
   };
 
   if (error) {
@@ -309,12 +317,13 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
                       <TableHead className="text-center">Incidents</TableHead>
                       <TableHead className="text-center">Overall Score</TableHead>
                       <TableHead className="text-center">Compliance Level</TableHead>
+                      <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredStaffRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                           No staff members found matching the selected filter
                         </TableCell>
                       </TableRow>
@@ -355,6 +364,16 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
                           </TableCell>
                           <TableCell className="text-center">{getScoreBadge(staff.overallScore)}</TableCell>
                           <TableCell className="text-center">{getComplianceBadge(staff.complianceLevel)}</TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewDetails(staff)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Details
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -364,6 +383,16 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
             </CardContent>
           </Card>
         </>
+      )}
+      
+      {/* Breakdown Dialog */}
+      {selectedStaff && (
+        <StaffComplianceBreakdownDialog
+          open={breakdownDialogOpen}
+          onOpenChange={setBreakdownDialogOpen}
+          staffName={selectedStaff.staffName}
+          breakdown={selectedStaff.detailedBreakdown}
+        />
       )}
     </div>
   );
