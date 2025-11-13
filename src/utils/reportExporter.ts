@@ -403,7 +403,9 @@ export class ReportExporter {
       doc.text('Carer Name:', leftMargin + 2, leftY);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
-      const carerName = report.staff ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim() : "-";
+      const carerName = report.staff 
+        ? `${report.staff.first_name || ''} ${report.staff.last_name || ''}`.trim() || 'Unknown Carer'
+        : 'Unknown Carer';
       doc.text(carerName, leftMargin + 30, leftY);
       leftY += rowHeight;
       
@@ -464,7 +466,7 @@ export class ReportExporter {
       doc.text('Medication Administered:', rightColX, rightY);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
-      doc.text(report.medication_administered ? '✓ Yes' : '✗ No', rightColX + 40, rightY);
+      doc.text(report.medication_administered ? 'Yes' : 'No', rightColX + 40, rightY);
       rightY += rowHeight;
       
       // Incident Occurred
@@ -473,7 +475,7 @@ export class ReportExporter {
       doc.text('Incident Occurred:', rightColX, rightY);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(valueColor.r, valueColor.g, valueColor.b);
-      doc.text(report.incident_occurred ? '✓ Yes' : '✗ No', rightColX + 40, rightY);
+      doc.text(report.incident_occurred ? 'Yes' : 'No', rightColX + 40, rightY);
       
       currentY = Math.max(leftY, rightY) + 5;
       
@@ -489,8 +491,14 @@ export class ReportExporter {
         const taskTableData = report.tasks.map((task: any) => [
           task.task_name || '-',
           task.task_category || '-',
-          task.is_completed ? '✓ Complete' : '○ Pending',
-          task.completed_at ? format(new Date(task.completed_at), 'HH:mm') : '-',
+          task.is_completed ? 'Complete' : 'Pending',
+          task.completed_at ? (() => {
+            try {
+              return format(new Date(task.completed_at), 'HH:mm');
+            } catch {
+              return '-';
+            }
+          })() : '-',
           task.completion_notes || '-'
         ]);
         
@@ -520,7 +528,7 @@ export class ReportExporter {
           },
           didParseCell: function(data) {
             if (data.column.index === 2 && data.section === 'body') {
-              if (data.cell.text[0]?.includes('✓')) {
+              if (data.cell.text[0]?.includes('Complete')) {
                 data.cell.styles.textColor = [21, 128, 61];
                 data.cell.styles.fontStyle = 'bold';
               } else {
@@ -563,12 +571,11 @@ export class ReportExporter {
           doc.setLineWidth(0.3);
           doc.roundedRect(leftMargin, currentY, contentWidth, cardHeight, 2, 2, 'S');
           
-          // Medication icon and name
+          // Medication name
           doc.setFontSize(10);
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
-          doc.text('💊', leftMargin + 2, currentY + 5);
-          doc.text(`${med.medication_name || 'Unknown'} - ${med.dosage || 'N/A'}`, leftMargin + 8, currentY + 5);
+          doc.text(`${med.medication_name || 'Unknown'} - ${med.dosage || 'N/A'}`, leftMargin + 2, currentY + 5);
           
           // Details
           doc.setFontSize(8);
@@ -589,7 +596,7 @@ export class ReportExporter {
           
           if (med.is_administered) {
             doc.setTextColor(21, 128, 61);
-            doc.text(`✓ Yes at ${med.administration_time || 'N/A'}`, leftMargin + 35, medY);
+            doc.text(`Yes at ${med.administration_time || 'N/A'}`, leftMargin + 35, medY);
             
             if (med.administration_notes) {
               medY += 5;
@@ -603,7 +610,7 @@ export class ReportExporter {
             }
           } else {
             doc.setTextColor(185, 28, 28);
-            doc.text('✗ Missed', leftMargin + 35, medY);
+            doc.text('Missed', leftMargin + 35, medY);
             
             if (med.missed_reason) {
               medY += 5;
@@ -718,7 +725,7 @@ export class ReportExporter {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(185, 28, 28);
-        doc.text('⚠ Incident Report', leftMargin + 3, currentY + 6);
+        doc.text('WARNING: Incident Report', leftMargin + 3, currentY + 6);
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');

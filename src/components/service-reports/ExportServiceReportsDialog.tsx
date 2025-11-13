@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useApprovedServiceReports } from "@/hooks/useServiceReports";
+import { useQuery } from "@tanstack/react-query";
 import { ReportExporter } from "@/utils/reportExporter";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,30 @@ export function ExportServiceReportsDialog({
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [isExporting, setIsExporting] = useState(false);
 
-  const { data: allReports } = useApprovedServiceReports(clientId);
+  // Fetch ALL service reports for the client (not just approved ones)
+  const { data: allReports } = useQuery({
+    queryKey: ['export-service-reports', clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      
+      const { data, error } = await supabase
+        .from('client_service_reports')
+        .select(`
+          *,
+          staff (
+            first_name,
+            last_name,
+            email
+          )
+        `)
+        .eq('client_id', clientId)
+        .order('service_date', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: Boolean(clientId),
+  });
 
   const handleExport = async () => {
     if (!allReports || allReports.length === 0) {
@@ -47,10 +70,12 @@ export function ExportServiceReportsDialog({
     }
 
     setIsExporting(true);
+    
+    let filteredReports: any[] = [];
 
     try {
       // Filter reports by date range
-      const filteredReports = allReports.filter((report) => {
+      filteredReports = allReports.filter((report) => {
         const reportDate = new Date(report.service_date);
         return reportDate >= startDate && reportDate <= endDate;
       });
@@ -64,8 +89,8 @@ export function ExportServiceReportsDialog({
       // Fetch detailed medication and task data for each report
       const reportsWithDetails = await Promise.all(
         filteredReports.map(async (report) => {
-          let medications = [];
-          let tasks = [];
+          let medications: any[] = [];
+          let tasks: any[] = [];
 
           if (report.visit_record_id) {
             // Fetch medications
@@ -75,7 +100,7 @@ export function ExportServiceReportsDialog({
               .eq("visit_record_id", report.visit_record_id)
               .order("prescribed_time", { ascending: true });
 
-            if (medsData) medications = medsData;
+            medications = medsData || [];
 
             // Fetch tasks
             const { data: tasksData } = await supabase
@@ -84,7 +109,7 @@ export function ExportServiceReportsDialog({
               .eq("visit_record_id", report.visit_record_id)
               .order("task_category", { ascending: true });
 
-            if (tasksData) tasks = tasksData;
+            tasks = tasksData || [];
           }
 
           return {
@@ -117,8 +142,20 @@ export function ExportServiceReportsDialog({
       );
       onOpenChange(false);
     } catch (error) {
-      console.error("Error exporting service reports:", error);
-      toast.error("Failed to export service reports");
+      console.error("❌ Service Report Export Error:", error);
+      console.error("Error details:", {
+        reportsCount: filteredReports?.length,
+        clientId,
+        dateRange: { from: startDate, to: endDate },
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined
+      });
+      
+      const errorMessage = error instanceof Error 
+        ? `Failed to export: ${error.message}` 
+        : "Failed to export service reports. Please try again.";
+      
+      toast.error(errorMessage);
     } finally {
       setIsExporting(false);
     }
