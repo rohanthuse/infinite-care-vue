@@ -96,6 +96,14 @@ export const useStaffComplianceMatrix = ({
           .select('expiry_date, status')
           .eq('staff_id', staffId);
 
+        // Fetch staff essentials checklist
+        const { data: essentials } = await supabase
+          .from('staff_essentials_checklist')
+          .select('status, expiry_date, required, completion_date, document_id')
+          .eq('staff_id', staffId);
+
+        console.log(`[Staff ${staffName}] Essentials: ${(essentials || []).length}, Documents: ${(documents || []).length}`);
+
         // Fetch bookings (for missed calls)
         const { data: bookings } = await supabase
           .from('bookings')
@@ -126,24 +134,44 @@ export const useStaffComplianceMatrix = ({
             ? Math.round((compliantTraining.length / mandatoryTraining.length) * 100)
             : 100;
 
-        // Calculate document status
-        const expiredDocs = (documents || []).filter((d) => {
-          if (d.status === 'expired') return true;
-          if (!d.expiry_date) return false;
-          const daysUntilExpiry = calculateDaysUntilExpiry(d.expiry_date);
+        // Calculate document status from BOTH staff_documents and essentials
+        const allDocuments = [
+          // Existing staff_documents
+          ...(documents || []).map(d => ({
+            expiry_date: d.expiry_date,
+            status: d.status,
+            source: 'document'
+          })),
+          // Essentials checklist items
+          ...(essentials || []).map(e => ({
+            expiry_date: e.expiry_date,
+            status: e.status,
+            source: 'essential'
+          }))
+        ];
+
+        const expiredItems = allDocuments.filter((item) => {
+          if (item.status === 'expired') return true;
+          if (!item.expiry_date) return false;
+          const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
           return daysUntilExpiry !== null && daysUntilExpiry < 0;
         }).length;
 
-        const expiringDocs = (documents || []).filter((d) => {
-          if (!d.expiry_date) return false;
-          const daysUntilExpiry = calculateDaysUntilExpiry(d.expiry_date);
+        const expiringItems = allDocuments.filter((item) => {
+          if (!item.expiry_date) return false;
+          const daysUntilExpiry = calculateDaysUntilExpiry(item.expiry_date);
           return daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
         }).length;
 
+        // Also count pending/incomplete required essentials as non-compliant
+        const pendingEssentials = (essentials || []).filter(
+          e => e.required && (e.status === 'pending' || e.status === null)
+        ).length;
+
         let documentStatus: 'compliant' | 'at-risk' | 'non-compliant' = 'compliant';
-        if (expiredDocs > 0) {
+        if (expiredItems > 0 || pendingEssentials > 0) {
           documentStatus = 'non-compliant';
-        } else if (expiringDocs > 0) {
+        } else if (expiringItems > 0) {
           documentStatus = 'at-risk';
         }
 
@@ -163,8 +191,9 @@ export const useStaffComplianceMatrix = ({
         ).length;
 
         // Calculate overall score
-        const documentScore = documents && documents.length > 0
-          ? ((documents.length - expiredDocs - expiringDocs * 0.5) / documents.length) * 100
+        const totalItems = allDocuments.length;
+        const documentScore = totalItems > 0
+          ? ((totalItems - expiredItems - expiringItems * 0.5 - pendingEssentials) / totalItems) * 100
           : 100;
 
         const incidentPenalty = Math.min(incidentsCount * 5, 20);
