@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Combobox } from "@/components/ui/combobox";
-import { EQUIPMENT_OPTIONS, ENVIRONMENT_CHECKS, HOME_REPAIR_OPTIONS } from "@/constants/equipment";
+import { EQUIPMENT_OPTIONS, HANDLING_FACTORS, ENVIRONMENT_CHECKS, HOME_REPAIR_OPTIONS } from "@/constants/equipment";
 
 interface WizardStep10EquipmentProps {
   form: UseFormReturn<any>;
@@ -73,12 +73,11 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
           const allNotes = [existingNotes, ...legacyInfo].filter(Boolean).join('\n');
           
           return {
-            equipmentUsed,
-            supplier: "",
-            dateReceived: item.installation_date || "",
-            dateTrained: "",
-            nextServiceDate: item.next_maintenance_date || "",
-            notes: allNotes
+            equipmentUsed: equipmentUsed[0] || "",
+            handlingFactors: [],
+            remedialAction: allNotes,
+            hasExpiryDate: item.next_maintenance_date ? "yes" : "no",
+            maintenanceExpiryDate: item.next_maintenance_date || "",
           };
         });
         
@@ -123,12 +122,11 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
           const allNotes = [existingNotes, ...legacyInfo].filter(Boolean).join('\n');
           
           return {
-            equipmentUsed,
-            supplier: "",
-            dateReceived: item.installation_date || "",
-            dateTrained: "",
-            nextServiceDate: item.next_maintenance_date || "",
-            notes: allNotes
+            equipmentUsed: equipmentUsed[0] || "",
+            handlingFactors: [],
+            remedialAction: allNotes,
+            hasExpiryDate: item.next_maintenance_date ? "yes" : "no",
+            maintenanceExpiryDate: item.next_maintenance_date || "",
           };
         });
         
@@ -184,12 +182,11 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
   const addEquipmentBlock = () => {
     const current = form.getValues("equipment.equipment_blocks") || [];
     form.setValue("equipment.equipment_blocks", [...current, {
-      equipmentUsed: [],
-      supplier: "",
-      dateReceived: "",
-      dateTrained: "",
-      nextServiceDate: "",
-      notes: ""
+      equipmentUsed: "",
+      handlingFactors: [],
+      remedialAction: "",
+      hasExpiryDate: "no",
+      maintenanceExpiryDate: "",
     }]);
   };
 
@@ -243,21 +240,22 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
               </div>
 
               <div className="space-y-4">
+                {/* Equipment Used - Single Select Dropdown */}
                 <FormField
                   control={form.control}
                   name={`equipment.equipment_blocks.${index}.equipmentUsed`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Equipment Used</FormLabel>
+                      <FormLabel>Equipment Used <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
-                        <MultiSelect
+                        <Combobox
                           options={EQUIPMENT_OPTIONS}
-                          selected={field.value || []}
-                          onSelectionChange={field.onChange}
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
                           placeholder="Select equipment..."
                           searchPlaceholder="Search equipment..."
                           emptyText="No equipment found."
-                          maxDisplay={3}
+                          allowCustom={false}
                         />
                       </FormControl>
                       <FormMessage />
@@ -265,88 +263,40 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`equipment.equipment_blocks.${index}.supplier`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Supplier</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter supplier name" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`equipment.equipment_blocks.${index}.dateReceived`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date Received</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name={`equipment.equipment_blocks.${index}.dateTrained`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date Trained</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name={`equipment.equipment_blocks.${index}.nextServiceDate`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Next Service Date</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="date"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
+                {/* Factors to be Considered - Multi-select Tags */}
                 <FormField
                   control={form.control}
-                  name={`equipment.equipment_blocks.${index}.notes`}
+                  name={`equipment.equipment_blocks.${index}.handlingFactors`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Notes</FormLabel>
+                      <FormLabel>Factors to be considered when moving and handling Client</FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={HANDLING_FACTORS}
+                          selected={field.value || []}
+                          onSelectionChange={field.onChange}
+                          placeholder="Select factors..."
+                          searchPlaceholder="Search factors..."
+                          emptyText="No factors found."
+                          maxDisplay={5}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Possible Remedial Action - Textarea */}
+                <FormField
+                  control={form.control}
+                  name={`equipment.equipment_blocks.${index}.remedialAction`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Possible Remedial Action?</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Additional notes about the equipment..."
-                          className="min-h-[80px]"
+                          placeholder="e.g., Use of side rails and brakes, Ensure regular servicing checks are current and up to date"
+                          className="min-h-[100px]"
                           {...field} 
                         />
                       </FormControl>
@@ -354,6 +304,64 @@ export function WizardStep10Equipment({ form }: WizardStep10EquipmentProps) {
                     </FormItem>
                   )}
                 />
+
+                {/* Has an Expiry Date - Radio Buttons */}
+                <FormField
+                  control={form.control}
+                  name={`equipment.equipment_blocks.${index}.hasExpiryDate`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Has an expiry date?</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value || "no"}
+                          className="flex space-x-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="yes" id={`expiry-${index}-yes`} />
+                            <label 
+                              htmlFor={`expiry-${index}-yes`}
+                              className="text-sm font-medium leading-none cursor-pointer"
+                            >
+                              Yes
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="no" id={`expiry-${index}-no`} />
+                            <label 
+                              htmlFor={`expiry-${index}-no`}
+                              className="text-sm font-medium leading-none cursor-pointer"
+                            >
+                              No
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Maintenance Expiry Date - Conditional on "Yes" */}
+                {form.watch(`equipment.equipment_blocks.${index}.hasExpiryDate`) === "yes" && (
+                  <FormField
+                    control={form.control}
+                    name={`equipment.equipment_blocks.${index}.maintenanceExpiryDate`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Maintenance Expiry Date <span className="text-red-500">*</span></FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             </div>
           ))}

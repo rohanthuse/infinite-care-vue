@@ -23,6 +23,17 @@ export const EQUIPMENT_OPTIONS = [
   { label: "Other", value: "other", description: "Other equipment not listed" },
 ];
 
+export const HANDLING_FACTORS = [
+  { label: "Body size & shape", value: "body_size_shape" },
+  { label: "Comprehension/communication", value: "comprehension_communication" },
+  { label: "Carer factors i.e. bending, stretching", value: "carer_factors" },
+  { label: "Pain/skin lesions/ bone fragility", value: "pain_skin_lesions" },
+  { label: "Sensory & motor function", value: "sensory_motor_function" },
+  { label: "Environmental factors", value: "environmental_factors" },
+  { label: "Client cooperation", value: "client_cooperation" },
+  { label: "Weight bearing ability", value: "weight_bearing_ability" },
+];
+
 export const ENVIRONMENT_CHECKS = [
   { label: "Are there adequate lighting?", key: "adequate_lighting" },
   { label: "Are there space constraints?", key: "space_constraints" },
