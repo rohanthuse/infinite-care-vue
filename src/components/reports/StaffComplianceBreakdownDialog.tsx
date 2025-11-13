@@ -28,6 +28,7 @@ interface StaffComplianceBreakdownDialogProps {
     expiredItems: DocumentItem[];
     expiringItems: DocumentItem[];
     pendingItems: DocumentItem[];
+    notUpdatedItems: DocumentItem[];
     compliantItems: DocumentItem[];
   };
 }
@@ -53,9 +54,16 @@ export function StaffComplianceBreakdownDialog({
                 <p className="text-xs text-muted-foreground mt-0.5">{item.category}</p>
               )}
             </div>
-            <Badge variant="outline" className="text-xs shrink-0">
-              {item.type === 'document' ? 'Document' : 'Essential'}
-            </Badge>
+            <div className="flex gap-1 shrink-0">
+              <Badge variant="outline" className="text-xs">
+                {item.type === 'document' ? 'Document' : 'Essential'}
+              </Badge>
+              {item.isNotUpdated && (
+                <Badge variant="destructive" className="text-xs">
+                  Not Updated
+                </Badge>
+              )}
+            </div>
           </div>
           {item.expiryDate && (
             <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
@@ -72,9 +80,17 @@ export function StaffComplianceBreakdownDialog({
               </span>
             </div>
           )}
-          {item.required && (
-            <Badge variant="secondary" className="text-xs mt-2">Required</Badge>
+          {item.type === 'essential' && item.updatedAt && !item.isNotUpdated && (
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>Completed: {format(new Date(item.updatedAt), 'MMM dd, yyyy')}</span>
+            </div>
           )}
+          <div className="flex gap-2 mt-2">
+            {item.required && (
+              <Badge variant="secondary" className="text-xs">Required</Badge>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -83,7 +99,8 @@ export function StaffComplianceBreakdownDialog({
   const totalIssues = 
     breakdown.expiredItems.length + 
     breakdown.expiringItems.length + 
-    breakdown.pendingItems.length;
+    breakdown.pendingItems.length +
+    breakdown.notUpdatedItems.length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,6 +157,24 @@ export function StaffComplianceBreakdownDialog({
                 <div className="space-y-2">
                   {breakdown.expiringItems.map(renderItem)}
                 </div>
+              </div>
+            )}
+
+            {/* Not Updated Required Items */}
+            {breakdown.notUpdatedItems.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="h-5 w-5 text-destructive" />
+                  <h3 className="font-semibold text-destructive">
+                    Required Items Not Updated ({breakdown.notUpdatedItems.length})
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {breakdown.notUpdatedItems.map(renderItem)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  These required essentials have been created but never updated or completed.
+                </p>
               </div>
             )}
 

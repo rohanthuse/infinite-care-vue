@@ -10,6 +10,9 @@ export interface DocumentItem {
   expiryDate: string | null;
   daysUntilExpiry: number | null;
   required?: boolean;
+  updatedAt?: string;
+  createdAt?: string;
+  isNotUpdated?: boolean;
 }
 
 export interface StaffComplianceRow {
@@ -26,6 +29,7 @@ export interface StaffComplianceRow {
     expiredItems: DocumentItem[];
     expiringItems: DocumentItem[];
     pendingItems: DocumentItem[];
+    notUpdatedItems: DocumentItem[];
     compliantItems: DocumentItem[];
   };
 }
@@ -165,20 +169,25 @@ export const useStaffComplianceMatrix = ({
               daysUntilExpiry,
             };
           }),
-          // Essentials
-          ...(essentials || []).map(e => {
-            const daysUntilExpiry = calculateDaysUntilExpiry(e.expiry_date);
-            return {
-              id: e.id,
-              name: e.display_name || e.essential_type || 'Unknown Essential',
-              type: 'essential' as const,
-              category: e.category,
-              status: e.status || 'unknown',
-              expiryDate: e.expiry_date,
-              daysUntilExpiry,
-              required: e.required,
-            };
-          })
+        // Essentials
+        ...(essentials || []).map(e => {
+          const daysUntilExpiry = calculateDaysUntilExpiry(e.expiry_date);
+          const isNotUpdated = !e.completion_date;
+          
+          return {
+            id: e.id,
+            name: e.display_name || e.essential_type || 'Unknown Essential',
+            type: 'essential' as const,
+            category: e.category,
+            status: e.status || 'unknown',
+            expiryDate: e.expiry_date,
+            daysUntilExpiry,
+            required: e.required,
+            updatedAt: e.completion_date,
+            createdAt: undefined,
+            isNotUpdated: e.required && isNotUpdated,
+          };
+        })
         ];
 
         // Categorize items for detailed breakdown
@@ -188,27 +197,38 @@ export const useStaffComplianceMatrix = ({
           return item.daysUntilExpiry !== null && item.daysUntilExpiry < 0;
         });
 
-        const expiringItemsList = allDetailedItems.filter((item) => {
-          if (!item.expiryDate) return false;
-          return item.daysUntilExpiry !== null && 
-                 item.daysUntilExpiry >= 0 && 
-                 item.daysUntilExpiry <= 30 &&
-                 item.status !== 'expired';
-        });
+      const expiringItemsList = allDetailedItems.filter((item) => {
+        if (!item.expiryDate) return false;
+        return item.daysUntilExpiry !== null && 
+               item.daysUntilExpiry >= 0 && 
+               item.daysUntilExpiry <= 30 &&
+               item.status !== 'expired';
+      });
 
-        const pendingItemsList = allDetailedItems.filter((item) => {
-          return item.type === 'essential' && 
-                 item.required && 
-                 (item.status === 'pending' || item.status === null || item.status === 'not_started');
-        });
+      // Items that are required but have never been updated
+      const notUpdatedItemsList = allDetailedItems.filter((item) => {
+        return item.type === 'essential' && 
+               item.required && 
+               item.isNotUpdated &&
+               (item.status === 'pending' || item.status === null);
+      });
 
-        const compliantItemsList = allDetailedItems.filter((item) => {
-          // Not in any of the problem categories
-          const isExpired = expiredItemsList.some(i => i.id === item.id);
-          const isExpiring = expiringItemsList.some(i => i.id === item.id);
-          const isPending = pendingItemsList.some(i => i.id === item.id);
-          return !isExpired && !isExpiring && !isPending;
-        });
+      // Update pending items to exclude the "not updated" ones (avoid duplication)
+      const pendingItemsList = allDetailedItems.filter((item) => {
+        return item.type === 'essential' && 
+               item.required && 
+               (item.status === 'pending' || item.status === null || item.status === 'not_started') &&
+               !item.isNotUpdated;
+      });
+
+      const compliantItemsList = allDetailedItems.filter((item) => {
+        // Not in any of the problem categories
+        const isExpired = expiredItemsList.some(i => i.id === item.id);
+        const isExpiring = expiringItemsList.some(i => i.id === item.id);
+        const isPending = pendingItemsList.some(i => i.id === item.id);
+        const isNotUpdated = notUpdatedItemsList.some(i => i.id === item.id);
+        return !isExpired && !isExpiring && !isPending && !isNotUpdated;
+      });
 
         // Use categorized items for status calculation
         const expiredItems = expiredItemsList.length;
@@ -274,12 +294,13 @@ export const useStaffComplianceMatrix = ({
           incidentsCount,
           overallScore,
           complianceLevel,
-          detailedBreakdown: {
-            expiredItems: expiredItemsList,
-            expiringItems: expiringItemsList,
-            pendingItems: pendingItemsList,
-            compliantItems: compliantItemsList,
-          },
+        detailedBreakdown: {
+          expiredItems: expiredItemsList,
+          expiringItems: expiringItemsList,
+          pendingItems: pendingItemsList,
+          notUpdatedItems: notUpdatedItemsList,
+          compliantItems: compliantItemsList,
+        },
         };
       });
 
