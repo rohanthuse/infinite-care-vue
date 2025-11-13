@@ -62,7 +62,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedClientId, setSelectedClientId] = useState<string>(clientParam || "all-clients");
   const [selectedCarerId, setSelectedCarerId] = useState<string>("all-carers");
-  const [activeView, setActiveView] = useState<string>("calendar");
+  const [activeView, setActiveView] = useState<string>("unified-schedule");
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
   const [highlightedBookingId, setHighlightedBookingId] = useState<string | null>(null);
@@ -375,12 +375,48 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
 
       <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
         <TabsList className="inline-flex gap-2">
+          <TabsTrigger value="unified-schedule">Unified Schedule</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="unified-schedule">Unified Schedule</TabsTrigger>
         </TabsList>
         
+        <TabsContent value="unified-schedule" className="space-y-4 w-full overflow-hidden">
+          <DateNavigation 
+            currentDate={selectedDate} 
+            onDateChange={setSelectedDate}
+            viewType={viewType}
+            onViewTypeChange={setViewType}
+          />
+          
+          <BookingFilters
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            selectedClientId={selectedClientId}
+            onClientChange={setSelectedClientId}
+            selectedCarerId={selectedCarerId}
+            onCarerChange={setSelectedCarerId}
+            clients={clients}
+            carers={carers}
+          />
+
+          <UnifiedScheduleView
+            date={selectedDate}
+            bookings={filteredBookings}
+            branchId={branchId}
+            clients={clients}
+            carers={carers}
+            selectedClient={selectedClientId}
+            selectedCarer={selectedCarerId}
+            selectedStatus={statusFilter}
+            viewType={viewType}
+            onViewBooking={handleViewBooking}
+            onCreateBooking={(clientId, staffId, timeSlot) => {
+              handleContextMenuBooking(selectedDate, timeSlot, clientId, staffId);
+            }}
+          />
+        </TabsContent>
+
         <TabsContent value="calendar" className="space-y-4">
           <DateNavigation 
             currentDate={selectedDate} 
@@ -429,42 +465,6 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         
         <TabsContent value="reports">
           <BookingReport bookings={filteredBookings} />
-        </TabsContent>
-
-        <TabsContent value="unified-schedule" className="space-y-4 w-full overflow-hidden">
-          <DateNavigation 
-            currentDate={selectedDate} 
-            onDateChange={setSelectedDate}
-            viewType={viewType}
-            onViewTypeChange={setViewType}
-          />
-          
-          <BookingFilters
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            selectedClientId={selectedClientId}
-            onClientChange={setSelectedClientId}
-            selectedCarerId={selectedCarerId}
-            onCarerChange={setSelectedCarerId}
-            clients={clients}
-            carers={carers}
-          />
-
-          <UnifiedScheduleView
-            date={selectedDate}
-            bookings={filteredBookings}
-            branchId={branchId}
-            clients={clients}
-            carers={carers}
-            selectedClient={selectedClientId}
-            selectedCarer={selectedCarerId}
-            selectedStatus={statusFilter}
-            viewType={viewType}
-            onViewBooking={handleViewBooking}
-            onCreateBooking={(clientId, staffId, timeSlot) => {
-              handleContextMenuBooking(selectedDate, timeSlot, clientId, staffId);
-            }}
-          />
         </TabsContent>
 
 
