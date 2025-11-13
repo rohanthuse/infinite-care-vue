@@ -11,6 +11,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useStaffComplianceMatrix, StaffComplianceRow } from "@/hooks/useStaffComplianceMatrix";
 import { ReportExporter } from "@/utils/reportExporter";
+import { generateBulkStaffCompliancePDF } from "@/utils/staffCompliancePdfGenerator";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { StaffComplianceBreakdownDialog } from "./StaffComplianceBreakdownDialog";
@@ -93,6 +94,23 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
     }
   };
 
+  const handleExportDetailedPDF = async () => {
+    if (!matrixData) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    try {
+      generateBulkStaffCompliancePDF(filteredStaffRows, branchName);
+      toast.success("Detailed compliance report exported successfully", {
+        description: `${filteredStaffRows.length} staff member(s) included in the report`
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export detailed report');
+    }
+  };
+
   const getComplianceBadge = (level: string) => {
     switch (level) {
       case 'compliant':
@@ -167,7 +185,10 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => handleExport('pdf')}>
-              Export as PDF
+              Export Summary as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportDetailedPDF}>
+              Export Detailed PDF (All Breakdowns)
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleExport('csv')}>
               Export as CSV
@@ -390,6 +411,7 @@ export function StaffComplianceMatrixReport({ branchId, branchName }: StaffCompl
           open={breakdownDialogOpen}
           onOpenChange={setBreakdownDialogOpen}
           staffName={selectedStaff.staffName}
+          branchName={branchName}
           breakdown={selectedStaff.detailedBreakdown}
         />
       )}

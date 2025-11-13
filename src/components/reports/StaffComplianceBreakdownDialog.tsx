@@ -7,6 +7,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -15,15 +16,19 @@ import {
   FileWarning, 
   CheckCircle2,
   FileText,
-  ClipboardList
+  ClipboardList,
+  Download
 } from "lucide-react";
 import { DocumentItem } from "@/hooks/useStaffComplianceMatrix";
 import { format } from "date-fns";
+import { generateStaffCompliancePDF } from "@/utils/staffCompliancePdfGenerator";
+import { toast } from "sonner";
 
 interface StaffComplianceBreakdownDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   staffName: string;
+  branchName: string;
   breakdown: {
     expiredItems: DocumentItem[];
     expiringItems: DocumentItem[];
@@ -37,8 +42,22 @@ export function StaffComplianceBreakdownDialog({
   open,
   onOpenChange,
   staffName,
+  branchName,
   breakdown,
 }: StaffComplianceBreakdownDialogProps) {
+  const handleExportPDF = () => {
+    try {
+      generateStaffCompliancePDF(staffName, breakdown, branchName);
+      toast.success("Compliance report exported successfully", {
+        description: `${staffName}'s detailed report has been downloaded as PDF`
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Export failed", {
+        description: "There was an error exporting the compliance report"
+      });
+    }
+  };
   
   const renderItem = (item: DocumentItem) => {
     const Icon = item.type === 'document' ? FileText : ClipboardList;
@@ -105,14 +124,27 @@ export function StaffComplianceBreakdownDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="text-xl">
-            Compliance Breakdown: {staffName}
-          </DialogTitle>
-          <DialogDescription>
-            Detailed view of documents and essentials status
-          </DialogDescription>
-        </DialogHeader>
+      <DialogHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <DialogTitle className="text-xl">
+              Compliance Breakdown: {staffName}
+            </DialogTitle>
+            <DialogDescription>
+              Detailed view of documents and essentials status
+            </DialogDescription>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPDF}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export PDF
+          </Button>
+        </div>
+      </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-6">
