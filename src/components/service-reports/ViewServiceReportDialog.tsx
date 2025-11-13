@@ -52,29 +52,42 @@ export function ViewServiceReportDialog({
   onOpenChange,
   report,
 }: ViewServiceReportDialogProps) {
+  // Early return if no report
+  if (!report) return null;
+
+  // Ensure nested objects have fallback empty objects to prevent crashes
+  const safeReport = {
+    ...report,
+    clients: report.clients || { first_name: '', last_name: '', email: '' },
+    staff: report.staff || { first_name: '', last_name: '', email: '' },
+    services_provided: report.services_provided || [],
+  };
+
   // Fetch visit record data
-  const { data: visitRecord } = useQuery({
-    queryKey: ['visit-record', report?.visit_record_id],
+  const { data: visitRecord, isLoading: visitRecordLoading } = useQuery({
+    queryKey: ['visit-record', safeReport.visit_record_id],
     queryFn: async () => {
-      if (!report?.visit_record_id) return null;
+      if (!safeReport.visit_record_id) return null;
       
       const { data, error } = await supabase
         .from('visit_records')
         .select('*')
-        .eq('id', report.visit_record_id)
+        .eq('id', safeReport.visit_record_id)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!report?.visit_record_id && open,
+    enabled: !!safeReport.visit_record_id && open,
   });
 
-  // Fetch all related data using hooks
-  const { tasks = [] } = useVisitTasks(report?.visit_record_id);
-  const { medications = [] } = useVisitMedications(report?.visit_record_id);
-  const { vitals = [], news2Readings = [], latestNEWS2 } = useVisitVitals(report?.visit_record_id);
-  const { events = [], incidents, accidents, observations } = useVisitEvents(report?.visit_record_id);
+  // Fetch all related data using hooks - only if visit_record_id exists
+  const { tasks = [], isLoading: tasksLoading } = useVisitTasks(safeReport.visit_record_id);
+  const { medications = [], isLoading: medsLoading } = useVisitMedications(safeReport.visit_record_id);
+  const { vitals = [], news2Readings = [], latestNEWS2, isLoading: vitalsLoading } = useVisitVitals(safeReport.visit_record_id);
+  const { events = [], incidents = [], accidents = [], observations = [], isLoading: eventsLoading } = useVisitEvents(safeReport.visit_record_id);
+
+  const isDataLoading = visitRecordLoading || tasksLoading || medsLoading || vitalsLoading || eventsLoading;
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; icon: any }> = {
@@ -109,8 +122,6 @@ export function ViewServiceReportDialog({
     return moodIcons[mood] || '😐';
   };
 
-  if (!report) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
@@ -118,21 +129,21 @@ export function ViewServiceReportDialog({
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={report.clients?.avatar_url} />
+                <AvatarImage src={safeReport.clients.avatar_url} />
                 <AvatarFallback>
-                  {report.clients?.first_name?.[0]}{report.clients?.last_name?.[0]}
+                  {safeReport.clients.first_name?.[0] || 'C'}{safeReport.clients.last_name?.[0] || 'L'}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <DialogTitle className="text-2xl">
-                  Service Report: {report.clients?.first_name} {report.clients?.last_name}
+                  Service Report: {safeReport.clients.first_name} {safeReport.clients.last_name}
                 </DialogTitle>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="flex items-center gap-1">
                     <User className="h-3 w-3" />
-                    Carer: {report.staff?.first_name} {report.staff?.last_name}
+                    Carer: {safeReport.staff.first_name} {safeReport.staff.last_name}
                   </Badge>
-                  {getStatusBadge(report.status)}
+                  {getStatusBadge(safeReport.status)}
                 </div>
               </div>
             </div>
@@ -141,6 +152,18 @@ export function ViewServiceReportDialog({
 
         <ScrollArea className="max-h-[calc(90vh-120px)] px-6 pb-6">
           <div className="space-y-6 mt-6">
+            {/* Loading State */}
+            {isDataLoading && safeReport.visit_record_id && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    <span>Loading visit details...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Visit Summary Section */}
             <Card>
               <CardHeader>
@@ -155,14 +178,14 @@ export function ViewServiceReportDialog({
                     <p className="text-sm text-muted-foreground">Service Date</p>
                     <p className="font-medium flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {format(new Date(report.service_date), 'PPP')}
+                      {safeReport.service_date ? format(new Date(safeReport.service_date), 'PPP') : 'N/A'}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Duration</p>
                     <p className="font-medium flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {report.service_duration_minutes} minutes
+                      {safeReport.service_duration_minutes || 0} minutes
                     </p>
                   </div>
                   {visitRecord?.visit_start_time && (
@@ -189,11 +212,15 @@ export function ViewServiceReportDialog({
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">Services Provided</p>
                   <div className="flex flex-wrap gap-2">
-                    {report.services_provided?.map((service: string, index: number) => (
-                      <Badge key={index} variant="secondary">
-                        {service}
-                      </Badge>
-                    ))}
+                    {safeReport.services_provided.length > 0 ? (
+                      safeReport.services_provided.map((service: string, index: number) => (
+                        <Badge key={index} variant="secondary">
+                          {service}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No services recorded</span>
+                    )}
                   </div>
                 </div>
 
