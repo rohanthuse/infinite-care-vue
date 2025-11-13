@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { format, startOfWeek, addDays } from "date-fns";
-import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download } from "lucide-react";
+import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, StickyNote } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -853,15 +853,17 @@ export function ClientScheduleCalendar({
                             <div
                               className={`
                                 absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
+                                border border-gray-300 dark:border-gray-600 rounded-sm
                                 ${colorClass}
                                 ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
                                 ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
                                 ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
                               `}
                               style={{ 
-                                left: `${block.leftPosition}px`,
-                                width: `${Math.max(block.width, 20)}px`,
-                                height: '80px',
+                                left: `${block.leftPosition + 1}px`,
+                                width: `${Math.max(block.width - 2, 18)}px`,
+                                height: '78px',
+                                marginTop: '1px',
                                 zIndex: isSelected ? 2 : 1
                               }}
                               onClick={(e) => {
@@ -885,6 +887,18 @@ export function ClientScheduleCalendar({
                                   />
                                 </div>
                               )}
+
+                              {block.booking.notes && (
+                                <div 
+                                  className="absolute top-1 right-1 z-10 pointer-events-none"
+                                  title="Has notes"
+                                >
+                                  <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
+                                    <StickyNote className="h-3 w-3" />
+                                  </div>
+                                </div>
+                              )}
+
                               <div className="flex flex-col items-center justify-center px-1 w-full">
                                 <div className="font-semibold truncate w-full text-center">
                                   {block.booking.carerName}
