@@ -1,6 +1,7 @@
 import React from "react";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { StickyNote } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getBookingStatusColor } from "./utils/bookingColors";
 import { Booking } from "./BookingTimeGrid";
@@ -137,6 +138,18 @@ export function StaffScheduleDraggable({
                         />
                       </div>
                     )}
+
+                    {block.booking.notes && (
+                      <div 
+                        className="absolute top-1 right-1 z-10 pointer-events-none"
+                        title="Has notes"
+                      >
+                        <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
+                          <StickyNote className="h-3 w-3" />
+                        </div>
+                      </div>
+                    )}
+
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex flex-col items-center justify-center px-1 w-full pointer-events-none">

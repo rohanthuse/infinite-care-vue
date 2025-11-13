@@ -1,6 +1,6 @@
 import React from "react";
 import { Booking } from "./BookingTimeGrid";
-import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle } from "lucide-react";
+import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle, StickyNote } from "lucide-react";
 import { 
   Tooltip, 
   TooltipContent, 
@@ -201,6 +201,16 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 }}
                 onClick={handleClick}
               >
+                {booking.notes && (
+                  <div 
+                    className="absolute top-1 right-1 z-10 pointer-events-none"
+                    title="Has notes"
+                  >
+                    <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
+                      <StickyNote className="h-3 w-3" />
+                    </div>
+                  </div>
+                )}
                 <div className="p-1 overflow-hidden h-full flex flex-col">
                   <div className="font-medium truncate flex items-center">
                     {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
@@ -248,6 +258,16 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             }}
             onClick={handleClick}
           >
+            {booking.notes && (
+              <div 
+                className="absolute top-1 right-1 z-10 pointer-events-none"
+                title="Has notes"
+              >
+                <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
+                  <StickyNote className="h-3 w-3" />
+                </div>
+              </div>
+            )}
             <div className="p-1 overflow-hidden h-full flex flex-col">
               <div className="font-medium truncate flex items-center">
                 {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
