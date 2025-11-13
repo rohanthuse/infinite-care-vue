@@ -60,37 +60,13 @@ export function ExportServiceReportsDialog({
         return;
       }
 
-      // Transform data for export
-      const exportData = filteredReports.map((report) => ({
-        "Service Date": format(new Date(report.service_date), "dd/MM/yyyy"),
-        "Submitted": format(new Date(report.submitted_at), "dd/MM/yyyy HH:mm"),
-        "Carer Name": report.staff
-          ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim()
-          : "",
-        "Duration (mins)": report.service_duration_minutes || "",
-        "Services": report.services_provided?.join(", ") || "",
-        "Client Mood": report.client_mood || "",
-        "Engagement": report.client_engagement || "",
-        "Status": report.status,
-        "Activities": report.activities_undertaken || "",
-        "Medication": report.medication_administered ? "Yes" : "No",
-        "Incident": report.incident_occurred ? "Yes" : "No",
-        "Observations": report.carer_observations
-          ? report.carer_observations.length > 100
-            ? report.carer_observations.substring(0, 100) + "..."
-            : report.carer_observations
-          : "",
-        "Review Notes": report.review_notes || "",
-      }));
-
-      // Export using ReportExporter
-      await ReportExporter.exportToPDF({
-        title: `Service Reports - ${clientName}`,
-        data: exportData,
-        columns: Object.keys(exportData[0] || {}),
-        fileName: `service_reports_${clientName.replace(/\s+/g, "_")}_${format(startDate, "yyyyMMdd")}_${format(endDate, "yyyyMMdd")}.pdf`,
-        branchId: branchId,
+      // Export using the dedicated service reports PDF generator
+      await ReportExporter.generateServiceReportsPDF({
+        reports: filteredReports,
+        clientName,
+        branchId,
         dateRange: { from: startDate, to: endDate },
+        fileName: `service_reports_${clientName.replace(/\s+/g, "_")}_${format(startDate, "yyyyMMdd")}_${format(endDate, "yyyyMMdd")}.pdf`,
         metadata: {
           totalRecords: allReports.length,
           exportedRecords: filteredReports.length,

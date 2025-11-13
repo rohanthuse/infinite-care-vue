@@ -287,6 +287,171 @@ export class ReportExporter {
     printWindow.close();
   }
 
+  static async generateServiceReportsPDF(options: {
+    reports: any[];
+    clientName: string;
+    branchId: string;
+    dateRange: { from: Date; to: Date };
+    fileName: string;
+    metadata: {
+      totalRecords: number;
+      exportedRecords: number;
+      filters: Record<string, string>;
+    };
+  }) {
+    const { reports, clientName, branchId, dateRange, fileName, metadata } = options;
+    const doc = new jsPDF('landscape'); // Use landscape for better column width
+    
+    // Fetch organization settings
+    const orgSettings = await fetchOrganizationSettings(branchId);
+    
+    // Load company logo
+    let logoBase64: string | null = null;
+    if (orgSettings?.logo_url) {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+    }
+    
+    const leftMargin = 15;
+    
+    // Add professional header
+    let currentY = await addPDFHeader(doc, orgSettings, logoBase64);
+    
+    // Add document title
+    const subtitle = `Client: ${clientName} | Period: ${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`;
+    currentY = addDocumentTitle(doc, 'Service Reports', subtitle, currentY);
+    
+    // Add export information
+    currentY = addSectionHeader(doc, 'Export Information', currentY);
+    doc.setFontSize(9);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text(`Total Records: ${metadata.totalRecords}`, leftMargin, currentY);
+    currentY += 6;
+    doc.text(`Exported Records: ${metadata.exportedRecords}`, leftMargin, currentY);
+    currentY += 6;
+    doc.text(`Export Date: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, leftMargin, currentY);
+    currentY += 10;
+    
+    // Add data table header
+    currentY = addSectionHeader(doc, 'Service Report Details', currentY);
+    
+    // Transform data for table
+    const tableData = reports.map((report) => [
+      format(new Date(report.service_date), "dd/MM/yyyy"),
+      format(new Date(report.submitted_at), "dd/MM/yyyy HH:mm"),
+      report.staff ? `${report.staff.first_name || ""} ${report.staff.last_name || ""}`.trim() : "-",
+      report.service_duration_minutes ? `${report.service_duration_minutes} mins` : "-",
+      report.services_provided?.join(", ") || "-",
+      report.client_mood || "-",
+      report.client_engagement || "-",
+      report.status || "-",
+      report.medication_administered ? "✓" : "✗",
+      report.incident_occurred ? "✓" : "✗",
+      report.activities_undertaken || "-",
+      report.carer_observations || "-",
+      report.review_notes || "-",
+    ]);
+    
+    // Define columns with specific configuration
+    autoTable(doc, {
+      head: [[
+        'Service Date',
+        'Submitted',
+        'Carer Name',
+        'Duration',
+        'Services',
+        'Client Mood',
+        'Engagement',
+        'Status',
+        'Medication',
+        'Incident',
+        'Activities',
+        'Observations',
+        'Review Notes'
+      ]],
+      body: tableData,
+      startY: currentY,
+      theme: 'grid',
+      styles: { 
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [PDF_COLORS.gray[300].r, PDF_COLORS.gray[300].g, PDF_COLORS.gray[300].b],
+        lineWidth: 0.1,
+        minCellHeight: 8,
+        valign: 'middle',
+        overflow: 'linebreak',
+      },
+      headStyles: { 
+        fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b],
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'center',
+        valign: 'middle',
+        fontSize: 7,
+        cellPadding: 3,
+      },
+      alternateRowStyles: {
+        fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b]
+      },
+      columnStyles: {
+        0: { cellWidth: 20, halign: 'center' }, // Service Date
+        1: { cellWidth: 28, halign: 'center', fontSize: 6 }, // Submitted
+        2: { cellWidth: 25, halign: 'left' }, // Carer Name
+        3: { cellWidth: 15, halign: 'center' }, // Duration
+        4: { cellWidth: 30, halign: 'left', fontSize: 6 }, // Services
+        5: { cellWidth: 18, halign: 'center', fontSize: 6 }, // Client Mood
+        6: { cellWidth: 18, halign: 'center', fontSize: 6 }, // Engagement
+        7: { cellWidth: 16, halign: 'center', fontSize: 7 }, // Status
+        8: { cellWidth: 12, halign: 'center' }, // Medication
+        9: { cellWidth: 12, halign: 'center' }, // Incident
+        10: { cellWidth: 30, halign: 'left', fontSize: 6 }, // Activities
+        11: { cellWidth: 35, halign: 'left', fontSize: 6 }, // Observations
+        12: { cellWidth: 25, halign: 'left', fontSize: 6 }, // Review Notes
+      },
+      didParseCell: function(data) {
+        // Style status column with colors
+        if (data.column.index === 7 && data.section === 'body') {
+          const status = data.cell.text[0]?.toLowerCase();
+          if (status === 'approved') {
+            data.cell.styles.fillColor = [220, 252, 231]; // green-100
+            data.cell.styles.textColor = [21, 128, 61]; // green-700
+            data.cell.styles.fontStyle = 'bold';
+          } else if (status === 'pending') {
+            data.cell.styles.fillColor = [254, 249, 195]; // yellow-100
+            data.cell.styles.textColor = [161, 98, 7]; // yellow-700
+            data.cell.styles.fontStyle = 'bold';
+          } else if (status === 'rejected') {
+            data.cell.styles.fillColor = [254, 226, 226]; // red-100
+            data.cell.styles.textColor = [185, 28, 28]; // red-700
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+        
+        // Style Yes/No columns (Medication and Incident)
+        if ((data.column.index === 8 || data.column.index === 9) && data.section === 'body') {
+          data.cell.styles.fontStyle = 'bold';
+          if (data.cell.text[0] === '✓') {
+            data.cell.styles.textColor = [21, 128, 61]; // green-700
+          } else {
+            data.cell.styles.textColor = [107, 114, 128]; // gray-500
+          }
+        }
+      },
+      margin: { left: leftMargin, right: leftMargin },
+      showHead: 'firstPage',
+      rowPageBreak: 'avoid',
+    });
+    
+    // Add professional footers to all pages
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      addPDFFooter(doc, orgSettings, i, pageCount);
+    }
+    
+    // Save the PDF
+    doc.save(fileName);
+  }
+
   static exportChartData(options: {
     title: string;
     weeklyStats: WeeklyStat[];
