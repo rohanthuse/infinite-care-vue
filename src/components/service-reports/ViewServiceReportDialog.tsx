@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format } from 'date-fns';
 import { 
   Calendar, 
   Clock, 
@@ -40,37 +39,13 @@ import { MedicationsTable } from './view-report/MedicationsTable';
 import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
+import { formatSafeDate } from '@/lib/dateUtils';
 
 interface ViewServiceReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   report: any;
 }
-
-// Safe date formatter that handles invalid dates gracefully
-const formatSafeDate = (dateValue: any, formatString: string, fallback: string = 'N/A'): string => {
-  try {
-    // Check if value exists and is not empty
-    if (!dateValue || dateValue === '') {
-      return fallback;
-    }
-    
-    // Create Date object
-    const date = new Date(dateValue);
-    
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      console.warn('[formatSafeDate] Invalid date value:', dateValue);
-      return fallback;
-    }
-    
-    // Format the valid date
-    return format(date, formatString);
-  } catch (error) {
-    console.error('[formatSafeDate] Error formatting date:', dateValue, error);
-    return fallback;
-  }
-};
 
 export function ViewServiceReportDialog({
   open,

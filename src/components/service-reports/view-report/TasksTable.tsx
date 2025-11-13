@@ -2,7 +2,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatSafeDate } from '@/lib/dateUtils';
 
 interface Task {
   id: string;
@@ -68,7 +68,7 @@ export function TasksTable({ tasks }: TasksTableProps) {
                 {task.completed_at ? (
                   <span className="text-sm flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {format(new Date(task.completed_at), 'p')}
+                    {formatSafeDate(task.completed_at, 'p')}
                   </span>
                 ) : (
                   <span className="text-muted-foreground text-sm">Not completed</span>
