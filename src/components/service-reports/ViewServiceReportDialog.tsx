@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,12 +11,24 @@ import { useVisitTasks } from '@/hooks/useVisitTasks';
 import { useVisitMedications } from '@/hooks/useVisitMedications';
 import { useVisitVitals } from '@/hooks/useVisitVitals';
 import { useVisitEvents } from '@/hooks/useVisitEvents';
+import { useUpdateServiceReport } from '@/hooks/useServiceReports';
 import type { Database } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
 import { 
   Calendar, 
   Clock, 
@@ -32,7 +44,8 @@ import {
   Circle,
   Smile,
   Users,
-  PenTool
+  PenTool,
+  Send
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
@@ -58,8 +71,8 @@ export function ViewServiceReportDialog({
     clients: report.clients || { first_name: '', last_name: '', email: '' },
     staff: report.staff || { first_name: '', last_name: '', email: '' },
     services_provided: report.services_provided || [],
-    client_mood: report.client_mood || 'Neutral',
-    client_engagement: report.client_engagement || 'Not recorded',
+    client_mood: report.client_mood || '',
+    client_engagement: report.client_engagement || '',
     carer_observations: report.carer_observations || '',
     client_feedback: report.client_feedback || '',
     activities_undertaken: report.activities_undertaken || '',
@@ -70,6 +83,26 @@ export function ViewServiceReportDialog({
     medication_administered: report.medication_administered ?? false,
     incident_occurred: report.incident_occurred ?? false,
   } : null;
+
+  // Form state for editable fields
+  const [formData, setFormData] = useState({
+    client_mood: safeReport?.client_mood || '',
+    client_engagement: safeReport?.client_engagement || '',
+    carer_observations: safeReport?.carer_observations || '',
+    client_feedback: safeReport?.client_feedback || '',
+  });
+
+  // Mutation hook for updating the report
+  const updateServiceReport = useUpdateServiceReport();
+
+  // Determine if report is editable
+  const isEditable = safeReport && (
+    safeReport.status === 'pending' ||
+    safeReport.status === 'requires_revision' ||
+    !safeReport.client_mood ||
+    !safeReport.client_engagement ||
+    !safeReport.carer_observations
+  );
 
   // ALL HOOKS MUST BE CALLED HERE - before any early returns
   // Fetch visit record data
@@ -134,6 +167,47 @@ export function ViewServiceReportDialog({
     return moodIcons[mood] || '😐';
   };
 
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!formData.client_mood || !formData.client_engagement || !formData.carer_observations.trim()) {
+      toast({
+        title: 'Missing Required Fields',
+        description: 'Please complete Client Mood, Client Engagement, and Carer Observations.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await updateServiceReport.mutateAsync({
+        id: safeReport.id,
+        updates: {
+          client_mood: formData.client_mood,
+          client_engagement: formData.client_engagement,
+          carer_observations: formData.carer_observations,
+          client_feedback: formData.client_feedback,
+          status: 'pending',
+          submitted_at: new Date().toISOString(),
+        },
+      });
+
+      toast({
+        title: 'Report Submitted',
+        description: 'Your report has been submitted for admin approval.',
+      });
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      toast({
+        title: 'Submission Failed',
+        description: 'Failed to submit the report. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
@@ -164,6 +238,20 @@ export function ViewServiceReportDialog({
 
         <ScrollArea className="max-h-[calc(90vh-120px)] px-6 pb-6">
           <div className="space-y-6 mt-6">
+            {/* Edit Mode Indicator */}
+            {isEditable && (
+              <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                    <AlertTriangle className="h-5 w-5" />
+                    <p className="text-sm font-medium">
+                      This report is incomplete - Please complete the required fields and submit for approval
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Loading State */}
             {isDataLoading && safeReport.visit_record_id && (
               <Card>
@@ -316,121 +404,232 @@ export function ViewServiceReportDialog({
               </Card>
             )}
 
-            {/* Client Mood & Engagement */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Smile className="h-5 w-5" />
-                  Client Mood & Engagement
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Client Mood</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{getMoodIcon(safeReport.client_mood)}</span>
-                      <Badge variant="outline">{safeReport.client_mood}</Badge>
+            {/* Carer Visit Details - Editable Section */}
+            {isEditable ? (
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Smile className="h-5 w-5" />
+                    Carer Visit Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Client Mood */}
+                    <div className="space-y-2">
+                      <Label htmlFor="client_mood">
+                        Client Mood <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={formData.client_mood}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, client_mood: value }))}
+                      >
+                        <SelectTrigger id="client_mood">
+                          <SelectValue placeholder="Select mood" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Happy">😊 Happy</SelectItem>
+                          <SelectItem value="Content">😌 Content</SelectItem>
+                          <SelectItem value="Neutral">😐 Neutral</SelectItem>
+                          <SelectItem value="Anxious">😰 Anxious</SelectItem>
+                          <SelectItem value="Sad">😢 Sad</SelectItem>
+                          <SelectItem value="Confused">😕 Confused</SelectItem>
+                          <SelectItem value="Agitated">😠 Agitated</SelectItem>
+                          <SelectItem value="Calm">😇 Calm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Client Engagement */}
+                    <div className="space-y-2">
+                      <Label htmlFor="client_engagement">
+                        Client Engagement <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={formData.client_engagement}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, client_engagement: value }))}
+                      >
+                        <SelectTrigger id="client_engagement">
+                          <SelectValue placeholder="Select engagement level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Very Engaged">Very Engaged</SelectItem>
+                          <SelectItem value="Engaged">Engaged</SelectItem>
+                          <SelectItem value="Somewhat Engaged">Somewhat Engaged</SelectItem>
+                          <SelectItem value="Limited Engagement">Limited Engagement</SelectItem>
+                          <SelectItem value="Not Engaged">Not Engaged</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Engagement Level</p>
-                    <Badge variant="secondary">{safeReport.client_engagement}</Badge>
-                  </div>
-                </div>
 
-                {safeReport.activities_undertaken && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Activities Undertaken</p>
-                    <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {safeReport.activities_undertaken}
-                    </p>
+                  {/* Carer Observations */}
+                  <div className="space-y-2">
+                    <Label htmlFor="carer_observations">
+                      Carer Observation <span className="text-destructive">*</span>
+                    </Label>
+                    <Textarea
+                      id="carer_observations"
+                      placeholder="Enter your observations about the client during this visit..."
+                      value={formData.carer_observations}
+                      onChange={(e) => setFormData(prev => ({ ...prev, carer_observations: e.target.value }))}
+                      className="min-h-[100px]"
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Visit Notes Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Visit Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Carer Observations */}
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">
-                    Carer Observations
-                  </p>
-                  <p className="text-sm bg-muted/50 p-3 rounded-md">
-                    {safeReport.carer_observations || 'No observations recorded'}
-                  </p>
-                </div>
-
-                {/* Client Feedback */}
-                {safeReport.client_feedback && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">
-                      Client Feedback
-                    </p>
-                    <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {safeReport.client_feedback}
-                    </p>
+                  {/* Client Feedback */}
+                  <div className="space-y-2">
+                    <Label htmlFor="client_feedback">Client Feedback</Label>
+                    <Textarea
+                      id="client_feedback"
+                      placeholder="Enter any feedback from the client (optional)..."
+                      value={formData.client_feedback}
+                      onChange={(e) => setFormData(prev => ({ ...prev, client_feedback: e.target.value }))}
+                      className="min-h-[80px]"
+                    />
                   </div>
-                )}
 
-                {/* Medication Notes */}
-                {safeReport.medication_administered && safeReport.medication_notes && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">
-                      Medication Notes
-                    </p>
-                    <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {safeReport.medication_notes}
-                    </p>
+                  {/* Submit Button */}
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={updateServiceReport.isPending}
+                      className="gap-2"
+                    >
+                      {updateServiceReport.isPending ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" />
+                          Send Report
+                        </>
+                      )}
+                    </Button>
                   </div>
-                )}
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Client Mood & Engagement - Read Only */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Smile className="h-5 w-5" />
+                      Client Mood & Engagement
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Client Mood</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{getMoodIcon(safeReport.client_mood)}</span>
+                          <Badge variant="outline">{safeReport.client_mood || 'Not recorded'}</Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Engagement Level</p>
+                        <Badge variant="secondary">{safeReport.client_engagement || 'Not recorded'}</Badge>
+                      </div>
+                    </div>
 
-                {/* Incident Details */}
-                {safeReport.incident_occurred && safeReport.incident_details && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      Incident Details
-                    </p>
-                    <p className="text-sm bg-amber-50 dark:bg-amber-950/20 p-3 rounded-md border border-amber-200 dark:border-amber-800">
-                      {safeReport.incident_details}
-                    </p>
-                  </div>
-                )}
+                    {safeReport.activities_undertaken && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Activities Undertaken</p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {safeReport.activities_undertaken}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* Next Visit Preparations */}
-                {safeReport.next_visit_preparations && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">
-                      Next Visit Preparations
-                    </p>
-                    <p className="text-sm bg-muted/50 p-3 rounded-md">
-                      {safeReport.next_visit_preparations}
-                    </p>
-                  </div>
-                )}
+                {/* Visit Notes Section - Read Only */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Visit Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Carer Observations */}
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        Carer Observations
+                      </p>
+                      <p className="text-sm bg-muted/50 p-3 rounded-md">
+                        {safeReport.carer_observations || 'No observations recorded'}
+                      </p>
+                    </div>
 
-                {/* Review Notes (if any) */}
-                {safeReport.review_notes && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-2">
-                      Review Notes (Admin)
-                    </p>
-                    <p className="text-sm bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md border border-blue-200 dark:border-blue-800">
-                      {safeReport.review_notes}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    {/* Client Feedback */}
+                    {safeReport.client_feedback && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Client Feedback
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {safeReport.client_feedback}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Medication Notes */}
+                    {safeReport.medication_administered && safeReport.medication_notes && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Medication Notes
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {safeReport.medication_notes}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Incident Details */}
+                    {safeReport.incident_occurred && safeReport.incident_details && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                          Incident Details
+                        </p>
+                        <p className="text-sm bg-amber-50 dark:bg-amber-950/20 p-3 rounded-md border border-amber-200 dark:border-amber-800">
+                          {safeReport.incident_details}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Next Visit Preparations */}
+                    {safeReport.next_visit_preparations && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Next Visit Preparations
+                        </p>
+                        <p className="text-sm bg-muted/50 p-3 rounded-md">
+                          {safeReport.next_visit_preparations}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Review Notes (if any) */}
+                    {safeReport.review_notes && (
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">
+                          Review Notes (Admin)
+                        </p>
+                        <p className="text-sm bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md border border-blue-200 dark:border-blue-800">
+                          {safeReport.review_notes}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
 
             {/* Signatures Section */}
             {(visitRecord?.staff_signature_data || visitRecord?.client_signature_data) && (
