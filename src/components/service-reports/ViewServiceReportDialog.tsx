@@ -265,6 +265,7 @@ export function ViewServiceReportDialog({
         incidents: incidents || [],
         accidents: accidents || [],
         observations: observations || [],
+        branchId: safeReport.branch_id,
       });
       toast({
         title: "Success",
