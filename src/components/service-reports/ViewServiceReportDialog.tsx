@@ -99,6 +99,7 @@ export function ViewServiceReportDialog({
     client_engagement: safeReport?.client_engagement || '',
     carer_observations: safeReport?.carer_observations || '',
     client_feedback: safeReport?.client_feedback || '',
+    next_visit_preparations: safeReport?.next_visit_preparations || '',
   });
 
   // Admin review state
@@ -201,6 +202,7 @@ export function ViewServiceReportDialog({
           client_engagement: formData.client_engagement,
           carer_observations: formData.carer_observations,
           client_feedback: formData.client_feedback,
+          next_visit_preparations: formData.next_visit_preparations,
           status: 'pending',
           submitted_at: new Date().toISOString(),
         },
@@ -512,6 +514,20 @@ export function ViewServiceReportDialog({
                       value={formData.carer_observations}
                       onChange={(e) => setFormData(prev => ({ ...prev, carer_observations: e.target.value }))}
                       className="min-h-[100px]"
+                    />
+                  </div>
+
+                  {/* Next Visit Preparations */}
+                  <div className="space-y-2">
+                    <Label htmlFor="next_visit_preparations">
+                      Next Visit Preparations
+                    </Label>
+                    <Textarea
+                      id="next_visit_preparations"
+                      placeholder="Enter any preparations or notes for the next visit (optional)..."
+                      value={formData.next_visit_preparations}
+                      onChange={(e) => setFormData(prev => ({ ...prev, next_visit_preparations: e.target.value }))}
+                      className="min-h-[80px]"
                     />
                   </div>
 
