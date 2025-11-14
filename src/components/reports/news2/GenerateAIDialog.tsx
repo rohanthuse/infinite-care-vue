@@ -28,23 +28,29 @@ export function GenerateAIDialog({
   const { generateRecommendations, isGenerating, error } = useGenerateAIRecommendations();
   const [recommendations, setRecommendations] = useState<any>(null);
   const hasGeneratedRef = useRef<string | null>(null);
+  const isGeneratingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Only generate if:
-    // 1. Dialog is open
-    // 2. We have an observation ID
-    // 3. We haven't already generated for this observation
-    if (open && latestObservation?.id && hasGeneratedRef.current !== latestObservation.id) {
-      hasGeneratedRef.current = latestObservation.id;
-      handleGenerate();
-    }
-    
-    // Reset when dialog closes
+    // Strict guards to prevent multiple calls
     if (!open) {
       setRecommendations(null);
       hasGeneratedRef.current = null;
+      isGeneratingRef.current = false;
+      return;
     }
-  }, [open, latestObservation?.id]);
+
+    // Multiple conditions to prevent duplicate calls
+    if (
+      latestObservation?.id && 
+      hasGeneratedRef.current !== latestObservation.id &&
+      !isGeneratingRef.current &&
+      !isGenerating
+    ) {
+      hasGeneratedRef.current = latestObservation.id;
+      isGeneratingRef.current = true;
+      handleGenerate();
+    }
+  }, [open, latestObservation?.id, isGenerating]);
 
   const handleGenerate = async () => {
     try {
@@ -55,6 +61,8 @@ export function GenerateAIDialog({
       setRecommendations(result);
     } catch (err) {
       console.error("Failed to generate recommendations:", err);
+    } finally {
+      isGeneratingRef.current = false;
     }
   };
 
