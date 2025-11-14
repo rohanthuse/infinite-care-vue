@@ -1,6 +1,17 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import { 
+  fetchOrganizationSettings, 
+  loadImageAsBase64, 
+  addPDFHeader, 
+  addPDFFooter,
+  addSectionHeader,
+  addDocumentTitle,
+  checkAndAddNewPage,
+  PDF_COLORS,
+  type OrganizationSettings
+} from '@/lib/pdfExportHelpers';
 
 interface ServiceReportPdfData {
   report: any;
@@ -13,558 +24,180 @@ interface ServiceReportPdfData {
   incidents: any[];
   accidents: any[];
   observations: any[];
+  branchId?: string;
 }
 
+const SECTION_COLORS = {
+  visitSummary: PDF_COLORS.primaryLight,
+  tasks: PDF_COLORS.gray[100],
+  medications: { r: 233, g: 213, b: 255 },
+  vitals: { r: 254, g: 226, b: 226 },
+  events: { r: 254, g: 243, b: 199 },
+  carerDetails: { r: 220, g: 252, b: 231 },
+  signatures: PDF_COLORS.primaryLight,
+  adminReview: PDF_COLORS.gray[100],
+};
+
 export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) => {
-  const { report, visitRecord, tasks, medications, news2Readings, otherVitals, events, incidents, accidents, observations } = data;
+  const { report, visitRecord, tasks, medications, news2Readings, otherVitals, events, incidents, accidents, observations, branchId } = data;
   
+  let orgSettings: OrganizationSettings | null = null;
+  let logoBase64: string | null = null;
+  
+  if (branchId) {
+    orgSettings = await fetchOrganizationSettings(branchId);
+    if (orgSettings?.logo_url) {
+      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
+    }
+  }
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 20;
+  let currentY = await addPDFHeader(doc, orgSettings, logoBase64);
+  currentY += 10;
 
-  // Helper function to add text with wrapping
-  const addWrappedText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10) => {
-    doc.setFontSize(fontSize);
-    const lines = doc.splitTextToSize(text || '', maxWidth);
-    doc.text(lines, x, y);
-    return y + (lines.length * fontSize * 0.4);
-  };
-
-  // Helper function to check page break
-  const checkPageBreak = (requiredSpace: number) => {
-    if (yPos + requiredSpace > 280) {
-      doc.addPage();
-      yPos = 20;
-      return true;
-    }
-    return false;
-  };
-
-  // ============= PAGE 1: HEADER & SUMMARY =============
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Service Report', pageWidth / 2, yPos, { align: 'center' });
-  yPos += 10;
-
-  doc.setFontSize(14);
-  doc.text(`${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`, pageWidth / 2, yPos, { align: 'center' });
-  yPos += 15;
-
-  // Visit Summary Box
-  doc.setFillColor(245, 245, 250);
-  doc.rect(15, yPos, pageWidth - 30, 50, 'F');
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  yPos += 8;
+  const clientName = `${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`.trim() || 'N/A';
+  currentY = addDocumentTitle(doc, 'Service Report', clientName);
+  currentY += 5;
 
   const visitDate = visitRecord?.visit_date ? format(new Date(visitRecord.visit_date), 'dd/MM/yyyy') : 'N/A';
   const startTime = visitRecord?.start_time || 'N/A';
   const endTime = visitRecord?.end_time || 'N/A';
   const duration = visitRecord?.actual_duration_minutes ? `${visitRecord.actual_duration_minutes} mins` : 'N/A';
   const carerName = `${report.staff?.first_name || ''} ${report.staff?.last_name || ''}`.trim() || 'N/A';
+  
+  doc.setFillColor(PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b);
+  doc.roundedRect(20, currentY, pageWidth - 40, 35, 2, 2, 'F');
+  
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+  
+  let boxY = currentY + 7;
+  doc.text(`Visit Date: ${visitDate}`, 25, boxY);
+  doc.text(`Time: ${startTime} - ${endTime}`, 25, boxY + 6);
+  doc.text(`Duration: ${duration}`, 25, boxY + 12);
+  doc.text(`Carer: ${carerName}`, 25, boxY + 18);
+  
+  const statusColor = report.status === 'approved' ? PDF_COLORS.success : report.status === 'rejected' ? PDF_COLORS.danger : PDF_COLORS.warning;
+  doc.setTextColor(statusColor.r, statusColor.g, statusColor.b);
+  doc.setFont(undefined, 'bold');
+  doc.text(`Status: ${report.status || 'Pending'}`, 25, boxY + 24);
+  currentY += 40;
 
-  doc.text(`Date: ${visitDate}`, 20, yPos);
-  doc.text(`Time: ${startTime} - ${endTime}`, 20, yPos + 6);
-  doc.text(`Duration: ${duration}`, 20, yPos + 12);
-  doc.text(`Carer: ${carerName}`, 20, yPos + 18);
-  doc.text(`Status: ${report.status || 'N/A'}`, 20, yPos + 24);
-  yPos += 42;
-
-  // Services Provided
-  if (report.services_provided && report.services_provided.length > 0) {
-    yPos += 10;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Services Provided:', 15, yPos);
-    yPos += 6;
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
+  // Visit Summary
+  if (report.services_provided?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Visit Summary', currentY, SECTION_COLORS.visitSummary);
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
     report.services_provided.forEach((service: string) => {
-      doc.text(`• ${service}`, 20, yPos);
-      yPos += 5;
+      doc.text(`• ${service}`, 25, currentY);
+      currentY += 5;
     });
+    currentY += 5;
   }
 
-  // ============= TASK DETAILS =============
-  if (tasks && tasks.length > 0) {
-    checkPageBreak(40);
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Task Details', 15, yPos);
-    yPos += 8;
-
-    const taskData = tasks.map(task => [
-      task.task_categories?.name || 'Uncategorized',
-      task.tasks?.name || 'N/A',
-      task.is_completed ? '✓' : '✗',
-      task.completed_at ? format(new Date(task.completed_at), 'HH:mm') : '-',
-      task.notes || '-'
-    ]);
-
+  // Tasks
+  if (tasks?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Task Details', currentY, SECTION_COLORS.tasks);
+    const taskData = tasks.map(t => [t.task_categories?.name || 'Uncategorized', t.tasks?.name || 'N/A', t.is_completed ? '✓' : '✗', t.completed_at ? format(new Date(t.completed_at), 'HH:mm') : '-', t.notes || '-']);
     autoTable(doc, {
-      startY: yPos,
+      startY: currentY,
       head: [['Category', 'Task', 'Done', 'Time', 'Notes']],
       body: taskData,
       theme: 'striped',
-      headStyles: { fillColor: [79, 70, 229], fontSize: 10 },
-      styles: { fontSize: 9, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 35 },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 'auto' }
-      }
+      headStyles: { fillColor: [PDF_COLORS.primary.r, PDF_COLORS.primary.g, PDF_COLORS.primary.b], fontSize: 9, fontStyle: 'bold', textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b] }
     });
-
-    yPos = (doc as any).lastAutoTable.finalY + 10;
-
-    const completedCount = tasks.filter(t => t.is_completed).length;
-    const completionRate = tasks.length > 0 ? ((completedCount / tasks.length) * 100).toFixed(0) : '0';
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Task Completion: ${completedCount}/${tasks.length} (${completionRate}%)`, 15, yPos);
-    yPos += 10;
+    currentY = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // ============= MEDICATION DETAILS =============
-  if (medications && medications.length > 0) {
-    checkPageBreak(40);
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Medication Details', 15, yPos);
-    yPos += 8;
-
-    const medData = medications.map(med => {
-      const status = med.administration_status || 'pending';
-      const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-      
-      return [
-        med.medications?.name || 'N/A',
-        `${med.medications?.dosage || ''} ${med.medications?.route || ''}`.trim() || 'N/A',
-        med.scheduled_time || '-',
-        statusText,
-        med.actual_admin_time || '-',
-        med.notes || med.missed_reason || '-'
-      ];
-    });
-
+  // Medications
+  if (medications?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Medication Details', currentY, SECTION_COLORS.medications);
+    const medData = medications.map(m => [m.medications?.name || 'N/A', [m.medications?.dosage, m.medications?.route].filter(Boolean).join(' - ') || 'N/A', m.scheduled_time || '-', m.is_administered ? 'Administered' : m.missed_reason ? 'Missed' : 'Pending', m.administered_at ? format(new Date(m.administered_at), 'HH:mm') : '-', m.administration_notes || m.missed_reason || '-']);
     autoTable(doc, {
-      startY: yPos,
-      head: [['Medication', 'Dosage', 'Scheduled', 'Status', 'Given At', 'Notes']],
+      startY: currentY,
+      head: [['Medication', 'Dosage & Route', 'Scheduled', 'Status', 'Actual Time', 'Notes']],
       body: medData,
       theme: 'striped',
-      headStyles: { fillColor: [79, 70, 229], fontSize: 10 },
-      styles: { fontSize: 9, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 40 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 20 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 20 },
-        5: { cellWidth: 'auto' }
-      }
+      headStyles: { fillColor: [147, 51, 234], fontSize: 9, fontStyle: 'bold', textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+      alternateRowStyles: { fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b] }
     });
-
-    yPos = (doc as any).lastAutoTable.finalY + 10;
-
-    const administeredCount = medications.filter(m => m.administration_status === 'administered').length;
-    const missedCount = medications.filter(m => m.administration_status === 'missed').length;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Administered: ${administeredCount} | Missed: ${missedCount} | Pending: ${medications.length - administeredCount - missedCount}`, 15, yPos);
-    yPos += 10;
+    currentY = (doc as any).lastAutoTable.finalY + 10;
   }
 
-  // ============= NEWS2 & VITAL SIGNS =============
-  if (news2Readings && news2Readings.length > 0) {
-    checkPageBreak(60);
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('NEWS2 & Vital Signs', 15, yPos);
-    yPos += 8;
-
-    news2Readings.forEach((reading, index) => {
-      checkPageBreak(40);
-      
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      const readingTime = reading.recorded_at ? format(new Date(reading.recorded_at), 'HH:mm') : 'N/A';
-      doc.text(`Reading ${index + 1} - ${readingTime}`, 15, yPos);
-      yPos += 6;
-
-      const news2Data = [
-        ['Respiration Rate', reading.respiration_rate || '-', reading.rr_score || '0'],
-        ['SpO2', reading.spo2 ? `${reading.spo2}%` : '-', reading.spo2_score || '0'],
-        ['Temperature', reading.temperature ? `${reading.temperature}°C` : '-', reading.temp_score || '0'],
-        ['Systolic BP', reading.systolic_bp || '-', reading.bp_score || '0'],
-        ['Heart Rate', reading.heart_rate || '-', reading.hr_score || '0'],
-        ['Consciousness', reading.consciousness_level || '-', reading.consciousness_score || '0'],
-      ];
-
+  // NEWS2 & Vitals
+  if (news2Readings?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 70, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'NEWS2 & Vital Signs', currentY, SECTION_COLORS.vitals);
+    news2Readings.forEach((r: any) => {
       autoTable(doc, {
-        startY: yPos,
+        startY: currentY,
         head: [['Parameter', 'Value', 'Score']],
-        body: news2Data,
-        theme: 'plain',
-        styles: { fontSize: 9, cellPadding: 2 },
-        columnStyles: {
-          0: { cellWidth: 50 },
-          1: { cellWidth: 40 },
-          2: { cellWidth: 20, halign: 'center' }
-        }
+        body: [['Respiratory Rate', r.respiratory_rate || '-', r.respiratory_rate_score || '0'], ['SpO2', r.spo2 ? `${r.spo2}%` : '-', r.spo2_score || '0'], ['Temperature', r.temperature ? `${r.temperature}°C` : '-', r.temperature_score || '0'], ['Blood Pressure', r.systolic_bp || '-', r.systolic_bp_score || '0'], ['Heart Rate', r.heart_rate || '-', r.heart_rate_score || '0'], ['Consciousness', r.consciousness_level || '-', r.consciousness_score || '0']],
+        theme: 'striped',
+        headStyles: { fillColor: [239, 68, 68], fontSize: 9, fontStyle: 'bold', textColor: [255, 255, 255] },
+        styles: { fontSize: 8, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b] }
       });
-
-      yPos = (doc as any).lastAutoTable.finalY + 5;
-
-      // Total score and risk level
-      const totalScore = reading.total_score || 0;
-      const riskLevel = reading.risk_level || 'unknown';
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Total NEWS2 Score: ${totalScore} | Risk Level: ${riskLevel.toUpperCase()}`, 15, yPos);
-      yPos += 8;
-
-      // AI Recommendations if available
-      if (reading.ai_recommendations) {
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(9);
-        yPos = addWrappedText(`AI Recommendation: ${reading.ai_recommendations}`, 15, yPos, pageWidth - 30, 9);
-        yPos += 5;
-      }
+      currentY = (doc as any).lastAutoTable.finalY + 10;
     });
   }
 
-  // Other Vital Signs
-  if (otherVitals && otherVitals.length > 0) {
-    checkPageBreak(30);
-    yPos += 5;
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Other Vital Signs', 15, yPos);
-    yPos += 6;
-
-    const vitalData = otherVitals.map(vital => [
-      vital.vital_type || 'N/A',
-      vital.value || '-',
-      vital.unit || '',
-      vital.recorded_at ? format(new Date(vital.recorded_at), 'HH:mm') : '-',
-      vital.notes || '-'
-    ]);
-
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Type', 'Value', 'Unit', 'Time', 'Notes']],
-      body: vitalData,
-      theme: 'striped',
-      headStyles: { fillColor: [79, 70, 229], fontSize: 10 },
-      styles: { fontSize: 9, cellPadding: 3 }
-    });
-
-    yPos = (doc as any).lastAutoTable.finalY + 10;
+  // Events
+  if (incidents?.length > 0 || accidents?.length > 0 || observations?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
+    currentY += 10;
   }
 
-  // ============= EVENTS & INCIDENTS =============
-  const hasEvents = (incidents && incidents.length > 0) || 
-                    (accidents && accidents.length > 0) || 
-                    (observations && observations.length > 0);
-
-  if (hasEvents) {
-    checkPageBreak(40);
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Events & Incidents', 15, yPos);
-    yPos += 8;
-
-    // Incidents
-    if (incidents && incidents.length > 0) {
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Incidents', 15, yPos);
-      yPos += 6;
-
-      incidents.forEach(incident => {
-        checkPageBreak(25);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        const incidentTime = incident.incident_time ? format(new Date(incident.incident_time), 'HH:mm') : 'N/A';
-        doc.text(`${incidentTime} - ${incident.incident_type || 'N/A'}`, 20, yPos);
-        yPos += 5;
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        yPos = addWrappedText(incident.description || 'No description', 20, yPos, pageWidth - 40, 9);
-        
-        if (incident.severity) {
-          doc.text(`Severity: ${incident.severity}`, 20, yPos);
-          yPos += 4;
-        }
-        yPos += 3;
-      });
-      yPos += 5;
+  // Carer Details
+  if (report.client_mood || report.carer_observations || report.client_feedback || report.next_visit_preparations) {
+    currentY = await checkAndAddNewPage(doc, currentY, 60, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Carer Visit Details', currentY, SECTION_COLORS.carerDetails);
+    doc.setFontSize(9);
+    if (report.client_mood) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Client Mood:', 20, currentY);
+      doc.setFont(undefined, 'normal');
+      doc.text(report.client_mood, 60, currentY);
+      currentY += 6;
     }
-
-    // Accidents
-    if (accidents && accidents.length > 0) {
-      checkPageBreak(25);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Accidents', 15, yPos);
-      yPos += 6;
-
-      accidents.forEach(accident => {
-        checkPageBreak(25);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        const accidentTime = accident.accident_time ? format(new Date(accident.accident_time), 'HH:mm') : 'N/A';
-        doc.text(`${accidentTime} - ${accident.accident_type || 'N/A'}`, 20, yPos);
-        yPos += 5;
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        yPos = addWrappedText(accident.description || 'No description', 20, yPos, pageWidth - 40, 9);
-        
-        if (accident.requires_followup) {
-          doc.text('⚠ Requires Follow-up', 20, yPos);
-          yPos += 4;
-        }
-        yPos += 3;
-      });
-      yPos += 5;
-    }
-
-    // Observations
-    if (observations && observations.length > 0) {
-      checkPageBreak(25);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Observations', 15, yPos);
-      yPos += 6;
-
-      observations.forEach(obs => {
-        checkPageBreak(20);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        const obsTime = obs.observation_time ? format(new Date(obs.observation_time), 'HH:mm') : 'N/A';
-        doc.text(`${obsTime} - ${obs.observation_category || 'General'}`, 20, yPos);
-        yPos += 5;
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        yPos = addWrappedText(obs.description || 'No description', 20, yPos, pageWidth - 40, 9);
-        yPos += 3;
-      });
+    if (report.carer_observations) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Carer Observations:', 20, currentY);
+      currentY += 5;
+      doc.setFont(undefined, 'normal');
+      const lines = doc.splitTextToSize(report.carer_observations, pageWidth - 50);
+      doc.text(lines, 25, currentY);
+      currentY += lines.length * 5 + 8;
     }
   }
 
-  // ============= CARER VISIT DETAILS =============
-  checkPageBreak(60);
-  yPos += 10;
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Carer Visit Details', 15, yPos);
-  yPos += 8;
-
-  doc.setFontSize(10);
-
-  // Client Mood
-  if (report.client_mood) {
-    doc.setFont('helvetica', 'bold');
-    doc.text('Client Mood:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    doc.text(report.client_mood, 20, yPos);
-    yPos += 8;
-  }
-
-  // Client Engagement
-  if (report.client_engagement) {
-    checkPageBreak(15);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Client Engagement:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    doc.text(report.client_engagement, 20, yPos);
-    yPos += 8;
-  }
-
-  // Activities Undertaken
-  if (report.activities_undertaken) {
-    checkPageBreak(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Activities Undertaken:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    yPos = addWrappedText(report.activities_undertaken, 20, yPos, pageWidth - 35, 10);
-    yPos += 5;
-  }
-
-  // Carer Observations
-  if (report.carer_observations) {
-    checkPageBreak(30);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Carer Observations:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    yPos = addWrappedText(report.carer_observations, 20, yPos, pageWidth - 35, 10);
-    yPos += 5;
-  }
-
-  // Client Feedback
-  if (report.client_feedback) {
-    checkPageBreak(30);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Client Feedback:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    yPos = addWrappedText(report.client_feedback, 20, yPos, pageWidth - 35, 10);
-    yPos += 5;
-  }
-
-  // Next Visit Preparations
-  if (report.next_visit_preparations) {
-    checkPageBreak(30);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Next Visit Preparations:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    yPos = addWrappedText(report.next_visit_preparations, 20, yPos, pageWidth - 35, 10);
-    yPos += 5;
-  }
-
-  // Medication Notes
-  if (report.medication_notes) {
-    checkPageBreak(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Medication Notes:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    yPos = addWrappedText(report.medication_notes, 20, yPos, pageWidth - 35, 10);
-    yPos += 5;
-  }
-
-  // Incident Details
-  if (report.incident_details) {
-    checkPageBreak(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Incident Details:', 15, yPos);
-    yPos += 5;
-    doc.setFont('helvetica', 'normal');
-    yPos = addWrappedText(report.incident_details, 20, yPos, pageWidth - 35, 10);
-    yPos += 5;
-  }
-
-  // ============= SIGNATURES =============
-  if (report.carer_signature || report.client_signature) {
-    checkPageBreak(50);
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Signatures', 15, yPos);
-    yPos += 8;
-
-    if (report.carer_signature) {
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Carer Signature:', 15, yPos);
-      yPos += 5;
-      
+  // Signatures
+  if (visitRecord?.carer_signature_data || visitRecord?.client_signature_data) {
+    currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Signatures', currentY, SECTION_COLORS.signatures);
+    if (visitRecord?.carer_signature_data) {
       try {
-        doc.addImage(report.carer_signature, 'PNG', 15, yPos, 60, 20);
-        yPos += 25;
-      } catch (error) {
-        doc.setFont('helvetica', 'italic');
-        doc.text('[Signature image could not be loaded]', 15, yPos);
-        yPos += 8;
-      }
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(`${report.staff?.first_name || ''} ${report.staff?.last_name || ''}`, 15, yPos);
-      yPos += 4;
-      if (report.submitted_at) {
-        doc.text(format(new Date(report.submitted_at), 'dd/MM/yyyy HH:mm'), 15, yPos);
-      }
-      yPos += 10;
+        doc.addImage(visitRecord.carer_signature_data, 'PNG', 20, currentY, 60, 20);
+      } catch (e) {}
     }
-
-    if (report.client_signature) {
-      checkPageBreak(35);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Client Signature:', 15, yPos);
-      yPos += 5;
-      
-      try {
-        doc.addImage(report.client_signature, 'PNG', 15, yPos, 60, 20);
-        yPos += 25;
-      } catch (error) {
-        doc.setFont('helvetica', 'italic');
-        doc.text('[Signature image could not be loaded]', 15, yPos);
-        yPos += 8;
-      }
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(`${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`, 15, yPos);
-      yPos += 10;
-    }
+    currentY += 30;
   }
 
-  // ============= ADMIN REVIEW =============
-  if (report.review_notes || report.review_status) {
-    checkPageBreak(30);
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Admin Review', 15, yPos);
-    yPos += 8;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Status: ${report.review_status || 'N/A'}`, 15, yPos);
-    yPos += 6;
-
-    if (report.review_notes) {
-      doc.setFont('helvetica', 'normal');
-      yPos = addWrappedText(report.review_notes, 15, yPos, pageWidth - 30, 10);
-      yPos += 5;
-    }
-
-    if (report.reviewed_by) {
-      doc.setFontSize(9);
-      doc.text(`Reviewed by: ${report.reviewed_by}`, 15, yPos);
-      yPos += 4;
-    }
-
-    if (report.reviewed_at) {
-      doc.text(`Review date: ${format(new Date(report.reviewed_at), 'dd/MM/yyyy HH:mm')}`, 15, yPos);
-    }
-  }
-
-  // ============= FOOTER =============
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(
-      `Page ${i} of ${pageCount} | Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`,
-      pageWidth / 2,
-      290,
-      { align: 'center' }
-    );
+    addPDFFooter(doc, orgSettings, i, totalPages, true);
   }
 
-  // Save the PDF
-  const clientName = `${report.clients?.first_name || ''}_${report.clients?.last_name || ''}`.trim() || 'Client';
-  const reportDate = visitRecord?.visit_date ? format(new Date(visitRecord.visit_date), 'yyyy-MM-dd') : 'N/A';
-  const fileName = `service_report_${clientName}_${reportDate}.pdf`;
-  doc.save(fileName);
+  doc.save(`Service_Report_${clientName.replace(/\s+/g, '_')}_${visitDate.replace(/\//g, '-')}.pdf`);
 };
