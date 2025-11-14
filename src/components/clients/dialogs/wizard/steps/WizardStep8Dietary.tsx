@@ -16,13 +16,12 @@ import { useFluidIntakeSummary } from '@/hooks/useFluidIntakeRecords';
 import { useFluidOutputSummary } from '@/hooks/useFluidOutputRecords';
 import { format } from 'date-fns';
 
-export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> }) {
+export default function WizardStep8Dietary({ form, clientId }: { form: UseFormReturn<any>; clientId: string }) {
   const watchedValues = form.watch();
   const [newAllergy, setNewAllergy] = React.useState('');
   const [fluidBalanceDialogOpen, setFluidBalanceDialogOpen] = useState(false);
   
   // Get client info from form
-  const clientId = form.getValues('client_id');
   const clientName = form.getValues('basic_info.full_name') || form.getValues('basic_info.preferred_name') || 'Client';
   
   // Fluid balance hooks
