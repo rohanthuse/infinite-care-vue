@@ -777,8 +777,8 @@ export function ClientScheduleCalendar({
                       <Clock className="h-3 w-3" />
                       <span>
                         {viewType === 'weekly' 
-                          ? `${client.totalWeekHours?.toFixed(1) || '0.0'}h / ${client.contractedHours}h`
-                          : `${client.totalCareHours?.toFixed(1) || '0.0'}h / ${client.contractedHours}h`
+                          ? `${client.totalWeekHours?.toFixed(1) || '0.0'}h`
+                          : `${client.totalCareHours?.toFixed(1) || '0.0'}h`
                         }
                       </span>
                     </div>
