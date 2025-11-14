@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Plus, X } from 'lucide-react';
+import { ChevronDown, Plus, X, Droplets, TrendingUp, TrendingDown } from 'lucide-react';
+import { FluidBalanceRecordDialog } from '@/components/fluid-balance/FluidBalanceRecordDialog';
+import { useFluidBalanceTarget, useUpdateFluidBalanceTarget } from '@/hooks/useFluidBalanceTargets';
+import { useFluidIntakeSummary } from '@/hooks/useFluidIntakeRecords';
+import { useFluidOutputSummary } from '@/hooks/useFluidOutputRecords';
+import { format } from 'date-fns';
 
 export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> }) {
   const watchedValues = form.watch();
   const [newAllergy, setNewAllergy] = React.useState('');
+  const [fluidBalanceDialogOpen, setFluidBalanceDialogOpen] = useState(false);
+  
+  // Get client info from form
+  const clientId = form.getValues('client_id');
+  const clientName = form.getValues('basic_info.full_name') || form.getValues('basic_info.preferred_name') || 'Client';
+  
+  // Fluid balance hooks
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const { data: fluidTarget } = useFluidBalanceTarget(clientId || '');
+  const { data: todayIntake } = useFluidIntakeSummary(clientId || '', today);
+  const { data: todayOutput } = useFluidOutputSummary(clientId || '', today);
+  const updateTargetMutation = useUpdateFluidBalanceTarget();
 
   // Initialize dietary defaults if not present
   React.useEffect(() => {
@@ -72,6 +89,7 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
   };
 
   return (
+    <>
     <Form {...form}>
       <div className="space-y-6">
         <Card>
@@ -372,7 +390,176 @@ export default function WizardStep8Dietary({ form }: { form: UseFormReturn<any> 
           </Collapsible>
         </CardContent>
       </Card>
+
+      {/* Fluid Balance Management */}
+      {clientId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Droplets className="h-5 w-5 text-blue-500" />
+              Fluid Balance Monitoring
+            </CardTitle>
+            <CardDescription>
+              Set daily fluid intake and output targets, and track today's records
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Today's Summary Widget */}
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium">Today's Summary</h4>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setFluidBalanceDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Record Entry
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                    Intake
+                  </div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {todayIntake?.total || 0} ml
+                  </div>
+                  {fluidTarget?.daily_intake_target_ml && (
+                    <div className="text-xs text-muted-foreground">
+                      Target: {fluidTarget.daily_intake_target_ml} ml
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <TrendingDown className="h-4 w-4 text-orange-500" />
+                    Output
+                  </div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {todayOutput?.total || 0} ml
+                  </div>
+                  {fluidTarget?.daily_output_target_ml && (
+                    <div className="text-xs text-muted-foreground">
+                      Target: {fluidTarget.daily_output_target_ml} ml
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Target Settings */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium">Fluid Balance Targets</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormItem>
+                  <FormLabel>Daily Intake Target (ml)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 2000"
+                      defaultValue={fluidTarget?.daily_intake_target_ml || ''}
+                      onBlur={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value && clientId) {
+                          updateTargetMutation.mutate({
+                            client_id: clientId,
+                            daily_intake_target_ml: value,
+                            daily_output_target_ml: fluidTarget?.daily_output_target_ml,
+                            alert_threshold_percentage: fluidTarget?.alert_threshold_percentage,
+                            notes: fluidTarget?.notes,
+                          });
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+
+                <FormItem>
+                  <FormLabel>Daily Output Target (ml)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 1500"
+                      defaultValue={fluidTarget?.daily_output_target_ml || ''}
+                      onBlur={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value && clientId) {
+                          updateTargetMutation.mutate({
+                            client_id: clientId,
+                            daily_intake_target_ml: fluidTarget?.daily_intake_target_ml,
+                            daily_output_target_ml: value,
+                            alert_threshold_percentage: fluidTarget?.alert_threshold_percentage,
+                            notes: fluidTarget?.notes,
+                          });
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Alert Threshold (%)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 80 (alert when below 80% of target)"
+                      defaultValue={fluidTarget?.alert_threshold_percentage || ''}
+                      onBlur={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (clientId) {
+                          updateTargetMutation.mutate({
+                            client_id: clientId,
+                            daily_intake_target_ml: fluidTarget?.daily_intake_target_ml,
+                            daily_output_target_ml: fluidTarget?.daily_output_target_ml,
+                            alert_threshold_percentage: value || null,
+                            notes: fluidTarget?.notes,
+                          });
+                        }
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              </div>
+
+              <FormItem>
+                <FormLabel>Fluid Balance Notes</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Add any special instructions or notes about fluid balance monitoring..."
+                    defaultValue={fluidTarget?.notes || ''}
+                    onBlur={(e) => {
+                      if (clientId) {
+                        updateTargetMutation.mutate({
+                          client_id: clientId,
+                          daily_intake_target_ml: fluidTarget?.daily_intake_target_ml,
+                          daily_output_target_ml: fluidTarget?.daily_output_target_ml,
+                          alert_threshold_percentage: fluidTarget?.alert_threshold_percentage,
+                          notes: e.target.value || null,
+                        });
+                      }
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       </div>
     </Form>
+
+    {/* Fluid Balance Record Dialog */}
+    {clientId && clientName && (
+      <FluidBalanceRecordDialog
+        open={fluidBalanceDialogOpen}
+        onOpenChange={setFluidBalanceDialogOpen}
+        clientId={clientId}
+        clientName={clientName}
+      />
+    )}
+    </>
   );
 }
