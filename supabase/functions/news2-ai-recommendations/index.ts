@@ -71,8 +71,9 @@ serve(async (req) => {
           first_name,
           last_name,
           date_of_birth,
-          medical_conditions,
-          medications
+          gender,
+          mobility_status,
+          gp_details
         )
       `)
       .eq('id', news2_patient_id)
@@ -80,6 +81,7 @@ serve(async (req) => {
 
     if (patientError) {
       console.error('[news2-ai-recommendations] Error fetching patient:', patientError);
+      // Continue with limited context rather than failing completely
     }
 
     const clientId = patientData?.client?.id;
@@ -406,12 +408,68 @@ function buildEnhancedPrompt(
     ? Math.floor((Date.now() - new Date(client.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : 'unknown';
 
+  // Extract medical conditions and medications from care plan data
+  let medicalConditions = 'None recorded';
+  let medications = 'None recorded';
+  
+  if (carePlanData) {
+    // Check general section for medical history
+    if (carePlanData.general?.medical_history) {
+      medicalConditions = carePlanData.general.medical_history;
+    }
+    
+    // Check for medications in general section
+    if (carePlanData.general?.current_medications) {
+      medications = carePlanData.general.current_medications;
+    }
+    
+    // Also check about_me section which may contain health information
+    if (carePlanData.about_me?.health_conditions) {
+      const aboutMeConditions = carePlanData.about_me.health_conditions;
+      if (medicalConditions === 'None recorded') {
+        medicalConditions = aboutMeConditions;
+      } else {
+        medicalConditions += ' | ' + aboutMeConditions;
+      }
+    }
+    
+    // Check risk assessments for additional health context
+    if (carePlanData.risk_assessments) {
+      const riskInfo = [];
+      if (carePlanData.risk_assessments.falls_risk_level && carePlanData.risk_assessments.falls_risk_level !== 'low') {
+        riskInfo.push('Falls Risk (' + carePlanData.risk_assessments.falls_risk_level + ')');
+      }
+      if (carePlanData.risk_assessments.pressure_sore_risk && carePlanData.risk_assessments.pressure_sore_risk !== 'low') {
+        riskInfo.push('Pressure Sore Risk (' + carePlanData.risk_assessments.pressure_sore_risk + ')');
+      }
+      if (carePlanData.dietary_requirements?.choking_risk) {
+        riskInfo.push('Choking Risk');
+      }
+      if (riskInfo.length > 0) {
+        medicalConditions += (medicalConditions === 'None recorded' ? '' : ' | ') + 'Risk Factors: ' + riskInfo.join(', ');
+      }
+    }
+  }
+
   let prompt = `You are an expert clinical AI assistant analyzing NEWS2 vital signs observations with comprehensive care plan context.
 
+CRITICAL INSTRUCTIONS:
+1. Generate HIGHLY DETAILED, PERSONALIZED recommendations based on ALL provided context
+2. Reference SPECIFIC data points from the care plan, fluid balance, personal care needs, and risk assessments
+3. Tailor ALL recommendations to this individual's unique situation, medical history, mobility, and preferences
+4. Provide ACTIONABLE, SPECIFIC guidance - avoid generic advice
+5. Explain your clinical reasoning with clear connections to the patient's context
+6. If any area shows concern, provide MULTIPLE specific interventions
+7. Always acknowledge positive observations and progress
+
 PATIENT CONTEXT:
+- Name: ${client?.first_name} ${client?.last_name}
 - Age: ${age} years
-- Medical Conditions: ${client?.medical_conditions || 'None recorded'}
-- Current Medications: ${client?.medications || 'None recorded'}
+- Gender: ${client?.gender || 'Not specified'}
+- Mobility Status: ${client?.mobility_status || 'Not specified'}
+- Medical Conditions: ${medicalConditions}
+- Current Medications: ${medications}
+- GP Details: ${client?.gp_details || 'Not recorded'}
 
 CURRENT NEWS2 OBSERVATION:
 - Total Score: ${observation.total_score}
@@ -480,25 +538,47 @@ CURRENT NEWS2 OBSERVATION:
     }
   }
 
-  // Add activities & engagement
+  // Add detailed personal background for personalization
   if (carePlanData?.about_me) {
     const am = carePlanData.about_me;
-    prompt += `\nACTIVITIES & ENGAGEMENT:
+    prompt += `\nPERSONAL BACKGROUND & PREFERENCES:
+- Preferred Name: ${am.preferred_name || client?.first_name || 'Not specified'}
+- Communication Style: ${am.communication_style || 'Not specified'}
+- Likes: ${am.likes || 'Not recorded'}
+- Dislikes: ${am.dislikes || 'Not recorded'}
+- What's Important: ${am.important_to_me || 'Not recorded'}
 - Hobbies/Interests: ${am.hobbies || 'Not recorded'}
 - Social Preferences: ${am.social_preferences || 'Not recorded'}
+- Life History: ${am.life_history || 'Not recorded'}
 `;
   }
 
+  // Add equipment & aids information
   if (carePlanData?.equipment) {
     const eq = carePlanData.equipment;
-    prompt += `- Mobility Aids: ${eq.mobility_aids || 'None'}\n`;
+    prompt += `\nEQUIPMENT & AIDS:
+- Mobility Aids: ${eq.mobility_aids || 'None'}
+- Medical Equipment: ${eq.medical_equipment || 'None'}
+- Assistive Devices: ${eq.assistive_devices || 'None'}
+`;
   }
 
-  // Add care goals
+  // Add service plan context
+  if (carePlanData?.service_plans) {
+    const sp = carePlanData.service_plans;
+    prompt += `\nSERVICE PLAN:
+- Care Hours: ${sp.hours_per_week || 'Not specified'} hours/week
+- Visit Frequency: ${sp.visit_frequency || 'Not specified'}
+- Key Services: ${sp.key_services || 'Not specified'}
+`;
+  }
+
+  // Add care goals with detailed context
   if (goalsData.length > 0) {
-    prompt += `\nCARE GOALS:\n`;
-    goalsData.forEach((goal) => {
-      prompt += `- ${goal.description} (Status: ${goal.status}, Progress: ${goal.progress || 0}%)\n`;
+    prompt += `\nACTIVE CARE GOALS:\n`;
+    goalsData.forEach((goal, idx) => {
+      prompt += `${idx + 1}. ${goal.description} (Status: ${goal.status}, Progress: ${goal.progress || 0}%)\n`;
+      if (goal.notes) prompt += `   Notes: ${goal.notes}\n`;
     });
   }
 
@@ -521,28 +601,53 @@ CURRENT NEWS2 OBSERVATION:
 `;
   }
 
-  prompt += `\nINSTRUCTIONS:
-Provide comprehensive, personalized care recommendations that:
+  prompt += `\nCRITICAL INSTRUCTIONS FOR DETAILED RECOMMENDATIONS:
+Provide comprehensive, HIGHLY DETAILED, PERSONALIZED care recommendations that:
 
-1. **PERSONALIZATION**: Reference specific care plan details where relevant
-   - If patient likes tea and is dehydrated, suggest offering preferred beverages
-   - If patient uses walking frame, remind staff to ensure it's accessible
-   - Consider dietary restrictions and swallowing difficulties in all suggestions
+1. **MAXIMUM PERSONALIZATION**: Reference SPECIFIC care plan details in EVERY recommendation
+   - Use patient's preferred name: "${carePlanData?.about_me?.preferred_name || client?.first_name}"
+   - If patient likes specific activities/foods/drinks → suggest them by name
+   - If patient uses specific equipment (e.g., "${carePlanData?.equipment?.mobility_aids}") → mention it explicitly
+   - Consider dietary restrictions ("${carePlanData?.dietary_requirements?.allergies}") in all suggestions
+   - Reference their hobbies/interests ("${carePlanData?.about_me?.hobbies}") when suggesting comfort measures
 
-2. **RISK-AWARE**: Factor in known risk assessments
-   - If falls risk is high + NEWS2 shows dizziness → emphasize supervision when mobilizing
-   - If swallowing difficulty + dehydration → suggest appropriate fluid consistency
-   - If pressure sore risk + reduced mobility → remind about repositioning
+2. **DEEPLY RISK-AWARE**: Factor in ALL known risk assessments with specific interventions
+   - Falls risk (${carePlanData?.risk_assessments?.falls_risk_level || 'unknown'}) + NEWS2 score → provide 3-5 specific safety measures
+   - Swallowing difficulty (${carePlanData?.dietary_requirements?.swallowing_difficulties ? 'YES' : 'NO'}) + dehydration → suggest fluid consistency, positioning, supervision details
+   - Pressure sore risk (${carePlanData?.risk_assessments?.pressure_sore_risk || 'unknown'}) + reduced mobility → detailed repositioning schedule with specific positions
+   - Choking risk (${carePlanData?.dietary_requirements?.choking_risk ? 'YES - HIGH PRIORITY' : 'NO'}) → modify ALL food/fluid recommendations accordingly
 
-3. **GOAL-ALIGNED**: Relate recommendations to patient's care goals where relevant
+3. **STRONGLY GOAL-ALIGNED**: Explicitly connect recommendations to each active care goal
+   ${goalsData.length > 0 ? goalsData.map((g, i) => `- Goal ${i+1}: "${g.description}" (${g.progress || 0}% complete) → Suggest 2-3 actions to progress this goal`).join('\n   ') : '- No active goals - focus on maintaining wellbeing'}
 
-4. **CULTURALLY SENSITIVE**: Respect any cultural or religious preferences
+4. **CULTURALLY & PERSONALLY SENSITIVE**: Respect preferences
+   - Communication: ${carePlanData?.general?.communication_preferences || 'Not specified'}
+   - Language: ${carePlanData?.general?.language_preferences || 'English'}
+   - Cultural/Religious considerations: ${carePlanData?.general?.cultural_needs || 'None recorded'}
 
-5. **PRACTICAL**: Be specific and actionable for care staff, not generic advice
+5. **HYPER-PRACTICAL**: Be EXTREMELY specific and actionable for care staff
+   - Instead of "monitor hydration" → "Offer ${carePlanData?.about_me?.likes || 'preferred beverage'} every 2 hours, record amounts, aim for ${fluidBalanceData?.target?.daily_intake_target_ml || 2000}ml total by end of shift"
+   - Instead of "ensure safety" → "Keep ${carePlanData?.equipment?.mobility_aids || 'mobility aid'} within arm's reach on ${client?.mobility_status || 'preferred'} side, clear 3-foot path to toilet, night light on"
+   - Instead of "provide comfort" → "Play ${carePlanData?.about_me?.hobbies || 'relaxing music'}, offer ${carePlanData?.about_me?.likes || 'favorite activity'}, ensure room temperature matches preference"
 
-6. **EMPATHETIC**: Use a person-centered approach that maintains dignity
+6. **EMPATHETIC & PERSON-CENTERED**: Use dignified, respectful language
+   - Always use preferred name
+   - Acknowledge patient's strengths and positive observations
+   - Frame recommendations as supporting independence, not limiting it
 
-Provide your response using the 'provide_enhanced_care_recommendations' function.`;
+7. **QUANTIFIED & MEASURABLE**: Include specific numbers, times, frequencies
+   - "Monitor every X hours/minutes"
+   - "Target: X ml fluid intake"
+   - "Reposition every X hours"
+   - "Check vital signs at X, Y, Z times"
+
+8. **COMPREHENSIVE CLINICAL REASONING**: Explain WHY each recommendation matters
+   - Connect NEWS2 score to patient's specific medical history
+   - Explain how current vital signs relate to their medications
+   - Show how recommendations support their care goals
+   - Reference trends from previous observations
+
+Provide your response using the 'provide_enhanced_care_recommendations' function with MAXIMUM detail in every field.`;
 
   return prompt;
 }
