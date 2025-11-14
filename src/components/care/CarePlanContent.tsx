@@ -256,6 +256,8 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
             
             <TabsContent value="dietary">
               <DietaryTab 
+                clientId={carePlan.patientId}
+                clientName={carePlan.patientName}
                 dietaryRequirements={dietaryRequirements || {
                   dietary_restrictions: [],
                   food_allergies: [],
