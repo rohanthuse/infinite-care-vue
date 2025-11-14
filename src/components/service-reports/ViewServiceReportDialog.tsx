@@ -254,19 +254,9 @@ export function ViewServiceReportDialog({
   const handleDownloadPDF = async () => {
     setIsGeneratingPDF(true);
     try {
-      await exportSingleServiceReportPDF({
-        report: safeReport,
-        visitRecord: visitRecord,
-        tasks: tasks || [],
-        medications: medications || [],
-        news2Readings: news2Readings || [],
-        otherVitals: vitals.filter(v => v.vital_type !== 'news2') || [],
-        events: events || [],
-        incidents: incidents || [],
-        accidents: accidents || [],
-        observations: observations || [],
-        branchId: safeReport.branch_id,
-      });
+      // Use the shared PDF generation utility
+      const { generatePDFForServiceReport } = await import('@/utils/serviceReportPdfExporter');
+      await generatePDFForServiceReport(safeReport, safeReport.branch_id);
       toast({
         title: "Success",
         description: "Service report downloaded successfully",
@@ -275,7 +265,7 @@ export function ViewServiceReportDialog({
       console.error('PDF generation error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate PDF. Please try again.",
         variant: "destructive",
       });
     } finally {

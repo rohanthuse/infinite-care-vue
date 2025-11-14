@@ -18,6 +18,11 @@ export const useClientServiceReports = (clientId?: string) => {
         .from('client_service_reports')
         .select(`
           *,
+          clients!inner (
+            first_name,
+            last_name,
+            email
+          ),
           staff!inner (
             first_name,
             last_name,

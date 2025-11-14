@@ -152,7 +152,6 @@ export function AdminServiceReportsTab({
   const handleDownloadPDF = async (report: any) => {
     // Prevent multiple simultaneous downloads
     if (downloadingReportId) {
-      console.warn('[handleDownloadPDF] Already downloading a report');
       toast({
         title: 'Download in Progress',
         description: 'Please wait for the current download to complete.',
@@ -161,168 +160,20 @@ export function AdminServiceReportsTab({
       return;
     }
 
-    // Validate report has visit_record_id
-    if (!report.visit_record_id) {
-      console.error('[handleDownloadPDF] No visit_record_id found in report:', report);
-      toast({
-        title: 'Cannot Download PDF',
-        description: 'This service report is missing visit record information. Please contact support.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     console.log('[handleDownloadPDF] Starting PDF generation for report:', report.id);
     setDownloadingReportId(report.id);
 
     try {
-      // Fetch visit record
-      console.log('[handleDownloadPDF] Fetching visit record:', report.visit_record_id);
-      const { data: visitRecord, error: visitError } = await supabase
-        .from('visit_records')
-        .select('*')
-        .eq('id', report.visit_record_id)
-        .single();
-
-      if (visitError) {
-        console.error('[handleDownloadPDF] Visit record fetch error:', visitError);
-        throw new Error(`Failed to fetch visit record: ${visitError.message}`);
-      }
-      console.log('[handleDownloadPDF] Visit record fetched successfully');
-
-      // Fetch tasks
-      console.log('[handleDownloadPDF] Fetching tasks...');
-      const { data: tasks, error: tasksError } = await supabase
-        .from('visit_tasks')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .order('created_at', { ascending: true });
-
-      if (tasksError) {
-        console.error('[handleDownloadPDF] Tasks fetch error:', tasksError);
-        throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
-      }
-      console.log('[handleDownloadPDF] Tasks fetched:', tasks?.length || 0);
-
-      // Fetch medications
-      console.log('[handleDownloadPDF] Fetching medications...');
-      const { data: medications, error: medsError } = await supabase
-        .from('visit_medications')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .order('scheduled_time', { ascending: true });
-
-      if (medsError) {
-        console.error('[handleDownloadPDF] Medications fetch error:', medsError);
-        throw new Error(`Failed to fetch medications: ${medsError.message}`);
-      }
-      console.log('[handleDownloadPDF] Medications fetched:', medications?.length || 0);
-
-      // Fetch vitals (including NEWS2)
-      console.log('[handleDownloadPDF] Fetching vitals...');
-      const { data: vitals, error: vitalsError } = await supabase
-        .from('visit_vitals')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .order('recorded_at', { ascending: true });
-
-      if (vitalsError) {
-        console.error('[handleDownloadPDF] Vitals fetch error:', vitalsError);
-        throw new Error(`Failed to fetch vitals: ${vitalsError.message}`);
-      }
-
-      const news2Readings = vitals?.filter(v => v.vital_type === 'news2') || [];
-      const otherVitals = vitals?.filter(v => v.vital_type !== 'news2') || [];
-      console.log('[handleDownloadPDF] Vitals fetched - NEWS2:', news2Readings.length, 'Other:', otherVitals.length);
-
-      // Fetch events
-      console.log('[handleDownloadPDF] Fetching events...');
-      const { data: events, error: eventsError } = await supabase
-        .from('visit_events')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .eq('event_type', 'general')
-        .order('event_time', { ascending: true });
-
-      if (eventsError) {
-        console.error('[handleDownloadPDF] Events fetch error:', eventsError);
-        throw new Error(`Failed to fetch events: ${eventsError.message}`);
-      }
-      console.log('[handleDownloadPDF] Events fetched:', events?.length || 0);
-
-      // Fetch incidents
-      console.log('[handleDownloadPDF] Fetching incidents...');
-      const { data: incidents, error: incidentsError } = await supabase
-        .from('visit_events')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .eq('event_type', 'incident')
-        .order('event_time', { ascending: true });
-
-      if (incidentsError) {
-        console.error('[handleDownloadPDF] Incidents fetch error:', incidentsError);
-        throw new Error(`Failed to fetch incidents: ${incidentsError.message}`);
-      }
-      console.log('[handleDownloadPDF] Incidents fetched:', incidents?.length || 0);
-
-      // Fetch accidents
-      console.log('[handleDownloadPDF] Fetching accidents...');
-      const { data: accidents, error: accidentsError } = await supabase
-        .from('visit_events')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .eq('event_type', 'accident')
-        .order('event_time', { ascending: true });
-
-      if (accidentsError) {
-        console.error('[handleDownloadPDF] Accidents fetch error:', accidentsError);
-        throw new Error(`Failed to fetch accidents: ${accidentsError.message}`);
-      }
-      console.log('[handleDownloadPDF] Accidents fetched:', accidents?.length || 0);
-
-      // Fetch observations
-      console.log('[handleDownloadPDF] Fetching observations...');
-      const { data: observations, error: observationsError } = await supabase
-        .from('visit_events')
-        .select('*')
-        .eq('visit_record_id', report.visit_record_id)
-        .eq('event_type', 'observation')
-        .order('event_time', { ascending: true });
-
-      if (observationsError) {
-        console.error('[handleDownloadPDF] Observations fetch error:', observationsError);
-        throw new Error(`Failed to fetch observations: ${observationsError.message}`);
-      }
-      console.log('[handleDownloadPDF] Observations fetched:', observations?.length || 0);
-
-      // Generate PDF
-      console.log('[handleDownloadPDF] Generating PDF...');
-      await exportSingleServiceReportPDF({
-        report: report,
-        visitRecord: visitRecord,
-        tasks: tasks || [],
-        medications: medications || [],
-        news2Readings: news2Readings || [],
-        otherVitals: otherVitals || [],
-        events: events || [],
-        incidents: incidents || [],
-        accidents: accidents || [],
-        observations: observations || [],
-        branchId: report.branch_id,
-      });
-
-      console.log('[handleDownloadPDF] ✅ PDF generated successfully for report:', report.id);
+      const { generatePDFForServiceReport } = await import('@/utils/serviceReportPdfExporter');
+      await generatePDFForServiceReport(report, report.branch_id);
       
-      // Show success toast
+      console.log('[handleDownloadPDF] ✅ PDF generated successfully for report:', report.id);
       toast({
         title: 'Success',
         description: 'Service report downloaded successfully',
       });
-
     } catch (error) {
       console.error('[handleDownloadPDF] ❌ PDF generation failed:', error);
-      
-      // Show error toast
       toast({
         title: 'Download Failed',
         description: error instanceof Error ? error.message : 'Failed to generate PDF. Please try again.',
