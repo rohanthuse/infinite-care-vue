@@ -23,7 +23,7 @@ export const useFluidIntakeRecords = (clientId: string, date?: string) => {
   return useQuery({
     queryKey: ['fluid-intake-records', clientId, date],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('fluid_intake_records')
         .select('*')
         .eq('client_id', clientId)
@@ -48,7 +48,7 @@ export const useAddFluidIntakeRecord = () => {
 
   return useMutation({
     mutationFn: async (record: Omit<FluidIntakeRecord, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('fluid_intake_records')
         .insert(record)
         .select()
@@ -80,7 +80,7 @@ export const useUpdateFluidIntakeRecord = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<FluidIntakeRecord> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('fluid_intake_records')
         .update(updates)
         .eq('id', id)
@@ -113,7 +113,7 @@ export const useDeleteFluidIntakeRecord = () => {
 
   return useMutation({
     mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('fluid_intake_records')
         .delete()
         .eq('id', id);
@@ -142,7 +142,7 @@ export const useFluidIntakeSummary = (clientId: string, date: string) => {
   return useQuery({
     queryKey: ['fluid-intake-summary', clientId, date],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('fluid_intake_records')
         .select('amount_ml')
         .eq('client_id', clientId)
@@ -150,7 +150,7 @@ export const useFluidIntakeSummary = (clientId: string, date: string) => {
 
       if (error) throw error;
 
-      const total = data.reduce((sum, record) => sum + record.amount_ml, 0);
+      const total = data.reduce((sum: number, record: any) => sum + record.amount_ml, 0);
       return { total, count: data.length };
     },
     enabled: !!clientId && !!date,
