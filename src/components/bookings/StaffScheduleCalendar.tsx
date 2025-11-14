@@ -1074,17 +1074,11 @@ export function StaffScheduleCalendar({
                   <div className="text-xs text-muted-foreground mt-1">
                     {viewType === 'weekly' ? (
                       <>
-                        {staffMember.totalWeekHours?.toFixed(1) || '0.0'}h / {staffMember.contractedHours}h
-                        <span className={`ml-1 ${staffMember.totalWeekHours > staffMember.contractedHours ? 'text-amber-600' : ''}`}>
-                          ({((staffMember.totalWeekHours / staffMember.contractedHours) * 100).toFixed(0)}%)
-                        </span>
+                        {staffMember.totalWeekHours?.toFixed(1) || '0.0'}h
                       </>
                     ) : (
                       <>
-                        {staffMember.totalHours?.toFixed(1) || '0.0'}h / {staffMember.contractedHours}h
-                        <span className={`ml-1 ${staffMember.totalHours > staffMember.contractedHours ? 'text-amber-600' : ''}`}>
-                          ({((staffMember.totalHours / staffMember.contractedHours) * 100).toFixed(0)}%)
-                        </span>
+                        {staffMember.totalHours?.toFixed(1) || '0.0'}h
                       </>
                     )}
                   </div>
