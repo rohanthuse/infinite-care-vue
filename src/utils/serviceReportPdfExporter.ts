@@ -57,7 +57,7 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   currentY += 10;
 
   const clientName = `${report.clients?.first_name || ''} ${report.clients?.last_name || ''}`.trim() || 'N/A';
-  currentY = addDocumentTitle(doc, 'Service Report', clientName);
+  currentY = addDocumentTitle(doc, 'Service Report', clientName, currentY);
   currentY += 5;
 
   const visitDate = visitRecord?.visit_date ? format(new Date(visitRecord.visit_date), 'dd/MM/yyyy') : 'N/A';
