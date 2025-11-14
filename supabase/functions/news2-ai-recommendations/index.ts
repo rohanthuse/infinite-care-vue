@@ -66,7 +66,7 @@ async function callOpenAIWithRetry(
             type: 'function', 
             function: { name: 'provide_enhanced_care_recommendations' } 
           },
-          max_completion_tokens: 3000,
+          max_completion_tokens: 16000,
         }),
       });
 
@@ -543,7 +543,25 @@ serve(async (req) => {
           error: data.error
         }, null, 2));
 
+        // Monitor token usage to catch future issues
+        if (data.usage) {
+          const reasoningTokens = data.usage.completion_tokens_details?.reasoning_tokens || 0;
+          const outputTokens = data.usage.completion_tokens - reasoningTokens;
+          console.log(`[news2-ai-recommendations][${requestId}] Token usage: ${reasoningTokens} reasoning + ${outputTokens} output = ${data.usage.completion_tokens} total`);
+          
+          // Warning if we're getting close to the limit
+          if (data.usage.completion_tokens > 16000 * 0.9) {
+            console.warn(`[news2-ai-recommendations][${requestId}] Warning: Using ${Math.round(data.usage.completion_tokens / 16000 * 100)}% of token limit`);
+          }
+        }
+
         const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+        
+        // Check if response was cut off due to token limit
+        if (data.choices?.[0]?.finish_reason === 'length') {
+          console.error(`[news2-ai-recommendations][${requestId}] Response was truncated due to token limit!`);
+          throw new Error('AI response exceeded token limit. Please try again or contact support.');
+        }
         if (!toolCall || toolCall.function?.name !== 'provide_enhanced_care_recommendations') {
           console.error(`[news2-ai-recommendations][${requestId}] No valid tool call`);
           return new Response(
