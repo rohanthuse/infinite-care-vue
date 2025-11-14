@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   fetchOrganizationSettings, 
   getLogoForPDF,
@@ -443,4 +444,106 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   }
 
   doc.save(`Service_Report_${clientName.replace(/\s+/g, '_')}_${visitDate.replace(/\//g, '-')}.pdf`);
+};
+
+/**
+ * Fetches all visit-related data and generates a PDF
+ * This is a standalone function that can be called from anywhere
+ */
+export const generatePDFForServiceReport = async (
+  report: any,
+  branchId?: string
+) => {
+  // Create safeReport with fallbacks (same as ViewServiceReportDialog)
+  const safeReport = {
+    ...report,
+    clients: report.clients || { first_name: '', last_name: '', email: '' },
+    staff: report.staff || { first_name: '', last_name: '', email: '' },
+    services_provided: report.services_provided || [],
+    client_mood: report.client_mood || '',
+    client_engagement: report.client_engagement || '',
+    carer_observations: report.carer_observations || '',
+    client_feedback: report.client_feedback || '',
+    activities_undertaken: report.activities_undertaken || '',
+    medication_notes: report.medication_notes || '',
+    incident_details: report.incident_details || '',
+    next_visit_preparations: report.next_visit_preparations || '',
+    review_notes: report.review_notes || '',
+    medication_administered: report.medication_administered ?? false,
+    incident_occurred: report.incident_occurred ?? false,
+  };
+
+  // Validate visit_record_id
+  if (!safeReport.visit_record_id) {
+    throw new Error('Service report is missing visit record information');
+  }
+
+  // Fetch visit record
+  const { data: visitRecord, error: visitError } = await supabase
+    .from('visit_records')
+    .select('*')
+    .eq('id', safeReport.visit_record_id)
+    .single();
+
+  if (visitError) throw new Error(`Failed to fetch visit record: ${visitError.message}`);
+
+  // Fetch tasks
+  const { data: tasks, error: tasksError } = await supabase
+    .from('visit_tasks')
+    .select('*')
+    .eq('visit_record_id', safeReport.visit_record_id)
+    .order('created_at', { ascending: true });
+
+  if (tasksError) throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+
+  // Fetch medications
+  const { data: medications, error: medsError } = await supabase
+    .from('visit_medications')
+    .select('*')
+    .eq('visit_record_id', safeReport.visit_record_id)
+    .order('scheduled_time', { ascending: true });
+
+  if (medsError) throw new Error(`Failed to fetch medications: ${medsError.message}`);
+
+  // Fetch vitals
+  const { data: vitals, error: vitalsError } = await supabase
+    .from('visit_vitals')
+    .select('*')
+    .eq('visit_record_id', safeReport.visit_record_id)
+    .order('recorded_at', { ascending: true });
+
+  if (vitalsError) throw new Error(`Failed to fetch vitals: ${vitalsError.message}`);
+
+  const news2Readings = vitals?.filter(v => v.vital_type === 'news2') || [];
+  const otherVitals = vitals?.filter(v => v.vital_type !== 'news2') || [];
+
+  // Fetch all events types
+  const { data: allEvents, error: eventsError } = await supabase
+    .from('visit_events')
+    .select('*')
+    .eq('visit_record_id', safeReport.visit_record_id)
+    .order('event_time', { ascending: true });
+
+  if (eventsError) throw new Error(`Failed to fetch events: ${eventsError.message}`);
+
+  // Separate events by type
+  const events = allEvents?.filter(e => e.event_type === 'general') || [];
+  const incidents = allEvents?.filter(e => e.event_type === 'incident') || [];
+  const accidents = allEvents?.filter(e => e.event_type === 'accident') || [];
+  const observations = allEvents?.filter(e => e.event_type === 'observation') || [];
+
+  // Generate PDF with all data
+  await exportSingleServiceReportPDF({
+    report: safeReport,
+    visitRecord: visitRecord,
+    tasks: tasks || [],
+    medications: medications || [],
+    news2Readings: news2Readings,
+    otherVitals: otherVitals,
+    events: events,
+    incidents: incidents,
+    accidents: accidents,
+    observations: observations,
+    branchId: branchId || safeReport.branch_id,
+  });
 };
