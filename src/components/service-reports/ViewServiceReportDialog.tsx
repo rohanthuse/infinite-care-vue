@@ -50,7 +50,8 @@ import {
   ClipboardCheck,
   ThumbsUp,
   ThumbsDown,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
 import { TasksTable } from './view-report/TasksTable';
 import { MedicationsTable } from './view-report/MedicationsTable';
@@ -58,6 +59,7 @@ import { NEWS2Display } from './view-report/NEWS2Display';
 import { EventsList } from './view-report/EventsList';
 import { SignatureDisplay } from './view-report/SignatureDisplay';
 import { formatSafeDate } from '@/lib/dateUtils';
+import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
 
 interface ViewServiceReportDialogProps {
   open: boolean;
@@ -106,6 +108,7 @@ export function ViewServiceReportDialog({
   const [adminReviewNotes, setAdminReviewNotes] = useState('');
   const [adminVisibleToClient, setAdminVisibleToClient] = useState(true);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Mutation hook for updating the report
   const updateServiceReport = useUpdateServiceReport();
@@ -248,6 +251,37 @@ export function ViewServiceReportDialog({
     }
   };
 
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
+    try {
+      await exportSingleServiceReportPDF({
+        report: safeReport,
+        visitRecord: visitRecord,
+        tasks: tasks || [],
+        medications: medications || [],
+        news2Readings: news2Readings || [],
+        otherVitals: vitals.filter(v => v.vital_type !== 'news2') || [],
+        events: events || [],
+        incidents: incidents || [],
+        accidents: accidents || [],
+        observations: observations || [],
+      });
+      toast({
+        title: "Success",
+        description: "Service report downloaded successfully",
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0">
@@ -273,6 +307,26 @@ export function ViewServiceReportDialog({
                 </div>
               </div>
             </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+              className="gap-2"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </>
+              )}
+            </Button>
           </div>
         </DialogHeader>
 
