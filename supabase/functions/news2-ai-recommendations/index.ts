@@ -72,6 +72,14 @@ async function callOpenAIWithRetry(
 
       const data = await response.json();
 
+      // Log response status and basic info for debugging
+      console.log(`[news2-ai-recommendations][${requestId}] OpenAI status: ${response.status}, has choices: ${!!data.choices}, has error: ${!!data.error}`);
+      
+      // If there's an error in the response body, log it
+      if (data.error) {
+        console.error(`[news2-ai-recommendations][${requestId}] OpenAI returned error:`, JSON.stringify(data.error, null, 2));
+      }
+
       if (response.status === 429) {
         if (attempt < maxRetries - 1) {
           const waitTime = Math.pow(2, attempt) * 2000;
@@ -517,6 +525,23 @@ serve(async (req) => {
         }];
 
         const data = await callOpenAIWithRetry(systemPrompt, userPrompt, tools, 2, requestId);
+
+        // Log the full OpenAI response for debugging
+        console.log(`[news2-ai-recommendations][${requestId}] OpenAI response:`, JSON.stringify({
+          id: data.id,
+          model: data.model,
+          choices: data.choices?.map((c: any) => ({
+            index: c.index,
+            finish_reason: c.finish_reason,
+            message: {
+              role: c.message?.role,
+              content: c.message?.content?.substring(0, 200), // First 200 chars
+              tool_calls: c.message?.tool_calls
+            }
+          })),
+          usage: data.usage,
+          error: data.error
+        }, null, 2));
 
         const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
         if (!toolCall || toolCall.function?.name !== 'provide_enhanced_care_recommendations') {
