@@ -510,7 +510,7 @@ export const generatePDFForServiceReport = async (
     .from('visit_vitals')
     .select('*')
     .eq('visit_record_id', safeReport.visit_record_id)
-    .order('recorded_at', { ascending: true });
+    .order('reading_time', { ascending: true });
 
   if (vitalsError) throw new Error(`Failed to fetch vitals: ${vitalsError.message}`);
 
