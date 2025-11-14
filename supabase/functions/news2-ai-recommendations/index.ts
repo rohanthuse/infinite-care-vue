@@ -286,11 +286,10 @@ serve(async (req) => {
         const data = await callGeminiWithRetry(
           'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp:generateContent',
           {
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-            }]
+            contents: [{
+              parts: [{
+                text: prompt
+              }]
             }],
             generationConfig: {
               temperature: 0.3,
