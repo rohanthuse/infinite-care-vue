@@ -4840,6 +4840,225 @@ export type Database = {
           },
         ]
       }
+      fluid_balance_targets: {
+        Row: {
+          alert_threshold_percentage: number | null
+          client_id: string
+          created_at: string | null
+          daily_intake_target_ml: number | null
+          daily_output_target_ml: number | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          alert_threshold_percentage?: number | null
+          client_id: string
+          created_at?: string | null
+          daily_intake_target_ml?: number | null
+          daily_output_target_ml?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          alert_threshold_percentage?: number | null
+          client_id?: string
+          created_at?: string | null
+          daily_intake_target_ml?: number | null
+          daily_output_target_ml?: number | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluid_balance_targets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_balance_targets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fluid_intake_records: {
+        Row: {
+          amount_ml: number
+          client_id: string
+          comments: string | null
+          created_at: string | null
+          fluid_type: string
+          id: string
+          method: string
+          record_date: string
+          recorded_by: string | null
+          service_report_id: string | null
+          time: string
+          updated_at: string | null
+          visit_record_id: string | null
+        }
+        Insert: {
+          amount_ml: number
+          client_id: string
+          comments?: string | null
+          created_at?: string | null
+          fluid_type: string
+          id?: string
+          method: string
+          record_date: string
+          recorded_by?: string | null
+          service_report_id?: string | null
+          time: string
+          updated_at?: string | null
+          visit_record_id?: string | null
+        }
+        Update: {
+          amount_ml?: number
+          client_id?: string
+          comments?: string | null
+          created_at?: string | null
+          fluid_type?: string
+          id?: string
+          method?: string
+          record_date?: string
+          recorded_by?: string | null
+          service_report_id?: string | null
+          time?: string
+          updated_at?: string | null
+          visit_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluid_intake_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_intake_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_intake_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_intake_records_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_intake_records_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fluid_output_records: {
+        Row: {
+          amount_estimate: string | null
+          amount_ml: number | null
+          appearance: string | null
+          client_id: string
+          comments: string | null
+          created_at: string | null
+          id: string
+          output_type: string
+          record_date: string
+          recorded_by: string | null
+          service_report_id: string | null
+          time: string
+          updated_at: string | null
+          visit_record_id: string | null
+        }
+        Insert: {
+          amount_estimate?: string | null
+          amount_ml?: number | null
+          appearance?: string | null
+          client_id: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          output_type: string
+          record_date: string
+          recorded_by?: string | null
+          service_report_id?: string | null
+          time: string
+          updated_at?: string | null
+          visit_record_id?: string | null
+        }
+        Update: {
+          amount_estimate?: string | null
+          amount_ml?: number | null
+          appearance?: string | null
+          client_id?: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          output_type?: string
+          record_date?: string
+          recorded_by?: string | null
+          service_report_id?: string | null
+          time?: string
+          updated_at?: string | null
+          visit_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fluid_output_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_output_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_output_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_output_records_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fluid_output_records_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_assignees: {
         Row: {
           assigned_at: string
@@ -9399,6 +9618,96 @@ export type Database = {
           },
         ]
       }
+      urinary_output_records: {
+        Row: {
+          amount_estimate: string | null
+          amount_ml: number | null
+          client_id: string
+          collection_method: string
+          colour: string | null
+          created_at: string | null
+          discomfort_observations: string | null
+          id: string
+          odour: string | null
+          record_date: string
+          recorded_by: string | null
+          service_report_id: string | null
+          time: string
+          updated_at: string | null
+          visit_record_id: string | null
+        }
+        Insert: {
+          amount_estimate?: string | null
+          amount_ml?: number | null
+          client_id: string
+          collection_method: string
+          colour?: string | null
+          created_at?: string | null
+          discomfort_observations?: string | null
+          id?: string
+          odour?: string | null
+          record_date: string
+          recorded_by?: string | null
+          service_report_id?: string | null
+          time: string
+          updated_at?: string | null
+          visit_record_id?: string | null
+        }
+        Update: {
+          amount_estimate?: string | null
+          amount_ml?: number | null
+          client_id?: string
+          collection_method?: string
+          colour?: string | null
+          created_at?: string | null
+          discomfort_observations?: string | null
+          id?: string
+          odour?: string | null
+          record_date?: string
+          recorded_by?: string | null
+          service_report_id?: string | null
+          time?: string
+          updated_at?: string | null
+          visit_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "urinary_output_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "urinary_output_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "urinary_output_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "urinary_output_records_service_report_id_fkey"
+            columns: ["service_report_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "urinary_output_records_visit_record_id_fkey"
+            columns: ["visit_record_id"]
+            isOneToOne: false
+            referencedRelation: "visit_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -9937,6 +10246,10 @@ export type Database = {
               total: number
             }[]
           }
+      can_access_client_data: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_access_thread: {
         Args: { thread_id_param: string; user_id_param: string }
         Returns: boolean
