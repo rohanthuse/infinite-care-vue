@@ -17,7 +17,7 @@ export const useFluidBalanceTarget = (clientId: string) => {
   return useQuery({
     queryKey: ['fluid-balance-target', clientId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('fluid_balance_targets')
         .select('*')
         .eq('client_id', clientId)
@@ -37,7 +37,7 @@ export const useUpdateFluidBalanceTarget = () => {
   return useMutation({
     mutationFn: async (target: Partial<FluidBalanceTarget> & { client_id: string }) => {
       // Try to update first
-      const { data: existing } = await supabase
+      const { data: existing } = await (supabase as any)
         .from('fluid_balance_targets')
         .select('id')
         .eq('client_id', target.client_id)
@@ -45,7 +45,7 @@ export const useUpdateFluidBalanceTarget = () => {
 
       if (existing) {
         // Update existing
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('fluid_balance_targets')
           .update(target)
           .eq('client_id', target.client_id)
@@ -56,7 +56,7 @@ export const useUpdateFluidBalanceTarget = () => {
         return data;
       } else {
         // Insert new
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('fluid_balance_targets')
           .insert(target)
           .select()

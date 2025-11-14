@@ -10,12 +10,13 @@ interface UrinaryOutputRecord {
   record_date: string;
   recorded_by?: string;
   time: string;
-  collection_method: string;
+  colour: string;
+  odour: string;
+  discomfort_observations?: string;
+  collection_method?: string;
   amount_ml?: number;
   amount_estimate?: string;
-  colour?: string;
-  odour?: string;
-  discomfort_observations?: string;
+  comments?: string;
   created_at: string;
   updated_at: string;
 }
@@ -24,7 +25,7 @@ export const useUrinaryOutputRecords = (clientId: string, date?: string) => {
   return useQuery({
     queryKey: ['urinary-output-records', clientId, date],
     queryFn: async () => {
-      let query = supabase
+      let query = (supabase as any)
         .from('urinary_output_records')
         .select('*')
         .eq('client_id', clientId)
@@ -49,7 +50,7 @@ export const useAddUrinaryOutputRecord = () => {
 
   return useMutation({
     mutationFn: async (record: Omit<UrinaryOutputRecord, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('urinary_output_records')
         .insert(record)
         .select()
@@ -81,7 +82,7 @@ export const useUpdateUrinaryOutputRecord = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<UrinaryOutputRecord> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('urinary_output_records')
         .update(updates)
         .eq('id', id)
@@ -114,7 +115,7 @@ export const useDeleteUrinaryOutputRecord = () => {
 
   return useMutation({
     mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('urinary_output_records')
         .delete()
         .eq('id', id);
@@ -143,16 +144,17 @@ export const useUrinaryOutputSummary = (clientId: string, date: string) => {
   return useQuery({
     queryKey: ['urinary-output-summary', clientId, date],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('urinary_output_records')
         .select('amount_ml')
         .eq('client_id', clientId)
-        .eq('record_date', date)
-        .not('amount_ml', 'is', null);
+        .eq('record_date', date);
 
       if (error) throw error;
-
-      const total = data.reduce((sum, record) => sum + (record.amount_ml || 0), 0);
+      
+      const total = data.reduce((sum: number, record: any) => {
+        return sum + (record.amount_ml || 0);
+      }, 0);
       return { total, count: data.length };
     },
     enabled: !!clientId && !!date,
