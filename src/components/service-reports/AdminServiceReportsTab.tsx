@@ -11,6 +11,8 @@ import { ViewServiceReportDialog } from './ViewServiceReportDialog';
 import { Calendar, Clock, User, FileText, Activity, AlertTriangle, CheckCircle, XCircle, Eye, Plus, Edit, Download, AlertCircle, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ExportServiceReportsDialog } from './ExportServiceReportsDialog';
+import { exportSingleServiceReportPDF } from '@/utils/serviceReportPdfExporter';
+import { supabase } from '@/integrations/supabase/client';
 interface AdminServiceReportsTabProps {
   clientId: string;
   branchId: string;
@@ -56,6 +58,7 @@ export function AdminServiceReportsTab({
     report: null
   });
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
 
   // Reset state when dialog closes - MUST be before any conditional returns
   React.useEffect(() => {
@@ -144,6 +147,124 @@ export function AdminServiceReportsTab({
       report
     });
   };
+
+  const handleDownloadPDF = async (report: any) => {
+    // Prevent multiple simultaneous downloads
+    if (downloadingReportId) {
+      console.warn('Already downloading a report');
+      return;
+    }
+
+    // Check if report has visit_record_id
+    if (!report.visit_record_id) {
+      console.error('No visit_record_id found in report');
+      return;
+    }
+
+    setDownloadingReportId(report.id);
+
+    try {
+      // Fetch visit record
+      const { data: visitRecord, error: visitError } = await supabase
+        .from('visit_records')
+        .select('*')
+        .eq('id', report.visit_record_id)
+        .single();
+
+      if (visitError) throw visitError;
+
+      // Fetch tasks
+      const { data: tasks, error: tasksError } = await supabase
+        .from('visit_tasks')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .order('created_at', { ascending: true });
+
+      if (tasksError) throw tasksError;
+
+      // Fetch medications
+      const { data: medications, error: medsError } = await supabase
+        .from('visit_medications')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .order('scheduled_time', { ascending: true });
+
+      if (medsError) throw medsError;
+
+      // Fetch vitals (including NEWS2)
+      const { data: vitals, error: vitalsError } = await supabase
+        .from('visit_vitals')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .order('recorded_at', { ascending: true });
+
+      if (vitalsError) throw vitalsError;
+
+      const news2Readings = vitals?.filter(v => v.vital_type === 'news2') || [];
+      const otherVitals = vitals?.filter(v => v.vital_type !== 'news2') || [];
+
+      // Fetch events
+      const { data: events, error: eventsError } = await supabase
+        .from('visit_events')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .eq('event_type', 'general')
+        .order('event_time', { ascending: true });
+
+      if (eventsError) throw eventsError;
+
+      // Fetch incidents
+      const { data: incidents, error: incidentsError } = await supabase
+        .from('visit_events')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .eq('event_type', 'incident')
+        .order('event_time', { ascending: true });
+
+      if (incidentsError) throw incidentsError;
+
+      // Fetch accidents
+      const { data: accidents, error: accidentsError } = await supabase
+        .from('visit_events')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .eq('event_type', 'accident')
+        .order('event_time', { ascending: true });
+
+      if (accidentsError) throw accidentsError;
+
+      // Fetch observations
+      const { data: observations, error: observationsError } = await supabase
+        .from('visit_events')
+        .select('*')
+        .eq('visit_record_id', report.visit_record_id)
+        .eq('event_type', 'observation')
+        .order('event_time', { ascending: true });
+
+      if (observationsError) throw observationsError;
+
+      // Generate PDF
+      await exportSingleServiceReportPDF({
+        report: report,
+        visitRecord: visitRecord,
+        tasks: tasks || [],
+        medications: medications || [],
+        news2Readings: news2Readings || [],
+        otherVitals: otherVitals || [],
+        events: events || [],
+        incidents: incidents || [],
+        accidents: accidents || [],
+        observations: observations || [],
+        branchId: report.branch_id,
+      });
+
+      console.log('PDF generated successfully for report:', report.id);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    } finally {
+      setDownloadingReportId(null);
+    }
+  };
   return <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -187,7 +308,7 @@ export function AdminServiceReportsTab({
         </TabsContent>
 
         <TabsContent value="approved" className="space-y-4">
-          {approvedReports.length === 0 ? <EmptyState message="No approved reports" /> : approvedReports.map(report => <ServiceReportCard key={report.id} report={report} onEdit={() => openEditDialog(report)} showEditButton />)}
+          {approvedReports.length === 0 ? <EmptyState message="No approved reports" /> : approvedReports.map(report => <ServiceReportCard key={report.id} report={report} onEdit={() => openEditDialog(report)} onDownload={() => handleDownloadPDF(report)} showEditButton showDownloadButton isDownloading={downloadingReportId === report.id} />)}
         </TabsContent>
 
         <TabsContent value="revision" className="space-y-4">
@@ -247,14 +368,20 @@ function ServiceReportCard({
   report,
   onReview,
   onEdit,
+  onDownload,
   showReviewButtons = false,
-  showEditButton = false
+  showEditButton = false,
+  showDownloadButton = false,
+  isDownloading = false,
 }: {
   report: any;
   onReview?: () => void;
   onEdit?: () => void;
+  onDownload?: () => void;
   showReviewButtons?: boolean;
   showEditButton?: boolean;
+  showDownloadButton?: boolean;
+  isDownloading?: boolean;
 }) {
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -296,12 +423,23 @@ function ServiceReportCard({
             </CardDescription>
           </div>
           
-          <div className="flex gap-2">
-            {showEditButton && onEdit && <Button onClick={onEdit} size="sm" variant="outline">
+          <div className="flex flex-col gap-2">
+            {showEditButton && onEdit && <Button onClick={onEdit} size="sm" variant="outline" className="w-full">
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
               </Button>}
-            {showReviewButtons && onReview && <Button onClick={onReview} size="sm">
+            
+            {showDownloadButton && onDownload && <Button onClick={onDownload} size="sm" variant="outline" disabled={isDownloading} className="w-full">
+                {isDownloading ? <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-1"></div>
+                    Generating...
+                  </> : <>
+                    <Download className="h-4 w-4 mr-1" />
+                    Download PDF
+                  </>}
+              </Button>}
+            
+            {showReviewButtons && onReview && <Button onClick={onReview} size="sm" className="w-full">
                 <Eye className="h-4 w-4 mr-1" />
                 View & Review
               </Button>}
