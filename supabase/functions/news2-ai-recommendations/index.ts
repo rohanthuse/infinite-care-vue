@@ -16,6 +16,21 @@ interface AIRecommendations {
   escalation_criteria: string[];
   positive_observations: string[];
   clinical_reasoning: string;
+  personalized_care_adjustments?: string[];
+  hydration_nutrition_actions?: string[];
+  mobility_safety_measures?: string[];
+  comfort_wellbeing_suggestions?: string[];
+  goal_alignment_notes?: string;
+  cultural_religious_considerations?: string[];
+  communication_tips?: string[];
+  next_review_time?: string;
+  context_used?: {
+    care_plan: boolean;
+    fluid_balance: boolean;
+    personal_care: boolean;
+    risk_assessment: boolean;
+    goals: boolean;
+  };
   generated_at: string;
   model_used: string;
 }
@@ -46,12 +61,12 @@ serve(async (req) => {
       throw new Error('Observation not found');
     }
 
-    // Fetch patient and client data
+    // Fetch comprehensive patient and care plan data
     const { data: patientData, error: patientError } = await supabase
       .from('news2_patients')
       .select(`
         *,
-        client:clients(
+        client:clients!inner(
           id,
           first_name,
           last_name,
@@ -65,6 +80,109 @@ serve(async (req) => {
 
     if (patientError) {
       console.error('[news2-ai-recommendations] Error fetching patient:', patientError);
+    }
+
+    const clientId = patientData?.client?.id;
+    let carePlanData: any = null;
+    let fluidBalanceData: any = null;
+    let goalsData: any = [];
+    let contextUsed = {
+      care_plan: false,
+      fluid_balance: false,
+      personal_care: false,
+      risk_assessment: false,
+      goals: false
+    };
+
+    // Fetch active care plan with all sections if client exists
+    if (clientId && include_client_context) {
+      try {
+        const { data: carePlan } = await supabase
+          .from('client_care_plans')
+          .select(`
+            id,
+            title,
+            status,
+            personal_care,
+            dietary_requirements,
+            about_me,
+            general,
+            risk_assessments,
+            service_plans,
+            equipment
+          `)
+          .eq('client_id', clientId)
+          .eq('status', 'active')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (carePlan) {
+          carePlanData = carePlan;
+          contextUsed.care_plan = true;
+          contextUsed.personal_care = !!carePlan.personal_care;
+          contextUsed.risk_assessment = !!carePlan.risk_assessments;
+        }
+
+        // Fetch goals
+        const { data: goals } = await supabase
+          .from('client_care_plan_goals')
+          .select('description, status, progress, notes')
+          .eq('care_plan_id', carePlan?.id || '')
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (goals && goals.length > 0) {
+          goalsData = goals;
+          contextUsed.goals = true;
+        }
+
+        // Fetch today's fluid balance
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { data: intakeRecords } = await supabase
+          .from('fluid_intake_records')
+          .select('amount_ml, fluid_type, time')
+          .eq('client_id', clientId)
+          .eq('record_date', today)
+          .order('time', { ascending: false })
+          .limit(5);
+
+        const { data: outputRecords } = await supabase
+          .from('fluid_output_records')
+          .select('amount_ml, output_type, appearance, time')
+          .eq('client_id', clientId)
+          .eq('record_date', today)
+          .order('time', { ascending: false })
+          .limit(5);
+
+        const { data: urinaryRecords } = await supabase
+          .from('urinary_output_records')
+          .select('colour, odour, discomfort_observations, time')
+          .eq('client_id', clientId)
+          .eq('record_date', today)
+          .order('time', { ascending: false })
+          .limit(3);
+
+        const { data: targetData } = await supabase
+          .from('fluid_balance_targets')
+          .select('daily_intake_target_ml, daily_output_target_ml')
+          .eq('client_id', clientId)
+          .eq('is_active', true)
+          .single();
+
+        if (intakeRecords || outputRecords || urinaryRecords) {
+          fluidBalanceData = {
+            intake: intakeRecords || [],
+            output: outputRecords || [],
+            urinary: urinaryRecords || [],
+            target: targetData
+          };
+          contextUsed.fluid_balance = true;
+        }
+      } catch (error) {
+        console.warn('[news2-ai-recommendations] Could not fetch full care plan context:', error);
+      }
     }
 
     // Fetch previous observations for trend analysis
@@ -82,11 +200,18 @@ serve(async (req) => {
     }
 
     // Build comprehensive prompt
-    const prompt = buildPrompt(observation, patientData, previousObservations);
+    const prompt = buildEnhancedPrompt(
+      observation,
+      patientData,
+      previousObservations,
+      carePlanData,
+      fluidBalanceData,
+      goalsData
+    );
 
-    console.log('[news2-ai-recommendations] Calling Gemini API...');
+    console.log('[news2-ai-recommendations] Calling Gemini API with enhanced context...');
 
-    // Call Gemini API with function calling
+    // Call Gemini API with enhanced function calling
     const response = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
       {
@@ -105,19 +230,19 @@ serve(async (req) => {
             temperature: 0.3,
             topK: 40,
             topP: 0.95,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 3000,
           },
           tools: [{
             functionDeclarations: [{
-              name: 'provide_news2_recommendations',
-              description: 'Provide structured clinical recommendations based on NEWS2 assessment',
+              name: 'provide_enhanced_care_recommendations',
+              description: 'Provide comprehensive, personalized care recommendations based on NEWS2 assessment and full care plan context',
               parameters: {
                 type: 'object',
                 properties: {
                   immediate_actions: {
                     type: 'array',
-                    description: 'List of urgent actions required (empty if none)',
-                    items: { type: 'string' }
+                    items: { type: 'string' },
+                    description: 'Urgent actions required within the next hour (empty if none)'
                   },
                   monitoring_plan: {
                     type: 'object',
@@ -128,40 +253,78 @@ serve(async (req) => {
                       },
                       focus_areas: {
                         type: 'array',
-                        description: 'Specific vital signs or symptoms to watch',
-                        items: { type: 'string' }
+                        items: { type: 'string' },
+                        description: 'Specific vital signs or symptoms to watch'
                       }
                     },
                     required: ['frequency', 'focus_areas']
                   },
                   care_suggestions: {
                     type: 'array',
-                    description: 'Supportive care and comfort measures',
-                    items: { type: 'string' }
+                    items: { type: 'string' },
+                    description: 'General supportive care and comfort measures'
+                  },
+                  personalized_care_adjustments: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Specific care adjustments based on patient preferences, dietary needs, mobility, personal care requirements'
+                  },
+                  hydration_nutrition_actions: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Specific actions related to fluid intake, diet, and nutrition based on current readings and dietary requirements'
+                  },
+                  mobility_safety_measures: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Mobility support, fall prevention, equipment checks based on risk assessments'
+                  },
+                  comfort_wellbeing_suggestions: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Actions to support comfort, pain management, sleep, emotional wellbeing'
+                  },
+                  goal_alignment_notes: {
+                    type: 'string',
+                    description: 'How this situation relates to patient care goals and progress'
+                  },
+                  cultural_religious_considerations: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Any cultural or religious considerations for care actions'
+                  },
+                  communication_tips: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'How to communicate with patient about the situation (language, style, preferences)'
                   },
                   escalation_criteria: {
                     type: 'array',
-                    description: 'Warning signs that require immediate clinical attention',
-                    items: { type: 'string' }
+                    items: { type: 'string' },
+                    description: 'Warning signs that require immediate clinical attention'
                   },
                   positive_observations: {
                     type: 'array',
-                    description: 'What is going well (encouragement)',
-                    items: { type: 'string' }
+                    items: { type: 'string' },
+                    description: 'What is going well (encouragement)'
                   },
                   clinical_reasoning: {
                     type: 'string',
                     description: 'Brief explanation of the recommendations (2-3 sentences)'
+                  },
+                  next_review_time: {
+                    type: 'string',
+                    description: 'When to reassess (e.g., "in 1 hour", "in 4 hours", "next scheduled visit")'
                   }
                 },
-                required: ['immediate_actions', 'monitoring_plan', 'care_suggestions', 'escalation_criteria', 'positive_observations', 'clinical_reasoning']
+                required: ['immediate_actions', 'monitoring_plan', 'care_suggestions', 'clinical_reasoning', 'escalation_criteria', 'positive_observations']
               }
             }]
           }],
           toolConfig: {
             functionCallingConfig: {
               mode: 'ANY',
-              allowedFunctionNames: ['provide_news2_recommendations']
+              allowedFunctionNames: ['provide_enhanced_care_recommendations']
             }
           }
         }),
@@ -179,7 +342,7 @@ serve(async (req) => {
 
     // Extract function call result
     const functionCall = data.candidates?.[0]?.content?.parts?.[0]?.functionCall;
-    if (!functionCall || functionCall.name !== 'provide_news2_recommendations') {
+    if (!functionCall || functionCall.name !== 'provide_enhanced_care_recommendations') {
       console.error('[news2-ai-recommendations] No valid function call in response:', data);
       
       // Return fallback recommendations
@@ -193,11 +356,12 @@ serve(async (req) => {
 
     const recommendations: AIRecommendations = {
       ...functionCall.args,
+      context_used: contextUsed,
       generated_at: new Date().toISOString(),
       model_used: 'gemini-2.0-flash-exp'
     };
 
-    console.log('[news2-ai-recommendations] Recommendations generated successfully');
+    console.log('[news2-ai-recommendations] Enhanced recommendations generated successfully');
 
     return new Response(
       JSON.stringify({ recommendations }),
@@ -217,191 +381,212 @@ serve(async (req) => {
             focus_areas: ['Monitor vital signs regularly']
           },
           care_suggestions: ['Continue routine care', 'Contact care team if concerns arise'],
-          escalation_criteria: ['Significant changes in vital signs', 'Patient discomfort or distress'],
-          positive_observations: ['Observation recorded for monitoring'],
-          clinical_reasoning: 'AI recommendations temporarily unavailable. Please follow standard care protocols.',
+          escalation_criteria: ['Any sudden deterioration', 'Difficulty breathing', 'Chest pain', 'Altered consciousness'],
+          positive_observations: [],
+          clinical_reasoning: 'Unable to generate AI recommendations. Please use clinical judgment.',
           generated_at: new Date().toISOString(),
           model_used: 'fallback'
         }
       }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   }
 });
 
-function buildPrompt(observation: any, patientData: any, previousObservations: any[]): string {
+function buildEnhancedPrompt(
+  observation: any,
+  patientData: any,
+  previousObservations: any[],
+  carePlanData: any,
+  fluidBalanceData: any,
+  goalsData: any[]
+): string {
   const client = patientData?.client;
   const age = client?.date_of_birth 
     ? Math.floor((Date.now() - new Date(client.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : 'Unknown';
+    : 'unknown';
 
-  let prompt = `You are a clinical AI assistant analyzing NEWS2 vital signs observations to provide actionable recommendations.
+  let prompt = `You are an expert clinical AI assistant analyzing NEWS2 vital signs observations with comprehensive care plan context.
 
 PATIENT CONTEXT:
 - Age: ${age} years
-- Current Conditions: ${client?.medical_conditions || 'None recorded'}
+- Medical Conditions: ${client?.medical_conditions || 'None recorded'}
 - Current Medications: ${client?.medications || 'None recorded'}
-- Monitoring Frequency: ${patientData?.monitoring_frequency || 'Not specified'}
-- Risk Category: ${observation.risk_level}
 
-CURRENT OBSERVATION (${new Date(observation.recorded_at).toLocaleString()}):
-- NEWS2 Score: ${observation.total_score} (${observation.risk_level.toUpperCase()} RISK)
-- Respiratory Rate: ${observation.respiratory_rate || 'N/A'}/min (score: ${observation.respiratory_rate_score})
-- Oxygen Saturation: ${observation.oxygen_saturation || 'N/A'}% (score: ${observation.oxygen_saturation_score})
-- Blood Pressure: ${observation.systolic_bp || 'N/A'}${observation.diastolic_bp ? `/${observation.diastolic_bp}` : ''} mmHg (score: ${observation.systolic_bp_score})
-- Pulse Rate: ${observation.pulse_rate || 'N/A'} bpm (score: ${observation.pulse_rate_score})
-- Temperature: ${observation.temperature || 'N/A'}°C (score: ${observation.temperature_score})
-- Consciousness: ${observation.consciousness_level} (score: ${observation.consciousness_level_score})
-- Supplemental Oxygen: ${observation.supplemental_oxygen ? 'Yes' : 'No'} (score: ${observation.supplemental_oxygen_score})
+CURRENT NEWS2 OBSERVATION:
+- Total Score: ${observation.total_score}
+- Risk Level: ${observation.risk_level}
+- Respiration Rate: ${observation.respiration_rate} breaths/min
+- SpO2: ${observation.spo2_scale_1 || observation.spo2_scale_2}%${observation.on_oxygen ? ' (on supplemental oxygen)' : ''}
+- Systolic BP: ${observation.systolic_bp} mmHg
+- Pulse: ${observation.pulse_rate} bpm
+- Consciousness: ${observation.consciousness || 'Alert'}
+- Temperature: ${observation.temperature}°C
 `;
 
-  if (observation.clinical_notes) {
-    prompt += `- Clinical Notes: ${observation.clinical_notes}\n`;
+  // Add trend analysis
+  if (previousObservations.length > 0) {
+    prompt += `\nRECENT TREND:\n`;
+    previousObservations.forEach((obs, idx) => {
+      prompt += `- ${idx + 1} observation(s) ago: Score ${obs.total_score} (${obs.risk_level})\n`;
+    });
   }
 
-  if (previousObservations.length > 0) {
-    const trend = analyzeTrend(observation.total_score, previousObservations);
-    prompt += `\nRECENT TREND:\n- Previous scores: ${previousObservations.map(o => `${o.total_score} (${o.risk_level})`).join(', ')}\n- Trend: ${trend}\n`;
+  // Add personal care context
+  if (carePlanData?.personal_care) {
+    const pc = carePlanData.personal_care;
+    prompt += `\nPERSONAL CARE NEEDS:
+- Mobility Level: ${pc.mobility_level || 'Not specified'}
+- Bathing Assistance: ${pc.bathing_preferences || 'Not specified'}
+- Toileting Assistance: ${pc.toileting_assistance_level || 'Not specified'}
+- Continence Status: ${pc.continence_status || 'Not specified'}
+- Sleep Patterns: ${pc.sleep_patterns || 'Not specified'}
+- Pain Management: ${pc.pain_management || 'Not specified'}
+`;
+  }
+
+  // Add dietary & hydration context
+  if (carePlanData?.dietary_requirements || fluidBalanceData) {
+    prompt += `\nDIETARY & HYDRATION:`;
+    
+    if (carePlanData?.dietary_requirements) {
+      const dr = carePlanData.dietary_requirements;
+      prompt += `
+- Allergies: ${dr.allergies || 'None known'}
+- Food Restrictions: ${dr.restrictions || 'None'}
+- Nutritional Risk: ${dr.malnutrition_risk_level || 'Not assessed'}
+- Swallowing Difficulties: ${dr.swallowing_difficulties ? 'Yes - ' + dr.swallowing_notes : 'No'}
+- Choking Risk: ${dr.choking_risk ? 'YES - High Risk' : 'No'}
+`;
+    }
+
+    if (fluidBalanceData) {
+      const totalIntake = fluidBalanceData.intake.reduce((sum: number, r: any) => sum + (r.amount_ml || 0), 0);
+      const totalOutput = fluidBalanceData.output.reduce((sum: number, r: any) => sum + (r.amount_ml || 0), 0);
+      const balance = totalIntake - totalOutput;
+      const target = fluidBalanceData.target?.daily_intake_target_ml || 2000;
+
+      prompt += `
+- Today's Fluid Intake: ${totalIntake}ml (Target: ${target}ml)
+- Today's Fluid Output: ${totalOutput}ml
+- Fluid Balance: ${balance > 0 ? '+' : ''}${balance}ml
+- Hydration Status: ${balance < -500 ? 'NEGATIVE BALANCE - CONCERN' : totalIntake < (target * 0.7) ? 'Below target' : 'Adequate'}
+`;
+
+      if (fluidBalanceData.urinary.length > 0) {
+        const latest = fluidBalanceData.urinary[0];
+        prompt += `- Latest Urinary Observation: ${latest.colour}, ${latest.odour}${latest.discomfort_observations ? ', ' + latest.discomfort_observations : ''}\n`;
+      }
+    }
+  }
+
+  // Add activities & engagement
+  if (carePlanData?.about_me) {
+    const am = carePlanData.about_me;
+    prompt += `\nACTIVITIES & ENGAGEMENT:
+- Hobbies/Interests: ${am.hobbies || 'Not recorded'}
+- Social Preferences: ${am.social_preferences || 'Not recorded'}
+`;
+  }
+
+  if (carePlanData?.equipment) {
+    const eq = carePlanData.equipment;
+    prompt += `- Mobility Aids: ${eq.mobility_aids || 'None'}\n`;
+  }
+
+  // Add care goals
+  if (goalsData.length > 0) {
+    prompt += `\nCARE GOALS:\n`;
+    goalsData.forEach((goal) => {
+      prompt += `- ${goal.description} (Status: ${goal.status}, Progress: ${goal.progress || 0}%)\n`;
+    });
+  }
+
+  // Add risk assessments
+  if (carePlanData?.risk_assessments) {
+    const ra = carePlanData.risk_assessments;
+    prompt += `\nKNOWN RISKS:
+- Falls Risk: ${ra.falls_risk_level || 'Not assessed'}
+- Pressure Sores Risk: ${ra.pressure_sore_risk || 'Not assessed'}
+- Other Risks: ${ra.other_risks || 'None recorded'}
+`;
+  }
+
+  // Add cultural & communication
+  if (carePlanData?.general) {
+    const gen = carePlanData.general;
+    prompt += `\nCULTURAL & COMMUNICATION:
+- Communication Preferences: ${gen.communication_preferences || 'Not specified'}
+- Language: ${gen.language_preferences || 'English'}
+`;
   }
 
   prompt += `\nINSTRUCTIONS:
-Provide evidence-based recommendations that are:
-1. Clear and actionable
-2. Appropriate for the risk level
-3. Compassionate and supportive
-4. Focused on patient safety and comfort
+Provide comprehensive, personalized care recommendations that:
 
-FOR LOW RISK (0-4):
-- Focus on wellness and prevention
-- Routine monitoring guidance
-- Positive reinforcement
+1. **PERSONALIZATION**: Reference specific care plan details where relevant
+   - If patient likes tea and is dehydrated, suggest offering preferred beverages
+   - If patient uses walking frame, remind staff to ensure it's accessible
+   - Consider dietary restrictions and swallowing difficulties in all suggestions
 
-FOR MEDIUM RISK (5-6):
-- Increased monitoring frequency
-- Specific vital signs to watch
-- When to escalate
+2. **RISK-AWARE**: Factor in known risk assessments
+   - If falls risk is high + NEWS2 shows dizziness → emphasize supervision when mobilizing
+   - If swallowing difficulty + dehydration → suggest appropriate fluid consistency
+   - If pressure sore risk + reduced mobility → remind about repositioning
 
-FOR HIGH RISK (7+):
-- URGENT actions required
-- Immediate escalation criteria
-- Close monitoring protocol
+3. **GOAL-ALIGNED**: Relate recommendations to patient's care goals where relevant
 
-Be specific, practical, and use plain language suitable for care teams and patients.`;
+4. **CULTURALLY SENSITIVE**: Respect any cultural or religious preferences
+
+5. **PRACTICAL**: Be specific and actionable for care staff, not generic advice
+
+6. **EMPATHETIC**: Use a person-centered approach that maintains dignity
+
+Provide your response using the 'provide_enhanced_care_recommendations' function.`;
 
   return prompt;
 }
 
-function analyzeTrend(currentScore: number, previousObservations: any[]): string {
-  if (previousObservations.length === 0) return 'No previous data';
-  
-  const lastScore = previousObservations[0].total_score;
-  const diff = currentScore - lastScore;
-  
-  if (diff > 2) return 'Deteriorating (score increased)';
-  if (diff < -2) return 'Improving (score decreased)';
-  return 'Stable';
-}
-
 function getFallbackRecommendations(totalScore: number, riskLevel: string): AIRecommendations {
-  if (totalScore >= 7) {
-    return {
-      immediate_actions: [
-        'URGENT: Immediate clinical review required',
-        'Notify senior staff and follow escalation protocol',
-        'Monitor continuously until condition stabilizes'
-      ],
-      monitoring_plan: {
-        frequency: 'Continuous or every 1-2 hours',
-        focus_areas: [
-          'All vital signs requiring close attention',
-          'Level of consciousness',
-          'Signs of clinical deterioration'
-        ]
-      },
-      care_suggestions: [
-        'Ensure patient comfort and safety',
-        'Maintain clear communication with clinical team',
-        'Document all observations and changes'
-      ],
-      escalation_criteria: [
-        'Any further deterioration in vital signs',
-        'Decreased consciousness level',
-        'Patient or family concerns'
-      ],
-      positive_observations: [
-        'Observation recorded promptly',
-        'Care team alerted to high risk status'
-      ],
-      clinical_reasoning: 'High NEWS2 score requires urgent clinical attention. Close monitoring and immediate intervention protocols should be followed.',
-      generated_at: new Date().toISOString(),
-      model_used: 'fallback-high-risk'
-    };
-  }
-
-  if (totalScore >= 5) {
-    return {
-      immediate_actions: [],
-      monitoring_plan: {
-        frequency: 'Every 4-6 hours or as directed',
-        focus_areas: [
-          'Vital signs showing elevated scores',
-          'Overall trend in observations',
-          'Patient comfort and wellbeing'
-        ]
-      },
-      care_suggestions: [
-        'Increase monitoring frequency as recommended',
-        'Document any changes in condition',
-        'Consider clinical assessment if score increases',
-        'Ensure patient hydration and comfort'
-      ],
-      escalation_criteria: [
-        'NEWS2 score increases to 7 or above',
-        'Any single parameter score of 3',
-        'Rapid deterioration in any vital sign',
-        'Patient reports significant discomfort'
-      ],
-      positive_observations: [
-        'Patient being monitored appropriately',
-        'Care team aware of medium risk status'
-      ],
-      clinical_reasoning: 'Medium risk requires increased vigilance. Monitor trends and be prepared to escalate if condition changes.',
-      generated_at: new Date().toISOString(),
-      model_used: 'fallback-medium-risk'
-    };
+  let immediateActions: string[] = [];
+  let frequency = 'Every 4 hours';
+  
+  if (riskLevel === 'high' || totalScore >= 7) {
+    immediateActions = [
+      'Contact senior clinician immediately',
+      'Increase monitoring frequency',
+      'Ensure emergency equipment is accessible'
+    ];
+    frequency = 'Hourly or more frequently as clinically indicated';
+  } else if (riskLevel === 'medium' || totalScore >= 5) {
+    immediateActions = [
+      'Inform registered nurse or care team lead',
+      'Increase monitoring frequency'
+    ];
+    frequency = 'Every 2 hours';
   }
 
   return {
-    immediate_actions: [],
+    immediate_actions: immediateActions,
     monitoring_plan: {
-      frequency: 'As per routine care plan (e.g., daily or 12-hourly)',
-      focus_areas: [
-        'Routine vital signs monitoring',
-        'General wellbeing',
-        'Any patient concerns'
-      ]
+      frequency,
+      focus_areas: ['All vital signs', 'Consciousness level', 'Overall condition']
     },
     care_suggestions: [
-      'Continue routine monitoring as planned',
-      'Encourage healthy lifestyle habits',
-      'Maintain open communication with patient',
-      'Document observations regularly'
+      'Ensure patient comfort and safety',
+      'Monitor fluid intake',
+      'Provide reassurance'
     ],
     escalation_criteria: [
-      'Any significant change in vital signs',
-      'Patient reports new symptoms or concerns',
-      'NEWS2 score increases to 5 or above'
+      'Any sudden deterioration',
+      'Difficulty breathing',
+      'Chest pain',
+      'Altered consciousness',
+      'Significant change in vital signs'
     ],
-    positive_observations: [
-      'Vital signs within expected ranges',
-      'Patient appears stable',
-      'Good baseline for comparison'
-    ],
-    clinical_reasoning: 'Low risk indicates stable condition. Continue routine care and monitoring as per care plan.',
+    positive_observations: totalScore < 5 ? ['Vital signs stable', 'Patient comfortable'] : [],
+    clinical_reasoning: 'Fallback recommendations generated. Please use clinical judgment and escalate as appropriate.',
     generated_at: new Date().toISOString(),
-    model_used: 'fallback-low-risk'
+    model_used: 'fallback'
   };
 }
