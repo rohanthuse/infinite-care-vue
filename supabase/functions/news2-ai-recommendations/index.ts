@@ -391,9 +391,11 @@ serve(async (req) => {
               mode: 'ANY',
               allowedFunctionNames: ['provide_enhanced_care_recommendations']
             }
-          },
-          requestId
-        );
+          }
+        },
+        2,
+        requestId
+      );
 
         const functionCall = data.candidates?.[0]?.content?.parts?.[0]?.functionCall;
         if (!functionCall || functionCall.name !== 'provide_enhanced_care_recommendations') {
