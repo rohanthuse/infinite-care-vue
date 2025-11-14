@@ -35,6 +35,52 @@ interface AIRecommendations {
   model_used: string;
 }
 
+// In-memory cache to prevent duplicate concurrent requests
+const activeRequests = new Map<string, Promise<Response>>();
+
+// Retry helper with exponential backoff
+async function callGeminiWithRetry(url: string, payload: any, maxRetries = 2, requestId: string) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`[news2-ai-recommendations][${requestId}] Gemini API call attempt ${attempt + 1}/${maxRetries}`);
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': GEMINI_API_KEY!,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      // Only retry on 429 (rate limit) or 503 (service unavailable)
+      if (response.status === 429 || response.status === 503) {
+        if (attempt < maxRetries - 1) {
+          const waitTime = Math.pow(2, attempt) * 1000; // 1s, 2s
+          console.log(`[news2-ai-recommendations][${requestId}] Rate limited (${response.status}), retrying after ${waitTime}ms`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+      }
+
+      // For 404 or other errors, don't retry
+      if (!response.ok) {
+        const errorMsg = data.error?.message || JSON.stringify(data);
+        console.error(`[news2-ai-recommendations][${requestId}] Gemini API error: ${response.status}`, errorMsg);
+        throw new Error(`Gemini API error: ${response.status} - ${errorMsg}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error(`[news2-ai-recommendations][${requestId}] Attempt ${attempt + 1} failed:`, error);
+      if (attempt === maxRetries - 1) throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,6 +92,23 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { observation_id, news2_patient_id, include_client_context = true, include_history = true } = await req.json();
+
+    // Create unique request key
+    const requestKey = `${observation_id}-${news2_patient_id}`;
+
+    // Check if request is already in progress
+    if (activeRequests.has(requestKey)) {
+      console.log(`[news2-ai-recommendations][${requestId}] Duplicate request detected for ${requestKey}, rejecting`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'A generation request is already in progress for this observation. Please wait.' 
+        }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     console.log(`[news2-ai-recommendations][${requestId}] Generating recommendations for observation: ${observation_id}`);
 
@@ -214,30 +277,28 @@ serve(async (req) => {
       goalsData
     );
 
-    console.log('[news2-ai-recommendations] Calling Gemini API with enhanced context...');
+    console.log(`[news2-ai-recommendations][${requestId}] Calling Gemini API with enhanced context...`);
 
-    // Call Gemini API with enhanced function calling
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY,
-        },
-        body: JSON.stringify({
+    // Mark request as in progress
+    const processRequest = async (): Promise<Response> => {
+      try {
+        // Call Gemini API with retry logic - FIXED: Use v1 API path
+        const data = await callGeminiWithRetry(
+          'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-exp:generateContent',
+          {
           contents: [{
             parts: [{
               text: prompt
             }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 3000,
-          },
-          tools: [{
+            }]
+            }],
+            generationConfig: {
+              temperature: 0.3,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 3000,
+            },
+            tools: [{
             functionDeclarations: [{
               name: 'provide_enhanced_care_recommendations',
               description: 'Provide comprehensive, personalized care recommendations based on NEWS2 assessment and full care plan context',
@@ -331,54 +392,81 @@ serve(async (req) => {
               mode: 'ANY',
               allowedFunctionNames: ['provide_enhanced_care_recommendations']
             }
-          }
-        }),
+          },
+          requestId
+        );
+
+        const functionCall = data.candidates?.[0]?.content?.parts?.[0]?.functionCall;
+        if (!functionCall || functionCall.name !== 'provide_enhanced_care_recommendations') {
+          console.error(`[news2-ai-recommendations][${requestId}] No valid function call in response:`, data);
+          
+          // Return fallback recommendations
+          return new Response(
+            JSON.stringify({
+              recommendations: getFallbackRecommendations(observation.total_score, observation.risk_level)
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        const recommendations: AIRecommendations = {
+          ...functionCall.args,
+          context_used: contextUsed,
+          generated_at: new Date().toISOString(),
+          model_used: 'gemini-2.0-flash-exp'
+        };
+
+        console.log(`[news2-ai-recommendations][${requestId}] Enhanced recommendations generated successfully`);
+
+        return new Response(
+          JSON.stringify({ recommendations }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (error) {
+        console.error(`[news2-ai-recommendations][${requestId}] Error in processRequest:`, error);
+        throw error;
       }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[news2-ai-recommendations] Gemini API error:', response.status, errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('[news2-ai-recommendations] Gemini response received');
-
-    // Extract function call result
-    const functionCall = data.candidates?.[0]?.content?.parts?.[0]?.functionCall;
-    if (!functionCall || functionCall.name !== 'provide_enhanced_care_recommendations') {
-      console.error('[news2-ai-recommendations] No valid function call in response:', data);
-      
-      // Return fallback recommendations
-      return new Response(
-        JSON.stringify({
-          recommendations: getFallbackRecommendations(observation.total_score, observation.risk_level)
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const recommendations: AIRecommendations = {
-      ...functionCall.args,
-      context_used: contextUsed,
-      generated_at: new Date().toISOString(),
-      model_used: 'gemini-2.0-flash-exp'
     };
 
-    console.log('[news2-ai-recommendations] Enhanced recommendations generated successfully');
+    // Store the promise and execute
+    const requestPromise = processRequest();
+    activeRequests.set(requestKey, requestPromise);
 
-    return new Response(
-      JSON.stringify({ recommendations }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    try {
+      const result = await requestPromise;
+      return result;
+    } finally {
+      // Clean up after 2 seconds to allow for near-duplicate detection
+      setTimeout(() => activeRequests.delete(requestKey), 2000);
+    }
 
-  } catch (error) {
-    console.error('[news2-ai-recommendations] Error:', error);
+  } catch (error: any) {
+    const requestId = crypto.randomUUID();
+    console.error(`[news2-ai-recommendations][${requestId}] Error:`, error);
     
-    // Return fallback recommendations on error
+    // Determine error type and appropriate response
+    let statusCode = 500;
+    let errorMessage = 'Unable to generate AI recommendations. Please try again.';
+    
+    if (error.message?.includes('404')) {
+      statusCode = 404;
+      errorMessage = 'AI model not available. Please contact support.';
+    } else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+      statusCode = 429;
+      errorMessage = 'Too many requests. Please wait a moment and try again.';
+    } else if (error.message?.includes('quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
+      statusCode = 429;
+      errorMessage = 'API quota exceeded. Please try again later.';
+    } else if (error.message?.includes('duplicate request')) {
+      statusCode = 429;
+      errorMessage = 'A request is already in progress. Please wait.';
+    }
+    
+    // Return fallback recommendations with error details
     return new Response(
       JSON.stringify({
+        error: errorMessage,
+        details: error.message,
         recommendations: {
           immediate_actions: [],
           monitoring_plan: {
@@ -393,7 +481,7 @@ serve(async (req) => {
           model_used: 'fallback'
         }
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: statusCode }
     );
   }
 });
