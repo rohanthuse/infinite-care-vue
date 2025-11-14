@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { 
   fetchOrganizationSettings, 
-  loadImageAsBase64, 
+  getLogoForPDF,
   addPDFHeader, 
   addPDFFooter,
   addSectionHeader,
@@ -46,10 +46,8 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   
   if (branchId) {
     orgSettings = await fetchOrganizationSettings(branchId);
-    if (orgSettings?.logo_url) {
-      logoBase64 = await loadImageAsBase64(orgSettings.logo_url);
-    }
   }
+  logoBase64 = await getLogoForPDF(orgSettings);
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -60,30 +58,71 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
   currentY = addDocumentTitle(doc, 'Service Report', clientName, currentY);
   currentY += 5;
 
-  const visitDate = visitRecord?.visit_date ? format(new Date(visitRecord.visit_date), 'dd/MM/yyyy') : 'N/A';
-  const startTime = visitRecord?.start_time || 'N/A';
-  const endTime = visitRecord?.end_time || 'N/A';
+  const visitDate = visitRecord?.visit_start_time 
+    ? format(new Date(visitRecord.visit_start_time), 'dd/MM/yyyy')
+    : report.service_date 
+      ? format(new Date(report.service_date), 'dd/MM/yyyy')
+      : 'N/A';
+
+  const startTime = visitRecord?.visit_start_time 
+    ? format(new Date(visitRecord.visit_start_time), 'HH:mm')
+    : 'N/A';
+
+  const endTime = visitRecord?.visit_end_time 
+    ? format(new Date(visitRecord.visit_end_time), 'HH:mm')
+    : 'N/A';
+    
   const duration = visitRecord?.actual_duration_minutes ? `${visitRecord.actual_duration_minutes} mins` : 'N/A';
   const carerName = `${report.staff?.first_name || ''} ${report.staff?.last_name || ''}`.trim() || 'N/A';
+  const reportId = report.id.substring(0, 8).toUpperCase();
   
   doc.setFillColor(PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b);
-  doc.roundedRect(20, currentY, pageWidth - 40, 35, 2, 2, 'F');
+  doc.roundedRect(20, currentY, pageWidth - 40, 40, 2, 2, 'F');
   
   doc.setFontSize(9);
   doc.setFont(undefined, 'normal');
   doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
   
   let boxY = currentY + 7;
-  doc.text(`Visit Date: ${visitDate}`, 25, boxY);
-  doc.text(`Time: ${startTime} - ${endTime}`, 25, boxY + 6);
-  doc.text(`Duration: ${duration}`, 25, boxY + 12);
-  doc.text(`Carer: ${carerName}`, 25, boxY + 18);
+  const col1X = 25;
+  const col2X = pageWidth / 2 + 5;
   
+  // Left column
+  doc.setFont(undefined, 'bold');
+  doc.text('Visit Date:', col1X, boxY);
+  doc.setFont(undefined, 'normal');
+  doc.text(visitDate, col1X + 25, boxY);
+  
+  doc.setFont(undefined, 'bold');
+  doc.text('Time:', col1X, boxY + 6);
+  doc.setFont(undefined, 'normal');
+  doc.text(`${startTime} - ${endTime}`, col1X + 25, boxY + 6);
+  
+  doc.setFont(undefined, 'bold');
+  doc.text('Duration:', col1X, boxY + 12);
+  doc.setFont(undefined, 'normal');
+  doc.text(duration, col1X + 25, boxY + 12);
+  
+  // Right column
+  doc.setFont(undefined, 'bold');
+  doc.text('Carer:', col2X, boxY);
+  doc.setFont(undefined, 'normal');
+  doc.text(carerName, col2X + 20, boxY);
+  
+  doc.setFont(undefined, 'bold');
+  doc.text('Report ID:', col2X, boxY + 6);
+  doc.setFont(undefined, 'normal');
+  doc.text(reportId, col2X + 25, boxY + 6);
+  
+  doc.setFont(undefined, 'bold');
+  doc.text('Status:', col2X, boxY + 12);
   const statusColor = report.status === 'approved' ? PDF_COLORS.success : report.status === 'rejected' ? PDF_COLORS.danger : PDF_COLORS.warning;
   doc.setTextColor(statusColor.r, statusColor.g, statusColor.b);
   doc.setFont(undefined, 'bold');
-  doc.text(`Status: ${report.status || 'Pending'}`, 25, boxY + 24);
-  currentY += 40;
+  doc.text((report.status || 'Pending').toUpperCase(), col2X + 20, boxY + 12);
+  
+  doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+  currentY += 45;
 
   // Visit Summary
   if (report.services_provided?.length > 0) {
@@ -151,18 +190,104 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
     });
   }
 
-  // Events
-  if (incidents?.length > 0 || accidents?.length > 0 || observations?.length > 0) {
+  // Events & Incidents
+  let hasEvents = false;
+
+  if (incidents?.length > 0) {
     currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
-    currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
-    currentY += 10;
+    if (!hasEvents) {
+      currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
+      hasEvents = true;
+    }
+    
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text('Incidents:', 20, currentY);
+    currentY += 6;
+    
+    const incidentData = incidents.map(inc => [
+      inc.time ? format(new Date(inc.time), 'HH:mm') : '-',
+      inc.title || 'Incident',
+      inc.description || '-',
+      inc.severity || 'Low'
+    ]);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Time', 'Title', 'Description', 'Severity']],
+      body: incidentData,
+      theme: 'striped',
+      headStyles: { fillColor: [251, 191, 36], fontSize: 9, fontStyle: 'bold', textColor: [0, 0, 0] },
+      styles: { fontSize: 8, cellPadding: 3 },
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  if (accidents?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+    if (!hasEvents) {
+      currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
+      hasEvents = true;
+    }
+    
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text('Accidents:', 20, currentY);
+    currentY += 6;
+    
+    const accidentData = accidents.map(acc => [
+      acc.time ? format(new Date(acc.time), 'HH:mm') : '-',
+      acc.title || 'Accident',
+      acc.description || '-',
+      acc.follow_up_required ? 'Yes' : 'No'
+    ]);
+    
+    autoTable(doc, {
+      startY: currentY,
+      head: [['Time', 'Title', 'Description', 'Follow-up Required']],
+      body: accidentData,
+      theme: 'striped',
+      headStyles: { fillColor: [239, 68, 68], fontSize: 9, fontStyle: 'bold', textColor: [255, 255, 255] },
+      styles: { fontSize: 8, cellPadding: 3 },
+    });
+    currentY = (doc as any).lastAutoTable.finalY + 10;
+  }
+
+  if (observations?.length > 0) {
+    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+    if (!hasEvents) {
+      currentY = addSectionHeader(doc, 'Events & Incidents', currentY, SECTION_COLORS.events);
+      hasEvents = true;
+    }
+    
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text('Observations:', 20, currentY);
+    currentY += 6;
+    
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(9);
+    observations.forEach((obs: any) => {
+      doc.setFont(undefined, 'bold');
+      doc.text(`${obs.time ? format(new Date(obs.time), 'HH:mm') : '-'}:`, 25, currentY);
+      doc.setFont(undefined, 'normal');
+      const lines = doc.splitTextToSize(obs.observation || '-', pageWidth - 60);
+      doc.text(lines, 40, currentY);
+      currentY += lines.length * 4 + 3;
+    });
+    currentY += 5;
   }
 
   // Carer Details
-  if (report.client_mood || report.carer_observations || report.client_feedback || report.next_visit_preparations) {
+  if (report.client_mood || report.carer_observations || report.client_feedback || report.next_visit_preparations || report.client_engagement || report.activities_undertaken || (report.medication_administered && report.medication_notes) || (report.incident_occurred && report.incident_details)) {
     currentY = await checkAndAddNewPage(doc, currentY, 60, orgSettings, logoBase64);
     currentY = addSectionHeader(doc, 'Carer Visit Details', currentY, SECTION_COLORS.carerDetails);
     doc.setFontSize(9);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    
     if (report.client_mood) {
       doc.setFont(undefined, 'bold');
       doc.text('Client Mood:', 20, currentY);
@@ -170,6 +295,25 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       doc.text(report.client_mood, 60, currentY);
       currentY += 6;
     }
+    
+    if (report.client_engagement) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Client Engagement:', 20, currentY);
+      doc.setFont(undefined, 'normal');
+      doc.text(report.client_engagement, 60, currentY);
+      currentY += 6;
+    }
+    
+    if (report.activities_undertaken) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Activities Undertaken:', 20, currentY);
+      currentY += 5;
+      doc.setFont(undefined, 'normal');
+      const actLines = doc.splitTextToSize(report.activities_undertaken, pageWidth - 50);
+      doc.text(actLines, 25, currentY);
+      currentY += actLines.length * 5 + 8;
+    }
+    
     if (report.carer_observations) {
       doc.setFont(undefined, 'bold');
       doc.text('Carer Observations:', 20, currentY);
@@ -179,18 +323,117 @@ export const exportSingleServiceReportPDF = async (data: ServiceReportPdfData) =
       doc.text(lines, 25, currentY);
       currentY += lines.length * 5 + 8;
     }
+    
+    if (report.client_feedback) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Client Feedback:', 20, currentY);
+      currentY += 5;
+      doc.setFont(undefined, 'normal');
+      const feedbackLines = doc.splitTextToSize(report.client_feedback, pageWidth - 50);
+      doc.text(feedbackLines, 25, currentY);
+      currentY += feedbackLines.length * 5 + 8;
+    }
+    
+    if (report.next_visit_preparations) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Next Visit Preparations:', 20, currentY);
+      currentY += 5;
+      doc.setFont(undefined, 'normal');
+      const prepLines = doc.splitTextToSize(report.next_visit_preparations, pageWidth - 50);
+      doc.text(prepLines, 25, currentY);
+      currentY += prepLines.length * 5 + 8;
+    }
+    
+    if (report.medication_administered && report.medication_notes) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Medication Notes:', 20, currentY);
+      currentY += 5;
+      doc.setFont(undefined, 'normal');
+      const medLines = doc.splitTextToSize(report.medication_notes, pageWidth - 50);
+      doc.text(medLines, 25, currentY);
+      currentY += medLines.length * 5 + 8;
+    }
+    
+    if (report.incident_occurred && report.incident_details) {
+      doc.setFont(undefined, 'bold');
+      doc.setTextColor(PDF_COLORS.danger.r, PDF_COLORS.danger.g, PDF_COLORS.danger.b);
+      doc.text('⚠ Incident Details:', 20, currentY);
+      currentY += 5;
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      const incLines = doc.splitTextToSize(report.incident_details, pageWidth - 50);
+      doc.text(incLines, 25, currentY);
+      currentY += incLines.length * 5 + 8;
+    }
   }
 
   // Signatures
-  if (visitRecord?.carer_signature_data || visitRecord?.client_signature_data) {
-    currentY = await checkAndAddNewPage(doc, currentY, 50, orgSettings, logoBase64);
+  if (visitRecord?.staff_signature_data || visitRecord?.client_signature_data) {
+    currentY = await checkAndAddNewPage(doc, currentY, 60, orgSettings, logoBase64);
     currentY = addSectionHeader(doc, 'Signatures', currentY, SECTION_COLORS.signatures);
-    if (visitRecord?.carer_signature_data) {
+    
+    if (visitRecord?.staff_signature_data) {
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text('Carer Signature:', 20, currentY);
+      currentY += 5;
       try {
-        doc.addImage(visitRecord.carer_signature_data, 'PNG', 20, currentY, 60, 20);
-      } catch (e) {}
+        doc.addImage(visitRecord.staff_signature_data, 'PNG', 20, currentY, 60, 20);
+      } catch (e) {
+        console.error('Error adding carer signature:', e);
+      }
+      currentY += 25;
     }
-    currentY += 30;
+    
+    if (visitRecord?.client_signature_data) {
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+      doc.text('Client Signature:', visitRecord?.staff_signature_data ? 100 : 20, visitRecord?.staff_signature_data ? currentY - 30 : currentY);
+      try {
+        doc.addImage(visitRecord.client_signature_data, 'PNG', visitRecord?.staff_signature_data ? 100 : 20, visitRecord?.staff_signature_data ? currentY - 25 : currentY + 5, 60, 20);
+      } catch (e) {
+        console.error('Error adding client signature:', e);
+      }
+      if (!visitRecord?.staff_signature_data) {
+        currentY += 30;
+      }
+    }
+    currentY += 10;
+  }
+  
+  // Admin Review Section
+  if (report.reviewed_at && report.review_notes) {
+    currentY = await checkAndAddNewPage(doc, currentY, 40, orgSettings, logoBase64);
+    currentY = addSectionHeader(doc, 'Admin Review', currentY, SECTION_COLORS.adminReview);
+    
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    doc.text('Review Status:', 20, currentY);
+    
+    const reviewStatusColor = report.status === 'approved' ? PDF_COLORS.success : 
+                       report.status === 'rejected' ? PDF_COLORS.danger : 
+                       PDF_COLORS.warning;
+    doc.setTextColor(reviewStatusColor.r, reviewStatusColor.g, reviewStatusColor.b);
+    doc.text((report.status || '').toUpperCase(), 60, currentY);
+    doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
+    currentY += 6;
+    
+    doc.setFont(undefined, 'bold');
+    doc.text('Review Notes:', 20, currentY);
+    currentY += 5;
+    doc.setFont(undefined, 'normal');
+    const reviewLines = doc.splitTextToSize(report.review_notes, pageWidth - 50);
+    doc.text(reviewLines, 25, currentY);
+    currentY += reviewLines.length * 5 + 5;
+    
+    doc.setFont(undefined, 'bold');
+    doc.text('Reviewed On:', 20, currentY);
+    doc.setFont(undefined, 'normal');
+    doc.text(format(new Date(report.reviewed_at), 'dd/MM/yyyy HH:mm'), 60, currentY);
+    currentY += 10;
   }
 
   const totalPages = doc.getNumberOfPages();
