@@ -40,11 +40,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const requestId = crypto.randomUUID();
+  console.log(`[news2-ai-recommendations][${requestId}] Request received`);
+
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { observation_id, news2_patient_id, include_client_context = true, include_history = true } = await req.json();
 
-    console.log('[news2-ai-recommendations] Generating recommendations for observation:', observation_id);
+    console.log(`[news2-ai-recommendations][${requestId}] Generating recommendations for observation: ${observation_id}`);
 
     if (!GEMINI_API_KEY) {
       throw new Error('GEMINI_API_KEY not configured');
@@ -215,7 +218,7 @@ serve(async (req) => {
 
     // Call Gemini API with enhanced function calling
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
       {
         method: 'POST',
         headers: {
@@ -360,7 +363,7 @@ serve(async (req) => {
       ...functionCall.args,
       context_used: contextUsed,
       generated_at: new Date().toISOString(),
-      model_used: 'gemini-1.5-flash'
+      model_used: 'gemini-2.0-flash-exp'
     };
 
     console.log('[news2-ai-recommendations] Enhanced recommendations generated successfully');

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,14 +27,22 @@ export function GenerateAIDialog({
 }: GenerateAIDialogProps) {
   const { generateRecommendations, isGenerating, error } = useGenerateAIRecommendations();
   const [recommendations, setRecommendations] = useState<any>(null);
+  const hasGeneratedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (open && latestObservation?.id) {
+    // Only generate if:
+    // 1. Dialog is open
+    // 2. We have an observation ID
+    // 3. We haven't already generated for this observation
+    if (open && latestObservation?.id && hasGeneratedRef.current !== latestObservation.id) {
+      hasGeneratedRef.current = latestObservation.id;
       handleGenerate();
     }
+    
     // Reset when dialog closes
     if (!open) {
       setRecommendations(null);
+      hasGeneratedRef.current = null;
     }
   }, [open, latestObservation?.id]);
 
@@ -80,13 +88,15 @@ export function GenerateAIDialog({
             <Alert variant="destructive">
               <AlertDescription className="flex items-center justify-between">
                 <span>{error}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerate}
-                >
-                  Retry
-                </Button>
+                {!error.includes("wait") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerate}
+                  >
+                    Retry
+                  </Button>
+                )}
               </AlertDescription>
             </Alert>
           )}
