@@ -215,7 +215,7 @@ serve(async (req) => {
 
     // Call Gemini API with enhanced function calling
     const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
       {
         method: 'POST',
         headers: {
@@ -360,7 +360,7 @@ serve(async (req) => {
       ...functionCall.args,
       context_used: contextUsed,
       generated_at: new Date().toISOString(),
-      model_used: 'gemini-2.0-flash-exp'
+      model_used: 'gemini-1.5-flash'
     };
 
     console.log('[news2-ai-recommendations] Enhanced recommendations generated successfully');
