@@ -501,7 +501,7 @@ export const generatePDFForServiceReport = async (
     .from('visit_medications')
     .select('*')
     .eq('visit_record_id', safeReport.visit_record_id)
-    .order('scheduled_time', { ascending: true });
+    .order('prescribed_time', { ascending: true });
 
   if (medsError) throw new Error(`Failed to fetch medications: ${medsError.message}`);
 
