@@ -101,6 +101,34 @@ export const loadImageAsBase64 = async (imageUrl: string): Promise<string | null
 };
 
 /**
+ * Get logo for PDF - tries org logo first, then falls back to default Laniwyn logo
+ */
+export const getLogoForPDF = async (orgSettings: OrganizationSettings | null): Promise<string | null> => {
+  // Try organization logo first
+  if (orgSettings?.logo_url) {
+    const orgLogo = await loadImageAsBase64(orgSettings.logo_url);
+    if (orgLogo) return orgLogo;
+  }
+  
+  // Fallback to default Laniwyn logo
+  try {
+    const response = await fetch('/images/laniwyn-logo.png');
+    if (response.ok) {
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    }
+  } catch (error) {
+    console.error('Error loading fallback logo:', error);
+  }
+  
+  return null;
+};
+
+/**
  * Add professional header to PDF page
  * @returns Y position where content should start
  */
