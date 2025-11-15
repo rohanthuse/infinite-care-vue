@@ -7,7 +7,12 @@ export const usePersistentSidebar = (branchId?: string) => {
     if (typeof window === 'undefined') return false;
     
     const stored = localStorage.getItem(getStorageKey());
-    return stored ? JSON.parse(stored) : false;
+    if (stored !== null) {
+      return JSON.parse(stored);
+    }
+    
+    // Default: open on desktop (≥768px), closed on mobile
+    return window.innerWidth >= 768;
   });
 
   const setOpen = (newOpen: boolean | ((prev: boolean) => boolean)) => {
