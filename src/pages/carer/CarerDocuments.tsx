@@ -345,32 +345,33 @@ const CarerDocuments: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Documents</h1>
+      <h1 className="text-xl md:text-2xl font-bold mb-6">Documents</h1>
       
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative w-full max-w-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+        <div className="relative w-full sm:flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input placeholder="Search documents..." className="pl-9" />
+          <Input placeholder="Search documents..." className="pl-9 w-full" />
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="flex-1 sm:flex-initial gap-2">
             <Filter className="h-4 w-4" />
             <span>Filter</span>
           </Button>
-          <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
+          <Button onClick={() => setUploadDialogOpen(true)} className="flex-1 sm:flex-initial gap-2">
             <Upload className="h-4 w-4" />
-            <span>Upload Document</span>
+            <span className="hidden sm:inline">Upload Document</span>
+            <span className="sm:hidden">Upload</span>
           </Button>
         </div>
       </div>
       
       <Tabs defaultValue="forms" className="w-full">
-        <TabsList className="w-full mb-6">
-          <TabsTrigger value="my-documents" className="flex-1">My Documents</TabsTrigger>
-          <TabsTrigger value="forms" className="flex-1">Forms</TabsTrigger>
-          <TabsTrigger value="policies" className="flex-1">Policies & Procedures</TabsTrigger>
-          <TabsTrigger value="training" className="flex-1">Training</TabsTrigger>
+        <TabsList className="w-full mb-6 grid grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="my-documents">My Documents</TabsTrigger>
+          <TabsTrigger value="forms">Forms</TabsTrigger>
+          <TabsTrigger value="policies">Policies</TabsTrigger>
+          <TabsTrigger value="training">Training</TabsTrigger>
         </TabsList>
         
         <TabsContent value="my-documents" className="mt-0">
