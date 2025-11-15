@@ -165,7 +165,19 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
       const matchesClient = selectedClientIds.length === 0 || selectedClientIds.includes(booking.clientId);
       const matchesCarer = selectedCarerIds.length === 0 || selectedCarerIds.includes(booking.carerId);
-      return matchesStatus && matchesClient && matchesCarer;
+      
+      // Determine which filters are active
+      const hasClientFilter = selectedClientIds.length > 0;
+      const hasCarerFilter = selectedCarerIds.length > 0;
+      
+      // Apply smart filtering logic
+      if (hasClientFilter && hasCarerFilter) {
+        // Both filters active: Show bookings that match EITHER clients OR carers
+        return matchesStatus && (matchesClient || matchesCarer);
+      } else {
+        // Single filter or no filter: Use AND logic
+        return matchesStatus && matchesClient && matchesCarer;
+      }
     });
   }, [bookings, statusFilter, selectedClientIds, selectedCarerIds]);
 
