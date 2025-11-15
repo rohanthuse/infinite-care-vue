@@ -318,16 +318,16 @@ const CarerNews2: React.FC = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="all" className="m-0 space-y-4">
+        <TabsContent value="all" className="w-full m-0 space-y-4">
           {renderPatientList(sortedPatients)}
         </TabsContent>
-        <TabsContent value="high" className="m-0 space-y-4">
+        <TabsContent value="high" className="w-full m-0 space-y-4">
           {renderPatientList(sortedPatients)}
         </TabsContent>
-        <TabsContent value="medium" className="m-0 space-y-4">
+        <TabsContent value="medium" className="w-full m-0 space-y-4">
           {renderPatientList(sortedPatients)}
         </TabsContent>
-        <TabsContent value="low" className="m-0 space-y-4">
+        <TabsContent value="low" className="w-full m-0 space-y-4">
           {renderPatientList(sortedPatients)}
         </TabsContent>
       </Tabs>

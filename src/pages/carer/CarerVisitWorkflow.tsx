@@ -1003,7 +1003,7 @@ const CarerVisitWorkflow = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -1068,7 +1068,7 @@ const CarerVisitWorkflow = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="w-full max-w-full mx-auto p-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-9">
             <TabsTrigger 
@@ -1191,7 +1191,7 @@ const CarerVisitWorkflow = () => {
           </TabsList>
 
           {/* Check-in Tab */}
-          <TabsContent value="check-in" className="mt-6">
+          <TabsContent value="check-in" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1283,7 +1283,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Tasks Tab */}
-          <TabsContent value="tasks" className="mt-6">
+          <TabsContent value="tasks" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1415,7 +1415,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Medication Tab */}
-          <TabsContent value="medication" className="mt-6">
+          <TabsContent value="medication" className="w-full mt-6">
             <Card>
                <CardHeader>
                  <CardTitle className="flex items-center gap-2">
@@ -1574,7 +1574,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* NEWS2 Tab */}
-          <TabsContent value="news2" className="mt-6">
+          <TabsContent value="news2" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1780,7 +1780,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Events Tab */}
-          <TabsContent value="events" className="mt-6">
+          <TabsContent value="events" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1909,7 +1909,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Care Plan Tab */}
-          <TabsContent value="care-plan" className="mt-6">
+          <TabsContent value="care-plan" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1944,7 +1944,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Notes Tab */}
-          <TabsContent value="notes" className="mt-6">
+          <TabsContent value="notes" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -2046,7 +2046,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Sign-off Tab */}
-          <TabsContent value="sign-off" className="mt-6">
+          <TabsContent value="sign-off" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -2152,7 +2152,7 @@ const CarerVisitWorkflow = () => {
           </TabsContent>
 
           {/* Complete Tab */}
-          <TabsContent value="complete" className="mt-6">
+          <TabsContent value="complete" className="w-full mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
