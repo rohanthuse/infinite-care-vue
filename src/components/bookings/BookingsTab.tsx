@@ -16,7 +16,7 @@ import { StaffScheduleCalendar } from "./StaffScheduleCalendar";
 import { ClientScheduleCalendar } from "./ClientScheduleCalendar";
 import { UnifiedScheduleView } from "./UnifiedScheduleView";
 import { NewBookingDialog } from "./dialogs/NewBookingDialog";
-import { EditBookingDialog } from "./EditBookingDialog";
+import { EditBookingDialog } from "./dialogs/EditBookingDialog";
 import { ViewBookingDialog } from "./dialogs/ViewBookingDialog";
 import { BookingOverlapAlert } from "./BookingOverlapAlert";
 import { DateNavigation } from "./DateNavigation";
@@ -457,6 +457,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             bookings={filteredBookings}
             clients={clients}
             carers={carers}
+            services={services}
             viewType={viewType}
             viewMode="client"
             branchId={branchId}
@@ -501,11 +502,13 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         open={editBookingDialogOpen}
         onOpenChange={setEditBookingDialogOpen}
         booking={selectedBooking}
-        clients={clients}
-        carers={carers}
-        onUpdateBooking={handleUpdateBooking}
-        isCheckingOverlap={isCheckingOverlap}
+        services={services}
         branchId={branchId}
+        carers={carers}
+        onSuccess={(bookingId) => {
+          console.log('[BookingsTab] Booking updated successfully:', bookingId);
+          setEditBookingDialogOpen(false);
+        }}
       />
 
       <BookingOverlapAlert
