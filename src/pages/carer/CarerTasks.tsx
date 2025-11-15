@@ -329,7 +329,7 @@ const CarerTasks: React.FC = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="pending" className="mt-0 space-y-4">
+        <TabsContent value="pending" className="w-full mt-0 space-y-4">
           {pendingTasks.length > 0 ? (
             pendingTasks.map((task) => (
               <Card key={task.id} className="hover:shadow-sm transition-shadow cursor-pointer" onClick={() => handleTaskClick(task)}>
@@ -420,7 +420,7 @@ const CarerTasks: React.FC = () => {
           )}
         </TabsContent>
         
-        <TabsContent value="completed" className="mt-0 space-y-4">
+        <TabsContent value="completed" className="w-full mt-0 space-y-4">
           {completedTasks.length > 0 ? (
             completedTasks.map((task) => (
               <Card key={task.id} className="hover:shadow-sm transition-shadow bg-gray-50 opacity-80 cursor-pointer" onClick={() => handleTaskClick(task)}>
