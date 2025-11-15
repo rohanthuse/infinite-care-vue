@@ -77,7 +77,8 @@ const CarerMyTasks: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full">
+      <div className="space-y-6">
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-1">My Assigned Tasks</h2>
         <p className="text-sm text-muted-foreground">
@@ -241,6 +242,7 @@ const CarerMyTasks: React.FC = () => {
         open={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}
       />
+    </div>
     </div>
   );
 };

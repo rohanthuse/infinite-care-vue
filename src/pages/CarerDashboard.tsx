@@ -45,11 +45,13 @@ const CarerDashboard: React.FC = () => {
       <CarerHeader />
       
       <div className="flex flex-1 w-full">
-      <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
-        <main className="px-3 sm:px-4 md:px-8 pt-4 pb-20 md:py-6 overflow-x-hidden">
-          <Outlet />
-        </main>
-      </SidebarInset>
+        <SidebarInset className="flex-1 min-w-0 w-full">
+          <main className="w-full max-w-full px-4 sm:px-6 md:px-8 lg:px-10 pt-4 pb-20 md:py-6">
+            <div className="w-full max-w-[1600px] mx-auto">
+              <Outlet />
+            </div>
+          </main>
+        </SidebarInset>
         
         <CarerRightSidebar />
       </div>
