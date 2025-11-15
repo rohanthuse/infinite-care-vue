@@ -213,6 +213,7 @@ export function EditBookingDialog({
           .select(`
             id,
             staff_id,
+            service_id,
             staff:staff_id (
               id,
               first_name,
@@ -220,9 +221,9 @@ export function EditBookingDialog({
             )
           `)
           .eq('client_id', booking.clientId || booking.client_id)
+          .eq('branch_id', booking.branch_id)
           .eq('start_time', booking.start_time)
-          .eq('end_time', booking.end_time)
-          .eq('service_id', booking.service_id);
+          .eq('end_time', booking.end_time);
         
         if (error) {
           console.error('[EditBookingDialog] Error fetching related bookings:', error);
