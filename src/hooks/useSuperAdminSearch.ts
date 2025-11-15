@@ -8,6 +8,7 @@ interface Branch {
   branch_type: string;
   address: string | null;
   status: string;
+  organization_id: string | null;
 }
 
 interface BranchAdmin {
@@ -34,7 +35,7 @@ export function useSuperAdminSearch(searchTerm: string): SuperAdminSearchResult 
     queryFn: async () => {
       const { data, error } = await supabase
         .from('branches')
-        .select('id, name, country, branch_type, address, status')
+        .select('id, name, country, branch_type, address, status, organization_id')
         .or(`name.ilike.%${trimmedSearch}%,country.ilike.%${trimmedSearch}%,branch_type.ilike.%${trimmedSearch}%,address.ilike.%${trimmedSearch}%`)
         .eq('status', 'active')
         .order('name')
