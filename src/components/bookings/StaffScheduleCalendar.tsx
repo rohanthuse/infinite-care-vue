@@ -33,12 +33,12 @@ interface StaffScheduleCalendarProps {
   onDateChange?: (date: Date) => void;
   clients?: Client[];
   carers?: Carer[];
-  selectedClient?: string;
-  selectedCarer?: string;
+  selectedClientIds?: string[];
+  selectedCarerIds?: string[];
   selectedStatus?: string;
   viewType?: "daily" | "weekly" | "monthly";
-  onClientChange?: (clientId: string) => void;
-  onCarerChange?: (carerId: string) => void;
+  onClientChange?: (clientIds: string[]) => void;
+  onCarerChange?: (carerIds: string[]) => void;
   onStatusChange?: (status: string) => void;
   hideControls?: boolean;
   timeInterval?: 30 | 60;
@@ -88,8 +88,8 @@ export function StaffScheduleCalendar({
   onDateChange,
   clients = [],
   carers = [],
-  selectedClient,
-  selectedCarer,
+  selectedClientIds = [],
+  selectedCarerIds = [],
   selectedStatus,
   viewType = "daily",
   onClientChange,
@@ -234,7 +234,15 @@ export function StaffScheduleCalendar({
   const staffSchedule = useMemo(() => {
     if (viewType === 'weekly') {
       // Weekly view data structure
-      const scheduleData = staff.map(member => {
+      const scheduleData = staff
+        .filter(member => {
+          // Filter by selected carers if any
+          if (selectedCarerIds && selectedCarerIds.length > 0) {
+            return selectedCarerIds.includes(member.id);
+          }
+          return true;
+        })
+        .map(member => {
         const weekBookings: Record<string, Booking[]> = {};
         const weekLeave: Record<string, any> = {};
         const weekHolidays: Record<string, AnnualLeave | null> = {};
@@ -309,7 +317,15 @@ export function StaffScheduleCalendar({
       return filteredData;
     } else {
       // Daily view logic
-      const scheduleData: StaffScheduleRow[] = staff.map(member => {
+      const scheduleData: StaffScheduleRow[] = staff
+        .filter(member => {
+          // Filter by selected carers if any
+          if (selectedCarerIds && selectedCarerIds.length > 0) {
+            return selectedCarerIds.includes(member.id);
+          }
+          return true;
+        })
+        .map(member => {
         const schedule: Record<string, StaffStatus> = {};
         const bookingBlocks: BookingBlock[] = [];
         let totalHours = 0;
@@ -858,9 +874,9 @@ export function StaffScheduleCalendar({
           <BookingFilters
             statusFilter={selectedStatus || "all"}
             onStatusFilterChange={onStatusChange || (() => {})}
-            selectedClientId={selectedClient || "all-clients"}
+            selectedClientIds={selectedClientIds}
             onClientChange={onClientChange || (() => {})}
-            selectedCarerId={selectedCarer || "all-carers"}
+            selectedCarerIds={selectedCarerIds}
             onCarerChange={onCarerChange || (() => {})}
             clients={clients || []}
             carers={carers || []}

@@ -60,8 +60,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
   const [viewType, setViewType] = useState<"daily" | "weekly" | "monthly">("daily");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedClientId, setSelectedClientId] = useState<string>(clientParam || "all-clients");
-  const [selectedCarerId, setSelectedCarerId] = useState<string>("all-carers");
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>(clientParam ? [clientParam] : []);
+  const [selectedCarerIds, setSelectedCarerIds] = useState<string[]>([]);
   const [activeView, setActiveView] = useState<string>("unified-schedule");
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
@@ -75,15 +75,19 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       params.set('date', selectedDate.toISOString().split('T')[0]);
     }
     
-    if (selectedClientId !== "all-clients") {
-      params.set('client', selectedClientId);
+    if (selectedClientIds.length > 0) {
+      params.set('clients', selectedClientIds.join(','));
+    }
+    
+    if (selectedCarerIds.length > 0) {
+      params.set('carers', selectedCarerIds.join(','));
     }
     
     // Only update URL if there are meaningful parameters to avoid cluttering
     if (params.toString()) {
       setSearchParams(params, { replace: true });
     }
-  }, [selectedDate, selectedClientId, setSearchParams]);
+  }, [selectedDate, selectedClientIds, selectedCarerIds, setSearchParams]);
 
   const { data: services = [], isLoading: isLoadingServices } = useServices();
   const { clients, carers, bookings, isLoading } = useBookingData(branchId);
@@ -159,11 +163,11 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
       const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-      const matchesClient = selectedClientId === "all-clients" || booking.clientId === selectedClientId;
-      const matchesCarer = selectedCarerId === "all-carers" || booking.carerId === selectedCarerId;
+      const matchesClient = selectedClientIds.length === 0 || selectedClientIds.includes(booking.clientId);
+      const matchesCarer = selectedCarerIds.length === 0 || selectedCarerIds.includes(booking.carerId);
       return matchesStatus && matchesClient && matchesCarer;
     });
-  }, [bookings, statusFilter, selectedClientId, selectedCarerId]);
+  }, [bookings, statusFilter, selectedClientIds, selectedCarerIds]);
 
   // Handle booking view from list
   const handleViewBooking = async (booking: Booking) => {
@@ -389,16 +393,16 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             onViewTypeChange={setViewType}
           />
           
-          <BookingFilters
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            selectedClientId={selectedClientId}
-            onClientChange={setSelectedClientId}
-            selectedCarerId={selectedCarerId}
-            onCarerChange={setSelectedCarerId}
-            clients={clients}
-            carers={carers}
-          />
+            <BookingFilters
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              selectedClientIds={selectedClientIds}
+              onClientChange={setSelectedClientIds}
+              selectedCarerIds={selectedCarerIds}
+              onCarerChange={setSelectedCarerIds}
+              clients={clients}
+              carers={carers}
+            />
 
           <UnifiedScheduleView
             date={selectedDate}
@@ -406,8 +410,8 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
             branchId={branchId}
             clients={clients}
             carers={carers}
-            selectedClient={selectedClientId}
-            selectedCarer={selectedCarerId}
+            selectedClientIds={selectedClientIds}
+            selectedCarerIds={selectedCarerIds}
             selectedStatus={statusFilter}
             viewType={viewType}
             onViewBooking={handleViewBooking}
@@ -428,10 +432,10 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <BookingFilters
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
-            selectedClientId={selectedClientId}
-            onClientChange={setSelectedClientId}
-            selectedCarerId={selectedCarerId}
-            onCarerChange={setSelectedCarerId}
+            selectedClientIds={selectedClientIds}
+            onClientChange={setSelectedClientIds}
+            selectedCarerIds={selectedCarerIds}
+            onCarerChange={setSelectedCarerIds}
             clients={clients}
             carers={carers}
           />
@@ -478,7 +482,7 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
         onCreateBooking={handleCreateBooking}
         branchId={branchId}
         prefilledData={newBookingData}
-        preSelectedClientId={selectedClientId !== "all-clients" ? selectedClientId : undefined}
+        preSelectedClientId={selectedClientIds.length === 1 ? selectedClientIds[0] : undefined}
       />
 
       <EditBookingDialog
