@@ -278,7 +278,7 @@ const CarerTasks: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <h1 className="text-xl md:text-2xl font-bold mb-6">My Tasks</h1>
       
       <div className="flex flex-col gap-3 mb-6">

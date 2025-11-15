@@ -344,7 +344,7 @@ const CarerDocuments: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="w-full">
       <h1 className="text-xl md:text-2xl font-bold mb-6">Documents</h1>
       
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">

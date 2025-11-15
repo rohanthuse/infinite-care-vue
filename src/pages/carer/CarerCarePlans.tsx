@@ -87,7 +87,7 @@ const CarerCarePlans: React.FC = () => {
   });
 
   return (
-    <div>
+    <div className="w-full">
       <h1 className="text-2xl font-bold mb-6">My Care Plans</h1>
       
       <div className="mb-6 space-y-4">

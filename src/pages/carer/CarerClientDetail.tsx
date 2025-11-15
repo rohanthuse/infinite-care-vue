@@ -44,7 +44,7 @@ const CarerClientDetail: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <div className="flex items-center gap-4 mb-6">
         <Button 
           variant="outline" 
