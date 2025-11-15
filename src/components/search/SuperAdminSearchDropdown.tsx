@@ -75,8 +75,21 @@ export function SuperAdminSearchDropdown({
       navigate(result.path);
     } else if (result.type === 'branch') {
       // Navigate to branch dashboard
-      const tenantSlug = window.location.pathname.split('/')[1] || 'default';
-      navigate(`/${tenantSlug}/branch-dashboard/${result.id}/${encodeURIComponent(result.name)}`);
+      const currentPath = window.location.pathname;
+      const pathParts = currentPath.split('/').filter(Boolean);
+      
+      // Check if current URL has a valid tenant slug (not 'dashboard', 'system', etc.)
+      let tenantSlug = null;
+      if (pathParts.length > 0 && !['dashboard', 'system', 'login'].includes(pathParts[0])) {
+        tenantSlug = pathParts[0];
+      }
+      
+      // Construct the navigation path
+      const navigationPath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${result.id}/${encodeURIComponent(result.name)}`
+        : `/branch-dashboard/${result.id}/${encodeURIComponent(result.name)}`;
+      
+      navigate(navigationPath);
     } else if (result.type === 'admin') {
       // Navigate to dashboard with admin highlighted
       navigate('/dashboard', { state: { highlightAdminId: result.id } });
