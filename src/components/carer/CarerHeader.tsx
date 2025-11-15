@@ -51,7 +51,7 @@ export const CarerHeader: React.FC = () => {
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo and Sidebar Trigger */}
         <div className="flex items-center gap-2 md:gap-4">
-          <SidebarTrigger className="h-8 w-8" />
+          <SidebarTrigger className="h-8 w-8 md:h-10 md:w-10" />
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
           <div className="flex flex-col">
             <h2 className="text-sm md:text-lg font-bold tracking-tight">
