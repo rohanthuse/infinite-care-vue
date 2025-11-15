@@ -5,7 +5,7 @@ import { BookingEntry } from "./BookingEntry";
 import { EntitySelector } from "./EntitySelector";
 import { EntityList } from "./EntityList";
 import { BookingContextMenu } from "./BookingContextMenu";
-import { EditBookingDialog } from "./EditBookingDialog";
+import { EditBookingDialog } from "./dialogs/EditBookingDialog";
 import { BookingsMonthView } from "./BookingsMonthView";
 
 import { Maximize2, Minimize2, Calendar, Clock, AlertCircle } from "lucide-react";
@@ -68,6 +68,7 @@ interface BookingTimeGridProps {
   bookings: Booking[];
   clients: Client[];
   carers: Carer[];
+  services?: Array<{ id: string; title: string }>;
   viewType: "daily" | "weekly" | "monthly";
   viewMode: "client" | "group";
   branchId?: string; // Add branchId for debug panel
@@ -96,6 +97,7 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
   bookings,
   clients,
   carers,
+  services = [],
   viewType,
   viewMode,
   branchId,
@@ -789,10 +791,14 @@ export const BookingTimeGrid: React.FC<BookingTimeGridProps> = ({
         open={editBookingDialogOpen}
         onOpenChange={setEditBookingDialogOpen}
         booking={selectedBooking}
-        clients={clients}
+        services={services}
+        branchId={branchId}
         carers={carers}
-        onUpdateBooking={handleUpdateBooking}
-        isCheckingOverlap={isCheckingOverlap}
+        onSuccess={(bookingId) => {
+          console.log('[BookingTimeGrid] Booking updated successfully:', bookingId);
+          setEditBookingDialogOpen(false);
+          setSelectedBooking(null);
+        }}
       />
 
       {/* Confirmation Dialog */}
