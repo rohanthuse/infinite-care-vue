@@ -63,7 +63,7 @@ const CarerAgreements = () => {
   }
 
   return (
-    <div className="w-full container mx-auto p-6 space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">My Agreements</h1>
