@@ -25,8 +25,8 @@ interface UnifiedScheduleViewProps {
   branchId?: string;
   clients: Client[];
   carers: Carer[];
-  selectedClient: string;
-  selectedCarer: string;
+  selectedClientIds: string[];
+  selectedCarerIds: string[];
   selectedStatus: string;
   viewType: "daily" | "weekly" | "monthly";
   timeInterval?: 30 | 60;
@@ -57,8 +57,8 @@ export function UnifiedScheduleView({
   branchId,
   clients,
   carers,
-  selectedClient,
-  selectedCarer,
+  selectedClientIds,
+  selectedCarerIds,
   selectedStatus,
   viewType,
   timeInterval = 60,
@@ -306,8 +306,8 @@ export function UnifiedScheduleView({
             branchId={branchId}
             clients={clients}
             carers={carers}
-            selectedClient={selectedClient}
-            selectedCarer={selectedCarer}
+            selectedClientIds={selectedClientIds}
+            selectedCarerIds={selectedCarerIds}
             selectedStatus={selectedStatus}
             viewType={viewType}
             onClientChange={() => {}}
@@ -337,8 +337,8 @@ export function UnifiedScheduleView({
             branchId={branchId}
             clients={clients}
             carers={carers}
-            selectedClient={selectedClient}
-            selectedCarer={selectedCarer}
+            selectedClientIds={selectedClientIds}
+            selectedCarerIds={selectedCarerIds}
             selectedStatus={selectedStatus}
             viewType={viewType}
             onClientChange={() => {}}

@@ -23,12 +23,12 @@ interface ClientScheduleCalendarProps {
   onDateChange?: (date: Date) => void;
   clients?: Client[];
   carers?: Carer[];
-  selectedClient?: string;
-  selectedCarer?: string;
+  selectedClientIds?: string[];
+  selectedCarerIds?: string[];
   selectedStatus?: string;
   viewType?: "daily" | "weekly" | "monthly";
-  onClientChange?: (clientId: string) => void;
-  onCarerChange?: (carerId: string) => void;
+  onClientChange?: (clientIds: string[]) => void;
+  onCarerChange?: (carerIds: string[]) => void;
   onStatusChange?: (status: string) => void;
   hideControls?: boolean;
   timeInterval?: 30 | 60;
@@ -76,8 +76,8 @@ export function ClientScheduleCalendar({
   onDateChange,
   clients = [],
   carers = [],
-  selectedClient,
-  selectedCarer,
+  selectedClientIds = [],
+  selectedCarerIds = [],
   selectedStatus,
   viewType = "daily",
   onClientChange,
@@ -190,7 +190,15 @@ export function ClientScheduleCalendar({
   const clientSchedule = useMemo(() => {
     if (viewType === 'weekly') {
       // Weekly view data structure
-      const scheduleData = clients.map(client => {
+      const scheduleData = clients
+        .filter(client => {
+          // Filter by selected clients if any
+          if (selectedClientIds && selectedClientIds.length > 0) {
+            return selectedClientIds.includes(client.id);
+          }
+          return true;
+        })
+        .map(client => {
         const weekBookings: Record<string, Booking[]> = {};
         const weekStart = startOfWeek(date, { weekStartsOn: 1 });
         
@@ -244,7 +252,15 @@ export function ClientScheduleCalendar({
       return filteredData;
     } else {
       // Daily view logic
-      const scheduleData: ClientScheduleRow[] = clients.map(client => {
+      const scheduleData: ClientScheduleRow[] = clients
+        .filter(client => {
+          // Filter by selected clients if any
+          if (selectedClientIds && selectedClientIds.length > 0) {
+            return selectedClientIds.includes(client.id);
+          }
+          return true;
+        })
+        .map(client => {
         const schedule: Record<string, ClientStatus> = {};
         const bookingBlocks: BookingBlock[] = [];
         let totalCareHours = 0;
@@ -587,9 +603,9 @@ export function ClientScheduleCalendar({
           <BookingFilters
             statusFilter={selectedStatus || "all"}
             onStatusFilterChange={onStatusChange || (() => {})}
-            selectedClientId={selectedClient || "all-clients"}
+            selectedClientIds={selectedClientIds}
             onClientChange={onClientChange || (() => {})}
-            selectedCarerId={selectedCarer || "all-carers"}
+            selectedCarerIds={selectedCarerIds}
             onCarerChange={onCarerChange || (() => {})}
             clients={clients || []}
             carers={carers || []}
