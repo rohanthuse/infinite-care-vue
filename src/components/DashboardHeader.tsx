@@ -13,6 +13,7 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { useTenant } from "@/contexts/TenantContext";
 import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
+import { SuperAdminSearchDropdown } from "@/components/search/SuperAdminSearchDropdown";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -72,6 +73,9 @@ export function DashboardHeader() {
   };
 
   const { branchId, branchName, isBranchContext } = parseBranchContext();
+  
+  // Detect if user is super admin on main dashboard (not in a branch context)
+  const isSuperAdminDashboard = userRole?.role === 'super_admin' && !isBranchContext;
 
   // Close mobile menu when resizing to desktop
   useEffect(() => {
@@ -208,7 +212,10 @@ export function DashboardHeader() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               ref={searchInputRef}
-              placeholder="Search clients, carers, bookings, documents..." 
+              placeholder={isSuperAdminDashboard 
+                ? "Search branches, admins, system modules..." 
+                : "Search clients, carers, bookings, documents..."
+              }
               className="pl-10 pr-4 py-2 rounded-full bg-background border-border w-full transition-all duration-300"
               value={searchValue}
               onChange={(e) => {
@@ -227,18 +234,30 @@ export function DashboardHeader() {
             />
             
             {/* Dropdown renders here */}
-            {searchDropdownOpen && searchValue.trim().length >= 2 && isBranchContext && branchId && (
-              <BranchSearchDropdown
-                searchValue={searchValue}
-                onClose={() => setSearchDropdownOpen(false)}
-                onResultClick={() => {
-                  setSearchValue("");
-                  setSearchDropdownOpen(false);
-                }}
-                branchId={branchId}
-                branchName={branchName}
-                anchorRef={searchInputRef}
-              />
+            {searchDropdownOpen && searchValue.trim().length >= 2 && (
+              isSuperAdminDashboard ? (
+                <SuperAdminSearchDropdown
+                  searchValue={searchValue}
+                  onClose={() => setSearchDropdownOpen(false)}
+                  onResultClick={() => {
+                    setSearchValue("");
+                    setSearchDropdownOpen(false);
+                  }}
+                  anchorRef={searchInputRef}
+                />
+              ) : isBranchContext && branchId ? (
+                <BranchSearchDropdown
+                  searchValue={searchValue}
+                  onClose={() => setSearchDropdownOpen(false)}
+                  onResultClick={() => {
+                    setSearchValue("");
+                    setSearchDropdownOpen(false);
+                  }}
+                  branchId={branchId}
+                  branchName={branchName || ''}
+                  anchorRef={searchInputRef}
+                />
+              ) : null
             )}
           </div>
         </div>
