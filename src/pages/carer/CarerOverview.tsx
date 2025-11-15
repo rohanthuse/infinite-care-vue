@@ -77,9 +77,8 @@ const CarerOverview: React.FC = () => {
   }
 
   if (isLoading) {
-  return (
-    <div className="w-full">
-      <div className="space-y-6">
+    return (
+      <div className="w-full space-y-6">
         <Skeleton className="h-8 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
@@ -91,13 +90,11 @@ const CarerOverview: React.FC = () => {
           <Skeleton className="h-96" />
         </div>
       </div>
-    </div>
     );
   }
 
   return (
-    <div className="w-full">
-    <div className="space-y-4">
+    <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">
@@ -116,7 +113,7 @@ const CarerOverview: React.FC = () => {
       <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
@@ -166,7 +163,7 @@ const CarerOverview: React.FC = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {/* Active Visits */}
         <div className="lg:col-span-1">
           <ActiveVisitsSection />
@@ -372,7 +369,6 @@ const CarerOverview: React.FC = () => {
           )}
         </CardContent>
       </Card>
-    </div>
     </div>
   );
 };
