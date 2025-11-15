@@ -190,7 +190,7 @@ const CarerReports: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <h1 className="text-2xl font-bold mb-6">Reports</h1>
 
       <Card className="border border-gray-200 shadow-sm mb-6">

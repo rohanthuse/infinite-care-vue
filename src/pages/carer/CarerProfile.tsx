@@ -287,7 +287,7 @@ const CarerProfile: React.FC = () => {
         </div>
       </div>;
   }
-  return <div className="space-y-6">
+  return <div className="w-full space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-xl md:text-2xl font-bold">My Profile</h1>
         {getStatusBadge(carerProfile?.status)}

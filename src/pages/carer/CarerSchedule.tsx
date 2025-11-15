@@ -226,7 +226,7 @@ const CarerSchedule: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="w-full">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-xl md:text-2xl font-bold">My Schedule</h1>
         

@@ -167,7 +167,7 @@ const CarerNews2: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="w-full">
       <h1 className="text-2xl font-bold mb-6">NEWS2 Monitoring</h1>
       
       {/* Filters and Actions */}
