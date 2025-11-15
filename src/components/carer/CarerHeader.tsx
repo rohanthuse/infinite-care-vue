@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   LogOut, 
@@ -11,6 +10,8 @@ import { NotificationDropdown } from "@/components/notifications/NotificationDro
 import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
+import { useCarerContext } from "@/hooks/useCarerContext";
+import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export const CarerHeader: React.FC = () => {
@@ -19,6 +20,13 @@ export const CarerHeader: React.FC = () => {
   const { data: carerProfile } = useCarerProfile();
   const { createCarerPath } = useCarerNavigation();
   const [searchValue, setSearchValue] = useState("");
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { data: carerContext } = useCarerContext();
+  
+  // Get branch ID and name from carer context
+  const branchId = carerContext?.branchInfo?.id || carerProfile?.branch_id || '';
+  const branchName = carerContext?.branchInfo?.name || 'Branch';
 
   const handleLogout = async () => {
     console.log('[CarerHeader] Logout button clicked');
@@ -58,14 +66,42 @@ export const CarerHeader: React.FC = () => {
           <div className="relative max-w-md w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
-              placeholder="Search..." 
+              ref={searchInputRef}
+              placeholder="Search clients, bookings, documents..." 
               className="pl-10 pr-4 py-2 rounded-full bg-white border-gray-200 w-full transition-all duration-300"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={(e) => {
+                setSearchValue(e.target.value);
+                if (e.target.value.trim().length >= 2) {
+                  setSearchDropdownOpen(true);
+                } else {
+                  setSearchDropdownOpen(false);
+                }
+              }}
+              onFocus={() => {
+                if (searchValue.trim().length >= 2) {
+                  setSearchDropdownOpen(true);
+                }
+              }}
             />
+            
+            {/* Search Results Dropdown */}
+            {searchDropdownOpen && searchValue.trim().length >= 2 && branchId && (
+              <BranchSearchDropdown
+                searchValue={searchValue}
+                onClose={() => setSearchDropdownOpen(false)}
+                onResultClick={() => {
+                  setSearchValue("");
+                  setSearchDropdownOpen(false);
+                }}
+                branchId={branchId}
+                branchName={branchName}
+                anchorRef={searchInputRef}
+              />
+            )}
           </div>
         </div>
-        
+
         {/* Right side: Notifications and Profile */}
         <div className="flex items-center gap-2">
           <NotificationDropdown onViewAll={handleViewAllNotifications} />
