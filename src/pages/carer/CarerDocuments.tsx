@@ -55,6 +55,7 @@ const CarerDocuments: React.FC = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('');
+  const [customDocumentName, setCustomDocumentName] = useState<string>('');
   const [dragActive, setDragActive] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{id: string, filePath: string} | null>(null);
@@ -125,7 +126,7 @@ const CarerDocuments: React.FC = () => {
       // Create document record
       const { error: docError } = await supabase.rpc('upload_staff_document_bypass_rls', {
         p_staff_id: carerId,
-        p_document_type: documentType,
+        p_document_type: documentType === 'Other' ? customDocumentName : documentType,
         p_file_path: filePath,
         p_file_size: formattedSize
       });
@@ -249,6 +250,7 @@ const CarerDocuments: React.FC = () => {
     setUploadDialogOpen(false);
     setSelectedFile(null);
     setDocumentType('');
+    setCustomDocumentName('');
     setDragActive(false);
   };
 
@@ -754,6 +756,22 @@ const CarerDocuments: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Custom Document Name - shown only for "Other" type */}
+            {documentType === 'Other' && (
+              <div className="space-y-2">
+                <Label htmlFor="custom-document-name">
+                  Document Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="custom-document-name"
+                  placeholder="Enter document name"
+                  value={customDocumentName}
+                  onChange={(e) => setCustomDocumentName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -762,7 +780,12 @@ const CarerDocuments: React.FC = () => {
             </Button>
             <Button 
               onClick={handleUploadSubmit} 
-              disabled={!selectedFile || !documentType || uploadMutation.isPending}
+              disabled={
+                !selectedFile || 
+                !documentType || 
+                (documentType === 'Other' && !customDocumentName.trim()) ||
+                uploadMutation.isPending
+              }
             >
               {uploadMutation.isPending ? (
                 <>
