@@ -103,8 +103,8 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
             <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
-          <Command shouldFilter={false}>
+        <PopoverContent className="w-full p-0 pointer-events-auto" align="start" style={{ minWidth: '300px' }}>
+          <Command shouldFilter={false} className="pointer-events-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
             <div className="flex items-center border-b px-3">
               <Search className="h-4 w-4 shrink-0 opacity-50 mr-2" />
               <CommandInput 
@@ -114,7 +114,7 @@ export const EntitySelector: React.FC<EntitySelectorProps> = ({
                 onValueChange={handleInputChange}
               />
             </div>
-            <CommandList>
+            <CommandList className="max-h-[300px] overflow-y-auto pointer-events-auto">
               <CommandEmpty>No {type} found.</CommandEmpty>
               <CommandGroup>
                 {filteredEntities.map((entity) => (
