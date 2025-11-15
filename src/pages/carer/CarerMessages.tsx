@@ -82,17 +82,17 @@ const CarerMessages = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <MessageCircle className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold text-card-foreground">Messages</h1>
+          <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+          <h1 className="text-xl md:text-2xl font-bold text-card-foreground">Messages</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowComposer(true)} size="sm">
+          <Button onClick={() => setShowComposer(true)} size="sm" className="flex-1 sm:flex-initial">
             <Plus className="h-4 w-4 mr-2" />
             New Message
           </Button>
-          <Badge variant="secondary" className="px-3 py-1">
+          <Badge variant="secondary" className="px-3 py-1 whitespace-nowrap">
             {filteredThreads.reduce((total, thread) => total + thread.unreadCount, 0)} unread
           </Badge>
         </div>
@@ -110,9 +110,9 @@ const CarerMessages = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Thread List */}
-        <Card className="lg:col-span-1">
+        <Card className={`lg:col-span-1 ${selectedThreadId ? 'hidden lg:block' : ''}`}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Conversations</span>
@@ -177,11 +177,20 @@ const CarerMessages = () => {
         </Card>
 
         {/* Message View */}
-        <Card className="lg:col-span-2">
+        <Card className={`lg:col-span-2 ${!selectedThreadId ? 'hidden lg:block' : ''}`}>
           {selectedThreadId ? (
             <div className="flex flex-col h-full">
               <CardHeader className="border-b">
-                <CardTitle className="text-lg">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="lg:hidden mb-2 w-fit"
+                  onClick={() => setSelectedThreadId(null)}
+                >
+                  <span className="mr-2">←</span>
+                  Back to threads
+                </Button>
+                <CardTitle className="text-base sm:text-lg">
                   {threads?.find(t => t.id === selectedThreadId)?.subject || 'Conversation'}
                 </CardTitle>
               </CardHeader>

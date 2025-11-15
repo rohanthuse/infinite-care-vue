@@ -279,23 +279,23 @@ const CarerTasks: React.FC = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
+      <h1 className="text-xl md:text-2xl font-bold mb-6">My Tasks</h1>
       
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
-        <div className="relative w-full md:w-auto md:flex-1 max-w-md">
+      <div className="flex flex-col gap-3 mb-6">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input 
             placeholder="Search tasks..." 
-            className="pl-9"
+            className="pl-9 w-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap gap-2">
           <Button 
             variant="outline" 
-            className="flex-1 md:flex-none gap-2"
+            className="flex-1 sm:flex-initial gap-2"
             onClick={() => setFilterDialogOpen(true)}
           >
             <Filter className="h-4 w-4" />

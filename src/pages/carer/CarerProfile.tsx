@@ -288,9 +288,12 @@ const CarerProfile: React.FC = () => {
       </div>;
   }
   return <div className="space-y-6">
-      <h1 className="text-2xl font-bold mb-6">My Profile</h1>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold">My Profile</h1>
+        {getStatusBadge(carerProfile?.status)}
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
         <Card className="col-span-1">
           <CardHeader className="flex flex-col items-center">
             <div className="relative mb-4">
@@ -344,26 +347,26 @@ const CarerProfile: React.FC = () => {
         
         <div className="col-span-1 md:col-span-3 space-y-6">
           <Tabs defaultValue="personal" className="w-full">
-            <TabsList className="grid grid-cols-5 mb-6">
-              <TabsTrigger value="personal">
-                <User className="h-4 w-4 mr-2" />
-                Personal Details
+            <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 mb-6 h-auto">
+              <TabsTrigger value="personal" className="flex items-center justify-center gap-1 py-2">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Personal</span>
               </TabsTrigger>
-              <TabsTrigger value="professional">
-                <Briefcase className="h-4 w-4 mr-2" />
-                Professional Details
+              <TabsTrigger value="professional" className="flex items-center justify-center gap-1 py-2">
+                <Briefcase className="h-4 w-4" />
+                <span className="hidden sm:inline">Professional</span>
               </TabsTrigger>
-              <TabsTrigger value="bank">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Bank Details
+              <TabsTrigger value="bank" className="flex items-center justify-center gap-1 py-2">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">Bank</span>
               </TabsTrigger>
-              <TabsTrigger value="documents">
-                <FileText className="h-4 w-4 mr-2" />
-                Documents
+              <TabsTrigger value="documents" className="flex items-center justify-center gap-1 py-2">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Documents</span>
               </TabsTrigger>
-              <TabsTrigger value="security">
-                <Lock className="h-4 w-4 mr-2" />
-                Security
+              <TabsTrigger value="security" className="flex items-center justify-center gap-1 py-2">
+                <Lock className="h-4 w-4" />
+                <span className="hidden sm:inline">Security</span>
               </TabsTrigger>
             </TabsList>
             

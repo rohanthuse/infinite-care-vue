@@ -227,12 +227,12 @@ const CarerSchedule: React.FC = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">My Schedule</h1>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+        <h1 className="text-xl md:text-2xl font-bold">My Schedule</h1>
         
         <div className="flex items-center gap-2">
           <Select value={viewMode} onValueChange={setViewMode}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -245,7 +245,7 @@ const CarerSchedule: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-2 mb-6">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => navigatePeriod('prev')}>
             <ChevronLeft className="h-4 w-4" />

@@ -37,13 +37,13 @@ const CarerClients: React.FC = () => {
         </p>
       </div>
       
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative w-full max-w-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+        <div className="relative w-full sm:flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input placeholder="Search clients..." className="pl-9" />
+          <Input placeholder="Search clients..." className="pl-9 w-full" />
         </div>
         
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 w-full sm:w-auto">
           <Filter className="h-4 w-4" />
           <span>Filter</span>
         </Button>

@@ -97,7 +97,7 @@ export const CarerRightSidebar: React.FC = () => {
     <Sidebar 
       side="right" 
       className={cn(
-        "border-l transition-all duration-300",
+        "border-l transition-all duration-300 z-50",
         sidebarOpen ? "w-80" : "w-16"
       )}
       collapsible="icon"

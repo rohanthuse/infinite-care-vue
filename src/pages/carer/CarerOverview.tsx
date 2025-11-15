@@ -97,10 +97,10 @@ const CarerOverview: React.FC = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
             Welcome back, {carerProfile?.first_name || 'Carer'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm md:text-base text-gray-600">
             {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
         </div>
@@ -113,7 +113,7 @@ const CarerOverview: React.FC = () => {
       <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
