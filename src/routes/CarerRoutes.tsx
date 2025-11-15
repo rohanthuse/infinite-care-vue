@@ -29,6 +29,7 @@ import CarerMyTasks from "@/pages/carer/CarerMyTasks";
 import { CarerReportsTab } from "@/components/carer/CarerReportsTab";
 import React from "react";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
+import { CarerSidebarProvider } from "@/components/carer/CarerSidebarProvider";
 
 const RequireCarerAuth = () => {
   const auth = useAuth();
@@ -210,7 +211,11 @@ const RequireCarerAuth = () => {
  */
 const CarerRoutes = () => [
   <Route key="carer-auth" element={<RequireCarerAuth />}>
-    <Route path="carer-dashboard" element={<CarerDashboard />}>
+    <Route path="carer-dashboard" element={
+      <CarerSidebarProvider>
+        <CarerDashboard />
+      </CarerSidebarProvider>
+    }>
       <Route index element={<CarerOverview />} />
       <Route path="profile" element={<CarerProfile />} />
       <Route path="schedule" element={<CarerSchedule />} />

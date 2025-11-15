@@ -73,7 +73,7 @@ const CarerDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <CarerHeader onMobileMenuToggle={handleMobileMenuToggle} />
+        <CarerHeader />
         <div className="flex">
           <CarerSidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
           <main className="flex-1 p-6">
@@ -97,7 +97,7 @@ const CarerDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CarerHeader onMobileMenuToggle={handleMobileMenuToggle} />
+      <CarerHeader />
       <div className="flex">
         <CarerSidebar isOpen={sidebarOpen} onClose={handleSidebarClose} />
         <main className="flex-1 p-6">

@@ -1,0 +1,205 @@
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { 
+  Home, User, Calendar, CalendarDays, FileText, 
+  ClipboardList, Clock, FileBarChart, Wallet, 
+  GraduationCap, Users, AlertTriangle, MessageSquare,
+  Bell, Search
+} from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarTrigger,
+  useSidebar,
+  SidebarHeader,
+  SidebarFooter
+} from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { useCarerNavigation } from "@/hooks/useCarerNavigation";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
+
+const primaryItems = [
+  { icon: Home, label: "Dashboard", value: "", description: "Home overview" },
+  { icon: Calendar, label: "My Schedule", value: "schedule", description: "Booking calendar" },
+  { icon: Users, label: "My Clients", value: "clients", description: "Client list" },
+  { icon: ClipboardList, label: "My Tasks", value: "tasks", description: "Task management" },
+  { icon: AlertTriangle, label: "My Assignments", value: "my-tasks", description: "Assigned tasks" },
+];
+
+const secondaryGroups = [
+  {
+    label: "Reports & Documents",
+    items: [
+      { icon: Clock, label: "Attendance", value: "attendance" },
+      { icon: FileBarChart, label: "Service Reports", value: "service-reports" },
+      { icon: FileText, label: "Documents", value: "documents" },
+      { icon: FileText, label: "My Forms", value: "forms" },
+    ]
+  },
+  {
+    label: "Personal",
+    items: [
+      { icon: User, label: "Profile", value: "profile" },
+      { icon: Wallet, label: "Payments", value: "payments" },
+      { icon: GraduationCap, label: "Training", value: "training" },
+      { icon: MessageSquare, label: "Messages", value: "messages" },
+      { icon: Bell, label: "Notifications", value: "notifications" },
+    ]
+  }
+];
+
+export const CarerRightSidebar: React.FC = () => {
+  const { open: sidebarOpen } = useSidebar();
+  const { createCarerPath } = useCarerNavigation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "Reports & Documents": true,
+    "Personal": true
+  });
+
+  const handleNavClick = (value: string) => {
+    const path = createCarerPath(value ? `/${value}` : '');
+    navigate(path);
+  };
+
+  const isActive = (value: string) => {
+    const expectedPath = createCarerPath(value ? `/${value}` : '');
+    return location.pathname === expectedPath;
+  };
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  // Filter items based on search
+  const filteredPrimaryItems = primaryItems.filter(item =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredSecondaryGroups = secondaryGroups.map(group => ({
+    ...group,
+    items: group.items.filter(item =>
+      item.label.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(group => group.items.length > 0);
+
+  return (
+    <Sidebar 
+      side="right" 
+      className={cn(
+        "border-l transition-all duration-300",
+        sidebarOpen ? "w-80" : "w-16"
+      )}
+      collapsible="icon"
+    >
+      <SidebarHeader className="border-b p-4">
+        <div className="flex items-center justify-between">
+          {sidebarOpen && <h2 className="text-lg font-semibold">Navigation</h2>}
+          <SidebarTrigger className={cn(!sidebarOpen && "mx-auto")} />
+        </div>
+        
+        {sidebarOpen && (
+          <div className="mt-4 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search navigation..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
+      </SidebarHeader>
+
+      <SidebarContent>
+        {/* Primary Items */}
+        <SidebarGroup>
+          {sidebarOpen && <SidebarGroupLabel>Main</SidebarGroupLabel>}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {filteredPrimaryItems.map((item) => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton
+                    onClick={() => handleNavClick(item.value)}
+                    isActive={isActive(item.value)}
+                    tooltip={!sidebarOpen ? item.label : undefined}
+                    className={cn(
+                      "w-full justify-start",
+                      isActive(item.value) && "bg-primary/10 text-primary font-medium"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {sidebarOpen && <span className="ml-2">{item.label}</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Secondary Groups */}
+        {filteredSecondaryGroups.map((group) => (
+          <Collapsible
+            key={group.label}
+            open={openGroups[group.label]}
+            onOpenChange={() => toggleGroup(group.label)}
+          >
+            <SidebarGroup>
+              {sidebarOpen && (
+                <CollapsibleTrigger asChild>
+                  <SidebarGroupLabel className="cursor-pointer hover:bg-muted/50 flex items-center justify-between">
+                    <span>{group.label}</span>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 transition-transform",
+                      openGroups[group.label] && "rotate-180"
+                    )} />
+                  </SidebarGroupLabel>
+                </CollapsibleTrigger>
+              )}
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map((item) => (
+                      <SidebarMenuItem key={item.value}>
+                        <SidebarMenuButton
+                          onClick={() => handleNavClick(item.value)}
+                          isActive={isActive(item.value)}
+                          tooltip={!sidebarOpen ? item.label : undefined}
+                          className={cn(
+                            "w-full justify-start",
+                            isActive(item.value) && "bg-primary/10 text-primary font-medium"
+                          )}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {sidebarOpen && <span className="ml-2">{item.label}</span>}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </SidebarGroup>
+          </Collapsible>
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter className="border-t p-2">
+        {sidebarOpen && (
+          <p className="text-xs text-muted-foreground text-center">
+            Med-Infinite v1.0
+          </p>
+        )}
+      </SidebarFooter>
+    </Sidebar>
+  );
+};
