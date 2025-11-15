@@ -95,7 +95,7 @@ export const DateNavigation: React.FC<DateNavigationProps> = ({
   const getDateDisplay = () => {
     try {
       if (viewType === "daily") {
-        return format(validDate, "dd MMM yyyy");
+        return format(validDate, "EEEE, dd MMM yyyy");
       } else if (viewType === "weekly") {
         const weekStart = startOfWeek(validDate, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(validDate, { weekStartsOn: 1 });
