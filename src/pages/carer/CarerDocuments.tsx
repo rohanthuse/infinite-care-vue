@@ -374,7 +374,7 @@ const CarerDocuments: React.FC = () => {
           <TabsTrigger value="training">Training</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="my-documents" className="mt-0">
+        <TabsContent value="my-documents" className="w-full mt-0">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle>My Uploaded Documents</CardTitle>
@@ -463,7 +463,7 @@ const CarerDocuments: React.FC = () => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="forms" className="mt-0">
+        <TabsContent value="forms" className="w-full mt-0">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle>Assigned Forms</CardTitle>
@@ -518,7 +518,7 @@ const CarerDocuments: React.FC = () => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="policies" className="mt-0">
+        <TabsContent value="policies" className="w-full mt-0">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle>Policies & Procedures</CardTitle>
@@ -587,7 +587,7 @@ const CarerDocuments: React.FC = () => {
           </Card>
         </TabsContent>
         
-        <TabsContent value="training" className="mt-0">
+        <TabsContent value="training" className="w-full mt-0">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle>Training Records & Certificates</CardTitle>
