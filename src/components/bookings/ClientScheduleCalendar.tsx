@@ -186,6 +186,37 @@ export function ClientScheduleCalendar({
     return { left, width };
   };
 
+  // Helper function to group bookings by client, date, and time slot
+  const groupBookingsByTimeSlot = (bookings: Booking[]): Map<string, Booking[]> => {
+    const grouped = new Map<string, Booking[]>();
+    
+    bookings.forEach(booking => {
+      // Create unique key for same client, date, start time, end time
+      const key = `${booking.clientId}-${booking.date}-${booking.startTime}-${booking.endTime}`;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(booking);
+    });
+    
+    return grouped;
+  };
+
+  // Helper function to merge multiple booking records (multiple carers) into one
+  const mergeBookingRecords = (bookings: Booking[]): Booking & { allCarerNames?: string[]; allCarerIds?: string[] } => {
+    const firstBooking = bookings[0];
+    const allCarerNames = bookings.map(b => b.carerName).filter(Boolean);
+    const allCarerIds = bookings.map(b => b.carerId).filter(Boolean);
+    
+    return {
+      ...firstBooking,
+      carerName: allCarerNames.join(', '), // "John Smith, Mary Johnson"
+      allCarerNames, // Array for tooltip
+      allCarerIds, // Array for reference
+    };
+  };
+
   // Process client schedule data
   const clientSchedule = useMemo(() => {
     if (viewType === 'weekly') {
@@ -210,10 +241,27 @@ export function ClientScheduleCalendar({
         
         // Group bookings by day
         const clientBookings = bookings.filter(b => b.clientId === client.id);
+        
+        // Group by time slot to merge multiple carers
+        const groupedByDate: Record<string, Booking[]> = {};
         clientBookings.forEach(booking => {
-          if (weekBookings[booking.date]) {
-            weekBookings[booking.date].push(booking);
+          if (!groupedByDate[booking.date]) {
+            groupedByDate[booking.date] = [];
           }
+          groupedByDate[booking.date].push(booking);
+        });
+
+        // Merge bookings with same time slots for each day
+        Object.keys(groupedByDate).forEach(dateKey => {
+          const dayBookingsList = groupedByDate[dateKey];
+          const grouped = groupBookingsByTimeSlot(dayBookingsList);
+          
+          Array.from(grouped.values()).forEach(bookingGroup => {
+            const mergedBooking = mergeBookingRecords(bookingGroup);
+            if (weekBookings[dateKey]) {
+              weekBookings[dateKey].push(mergedBooking);
+            }
+          });
         });
         
         // Calculate total hours for the week
@@ -276,7 +324,12 @@ export function ClientScheduleCalendar({
           booking.date === format(date, 'yyyy-MM-dd')
         );
 
-        dayBookings.forEach(booking => {
+        // Group bookings by time slot (to handle multiple carers)
+        const groupedBookings = groupBookingsByTimeSlot(dayBookings);
+
+        // Process each unique booking (merging multiple carers)
+        Array.from(groupedBookings.values()).forEach(bookingGroup => {
+          const booking = mergeBookingRecords(bookingGroup);
           const [startHour, startMin] = booking.startTime.split(':').map(Number);
           const [endHour, endMin] = booking.endTime.split(':').map(Number);
           
@@ -553,7 +606,10 @@ export function ClientScheduleCalendar({
             </Badge>
           </div>
           <div className="space-y-1 text-sm">
-            <p><span className="font-medium">Carer:</span> {status.booking.carerName}</p>
+            <p>
+              <span className="font-medium">Carer{(status.booking as any).allCarerNames?.length > 1 ? 's' : ''}:</span>{' '}
+              {(status.booking as any).allCarerNames?.join(', ') || status.booking.carerName}
+            </p>
             <p><span className="font-medium">Time:</span> {status.booking.startTime} - {status.booking.endTime}</p>
             {status.booking.notes && (
               <p><span className="font-medium">Notes:</span> {status.booking.notes}</p>
@@ -817,13 +873,19 @@ export function ClientScheduleCalendar({
                               className="text-xs p-2 rounded cursor-pointer bg-blue-100 border-blue-300 text-blue-800 border"
                               onClick={() => onViewBooking?.(booking)}
                             >
-                              <div className="font-semibold">{booking.carerName}</div>
+                              <div className="font-semibold">
+                                {(booking as any).allCarerNames?.length > 1 
+                                  ? `${(booking as any).allCarerNames.length} Carers`
+                                  : booking.carerName}
+                              </div>
                               <div className="text-[10px] opacity-75">{booking.startTime} - {booking.endTime}</div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
                             <div className="text-sm space-y-1">
-                              <div><strong>Staff:</strong> {booking.carerName}</div>
+                              <div>
+                                <strong>Staff:</strong> {(booking as any).allCarerNames?.join(', ') || booking.carerName}
+                              </div>
                               <div><strong>Time:</strong> {booking.startTime} - {booking.endTime}</div>
                               <div><strong>Status:</strong> {booking.status}</div>
                             </div>
@@ -917,7 +979,9 @@ export function ClientScheduleCalendar({
 
                               <div className="flex flex-col items-center justify-center px-1 w-full">
                                 <div className="font-semibold truncate w-full text-center">
-                                  {block.booking.carerName}
+                                  {(block.booking as any).allCarerNames?.length > 1 
+                                    ? `${(block.booking as any).allCarerNames.length} Carers`
+                                    : block.booking.carerName}
                                 </div>
                                 <div className="text-[10px] opacity-75 flex items-center justify-center gap-1">
                                   {isSplitSecond && <span className="text-blue-600">←</span>}
