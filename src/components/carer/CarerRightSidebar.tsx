@@ -94,14 +94,14 @@ export const CarerRightSidebar: React.FC = () => {
   })).filter(group => group.items.length > 0);
 
   return (
-    <Sidebar 
-      side="right" 
-      className={cn(
-        "border-l transition-all duration-300 z-50",
-        sidebarOpen ? "w-80" : "w-16"
-      )}
-      collapsible="icon"
-    >
+      <Sidebar 
+        side="right" 
+        className={cn(
+          "border-l transition-all duration-300 z-50 shrink-0",
+          sidebarOpen ? "w-72 md:w-80" : "w-14 md:w-16"
+        )}
+        collapsible="icon"
+      >
       <SidebarHeader className="border-b p-4">
         <div className="flex items-center justify-between">
           {sidebarOpen && <h2 className="text-lg font-semibold">Navigation</h2>}

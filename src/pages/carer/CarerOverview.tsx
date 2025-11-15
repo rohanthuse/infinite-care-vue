@@ -77,7 +77,8 @@ const CarerOverview: React.FC = () => {
   }
 
   if (isLoading) {
-    return (
+  return (
+    <div className="w-full">
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -90,10 +91,12 @@ const CarerOverview: React.FC = () => {
           <Skeleton className="h-96" />
         </div>
       </div>
+    </div>
     );
   }
 
   return (
+    <div className="w-full">
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
@@ -113,7 +116,7 @@ const CarerOverview: React.FC = () => {
       <ReadyToStartSection appointments={readyToStartAppointments} isLoading={isLoading} />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
@@ -369,6 +372,7 @@ const CarerOverview: React.FC = () => {
           )}
         </CardContent>
       </Card>
+    </div>
     </div>
   );
 };

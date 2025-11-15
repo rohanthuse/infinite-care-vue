@@ -59,7 +59,8 @@ const CarerMessages = () => {
   };
 
   if (threadsLoading) {
-    return (
+  return (
+    <div className="w-full">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-48" />
@@ -76,10 +77,12 @@ const CarerMessages = () => {
           </div>
         </div>
       </div>
+    </div>
     );
   }
 
   return (
+    <div className="w-full">
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -110,7 +113,7 @@ const CarerMessages = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 w-full">
         {/* Thread List */}
         <Card className={`lg:col-span-1 ${selectedThreadId ? 'hidden lg:block' : ''}`}>
           <CardHeader>
@@ -279,6 +282,7 @@ const CarerMessages = () => {
         open={showComposer} 
         onOpenChange={setShowComposer} 
       />
+    </div>
     </div>
   );
 };
