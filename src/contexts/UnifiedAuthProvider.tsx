@@ -176,22 +176,32 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (error) {
         console.error('[UnifiedAuth] Sign out error:', error);
         toast.error('Logout failed: ' + error.message);
+        // Clear state even on error
+        setUser(null);
+        setSession(null);
+        setError(null);
       } else {
         console.log('[UnifiedAuth] Sign out successful');
-        toast.success('Logged out successfully');
+        // Clear state
+        setUser(null);
+        setSession(null);
+        setError(null);
       }
 
-      // Force navigation to login
-      window.location.replace('/login');
+      // DON'T redirect here - let the calling hook handle navigation
+      // This allows carer logout to go to /login
+      // and other logouts to go to their appropriate pages
+      
     } catch (err: any) {
       console.error('[UnifiedAuth] Sign out exception:', err);
       toast.error('Logout failed: ' + err.message);
       
-      // Even if there's an error, clear state and redirect
+      // Even if there's an error, clear state
       setUser(null);
       setSession(null);
       setError(null);
-      window.location.replace('/login');
+      
+      // DON'T redirect - let calling code handle it
     }
   };
 

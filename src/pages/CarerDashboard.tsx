@@ -15,11 +15,29 @@ const CarerDashboard: React.FC = () => {
   const { tenantSlug } = useCarerNavigation();
 
   // Check authentication status - only redirect if truly unauthenticated
+  // Use a ref to prevent redirect during active logout process
+  const isLoggingOut = React.useRef(false);
+
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated && !isLoggingOut.current) {
       console.log('[CarerDashboard] User not authenticated, redirecting to login');
       const loginPath = tenantSlug ? `/${tenantSlug}/carer-login` : "/carer-login";
-      navigate(loginPath);
+      
+      // Set flag to prevent race conditions
+      isLoggingOut.current = true;
+      
+      // Small delay to allow signOut to complete its own navigation
+      setTimeout(() => {
+        // Only navigate if we're still unauthenticated
+        if (!isAuthenticated) {
+          navigate(loginPath, { replace: true });
+        }
+      }, 100);
+    }
+    
+    // Reset flag when authenticated
+    if (isAuthenticated) {
+      isLoggingOut.current = false;
     }
   }, [isAuthenticated, loading, navigate, tenantSlug]);
 

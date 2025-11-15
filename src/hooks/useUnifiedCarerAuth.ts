@@ -131,6 +131,8 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
 
   // Enhanced sign out with complete cleanup
   const signOut = async () => {
+    console.log('[useUnifiedCarerAuth] Starting carer logout');
+    
     try {
       // Clear carer-specific localStorage
       const carerKeys = [
@@ -143,24 +145,22 @@ export const useUnifiedCarerAuth = (): UnifiedCarerAuthReturn => {
         sessionStorage.removeItem(key);
       });
 
-      // Clear state
+      // Clear state immediately
       setCarerProfile(null);
       setIsCarerRole(false);
 
-      // Use base sign out
+      // Call base sign out (this handles Supabase auth.signOut)
       await baseSignOut();
 
-      // Navigate to carer login
-      const tenantSlug = window.location.pathname.split('/')[1];
-      const loginPath = tenantSlug && tenantSlug !== 'carer-dashboard' 
-        ? `/${tenantSlug}/carer-login` 
-        : '/carer-login';
+      // CRITICAL: Redirect to unified login page
+      // Use window.location.replace for immediate redirect to prevent race conditions
+      console.log('[useUnifiedCarerAuth] Redirecting to unified login page: /login');
+      window.location.replace('/login');
       
-      navigate(loginPath, { replace: true });
     } catch (error) {
       console.error('[useUnifiedCarerAuth] Sign out error:', error);
-      // Force navigation even if sign out fails
-      window.location.href = '/carer-login';
+      // Force navigation to unified login even if sign out fails
+      window.location.replace('/login');
     }
   };
 

@@ -8,14 +8,14 @@ import {
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Input } from "@/components/ui/input";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
-import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export const CarerHeader: React.FC = () => {
   const navigate = useNavigate();
-  const { signOut } = useCarerAuthSafe();
+  const { signOut } = useUnifiedCarerAuth();
   const { data: carerProfile } = useCarerProfile();
   const { createCarerPath } = useCarerNavigation();
   const [searchValue, setSearchValue] = useState("");
