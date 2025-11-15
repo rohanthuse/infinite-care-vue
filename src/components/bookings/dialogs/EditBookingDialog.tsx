@@ -76,7 +76,7 @@ const isValidDate = (d: Date) => !isNaN(d.getTime());
 const editBookingSchema = z.object({
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
-  service_id: z.string().optional(),
+  service_id: z.string().optional().transform(val => val === "" ? undefined : val),
   staff_ids: z.array(z.string()).optional(),
   assign_later: z.boolean().optional(),
   notes: z.string().optional(),
@@ -370,7 +370,7 @@ export function EditBookingDialog({
       const commonUpdates = {
         start_time: start.toISOString(),
         end_time: end.toISOString(),
-        service_id: data.service_id,
+        service_id: data.service_id || null,
         notes: data.notes,
         status: newStaffIds.length > 0 ? 'assigned' : 'unassigned',
       };
@@ -409,7 +409,7 @@ export function EditBookingDialog({
           staff_id: staffId,
           start_time: start.toISOString(),
           end_time: end.toISOString(),
-          service_id: data.service_id,
+          service_id: data.service_id || null,
           status: 'assigned',
           notes: data.notes,
         });
@@ -435,7 +435,7 @@ export function EditBookingDialog({
           staff_id: null,
           start_time: start.toISOString(),
           end_time: end.toISOString(),
-          service_id: data.service_id,
+          service_id: data.service_id || null,
           status: 'unassigned',
           notes: data.notes,
         });
