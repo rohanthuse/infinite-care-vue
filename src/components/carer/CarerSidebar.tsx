@@ -3,12 +3,19 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Calendar,
+  CalendarDays,
   ClipboardList,
   Clock,
   FileText,
+  FileCheck,
   FileBarChart,
   Home,
   Users,
+  User,
+  BookOpen,
+  MessageSquare,
+  Wallet,
+  GraduationCap,
   X,
   AlertTriangle,
 } from "lucide-react";
@@ -27,21 +34,48 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
   const carerName = localStorage.getItem("carerName") || "Carer";
   
   const menuItems = [
+    // Primary Navigation
     { 
       name: "Dashboard", 
       path: getCarerMenuItems().find(item => item.name === "Dashboard")?.path || "/carer-dashboard", 
       icon: Home 
     },
     { 
+      name: "Profile", 
+      path: getCarerMenuItems().find(item => item.name === "Profile")?.path || "/carer-dashboard/profile", 
+      icon: User 
+    },
+    
+    // Scheduling
+    { 
       name: "My Schedule", 
       path: getCarerMenuItems().find(item => item.name === "Booking Calendar")?.path || "/carer-dashboard/schedule", 
       icon: Calendar 
     },
     { 
+      name: "Appointments", 
+      path: getCarerMenuItems().find(item => item.name === "Appointments")?.path || "/carer-dashboard/appointments", 
+      icon: CalendarDays 
+    },
+    { 
+      name: "Leave", 
+      path: getCarerMenuItems().find(item => item.name === "Leave")?.path || "/carer-dashboard/leave", 
+      icon: Calendar 
+    },
+    
+    // Client Management
+    { 
       name: "My Clients", 
       path: getCarerMenuItems().find(item => item.name === "Clients")?.path || "/carer-dashboard/clients", 
       icon: Users 
     },
+    { 
+      name: "Care Plans", 
+      path: getCarerMenuItems().find(item => item.name === "Care Plans")?.path || "/carer-dashboard/careplans", 
+      icon: FileText 
+    },
+    
+    // Tasks & Assignments
     { 
       name: "My Tasks", 
       path: getCarerMenuItems().find(item => item.name === "Tasks")?.path || "/carer-dashboard/tasks", 
@@ -52,6 +86,25 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
       path: getCarerMenuItems().find(item => item.name === "My Assignments")?.path || "/carer-dashboard/my-tasks", 
       icon: AlertTriangle 
     },
+    
+    // Documents & Agreements
+    { 
+      name: "My Agreements", 
+      path: getCarerMenuItems().find(item => item.name === "My Agreements")?.path || "/carer-dashboard/agreements", 
+      icon: FileCheck 
+    },
+    { 
+      name: "Documents", 
+      path: getCarerMenuItems().find(item => item.name === "My Forms")?.path || "/carer-dashboard/documents", 
+      icon: FileText 
+    },
+    { 
+      name: "Library", 
+      path: getCarerMenuItems().find(item => item.name === "Library")?.path || "/carer-dashboard/library", 
+      icon: BookOpen 
+    },
+    
+    // Reports & Tracking
     { 
       name: "Attendance", 
       path: getCarerMenuItems().find(item => item.name === "Reports")?.path || "/carer-dashboard/attendance", 
@@ -62,10 +115,22 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
       path: getCarerMenuItems().find(item => item.name === "Service Reports")?.path || "/carer-dashboard/service-reports", 
       icon: FileBarChart 
     },
+    
+    // Communication & Financial
     { 
-      name: "Documents", 
-      path: getCarerMenuItems().find(item => item.name === "My Forms")?.path || "/carer-dashboard/documents", 
-      icon: FileText 
+      name: "Messages", 
+      path: getCarerMenuItems().find(item => item.name === "Messages")?.path || "/carer-dashboard/messages", 
+      icon: MessageSquare 
+    },
+    { 
+      name: "Payments", 
+      path: getCarerMenuItems().find(item => item.name === "Payments")?.path || "/carer-dashboard/payments", 
+      icon: Wallet 
+    },
+    { 
+      name: "Training", 
+      path: getCarerMenuItems().find(item => item.name === "Training")?.path || "/carer-dashboard/training", 
+      icon: GraduationCap 
     },
   ];
   
