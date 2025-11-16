@@ -10,15 +10,26 @@ export const LoginNavigationInterceptor = () => {
   const location = useLocation();
   
   useEffect(() => {
+    const currentPath = location.pathname;
+    
+    // CRITICAL: Never intercept on /login or any login-related path
+    if (currentPath === '/login' || currentPath.includes('/login')) {
+      console.log('[LoginNavigationInterceptor] On login page, clearing any stale navigation flags');
+      sessionStorage.removeItem('navigating_to_dashboard');
+      sessionStorage.removeItem('target_dashboard');
+      sessionStorage.removeItem('redirect_in_progress');
+      return;
+    }
+    
     // Only intercept on root path
-    if (location.pathname === '/') {
+    if (currentPath === '/') {
       const isNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
       const targetDashboard = sessionStorage.getItem('target_dashboard');
       
       console.log('[LoginNavigationInterceptor] Checking navigation state:', {
         isNavigating,
         targetDashboard,
-        pathname: location.pathname
+        pathname: currentPath
       });
       
       if (isNavigating && targetDashboard) {
@@ -33,6 +44,7 @@ export const LoginNavigationInterceptor = () => {
               console.warn('[LoginNavigationInterceptor] Navigation timeout, clearing flags');
               sessionStorage.removeItem('navigating_to_dashboard');
               sessionStorage.removeItem('target_dashboard');
+              sessionStorage.removeItem('redirect_in_progress');
             }
           }, 5000);
           
@@ -41,6 +53,7 @@ export const LoginNavigationInterceptor = () => {
           console.warn('[LoginNavigationInterceptor] Invalid target path:', targetDashboard);
           sessionStorage.removeItem('navigating_to_dashboard');
           sessionStorage.removeItem('target_dashboard');
+          sessionStorage.removeItem('redirect_in_progress');
         }
       }
     }

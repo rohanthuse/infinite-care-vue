@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState, withProgressiveTimeout } from "@/utils/authRecovery";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
+import { useAuth } from "@/contexts/UnifiedAuthProvider";
 
 
 
@@ -24,6 +25,26 @@ const UnifiedLogin = () => {
   const [showRecovery, setShowRecovery] = useState(false);
   const navigate = useNavigate();
   const { getRoleWithOptimization, getOrganizationWithOptimization, clearOptimizationCache } = useOptimizedAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // Clean up navigation flags when landing on login page
+  useEffect(() => {
+    console.log('[UnifiedLogin] Component mounted, clearing any stale navigation flags');
+    sessionStorage.removeItem('navigating_to_dashboard');
+    sessionStorage.removeItem('target_dashboard');
+    sessionStorage.removeItem('redirect_in_progress');
+  }, []);
+
+  // Check if user is already authenticated and redirect away from login page
+  useEffect(() => {
+    if (!authLoading && user && !loading) {
+      console.log('[UnifiedLogin] Authenticated user detected on login page, redirecting to home');
+      sessionStorage.removeItem('navigating_to_dashboard');
+      sessionStorage.removeItem('target_dashboard');
+      sessionStorage.removeItem('redirect_in_progress');
+      navigate('/', { replace: true });
+    }
+  }, [authLoading, user, loading, navigate]);
 
   // Check for third-party invitation token
   useEffect(() => {
@@ -662,6 +683,17 @@ const UnifiedLogin = () => {
     }
   };
 
+  // Show loading screen while checking auth state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-3"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page-light min-h-screen flex">
