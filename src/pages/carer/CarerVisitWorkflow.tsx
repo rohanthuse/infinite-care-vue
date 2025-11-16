@@ -34,6 +34,8 @@ import {
   Newspaper,
   MessageCircle,
   FileBarChart2,
+  Target,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,6 +54,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
+import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
+import { useClientActivities } from "@/hooks/useClientActivities";
 
 interface Task {
   id: string;
@@ -153,6 +157,32 @@ const CarerVisitWorkflow = () => {
   }, [carerTasks, currentAppointment?.client_id]);
 
   const { vitals: news2Readings, recordNEWS2, calculateNEWS2Score, isLoading: vitalsLoading } = useVisitVitals(visitRecord?.id, currentAppointment?.client_id);
+  
+  // Fetch active care plan for goals and activities
+  const { data: activeCareplan, isLoading: carePlanLoading } = useQuery({
+    queryKey: ['client-active-care-plan', currentAppointment?.client_id],
+    queryFn: async () => {
+      if (!currentAppointment?.client_id) return null;
+      
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('*')
+        .eq('client_id', currentAppointment.client_id)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('Error fetching care plan:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!currentAppointment?.client_id,
+  });
+
+  // Fetch goals and activities using the care plan ID
+  const { data: carePlanGoals, isLoading: goalsLoading } = useCarePlanGoals(activeCareplan?.id || '');
+  const { data: carePlanActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
   
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
@@ -1060,9 +1090,9 @@ const CarerVisitWorkflow = () => {
           <div className="max-w-4xl mx-auto mt-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Progress</span>
-              <span className="text-sm text-gray-500">{Math.round((currentStep / 9) * 100)}% complete</span>
+              <span className="text-sm text-gray-500">{Math.round((currentStep / 11) * 100)}% complete</span>
             </div>
-            <Progress value={(currentStep / 9) * 100} className="h-2" />
+            <Progress value={(currentStep / 11) * 100} className="h-2" />
           </div>
         )}
       </div>
@@ -1070,7 +1100,7 @@ const CarerVisitWorkflow = () => {
       {/* Main Content */}
       <div className="w-full max-w-full mx-auto p-4">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-11">
             <TabsTrigger 
               value="check-in" 
               disabled={!canAccessTab("check-in")}
@@ -1147,6 +1177,32 @@ const CarerVisitWorkflow = () => {
                   {isTabCompleted("care-plan") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
                 </div>
                 <span className="text-xs">Care Plan</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="goals" 
+              disabled={!canAccessTab("goals")}
+              className={`${isTabCompleted("goals") ? "bg-green-50 border-green-200" : ""}`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-1">
+                  <Target className="w-4 h-4" />
+                  {isTabCompleted("goals") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
+                <span className="text-xs">Goals</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="activities" 
+              disabled={!canAccessTab("activities")}
+              className={`${isTabCompleted("activities") ? "bg-green-50 border-green-200" : ""}`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {isTabCompleted("activities") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
+                <span className="text-xs">Activities</span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
@@ -1935,6 +1991,204 @@ const CarerVisitWorkflow = () => {
                 <Button 
                   onClick={handleNextStep}
                   disabled={!isTabCompleted("care-plan")}
+                >
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Goals Tab */}
+          <TabsContent value="goals" className="w-full mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Care Plan Goals
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {goalsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : !activeCareplan ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No active care plan found for this client.</p>
+                  </div>
+                ) : !carePlanGoals || carePlanGoals.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No goals have been set in the care plan yet.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {carePlanGoals.map((goal) => (
+                        <Card key={goal.id} className="border-l-4 border-l-primary">
+                          <CardContent className="pt-4">
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-medium text-foreground flex-1">
+                                  {goal.description}
+                                </p>
+                                <Badge 
+                                  variant={
+                                    goal.status === 'completed' ? 'default' : 
+                                    goal.status === 'in-progress' ? 'secondary' : 
+                                    'outline'
+                                  }
+                                  className={
+                                    goal.status === 'completed' ? 'bg-green-500' :
+                                    goal.status === 'in-progress' ? 'bg-blue-500' :
+                                    ''
+                                  }
+                                >
+                                  {goal.status === 'completed' ? 'Completed' :
+                                   goal.status === 'in-progress' ? 'In Progress' :
+                                   'Not Started'}
+                                </Badge>
+                              </div>
+                              
+                              {goal.progress !== undefined && goal.progress !== null && (
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Progress</span>
+                                    <span className="font-medium text-foreground">{goal.progress}%</span>
+                                  </div>
+                                  <Progress value={goal.progress} className="h-2" />
+                                </div>
+                              )}
+                              
+                              {goal.notes && (
+                                <div className="bg-muted rounded-lg p-3">
+                                  <p className="text-sm text-muted-foreground italic">
+                                    {goal.notes}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <div className="text-xs text-muted-foreground">
+                                Last updated: {format(new Date(goal.updated_at), 'PPp')}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleNextStep}
+                >
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Activities Tab */}
+          <TabsContent value="activities" className="w-full mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Daily Activities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activitiesLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : !activeCareplan ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No active care plan found for this client.</p>
+                  </div>
+                ) : !carePlanActivities || carePlanActivities.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No activities have been scheduled in the care plan yet.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {carePlanActivities.map((activity) => (
+                        <Card key={activity.id} className="border-l-4 border-l-green-500">
+                          <CardContent className="pt-4">
+                            <div className="space-y-3">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-foreground mb-1">
+                                    {activity.name}
+                                  </h4>
+                                  {activity.description && (
+                                    <p className="text-sm text-muted-foreground">
+                                      {activity.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <Badge 
+                                  variant={
+                                    activity.status === 'completed' ? 'default' : 
+                                    activity.status === 'in-progress' ? 'secondary' : 
+                                    'outline'
+                                  }
+                                  className={
+                                    activity.status === 'completed' ? 'bg-green-500' :
+                                    activity.status === 'in-progress' ? 'bg-blue-500' :
+                                    ''
+                                  }
+                                >
+                                  {activity.status === 'completed' ? 'Completed' :
+                                   activity.status === 'in-progress' ? 'In Progress' :
+                                   'Pending'}
+                                </Badge>
+                              </div>
+                              
+                              <div className="flex items-center gap-4 text-sm">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Clock className="w-4 h-4" />
+                                  <span className="capitalize">{activity.frequency}</span>
+                                </div>
+                              </div>
+                              
+                              <div className="text-xs text-muted-foreground">
+                                Created: {format(new Date(activity.created_at), 'PPp')}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+              
+              <div className="border-t p-6 flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={handlePreviousStep}
+                  disabled={activeTab === "check-in"}
+                >
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleNextStep}
                 >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
