@@ -26,15 +26,17 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
   React.useEffect(() => {
     let mounted = true;
     let timeoutId: NodeJS.Timeout;
+    let initComplete = false; // Track if initialization completed
 
     const initializeAuth = async () => {
       try {
         console.log('[UnifiedAuth] Initializing authentication...');
-        setLoading(true); // Set true when starting check
+        setLoading(true);
         
         // 3 second timeout for session initialization
         timeoutId = setTimeout(() => {
-          if (mounted && loading) {
+          // FIXED: Check initComplete flag instead of stale loading state
+          if (mounted && !initComplete) {
             console.warn('[UnifiedAuth] Initialization timeout (3s), proceeding without auth');
             if (mounted) {
               setLoading(false);
@@ -54,6 +56,7 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         }
 
         if (mounted) {
+          initComplete = true; // Mark initialization as complete
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
@@ -69,6 +72,7 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       } catch (err: any) {
         console.error('[UnifiedAuth] Initialization error:', err);
         if (mounted) {
+          initComplete = true; // Mark as complete even on error
           setError(err.message || 'Authentication initialization failed');
           setLoading(false);
           clearTimeout(timeoutId);
@@ -81,24 +85,28 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
       (event, session) => {
         console.log('[UnifiedAuth] Auth state change:', event, session?.user?.email || 'no user');
         
-        if (mounted) {
-          // Atomic state updates to prevent race conditions
-          const newUser = session?.user ?? null;
-          const hasStateChanged = (user?.id !== newUser?.id) || (!!session !== !!session);
+        if (!mounted) return; // Don't update if unmounted
+        
+        // Atomic state updates to prevent race conditions
+        const newUser = session?.user ?? null;
+        
+        // Only update if there's an actual change
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          setSession(session);
+          setUser(newUser);
+          setError(null);
           
-          if (hasStateChanged || event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-            setSession(session);
-            setUser(newUser);
-            setError(null);
+          // Only set loading to false if we're not in the middle of a sign in
+          if (event !== 'SIGNED_IN') {
             setLoading(false);
-            
-            console.log('[UnifiedAuth] State updated:', {
-              event,
-              hasUser: !!newUser,
-              userId: newUser?.id,
-              sessionValid: !!session?.access_token
-            });
           }
+          
+          console.log('[UnifiedAuth] State updated:', {
+            event,
+            hasUser: !!newUser,
+            userId: newUser?.id,
+            sessionValid: !!session?.access_token
+          });
         }
       }
     );
