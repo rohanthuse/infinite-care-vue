@@ -4,7 +4,7 @@ import {
   Home, User, Calendar, CalendarDays, FileText, 
   ClipboardList, Clock, FileBarChart, Wallet, 
   GraduationCap, Users, AlertTriangle, MessageSquare,
-  Bell, Search
+  Bell, Search, FileCheck, BookOpen
 } from "lucide-react";
 import {
   Sidebar,
@@ -26,35 +26,45 @@ import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
-const primaryItems = [
-  { icon: Home, label: "Dashboard", value: "", description: "Home overview" },
-  { icon: Calendar, label: "My Schedule", value: "schedule", description: "Booking calendar" },
-  { icon: Users, label: "My Clients", value: "clients", description: "Client list" },
-  { icon: ClipboardList, label: "My Tasks", value: "tasks", description: "Task management" },
-  { icon: AlertTriangle, label: "My Assignments", value: "my-tasks", description: "Assigned tasks" },
-];
+  const primaryItems = [
+    { icon: Home, label: "Dashboard", value: "", description: "Home overview" },
+    { icon: Calendar, label: "My Schedule", value: "schedule", description: "Booking calendar" },
+    { icon: CalendarDays, label: "Appointments", value: "appointments", description: "View all appointments" },
+    { icon: Users, label: "My Clients", value: "clients", description: "Client list" },
+    { icon: ClipboardList, label: "My Tasks", value: "tasks", description: "Task management" },
+    { icon: AlertTriangle, label: "My Assignments", value: "my-tasks", description: "Assigned tasks" },
+  ];
 
-const secondaryGroups = [
-  {
-    label: "Reports & Documents",
-    items: [
-      { icon: Clock, label: "Attendance", value: "attendance" },
-      { icon: FileBarChart, label: "Service Reports", value: "service-reports" },
-      { icon: FileText, label: "Documents", value: "documents" },
-      { icon: FileText, label: "My Forms", value: "forms" },
-    ]
-  },
-  {
-    label: "Personal",
-    items: [
-      { icon: User, label: "Profile", value: "profile" },
-      { icon: Wallet, label: "Payments", value: "payments" },
-      { icon: GraduationCap, label: "Training", value: "training" },
-      { icon: MessageSquare, label: "Messages", value: "messages" },
-      { icon: Bell, label: "Notifications", value: "notifications" },
-    ]
-  }
-];
+  const secondaryGroups = [
+    {
+      label: "Care & Planning",
+      items: [
+        { icon: FileText, label: "Care Plans", value: "careplans" },
+        { icon: FileCheck, label: "My Agreements", value: "agreements" },
+        { icon: BookOpen, label: "Library", value: "library" },
+      ]
+    },
+    {
+      label: "Reports & Documents",
+      items: [
+        { icon: Clock, label: "Attendance", value: "attendance" },
+        { icon: FileBarChart, label: "Service Reports", value: "service-reports" },
+        { icon: FileText, label: "Documents", value: "documents" },
+        { icon: FileText, label: "My Forms", value: "forms" },
+      ]
+    },
+    {
+      label: "Personal",
+      items: [
+        { icon: User, label: "Profile", value: "profile" },
+        { icon: Wallet, label: "Payments", value: "payments" },
+        { icon: GraduationCap, label: "Training", value: "training" },
+        { icon: Calendar, label: "Leave", value: "leave" },
+        { icon: MessageSquare, label: "Messages", value: "messages" },
+        { icon: Bell, label: "Notifications", value: "notifications" },
+      ]
+    }
+  ];
 
 export const CarerRightSidebar: React.FC = () => {
   const { open: sidebarOpen } = useSidebar();
@@ -63,6 +73,7 @@ export const CarerRightSidebar: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "Care & Planning": true,
     "Reports & Documents": true,
     "Personal": true
   });
