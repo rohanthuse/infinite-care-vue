@@ -7,12 +7,12 @@ import {
   ClipboardList,
   Clock,
   FileText,
-  FileCheck,
+  ScrollText,
   FileBarChart,
   Home,
   Users,
   User,
-  BookOpen,
+  Book,
   MessageSquare,
   Wallet,
   GraduationCap,
@@ -91,7 +91,7 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
     { 
       name: "My Agreements", 
       path: getCarerMenuItems().find(item => item.name === "My Agreements")?.path || "/carer-dashboard/agreements", 
-      icon: FileCheck 
+      icon: ScrollText 
     },
     { 
       name: "Documents", 
@@ -101,7 +101,7 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
     { 
       name: "Library", 
       path: getCarerMenuItems().find(item => item.name === "Library")?.path || "/carer-dashboard/library", 
-      icon: BookOpen 
+      icon: Book 
     },
     
     // Reports & Tracking

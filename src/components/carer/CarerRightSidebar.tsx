@@ -4,7 +4,7 @@ import {
   Home, User, Calendar, CalendarDays, FileText, 
   ClipboardList, Clock, FileBarChart, Wallet, 
   GraduationCap, Users, AlertTriangle, MessageSquare,
-  Bell, Search, FileCheck, BookOpen
+  Bell, Search, ScrollText, Book
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,8 +40,8 @@ import { ChevronDown } from "lucide-react";
       label: "Care & Planning",
       items: [
         { icon: FileText, label: "Care Plans", value: "careplans" },
-        { icon: FileCheck, label: "My Agreements", value: "agreements" },
-        { icon: BookOpen, label: "Library", value: "library" },
+        { icon: ScrollText, label: "My Agreements", value: "agreements" },
+        { icon: Book, label: "Library", value: "library" },
       ]
     },
     {
