@@ -1349,53 +1349,6 @@ const CarerVisitWorkflow = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* Visit Care Tasks */}
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Care Tasks</h3>
-                    {tasksLoading ? (
-                      <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-2 text-gray-500">Loading care tasks...</p>
-                      </div>
-                    ) : tasks && tasks.length > 0 ? (
-                      <div className="space-y-3">
-                        {tasks.map((task) => (
-                          <div key={task.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
-                            <Checkbox
-                              checked={task.is_completed}
-                              onCheckedChange={() => handleTaskToggle(task.id)}
-                              className="flex-shrink-0"
-                              disabled={isViewOnly || updateTask.isPending}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className={`font-medium ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                                  {task.task_name}
-                                </p>
-                                {task.priority && getPriorityBadge(task.priority)}
-                              </div>
-                              {task.task_description && (
-                                <p className="text-sm text-gray-600 mt-1">{task.task_description}</p>
-                              )}
-                              {task.completed_at && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Completed at {format(new Date(task.completed_at), 'h:mm a')}
-                                </p>
-                              )}
-                            </div>
-                            {task.is_completed && (
-                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-gray-500">
-                        <p>No care tasks assigned for this visit</p>
-                      </div>
-                    )}
-                  </div>
-
                   {/* Assigned Tasks from Admin/Staff */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">Assigned Tasks (Admin/Staff)</h3>
