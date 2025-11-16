@@ -112,7 +112,26 @@ const AppContent = () => {
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
               <Route path="/demo-request" element={<DemoRequest />} />
-              <Route path="/login" element={<UnifiedLogin />} />
+              <Route path="/login" element={
+                <ErrorBoundary fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="text-center max-w-md p-8">
+                      <h2 className="text-2xl font-bold text-foreground mb-4">Login Page Error</h2>
+                      <p className="text-muted-foreground mb-6">
+                        We encountered an issue loading the login page. Please try again.
+                      </p>
+                      <button
+                        onClick={() => window.location.href = '/'}
+                        className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                      >
+                        Return to Home
+                      </button>
+                    </div>
+                  </div>
+                }>
+                  <UnifiedLogin />
+                </ErrorBoundary>
+              } />
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* Redirect old super-admin route to main page */}
               <Route path="/super-admin" element={<Index />} />
