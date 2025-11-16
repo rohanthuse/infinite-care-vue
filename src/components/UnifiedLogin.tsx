@@ -35,16 +35,28 @@ const UnifiedLogin = () => {
     sessionStorage.removeItem('redirect_in_progress');
   }, []);
 
-  // Check if user is already authenticated and redirect away from login page
+  // Defensive: Ensure auth provider timeout doesn't interfere
   useEffect(() => {
-    if (!authLoading && user && !loading) {
-      console.log('[UnifiedLogin] Authenticated user detected on login page, redirecting to home');
+    // Give the auth provider 100ms to initialize
+    const checkTimer = setTimeout(() => {
+      console.log('[UnifiedLogin] Auth state check:', { authLoading, user });
+    }, 100);
+    
+    return () => clearTimeout(checkTimer);
+  }, [authLoading, user]);
+
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    // Wait for auth to initialize before checking
+    if (!authLoading && user) {
+      console.log('[UnifiedLogin] Already authenticated, redirecting to home');
+      // Clear navigation flags
       sessionStorage.removeItem('navigating_to_dashboard');
       sessionStorage.removeItem('target_dashboard');
       sessionStorage.removeItem('redirect_in_progress');
       navigate('/', { replace: true });
     }
-  }, [authLoading, user, loading, navigate]);
+  }, [authLoading, user, navigate]);
 
   // Check for third-party invitation token
   useEffect(() => {
