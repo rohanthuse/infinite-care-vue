@@ -159,25 +159,38 @@ const CarerAppointments: React.FC = () => {
     const upcoming: any[] = [];
     const past: any[] = [];
 
-    // Filter out completed/done/cancelled appointments first
-    const excludedStatuses = ['completed', 'done', 'cancelled'];
-    const activeAppointments = appointments.filter(appointment => 
-      !excludedStatuses.includes(appointment.status)
+    // Only filter out cancelled appointments
+    // Keep completed/done appointments so they can appear in Past Appointments
+    const nonCancelledAppointments = appointments.filter(appointment => 
+      appointment.status !== 'cancelled'
     );
 
-    activeAppointments.forEach(appointment => {
+    nonCancelledAppointments.forEach(appointment => {
       const appointmentDate = format(new Date(appointment.start_time), 'yyyy-MM-dd');
       const startTime = new Date(appointment.start_time);
       
+      // Exclude completed/done from "current" and "today" categories
+      const excludedFromToday = ['completed', 'done'];
+      const isCompleted = excludedFromToday.includes(appointment.status);
+      
       if (appointmentDate === todayDate) {
-        if (canStartAppointment(appointment)) {
+        // Completed visits on today should go to past
+        if (isCompleted) {
+          past.push(appointment);
+        } else if (canStartAppointment(appointment)) {
           current.push(appointment);
         } else {
           today.push(appointment);
         }
       } else if (startTime > now) {
-        upcoming.push(appointment);
+        // Future appointments go to upcoming (unless completed)
+        if (!isCompleted) {
+          upcoming.push(appointment);
+        } else {
+          past.push(appointment);
+        }
       } else {
+        // Past appointments (includes completed visits)
         past.push(appointment);
       }
     });
