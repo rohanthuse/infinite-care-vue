@@ -22,7 +22,7 @@ import AdminRoutes from "./routes/AdminRoutes";
 import CarerRoutes from "./routes/CarerRoutes";
 import ClientRoutes from "./routes/ClientRoutes";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
-import { useAuth } from "@/contexts/UnifiedAuthProvider";
+import { useAuthSafe } from "@/hooks/useAuthSafe";
 import { TenantSetup } from "./pages/TenantSetup";
 import SystemLogin from "./pages/SystemLogin";
 import SystemDashboard from "./pages/SystemDashboard";
@@ -73,7 +73,7 @@ const NotificationEmailManager = () => {
 
 // Inner app component that uses auth context
 const AppContent = () => {
-  const { loading, error, user } = useAuth();
+  const { loading, error, user } = useAuthSafe();
 
   console.log('[App] Auth state:', { loading, error: !!error, user: !!user, pathname: window.location.pathname });
 
