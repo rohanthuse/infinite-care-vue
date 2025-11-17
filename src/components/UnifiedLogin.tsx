@@ -45,18 +45,8 @@ const UnifiedLogin = () => {
     return () => clearTimeout(checkTimer);
   }, [authLoading, user]);
 
-  // Redirect authenticated users away from login page
-  useEffect(() => {
-    // Wait for auth to initialize before checking
-    if (!authLoading && user) {
-      console.log('[UnifiedLogin] Already authenticated, redirecting to home');
-      // Clear navigation flags
-      sessionStorage.removeItem('navigating_to_dashboard');
-      sessionStorage.removeItem('target_dashboard');
-      sessionStorage.removeItem('redirect_in_progress');
-      navigate('/', { replace: true });
-    }
-  }, [authLoading, user, navigate]);
+  // Redirect loop prevention - removed automatic redirect
+  // Let users stay on login page to see error messages if they have auth issues
 
   // Check for third-party invitation token
   useEffect(() => {

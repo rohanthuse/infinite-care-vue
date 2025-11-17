@@ -128,12 +128,9 @@ const Index = () => {
       setTimeout(() => {
         navigate(redirectPath, { replace: true });
       }, 0);
-    } else if (!authLoading && !roleLoading && user && !userRole && !roleError) {
-      console.log('[Index] User authenticated but no role found - redirecting to login');
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 0);
     }
+    // Removed redirect to login for users without roles to prevent infinite loop
+    // Users without roles will stay on Index page or will be handled by UnifiedLogin
   }, [user, userRole, authLoading, roleLoading, roleError, navigate]);
 
   useEffect(() => {
