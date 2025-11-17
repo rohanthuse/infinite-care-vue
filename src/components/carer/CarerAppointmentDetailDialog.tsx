@@ -213,16 +213,6 @@ export const CarerAppointmentDetailDialog = ({
                 I'm Not Available
               </Button>
             )}
-            
-            <div className="flex gap-3">
-              {appointment.clients?.phone && (
-                <Button variant="outline" className="flex-1" asChild>
-                  <a href={`tel:${appointment.clients.phone}`}>
-                    Call Client
-                  </a>
-                </Button>
-              )}
-            </div>
           </div>
         </div>
       </DialogContent>
