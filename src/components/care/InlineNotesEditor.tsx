@@ -88,7 +88,7 @@ export const InlineNotesEditor = ({
         className="h-8"
       >
         <Edit className="w-3 h-3 mr-1" />
-        {notes ? "Edit Notes" : "Add Notes"}
+        Add Notes
       </Button>
     </div>
   );

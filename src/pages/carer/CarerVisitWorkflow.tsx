@@ -773,7 +773,7 @@ const CarerVisitWorkflow = () => {
   };
   
   // Define tab order and completion requirements
-  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "care-plan", "goals", "activities", "notes", "sign-off", "complete"];
+  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "goals", "activities", "notes", "care-plan", "sign-off", "complete"];
   
   // Check if a tab is completed
   const isTabCompleted = (tabName: string): boolean => {
@@ -1251,18 +1251,6 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="care-plan"
-              className={`${isTabCompleted("care-plan") ? "bg-green-50 border-green-200" : ""}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center gap-1">
-                  <FileBarChart2 className="w-4 h-4" />
-                  {isTabCompleted("care-plan") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
-                </div>
-                <span className="text-xs">Care Plan</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
               value="goals"
               className={`${isTabCompleted("goals") ? "bg-green-50 border-green-200" : ""}`}
             >
@@ -1295,7 +1283,19 @@ const CarerVisitWorkflow = () => {
                   <FileText className="w-4 h-4" />
                   {isTabCompleted("notes") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
                 </div>
-                <span className="text-xs">Notes</span>
+              <span className="text-xs">Notes</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="care-plan"
+              className={`${isTabCompleted("care-plan") ? "bg-green-50 border-green-200" : ""}`}
+            >
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center gap-1">
+                  <FileBarChart2 className="w-4 h-4" />
+                  {isTabCompleted("care-plan") && <CheckCircle2 className="w-3 h-3 text-green-600" />}
+                </div>
+                <span className="text-xs">Care Plan</span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
