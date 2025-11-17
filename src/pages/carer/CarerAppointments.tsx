@@ -24,6 +24,7 @@ const CarerAppointments: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [completingVisitId, setCompletingVisitId] = useState<string | null>(null);
   const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
@@ -61,7 +62,14 @@ const CarerAppointments: React.FC = () => {
         .select(`
           *,
           clients(first_name, last_name, phone, address),
-          services(title, description)
+          services(title, description),
+          visit_records(
+            id,
+            visit_start_time,
+            visit_end_time,
+            actual_duration_minutes,
+            status
+          )
         `)
         .eq('staff_id', carerContext.staffId)
         .order('start_time');
@@ -306,17 +314,40 @@ const CarerAppointments: React.FC = () => {
       isLoading: isLoading
     });
     
-    if (status === 'completed') {
+    if (status === 'completed' || status === 'done') {
+      return (
+        <div className="flex flex-col items-end gap-2">
+          <Badge variant="success" className="bg-green-100 text-green-800 border-green-300">
+            ✓ Visit Completed
+          </Badge>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={() => {
+              console.log('[getActionButton] Navigating to completed visit in view mode:', appointment.id);
+              navigate(createCarerPath(`/visit/${appointment.id}?mode=view`), { 
+                state: { viewOnly: true } 
+              });
+            }}
+            disabled={isLoading}
+          >
+            <Eye className="h-4 w-4" />
+            View Details
+          </Button>
+        </div>
+      );
+    }
+    
+    if (status === 'cancelled') {
       return (
         <Button 
-          variant="outline" 
+          variant="outline"
           size="sm" 
           className="flex items-center gap-2"
           onClick={() => {
-            console.log('[getActionButton] Navigating to completed visit in view mode:', appointment.id);
-            navigate(createCarerPath(`/visit/${appointment.id}?mode=view`), { 
-              state: { viewOnly: true } 
-            });
+            setSelectedAppointment(appointment);
+            setShowDetailDialog(true);
           }}
           disabled={isLoading}
         >
@@ -327,6 +358,15 @@ const CarerAppointments: React.FC = () => {
     }
     
     if (status === 'in_progress') {
+      // Don't show button if this visit is being completed
+      if (completingVisitId === appointment.id) {
+        return (
+          <Badge variant="outline" className="animate-pulse">
+            Completing...
+          </Badge>
+        );
+      }
+      
       return (
         <Button 
           variant="success"
@@ -511,6 +551,41 @@ const CarerAppointments: React.FC = () => {
                   )}
                   
                   {getTimeInfo(appointment)}
+                  
+                  {/* Show actual visit times for completed visits */}
+                  {(appointment.status === 'done' || appointment.status === 'completed') && 
+                   appointment.visit_records && 
+                   appointment.visit_records.length > 0 && 
+                   appointment.visit_records[0].visit_start_time && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="text-xs font-semibold text-gray-700 mb-2">Actual Visit Times</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-gray-500">Start:</span>{' '}
+                          <span className="font-medium">
+                            {format(new Date(appointment.visit_records[0].visit_start_time), 'HH:mm')}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">End:</span>{' '}
+                          <span className="font-medium">
+                            {appointment.visit_records[0].visit_end_time 
+                              ? format(new Date(appointment.visit_records[0].visit_end_time), 'HH:mm')
+                              : 'N/A'
+                            }
+                          </span>
+                        </div>
+                        {appointment.visit_records[0].actual_duration_minutes && (
+                          <div className="col-span-2">
+                            <span className="text-gray-500">Total Hours:</span>{' '}
+                            <span className="font-medium text-primary">
+                              {(appointment.visit_records[0].actual_duration_minutes / 60).toFixed(2)} hrs
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex flex-col items-end gap-2">

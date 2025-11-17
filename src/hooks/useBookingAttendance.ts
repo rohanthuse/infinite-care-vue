@@ -167,6 +167,14 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       
       console.log('[useBookingAttendance] Invalidated carer-appointments and carer-upcoming-appointments for dashboard refresh');
       
+      // Force immediate refetch with slight delay to ensure DB write completes
+      setTimeout(() => {
+        queryClient.refetchQueries({ 
+          queryKey: ['carer-appointments-full'], 
+          exact: false 
+        });
+      }, 300);
+      
       // Only show success toast if not in silent mode
       if (!options?.silent) {
         const actionText = variables.action === 'start_visit' ? 'started' : 'completed';
