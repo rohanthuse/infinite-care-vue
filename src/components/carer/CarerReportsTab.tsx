@@ -91,10 +91,14 @@ export function CarerReportsTab() {
     return (booking.status === 'done' || booking.status === 'completed') && startTime < new Date();
   });
   
-  // Cross-reference with reports to check which appointments have reports
+  // Cross-reference with reports to get full report status
   const pastAppointmentsWithReportStatus = pastAppointments.map(booking => {
-    const hasReport = reports.some(report => report.booking_id === booking.id);
-    return { ...booking, has_report: hasReport };
+    const report = reports.find(r => r.booking_id === booking.id);
+    return { 
+      ...booking, 
+      has_report: !!report,
+      report: report  // Include the full report object
+    };
   });
 
   const getStatusColor = (status: string) => {
@@ -309,11 +313,47 @@ export function CarerReportsTab() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {booking.has_report ? (
-                                  <Badge variant="success" className="text-xs">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Has Report
-                                  </Badge>
+                                {booking.has_report && booking.report ? (
+                                  (() => {
+                                    const status = booking.report.status;
+                                    switch (status) {
+                                      case 'pending':
+                                        return (
+                                          <Badge variant="secondary" className="text-xs">
+                                            <Clock className="h-3 w-3 mr-1" />
+                                            Pending Review
+                                          </Badge>
+                                        );
+                                      case 'approved':
+                                        return (
+                                          <Badge variant="success" className="text-xs">
+                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                            Approved
+                                          </Badge>
+                                        );
+                                      case 'rejected':
+                                        return (
+                                          <Badge variant="destructive" className="text-xs">
+                                            <XCircle className="h-3 w-3 mr-1" />
+                                            Rejected
+                                          </Badge>
+                                        );
+                                      case 'requires_revision':
+                                        return (
+                                          <Badge variant="warning" className="text-xs">
+                                            <AlertTriangle className="h-3 w-3 mr-1" />
+                                            Needs Revision
+                                          </Badge>
+                                        );
+                                      default:
+                                        return (
+                                          <Badge variant="outline" className="text-xs">
+                                            <ClipboardList className="h-3 w-3 mr-1" />
+                                            Incomplete
+                                          </Badge>
+                                        );
+                                    }
+                                  })()
                                 ) : (
                                   <Badge variant="warning" className="text-xs">
                                     <AlertTriangle className="h-3 w-3 mr-1" />
@@ -325,7 +365,7 @@ export function CarerReportsTab() {
                                 {booking.has_report ? (
                                   <Button
                                     size="sm"
-                                    variant="outline"
+                                    variant={booking.report?.status === 'requires_revision' ? 'default' : 'outline'}
                                     onClick={() => {
                                       const report = reports.find(r => r.booking_id === booking.id);
                                       if (report) {
@@ -335,8 +375,17 @@ export function CarerReportsTab() {
                                     }}
                                     className="flex items-center gap-2"
                                   >
-                                    <Eye className="h-4 w-4" />
-                                    View Report
+                                    {booking.report?.status === 'requires_revision' ? (
+                                      <>
+                                        <Edit className="h-4 w-4" />
+                                        Edit Report
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Eye className="h-4 w-4" />
+                                        View Report
+                                      </>
+                                    )}
                                   </Button>
                                 ) : (
                                   <Button
