@@ -186,12 +186,17 @@ export const useCarerDashboard = () => {
     const appointmentDate = format(startTime, 'yyyy-MM-dd');
     const todayDate = format(now, 'yyyy-MM-dd');
     
+    // Exclude completed/done/cancelled appointments
+    const excludedStatuses = ['completed', 'done', 'cancelled'];
+    if (excludedStatuses.includes(appointment.status)) {
+      return false;
+    }
+    
     const isToday = appointmentDate === todayDate;
     const minutesDiff = differenceInMinutes(startTime, now);
     
     return (
       (appointment.status === 'assigned' || appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
-      appointment.status !== 'completed' &&
       (isToday || (minutesDiff <= 240 && minutesDiff >= -240))
     );
   };

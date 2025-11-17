@@ -125,13 +125,18 @@ const CarerAppointments: React.FC = () => {
     const appointmentDate = format(startTime, 'yyyy-MM-dd');
     const todayDate = format(now, 'yyyy-MM-dd');
     
+    // Exclude completed/done/cancelled appointments
+    const excludedStatuses = ['completed', 'done', 'cancelled'];
+    if (excludedStatuses.includes(appointment.status)) {
+      return false;
+    }
+    
     // Allow starting any appointment on the current day, or within 4 hours on other days
     const isToday = appointmentDate === todayDate;
     const minutesDiff = differenceInMinutes(startTime, now);
     
     return (
       (appointment.status === 'assigned' || appointment.status === 'scheduled' || appointment.status === 'confirmed') &&
-      appointment.status !== 'completed' &&
       (isToday || (minutesDiff <= 240 && minutesDiff >= -240))
     );
   };
@@ -146,7 +151,13 @@ const CarerAppointments: React.FC = () => {
     const upcoming: any[] = [];
     const past: any[] = [];
 
-    appointments.forEach(appointment => {
+    // Filter out completed/done/cancelled appointments first
+    const excludedStatuses = ['completed', 'done', 'cancelled'];
+    const activeAppointments = appointments.filter(appointment => 
+      !excludedStatuses.includes(appointment.status)
+    );
+
+    activeAppointments.forEach(appointment => {
       const appointmentDate = format(new Date(appointment.start_time), 'yyyy-MM-dd');
       const startTime = new Date(appointment.start_time);
       
