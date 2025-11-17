@@ -77,21 +77,43 @@ const CarerSchedule: React.FC = () => {
     return status === 'in_progress' ? 'in-progress' : status;
   };
 
+  // Enhanced color system with gradients and shadows
   const getStatusColor = (status: string) => {
     const normalizedStatus = normalizeStatus(status);
     switch (normalizedStatus?.toLowerCase()) {
       case 'completed':
-        return 'bg-green-100 text-green-700';
+      case 'done':
+        return 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-emerald-200 shadow-md';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-200 shadow-md';
       case 'assigned':
       case 'scheduled':
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-amber-200 shadow-md';
       case 'cancelled':
-        return 'bg-red-100 text-red-700';
+        return 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-red-200 shadow-md';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-gray-200 shadow-md';
     }
+  };
+
+  const getAppointmentBgColor = (status: string) => {
+    const normalizedStatus = normalizeStatus(status);
+    switch (normalizedStatus?.toLowerCase()) {
+      case 'completed':
+      case 'done':
+        return 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300';
+      case 'in-progress':
+        return 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300';
+      case 'assigned':
+      case 'scheduled':
+        return 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300';
+      default:
+        return 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300';
+    }
+  };
+
+  const getTodayHighlight = (isToday: boolean) => {
+    return isToday ? 'ring-4 ring-primary ring-offset-2 shadow-xl' : '';
   };
 
   const formatAppointmentDate = (dateString: string) => {
@@ -273,73 +295,83 @@ const CarerSchedule: React.FC = () => {
         </h2>
       </div>
 
-      {/* Summary */}
-      <Card className="mb-6">
-        <CardHeader>
+      {/* Enhanced Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+              {viewMode === 'day' 
+                ? weekBookings.filter(booking => 
+                    format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+                  ).length
+                : currentViewBookings.length
+              }
+            </div>
+            <div className="text-sm text-blue-100 font-medium">Total Appointments</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+              {viewMode === 'day'
+                ? weekBookings.filter(booking => 
+                    format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
+                    booking.status === 'completed'
+                  ).length
+                : currentViewBookings.filter(booking => booking.status === 'completed').length
+              }
+            </div>
+            <div className="text-sm text-emerald-100 font-medium">Completed</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-amber-500 to-amber-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+              {viewMode === 'day'
+                ? weekBookings.filter(booking => 
+                    format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
+                    (booking.status === 'assigned' || booking.status === 'scheduled')
+                  ).length
+                : currentViewBookings.filter(booking => 
+                    booking.status === 'assigned' || booking.status === 'scheduled'
+                  ).length
+              }
+            </div>
+            <div className="text-sm text-amber-100 font-medium">Scheduled</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+              £{viewMode === 'day'
+                ? weekBookings
+                    .filter(booking => 
+                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
+                    )
+                    .reduce((total, booking) => total + (booking.revenue || 0), 0)
+                    .toFixed(2)
+                : currentViewBookings
+                    .reduce((total, booking) => total + (booking.revenue || 0), 0)
+                    .toFixed(2)
+              }
+            </div>
+            <div className="text-sm text-purple-100 font-medium">Total Revenue</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Appointments List */}
+      <Card className="mb-6 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b">
           <CardTitle>
             {viewMode === 'month' ? 'Month Summary' : 
              viewMode === 'week' ? 'Week Summary' : 'Day Summary'}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {viewMode === 'day' 
-                  ? weekBookings.filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
-                    ).length
-                  : currentViewBookings.length
-                }
-              </div>
-              <div className="text-sm text-gray-600">Total Appointments</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {viewMode === 'day'
-                  ? weekBookings.filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
-                      booking.status === 'completed'
-                    ).length
-                  : currentViewBookings.filter(booking => booking.status === 'completed').length
-                }
-              </div>
-              <div className="text-sm text-gray-600">Completed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">
-                {viewMode === 'day'
-                  ? weekBookings.filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
-                      (booking.status === 'assigned' || booking.status === 'scheduled')
-                    ).length
-                  : currentViewBookings.filter(booking => 
-                      booking.status === 'assigned' || booking.status === 'scheduled'
-                    ).length
-                }
-              </div>
-              <div className="text-sm text-gray-600">Scheduled</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                £{viewMode === 'day'
-                  ? weekBookings
-                      .filter(booking => 
-                        format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
-                      )
-                      .reduce((total, booking) => total + (booking.revenue || 0), 0)
-                      .toFixed(2)
-                  : currentViewBookings
-                      .reduce((total, booking) => total + (booking.revenue || 0), 0)
-                      .toFixed(2)
-                }
-              </div>
-              <div className="text-sm text-gray-600">Total Revenue</div>
-            </div>
-          </div>
-
-          {/* Appointments List */}
-          {periodAppointments.length > 0 ? (
+        <CardContent className="pt-6">{periodAppointments.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium text-sm text-gray-700">Appointments</h4>
@@ -397,48 +429,84 @@ const CarerSchedule: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Week View */}
+      {/* Enhanced Week View */}
       {viewMode === "week" && (
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
           {weekDays.map((day, index) => (
-            <Card key={index} className={`
-              ${day.isToday ? 'ring-2 ring-blue-500' : ''}
-              ${day.isOnLeave ? 'bg-red-50 border-red-200' : ''}
-              ${day.isAnnualLeave ? 'bg-orange-50 border-orange-200' : ''}
-            `}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>{format(day.date, 'EEE')}</span>
-                  {day.isOnLeave && (
-                    <Badge className="bg-red-100 text-red-700 text-xs">Leave</Badge>
-                  )}
-                  {day.isAnnualLeave && (
-                    <Badge className="bg-orange-100 text-orange-700 text-xs">Holiday</Badge>
-                  )}
+            <Card 
+              key={index} 
+              className={`
+                transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer border-2
+                ${getTodayHighlight(day.isToday)}
+                ${day.isOnLeave ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300' : ''}
+                ${day.isAnnualLeave ? 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-300' : ''}
+              `}
+            >
+              <CardHeader className="pb-3 space-y-2">
+                <CardTitle className="text-base font-bold flex items-center justify-between">
+                  <span className={day.isToday ? 'text-primary text-lg' : 'text-foreground'}>
+                    {format(day.date, 'EEE')}
+                  </span>
+                  <div className="flex gap-1">
+                    {day.isOnLeave && (
+                      <Badge className="bg-red-500 text-white font-semibold shadow-md text-xs">Leave</Badge>
+                    )}
+                    {day.isAnnualLeave && (
+                      <Badge className="bg-orange-500 text-white font-semibold shadow-md text-xs">Holiday</Badge>
+                    )}
+                  </div>
                 </CardTitle>
-                <CardDescription className={`text-xs ${day.isToday ? 'text-blue-600 font-medium' : ''}`}>
+                
+                <CardDescription className={`
+                  text-sm font-medium
+                  ${day.isToday ? 'text-primary font-bold text-base' : 'text-muted-foreground'}
+                `}>
                   {format(day.date, 'MMM dd')}
                 </CardDescription>
+                
+                {day.bookings.length > 0 && (
+                  <Badge variant="secondary" className="w-fit text-xs">
+                    {day.bookings.length} appointment{day.bookings.length !== 1 ? 's' : ''}
+                  </Badge>
+                )}
               </CardHeader>
-              <CardContent className="space-y-2">
+              
+              <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
                 {day.bookings.length > 0 ? (
                   day.bookings.map((booking) => (
-                  <div key={booking.id} className="p-2 bg-gray-50 rounded text-xs cursor-pointer hover:bg-gray-100"
-                       onClick={() => {
-                         setSelectedAppointment(booking);
-                         setShowAppointmentDialog(true);
-                       }}>
-                    <div className="font-medium">{format(new Date(booking.start_time), 'HH:mm')}</div>
-                    <div className="text-gray-600 truncate">{booking.client_name}</div>
-                    <div className="text-gray-500 truncate">{booking.service_name}</div>
-                    <Badge className={`${getStatusColor(booking.status)} text-xs mt-1`}>
-                      {booking.status === 'assigned' ? 'Scheduled' : normalizeStatus(booking.status)}
-                    </Badge>
-                  </div>
+                    <div 
+                      key={booking.id} 
+                      className={`
+                        p-3 rounded-lg border-2 transition-all duration-200
+                        hover:shadow-lg hover:scale-102 cursor-pointer
+                        ${getAppointmentBgColor(booking.status)}
+                      `}
+                      onClick={() => {
+                        setSelectedAppointment(booking);
+                        setShowAppointmentDialog(true);
+                      }}
+                    >
+                      <div className="font-bold text-base text-foreground mb-2">
+                        {format(new Date(booking.start_time), 'HH:mm')}
+                      </div>
+                      
+                      <div className="font-semibold text-sm text-foreground/90 mb-1">
+                        {booking.client_name}
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                        {booking.service_name}
+                      </div>
+                      
+                      <Badge className={`${getStatusColor(booking.status)} text-xs font-semibold`}>
+                        {booking.status === 'assigned' ? 'Scheduled' : normalizeStatus(booking.status)}
+                      </Badge>
+                    </div>
                   ))
                 ) : (
-                  <div className="text-xs text-gray-400 py-4 text-center">
-                    No appointments
+                  <div className="text-center py-8">
+                    <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground/50 font-medium">No appointments</p>
                   </div>
                 )}
               </CardContent>
@@ -447,63 +515,77 @@ const CarerSchedule: React.FC = () => {
         </div>
       )}
 
-      {/* Month View */}
+      {/* Enhanced Month View */}
       {viewMode === "month" && (
         <div className="space-y-4">
           {/* Month Calendar Header */}
-          <div className="grid grid-cols-7 gap-1 mb-2">
+          <div className="grid grid-cols-7 gap-2 mb-4">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-              <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+              <div key={day} className="text-center text-base font-bold text-foreground py-3 bg-muted rounded-lg">
                 {day}
               </div>
             ))}
           </div>
           
           {/* Month Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-2">
             {monthDays.map((day, index) => (
-              <Card key={index} className={`
-                min-h-[120px] cursor-pointer transition-all hover:shadow-md
-                ${day.isToday ? 'ring-2 ring-blue-500' : ''}
-                ${day.isOnLeave ? 'bg-red-50 border-red-200' : ''}
-                ${day.isAnnualLeave ? 'bg-orange-50 border-orange-200' : ''}
-                ${!day.isCurrentMonth ? 'opacity-40 bg-gray-50' : ''}
-              `}>
-                <CardContent className="p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-sm font-medium ${
-                      day.isToday ? 'text-blue-600' : 
-                      !day.isCurrentMonth ? 'text-gray-400' : 'text-gray-900'
-                    }`}>
+              <Card 
+                key={index} 
+                className={`
+                  min-h-[140px] cursor-pointer transition-all duration-300 
+                  hover:shadow-xl hover:scale-105 border-2
+                  ${getTodayHighlight(day.isToday)}
+                  ${day.isOnLeave ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300' : ''}
+                  ${day.isAnnualLeave ? 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-300' : ''}
+                  ${!day.isCurrentMonth ? 'opacity-50 bg-muted/50' : 'bg-card'}
+                `}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`
+                      text-lg font-bold
+                      ${day.isToday ? 'text-primary text-xl' : 
+                        !day.isCurrentMonth ? 'text-muted-foreground' : 'text-foreground'}
+                    `}>
                       {format(day.date, 'd')}
                     </span>
+                    
                     <div className="flex gap-1">
                       {day.isOnLeave && (
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-red-500 rounded-full shadow-md" title="On Leave"></div>
                       )}
                       {day.isAnnualLeave && (
-                        <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-orange-500 rounded-full shadow-md" title="Holiday"></div>
                       )}
                     </div>
                   </div>
                   
-                  <div className="space-y-1">
-                    {day.bookings.slice(0, 2).map((booking) => (
-                      <div key={booking.id} className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate">
-                        {format(new Date(booking.start_time), 'HH:mm')} {booking.client_name}
+                  {day.bookings.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {day.bookings.slice(0, 3).map((booking, idx) => (
+                          <div
+                            key={idx}
+                            className={`
+                              w-2 h-2 rounded-full shadow-sm
+                              ${booking.status === 'completed' ? 'bg-emerald-500' : ''}
+                              ${booking.status === 'in_progress' ? 'bg-blue-500' : ''}
+                              ${booking.status === 'assigned' ? 'bg-amber-500' : ''}
+                            `}
+                            title={`${format(new Date(booking.start_time), 'HH:mm')} - ${booking.client_name}`}
+                          />
+                        ))}
+                        {day.bookings.length > 3 && (
+                          <span className="text-xs text-muted-foreground font-medium">+{day.bookings.length - 3}</span>
+                        )}
                       </div>
-                    ))}
-                    {day.bookings.length > 2 && (
-                      <div className="text-xs text-gray-500 text-center">
-                        +{day.bookings.length - 2} more
+                      
+                      <div className="text-xs font-semibold text-foreground/80 text-center bg-muted/50 rounded px-2 py-1">
+                        {day.bookings.length} visit{day.bookings.length !== 1 ? 's' : ''}
                       </div>
-                    )}
-                    {day.bookings.length > 0 && (
-                      <div className="text-xs text-center text-gray-600 font-medium">
-                        {day.bookings.length} appointment{day.bookings.length !== 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
