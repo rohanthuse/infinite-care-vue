@@ -5,6 +5,7 @@ import { ArrowUpRight, ClipboardCheck } from "lucide-react";
 import { BookingItem } from "@/components/dashboard/BookingItem";
 import { ReviewItem, ReviewItemSkeleton } from "@/components/dashboard/ReviewItem";
 import { ActionItem } from "@/components/dashboard/ActionItem";
+import { UnavailabilityRequestsCard } from "@/components/admin/UnavailabilityRequestsCard";
 import { useBranchStatistics } from "@/data/hooks/useBranchStatistics";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
@@ -47,6 +48,11 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
     handleTabChange('task-matrix');
   };
 
+  const handleReassignClick = (bookingId: string, requestId: string) => {
+    // Navigate to bookings tab to handle reassignment
+    handleTabChange('bookings');
+  };
+
   // Filter and prepare urgent tasks for display
   const urgentTasks = tasks
     .filter(task => task.status !== 'done' && (task.priority === 'high' || task.priority === 'urgent'))
@@ -54,6 +60,13 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
 
   return (
     <>
+      {/* Unavailability Requests - Priority Alert Card */}
+      <div className="mb-6">
+        <UnavailabilityRequestsCard 
+          branchId={branchId}
+          onReassignClick={handleReassignClick}
+        />
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
         <Card>
           <CardHeader className="pb-2">
