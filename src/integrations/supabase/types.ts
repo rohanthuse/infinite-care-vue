@@ -840,6 +840,86 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_unavailability_requests: {
+        Row: {
+          admin_notes: string | null
+          booking_id: string
+          branch_id: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          organization_id: string | null
+          reason: string
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          staff_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          booking_id: string
+          branch_id: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          reason: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          booking_id?: string
+          branch_id?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string | null
+          reason?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          staff_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_unavailability_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_unavailability_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_unavailability_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_unavailability_requests_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           branch_id: string | null
