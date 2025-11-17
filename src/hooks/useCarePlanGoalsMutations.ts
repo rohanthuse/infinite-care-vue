@@ -67,8 +67,13 @@ export const useCreateGoal = () => {
   return useMutation({
     mutationFn: createGoal,
     onSuccess: (data) => {
+      console.log('[useCreateGoal] SUCCESS - Invalidating queries for care plan:', data.care_plan_id);
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
+      queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', data.care_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
+    },
+    onError: (error) => {
+      console.error('[useCreateGoal] MUTATION ERROR:', error);
     },
   });
 };
@@ -79,8 +84,13 @@ export const useUpdateGoal = () => {
   return useMutation({
     mutationFn: updateGoal,
     onSuccess: (data) => {
+      console.log('[useUpdateGoal] SUCCESS - Invalidating queries for care plan:', data.care_plan_id);
       queryClient.invalidateQueries({ queryKey: ['care-plan-goals', data.care_plan_id] });
+      queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', data.care_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['comprehensive-care-plan-data'] });
+    },
+    onError: (error) => {
+      console.error('[useUpdateGoal] MUTATION ERROR:', error);
     },
   });
 };

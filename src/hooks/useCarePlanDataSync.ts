@@ -1,5 +1,6 @@
 import { useCreateGoal } from './useCarePlanGoalsMutations';
 import { useCreateClientActivity } from './useClientActivities';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SyncGoalParams {
   goal: any;
@@ -25,6 +26,7 @@ interface SyncActivityParams {
 
 export const useSyncGoalToDatabase = () => {
   const createGoal = useCreateGoal();
+  const queryClient = useQueryClient();
 
   return async ({ goal, care_plan_id, updates }: SyncGoalParams): Promise<string> => {
     // Check if this is a JSON-sourced goal (not yet in database)
@@ -41,6 +43,13 @@ export const useSyncGoalToDatabase = () => {
       });
       
       console.log('[useSyncGoalToDatabase] Created goal in database:', newGoal.id);
+      
+      // Force refresh of JSON data query to prevent duplicates
+      queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', care_plan_id] });
+      
+      // Small delay to ensure DB write completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       return newGoal.id;
     }
     
@@ -51,6 +60,7 @@ export const useSyncGoalToDatabase = () => {
 
 export const useSyncActivityToDatabase = () => {
   const createActivity = useCreateClientActivity();
+  const queryClient = useQueryClient();
 
   return async ({ activity, care_plan_id, updates }: SyncActivityParams): Promise<string> => {
     // Check if this is a JSON-sourced activity (not yet in database)
@@ -67,6 +77,13 @@ export const useSyncActivityToDatabase = () => {
       });
       
       console.log('[useSyncActivityToDatabase] Created activity in database:', newActivity.id);
+      
+      // Force refresh of JSON data query to prevent duplicates
+      queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', care_plan_id] });
+      
+      // Small delay to ensure DB write completes
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       return newActivity.id;
     }
     
