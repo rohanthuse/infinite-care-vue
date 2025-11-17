@@ -57,6 +57,33 @@ export const CarerAppointmentDetailDialog = ({
     return appointment.status === 'assigned' && timeDiff >= -15;
   };
 
+  const getUnavailabilityStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return {
+          label: 'Unavailability Requested',
+          className: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        };
+      case 'approved':
+        return {
+          label: 'Unavailability Approved',
+          className: 'bg-green-100 text-green-800 border-green-200'
+        };
+      case 'rejected':
+        return {
+          label: 'Unavailability Rejected',
+          className: 'bg-red-100 text-red-800 border-red-200'
+        };
+      case 'reassigned':
+        return {
+          label: 'Booking Reassigned',
+          className: 'bg-blue-100 text-blue-800 border-blue-200'
+        };
+      default:
+        return null;
+    }
+  };
+
   const handleStartVisit = () => {
     onStartVisit?.(appointment);
     onOpenChange(false);
@@ -172,6 +199,50 @@ export const CarerAppointmentDetailDialog = ({
             </>
           )}
 
+          {/* Unavailability Request Status */}
+          {appointment.unavailability_request && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  Unavailability Request Status
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Status</span>
+                    <Badge className={getUnavailabilityStatusBadge(appointment.unavailability_request.status)?.className}>
+                      {getUnavailabilityStatusBadge(appointment.unavailability_request.status)?.label}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <span className="text-sm text-muted-foreground">Reason</span>
+                    <p className="text-sm mt-1">{appointment.unavailability_request.reason}</p>
+                  </div>
+                  
+                  {appointment.unavailability_request.notes && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Additional Notes</span>
+                      <p className="text-sm mt-1">{appointment.unavailability_request.notes}</p>
+                    </div>
+                  )}
+                  
+                  {appointment.unavailability_request.admin_notes && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <span className="text-sm font-medium text-blue-900">Admin Response</span>
+                      <p className="text-sm mt-1 text-blue-800">{appointment.unavailability_request.admin_notes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-muted-foreground">
+                    Requested on {format(new Date(appointment.unavailability_request.requested_at), 'PPP \'at\' p')}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
           {/* Action Buttons */}
           <Separator />
           <div className="flex flex-col gap-3">
@@ -199,8 +270,18 @@ export const CarerAppointmentDetailDialog = ({
               </Button>
             )}
             
-            {/* Not Available Button - Only show for future assigned bookings */}
-            {appointment.status === 'assigned' && new Date(appointment.start_time) > new Date() && (
+            {/* Info message when request is pending */}
+            {appointment.unavailability_request?.status === 'pending' && (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>Your unavailability request is pending admin review. You will be notified once it's processed.</span>
+              </div>
+            )}
+
+            {/* Not Available Button - Only show for future assigned bookings WITHOUT existing request */}
+            {appointment.status === 'assigned' && 
+             new Date(appointment.start_time) > new Date() && 
+             !appointment.unavailability_request && (
               <Button 
                 variant="destructive" 
                 onClick={() => {

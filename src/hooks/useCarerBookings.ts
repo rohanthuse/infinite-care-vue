@@ -18,6 +18,16 @@ export interface CarerBooking {
   service_name?: string;
   client_first_name?: string;
   client_last_name?: string;
+  // Unavailability request data
+  unavailability_request?: {
+    id: string;
+    status: string;
+    reason: string;
+    notes?: string;
+    requested_at: string;
+    reviewed_at?: string;
+    admin_notes?: string;
+  } | null;
 }
 
 const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
@@ -37,6 +47,15 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
       services (
         id,
         title
+      ),
+      booking_unavailability_requests!booking_id (
+        id,
+        status,
+        reason,
+        notes,
+        requested_at,
+        reviewed_at,
+        admin_notes
       )
     `)
     .eq('staff_id', carerId)
@@ -56,12 +75,16 @@ const fetchCarerBookings = async (carerId: string): Promise<CarerBooking[]> => {
     
     const serviceName = booking.services?.title || 'No Service Selected';
     
+    // Get the most recent unavailability request for this booking
+    const unavailabilityRequest = booking.booking_unavailability_requests?.[0] || null;
+    
     return {
       ...booking,
       client_name: clientName,
       service_name: serviceName,
       client_first_name: booking.clients?.first_name || '',
-      client_last_name: booking.clients?.last_name || ''
+      client_last_name: booking.clients?.last_name || '',
+      unavailability_request: unavailabilityRequest
     };
   });
 };

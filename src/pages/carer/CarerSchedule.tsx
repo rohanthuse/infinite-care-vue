@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Filter, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Filter, ChevronLeft, ChevronRight, Eye, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,40 @@ const CarerSchedule: React.FC = () => {
 
   const getTodayHighlight = (isToday: boolean) => {
     return isToday ? 'ring-4 ring-primary ring-offset-2 shadow-xl' : '';
+  };
+
+  const getUnavailabilityBadge = (request: any) => {
+    if (!request) return null;
+    
+    switch (request.status) {
+      case 'pending':
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 text-xs">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Unavailability Requested
+          </Badge>
+        );
+      case 'approved':
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+            Unavailability Approved
+          </Badge>
+        );
+      case 'rejected':
+        return (
+          <Badge className="bg-red-100 text-red-800 border-red-200 text-xs">
+            Unavailability Rejected
+          </Badge>
+        );
+      case 'reassigned':
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+            Reassigned
+          </Badge>
+        );
+      default:
+        return null;
+    }
   };
 
   const formatAppointmentDate = (dateString: string) => {
@@ -418,6 +452,7 @@ const CarerSchedule: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {appointment.unavailability_request && getUnavailabilityBadge(appointment.unavailability_request)}
                       <Badge className={`${getStatusColor(appointment.status)} text-xs`}>
                         {appointment.status === 'assigned' ? 'Scheduled' : normalizeStatus(appointment.status)}
                       </Badge>
@@ -504,9 +539,16 @@ const CarerSchedule: React.FC = () => {
                         {booking.service_name}
                       </div>
                       
-                      <Badge className={`${getStatusColor(booking.status)} text-xs font-semibold`}>
-                        {booking.status === 'assigned' ? 'Scheduled' : normalizeStatus(booking.status)}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        <Badge className={`${getStatusColor(booking.status)} text-xs font-semibold`}>
+                          {booking.status === 'assigned' ? 'Scheduled' : normalizeStatus(booking.status)}
+                        </Badge>
+                        {booking.unavailability_request && (
+                          <div className="text-right">
+                            {getUnavailabilityBadge(booking.unavailability_request)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -661,6 +703,7 @@ const CarerSchedule: React.FC = () => {
                       <Badge className={getStatusColor(booking.status)}>
                         {booking.status === 'assigned' ? 'Scheduled' : booking.status}
                       </Badge>
+                      {booking.unavailability_request && getUnavailabilityBadge(booking.unavailability_request)}
                     </div>
                   </div>
                 </CardContent>
