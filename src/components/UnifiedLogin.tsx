@@ -23,6 +23,7 @@ const UnifiedLogin = () => {
   const [thirdPartyInfo, setThirdPartyInfo] = useState<any>(null);
   const [thirdPartyLoading, setThirdPartyLoading] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
+  const [forceShowForm, setForceShowForm] = useState(false);
   const navigate = useNavigate();
   const { getRoleWithOptimization, getOrganizationWithOptimization, clearOptimizationCache } = useOptimizedAuth();
   const { user, loading: authLoading } = useAuth();
@@ -37,6 +38,7 @@ const UnifiedLogin = () => {
     sessionStorage.removeItem('redirect_in_progress');
     sessionStorage.removeItem('login_redirect_count');
     sessionStorage.removeItem('post_login_redirect');
+    sessionStorage.removeItem('navigation_flag_timestamp');
     
     // Check for stuck auth state
     const stuckAuth = sessionStorage.getItem('auth_stuck');
@@ -49,6 +51,18 @@ const UnifiedLogin = () => {
     // Set recovery flag
     sessionStorage.setItem('login_page_loaded', Date.now().toString());
   }, []);
+
+  // PHASE 2: Force display form after 2 seconds regardless of loading state
+  useEffect(() => {
+    const forceDisplayTimer = setTimeout(() => {
+      if (authLoading || loading) {
+        console.warn('[UnifiedLogin] Force displaying form after 2s timeout');
+        setForceShowForm(true);
+      }
+    }, 2000);
+    
+    return () => clearTimeout(forceDisplayTimer);
+  }, [authLoading, loading]);
 
   // Defensive: Ensure auth provider timeout doesn't interfere
   useEffect(() => {
@@ -745,11 +759,11 @@ const UnifiedLogin = () => {
 
       {/* Right Column - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white relative">
-        {/* Loading Overlay */}
-        {(loading || authLoading) && (
-          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-3"></div>
+        {/* PHASE 2: Non-blocking Loading Banner - only show if form not forced visible */}
+        {(loading || authLoading) && !forceShowForm && (
+          <div className="absolute top-0 left-0 right-0 bg-blue-50 border-b border-blue-100 py-3 px-4 z-40">
+            <div className="flex items-center justify-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
               <p className="text-sm font-medium text-gray-700">
                 {authLoading ? 'Checking authentication...' : loadingMessage}
               </p>

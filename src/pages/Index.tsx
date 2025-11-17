@@ -12,38 +12,45 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 
 const Index = () => {
-  // CRITICAL: Check navigation intent BEFORE any hooks are called
-  const isNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
-  const targetDashboard = sessionStorage.getItem('target_dashboard');
-  
-  // If navigating, return loading immediately - don't execute ANY other code
-  if (isNavigating && targetDashboard) {
-    // Safety: Clear flags after 1 second to prevent infinite loading
-    setTimeout(() => {
-      const stillNavigating = sessionStorage.getItem('navigating_to_dashboard') === 'true';
-      if (stillNavigating) {
-        console.warn('[Index] Navigation timeout, clearing flags');
-        sessionStorage.removeItem('navigating_to_dashboard');
-        sessionStorage.removeItem('target_dashboard');
-        sessionStorage.removeItem('redirect_in_progress');
-      }
-    }, 1000);
-    
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-sm text-gray-600 mt-4">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Only if NOT navigating, initialize hooks and render full page
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
+
+  // PHASE 1: Defensive flag clearing on mount - always runs first
+  useEffect(() => {
+    console.log('[Index] Mounted, clearing any stale navigation flags');
+    
+    // Clear stale flags immediately
+    const navigatingFlag = sessionStorage.getItem('navigating_to_dashboard');
+    const targetDashboard = sessionStorage.getItem('target_dashboard');
+    const flagTimestamp = sessionStorage.getItem('navigation_flag_timestamp');
+    
+    // Clear flags older than 5 seconds
+    if (flagTimestamp) {
+      const age = Date.now() - parseInt(flagTimestamp);
+      if (age > 5000) {
+        console.warn('[Index] Clearing stale flags (age:', age, 'ms)');
+        sessionStorage.removeItem('navigating_to_dashboard');
+        sessionStorage.removeItem('target_dashboard');
+        sessionStorage.removeItem('redirect_in_progress');
+        sessionStorage.removeItem('navigation_flag_timestamp');
+      }
+    }
+    
+    // Failsafe: Force clear after 2 seconds regardless
+    const failsafeTimer = setTimeout(() => {
+      if (sessionStorage.getItem('navigating_to_dashboard') === 'true') {
+        console.warn('[Index] Failsafe: Force clearing navigation flags');
+        sessionStorage.removeItem('navigating_to_dashboard');
+        sessionStorage.removeItem('target_dashboard');
+        sessionStorage.removeItem('redirect_in_progress');
+        sessionStorage.removeItem('navigation_flag_timestamp');
+      }
+    }, 2000);
+    
+    return () => clearTimeout(failsafeTimer);
+  }, []);
 
   // CRITICAL: Intercept password recovery tokens on Index and redirect to reset page
   useEffect(() => {

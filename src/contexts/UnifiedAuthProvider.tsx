@@ -33,11 +33,11 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
         console.log('[UnifiedAuth] Initializing authentication...');
         setLoading(true);
         
-        // 1.5 second timeout for session initialization
+        // PHASE 4: Reduced to 1 second timeout for faster initial load
         timeoutId = setTimeout(() => {
           // FIXED: Check initComplete flag instead of stale loading state
           if (mounted && !initComplete) {
-            console.warn('[UnifiedAuth] Initialization timeout (1.5s), proceeding without auth');
+            console.warn('[UnifiedAuth] Initialization timeout (1s), force-ready state');
             if (mounted) {
               setLoading(false);
               setInitialized(true);
@@ -45,7 +45,7 @@ export const UnifiedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
               setSession(null);
             }
           }
-        }, 1500);
+        }, 1000);
 
         // Get existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
