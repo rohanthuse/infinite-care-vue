@@ -228,6 +228,7 @@ export function useBookingData(branchId?: string) {
             date: startDate,
             status: bk.status || "assigned",
             notes: bk.notes || "",
+            unavailability_request: bk.booking_unavailability_requests?.[0] || null,
           };
 
           processedBookings.push(processedBooking);

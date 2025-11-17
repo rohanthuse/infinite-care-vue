@@ -14,6 +14,15 @@ export interface BookingDB {
   created_at: string | null;
   status: string | null;
   notes: string | null;
+  booking_unavailability_requests?: Array<{
+    id: string;
+    status: 'pending' | 'approved' | 'rejected' | 'reassigned';
+    reason: string;
+    notes?: string;
+    requested_at: string;
+    reviewed_at?: string;
+    admin_notes?: string;
+  }>;
 }
 
 export async function fetchBranchBookings(branchId?: string) {
@@ -26,9 +35,19 @@ export async function fetchBranchBookings(branchId?: string) {
   
   const { data, error } = await supabase
     .from("bookings")
-    .select(
-      "id, client_id, staff_id, branch_id, start_time, end_time, revenue, service_id, created_at, status, notes"
-    )
+    .select(`
+      id, client_id, staff_id, branch_id, start_time, end_time, 
+      revenue, service_id, created_at, status, notes,
+      booking_unavailability_requests!booking_id (
+        id,
+        status,
+        reason,
+        notes,
+        requested_at,
+        reviewed_at,
+        admin_notes
+      )
+    `)
     .eq("branch_id", branchId)
     .order("start_time", { ascending: true });
 
