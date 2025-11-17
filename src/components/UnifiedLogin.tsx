@@ -26,7 +26,6 @@ const UnifiedLogin = () => {
   const navigate = useNavigate();
   const { getRoleWithOptimization, getOrganizationWithOptimization, clearOptimizationCache } = useOptimizedAuth();
   const { user, loading: authLoading } = useAuth();
-  const [forceShowLogin, setForceShowLogin] = useState(false);
 
   // Clean up navigation flags when landing on login page
   useEffect(() => {
@@ -61,28 +60,15 @@ const UnifiedLogin = () => {
     return () => clearTimeout(checkTimer);
   }, [authLoading, user]);
 
-  // Force show login after timeout to prevent white screen
-  useEffect(() => {
-    const forceTimeout = setTimeout(() => {
-      if (authLoading && !forceShowLogin) {
-        console.warn('[UnifiedLogin] Auth loading timeout exceeded, forcing login display');
-        setForceShowLogin(true);
-      }
-    }, 2000); // 2 second maximum wait
-    
-    return () => clearTimeout(forceTimeout);
-  }, [authLoading, forceShowLogin]);
-
   // Diagnostic logging for debugging
   useEffect(() => {
     console.log('[UnifiedLogin] Render state:', {
       authLoading,
       hasUser: !!user,
-      forceShowLogin,
       pathname: window.location.pathname,
       timestamp: new Date().toISOString()
     });
-  }, [authLoading, user, forceShowLogin]);
+  }, [authLoading, user]);
 
   // Redirect loop prevention - removed automatic redirect
   // Let users stay on login page to see error messages if they have auth issues
@@ -724,38 +710,6 @@ const UnifiedLogin = () => {
     }
   };
 
-  // Show loading screen while checking auth state
-  if (authLoading && !forceShowLogin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-        <div className="text-center max-w-md p-8">
-          <div className="mb-6">
-            <img 
-              src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" 
-              alt="Med-Infinite Logo" 
-              className="w-16 h-16 mx-auto mb-4 animate-pulse" 
-            />
-          </div>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-lg font-medium text-gray-900 mb-2">Loading Login Page</p>
-          <p className="text-sm text-gray-600">Initializing authentication...</p>
-          
-          <div className="mt-8">
-            <button
-              onClick={() => {
-                console.log('[UnifiedLogin] User requested force load');
-                setForceShowLogin(true);
-              }}
-              className="text-sm text-blue-600 hover:text-blue-800 underline transition-opacity"
-            >
-              Taking too long? Click here to continue
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="login-page-light min-h-screen flex">
       {/* Left Column - Gradient Background with Info */}
@@ -792,11 +746,13 @@ const UnifiedLogin = () => {
       {/* Right Column - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 bg-white relative">
         {/* Loading Overlay */}
-        {loading && (
+        {(loading || authLoading) && (
           <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-3"></div>
-              <p className="text-sm font-medium text-gray-700">{loadingMessage}</p>
+              <p className="text-sm font-medium text-gray-700">
+                {authLoading ? 'Checking authentication...' : loadingMessage}
+              </p>
             </div>
           </div>
         )}
