@@ -1,6 +1,6 @@
 import React from "react";
 import { Booking } from "./BookingTimeGrid";
-import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle, StickyNote } from "lucide-react";
+import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle, StickyNote, AlertTriangle } from "lucide-react";
 import { 
   Tooltip, 
   TooltipContent, 
@@ -37,6 +37,12 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
   onViewBooking,
   isHighlighted = false
 }) => {
+  // Determine if booking requires reassignment
+  const needsReassignment = booking.unavailability_request && (
+    booking.unavailability_request.status === 'pending' || 
+    booking.unavailability_request.status === 'approved'
+  );
+
   // Determine background color based on status
   const statusColors = {
     assigned: "bg-green-100 border-green-300 text-green-800",
@@ -48,7 +54,10 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     suspended: "bg-gray-100 border-gray-300 text-gray-800"
   };
   
-  const backgroundColor = statusColors[booking.status];
+  // Override with reassignment highlight if needed
+  const backgroundColor = needsReassignment 
+    ? "bg-amber-50 border-amber-400 border-2 text-amber-900"
+    : statusColors[booking.status];
   
   // Apply highlight styles if this booking is highlighted
   const highlightClasses = isHighlighted ? 
@@ -212,6 +221,12 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                   </div>
                 )}
                 <div className="p-1 overflow-hidden h-full flex flex-col">
+                  {needsReassignment && (
+                    <div className="flex items-center gap-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      {booking.unavailability_request?.status === 'pending' ? 'Reassign Pending' : 'Reassign Required'}
+                    </div>
+                  )}
                   <div className="font-medium truncate flex items-center">
                     {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
                     <span>{booking.startTime}-{booking.endTime}</span>

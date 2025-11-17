@@ -44,6 +44,15 @@ export interface Booking {
   date: string; // Format: "2023-05-15"
   status: "assigned" | "unassigned" | "done" | "in-progress" | "cancelled" | "departed" | "suspended";
   notes?: string;
+  unavailability_request?: {
+    id: string;
+    status: 'pending' | 'approved' | 'rejected' | 'reassigned';
+    reason: string;
+    notes?: string;
+    requested_at: string;
+    reviewed_at?: string;
+    admin_notes?: string;
+  } | null;
 }
 
 export interface Client {

@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DayBookingsDialog } from "./DayBookingsDialog";
 import { AnnualLeave } from "@/hooks/useLeaveManagement";
+import { AlertTriangle } from "lucide-react";
+import { requiresReassignment, getReassignmentBadgeText } from "./utils/bookingColors";
 
 export interface Booking {
   id: string;
@@ -18,6 +20,15 @@ export interface Booking {
   date: string;
   status: "assigned" | "unassigned" | "done" | "in-progress" | "cancelled" | "departed" | "suspended";
   notes?: string;
+  unavailability_request?: {
+    id: string;
+    status: 'pending' | 'approved' | 'rejected' | 'reassigned';
+    reason: string;
+    notes?: string;
+    requested_at: string;
+    reviewed_at?: string;
+    admin_notes?: string;
+  } | null;
 }
 
 export interface Client {
@@ -275,26 +286,40 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                   ))}
 
                   {/* Bookings */}
-                  {visibleBookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className={cn(
-                        "text-xs p-1.5 rounded cursor-pointer transition-all",
-                        "hover:opacity-80 hover:shadow-sm",
-                        "text-white border-l-2",
-                        getStatusColor(booking.status)
-                      )}
-                      onClick={() => onBookingClick?.(booking)}
-                      title={`${booking.clientName}\n${booking.startTime} - ${booking.endTime}\nCarer: ${booking.carerName}\nStatus: ${booking.status}`}
-                    >
-                      <div className="font-semibold truncate">
-                        {booking.clientName}
+                  {visibleBookings.map((booking) => {
+                    const needsReassignment = requiresReassignment(booking);
+                    
+                    return (
+                      <div
+                        key={booking.id}
+                        className={cn(
+                          "text-xs p-1.5 rounded cursor-pointer transition-all",
+                          "hover:opacity-80 hover:shadow-sm",
+                          "text-white border-l-2",
+                          needsReassignment 
+                            ? "bg-amber-400 border-amber-600 ring-2 ring-amber-300" 
+                            : getStatusColor(booking.status)
+                        )}
+                        onClick={() => onBookingClick?.(booking)}
+                        title={`${booking.clientName}\n${booking.startTime} - ${booking.endTime}\nCarer: ${booking.carerName}\nStatus: ${booking.status}${needsReassignment ? '\n⚠️ REASSIGNMENT REQUIRED' : ''}`}
+                      >
+                        {needsReassignment && (
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className="bg-white text-amber-700 rounded-sm px-1 py-0.5 text-[9px] font-bold flex items-center gap-0.5">
+                              <AlertTriangle className="h-2 w-2" />
+                              {getReassignmentBadgeText(booking.unavailability_request!.status)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="font-semibold truncate">
+                          {booking.clientName}
+                        </div>
+                        <div className="text-[10px] opacity-90">
+                          {booking.startTime}-{booking.endTime}
+                        </div>
                       </div>
-                      <div className="text-[10px] opacity-90">
-                        {booking.startTime}-{booking.endTime}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Overflow indicator */}
                   {overflowCount > 0 && (

@@ -81,3 +81,45 @@ export function getBookingStatusLabel(status: string): string {
   const statusKey = status as BookingStatusType;
   return BOOKING_STATUS_COLORS[statusKey]?.label || status;
 }
+
+/**
+ * Check if a booking requires reassignment
+ * A booking needs reassignment if:
+ * 1. It has an unavailability request with status 'pending' or 'approved'
+ * 2. The booking is in the future
+ */
+export function requiresReassignment(booking: any): boolean {
+  if (!booking.unavailability_request) return false;
+  
+  const request = booking.unavailability_request;
+  const needsReassignment = 
+    request.status === 'pending' || 
+    request.status === 'approved';
+  
+  // Only mark future bookings
+  const bookingDateTime = new Date(`${booking.date}T${booking.startTime}`);
+  const isFuture = bookingDateTime > new Date();
+  
+  return needsReassignment && isFuture;
+}
+
+/**
+ * Get reassignment badge text based on unavailability request status
+ */
+export function getReassignmentBadgeText(status: string): string {
+  switch (status) {
+    case 'pending':
+      return 'Reassign Pending';
+    case 'approved':
+      return 'Reassign Required';
+    default:
+      return 'Reassign Required';
+  }
+}
+
+/**
+ * Get reassignment highlight color classes
+ */
+export function getReassignmentHighlight(): string {
+  return 'bg-amber-50 border-amber-400 border-2';
+}

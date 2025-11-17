@@ -1,7 +1,7 @@
 import React from "react";
 import { Draggable, Droppable } from "react-beautiful-dnd";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { StickyNote, GraduationCap, CalendarCheck } from "lucide-react";
+import { StickyNote, GraduationCap, CalendarCheck, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getBookingStatusColor } from "./utils/bookingColors";
 import { Booking } from "./BookingTimeGrid";
@@ -89,6 +89,11 @@ export function StaffScheduleDraggable({
             const isSplitSecond = block.isSplit && block.splitType === 'second';
             const isSelected = selectedBookings.some(b => b.id === block.booking.id);
             
+            const needsReassignment = 
+              block.booking.unavailability_request && 
+              (block.booking.unavailability_request.status === 'pending' || 
+               block.booking.unavailability_request.status === 'approved');
+            
             return (
               <Draggable 
                 key={`${block.booking.id}-${idx}`} 
@@ -107,7 +112,7 @@ export function StaffScheduleDraggable({
                     className={`
                       absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-grab active:cursor-grabbing transition-all
                       border border-gray-300 dark:border-gray-600 rounded-sm
-                      ${colorClass}
+                      ${needsReassignment ? 'bg-amber-100 border-amber-500' : colorClass}
                       ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
                       ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
                       ${snapshot.isDragging ? 'shadow-xl opacity-95 rotate-2 scale-105 ring-2 ring-primary' : ''}
@@ -128,6 +133,12 @@ export function StaffScheduleDraggable({
                       }
                     }}
                   >
+                    {needsReassignment && (
+                      <div className="absolute top-0 right-0 bg-amber-500 text-white px-1.5 py-0.5 text-[9px] font-bold rounded-bl flex items-center gap-0.5 z-20">
+                        <AlertTriangle className="h-2.5 w-2.5" />
+                        Reassign
+                      </div>
+                    )}
                     {onBookingSelect && block.booking.status !== 'training' && block.booking.status !== 'meeting' && (
                       <div 
                         className="absolute top-1 left-1 z-10 pointer-events-auto"
