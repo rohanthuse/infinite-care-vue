@@ -1328,7 +1328,6 @@ const CarerVisitWorkflow = () => {
                 <div className="border-t p-6 flex justify-end">
                   <Button 
                     onClick={handleNextStep}
-                    disabled={!isTabCompleted("check-in")}
                   >
                     Next Step
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1571,7 +1570,6 @@ const CarerVisitWorkflow = () => {
                     </Button>
                     <Button 
                       onClick={handleNextStep}
-                      disabled={!isTabCompleted("medication")}
                     >
                       Next Step
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -1779,7 +1777,6 @@ const CarerVisitWorkflow = () => {
                 </Button>
                 <Button 
                   onClick={handleNextStep}
-                  disabled={!isTabCompleted("news2")}
                 >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1908,7 +1905,6 @@ const CarerVisitWorkflow = () => {
                 </Button>
                 <Button 
                   onClick={handleNextStep}
-                  disabled={!isTabCompleted("events")}
                 >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1943,7 +1939,6 @@ const CarerVisitWorkflow = () => {
                 </Button>
                 <Button 
                   onClick={handleNextStep}
-                  disabled={!isTabCompleted("care-plan")}
                 >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -2243,7 +2238,6 @@ const CarerVisitWorkflow = () => {
                 </Button>
                 <Button 
                   onClick={handleNextStep}
-                  disabled={!isTabCompleted("notes")}
                 >
                   Next Step
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -2347,7 +2341,6 @@ const CarerVisitWorkflow = () => {
                     </Button>
                     <Button 
                       onClick={handleNextStep}
-                      disabled={!isTabCompleted("sign-off")}
                     >
                       Complete Visit
                       <ArrowRight className="w-4 h-4 ml-2" />
