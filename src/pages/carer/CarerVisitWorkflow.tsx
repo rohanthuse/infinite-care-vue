@@ -56,6 +56,7 @@ import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
 import { useClientActivities } from "@/hooks/useClientActivities";
+import { useCarePlanJsonData } from "@/hooks/useCarePlanJsonData";
 
 interface Task {
   id: string;
@@ -180,9 +181,25 @@ const CarerVisitWorkflow = () => {
     enabled: !!currentAppointment?.client_id,
   });
 
-  // Fetch goals and activities using the care plan ID
-  const { data: carePlanGoals, isLoading: goalsLoading } = useCarePlanGoals(activeCareplan?.id || '');
-  const { data: carePlanActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
+  // Fetch goals and activities from both normalized tables and JSON
+  const { data: normalizedGoals, isLoading: goalsLoading } = useCarePlanGoals(activeCareplan?.id || '');
+  const { data: normalizedActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
+  const { data: jsonData, isLoading: jsonLoading } = useCarePlanJsonData(activeCareplan?.id || '');
+  
+  // Merge data: prioritize normalized tables, fall back to JSON data
+  const carePlanGoals = useMemo(() => {
+    if (normalizedGoals && normalizedGoals.length > 0) {
+      return normalizedGoals;
+    }
+    return jsonData?.goals || [];
+  }, [normalizedGoals, jsonData?.goals]);
+  
+  const carePlanActivities = useMemo(() => {
+    if (normalizedActivities && normalizedActivities.length > 0) {
+      return normalizedActivities;
+    }
+    return jsonData?.activities || [];
+  }, [normalizedActivities, jsonData?.activities]);
   
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
