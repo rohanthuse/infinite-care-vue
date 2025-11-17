@@ -201,6 +201,20 @@ const CarerVisitWorkflow = () => {
     return jsonData?.activities || [];
   }, [normalizedActivities, jsonData?.activities]);
   
+  // Debug logging for data merge
+  console.log('[CarerVisitWorkflow] Data merge status:', {
+    normalizedGoalsCount: normalizedGoals?.length || 0,
+    jsonGoalsCount: jsonData?.goals?.length || 0,
+    finalGoalsCount: carePlanGoals?.length || 0,
+    normalizedActivitiesCount: normalizedActivities?.length || 0,
+    jsonActivitiesCount: jsonData?.activities?.length || 0,
+    finalActivitiesCount: carePlanActivities?.length || 0,
+    goalsLoading,
+    activitiesLoading,
+    jsonLoading,
+    carePlanId: activeCareplan?.id
+  });
+  
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
   const [completedTabs, setCompletedTabs] = useState<string[]>([]);
@@ -2052,7 +2066,7 @@ const CarerVisitWorkflow = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {goalsLoading ? (
+                {(goalsLoading || jsonLoading) ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -2153,7 +2167,7 @@ const CarerVisitWorkflow = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {activitiesLoading ? (
+                {(activitiesLoading || jsonLoading) ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
