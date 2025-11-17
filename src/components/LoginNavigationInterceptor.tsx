@@ -12,12 +12,29 @@ export const LoginNavigationInterceptor = () => {
   useEffect(() => {
     const currentPath = location.pathname;
     
+    // PHASE 3: Aggressive cleanup on ANY navigation
+    console.log('[LoginNavigationInterceptor] Checking for stale flags on:', currentPath);
+    
+    // Check flag age - flags older than 5 seconds are invalid
+    const flagTimestamp = sessionStorage.getItem('navigation_flag_timestamp');
+    if (flagTimestamp) {
+      const age = Date.now() - parseInt(flagTimestamp);
+      if (age > 5000) {
+        console.warn('[LoginNavigationInterceptor] Clearing stale navigation flags (age:', age, 'ms)');
+        sessionStorage.removeItem('navigating_to_dashboard');
+        sessionStorage.removeItem('target_dashboard');
+        sessionStorage.removeItem('redirect_in_progress');
+        sessionStorage.removeItem('navigation_flag_timestamp');
+      }
+    }
+    
     // CRITICAL: Never intercept on /login or any login-related path
     if (currentPath === '/login' || currentPath.includes('/login')) {
       console.log('[LoginNavigationInterceptor] On login page, clearing any stale navigation flags');
       sessionStorage.removeItem('navigating_to_dashboard');
       sessionStorage.removeItem('target_dashboard');
       sessionStorage.removeItem('redirect_in_progress');
+      sessionStorage.removeItem('navigation_flag_timestamp');
       return;
     }
     

@@ -49,6 +49,7 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import { LoginNavigationInterceptor } from "@/components/LoginNavigationInterceptor";
 import { useNotificationEmailSender } from "@/hooks/useNotificationEmailSender";
+import { StuckStateRecovery } from "@/components/StuckStateRecovery";
 
 import { queryClient } from "./lib/queryClient";
 
@@ -76,6 +77,43 @@ const AppContent = () => {
   const { loading, error, user } = useAuthSafe();
 
   console.log('[App] Auth state:', { loading, error: !!error, user: !!user, pathname: window.location.pathname });
+
+  // PHASE 3: Global navigation timeout - clear stuck flags on mount
+  React.useEffect(() => {
+    console.log('[App] Mounted, checking for stuck navigation flags');
+    
+    const checkStuckFlags = () => {
+      const navigating = sessionStorage.getItem('navigating_to_dashboard');
+      const flagTimestamp = sessionStorage.getItem('navigation_flag_timestamp');
+      
+      if (navigating === 'true') {
+        if (flagTimestamp) {
+          const age = Date.now() - parseInt(flagTimestamp);
+          if (age > 3000) {
+            console.warn('[App] Detected stuck navigation flags (age:', age, 'ms), clearing');
+            sessionStorage.removeItem('navigating_to_dashboard');
+            sessionStorage.removeItem('target_dashboard');
+            sessionStorage.removeItem('redirect_in_progress');
+            sessionStorage.removeItem('navigation_flag_timestamp');
+          }
+        } else {
+          // No timestamp but flag is set - clear it
+          console.warn('[App] Navigation flag without timestamp, clearing');
+          sessionStorage.removeItem('navigating_to_dashboard');
+          sessionStorage.removeItem('target_dashboard');
+          sessionStorage.removeItem('redirect_in_progress');
+        }
+      }
+    };
+    
+    // Check immediately on mount
+    checkStuckFlags();
+    
+    // Check again after 1 second as failsafe
+    const timeoutId = setTimeout(checkStuckFlags, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   // Show loading screen only for protected routes, not public routes
   const isPublicRoute = [
@@ -111,6 +149,7 @@ const AppContent = () => {
               <PWAInstallPrompt />
               <OfflineIndicator />
               <PWAUpdatePrompt />
+              <StuckStateRecovery />
               {user && <NotificationEmailManager />}
               <Routes>
               {/* Public Routes - Always accessible */}
