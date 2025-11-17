@@ -169,9 +169,15 @@ const CarerAppointments: React.FC = () => {
       const appointmentDate = format(new Date(appointment.start_time), 'yyyy-MM-dd');
       const startTime = new Date(appointment.start_time);
       
+      // Check if visit is actually completed (visit_record status trumps booking status)
+      const isVisitCompleted = appointment.visit_records && 
+        appointment.visit_records.length > 0 && 
+        appointment.visit_records[0].status === 'completed' &&
+        appointment.visit_records[0].visit_end_time;
+      
       // Exclude completed/done from "current" and "today" categories
       const excludedFromToday = ['completed', 'done'];
-      const isCompleted = excludedFromToday.includes(appointment.status);
+      const isCompleted = excludedFromToday.includes(appointment.status) || isVisitCompleted;
       
       if (appointmentDate === todayDate) {
         // Completed visits on today should go to past
@@ -321,11 +327,44 @@ const CarerAppointments: React.FC = () => {
     const status = appointment.status?.toLowerCase();
     const isLoading = bookingAttendance.isPending;
     
+    // Check if visit is actually completed (visit_record status)
+    const isVisitCompleted = appointment.visit_records && 
+      appointment.visit_records.length > 0 && 
+      appointment.visit_records[0].status === 'completed' &&
+      appointment.visit_records[0].visit_end_time;
+    
     console.log('[getActionButton] Rendering button for appointment:', {
       id: appointment.id,
       status: status,
+      isVisitCompleted: isVisitCompleted,
       isLoading: isLoading
     });
+    
+    // If booking status is in_progress but visit is completed, treat as completed
+    if (isVisitCompleted && (status === 'in_progress' || status === 'in-progress')) {
+      return (
+        <div className="flex flex-col items-end gap-2">
+          <Badge variant="success" className="bg-green-100 text-green-800 border-green-300">
+            ✓ Visit Completed
+          </Badge>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2"
+            onClick={() => {
+              console.log('[getActionButton] Navigating to completed visit in view mode:', appointment.id);
+              navigate(createCarerPath(`/visit/${appointment.id}?mode=view`), { 
+                state: { viewOnly: true } 
+              });
+            }}
+            disabled={isLoading}
+          >
+            <Eye className="h-4 w-4" />
+            View Details
+          </Button>
+        </div>
+      );
+    }
     
     if (status === 'completed' || status === 'done') {
       return (

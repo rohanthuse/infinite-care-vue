@@ -59,17 +59,32 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
 
         if (bookingError) {
           console.error('[useBookingAttendance] Booking update error:', bookingError);
+          
+          // Log RLS policy issues specifically
+          if (bookingError.message?.includes('policy') || bookingError.message?.includes('permission')) {
+            console.error('[useBookingAttendance] RLS policy violation detected - check if carer has permission to update this booking');
+          }
+          
           throw new Error(`Failed to update booking: ${bookingError.message}`);
         }
 
-        // Verify the update
-        const { data: updatedBooking } = await supabase
+        // CRITICAL: Double-verify the update succeeded
+        const { data: updatedBooking, error: verifyError } = await supabase
           .from('bookings')
           .select('status')
           .eq('id', data.bookingId)
           .single();
+
+        if (verifyError || !updatedBooking || updatedBooking.status !== newStatus) {
+          console.error('[useBookingAttendance] Verification failed:', { 
+            expected: newStatus, 
+            actual: updatedBooking?.status,
+            error: verifyError 
+          });
+          throw new Error(`Booking status verification failed - expected ${newStatus} but got ${updatedBooking?.status || 'null'}`);
+        }
         
-        console.log('[useBookingAttendance] Booking updated successfully, new status:', updatedBooking?.status);
+        console.log('[useBookingAttendance] Booking updated and verified successfully, new status:', updatedBooking.status);
 
         // If starting visit and late arrival data provided, create/update visit record with late arrival info
         if (data.action === 'start_visit' && (data.lateArrivalReason || data.arrivalDelayMinutes)) {
