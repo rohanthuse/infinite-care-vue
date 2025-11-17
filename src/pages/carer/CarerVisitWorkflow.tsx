@@ -665,34 +665,10 @@ const CarerVisitWorkflow = () => {
     }
   };
   
-  // Check if a tab can be accessed
-  const canAccessTab = (tabName: string): boolean => {
-    const tabIndex = tabOrder.indexOf(tabName);
-    if (tabIndex === 0) return true; // Check-in is always accessible
-    
-    // Can access if it's the current active tab
-    if (tabName === activeTab) return true;
-    
-    // Can access any previously completed tab
-    if (completedTabs.includes(tabName)) return true;
-    
-    // Can access next tab if current tab is completed
-    const currentTabIndex = tabOrder.indexOf(activeTab);
-    const isCurrentCompleted = isTabCompleted(activeTab);
-    
-    return tabIndex <= currentTabIndex + (isCurrentCompleted ? 1 : 0);
-  };
+  // Tab access restrictions removed - carers can navigate freely between all tabs
 
   const handleTabChange = (tabValue: string) => {
-    if (!canAccessTab(tabValue)) {
-      const currentTabIndex = tabOrder.indexOf(activeTab);
-      const targetTabIndex = tabOrder.indexOf(tabValue);
-      
-      if (targetTabIndex > currentTabIndex) {
-        toast.error(`Please complete the current tab before proceeding to ${tabValue}`);
-      }
-      return;
-    }
+    // No validation - allow free navigation between tabs
     
     // Mark previous tab as completed if it meets requirements
     if (isTabCompleted(activeTab) && !completedTabs.includes(activeTab)) {
@@ -1073,8 +1049,7 @@ const CarerVisitWorkflow = () => {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-11">
             <TabsTrigger 
-              value="check-in" 
-              disabled={!canAccessTab("check-in")}
+              value="check-in"
               className={`${isTabCompleted("check-in") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1086,8 +1061,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="tasks" 
-              disabled={!canAccessTab("tasks")}
+              value="tasks"
               className={`${isTabCompleted("tasks") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1099,8 +1073,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="medication" 
-              disabled={!canAccessTab("medication")}
+              value="medication"
               className={`${isTabCompleted("medication") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1112,8 +1085,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="news2" 
-              disabled={!canAccessTab("news2")}
+              value="news2"
               className={`${isTabCompleted("news2") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1125,8 +1097,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="events" 
-              disabled={!canAccessTab("events")}
+              value="events"
               className={`${isTabCompleted("events") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1138,8 +1109,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="care-plan" 
-              disabled={!canAccessTab("care-plan")}
+              value="care-plan"
               className={`${isTabCompleted("care-plan") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1151,8 +1121,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="goals" 
-              disabled={!canAccessTab("goals")}
+              value="goals"
               className={`${isTabCompleted("goals") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1164,8 +1133,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="activities" 
-              disabled={!canAccessTab("activities")}
+              value="activities"
               className={`${isTabCompleted("activities") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1177,8 +1145,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="notes" 
-              disabled={!canAccessTab("notes")}
+              value="notes"
               className={`${isTabCompleted("notes") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1190,8 +1157,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="sign-off" 
-              disabled={!canAccessTab("sign-off")}
+              value="sign-off"
               className={`${isTabCompleted("sign-off") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
@@ -1203,8 +1169,7 @@ const CarerVisitWorkflow = () => {
               </div>
             </TabsTrigger>
             <TabsTrigger 
-              value="complete" 
-              disabled={!canAccessTab("complete")}
+              value="complete"
               className={`${isTabCompleted("complete") ? "bg-green-50 border-green-200" : ""}`}
             >
               <div className="flex flex-col items-center gap-1">
