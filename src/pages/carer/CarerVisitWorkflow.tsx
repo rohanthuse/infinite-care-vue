@@ -739,35 +739,6 @@ const CarerVisitWorkflow = () => {
     // Removed auto-save on tab navigation to reduce database load
     // Data will be saved on Complete Visit action
     
-    // Check if current tab is completed
-    if (!isTabCompleted(activeTab)) {
-      let errorMessage = "";
-      switch (activeTab) {
-        case "check-in":
-          errorMessage = "Please start the visit first";
-          break;
-        case "tasks":
-          errorMessage = "Please complete all high priority tasks";
-          break;
-        case "medication":
-          errorMessage = "Please complete all medication tasks or mark as not administered";
-          break;
-        case "news2":
-          errorMessage = "Please record at least one NEWS2 reading";
-          break;
-        case "notes":
-          errorMessage = "Please enter visit notes (minimum 10 characters)";
-          break;
-        case "sign-off":
-          errorMessage = "Client signature is required";
-          break;
-        default:
-          errorMessage = "Please complete this section before proceeding";
-      }
-      toast.error(errorMessage);
-      return;
-    }
-    
     // Mark current tab as completed
     if (!completedTabs.includes(activeTab)) {
       setCompletedTabs(prev => [...prev, activeTab]);
