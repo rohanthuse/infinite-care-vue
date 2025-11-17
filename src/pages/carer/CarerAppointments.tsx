@@ -383,11 +383,17 @@ const CarerAppointments: React.FC = () => {
 
   if (isLoading || isContextLoading) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold mb-6">My Appointments</h1>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <div className="mb-6">
+          <Skeleton className="h-8 w-56 mb-2" />
+        </div>
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-full md:w-48" />
+        </div>
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-40 rounded-lg" />
           ))}
         </div>
       </div>
@@ -395,7 +401,7 @@ const CarerAppointments: React.FC = () => {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 max-w-full">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">My Appointments</h1>
       </div>

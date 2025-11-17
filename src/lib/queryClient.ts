@@ -7,8 +7,8 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: true,
-      staleTime: 10 * 60 * 1000, // 10 minutes - increased for visit data
-      gcTime: 15 * 60 * 1000, // 15 minutes
+      staleTime: 2 * 60 * 1000, // 2 minutes - faster updates for carer data
+      gcTime: 5 * 60 * 1000, // 5 minutes - quicker cleanup
       retry: 1,
     },
     mutations: {

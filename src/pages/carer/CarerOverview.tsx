@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +17,16 @@ import { ActiveVisitsSection } from "@/components/carer/ActiveVisitsSection";
 import { ReadyToStartSection } from "@/components/carer/ReadyToStartSection";
 import { ServiceReportsDashboardWidget } from "@/components/carer/ServiceReportsDashboardWidget";
 import { ImprovementAreasCard } from "@/components/carer/ImprovementAreasCard";
+import { useCarerPagePrefetch } from "@/hooks/useCarerPagePrefetch";
 
 const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
   const { user, isAuthenticated } = useUnifiedCarerAuth();
   const { data: carerProfile } = useCarerProfile();
+  
+  // Prefetch data for common pages
+  useCarerPagePrefetch();
   const {
     todayAppointments,
     readyToStartAppointments,
@@ -78,23 +81,28 @@ const CarerOverview: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-6">
-        <Skeleton className="h-8 w-64" />
+      <div className="w-full min-w-0 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="h-5 w-48" />
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-96" />
-          <Skeleton className="h-96" />
+          <Skeleton className="h-[400px] rounded-lg" />
+          <Skeleton className="h-[400px] rounded-lg" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full min-w-0 max-w-full space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">
