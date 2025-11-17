@@ -261,14 +261,14 @@ const CarerVisitWorkflow = () => {
   const [tasksInitialized, setTasksInitialized] = useState(false);
   const [medicationsInitialized, setMedicationsInitialized] = useState(false);
 
-  useEffect(() => {
-    // Don't initialize tasks in view-only mode
-    if (!isViewOnly && visitRecord && !tasksInitialized && (tasks?.length === 0 || tasks === undefined)) {
-      console.log('Initializing common tasks for visit record:', visitRecord.id);
-      setTasksInitialized(true);
-      addCommonTasks.mutate(visitRecord.id);
-    }
-  }, [visitRecord, tasks, addCommonTasks, tasksInitialized, isViewOnly]);
+  // Removed auto-generation of common tasks - only show admin-assigned tasks
+  // useEffect(() => {
+  //   if (!isViewOnly && visitRecord && !tasksInitialized && (tasks?.length === 0 || tasks === undefined)) {
+  //     console.log('Initializing common tasks for visit record:', visitRecord.id);
+  //     setTasksInitialized(true);
+  //     addCommonTasks.mutate(visitRecord.id);
+  //   }
+  // }, [visitRecord, tasks, addCommonTasks, tasksInitialized, isViewOnly]);
 
   useEffect(() => {
     // Don't initialize medications in view-only mode
@@ -873,9 +873,11 @@ const CarerVisitWorkflow = () => {
           staff_signature_data: completedVisit.staff_signature_data,
           visit_photos: Array.isArray(completedVisit.visit_photos) ? completedVisit.visit_photos : [],
         },
-        tasks: tasks || [],
+        tasks: assignedTasks || [],
         medications: medications || [],
         events: events || [],
+        goals: carePlanGoals || [],
+        activities: carePlanActivities || [],
         createdBy: user.id,
       });
 
@@ -1370,130 +1372,266 @@ const CarerVisitWorkflow = () => {
                    <Pill className="w-5 h-5" />
                    Medication Administration
                  </CardTitle>
-                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
-                   <div className="flex items-start gap-2">
-                     <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                       <Pill className="h-3 w-3 text-blue-600" />
-                     </div>
-                     <div className="text-sm text-blue-700">
-                       <p className="font-medium">Medications from Care Plan</p>
-                       <p className="mt-0.5">These medications were added to the client's care plan by staff. Record administrations here to create MAR entries.</p>
-                     </div>
-                   </div>
-                 </div>
                </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {medicationsLoading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                       <p className="mt-2 text-gray-500">Loading medications...</p>
                     </div>
-                  ) : medications && medications.length > 0 ? (
-                    <div className="space-y-3">
-                      {medications.map((med) => (
-                        <div key={med.id} className="border rounded-lg hover:bg-gray-50 transition-all">
-                          <div className="flex items-center space-x-3 p-4">
-                            <Checkbox
-                              checked={med.is_administered}
-                              onCheckedChange={() => {
-                                if (!med.is_administered) {
-                                  setExpandedMedication(med.id);
-                                }
-                                handleMedicationToggle(med.id, medicationNotes[med.id]);
-                              }}
-                              className="flex-shrink-0"
-                              disabled={isViewOnly || administerMedication.isPending}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                                    {med.medication_name}
-                                  </p>
-                                  <Badge variant="outline">{med.dosage}</Badge>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setExpandedMedication(expandedMedication === med.id ? null : med.id)}
-                                  disabled={isViewOnly}
-                                >
-                                  {expandedMedication === med.id ? 'Hide Notes' : 'Add Notes'}
-                                </Button>
-                              </div>
-                              {med.prescribed_time && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  Prescribed time: {format(new Date(`1970-01-01T${med.prescribed_time}`), 'h:mm a')}
-                                </p>
-                              )}
-                              {med.administration_time && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Administered at {format(new Date(med.administration_time), 'h:mm a')}
-                                </p>
-                              )}
-                              {med.missed_reason && (
-                                <p className="text-xs text-orange-600 mt-1">
-                                  Not administered: {med.missed_reason}
-                                </p>
-                              )}
-                            </div>
-                            {med.is_administered && (
-                              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                            )}
-                          </div>
-                          
-                          {/* Notes Section - Expandable */}
-                          {expandedMedication === med.id && (
-                            <div className="px-4 pb-4 pt-2 border-t">
-                              <Label htmlFor={`med-notes-${med.id}`} className="text-sm text-gray-700 mb-2 block">
-                                Notes (e.g., "Client refused", "Taken with food", "No side effects observed")
-                              </Label>
-                              <Textarea
-                                id={`med-notes-${med.id}`}
-                                value={medicationNotes[med.id] || ''}
-                                onChange={(e) => setMedicationNotes(prev => ({ ...prev, [med.id]: e.target.value }))}
-                                placeholder="Add any relevant notes about this medication..."
-                                disabled={isViewOnly}
-                                rows={3}
-                                className="w-full"
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setExpandedMedication(null)}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    handleMedicationToggle(med.id, medicationNotes[med.id]);
-                                    setExpandedMedication(null);
-                                  }}
-                                >
-                                  Save Notes
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Display existing notes if any */}
-                          {med.administration_notes && expandedMedication !== med.id && (
-                            <div className="px-4 pb-3 pt-1 border-t bg-blue-50">
-                              <p className="text-xs text-blue-700 font-medium mb-1">Notes:</p>
-                              <p className="text-sm text-blue-900">{med.administration_notes}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Pill className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No medications scheduled for this visit</p>
-                    </div>
+                    <>
+                      {/* Care Plan Medications Section */}
+                      <div>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                          <div className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Pill className="h-3 w-3 text-blue-600" />
+                            </div>
+                            <div className="text-sm text-blue-700">
+                              <p className="font-medium">Care Plan Medications</p>
+                              <p className="mt-0.5">These medications were added to the client's care plan by staff. Record administrations here to create MAR entries.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {medications?.filter(med => med.medication_id).length > 0 ? (
+                          <div className="space-y-3">
+                            {medications.filter(med => med.medication_id).map((med) => (
+                              <div key={med.id} className="border rounded-lg hover:bg-gray-50 transition-all">
+                                <div className="flex items-center space-x-3 p-4">
+                                  <Checkbox
+                                    checked={med.is_administered}
+                                    onCheckedChange={() => {
+                                      if (!med.is_administered) {
+                                        setExpandedMedication(med.id);
+                                      }
+                                      handleMedicationToggle(med.id, medicationNotes[med.id]);
+                                    }}
+                                    className="flex-shrink-0"
+                                    disabled={isViewOnly || administerMedication.isPending}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                          {med.medication_name}
+                                        </p>
+                                        <Badge variant="outline">{med.dosage}</Badge>
+                                        <Badge variant="secondary" className="text-xs">Care Plan</Badge>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setExpandedMedication(expandedMedication === med.id ? null : med.id)}
+                                        disabled={isViewOnly}
+                                      >
+                                        {expandedMedication === med.id ? 'Hide Notes' : 'Add Notes'}
+                                      </Button>
+                                    </div>
+                                    {med.prescribed_time && (
+                                      <p className="text-sm text-gray-600 mt-1">
+                                        Prescribed time: {format(new Date(`1970-01-01T${med.prescribed_time}`), 'h:mm a')}
+                                      </p>
+                                    )}
+                                    {med.administration_time && (
+                                      <p className="text-xs text-green-600 mt-1">
+                                        Administered at {format(new Date(med.administration_time), 'h:mm a')}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {med.is_administered && (
+                                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                  )}
+                                </div>
+                                
+                                {expandedMedication === med.id && (
+                                  <div className="px-4 pb-4 space-y-3 border-t bg-gray-50">
+                                    <div className="pt-3">
+                                      <Label htmlFor={`med-notes-${med.id}`} className="text-xs text-gray-600 block mb-1">
+                                        Notes (e.g., "Client refused", "Taken with food", "No side effects observed")
+                                      </Label>
+                                      <Textarea
+                                        id={`med-notes-${med.id}`}
+                                        value={medicationNotes[med.id] || ''}
+                                        onChange={(e) => setMedicationNotes({
+                                          ...medicationNotes,
+                                          [med.id]: e.target.value
+                                        })}
+                                        placeholder="Enter any relevant notes about medication administration..."
+                                        rows={3}
+                                        className="resize-none"
+                                        disabled={isViewOnly}
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setExpandedMedication(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          handleMedicationToggle(med.id, medicationNotes[med.id]);
+                                          setExpandedMedication(null);
+                                        }}
+                                      >
+                                        Save Notes
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {med.administration_notes && expandedMedication !== med.id && (
+                                  <div className="px-4 pb-3 pt-1 border-t bg-blue-50">
+                                    <p className="text-xs text-blue-700 font-medium mb-1">Notes:</p>
+                                    <p className="text-sm text-blue-900">{med.administration_notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-gray-500">
+                            <Pill className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                            <p>No care plan medications for this visit</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Admin-Assigned Medications Section */}
+                      <div>
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+                          <div className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <Pill className="h-3 w-3 text-purple-600" />
+                            </div>
+                            <div className="text-sm text-purple-700">
+                              <p className="font-medium">Admin-Assigned Medications</p>
+                              <p className="mt-0.5">Medications added specifically for this visit outside the care plan.</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {medications?.filter(med => !med.medication_id).length > 0 ? (
+                          <div className="space-y-3">
+                            {medications.filter(med => !med.medication_id).map((med) => (
+                              <div key={med.id} className="border border-purple-200 rounded-lg hover:bg-purple-50 transition-all">
+                                <div className="flex items-center space-x-3 p-4">
+                                  <Checkbox
+                                    checked={med.is_administered}
+                                    onCheckedChange={() => {
+                                      if (!med.is_administered) {
+                                        setExpandedMedication(med.id);
+                                      }
+                                      handleMedicationToggle(med.id, medicationNotes[med.id]);
+                                    }}
+                                    className="flex-shrink-0"
+                                    disabled={isViewOnly || administerMedication.isPending}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <p className={`font-medium ${med.is_administered ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                                          {med.medication_name}
+                                        </p>
+                                        <Badge variant="outline">{med.dosage}</Badge>
+                                        <Badge variant="default" className="text-xs bg-purple-600">Admin</Badge>
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setExpandedMedication(expandedMedication === med.id ? null : med.id)}
+                                        disabled={isViewOnly}
+                                      >
+                                        {expandedMedication === med.id ? 'Hide Notes' : 'Add Notes'}
+                                      </Button>
+                                    </div>
+                                    {med.prescribed_time && (
+                                      <p className="text-sm text-gray-600 mt-1">
+                                        Prescribed time: {format(new Date(`1970-01-01T${med.prescribed_time}`), 'h:mm a')}
+                                      </p>
+                                    )}
+                                    {med.administration_time && (
+                                      <p className="text-xs text-green-600 mt-1">
+                                        Administered at {format(new Date(med.administration_time), 'h:mm a')}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {med.is_administered && (
+                                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                  )}
+                                </div>
+                                
+                                {expandedMedication === med.id && (
+                                  <div className="px-4 pb-4 space-y-3 border-t bg-gray-50">
+                                    <div className="pt-3">
+                                      <Label htmlFor={`med-notes-${med.id}`} className="text-xs text-gray-600 block mb-1">
+                                        Notes (e.g., "Client refused", "Taken with food", "No side effects observed")
+                                      </Label>
+                                      <Textarea
+                                        id={`med-notes-${med.id}`}
+                                        value={medicationNotes[med.id] || ''}
+                                        onChange={(e) => setMedicationNotes({
+                                          ...medicationNotes,
+                                          [med.id]: e.target.value
+                                        })}
+                                        placeholder="Enter any relevant notes about medication administration..."
+                                        rows={3}
+                                        className="resize-none"
+                                        disabled={isViewOnly}
+                                      />
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setExpandedMedication(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          handleMedicationToggle(med.id, medicationNotes[med.id]);
+                                          setExpandedMedication(null);
+                                        }}
+                                      >
+                                        Save Notes
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {med.administration_notes && expandedMedication !== med.id && (
+                                  <div className="px-4 pb-3 pt-1 border-t bg-purple-50">
+                                    <p className="text-xs text-purple-700 font-medium mb-1">Notes:</p>
+                                    <p className="text-sm text-purple-900">{med.administration_notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-6 text-gray-500">
+                            <Pill className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                            <p>No admin-assigned medications for this visit</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Show empty state only if no medications at all */}
+                      {medications?.length === 0 && (
+                        <div className="text-center py-8">
+                          <Pill className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                          <p className="text-gray-500">No medications scheduled for this visit</p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>

@@ -18,9 +18,12 @@ export interface GenerateServiceReportData {
     visit_photos?: string[] | any;
   };
   tasks?: Array<{
-    task_name: string;
+    task_name?: string;
+    title?: string;
     task_description?: string;
-    is_completed: boolean;
+    description?: string;
+    is_completed?: boolean;
+    status?: string;
     completion_notes?: string;
   }>;
   medications?: Array<{
@@ -36,14 +39,26 @@ export interface GenerateServiceReportData {
     event_title: string;
     event_description: string;
   }>;
+  goals?: Array<{
+    description: string;
+    status: string;
+    progress?: number;
+    notes?: string;
+  }>;
+  activities?: Array<{
+    name: string;
+    description?: string;
+    frequency: string;
+    status: string;
+  }>;
   createdBy: string;
 }
 
 export function generateServiceReportFromVisit(data: GenerateServiceReportData) {
-  // Extract completed tasks
+  // Extract completed tasks - support both visit_tasks and admin-assigned tasks
   const completedTasks = data.tasks
-    ?.filter(t => t.is_completed)
-    .map(t => t.task_name) || [];
+    ?.filter(t => t.is_completed || t.status === 'done')
+    .map(t => t.task_name || t.title || 'Unnamed Task') || [];
 
   // Check for medications
   const medicationsAdministered = data.medications?.filter(m => m.is_administered) || [];
@@ -69,6 +84,16 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     ...(data.events?.filter(e => e.event_type === 'observation').map(e => e.event_description) || [])
   ].filter(Boolean).join('\n\n');
 
+  // Process care plan goals
+  const goalsProgress = data.goals
+    ?.map(g => `${g.description} (${g.status}, ${g.progress || 0}% complete)${g.notes ? ` - Notes: ${g.notes}` : ''}`)
+    .join('\n\n') || undefined;
+
+  // Process care plan activities
+  const activitiesPerformed = data.activities
+    ?.map(a => `${a.name} (${a.frequency}, ${a.status})${a.description ? ` - ${a.description}` : ''}`)
+    .join('\n\n') || undefined;
+
   return {
     client_id: data.visitRecord.client_id,
     staff_id: data.visitRecord.staff_id,
@@ -85,6 +110,8 @@ export function generateServiceReportFromVisit(data: GenerateServiceReportData) 
     incident_occurred: hasIncidents,
     incident_details: incidentDetails,
     carer_observations: observations || undefined,
+    care_plan_goals: goalsProgress,
+    daily_activities: activitiesPerformed,
     status: 'pending' as const, // Will need admin review
     created_by: data.createdBy,
   };
