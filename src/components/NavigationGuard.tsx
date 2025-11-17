@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { useUserRole } from '@/hooks/useUserRole';
 
 /**
@@ -9,7 +9,7 @@ import { useUserRole } from '@/hooks/useUserRole';
  */
 export const NavigationGuard = () => {
   const navigate = useNavigate();
-  const { user, session } = useAuth();
+  const { user, session } = useAuthSafe();
   const { data: userRoleData, isLoading } = useUserRole();
 
   useEffect(() => {

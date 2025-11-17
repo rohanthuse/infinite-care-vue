@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { useCarerAuthSafe } from '@/hooks/useCarerAuthSafe';
 import { useUserRole } from '@/hooks/useUserRole';
 import { LoadingScreen } from '@/components/LoadingScreen';
@@ -18,7 +18,7 @@ export const RouteGuard = ({
   redirectTo = '/',
   userType = 'admin'
 }: RouteGuardProps) => {
-  const { session: adminSession, loading: adminLoading } = useAuth();
+  const { session: adminSession, loading: adminLoading } = useAuthSafe();
   const { data: currentUser, isLoading: userRoleLoading, error: userRoleError } = useUserRole();
   
   // Only call carer auth if we actually need it for carer routes

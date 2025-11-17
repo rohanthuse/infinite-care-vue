@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { normalizeToHslVar } from '@/lib/colors';
 
 interface Organization {
@@ -45,7 +45,7 @@ interface TenantProviderProps {
 }
 
 export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user } = useAuthSafe();
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
 
   // Extract tenant slug from URL path
