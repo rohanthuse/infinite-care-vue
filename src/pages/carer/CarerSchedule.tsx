@@ -13,7 +13,9 @@ import { useCarerContext } from "@/hooks/useCarerContext";
 import { useLeaveStatus } from "@/hooks/useLeaveManagement";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CarerAppointmentDetailDialog } from "@/components/carer/CarerAppointmentDetailDialog";
+import { CarerUnavailabilityDialog } from "@/components/carer/CarerUnavailabilityDialog";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
+import { useSubmitUnavailability } from "@/hooks/useCarerUnavailability";
 
 const CarerSchedule: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -21,9 +23,13 @@ const CarerSchedule: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const [showAllAppointments, setShowAllAppointments] = useState(false);
+  const [showUnavailabilityDialog, setShowUnavailabilityDialog] = useState(false);
+  const [selectedUnavailabilityAppointment, setSelectedUnavailabilityAppointment] = useState<any>(null);
+  
   const { user } = useCarerAuth();
   const { createCarerPath } = useCarerNavigation();
   const { data: carerContext } = useCarerContext();
+  const submitUnavailabilityMutation = useSubmitUnavailability();
   
   // Use real booking data instead of mock data
   const { data: allBookings = [], isLoading } = useCarerBookings(carerContext?.staffId || '');
@@ -691,6 +697,35 @@ const CarerSchedule: React.FC = () => {
         onViewSummary={(appointment) => {
           window.location.href = createCarerPath(`/visit/${appointment.id}?mode=view`);
         }}
+        onRequestUnavailability={(appointment) => {
+          console.log('[CarerSchedule] Opening unavailability dialog for:', appointment);
+          setSelectedUnavailabilityAppointment(appointment);
+          setShowUnavailabilityDialog(true);
+        }}
+      />
+      
+      {/* Unavailability Dialog */}
+      <CarerUnavailabilityDialog
+        open={showUnavailabilityDialog}
+        onOpenChange={setShowUnavailabilityDialog}
+        appointment={selectedUnavailabilityAppointment}
+        onSubmit={(reason: string, notes: string) => {
+          if (!selectedUnavailabilityAppointment || !carerContext?.staffId) return;
+
+          submitUnavailabilityMutation.mutate({
+            booking_id: selectedUnavailabilityAppointment.id,
+            staff_id: carerContext.staffId,
+            branch_id: selectedUnavailabilityAppointment.branch_id,
+            reason,
+            notes
+          }, {
+            onSuccess: () => {
+              setShowUnavailabilityDialog(false);
+              setSelectedUnavailabilityAppointment(null);
+            }
+          });
+        }}
+        isSubmitting={submitUnavailabilityMutation.isPending}
       />
     </div>
   );

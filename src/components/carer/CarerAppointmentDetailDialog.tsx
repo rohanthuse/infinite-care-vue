@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, User, MapPin, Phone, Mail, FileText, Activity } from "lucide-react";
+import { Calendar, Clock, User, MapPin, Phone, Mail, FileText, Activity, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
 interface CarerAppointmentDetailDialogProps {
@@ -12,6 +12,7 @@ interface CarerAppointmentDetailDialogProps {
   onStartVisit?: (appointment: any) => void;
   onContinueVisit?: (appointment: any) => void;
   onViewSummary?: (appointment: any) => void;
+  onRequestUnavailability?: (appointment: any) => void;
 }
 
 export const CarerAppointmentDetailDialog = ({
@@ -20,7 +21,8 @@ export const CarerAppointmentDetailDialog = ({
   onOpenChange,
   onStartVisit,
   onContinueVisit,
-  onViewSummary
+  onViewSummary,
+  onRequestUnavailability
 }: CarerAppointmentDetailDialogProps) => {
   if (!appointment) return null;
 
@@ -172,7 +174,7 @@ export const CarerAppointmentDetailDialog = ({
 
           {/* Action Buttons */}
           <Separator />
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3">
             {appointment.status === 'completed' && (
               <Button onClick={() => {
                 if (onViewSummary) {
@@ -196,13 +198,31 @@ export const CarerAppointmentDetailDialog = ({
                 Start Visit
               </Button>
             )}
-            {appointment.clients?.phone && (
-              <Button variant="outline" asChild>
-                <a href={`tel:${appointment.clients.phone}`}>
-                  Call Client
-                </a>
+            
+            {/* Not Available Button - Only show for future assigned bookings */}
+            {appointment.status === 'assigned' && new Date(appointment.start_time) > new Date() && (
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  onRequestUnavailability?.(appointment);
+                  onOpenChange(false);
+                }}
+                className="flex items-center gap-2"
+              >
+                <AlertCircle className="h-4 w-4" />
+                I'm Not Available
               </Button>
             )}
+            
+            <div className="flex gap-3">
+              {appointment.clients?.phone && (
+                <Button variant="outline" className="flex-1" asChild>
+                  <a href={`tel:${appointment.clients.phone}`}>
+                    Call Client
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
