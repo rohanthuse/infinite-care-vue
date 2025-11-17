@@ -10815,6 +10815,12 @@ export type Database = {
         Args: { org_id: string }
         Returns: undefined
       }
+      sync_booking_status_from_visit: {
+        Args: never
+        Returns: {
+          synced_count: number
+        }[]
+      }
       sync_client_message_participants: { Args: never; Returns: undefined }
       sync_organization_members_with_roles: {
         Args: never
