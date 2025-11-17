@@ -65,12 +65,15 @@ const RoutingErrorFallback = () => (
   </div>
 );
 
+// Notification email sender component - only initializes when user is authenticated
+const NotificationEmailManager = () => {
+  useNotificationEmailSender();
+  return null;
+};
+
 // Inner app component that uses auth context
 const AppContent = () => {
   const { loading, error, user } = useAuth();
-  
-  // Initialize email notification sender for high-priority notifications
-  useNotificationEmailSender();
 
   console.log('[App] Auth state:', { loading, error: !!error, user: !!user, pathname: window.location.pathname });
 
@@ -108,6 +111,7 @@ const AppContent = () => {
               <PWAInstallPrompt />
               <OfflineIndicator />
               <PWAUpdatePrompt />
+              {user && <NotificationEmailManager />}
               <Routes>
               {/* Public Routes - Always accessible */}
               <Route path="/" element={<Index />} />
