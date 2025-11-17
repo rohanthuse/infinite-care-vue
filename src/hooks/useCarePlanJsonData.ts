@@ -103,6 +103,6 @@ export const useCarePlanJsonData = (carePlanId: string) => {
       return { goals, activities };
     },
     enabled: Boolean(carePlanId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always refetch when invalidated
   });
 };

@@ -55,10 +55,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
-import { useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
-import { useClientActivities, useUpdateClientActivity } from "@/hooks/useClientActivities";
+import { useCreateGoal, useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
+import { useClientActivities, useCreateClientActivity, useUpdateClientActivity } from "@/hooks/useClientActivities";
 import { useCarePlanJsonData } from "@/hooks/useCarePlanJsonData";
-import { useSyncGoalToDatabase, useSyncActivityToDatabase } from "@/hooks/useCarePlanDataSync";
 import { GoalStatusButton } from "@/components/care/GoalStatusButton";
 import { ActivityStatusButton } from "@/components/care/ActivityStatusButton";
 import { InlineNotesEditor } from "@/components/care/InlineNotesEditor";
@@ -191,11 +190,15 @@ const CarerVisitWorkflow = () => {
   const { data: normalizedActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
   const { data: jsonData, isLoading: jsonLoading } = useCarePlanJsonData(activeCareplan?.id || '');
   
-  // Mutations for updating goals and activities
+  // Mutations for goals and activities
+  const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
+  const createActivityMutation = useCreateClientActivity();
   const updateActivityMutation = useUpdateClientActivity();
-  const syncGoalToDb = useSyncGoalToDatabase();
-  const syncActivityToDb = useSyncActivityToDatabase();
+  
+  // Loading states to prevent duplicate clicks
+  const [isUpdatingGoal, setIsUpdatingGoal] = useState<string | null>(null);
+  const [isUpdatingActivity, setIsUpdatingActivity] = useState<string | null>(null);
   
   // Merge data: prioritize normalized tables, fall back to JSON data
   const carePlanGoals = useMemo(() => {
@@ -214,73 +217,106 @@ const CarerVisitWorkflow = () => {
   
   // Handler for goal status/progress updates
   const handleGoalUpdate = async (goal: any, newStatus: string, newProgress?: number) => {
+    if (isUpdatingGoal === goal.id) return; // Prevent duplicate calls
+    
+    setIsUpdatingGoal(goal.id);
     try {
-      // Sync to database if JSON-sourced
-      const goalId = await syncGoalToDb({
-        goal,
-        care_plan_id: activeCareplan!.id,
-        updates: { status: newStatus, progress: newProgress }
-      });
-
-      // Update in database
-      await updateGoalMutation.mutateAsync({
-        goalId,
-        updates: { 
-          status: newStatus, 
-          progress: newProgress ?? (newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 25 : 0)
-        }
-      });
+      if (goal.id.startsWith('json-')) {
+        // First time: Create with all updates
+        console.log('[handleGoalUpdate] Creating new goal from JSON:', goal.id);
+        await createGoalMutation.mutateAsync({
+          care_plan_id: activeCareplan!.id,
+          description: goal.description,
+          status: newStatus,
+          progress: newProgress ?? (newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 25 : 0),
+          notes: goal.notes || null,
+        });
+      } else {
+        // Existing goal: Just update
+        console.log('[handleGoalUpdate] Updating existing goal:', goal.id);
+        await updateGoalMutation.mutateAsync({
+          goalId: goal.id,
+          updates: { 
+            status: newStatus, 
+            progress: newProgress ?? (newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 25 : 0)
+          }
+        });
+      }
 
       toast.success("Goal status has been updated successfully");
     } catch (error) {
       console.error('[handleGoalUpdate] Error:', error);
       toast.error("Failed to update goal status");
+    } finally {
+      setIsUpdatingGoal(null);
     }
   };
 
   // Handler for goal notes updates
   const handleGoalNotesUpdate = async (goal: any, notes: string) => {
+    if (isUpdatingGoal === goal.id) return; // Prevent duplicate calls
+    
+    setIsUpdatingGoal(goal.id);
     try {
-      // Sync to database if JSON-sourced
-      const goalId = await syncGoalToDb({
-        goal,
-        care_plan_id: activeCareplan!.id,
-        updates: { notes }
-      });
-
-      // Update in database
-      await updateGoalMutation.mutateAsync({
-        goalId,
-        updates: { notes }
-      });
+      if (goal.id.startsWith('json-')) {
+        // First time: Create with notes
+        console.log('[handleGoalNotesUpdate] Creating new goal from JSON:', goal.id);
+        await createGoalMutation.mutateAsync({
+          care_plan_id: activeCareplan!.id,
+          description: goal.description,
+          status: goal.status || 'not-started',
+          progress: goal.progress || 0,
+          notes: notes,
+        });
+      } else {
+        // Existing goal: Just update notes
+        console.log('[handleGoalNotesUpdate] Updating existing goal notes:', goal.id);
+        await updateGoalMutation.mutateAsync({
+          goalId: goal.id,
+          updates: { notes }
+        });
+      }
 
       toast.success("Goal notes have been saved successfully");
     } catch (error) {
       console.error('[handleGoalNotesUpdate] Error:', error);
       toast.error("Failed to save goal notes");
+    } finally {
+      setIsUpdatingGoal(null);
     }
   };
 
   // Handler for activity status updates
   const handleActivityUpdate = async (activity: any, newStatus: string) => {
+    if (isUpdatingActivity === activity.id) return; // Prevent duplicate calls
+    
+    setIsUpdatingActivity(activity.id);
     try {
-      // Sync to database if JSON-sourced
-      const activityId = await syncActivityToDb({
-        activity,
-        care_plan_id: activeCareplan!.id,
-        updates: { status: newStatus }
-      });
-
-      // Update in database
-      await updateActivityMutation.mutateAsync({
-        id: activityId,
-        updates: { status: newStatus }
-      });
+      if (activity.id.startsWith('json-')) {
+        // First time: Create with all updates
+        console.log('[handleActivityUpdate] Creating new activity from JSON:', activity.id);
+        await createActivityMutation.mutateAsync({
+          care_plan_id: activeCareplan!.id,
+          name: activity.name,
+          description: activity.description || null,
+          frequency: activity.frequency || 'daily',
+          status: newStatus,
+        });
+      } else {
+        // Existing activity: Just update
+        console.log('[handleActivityUpdate] Updating existing activity:', activity.id);
+        await updateActivityMutation.mutateAsync({
+          id: activity.id,
+          updates: { status: newStatus }
+        });
+      }
 
       toast.success("Activity status has been updated successfully");
     } catch (error) {
       console.error('[handleActivityUpdate] Error:', error);
       toast.error("Failed to update activity status");
+    } finally {
+      setIsUpdatingActivity(null);
     }
   };
   
@@ -2206,6 +2242,7 @@ const CarerVisitWorkflow = () => {
                                   onStatusChange={(newStatus, newProgress) => 
                                     handleGoalUpdate(goal, newStatus, newProgress)
                                   }
+                                  disabled={isUpdatingGoal === goal.id}
                                 />
 
                                 {goal.progress !== undefined && goal.progress !== null && (
@@ -2226,6 +2263,7 @@ const CarerVisitWorkflow = () => {
                                   notes={goal.notes}
                                   onSave={(notes) => handleGoalNotesUpdate(goal, notes)}
                                   placeholder="Add notes about progress, observations, or challenges..."
+                                  disabled={isUpdatingGoal === goal.id}
                                 />
                               </div>
 
@@ -2337,6 +2375,7 @@ const CarerVisitWorkflow = () => {
                                   onStatusChange={(newStatus) => 
                                     handleActivityUpdate(activity, newStatus)
                                   }
+                                  disabled={isUpdatingActivity === activity.id}
                                 />
                               </div>
 

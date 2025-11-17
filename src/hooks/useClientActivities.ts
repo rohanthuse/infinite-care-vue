@@ -71,9 +71,11 @@ export const useCreateClientActivity = () => {
       return { previousActivities };
     },
     onSuccess: (data) => {
+      console.log('[useCreateClientActivity] SUCCESS - Invalidating queries for care plan:', data.care_plan_id);
       // Invalidate and refetch to get the real server data
       queryClient.invalidateQueries({ queryKey: ['client-activities', data.care_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['client-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', data.care_plan_id] });
       toast.success('Activity created successfully');
     },
     onError: (err, newActivity, context) => {
@@ -105,11 +107,14 @@ export const useUpdateClientActivity = () => {
       return data;
     },
     onSuccess: (data) => {
+      console.log('[useUpdateClientActivity] SUCCESS - Invalidating queries for care plan:', data.care_plan_id);
       queryClient.invalidateQueries({ queryKey: ['client-activities', data.care_plan_id] });
       queryClient.invalidateQueries({ queryKey: ['client-activities'] });
+      queryClient.invalidateQueries({ queryKey: ['care-plan-json-data', data.care_plan_id] });
       toast.success('Activity updated successfully');
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('[useUpdateClientActivity] MUTATION ERROR:', error);
       toast.error('Failed to update activity');
     },
   });
