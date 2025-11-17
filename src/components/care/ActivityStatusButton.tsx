@@ -18,7 +18,7 @@ export const ActivityStatusButton = ({
   };
 
   const handleCompleteActivity = () => {
-    onStatusChange("completed");
+    onStatusChange("in-progress");
   };
 
   if (status === "completed") {
