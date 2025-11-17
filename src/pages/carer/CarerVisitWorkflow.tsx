@@ -637,7 +637,7 @@ const CarerVisitWorkflow = () => {
   };
   
   // Define tab order and completion requirements
-  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "care-plan", "notes", "sign-off", "complete"];
+  const tabOrder = ["check-in", "tasks", "medication", "news2", "events", "care-plan", "goals", "activities", "notes", "sign-off", "complete"];
   
   // Check if a tab is completed
   const isTabCompleted = (tabName: string): boolean => {
@@ -654,6 +654,10 @@ const CarerVisitWorkflow = () => {
         return true; // Events are optional
       case "care-plan":
         return true; // Care plan updates are optional
+      case "goals":
+        return true; // Goals are optional
+      case "activities":
+        return true; // Activities are optional
       case "notes":
         return notes.trim().length >= 10; // Minimum note length
       case "sign-off":
