@@ -26,13 +26,29 @@ const UnifiedLogin = () => {
   const navigate = useNavigate();
   const { getRoleWithOptimization, getOrganizationWithOptimization, clearOptimizationCache } = useOptimizedAuth();
   const { user, loading: authLoading } = useAuth();
+  const [forceShowLogin, setForceShowLogin] = useState(false);
 
   // Clean up navigation flags when landing on login page
   useEffect(() => {
-    console.log('[UnifiedLogin] Component mounted, clearing any stale navigation flags');
+    console.log('[UnifiedLogin] Component mounted, performing aggressive cleanup');
+    
+    // Clear all navigation and auth-related flags
     sessionStorage.removeItem('navigating_to_dashboard');
     sessionStorage.removeItem('target_dashboard');
     sessionStorage.removeItem('redirect_in_progress');
+    sessionStorage.removeItem('login_redirect_count');
+    sessionStorage.removeItem('post_login_redirect');
+    
+    // Check for stuck auth state
+    const stuckAuth = sessionStorage.getItem('auth_stuck');
+    if (stuckAuth) {
+      console.warn('[UnifiedLogin] Detected stuck auth state, clearing');
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+    }
+    
+    // Set recovery flag
+    sessionStorage.setItem('login_page_loaded', Date.now().toString());
   }, []);
 
   // Defensive: Ensure auth provider timeout doesn't interfere
@@ -44,6 +60,29 @@ const UnifiedLogin = () => {
     
     return () => clearTimeout(checkTimer);
   }, [authLoading, user]);
+
+  // Force show login after timeout to prevent white screen
+  useEffect(() => {
+    const forceTimeout = setTimeout(() => {
+      if (authLoading && !forceShowLogin) {
+        console.warn('[UnifiedLogin] Auth loading timeout exceeded, forcing login display');
+        setForceShowLogin(true);
+      }
+    }, 2000); // 2 second maximum wait
+    
+    return () => clearTimeout(forceTimeout);
+  }, [authLoading, forceShowLogin]);
+
+  // Diagnostic logging for debugging
+  useEffect(() => {
+    console.log('[UnifiedLogin] Render state:', {
+      authLoading,
+      hasUser: !!user,
+      forceShowLogin,
+      pathname: window.location.pathname,
+      timestamp: new Date().toISOString()
+    });
+  }, [authLoading, user, forceShowLogin]);
 
   // Redirect loop prevention - removed automatic redirect
   // Let users stay on login page to see error messages if they have auth issues
@@ -686,12 +725,32 @@ const UnifiedLogin = () => {
   };
 
   // Show loading screen while checking auth state
-  if (authLoading) {
+  if (authLoading && !forceShowLogin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-white to-blue-50/50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-3"></div>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+        <div className="text-center max-w-md p-8">
+          <div className="mb-6">
+            <img 
+              src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" 
+              alt="Med-Infinite Logo" 
+              className="w-16 h-16 mx-auto mb-4 animate-pulse" 
+            />
+          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-lg font-medium text-gray-900 mb-2">Loading Login Page</p>
+          <p className="text-sm text-gray-600">Initializing authentication...</p>
+          
+          <div className="mt-8">
+            <button
+              onClick={() => {
+                console.log('[UnifiedLogin] User requested force load');
+                setForceShowLogin(true);
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 underline transition-opacity"
+            >
+              Taking too long? Click here to continue
+            </button>
+          </div>
         </div>
       </div>
     );
