@@ -113,14 +113,21 @@ export function ViewServiceReportDialog({
   // Mutation hook for updating the report
   const updateServiceReport = useUpdateServiceReport();
 
-  // Determine if report is editable (only for carer, not admin)
+  // Determine if report has missing required fields (truly incomplete)
+  const hasMissingFields = !safeReport?.client_mood || 
+                           !safeReport?.client_engagement || 
+                           !safeReport?.carer_observations?.trim();
+
+  // Report is editable only if:
+  // 1. Not in admin mode
+  // 2. Status is 'requires_revision' OR has missing required fields
   const isEditable = !adminMode && safeReport && (
-    safeReport.status === 'pending' ||
     safeReport.status === 'requires_revision' ||
-    !safeReport.client_mood ||
-    !safeReport.client_engagement ||
-    !safeReport.carer_observations
+    hasMissingFields
   );
+
+  // Determine if report is submitted and awaiting approval
+  const isAwaitingApproval = safeReport?.status === 'pending' && !hasMissingFields;
 
   // ALL HOOKS MUST BE CALLED HERE - before any early returns
   // Fetch visit record data
@@ -323,15 +330,54 @@ export function ViewServiceReportDialog({
 
         <ScrollArea className="max-h-[calc(90vh-120px)] px-6 pb-6">
           <div className="space-y-6 mt-6">
-            {/* Edit Mode Indicator */}
-            {isEditable && (
-              <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800">
+            {/* Status Message Card */}
+            {(isEditable || isAwaitingApproval || safeReport.status === 'approved' || safeReport.status === 'rejected') && (
+              <Card className={`border ${
+                safeReport.status === 'approved' ? 'border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800' :
+                safeReport.status === 'rejected' ? 'border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800' :
+                isAwaitingApproval ? 'border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800' :
+                'border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800'
+              }`}>
                 <CardContent className="py-4">
-                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                    <AlertTriangle className="h-5 w-5" />
-                    <p className="text-sm font-medium">
-                      This report is incomplete - Please complete the required fields and submit for approval
-                    </p>
+                  <div className={`flex items-center gap-2 ${
+                    safeReport.status === 'approved' ? 'text-green-800 dark:text-green-200' :
+                    safeReport.status === 'rejected' ? 'text-red-800 dark:text-red-200' :
+                    isAwaitingApproval ? 'text-blue-800 dark:text-blue-200' :
+                    'text-amber-800 dark:text-amber-200'
+                  }`}>
+                    {safeReport.status === 'approved' ? (
+                      <>
+                        <CheckCircle className="h-5 w-5" />
+                        <p className="text-sm font-medium">This report has been approved by admin</p>
+                      </>
+                    ) : safeReport.status === 'rejected' ? (
+                      <>
+                        <XCircle className="h-5 w-5" />
+                        <p className="text-sm font-medium">
+                          This report was rejected. {safeReport.review_notes && `Reason: ${safeReport.review_notes}`}
+                        </p>
+                      </>
+                    ) : isAwaitingApproval ? (
+                      <>
+                        <Clock className="h-5 w-5" />
+                        <p className="text-sm font-medium">This report is submitted and awaiting admin approval</p>
+                      </>
+                    ) : safeReport.status === 'requires_revision' ? (
+                      <>
+                        <AlertTriangle className="h-5 w-5" />
+                        <p className="text-sm font-medium">
+                          This report requires revision - Please update the required fields and resubmit
+                          {safeReport.review_notes && `. Admin notes: ${safeReport.review_notes}`}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-5 w-5" />
+                        <p className="text-sm font-medium">
+                          This report is incomplete - Please complete the required fields and submit for approval
+                        </p>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
