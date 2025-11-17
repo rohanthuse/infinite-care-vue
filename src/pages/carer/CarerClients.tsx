@@ -4,6 +4,7 @@ import { Search, Filter, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCarerClients } from "@/hooks/useCarerClientData";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { format, parseISO } from "date-fns";
@@ -14,8 +15,20 @@ const CarerClients: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <div className="mb-6">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+          <Skeleton className="h-10 w-full sm:max-w-md" />
+          <Skeleton className="h-10 w-full sm:w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -29,7 +42,7 @@ const CarerClients: React.FC = () => {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 max-w-full">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">My Clients</h1>
         <p className="text-sm text-muted-foreground mt-1">

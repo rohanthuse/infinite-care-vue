@@ -59,12 +59,12 @@ const CarerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 min-w-0">
       <CarerHeader />
       
-      <div className="flex flex-1 w-full">
+      <div className="flex flex-1 w-full min-w-0">
         <SidebarInset className="flex-1 min-w-0 w-full">
-          <main className="w-full max-w-full px-4 sm:px-6 md:px-8 lg:px-10 pt-4 pb-20 md:py-6">
+          <main className="w-full max-w-full min-w-0 px-6 py-6">
             <Outlet />
           </main>
         </SidebarInset>

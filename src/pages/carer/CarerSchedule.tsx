@@ -214,11 +214,21 @@ const CarerSchedule: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold mb-6">My Schedule</h1>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <div className="mb-6">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+          <Skeleton className="h-10 w-full sm:max-w-xs" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
         <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
           ))}
         </div>
       </div>
@@ -226,7 +236,7 @@ const CarerSchedule: React.FC = () => {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 max-w-full">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-xl md:text-2xl font-bold">My Schedule</h1>
         

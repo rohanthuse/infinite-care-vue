@@ -74,9 +74,10 @@ export const useCarerContext = () => {
       };
     },
     enabled: !!user?.id,
-    staleTime: 10 * 60 * 1000, // 10 minutes - carer context doesn't change often
+    staleTime: 5 * 60 * 1000, // 5 minutes - carer context doesn't change often
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: false, // Don't refetch on every navigation
     retry: 2,
   });
 };
