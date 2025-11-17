@@ -55,8 +55,13 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useCarePlanGoals } from "@/hooks/useCarePlanGoals";
-import { useClientActivities } from "@/hooks/useClientActivities";
+import { useUpdateGoal } from "@/hooks/useCarePlanGoalsMutations";
+import { useClientActivities, useUpdateClientActivity } from "@/hooks/useClientActivities";
 import { useCarePlanJsonData } from "@/hooks/useCarePlanJsonData";
+import { useSyncGoalToDatabase, useSyncActivityToDatabase } from "@/hooks/useCarePlanDataSync";
+import { GoalStatusButton } from "@/components/care/GoalStatusButton";
+import { ActivityStatusButton } from "@/components/care/ActivityStatusButton";
+import { InlineNotesEditor } from "@/components/care/InlineNotesEditor";
 
 interface Task {
   id: string;
@@ -186,6 +191,12 @@ const CarerVisitWorkflow = () => {
   const { data: normalizedActivities, isLoading: activitiesLoading } = useClientActivities(activeCareplan?.id || '');
   const { data: jsonData, isLoading: jsonLoading } = useCarePlanJsonData(activeCareplan?.id || '');
   
+  // Mutations for updating goals and activities
+  const updateGoalMutation = useUpdateGoal();
+  const updateActivityMutation = useUpdateClientActivity();
+  const syncGoalToDb = useSyncGoalToDatabase();
+  const syncActivityToDb = useSyncActivityToDatabase();
+  
   // Merge data: prioritize normalized tables, fall back to JSON data
   const carePlanGoals = useMemo(() => {
     if (normalizedGoals && normalizedGoals.length > 0) {
@@ -201,19 +212,77 @@ const CarerVisitWorkflow = () => {
     return jsonData?.activities || [];
   }, [normalizedActivities, jsonData?.activities]);
   
-  // Debug logging for data merge
-  console.log('[CarerVisitWorkflow] Data merge status:', {
-    normalizedGoalsCount: normalizedGoals?.length || 0,
-    jsonGoalsCount: jsonData?.goals?.length || 0,
-    finalGoalsCount: carePlanGoals?.length || 0,
-    normalizedActivitiesCount: normalizedActivities?.length || 0,
-    jsonActivitiesCount: jsonData?.activities?.length || 0,
-    finalActivitiesCount: carePlanActivities?.length || 0,
-    goalsLoading,
-    activitiesLoading,
-    jsonLoading,
-    carePlanId: activeCareplan?.id
-  });
+  // Handler for goal status/progress updates
+  const handleGoalUpdate = async (goal: any, newStatus: string, newProgress?: number) => {
+    try {
+      // Sync to database if JSON-sourced
+      const goalId = await syncGoalToDb({
+        goal,
+        care_plan_id: activeCareplan!.id,
+        updates: { status: newStatus, progress: newProgress }
+      });
+
+      // Update in database
+      await updateGoalMutation.mutateAsync({
+        goalId,
+        updates: { 
+          status: newStatus, 
+          progress: newProgress ?? (newStatus === 'completed' ? 100 : newStatus === 'in-progress' ? 25 : 0)
+        }
+      });
+
+      toast.success("Goal status has been updated successfully");
+    } catch (error) {
+      console.error('[handleGoalUpdate] Error:', error);
+      toast.error("Failed to update goal status");
+    }
+  };
+
+  // Handler for goal notes updates
+  const handleGoalNotesUpdate = async (goal: any, notes: string) => {
+    try {
+      // Sync to database if JSON-sourced
+      const goalId = await syncGoalToDb({
+        goal,
+        care_plan_id: activeCareplan!.id,
+        updates: { notes }
+      });
+
+      // Update in database
+      await updateGoalMutation.mutateAsync({
+        goalId,
+        updates: { notes }
+      });
+
+      toast.success("Goal notes have been saved successfully");
+    } catch (error) {
+      console.error('[handleGoalNotesUpdate] Error:', error);
+      toast.error("Failed to save goal notes");
+    }
+  };
+
+  // Handler for activity status updates
+  const handleActivityUpdate = async (activity: any, newStatus: string) => {
+    try {
+      // Sync to database if JSON-sourced
+      const activityId = await syncActivityToDb({
+        activity,
+        care_plan_id: activeCareplan!.id,
+        updates: { status: newStatus }
+      });
+
+      // Update in database
+      await updateActivityMutation.mutateAsync({
+        id: activityId,
+        updates: { status: newStatus }
+      });
+
+      toast.success("Activity status has been updated successfully");
+    } catch (error) {
+      console.error('[handleActivityUpdate] Error:', error);
+      toast.error("Failed to update activity status");
+    }
+  };
   
   const [activeTab, setActiveTab] = useState("check-in");
   const [currentStep, setCurrentStep] = useState(1);
@@ -2085,50 +2154,85 @@ const CarerVisitWorkflow = () => {
                     <div className="space-y-4">
                       {carePlanGoals.map((goal) => (
                         <Card key={goal.id} className="border-l-4 border-l-primary">
-                          <CardContent className="pt-4">
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between gap-2">
-                                <p className="font-medium text-foreground flex-1">
+                          <CardContent className="pt-6">
+                            <div className="space-y-4">
+                              {/* Header with description and status */}
+                              <div className="flex items-start justify-between gap-3">
+                                <h4 className="font-semibold text-foreground flex-1 text-base">
                                   {goal.description}
-                                </p>
-                                <Badge 
-                                  variant={
-                                    goal.status === 'completed' ? 'default' : 
-                                    goal.status === 'in-progress' ? 'secondary' : 
-                                    'outline'
-                                  }
-                                  className={
-                                    goal.status === 'completed' ? 'bg-green-500' :
-                                    goal.status === 'in-progress' ? 'bg-blue-500' :
-                                    ''
-                                  }
-                                >
-                                  {goal.status === 'completed' ? 'Completed' :
-                                   goal.status === 'in-progress' ? 'In Progress' :
-                                   'Not Started'}
-                                </Badge>
+                                </h4>
                               </div>
-                              
-                              {goal.progress !== undefined && goal.progress !== null && (
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Progress</span>
-                                    <span className="font-medium text-foreground">{goal.progress}%</span>
+
+                              {/* Goal Details Grid */}
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                {(goal as any).priority && (
+                                  <div>
+                                    <span className="text-muted-foreground">Priority:</span>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`ml-2 ${
+                                        (goal as any).priority === 'high' ? 'border-red-500 text-red-500' :
+                                        (goal as any).priority === 'medium' ? 'border-amber-500 text-amber-500' :
+                                        'border-green-500 text-green-500'
+                                      }`}
+                                    >
+                                      {(goal as any).priority}
+                                    </Badge>
                                   </div>
-                                  <Progress value={goal.progress} className="h-2" />
+                                )}
+                                {(goal as any).target_date && (
+                                  <div>
+                                    <span className="text-muted-foreground">Target Date:</span>
+                                    <span className="ml-2 font-medium">
+                                      {format(new Date((goal as any).target_date), 'MMM dd, yyyy')}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Measurable Outcome / Success Criteria */}
+                              {(goal as any).measurable_outcome && (
+                                <div className="bg-muted/30 rounded-md p-3">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Success Criteria:</p>
+                                  <p className="text-sm">{(goal as any).measurable_outcome}</p>
                                 </div>
                               )}
-                              
-                              {goal.notes && (
-                                <div className="bg-muted rounded-lg p-3">
-                                  <p className="text-sm text-muted-foreground italic">
-                                    {goal.notes}
-                                  </p>
-                                </div>
-                              )}
-                              
-                              <div className="text-xs text-muted-foreground">
-                                Last updated: {format(new Date(goal.updated_at), 'PPp')}
+
+                              {/* Status and Progress Section */}
+                              <div className="space-y-3 pt-2 border-t">
+                                <GoalStatusButton
+                                  status={goal.status}
+                                  progress={goal.progress}
+                                  onStatusChange={(newStatus, newProgress) => 
+                                    handleGoalUpdate(goal, newStatus, newProgress)
+                                  }
+                                />
+
+                                {goal.progress !== undefined && goal.progress !== null && (
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-muted-foreground">Overall Progress</span>
+                                      <span className="font-medium text-foreground">{goal.progress}%</span>
+                                    </div>
+                                    <Progress value={goal.progress} className="h-2" />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Notes Section */}
+                              <div className="pt-2 border-t">
+                                <p className="text-xs font-medium text-muted-foreground mb-2">Carer Notes:</p>
+                                <InlineNotesEditor
+                                  notes={goal.notes}
+                                  onSave={(notes) => handleGoalNotesUpdate(goal, notes)}
+                                  placeholder="Add notes about progress, observations, or challenges..."
+                                />
+                              </div>
+
+                              {/* Timestamp */}
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+                                <Clock className="w-3 h-3" />
+                                <span>Last updated {format(new Date(goal.updated_at), 'MMM dd, yyyy')}</span>
                               </div>
                             </div>
                           </CardContent>
@@ -2185,12 +2289,13 @@ const CarerVisitWorkflow = () => {
                   <ScrollArea className="h-[400px] pr-4">
                     <div className="space-y-4">
                       {carePlanActivities.map((activity) => (
-                        <Card key={activity.id} className="border-l-4 border-l-green-500">
-                          <CardContent className="pt-4">
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between gap-2">
+                        <Card key={activity.id}>
+                          <CardContent className="pt-6">
+                            <div className="space-y-4">
+                              {/* Header with name and description */}
+                              <div className="flex items-start justify-between gap-3">
                                 <div className="flex-1">
-                                  <h4 className="font-semibold text-foreground mb-1">
+                                  <h4 className="font-semibold text-foreground text-base mb-1">
                                     {activity.name}
                                   </h4>
                                   {activity.description && (
@@ -2199,33 +2304,46 @@ const CarerVisitWorkflow = () => {
                                     </p>
                                   )}
                                 </div>
-                                <Badge 
-                                  variant={
-                                    activity.status === 'completed' ? 'default' : 
-                                    activity.status === 'in-progress' ? 'secondary' : 
-                                    'outline'
-                                  }
-                                  className={
-                                    activity.status === 'completed' ? 'bg-green-500' :
-                                    activity.status === 'in-progress' ? 'bg-blue-500' :
-                                    ''
-                                  }
-                                >
-                                  {activity.status === 'completed' ? 'Completed' :
-                                   activity.status === 'in-progress' ? 'In Progress' :
-                                   'Pending'}
-                                </Badge>
                               </div>
-                              
-                              <div className="flex items-center gap-4 text-sm">
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Clock className="w-4 h-4" />
-                                  <span className="capitalize">{activity.frequency}</span>
+
+                              {/* Activity Details Grid */}
+                              <div className="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Frequency:</span>
+                                  <Badge variant="outline" className="ml-2 capitalize">
+                                    {activity.frequency}
+                                  </Badge>
                                 </div>
+                                {(activity as any).duration && (
+                                  <div>
+                                    <span className="text-muted-foreground">Duration:</span>
+                                    <span className="ml-2 font-medium">{(activity as any).duration}</span>
+                                  </div>
+                                )}
+                                {(activity as any).time_of_day && (
+                                  <div>
+                                    <span className="text-muted-foreground">Time:</span>
+                                    <span className="ml-2 font-medium capitalize">
+                                      {(activity as any).time_of_day.replace('_', ' ')}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                              
-                              <div className="text-xs text-muted-foreground">
-                                Created: {format(new Date(activity.created_at), 'PPp')}
+
+                              {/* Status Section */}
+                              <div className="pt-2 border-t">
+                                <ActivityStatusButton
+                                  status={activity.status}
+                                  onStatusChange={(newStatus) => 
+                                    handleActivityUpdate(activity, newStatus)
+                                  }
+                                />
+                              </div>
+
+                              {/* Timestamp */}
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
+                                <Clock className="w-3 h-3" />
+                                <span>Created {format(new Date(activity.created_at), 'MMM dd, yyyy')}</span>
                               </div>
                             </div>
                           </CardContent>
