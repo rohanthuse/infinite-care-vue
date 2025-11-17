@@ -25,6 +25,9 @@ interface TransformedGoal {
   notes?: string;
   created_at: string;
   updated_at: string;
+  priority?: string;
+  target_date?: string;
+  measurable_outcome?: string;
 }
 
 interface TransformedActivity {
@@ -36,6 +39,8 @@ interface TransformedActivity {
   status: string;
   created_at: string;
   updated_at: string;
+  duration?: string;
+  time_of_day?: string;
 }
 
 export const useCarePlanJsonData = (carePlanId: string) => {
@@ -70,9 +75,12 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         description: goal.description || '',
         status: 'not-started',
         progress: 0,
-        notes: goal.measurable_outcome || null,
+        notes: null,
         created_at: data.created_at,
         updated_at: data.updated_at,
+        priority: goal.priority || 'medium',
+        target_date: goal.target_date || null,
+        measurable_outcome: goal.measurable_outcome || null,
       }));
 
       // Transform activities from JSON
@@ -85,6 +93,8 @@ export const useCarePlanJsonData = (carePlanId: string) => {
         status: 'active',
         created_at: data.created_at,
         updated_at: data.updated_at,
+        duration: activity.duration || null,
+        time_of_day: activity.time_of_day || null,
       }));
 
       console.log('[useCarePlanJsonData] Transformed goals:', goals.length);

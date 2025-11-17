@@ -11,6 +11,9 @@ export interface CarePlanGoal {
   notes?: string;
   created_at: string;
   updated_at: string;
+  priority?: string;
+  target_date?: string;
+  measurable_outcome?: string;
 }
 
 const fetchCarePlanGoals = async (carePlanId: string): Promise<CarePlanGoal[]> => {
