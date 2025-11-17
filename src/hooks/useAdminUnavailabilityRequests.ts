@@ -94,6 +94,9 @@ export const useReviewUnavailability = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-unavailability-requests'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
+      // Invalidate carer queries so the carer sees the update immediately
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-unavailability-requests'] });
       
       toast.success(
         data.status === 'approved' 

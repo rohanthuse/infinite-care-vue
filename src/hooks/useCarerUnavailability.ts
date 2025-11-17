@@ -62,7 +62,8 @@ export const useSubmitUnavailability = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Invalidate relevant queries
+      // Invalidate relevant queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
       queryClient.invalidateQueries({ queryKey: ['carer-unavailability-requests'] });
       
