@@ -39,7 +39,17 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
         // Update booking status
         const newStatus = data.action === 'start_visit' ? 'in_progress' : 'done';
         
-        console.log('[useBookingAttendance] Updating booking status to:', newStatus);
+        console.log('[useBookingAttendance] Updating booking status from current to:', newStatus);
+        
+        // Fetch current status for logging
+        const { data: currentBooking } = await supabase
+          .from('bookings')
+          .select('status')
+          .eq('id', data.bookingId)
+          .single();
+        
+        console.log('[useBookingAttendance] Current booking status:', currentBooking?.status);
+        
         const { error: bookingError } = await supabase
           .from('bookings')
           .update({ 
@@ -52,7 +62,14 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
           throw new Error(`Failed to update booking: ${bookingError.message}`);
         }
 
-        console.log('[useBookingAttendance] Booking updated successfully');
+        // Verify the update
+        const { data: updatedBooking } = await supabase
+          .from('bookings')
+          .select('status')
+          .eq('id', data.bookingId)
+          .single();
+        
+        console.log('[useBookingAttendance] Booking updated successfully, new status:', updatedBooking?.status);
 
         // If starting visit and late arrival data provided, create/update visit record with late arrival info
         if (data.action === 'start_visit' && (data.lateArrivalReason || data.arrivalDelayMinutes)) {
@@ -139,12 +156,16 @@ export const useBookingAttendance = (options?: { silent?: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-upcoming-appointments'] });
       queryClient.invalidateQueries({ queryKey: ['attendance-records'] });
       queryClient.invalidateQueries({ queryKey: ['today-attendance'] });
       queryClient.invalidateQueries({ queryKey: ['carer-completed-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['branch-booking-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['branch-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['client-billing'] });
+      
+      console.log('[useBookingAttendance] Invalidated carer-appointments and carer-upcoming-appointments for dashboard refresh');
       
       // Only show success toast if not in silent mode
       if (!options?.silent) {
