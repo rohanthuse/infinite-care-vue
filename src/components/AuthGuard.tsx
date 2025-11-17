@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LoadingScreen } from './LoadingScreen';
 
@@ -14,7 +14,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   redirectTo = '/login',
   requiresTenant = false 
 }) => {
-  const { user, session, loading } = useAuth();
+  const { user, session, loading } = useAuthSafe();
   const location = useLocation();
 
   if (loading) {

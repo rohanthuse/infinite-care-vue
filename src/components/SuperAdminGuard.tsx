@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface SuperAdminGuardProps {
@@ -12,7 +12,7 @@ export const SuperAdminGuard: React.FC<SuperAdminGuardProps> = ({
   children, 
   fallbackPath = '/login' 
 }) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthSafe();
   const { data: userRoleData, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
