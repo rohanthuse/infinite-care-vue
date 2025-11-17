@@ -1,13 +1,13 @@
 
-import React, { useState } from "react";
-import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Calendar, Clock, User, MapPin, Phone, Plus, Filter, Play, Eye, ArrowRight, RefreshCw, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, isToday, isTomorrow, isYesterday, isThisWeek, differenceInMinutes } from "date-fns";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,10 +25,20 @@ const CarerAppointments: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [completingVisitId, setCompletingVisitId] = useState<string | null>(null);
+  const [pastAppointmentsFilter, setPastAppointmentsFilter] = useState({
+    dateRange: 'last-30-days',
+    clientSearch: '',
+    statusFilter: 'all'
+  });
+  const [upcomingAppointmentsFilter, setUpcomingAppointmentsFilter] = useState({
+    dateRange: 'next-30-days',
+    clientSearch: ''
+  });
   const { data: carerContext, isLoading: isContextLoading } = useCarerContext();
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
   const bookingAttendance = useBookingAttendance();
+  const queryClient = useQueryClient();
   
   // Late arrival detection
   const {
@@ -40,8 +50,8 @@ const CarerAppointments: React.FC = () => {
     clearLateArrivalDialog,
   } = useLateArrivalDetection();
 
-  // Get appointments from database
-  const { data: appointments = [], isLoading } = useQuery({
+  // Get appointments from database with force refetch configuration
+  const { data: appointments = [], isLoading, isFetching } = useQuery({
     queryKey: ['carer-appointments-full', carerContext?.staffId, statusFilter],
     queryFn: async () => {
       if (!carerContext?.staffId) return [];
@@ -89,7 +99,69 @@ const CarerAppointments: React.FC = () => {
       return data || [];
     },
     enabled: !!carerContext?.staffId && !isContextLoading,
+    staleTime: 0, // Data is immediately stale - always fetch fresh
+    gcTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnReconnect: true, // Refetch when connection restored
   });
+
+  // Real-time subscription for booking updates
+  useEffect(() => {
+    if (!carerContext?.staffId) return;
+
+    console.log('[CarerAppointments] Setting up real-time subscription for staff:', carerContext.staffId);
+
+    const channel = supabase
+      .channel(`carer-bookings-${carerContext.staffId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'bookings',
+          filter: `staff_id=eq.${carerContext.staffId}`
+        },
+        (payload) => {
+          console.log('[CarerAppointments] Real-time booking update received:', payload);
+          
+          // Invalidate and refetch immediately
+          queryClient.invalidateQueries({ 
+            queryKey: ['carer-appointments-full', carerContext.staffId] 
+          });
+          
+          // Show a subtle notification
+          if (payload.eventType === 'UPDATE' && payload.new.status === 'done') {
+            toast.info('Visit status updated', { duration: 2000 });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'visit_records',
+          filter: `staff_id=eq.${carerContext.staffId}`
+        },
+        (payload) => {
+          console.log('[CarerAppointments] Real-time visit_record update received:', payload);
+          
+          // Refetch appointments when visit records change
+          queryClient.invalidateQueries({ 
+            queryKey: ['carer-appointments-full', carerContext.staffId] 
+          });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[CarerAppointments] Subscription status:', status);
+      });
+
+    return () => {
+      console.log('[CarerAppointments] Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [carerContext?.staffId, queryClient]);
 
   // Filter appointments based on search term
   const filteredAppointments = appointments.filter(appointment => {
@@ -149,7 +221,7 @@ const CarerAppointments: React.FC = () => {
     );
   };
 
-  // Categorize appointments
+  // Categorize appointments with enhanced logging
   const categorizeAppointments = (appointments: any[]) => {
     const now = new Date();
     const todayDate = format(now, 'yyyy-MM-dd');
@@ -159,13 +231,15 @@ const CarerAppointments: React.FC = () => {
     const upcoming: any[] = [];
     const past: any[] = [];
 
+    console.log('[categorizeAppointments] Processing', appointments.length, 'appointments');
+
     // Only filter out cancelled appointments
     // Keep completed/done appointments so they can appear in Past Appointments
     const nonCancelledAppointments = appointments.filter(appointment => 
       appointment.status !== 'cancelled'
     );
 
-    nonCancelledAppointments.forEach(appointment => {
+    nonCancelledAppointments.forEach((appointment, index) => {
       const appointmentDate = format(new Date(appointment.start_time), 'yyyy-MM-dd');
       const startTime = new Date(appointment.start_time);
       
@@ -178,6 +252,18 @@ const CarerAppointments: React.FC = () => {
       // Exclude completed/done from "current" and "today" categories
       const excludedFromToday = ['completed', 'done'];
       const isCompleted = excludedFromToday.includes(appointment.status) || isVisitCompleted;
+      
+      console.log(`[categorizeAppointments] Appointment ${index + 1}/${nonCancelledAppointments.length}:`, {
+        id: appointment.id,
+        client: `${appointment.clients?.first_name} ${appointment.clients?.last_name}`,
+        bookingStatus: appointment.status,
+        visitRecordStatus: appointment.visit_records?.[0]?.status,
+        isVisitCompleted,
+        isCompleted,
+        appointmentDate,
+        todayDate,
+        categorizedAs: isCompleted ? 'PAST' : (appointmentDate === todayDate ? 'TODAY/CURRENT' : 'UPCOMING')
+      });
       
       if (appointmentDate === todayDate) {
         // Completed visits on today should go to past
@@ -199,6 +285,13 @@ const CarerAppointments: React.FC = () => {
         // Past appointments (includes completed visits)
         past.push(appointment);
       }
+    });
+
+    console.log('[categorizeAppointments] Results:', {
+      current: current.length,
+      today: today.length,
+      upcoming: upcoming.length,
+      past: past.length
     });
 
     // Sort each category
@@ -503,10 +596,88 @@ const CarerAppointments: React.FC = () => {
     );
   }
 
+  // Manual refresh handler
+  const handleManualRefresh = () => {
+    toast.promise(
+      queryClient.refetchQueries({ 
+        queryKey: ['carer-appointments-full', carerContext?.staffId] 
+      }),
+      {
+        loading: 'Refreshing appointments...',
+        success: 'Appointments updated!',
+        error: 'Failed to refresh'
+      }
+    );
+  };
+
+  // Filter logic for Past Appointments
+  const filterPastAppointments = (appointments: any[]) => {
+    return appointments.filter(appointment => {
+      const matchesClient = pastAppointmentsFilter.clientSearch === '' || 
+        `${appointment.clients?.first_name} ${appointment.clients?.last_name}`
+          .toLowerCase()
+          .includes(pastAppointmentsFilter.clientSearch.toLowerCase());
+      
+      const matchesStatus = pastAppointmentsFilter.statusFilter === 'all' ||
+        appointment.status === pastAppointmentsFilter.statusFilter;
+      
+      const appointmentDate = new Date(appointment.start_time);
+      const now = new Date();
+      const daysAgo = Math.floor((now.getTime() - appointmentDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const matchesDateRange = 
+        pastAppointmentsFilter.dateRange === 'all' ||
+        (pastAppointmentsFilter.dateRange === 'last-7-days' && daysAgo <= 7) ||
+        (pastAppointmentsFilter.dateRange === 'last-30-days' && daysAgo <= 30) ||
+        (pastAppointmentsFilter.dateRange === 'last-90-days' && daysAgo <= 90);
+      
+      return matchesClient && matchesStatus && matchesDateRange;
+    });
+  };
+
+  // Filter logic for Upcoming Appointments
+  const filterUpcomingAppointments = (appointments: any[]) => {
+    return appointments.filter(appointment => {
+      const matchesClient = upcomingAppointmentsFilter.clientSearch === '' || 
+        `${appointment.clients?.first_name} ${appointment.clients?.last_name}`
+          .toLowerCase()
+          .includes(upcomingAppointmentsFilter.clientSearch.toLowerCase());
+      
+      const appointmentDate = new Date(appointment.start_time);
+      const now = new Date();
+      const daysAhead = Math.floor((appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const matchesDateRange = 
+        upcomingAppointmentsFilter.dateRange === 'all' ||
+        (upcomingAppointmentsFilter.dateRange === 'next-7-days' && daysAhead <= 7) ||
+        (upcomingAppointmentsFilter.dateRange === 'next-30-days' && daysAhead <= 30);
+      
+      return matchesClient && matchesDateRange;
+    });
+  };
+
   return (
     <div className="w-full min-w-0 max-w-full">
+      {/* Loading overlay during refetch */}
+      {isFetching && !isLoading && (
+        <div className="fixed top-16 right-4 z-50 bg-background shadow-lg rounded-lg p-3 flex items-center gap-2 border border-border">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <span className="text-sm font-medium">Updating appointments...</span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">My Appointments</h1>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleManualRefresh}
+          disabled={isLoading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Filters */}
@@ -694,8 +865,38 @@ const CarerAppointments: React.FC = () => {
                   <h2 className="text-lg font-semibold text-amber-700">Upcoming Appointments</h2>
                   <Badge className="bg-amber-100 text-amber-700">{categorized.upcoming.length}</Badge>
                 </div>
+                
+                {/* Filter controls for Upcoming */}
+                <div className="flex flex-col md:flex-row gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                  <Input 
+                    placeholder="Search client..." 
+                    value={upcomingAppointmentsFilter.clientSearch}
+                    onChange={(e) => setUpcomingAppointmentsFilter(prev => ({
+                      ...prev, 
+                      clientSearch: e.target.value
+                    }))}
+                    className="md:max-w-xs"
+                  />
+                  <Select 
+                    value={upcomingAppointmentsFilter.dateRange}
+                    onValueChange={(value) => setUpcomingAppointmentsFilter(prev => ({
+                      ...prev,
+                      dateRange: value
+                    }))}
+                  >
+                    <SelectTrigger className="md:w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="next-7-days">Next 7 Days</SelectItem>
+                      <SelectItem value="next-30-days">Next 30 Days</SelectItem>
+                      <SelectItem value="all">All Future</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="space-y-4">
-                  {categorized.upcoming.map(renderAppointmentCard)}
+                  {filterUpcomingAppointments(categorized.upcoming).map(renderAppointmentCard)}
                 </div>
               </div>
             )}
@@ -708,8 +909,55 @@ const CarerAppointments: React.FC = () => {
                   <h2 className="text-lg font-semibold text-gray-700">Past Appointments</h2>
                   <Badge className="bg-gray-100 text-gray-700">{categorized.past.length}</Badge>
                 </div>
+                
+                {/* Filter controls for Past */}
+                <div className="flex flex-col md:flex-row gap-3 mb-4 p-4 bg-muted/30 rounded-lg">
+                  <Input 
+                    placeholder="Search client..." 
+                    value={pastAppointmentsFilter.clientSearch}
+                    onChange={(e) => setPastAppointmentsFilter(prev => ({
+                      ...prev, 
+                      clientSearch: e.target.value
+                    }))}
+                    className="md:max-w-xs"
+                  />
+                  <Select 
+                    value={pastAppointmentsFilter.dateRange}
+                    onValueChange={(value) => setPastAppointmentsFilter(prev => ({
+                      ...prev,
+                      dateRange: value
+                    }))}
+                  >
+                    <SelectTrigger className="md:w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="last-7-days">Last 7 Days</SelectItem>
+                      <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                      <SelectItem value="last-90-days">Last 90 Days</SelectItem>
+                      <SelectItem value="all">All Time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select 
+                    value={pastAppointmentsFilter.statusFilter}
+                    onValueChange={(value) => setPastAppointmentsFilter(prev => ({
+                      ...prev,
+                      statusFilter: value
+                    }))}
+                  >
+                    <SelectTrigger className="md:w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="done">Completed</SelectItem>
+                      <SelectItem value="completed">Done</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="space-y-4">
-                  {categorized.past.map(renderAppointmentCard)}
+                  {filterPastAppointments(categorized.past).map(renderAppointmentCard)}
                 </div>
               </div>
             )}
