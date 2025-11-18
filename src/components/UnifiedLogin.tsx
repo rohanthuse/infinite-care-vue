@@ -95,6 +95,26 @@ const UnifiedLogin = () => {
     }
   }, [searchParams]);
 
+  // Check auth health on mount
+  useEffect(() => {
+    const checkAuthHealth = async () => {
+      try {
+        const { data, error } = await supabase.rpc('check_auth_health');
+        if (!error && data) {
+          console.log('[Auth Health]', data);
+          const healthData = data as any;
+          if (healthData && !healthData.healthy) {
+            console.warn('[Auth Health] System unhealthy:', healthData.affected_users, 'users affected');
+          }
+        }
+      } catch (error) {
+        console.error('[Auth Health] Check failed:', error);
+      }
+    };
+    
+    checkAuthHealth();
+  }, []);
+
   const validateThirdPartyToken = async (token: string) => {
     try {
       const { data: request, error } = await supabase
@@ -316,6 +336,35 @@ const UnifiedLogin = () => {
     }
   };
 
+  const handleAuthSchemaFix = async () => {
+    try {
+      setResetLoading(true);
+      toast.info("Running auth schema fix...");
+      
+      const { data, error } = await supabase.rpc('fix_auth_users_schema');
+      
+      if (error) throw error;
+      
+      console.log('[AUTH FIX] Schema fix result:', data);
+      
+      const fixData = data as any;
+      if (fixData?.success) {
+        toast.success(
+          `Auth schema fixed! ${fixData.affected_rows} users repaired. Please try logging in again.`,
+          { duration: 5000 }
+        );
+        setShowRecovery(false);
+      } else {
+        toast.error(fixData?.error || "Failed to fix auth schema");
+      }
+    } catch (error: any) {
+      console.error('[AUTH FIX] Error:', error);
+      toast.error("Failed to run schema fix: " + error.message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[LOGIN DEBUG] Sign in button clicked, starting login process');
@@ -360,6 +409,25 @@ const UnifiedLogin = () => {
 
       if (authError) {
         console.error('[LOGIN DEBUG] Auth error:', authError);
+        
+        // Check for auth schema error specifically
+        if (authError.message?.includes('Database error querying schema') || 
+            authError.message?.includes('converting NULL to string')) {
+          clearTimeout(timeoutId);
+          setLoading(false);
+          setShowRecovery(true);
+          
+          toast.error(
+            "Authentication system error detected. Please try the 'Fix Auth Schema' option below.",
+            { duration: 6000 }
+          );
+          
+          // Log for admin monitoring
+          console.error('[LOGIN CRITICAL] Auth schema error - NULL values detected in auth.users');
+          
+          return;
+        }
+        
         throw authError;
       }
 
@@ -942,6 +1010,26 @@ const UnifiedLogin = () => {
                     >
                       <AlertCircle className="h-4 w-4 mr-2" />
                       Complete Reset (Nuclear Option)
+                    </CustomButton>
+                    <CustomButton
+                      type="button"
+                      onClick={handleAuthSchemaFix}
+                      disabled={resetLoading}
+                      variant="secondary"
+                      className="w-full"
+                      size="sm"
+                    >
+                      {resetLoading ? (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          Fixing Auth Schema...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Fix Auth Schema (Admin)
+                        </>
+                      )}
                     </CustomButton>
                     <CustomButton
                       type="button"

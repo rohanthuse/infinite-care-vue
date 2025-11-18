@@ -10338,6 +10338,7 @@ export type Database = {
         Args: { _user_id: string; _visit_record_id: string }
         Returns: boolean
       }
+      check_auth_health: { Args: never; Returns: Json }
       check_auth_schema_health: { Args: never; Returns: Json }
       check_carer_auth_health: { Args: never; Returns: Json }
       check_document_upload_access: {
@@ -10453,6 +10454,7 @@ export type Database = {
       }
       expire_third_party_access: { Args: never; Returns: undefined }
       fix_all_client_auth_issues: { Args: never; Returns: Json }
+      fix_auth_users_schema: { Args: never; Returns: Json }
       fix_branch_admin_organization_memberships: { Args: never; Returns: Json }
       fix_client_auth_links: { Args: never; Returns: Json }
       fix_client_message_participants: {
