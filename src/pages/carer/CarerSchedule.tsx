@@ -336,16 +336,11 @@ const CarerSchedule: React.FC = () => {
       </div>
 
       {/* Enhanced Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-6 text-center">
             <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              {viewMode === 'day' 
-                ? weekBookings.filter(booking => 
-                    format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
-                  ).length
-                : currentViewBookings.length
-              }
+              {allBookings.length}
             </div>
             <div className="text-sm text-blue-100 font-medium">Total Appointments</div>
           </CardContent>
@@ -354,13 +349,7 @@ const CarerSchedule: React.FC = () => {
         <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-6 text-center">
             <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              {viewMode === 'day'
-                ? weekBookings.filter(booking => 
-                    format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
-                    booking.status === 'completed'
-                  ).length
-                : currentViewBookings.filter(booking => booking.status === 'completed').length
-              }
+              {allBookings.filter(booking => booking.status === 'completed').length}
             </div>
             <div className="text-sm text-emerald-100 font-medium">Completed</div>
           </CardContent>
@@ -369,36 +358,14 @@ const CarerSchedule: React.FC = () => {
         <Card className="bg-gradient-to-br from-amber-500 to-amber-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-6 text-center">
             <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              {viewMode === 'day'
-                ? weekBookings.filter(booking => 
-                    format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd') &&
-                    (booking.status === 'assigned' || booking.status === 'scheduled')
-                  ).length
-                : currentViewBookings.filter(booking => 
-                    booking.status === 'assigned' || booking.status === 'scheduled'
-                  ).length
-              }
+              {allBookings.filter(booking => {
+                const bookingDate = new Date(booking.start_time);
+                const now = new Date();
+                return (booking.status === 'assigned' || booking.status === 'scheduled') && 
+                       bookingDate >= now;
+              }).length}
             </div>
             <div className="text-sm text-amber-100 font-medium">Scheduled</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              £{viewMode === 'day'
-                ? weekBookings
-                    .filter(booking => 
-                      format(new Date(booking.start_time), 'yyyy-MM-dd') === format(currentDate, 'yyyy-MM-dd')
-                    )
-                    .reduce((total, booking) => total + (booking.revenue || 0), 0)
-                    .toFixed(2)
-                : currentViewBookings
-                    .reduce((total, booking) => total + (booking.revenue || 0), 0)
-                    .toFixed(2)
-              }
-            </div>
-            <div className="text-sm text-purple-100 font-medium">Total Revenue</div>
           </CardContent>
         </Card>
       </div>
