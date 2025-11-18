@@ -58,6 +58,32 @@ export function CarerReportsTab() {
   const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
   const [selectedVisitRecordId, setSelectedVisitRecordId] = useState<string | null>(null);
 
+  // Fetch visit record ID when a booking is selected for report
+  // ✅ This useEffect is now at the TOP, before any conditional returns
+  useEffect(() => {
+    const fetchVisitRecord = async () => {
+      if (!selectedBookingForReport?.id) return;
+      
+      const { data, error } = await supabase
+        .from('visit_records')
+        .select('id')
+        .eq('booking_id', selectedBookingForReport.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (data) {
+        setSelectedVisitRecordId(data.id);
+      } else {
+        setSelectedVisitRecordId(null);
+      }
+    };
+    
+    if (selectedBookingForReport) {
+      fetchVisitRecord();
+    }
+  }, [selectedBookingForReport]);
+
   // STEP 1: Check if context is loading (highest priority)
   if (contextLoading || !carerContext) {
     return (
@@ -155,31 +181,6 @@ export function CarerReportsTab() {
       report: report  // Include the full report object
     };
   });
-
-  // Fetch visit record ID when a booking is selected for report
-  useEffect(() => {
-    const fetchVisitRecord = async () => {
-      if (!selectedBookingForReport?.id) return;
-      
-      const { data, error } = await supabase
-        .from('visit_records')
-        .select('id')
-        .eq('booking_id', selectedBookingForReport.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (data) {
-        setSelectedVisitRecordId(data.id);
-      } else {
-        setSelectedVisitRecordId(null);
-      }
-    };
-    
-    if (selectedBookingForReport) {
-      fetchVisitRecord();
-    }
-  }, [selectedBookingForReport]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
