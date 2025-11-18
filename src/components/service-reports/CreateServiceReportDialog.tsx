@@ -580,84 +580,104 @@ export function CreateServiceReportDialog({
             <ScrollArea className="max-h-[600px] pr-4">
               <div className="space-y-6">
                 
-                {/* 1. Care Tasks & Assigned Tasks */}
-                {visitTasks && visitTasks.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <ClipboardList className="h-4 w-4" />
-                        Tasks Completed ({visitTasks.filter(t => t.is_completed).length}/{visitTasks.length})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 1. Care Tasks & Assigned Tasks - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <ClipboardList className="h-4 w-4" />
+                      Tasks Completed ({visitTasks?.filter(t => t.is_completed).length || 0}/{visitTasks?.length || 0})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {visitTasks && visitTasks.length > 0 ? (
                       <TasksTable tasks={visitTasks} />
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <ClipboardList className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No tasks recorded for this visit</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 2. Medications */}
-                {visitMedications && visitMedications.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Pill className="h-4 w-4" />
-                        Medications ({visitMedications.filter(m => m.is_administered).length} administered)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 2. Medications - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Pill className="h-4 w-4" />
+                      Medications ({visitMedications?.filter(m => m.is_administered).length || 0} administered)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {visitMedications && visitMedications.length > 0 ? (
                       <MedicationsTable medications={visitMedications} />
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Pill className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No medications recorded for this visit</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 3. NEWS2 Readings */}
-                {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Activity className="h-4 w-4" />
-                        Vital Signs ({news2Readings.length} NEWS2 readings, {otherVitals.length} other vitals)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 3. NEWS2 & Vital Signs - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Activity className="h-4 w-4" />
+                      Vital Signs ({news2Readings?.length || 0} NEWS2 readings, {otherVitals?.length || 0} other vitals)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
                       <NEWS2Display 
                         news2Readings={news2Readings} 
                         latestNEWS2={latestNEWS2}
                         otherVitals={otherVitals}
                       />
-                    </CardContent>
-                  </Card>
-                ) : null}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No vital signs recorded for this visit</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 4. Events & Incidents */}
-                {visitEvents && visitEvents.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <AlertTriangle className="h-4 w-4" />
-                        Events & Incidents ({visitEvents.length} recorded)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 4. Events & Incidents - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <AlertTriangle className="h-4 w-4" />
+                      Events & Incidents ({visitEvents?.length || 0} recorded)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {visitEvents && visitEvents.length > 0 ? (
                       <EventsList 
                         incidents={incidents}
                         accidents={accidents}
                         observations={observations}
                       />
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No events or incidents recorded for this visit</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 5. Care Plan Goals */}
-                {carePlanGoals && carePlanGoals.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Target className="h-4 w-4" />
-                        Care Plan Goals ({carePlanGoals.filter(g => g.status === 'completed' || g.status === 'achieved').length} completed)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 5. Care Plan Goals - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Target className="h-4 w-4" />
+                      Care Plan Goals ({carePlanGoals?.filter(g => g.status === 'completed' || g.status === 'achieved').length || 0} completed)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {carePlanGoals && carePlanGoals.length > 0 ? (
                       <div className="space-y-3">
                         {carePlanGoals.map((goal) => (
                           <div key={goal.id} className="flex items-start gap-3 p-3 border rounded-lg">
@@ -691,20 +711,25 @@ export function CreateServiceReportDialog({
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Target className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No care plan goals for this client</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 6. Activities */}
-                {clientActivities && clientActivities.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <Calendar className="h-4 w-4" />
-                        Client Activities ({clientActivities.filter(a => a.status === 'completed').length} completed)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 6. Client Activities - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="h-4 w-4" />
+                      Client Activities ({clientActivities?.filter(a => a.status === 'completed').length || 0} completed)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {clientActivities && clientActivities.length > 0 ? (
                       <div className="space-y-2">
                         {clientActivities.map((activity) => (
                           <div key={activity.id} className="flex items-center justify-between p-2 border rounded">
@@ -720,37 +745,47 @@ export function CreateServiceReportDialog({
                           </div>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No activities recorded for this client</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 7. Visit Notes */}
-                {fullVisitRecord?.visit_notes && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <FileText className="h-4 w-4" />
-                        Visit Notes
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 7. Visit Notes / Carer Notes - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <FileText className="h-4 w-4" />
+                      Visit Notes / Carer Notes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {fullVisitRecord?.visit_notes ? (
                       <div className="p-3 bg-muted rounded border">
                         <p className="text-sm whitespace-pre-wrap">{fullVisitRecord.visit_notes}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <FileText className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No notes recorded during this visit</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 8. Care Plan Information */}
-                {carePlanData?.auto_save_data && typeof carePlanData.auto_save_data === 'object' && 'personalInfo' in carePlanData.auto_save_data && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <User className="h-4 w-4" />
-                        Care Plan Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 8. Care Plan Information - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <User className="h-4 w-4" />
+                      Care Plan Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {carePlanData?.auto_save_data && typeof carePlanData.auto_save_data === 'object' && 'personalInfo' in carePlanData.auto_save_data ? (
                       <div className="space-y-2 text-sm">
                         {(carePlanData.auto_save_data as any).personalInfo?.preferred_name && (
                           <div className="flex justify-between py-1 border-b">
@@ -765,50 +800,40 @@ export function CreateServiceReportDialog({
                           </div>
                         )}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <User className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">No care plan information available</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                {/* 9. Signatures */}
-                {(fullVisitRecord?.staff_signature_data || fullVisitRecord?.client_signature_data) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-base">
-                        <PenTool className="h-4 w-4" />
-                        Sign-off Details
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                {/* 9. Sign-Off Details - ALWAYS SHOW */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <PenTool className="h-4 w-4" />
+                      Sign-Off Details (Signatures)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {(fullVisitRecord?.staff_signature_data || fullVisitRecord?.client_signature_data) ? (
                       <SignatureDisplay
                         carerSignature={fullVisitRecord.staff_signature_data}
                         carerName={preSelectedBooking?.staff_name || 'Carer'}
                         clientSignature={fullVisitRecord.client_signature_data}
                         clientName={preSelectedBooking?.client_name || 'Client'}
                       />
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Empty State - when visitRecordId exists but no data */}
-                {!visitTasks?.length && 
-                 !visitMedications?.length && 
-                 !news2Readings?.length && 
-                 !otherVitals?.length &&
-                 !visitEvents?.length && 
-                 !carePlanGoals?.length && 
-                 !clientActivities?.length && 
-                 !fullVisitRecord?.visit_notes && 
-                 !fullVisitRecord?.staff_signature_data &&
-                 !fullVisitRecord?.client_signature_data && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm font-medium">Visit Started But No Details Recorded</p>
-                    <p className="text-xs mt-2 max-w-sm mx-auto">
-                      The visit was started but no tasks, medications, vitals, or notes were recorded during the visit. 
-                      You can still complete the service report form below.
-                    </p>
-                  </div>
-                )}
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <PenTool className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">Visit not signed off yet</p>
+                        <p className="text-xs mt-1">Signatures will appear after visit completion and sign-off</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
               </div>
             </ScrollArea>
