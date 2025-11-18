@@ -365,7 +365,7 @@ export function CreateServiceReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -385,8 +385,10 @@ export function CreateServiceReportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Booking Details Summary */}
-        {preSelectedBooking && (
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-6 pb-6">
+            {/* Booking Details Summary */}
+            {preSelectedBooking && (
           <div className="bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="h-5 w-5 text-blue-600" />
@@ -577,7 +579,7 @@ export function CreateServiceReportDialog({
               </div>
             </div>
           ) : (
-            <ScrollArea className="h-[400px] md:h-[500px] lg:h-[600px] w-full pr-4">
+            <ScrollArea className="h-[350px] md:h-[400px] lg:h-[450px] w-full pr-4">
               <div className="space-y-6">
                 
                 {/* 1. Care Tasks & Assigned Tasks - ALWAYS SHOW */}
@@ -1202,6 +1204,8 @@ export function CreateServiceReportDialog({
             </div>
           </form>
         </Form>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
