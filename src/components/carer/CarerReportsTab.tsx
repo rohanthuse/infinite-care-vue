@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCarerServiceReports } from '@/hooks/useServiceReports';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerCompletedBookings } from '@/hooks/useCarerCompletedBookings';
@@ -24,6 +24,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 export function CarerReportsTab() {
   const { data: carerContext } = useCarerContext();
@@ -40,6 +41,7 @@ export function CarerReportsTab() {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [selectedBookingForReport, setSelectedBookingForReport] = useState<any>(null);
   const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
+  const [selectedVisitRecordId, setSelectedVisitRecordId] = useState<string | null>(null);
 
   // Debug logging
   console.log('[CarerReportsTab] Carer context:', {
@@ -100,6 +102,31 @@ export function CarerReportsTab() {
       report: report  // Include the full report object
     };
   });
+
+  // Fetch visit record ID when a booking is selected for report
+  useEffect(() => {
+    const fetchVisitRecord = async () => {
+      if (!selectedBookingForReport?.id) return;
+      
+      const { data, error } = await supabase
+        .from('visit_records')
+        .select('id')
+        .eq('booking_id', selectedBookingForReport.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (data) {
+        setSelectedVisitRecordId(data.id);
+      } else {
+        setSelectedVisitRecordId(null);
+      }
+    };
+    
+    if (selectedBookingForReport) {
+      fetchVisitRecord();
+    }
+  }, [selectedBookingForReport]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -498,7 +525,10 @@ export function CarerReportsTab() {
         open={bookingReportDialogOpen}
         onOpenChange={(open) => {
           setBookingReportDialogOpen(open);
-          if (!open) setSelectedBookingForReport(null);
+          if (!open) {
+            setSelectedBookingForReport(null);
+            setSelectedVisitRecordId(null);
+          }
         }}
         preSelectedClient={{
           id: selectedBookingForReport.client_id,
@@ -507,6 +537,7 @@ export function CarerReportsTab() {
         preSelectedDate={format(new Date(selectedBookingForReport.start_time), 'yyyy-MM-dd')}
         bookingId={selectedBookingForReport.id}
         preSelectedBooking={selectedBookingForReport}
+        visitRecordId={selectedVisitRecordId || undefined}
       />
       )}
 
