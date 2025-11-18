@@ -21,20 +21,35 @@ import {
   Eye,
   Calendar,
   User,
-  ClipboardList
+  ClipboardList,
+  RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 
 export function CarerReportsTab() {
-  const { data: carerContext } = useCarerContext();
-  const { data: reports = [], isLoading, error } = useCarerServiceReports(carerContext?.staffProfile?.id);
-  const { data: completedBookings = [], isLoading: bookingsLoading } = useCarerCompletedBookings(
-    carerContext?.staffProfile?.id
-  );
-  const { data: allBookings = [], isLoading: allBookingsLoading } = useCarerBookings(
-    carerContext?.staffProfile?.id
-  );
+  // Destructure loading and error states from ALL hooks
+  const { 
+    data: carerContext, 
+    isLoading: contextLoading, 
+    error: contextError 
+  } = useCarerContext();
+
+  const { 
+    data: reports = [], 
+    isLoading: reportsLoading, 
+    error: reportsError 
+  } = useCarerServiceReports(carerContext?.staffProfile?.id);
+
+  const { 
+    data: completedBookings = [], 
+    isLoading: bookingsLoading 
+  } = useCarerCompletedBookings(carerContext?.staffProfile?.id);
+
+  const { 
+    data: allBookings = [], 
+    isLoading: allBookingsLoading 
+  } = useCarerBookings(carerContext?.staffProfile?.id);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -43,44 +58,82 @@ export function CarerReportsTab() {
   const [bookingReportDialogOpen, setBookingReportDialogOpen] = useState(false);
   const [selectedVisitRecordId, setSelectedVisitRecordId] = useState<string | null>(null);
 
-  // Debug logging
-  console.log('[CarerReportsTab] Carer context:', {
-    hasContext: !!carerContext,
-    hasStaffProfile: !!carerContext?.staffProfile,
-    staffId: carerContext?.staffProfile?.id,
-    bookingsLoading,
-    completedBookingsCount: completedBookings.length
-  });
+  // STEP 1: Check if context is loading (highest priority)
+  if (contextLoading || !carerContext) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="ml-3 text-sm text-muted-foreground">Loading your profile...</p>
+      </div>
+    );
+  }
 
+  // STEP 2: Check for context errors
+  if (contextError) {
+    console.error('[CarerReportsTab] Context error:', contextError);
+    return (
+      <Card className="p-6">
+        <div className="text-center text-muted-foreground">
+          <XCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
+          <p className="font-medium">Unable to load carer profile</p>
+          <p className="text-sm mt-2">{contextError.message}</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  // STEP 3: Check if profile exists (after loading completes)
   if (!carerContext?.staffProfile) {
     return (
       <Card className="p-6">
         <div className="text-center text-muted-foreground">
           <FileText className="h-8 w-8 mx-auto mb-2" />
-          <p>Unable to load carer profile</p>
+          <p className="font-medium">No carer profile found</p>
+          <p className="text-sm mt-2">Please contact your administrator</p>
         </div>
       </Card>
     );
   }
 
-  if (isLoading) {
+  // STEP 4: Check if service reports are loading
+  if (reportsLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="ml-3 text-sm text-muted-foreground">Loading service reports...</p>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <Card className="p-6">
-        <div className="text-center text-muted-foreground">
-          <XCircle className="h-8 w-8 mx-auto mb-2" />
-          <p>Failed to load service reports</p>
-        </div>
-      </Card>
-    );
+  // STEP 5: Handle service reports errors (non-blocking)
+  if (reportsError) {
+    console.error('[CarerReportsTab] Reports error:', reportsError);
+    // Show error but still render the UI with empty state
   }
+
+  // Enhanced debug logging
+  console.log('[CarerReportsTab] Render state:', {
+    contextLoading,
+    reportsLoading,
+    bookingsLoading,
+    allBookingsLoading,
+    hasCarerContext: !!carerContext,
+    hasStaffProfile: !!carerContext?.staffProfile,
+    staffId: carerContext?.staffProfile?.id,
+    reportsCount: reports.length,
+    completedBookingsCount: completedBookings.length,
+    contextError: contextError?.message,
+    reportsError: reportsError?.message,
+    timestamp: new Date().toISOString()
+  });
 
   const pendingReports = reports.filter(r => r.status === 'pending');
   const approvedReports = reports.filter(r => r.status === 'approved');
@@ -455,7 +508,7 @@ export function CarerReportsTab() {
 
         <TabsContent value="revision" className="space-y-4">
           {revisionReports.length === 0 ? (
-            <EmptyState message="No reports requiring revision" />
+            <EmptyState message="No revision reports" />
           ) : (
             revisionReports.map((report) => (
               <ReportCard
@@ -699,11 +752,51 @@ function ReportCard({
 }
 
 function EmptyState({ message }: { message: string }) {
+  const getEmptyStateContent = () => {
+    switch (message) {
+      case "No pending reports":
+        return {
+          icon: <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />,
+          title: "No Pending Reports",
+          description: "Reports awaiting admin review will appear here."
+        };
+      case "No approved reports":
+        return {
+          icon: <CheckCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />,
+          title: "No Approved Reports",
+          description: "Your approved reports will appear here once reviewed by administrators."
+        };
+      case "No rejected reports":
+        return {
+          icon: <XCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />,
+          title: "No Rejected Reports",
+          description: "Rejected reports will appear here if any need to be resubmitted."
+        };
+      case "No revision reports":
+        return {
+          icon: <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />,
+          title: "No Reports Needing Revision",
+          description: "Reports requiring changes will appear here."
+        };
+      default:
+        return {
+          icon: <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />,
+          title: "No Service Reports Yet",
+          description: "Service reports will appear here after you submit them for completed visits."
+        };
+    }
+  };
+
+  const content = getEmptyStateContent();
+
   return (
-    <Card className="p-6">
-      <div className="text-center text-muted-foreground">
-        <FileText className="h-8 w-8 mx-auto mb-2" />
-        <p>{message}</p>
+    <Card className="p-8">
+      <div className="text-center">
+        {content.icon}
+        <h3 className="text-lg font-medium mb-2">{content.title}</h3>
+        <p className="text-sm text-muted-foreground">
+          {content.description}
+        </p>
       </div>
     </Card>
   );
