@@ -388,27 +388,7 @@ export function CarerReportsTab() {
                                   </Badge>}
                               </TableCell>
                               <TableCell className="text-right">
-                                {booking.has_report ? (
-                                  booking.report?.status === 'requires_revision' ? (
-                                    <Button 
-                                      size="sm" 
-                                      variant="default" 
-                                      onClick={() => {
-                                        const report = reports.find(r => r.booking_id === booking.id);
-                                        if (report) {
-                                          setSelectedReport(report);
-                                          setViewDialogOpen(true);
-                                        }
-                                      }} 
-                                      className="flex items-center gap-2"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                      Edit Report
-                                    </Button>
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">—</span>
-                                  )
-                                ) : (
+                                {!booking.has_report ? (
                                   <Button 
                                     size="sm" 
                                     onClick={() => {
@@ -420,6 +400,40 @@ export function CarerReportsTab() {
                                     <Plus className="h-4 w-4" />
                                     Add Report
                                   </Button>
+                                ) : booking.report?.status === 'requires_revision' ? (
+                                  <Button 
+                                    size="sm" 
+                                    variant="default" 
+                                    onClick={() => {
+                                      const report = reports.find(r => r.booking_id === booking.id);
+                                      if (report) {
+                                        setSelectedReport(report);
+                                        setViewDialogOpen(true);
+                                      }
+                                    }} 
+                                    className="flex items-center gap-2"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                    Edit Report
+                                  </Button>
+                                ) : booking.report?.status === 'pending' ? (
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      const report = reports.find(r => r.booking_id === booking.id);
+                                      if (report) {
+                                        setSelectedReport(report);
+                                        setViewDialogOpen(true);
+                                      }
+                                    }} 
+                                    className="flex items-center gap-2 text-xs"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                    View
+                                  </Button>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">—</span>
                                 )}
                               </TableCell>
                             </TableRow>;
