@@ -30,7 +30,19 @@ interface CarerSidebarProps {
 
 export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
-  const { getCarerMenuItems } = useCarerNavigation();
+  const { getCarerMenuItems, tenantSlug } = useCarerNavigation();
+
+  // Debug logging for development
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[CarerSidebar] Navigation state:', {
+        tenantSlug,
+        currentPath: location.pathname,
+        devTenant: localStorage.getItem('dev-tenant'),
+        menuItemPaths: getCarerMenuItems().map(item => ({ name: item.name, path: item.path }))
+      });
+    }
+  }, [tenantSlug, location.pathname, getCarerMenuItems]);
   const carerName = localStorage.getItem("carerName") || "Carer";
   
   const menuItems = [

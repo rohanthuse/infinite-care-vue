@@ -605,6 +605,16 @@ const UnifiedLogin = () => {
               localStorage.setItem('carerProfile', JSON.stringify(staffProfile));
               localStorage.setItem('carerName', `${staffProfile.first_name} ${staffProfile.last_name}`);
               sessionStorage.setItem('freshLogin', 'true');
+              
+              // Set dev-tenant for development environments
+              const isDev = window.location.hostname === 'localhost' || 
+                           window.location.hostname === '127.0.0.1' || 
+                           window.location.hostname.includes('preview');
+              
+              if (isDev && orgSlug) {
+                localStorage.setItem('dev-tenant', orgSlug);
+                console.log('[CARER_LOGIN] Set dev-tenant for development:', orgSlug);
+              }
             }
           } catch (profileError) {
             console.warn('[CARER_LOGIN] Failed to pre-fetch profile, will fetch on dashboard:', profileError);
