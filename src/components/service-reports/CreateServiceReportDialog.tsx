@@ -19,11 +19,23 @@ import { useCreateServiceReport, useUpdateServiceReport } from '@/hooks/useServi
 import { useClientCompletedBookings } from '@/hooks/useClientCompletedBookings';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { format } from 'date-fns';
-import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle } from 'lucide-react';
+import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle, FileText, ClipboardList, Pill, Activity, AlertTriangle, Target, Circle, Loader2, User, PenTool } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useVisitTasks } from '@/hooks/useVisitTasks';
+import { useVisitEvents } from '@/hooks/useVisitEvents';
+import { useVisitVitals } from '@/hooks/useVisitVitals';
+import { useCarePlanGoals } from '@/hooks/useCarePlanGoals';
+import { useClientActivities } from '@/hooks/useClientActivities';
+import { TasksTable } from './view-report/TasksTable';
+import { MedicationsTable } from './view-report/MedicationsTable';
+import { NEWS2Display } from './view-report/NEWS2Display';
+import { EventsList } from './view-report/EventsList';
+import { SignatureDisplay } from './view-report/SignatureDisplay';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
@@ -115,6 +127,71 @@ export function CreateServiceReportDialog({
         .eq('id', visitRecordId)
         .single();
 
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!visitRecordId && open,
+  });
+
+  // Fetch visit tasks
+  const { tasks: visitTasks = [], isLoading: isLoadingTasks } = useVisitTasks(visitRecordId);
+
+  // Fetch visit events (incidents, accidents, observations)
+  const { 
+    events: visitEvents = [], 
+    incidents = [], 
+    accidents = [], 
+    observations = [] 
+  } = useVisitEvents(visitRecordId);
+
+  // Fetch visit vitals (NEWS2 readings)
+  const { 
+    vitals: visitVitals = [], 
+    news2Readings = [], 
+    latestNEWS2,
+    otherVitals = [],
+    isLoading: isLoadingVitals 
+  } = useVisitVitals(visitRecordId);
+
+  // Fetch care plan ID for the client
+  const { data: carePlanData } = useQuery({
+    queryKey: ['client-care-plan', preSelectedBooking?.client_id],
+    queryFn: async () => {
+      if (!preSelectedBooking?.client_id) return null;
+      
+      const { data, error } = await supabase
+        .from('client_care_plans')
+        .select('id, auto_save_data')
+        .eq('client_id', preSelectedBooking.client_id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!preSelectedBooking?.client_id && open,
+  });
+
+  // Fetch care plan goals
+  const { data: carePlanGoals = [] } = useCarePlanGoals(carePlanData?.id || '');
+
+  // Fetch client activities
+  const { data: clientActivities = [] } = useClientActivities(carePlanData?.id || '');
+
+  // Fetch visit record with full details including signatures and notes
+  const { data: fullVisitRecord } = useQuery({
+    queryKey: ['full-visit-record', visitRecordId],
+    queryFn: async () => {
+      if (!visitRecordId) return null;
+      
+      const { data, error } = await supabase
+        .from('visit_records')
+        .select('*')
+        .eq('id', visitRecordId)
+        .single();
+      
       if (error) throw error;
       return data;
     },
@@ -288,7 +365,7 @@ export function CreateServiceReportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -447,6 +524,257 @@ export function CreateServiceReportDialog({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Visit Details Summary Section */}
+        {visitRecordId && (
+          <div className="space-y-4 p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="h-5 w-5 text-purple-600" />
+              <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
+                Visit Details Summary
+              </h3>
+              <Badge variant="outline" className="ml-auto">
+                Auto-populated from visit
+              </Badge>
+              {(isLoadingTasks || isLoadingVitals) && (
+                <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+              )}
+            </div>
+
+            <ScrollArea className="max-h-[600px] pr-4">
+              <div className="space-y-6">
+                
+                {/* 1. Care Tasks & Assigned Tasks */}
+                {visitTasks && visitTasks.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <ClipboardList className="h-4 w-4" />
+                        Tasks Completed ({visitTasks.filter(t => t.is_completed).length}/{visitTasks.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TasksTable tasks={visitTasks} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 2. Medications */}
+                {visitMedications && visitMedications.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Pill className="h-4 w-4" />
+                        Medications ({visitMedications.filter(m => m.is_administered).length} administered)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <MedicationsTable medications={visitMedications} />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 3. NEWS2 Readings */}
+                {(news2Readings && news2Readings.length > 0) || (otherVitals && otherVitals.length > 0) ? (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Activity className="h-4 w-4" />
+                        Vital Signs ({news2Readings.length} NEWS2 readings, {otherVitals.length} other vitals)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <NEWS2Display 
+                        news2Readings={news2Readings} 
+                        latestNEWS2={latestNEWS2}
+                        otherVitals={otherVitals}
+                      />
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                {/* 4. Events & Incidents */}
+                {visitEvents && visitEvents.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <AlertTriangle className="h-4 w-4" />
+                        Events & Incidents ({visitEvents.length} recorded)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <EventsList 
+                        incidents={incidents}
+                        accidents={accidents}
+                        observations={observations}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 5. Care Plan Goals */}
+                {carePlanGoals && carePlanGoals.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Target className="h-4 w-4" />
+                        Care Plan Goals ({carePlanGoals.filter(g => g.status === 'completed' || g.status === 'achieved').length} completed)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {carePlanGoals.map((goal) => (
+                          <div key={goal.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                            <div className="flex-shrink-0 mt-1">
+                              {goal.status === 'completed' || goal.status === 'achieved' ? (
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              ) : goal.status === 'in-progress' || goal.status === 'in_progress' ? (
+                                <Circle className="h-5 w-5 text-blue-600" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{goal.description}</p>
+                              {goal.measurable_outcome && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Target: {goal.measurable_outcome}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {goal.status}
+                                </Badge>
+                                {goal.progress !== undefined && goal.progress !== null && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {goal.progress}% complete
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 6. Activities */}
+                {clientActivities && clientActivities.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <Calendar className="h-4 w-4" />
+                        Client Activities ({clientActivities.filter(a => a.status === 'completed').length} completed)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {clientActivities.map((activity) => (
+                          <div key={activity.id} className="flex items-center justify-between p-2 border rounded">
+                            <div>
+                              <p className="font-medium text-sm">{activity.name}</p>
+                              {activity.description && (
+                                <p className="text-xs text-muted-foreground">{activity.description}</p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {activity.frequency}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 7. Visit Notes */}
+                {fullVisitRecord?.visit_notes && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <FileText className="h-4 w-4" />
+                        Visit Notes
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-3 bg-muted rounded border">
+                        <p className="text-sm whitespace-pre-wrap">{fullVisitRecord.visit_notes}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 8. Care Plan Information */}
+                {carePlanData?.auto_save_data && typeof carePlanData.auto_save_data === 'object' && 'personalInfo' in carePlanData.auto_save_data && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <User className="h-4 w-4" />
+                        Care Plan Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        {(carePlanData.auto_save_data as any).personalInfo?.preferred_name && (
+                          <div className="flex justify-between py-1 border-b">
+                            <span className="text-muted-foreground">Preferred Name:</span>
+                            <span className="font-medium">{(carePlanData.auto_save_data as any).personalInfo.preferred_name}</span>
+                          </div>
+                        )}
+                        {(carePlanData.auto_save_data as any).personalInfo?.communication_preferences && (
+                          <div className="flex justify-between py-1 border-b">
+                            <span className="text-muted-foreground">Communication:</span>
+                            <span className="font-medium">{(carePlanData.auto_save_data as any).personalInfo.communication_preferences}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 9. Signatures */}
+                {(fullVisitRecord?.staff_signature_data || fullVisitRecord?.client_signature_data) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <PenTool className="h-4 w-4" />
+                        Sign-off Details
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <SignatureDisplay
+                        carerSignature={fullVisitRecord.staff_signature_data}
+                        carerName={preSelectedBooking?.staff_name || 'Carer'}
+                        clientSignature={fullVisitRecord.client_signature_data}
+                        clientName={preSelectedBooking?.client_name || 'Client'}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Empty State */}
+                {!visitTasks?.length && 
+                 !visitMedications?.length && 
+                 !news2Readings?.length && 
+                 !otherVitals?.length &&
+                 !visitEvents?.length && 
+                 !carePlanGoals?.length && 
+                 !clientActivities?.length && 
+                 !fullVisitRecord?.visit_notes && 
+                 !fullVisitRecord?.staff_signature_data &&
+                 !fullVisitRecord?.client_signature_data && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No visit details available yet</p>
+                    <p className="text-xs mt-1">Complete visit tasks and activities to see them here</p>
+                  </div>
+                )}
+
+              </div>
+            </ScrollArea>
           </div>
         )}
 
