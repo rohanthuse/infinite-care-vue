@@ -40,16 +40,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const formSchema = z.object({
   client_id: z.string().min(1, 'Client is required'),
   booking_id: z.string().optional(),
-  service_date: z.string().min(1, 'Service date is required'),
-  service_duration_minutes: z.number().min(1, 'Duration is required'),
   tasks_completed: z.array(z.string()).optional(),
   client_mood: z.string().min(1, 'Client mood is required'),
   client_engagement: z.string().min(1, 'Client engagement is required'),
   activities_undertaken: z.string().optional(),
-  medication_administered: z.boolean().default(false),
-  medication_notes: z.string().optional(),
-  incident_occurred: z.boolean().default(false),
-  incident_details: z.string().optional(),
   next_visit_preparations: z.string().optional(),
   carer_observations: z.string().min(1, 'Carer observations are required'),
   client_feedback: z.string().optional(),
@@ -202,65 +196,17 @@ export function CreateServiceReportDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       client_id: preSelectedClient?.id || '',
-      service_date: preSelectedDate || format(new Date(), 'yyyy-MM-dd'),
-      service_duration_minutes: 60,
       tasks_completed: [],
       client_mood: '',
       client_engagement: '',
       activities_undertaken: '',
-      medication_administered: false,
-      medication_notes: '',
-      incident_occurred: false,
-      incident_details: '',
       next_visit_preparations: '',
       carer_observations: '',
       client_feedback: '',
     },
   });
 
-  // Auto-fill form fields when preSelectedBooking is provided
-  React.useEffect(() => {
-    if (preSelectedBooking) {
-      const duration = Math.round(
-        (new Date(preSelectedBooking.end_time).getTime() - 
-         new Date(preSelectedBooking.start_time).getTime()) / 60000
-      );
-      form.setValue('service_duration_minutes', duration);
-      form.setValue('service_date', format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd'));
-    }
-  }, [preSelectedBooking, form]);
 
-  // Auto-populate medication summary from visit medications
-  React.useEffect(() => {
-    if (visitRecordId && visitMedications && visitMedications.length > 0 && open) {
-      const administeredMeds = visitMedications.filter(m => m.is_administered);
-      const missedMeds = visitMedications.filter(m => !m.is_administered);
-      
-      let summary = '';
-      if (administeredMeds.length > 0) {
-        summary += `Administered:\n${administeredMeds.map(m => `• ${m.medication_name} (${m.dosage})`).join('\n')}\n\n`;
-        
-        // Add notes if any
-        const medsWithNotes = administeredMeds.filter(m => m.administration_notes);
-        if (medsWithNotes.length > 0) {
-          summary += `Notes:\n`;
-          medsWithNotes.forEach(med => {
-            summary += `• ${med.medication_name}: ${med.administration_notes}\n`;
-          });
-        }
-      }
-      
-      if (missedMeds.length > 0) {
-        if (summary) summary += '\n';
-        summary += `Not administered:\n${missedMeds.map(m => `• ${m.medication_name}${m.missed_reason ? ` - ${m.missed_reason}` : ''}`).join('\n')}`;
-      }
-      
-      if (summary) {
-        form.setValue('medication_notes', summary.trim());
-        form.setValue('medication_administered', administeredMeds.length > 0);
-      }
-    }
-  }, [visitRecordId, visitMedications, open, form]);
 
   // Populate form with existing report data when editing
   React.useEffect(() => {
@@ -268,16 +214,10 @@ export function CreateServiceReportDialog({
       form.reset({
         client_id: existingReport.client_id,
         booking_id: existingReport.booking_id || '',
-        service_date: existingReport.service_date,
-        service_duration_minutes: existingReport.service_duration_minutes,
         tasks_completed: existingReport.tasks_completed || [],
         client_mood: existingReport.client_mood || '',
         client_engagement: existingReport.client_engagement || '',
         activities_undertaken: existingReport.activities_undertaken || '',
-        medication_administered: existingReport.medication_administered || false,
-        medication_notes: existingReport.medication_notes || '',
-        incident_occurred: existingReport.incident_occurred || false,
-        incident_details: existingReport.incident_details || '',
         next_visit_preparations: existingReport.next_visit_preparations || '',
         carer_observations: existingReport.carer_observations || '',
         client_feedback: existingReport.client_feedback || '',
@@ -311,16 +251,20 @@ export function CreateServiceReportDialog({
     const reportData = {
       client_id: data.client_id,
       booking_id: bookingId || data.booking_id || null,
-      service_date: data.service_date,
-      service_duration_minutes: data.service_duration_minutes,
+      service_date: preSelectedBooking 
+        ? format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd')
+        : format(new Date(), 'yyyy-MM-dd'),
+      service_duration_minutes: preSelectedBooking 
+        ? Math.round((new Date(preSelectedBooking.end_time).getTime() - new Date(preSelectedBooking.start_time).getTime()) / 60000)
+        : 60,
       tasks_completed: data.tasks_completed,
       client_mood: data.client_mood,
       client_engagement: data.client_engagement,
       activities_undertaken: data.activities_undertaken,
-      medication_administered: data.medication_administered,
-      medication_notes: data.medication_notes,
-      incident_occurred: data.incident_occurred,
-      incident_details: data.incident_details,
+      medication_administered: false,
+      medication_notes: null,
+      incident_occurred: false,
+      incident_details: null,
       next_visit_preparations: data.next_visit_preparations,
       carer_observations: data.carer_observations,
       client_feedback: data.client_feedback,
@@ -360,8 +304,6 @@ export function CreateServiceReportDialog({
   };
 
   const tasksCompleted = form.watch('tasks_completed') || [];
-  const medicationAdministered = form.watch('medication_administered');
-  const incidentOccurred = form.watch('incident_occurred');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -843,41 +785,6 @@ export function CreateServiceReportDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="service_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Service Date</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="service_duration_minutes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration (minutes)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             {/* Client Information */}
             {preSelectedClient && !preSelectedBooking && (
               <div className="p-4 bg-muted rounded-lg">
@@ -899,13 +806,8 @@ export function CreateServiceReportDialog({
                         const booking = completedBookings.find(b => b.id === value);
                         if (booking) {
                           setSelectedBooking(booking);
-                          form.setValue('service_date', format(new Date(booking.start_time), 'yyyy-MM-dd'));
-                          const duration = Math.round(
-                            (new Date(booking.end_time).getTime() - new Date(booking.start_time).getTime()) / 60000
-                          );
-                          form.setValue('service_duration_minutes', duration);
                         }
-                      }} 
+                      }}
                       value={field.value}
                     >
                       <FormControl>
@@ -1047,88 +949,6 @@ export function CreateServiceReportDialog({
                 </FormItem>
               )}
             />
-
-            {/* Medication Section */}
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="medication_administered"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Medication administered</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {medicationAdministered && (
-                <FormField
-                  control={form.control}
-                  name="medication_notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Medication Notes</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Detail which medications were given, times, and any observations..."
-                          {...field}
-                          rows={3}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
-
-            {/* Incident Section */}
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="incident_occurred"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Incident occurred during visit</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {incidentOccurred && (
-                <FormField
-                  control={form.control}
-                  name="incident_details"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Incident Details</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Provide detailed description of the incident, actions taken, and any follow-up required..."
-                          {...field}
-                          rows={4}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
 
             {/* Additional Sections */}
             <FormField
