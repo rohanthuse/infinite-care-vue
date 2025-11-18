@@ -340,7 +340,7 @@ const CarerSchedule: React.FC = () => {
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-6 text-center">
             <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              {allBookings.length}
+              {periodAppointments.length}
             </div>
             <div className="text-sm text-blue-100 font-medium">Total Appointments</div>
           </CardContent>
@@ -349,7 +349,10 @@ const CarerSchedule: React.FC = () => {
         <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-6 text-center">
             <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              {allBookings.filter(booking => booking.status === 'completed').length}
+              {periodAppointments.filter(booking => {
+                const status = booking.status?.toLowerCase();
+                return status === 'completed' || status === 'done';
+              }).length}
             </div>
             <div className="text-sm text-emerald-100 font-medium">Completed</div>
           </CardContent>
@@ -358,10 +361,11 @@ const CarerSchedule: React.FC = () => {
         <Card className="bg-gradient-to-br from-amber-500 to-amber-600 border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
           <CardContent className="p-6 text-center">
             <div className="text-3xl md:text-4xl font-bold text-white mb-2">
-              {allBookings.filter(booking => {
+              {periodAppointments.filter(booking => {
+                const status = booking.status?.toLowerCase();
                 const bookingDate = new Date(booking.start_time);
                 const now = new Date();
-                return (booking.status === 'assigned' || booking.status === 'scheduled') && 
+                return (status === 'assigned' || status === 'scheduled') && 
                        bookingDate >= now;
               }).length}
             </div>
