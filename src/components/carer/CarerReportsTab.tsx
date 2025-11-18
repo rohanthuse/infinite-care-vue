@@ -10,45 +10,28 @@ import { CreateServiceReportDialog } from '../service-reports/CreateServiceRepor
 import { ViewServiceReportDialog } from '../service-reports/ViewServiceReportDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  FileText, 
-  Plus, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle,
-  Edit,
-  Eye,
-  Calendar,
-  User,
-  ClipboardList,
-  RefreshCw
-} from 'lucide-react';
+import { FileText, Plus, Clock, CheckCircle, AlertTriangle, XCircle, Edit, Eye, Calendar, User, ClipboardList, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-
 export function CarerReportsTab() {
   // Destructure loading and error states from ALL hooks
-  const { 
-    data: carerContext, 
-    isLoading: contextLoading, 
-    error: contextError 
+  const {
+    data: carerContext,
+    isLoading: contextLoading,
+    error: contextError
   } = useCarerContext();
-
-  const { 
-    data: reports = [], 
-    isLoading: reportsLoading, 
-    error: reportsError 
+  const {
+    data: reports = [],
+    isLoading: reportsLoading,
+    error: reportsError
   } = useCarerServiceReports(carerContext?.staffProfile?.id);
-
-  const { 
-    data: completedBookings = [], 
-    isLoading: bookingsLoading 
+  const {
+    data: completedBookings = [],
+    isLoading: bookingsLoading
   } = useCarerCompletedBookings(carerContext?.staffProfile?.id);
-
-  const { 
-    data: allBookings = [], 
-    isLoading: allBookingsLoading 
+  const {
+    data: allBookings = [],
+    isLoading: allBookingsLoading
   } = useCarerBookings(carerContext?.staffProfile?.id);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -63,22 +46,18 @@ export function CarerReportsTab() {
   useEffect(() => {
     const fetchVisitRecord = async () => {
       if (!selectedBookingForReport?.id) return;
-      
-      const { data, error } = await supabase
-        .from('visit_records')
-        .select('id')
-        .eq('booking_id', selectedBookingForReport.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('visit_records').select('id').eq('booking_id', selectedBookingForReport.id).order('created_at', {
+        ascending: false
+      }).limit(1).maybeSingle();
       if (data) {
         setSelectedVisitRecordId(data.id);
       } else {
         setSelectedVisitRecordId(null);
       }
     };
-    
     if (selectedBookingForReport) {
       fetchVisitRecord();
     }
@@ -86,57 +65,45 @@ export function CarerReportsTab() {
 
   // STEP 1: Check if context is loading (highest priority)
   if (contextLoading || !carerContext) {
-    return (
-      <div className="flex items-center justify-center p-8">
+    return <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         <p className="ml-3 text-sm text-muted-foreground">Loading your profile...</p>
-      </div>
-    );
+      </div>;
   }
 
   // STEP 2: Check for context errors
   if (contextError) {
     console.error('[CarerReportsTab] Context error:', contextError);
-    return (
-      <Card className="p-6">
+    return <Card className="p-6">
         <div className="text-center text-muted-foreground">
           <XCircle className="h-8 w-8 mx-auto mb-2 text-destructive" />
           <p className="font-medium">Unable to load carer profile</p>
           <p className="text-sm mt-2">{contextError.message}</p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => window.location.reload()}
-          >
+          <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Retry
           </Button>
         </div>
-      </Card>
-    );
+      </Card>;
   }
 
   // STEP 3: Check if profile exists (after loading completes)
   if (!carerContext?.staffProfile) {
-    return (
-      <Card className="p-6">
+    return <Card className="p-6">
         <div className="text-center text-muted-foreground">
           <FileText className="h-8 w-8 mx-auto mb-2" />
           <p className="font-medium">No carer profile found</p>
           <p className="text-sm mt-2">Please contact your administrator</p>
         </div>
-      </Card>
-    );
+      </Card>;
   }
 
   // STEP 4: Check if service reports are loading
   if (reportsLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
+    return <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         <p className="ml-3 text-sm text-muted-foreground">Loading service reports...</p>
-      </div>
-    );
+      </div>;
   }
 
   // STEP 5: Handle service reports errors (non-blocking)
@@ -160,55 +127,59 @@ export function CarerReportsTab() {
     reportsError: reportsError?.message,
     timestamp: new Date().toISOString()
   });
-
   const pendingReports = reports.filter(r => r.status === 'pending');
   const approvedReports = reports.filter(r => r.status === 'approved');
   const rejectedReports = reports.filter(r => r.status === 'rejected');
   const revisionReports = reports.filter(r => r.status === 'requires_revision');
-  
+
   // Filter past appointments (completed or done status, before current time)
   const pastAppointments = allBookings.filter(booking => {
     const startTime = new Date(booking.start_time);
     return (booking.status === 'done' || booking.status === 'completed') && startTime < new Date();
   });
-  
+
   // Cross-reference with reports to get full report status
   const pastAppointmentsWithReportStatus = pastAppointments.map(booking => {
     const report = reports.find(r => r.booking_id === booking.id);
-    return { 
-      ...booking, 
+    return {
+      ...booking,
       has_report: !!report,
-      report: report  // Include the full report object
+      report: report // Include the full report object
     };
   });
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      case 'requires_revision': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'requires_revision':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="h-3 w-3" />;
-      case 'approved': return <CheckCircle className="h-3 w-3" />;
-      case 'rejected': return <XCircle className="h-3 w-3" />;
-      case 'requires_revision': return <AlertTriangle className="h-3 w-3" />;
-      default: return <FileText className="h-3 w-3" />;
+      case 'pending':
+        return <Clock className="h-3 w-3" />;
+      case 'approved':
+        return <CheckCircle className="h-3 w-3" />;
+      case 'rejected':
+        return <XCircle className="h-3 w-3" />;
+      case 'requires_revision':
+        return <AlertTriangle className="h-3 w-3" />;
+      default:
+        return <FileText className="h-3 w-3" />;
     }
   };
-
   const handleEditReport = (report: any) => {
     setSelectedReport(report);
     setEditDialogOpen(true);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -217,10 +188,7 @@ export function CarerReportsTab() {
             Manage your service reports and track their approval status
           </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          New Report
-        </Button>
+        
       </div>
 
       {/* Status Overview */}
@@ -322,18 +290,13 @@ export function CarerReportsTab() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {allBookingsLoading ? (
-                <div className="flex items-center justify-center p-8">
+              {allBookingsLoading ? <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : pastAppointments.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
+                </div> : pastAppointments.length === 0 ? <div className="text-center text-muted-foreground py-8">
                   <Calendar className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                   <p className="text-lg font-medium">No past appointments</p>
                   <p className="text-sm">Your completed appointments will appear here.</p>
-                </div>
-              ) : (
-                <div className="rounded-md border">
+                </div> : <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -349,15 +312,11 @@ export function CarerReportsTab() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pastAppointmentsWithReportStatus
-                        .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
-                        .map((booking) => {
-                          const startTime = new Date(booking.start_time);
-                          const endTime = new Date(booking.end_time);
-                          const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
-                          
-                          return (
-                            <TableRow key={booking.id}>
+                      {pastAppointmentsWithReportStatus.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime()).map(booking => {
+                    const startTime = new Date(booking.start_time);
+                    const endTime = new Date(booking.end_time);
+                    const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+                    return <TableRow key={booking.id}>
                               <TableCell className="font-mono text-xs">
                                 #{booking.id.slice(0, 8)}
                               </TableCell>
@@ -394,254 +353,160 @@ export function CarerReportsTab() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {booking.has_report && booking.report ? (
-                                  (() => {
-                                    const status = booking.report.status;
-                                    switch (status) {
-                                      case 'pending':
-                                        return (
-                                          <Badge variant="secondary" className="text-xs">
+                                {booking.has_report && booking.report ? (() => {
+                          const status = booking.report.status;
+                          switch (status) {
+                            case 'pending':
+                              return <Badge variant="secondary" className="text-xs">
                                             <Clock className="h-3 w-3 mr-1" />
                                             Pending Review
-                                          </Badge>
-                                        );
-                                      case 'approved':
-                                        return (
-                                          <Badge variant="success" className="text-xs">
+                                          </Badge>;
+                            case 'approved':
+                              return <Badge variant="success" className="text-xs">
                                             <CheckCircle className="h-3 w-3 mr-1" />
                                             Approved
-                                          </Badge>
-                                        );
-                                      case 'rejected':
-                                        return (
-                                          <Badge variant="destructive" className="text-xs">
+                                          </Badge>;
+                            case 'rejected':
+                              return <Badge variant="destructive" className="text-xs">
                                             <XCircle className="h-3 w-3 mr-1" />
                                             Rejected
-                                          </Badge>
-                                        );
-                                      case 'requires_revision':
-                                        return (
-                                          <Badge variant="warning" className="text-xs">
+                                          </Badge>;
+                            case 'requires_revision':
+                              return <Badge variant="warning" className="text-xs">
                                             <AlertTriangle className="h-3 w-3 mr-1" />
                                             Needs Revision
-                                          </Badge>
-                                        );
-                                      default:
-                                        return (
-                                          <Badge variant="outline" className="text-xs">
+                                          </Badge>;
+                            default:
+                              return <Badge variant="outline" className="text-xs">
                                             <ClipboardList className="h-3 w-3 mr-1" />
                                             Incomplete
-                                          </Badge>
-                                        );
-                                    }
-                                  })()
-                                ) : (
-                                  <Badge variant="warning" className="text-xs">
+                                          </Badge>;
+                          }
+                        })() : <Badge variant="warning" className="text-xs">
                                     <AlertTriangle className="h-3 w-3 mr-1" />
                                     Needs Report
-                                  </Badge>
-                                )}
+                                  </Badge>}
                               </TableCell>
                               <TableCell className="text-right">
-                                {booking.has_report ? (
-                                  <Button
-                                    size="sm"
-                                    variant={booking.report?.status === 'requires_revision' ? 'default' : 'outline'}
-                                    onClick={() => {
-                                      const report = reports.find(r => r.booking_id === booking.id);
-                                      if (report) {
-                                        setSelectedReport(report);
-                                        setViewDialogOpen(true);
-                                      }
-                                    }}
-                                    className="flex items-center gap-2"
-                                  >
-                                    {booking.report?.status === 'requires_revision' ? (
-                                      <>
+                                {booking.has_report ? <Button size="sm" variant={booking.report?.status === 'requires_revision' ? 'default' : 'outline'} onClick={() => {
+                          const report = reports.find(r => r.booking_id === booking.id);
+                          if (report) {
+                            setSelectedReport(report);
+                            setViewDialogOpen(true);
+                          }
+                        }} className="flex items-center gap-2">
+                                    {booking.report?.status === 'requires_revision' ? <>
                                         <Edit className="h-4 w-4" />
                                         Edit Report
-                                      </>
-                                    ) : (
-                                      <>
+                                      </> : <>
                                         <Eye className="h-4 w-4" />
                                         View Report
-                                      </>
-                                    )}
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedBookingForReport(booking);
-                                      setBookingReportDialogOpen(true);
-                                    }}
-                                    className="flex items-center gap-2"
-                                  >
+                                      </>}
+                                  </Button> : <Button size="sm" onClick={() => {
+                          setSelectedBookingForReport(booking);
+                          setBookingReportDialogOpen(true);
+                        }} className="flex items-center gap-2">
                                     <Plus className="h-4 w-4" />
                                     Add Report
-                                  </Button>
-                                )}
+                                  </Button>}
                               </TableCell>
-                            </TableRow>
-                          );
-                        })}
+                            </TableRow>;
+                  })}
                     </TableBody>
                   </Table>
-                </div>
-              )}
+                </div>}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="pending" className="space-y-4">
-          {pendingReports.length === 0 ? (
-            <EmptyState message="No pending reports" />
-          ) : (
-            pendingReports.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                canEdit={false}
-              />
-            ))
-          )}
+          {pendingReports.length === 0 ? <EmptyState message="No pending reports" /> : pendingReports.map(report => <ReportCard key={report.id} report={report} canEdit={false} />)}
         </TabsContent>
 
         <TabsContent value="revision" className="space-y-4">
-          {revisionReports.length === 0 ? (
-            <EmptyState message="No revision reports" />
-          ) : (
-            revisionReports.map((report) => (
-              <ReportCard
-                key={report.id}
-                report={report}
-                canEdit={true}
-                onEdit={() => handleEditReport(report)}
-              />
-            ))
-          )}
+          {revisionReports.length === 0 ? <EmptyState message="No revision reports" /> : revisionReports.map(report => <ReportCard key={report.id} report={report} canEdit={true} onEdit={() => handleEditReport(report)} />)}
         </TabsContent>
 
         <TabsContent value="approved" className="space-y-4">
-          {approvedReports.length === 0 ? (
-            <EmptyState message="No approved reports" />
-          ) : (
-            approvedReports.map((report) => (
-              <ReportCard key={report.id} report={report} />
-            ))
-          )}
+          {approvedReports.length === 0 ? <EmptyState message="No approved reports" /> : approvedReports.map(report => <ReportCard key={report.id} report={report} />)}
         </TabsContent>
 
         <TabsContent value="rejected" className="space-y-4">
-          {rejectedReports.length === 0 ? (
-            <EmptyState message="No rejected reports" />
-          ) : (
-            rejectedReports.map((report) => (
-              <ReportCard 
-                key={report.id} 
-                report={report}
-                canEdit={true}
-                onEdit={() => handleEditReport(report)}
-              />
-            ))
-          )}
+          {rejectedReports.length === 0 ? <EmptyState message="No rejected reports" /> : rejectedReports.map(report => <ReportCard key={report.id} report={report} canEdit={true} onEdit={() => handleEditReport(report)} />)}
         </TabsContent>
       </Tabs>
 
       {/* Create Report Dialog */}
-      <CreateServiceReportDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
+      <CreateServiceReportDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
 
       {/* Edit Report Dialog */}
-      {selectedReport && (
-        <CreateServiceReportDialog
-          open={editDialogOpen}
-          onOpenChange={(open) => {
-            setEditDialogOpen(open);
-            if (!open) setSelectedReport(null);
-          }}
-          preSelectedClient={{
-            id: selectedReport.client_id,
-            name: `${selectedReport.clients?.first_name} ${selectedReport.clients?.last_name}`
-          }}
-          preSelectedDate={selectedReport.service_date}
-          bookingId={selectedReport.booking_id}
-          existingReport={selectedReport}
-          mode="edit"
-        />
-      )}
+      {selectedReport && <CreateServiceReportDialog open={editDialogOpen} onOpenChange={open => {
+      setEditDialogOpen(open);
+      if (!open) setSelectedReport(null);
+    }} preSelectedClient={{
+      id: selectedReport.client_id,
+      name: `${selectedReport.clients?.first_name} ${selectedReport.clients?.last_name}`
+    }} preSelectedDate={selectedReport.service_date} bookingId={selectedReport.booking_id} existingReport={selectedReport} mode="edit" />}
 
       {/* Create Report from Booking Dialog */}
-      {selectedBookingForReport && (
-      <CreateServiceReportDialog
-        open={bookingReportDialogOpen}
-        onOpenChange={(open) => {
-          setBookingReportDialogOpen(open);
-          if (!open) {
-            setSelectedBookingForReport(null);
-            setSelectedVisitRecordId(null);
-          }
-        }}
-        preSelectedClient={{
-          id: selectedBookingForReport.client_id,
-          name: `${selectedBookingForReport.clients?.first_name} ${selectedBookingForReport.clients?.last_name}`
-        }}
-        preSelectedDate={format(new Date(selectedBookingForReport.start_time), 'yyyy-MM-dd')}
-        bookingId={selectedBookingForReport.id}
-        preSelectedBooking={selectedBookingForReport}
-        visitRecordId={selectedVisitRecordId || undefined}
-      />
-      )}
+      {selectedBookingForReport && <CreateServiceReportDialog open={bookingReportDialogOpen} onOpenChange={open => {
+      setBookingReportDialogOpen(open);
+      if (!open) {
+        setSelectedBookingForReport(null);
+        setSelectedVisitRecordId(null);
+      }
+    }} preSelectedClient={{
+      id: selectedBookingForReport.client_id,
+      name: `${selectedBookingForReport.clients?.first_name} ${selectedBookingForReport.clients?.last_name}`
+    }} preSelectedDate={format(new Date(selectedBookingForReport.start_time), 'yyyy-MM-dd')} bookingId={selectedBookingForReport.id} preSelectedBooking={selectedBookingForReport} visitRecordId={selectedVisitRecordId || undefined} />}
 
       {/* View Report Dialog */}
-      {selectedReport && (
-        <ViewServiceReportDialog
-          open={viewDialogOpen}
-          onOpenChange={(open) => {
-            setViewDialogOpen(open);
-            if (!open) setSelectedReport(null);
-          }}
-          report={selectedReport}
-        />
-      )}
-    </div>
-  );
+      {selectedReport && <ViewServiceReportDialog open={viewDialogOpen} onOpenChange={open => {
+      setViewDialogOpen(open);
+      if (!open) setSelectedReport(null);
+    }} report={selectedReport} />}
+    </div>;
 }
 
 // Helper Components
-function ReportCard({ 
-  report, 
+function ReportCard({
+  report,
   canEdit = false,
   onEdit
-}: { 
+}: {
   report: any;
   canEdit?: boolean;
   onEdit?: () => void;
 }) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      case 'requires_revision': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'requires_revision':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending': return <Clock className="h-3 w-3" />;
-      case 'approved': return <CheckCircle className="h-3 w-3" />;
-      case 'rejected': return <XCircle className="h-3 w-3" />;
-      case 'requires_revision': return <AlertTriangle className="h-3 w-3" />;
-      default: return <FileText className="h-3 w-3" />;
+      case 'pending':
+        return <Clock className="h-3 w-3" />;
+      case 'approved':
+        return <CheckCircle className="h-3 w-3" />;
+      case 'rejected':
+        return <XCircle className="h-3 w-3" />;
+      case 'requires_revision':
+        return <AlertTriangle className="h-3 w-3" />;
+      default:
+        return <FileText className="h-3 w-3" />;
     }
   };
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
+  return <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -669,12 +534,10 @@ function ReportCard({
           </div>
           
           <div className="flex gap-2">
-            {canEdit && onEdit && (
-              <Button onClick={onEdit} size="sm" variant="outline">
+            {canEdit && onEdit && <Button onClick={onEdit} size="sm" variant="outline">
                 <Edit className="h-4 w-4 mr-1" />
                 Edit
-              </Button>
-            )}
+              </Button>}
           </div>
         </div>
       </CardHeader>
@@ -684,16 +547,12 @@ function ReportCard({
           {/* Services Preview */}
           <div>
             <div className="flex flex-wrap gap-1">
-              {report.services_provided?.slice(0, 3).map((service: string, index: number) => (
-                <Badge key={index} variant="outline" className="text-xs">
+              {report.services_provided?.slice(0, 3).map((service: string, index: number) => <Badge key={index} variant="outline" className="text-xs">
                   {service}
-                </Badge>
-              ))}
-              {report.services_provided?.length > 3 && (
-                <Badge variant="outline" className="text-xs">
+                </Badge>)}
+              {report.services_provided?.length > 3 && <Badge variant="outline" className="text-xs">
                   +{report.services_provided.length - 3} more
-                </Badge>
-              )}
+                </Badge>}
             </div>
           </div>
 
@@ -707,52 +566,40 @@ function ReportCard({
               <div className="h-2 w-2 rounded-full bg-green-500" />
               <span>{report.client_engagement}</span>
             </div>
-            {report.incident_occurred && (
-              <div className="flex items-center gap-1">
+            {report.incident_occurred && <div className="flex items-center gap-1">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
                 <span>Incident</span>
-              </div>
-            )}
-            {report.medication_administered && (
-              <div className="flex items-center gap-1">
+              </div>}
+            {report.medication_administered && <div className="flex items-center gap-1">
                 <CheckCircle className="h-4 w-4 text-blue-500" />
                 <span>Medication</span>
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Review notes if any */}
-          {report.review_notes && (
-            <div className={`p-3 rounded-lg ${
-              report.status === 'rejected' ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800' :
-              report.status === 'requires_revision' ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800' :
-              'bg-muted'
-            }`}>
+          {report.review_notes && <div className={`p-3 rounded-lg ${report.status === 'rejected' ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800' : report.status === 'requires_revision' ? 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800' : 'bg-muted'}`}>
               <div className="flex items-center gap-2 mb-1">
                 {report.status === 'rejected' && <XCircle className="h-4 w-4 text-red-500" />}
                 {report.status === 'requires_revision' && <AlertTriangle className="h-4 w-4 text-orange-500" />}
                 {report.status !== 'rejected' && report.status !== 'requires_revision' && <Eye className="h-4 w-4" />}
                 <span className="text-sm font-medium">
-                  {report.status === 'rejected' ? 'Rejection Reason:' : 
-                   report.status === 'requires_revision' ? 'Admin Feedback:' : 
-                   'Admin Feedback:'}
+                  {report.status === 'rejected' ? 'Rejection Reason:' : report.status === 'requires_revision' ? 'Admin Feedback:' : 'Admin Feedback:'}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">{report.review_notes}</p>
-              {(report.status === 'rejected' || report.status === 'requires_revision') && (
-                <p className="text-xs text-muted-foreground mt-2 italic">
+              {(report.status === 'rejected' || report.status === 'requires_revision') && <p className="text-xs text-muted-foreground mt-2 italic">
                   Click "Edit" above to revise and resubmit this report.
-                </p>
-              )}
-            </div>
-          )}
+                </p>}
+            </div>}
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
-
-function EmptyState({ message }: { message: string }) {
+function EmptyState({
+  message
+}: {
+  message: string;
+}) {
   const getEmptyStateContent = () => {
     switch (message) {
       case "No pending reports":
@@ -787,11 +634,8 @@ function EmptyState({ message }: { message: string }) {
         };
     }
   };
-
   const content = getEmptyStateContent();
-
-  return (
-    <Card className="p-8">
+  return <Card className="p-8">
       <div className="text-center">
         {content.icon}
         <h3 className="text-lg font-medium mb-2">{content.title}</h3>
@@ -799,6 +643,5 @@ function EmptyState({ message }: { message: string }) {
           {content.description}
         </p>
       </div>
-    </Card>
-  );
+    </Card>;
 }
