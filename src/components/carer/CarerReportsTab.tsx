@@ -388,27 +388,39 @@ export function CarerReportsTab() {
                                   </Badge>}
                               </TableCell>
                               <TableCell className="text-right">
-                                {booking.has_report ? <Button size="sm" variant={booking.report?.status === 'requires_revision' ? 'default' : 'outline'} onClick={() => {
-                          const report = reports.find(r => r.booking_id === booking.id);
-                          if (report) {
-                            setSelectedReport(report);
-                            setViewDialogOpen(true);
-                          }
-                        }} className="flex items-center gap-2">
-                                    {booking.report?.status === 'requires_revision' ? <>
-                                        <Edit className="h-4 w-4" />
-                                        Edit Report
-                                      </> : <>
-                                        <Eye className="h-4 w-4" />
-                                        View Report
-                                      </>}
-                                  </Button> : <Button size="sm" onClick={() => {
-                          setSelectedBookingForReport(booking);
-                          setBookingReportDialogOpen(true);
-                        }} className="flex items-center gap-2">
+                                {booking.has_report ? (
+                                  booking.report?.status === 'requires_revision' ? (
+                                    <Button 
+                                      size="sm" 
+                                      variant="default" 
+                                      onClick={() => {
+                                        const report = reports.find(r => r.booking_id === booking.id);
+                                        if (report) {
+                                          setSelectedReport(report);
+                                          setViewDialogOpen(true);
+                                        }
+                                      }} 
+                                      className="flex items-center gap-2"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                      Edit Report
+                                    </Button>
+                                  ) : (
+                                    <span className="text-sm text-muted-foreground">—</span>
+                                  )
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => {
+                                      setSelectedBookingForReport(booking);
+                                      setBookingReportDialogOpen(true);
+                                    }} 
+                                    className="flex items-center gap-2"
+                                  >
                                     <Plus className="h-4 w-4" />
                                     Add Report
-                                  </Button>}
+                                  </Button>
+                                )}
                               </TableCell>
                             </TableRow>;
                   })}
