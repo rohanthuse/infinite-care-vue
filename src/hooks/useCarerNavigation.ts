@@ -1,14 +1,42 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTenant } from '@/contexts/TenantContext';
 
 export const useCarerNavigation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { tenantSlug } = useTenant();
 
   const createCarerPath = (path: string) => {
-    if (tenantSlug) {
-      return `/${tenantSlug}/carer-dashboard${path}`;
+    // Try to get tenant slug from context first
+    let finalTenantSlug = tenantSlug;
+
+    // Fallback 1: Extract from current URL if context doesn't have it
+    if (!finalTenantSlug) {
+      const pathParts = location.pathname.split('/').filter(Boolean);
+      if (pathParts.length > 0 && pathParts[0] !== 'carer-dashboard') {
+        finalTenantSlug = pathParts[0];
+        console.log('[useCarerNavigation] Extracted tenant from URL:', finalTenantSlug);
+      }
     }
+
+    // Fallback 2: Try localStorage for development
+    if (!finalTenantSlug) {
+      const isDev = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.hostname.includes('preview');
+      if (isDev) {
+        finalTenantSlug = localStorage.getItem('dev-tenant') || undefined;
+        if (finalTenantSlug) {
+          console.log('[useCarerNavigation] Using dev-tenant from localStorage:', finalTenantSlug);
+        }
+      }
+    }
+
+    if (finalTenantSlug) {
+      return `/${finalTenantSlug}/carer-dashboard${path}`;
+    }
+    
+    console.warn('[useCarerNavigation] No tenant slug found, returning non-tenant path');
     return `/carer-dashboard${path}`;
   };
 
