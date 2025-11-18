@@ -528,21 +528,55 @@ export function CreateServiceReportDialog({
         )}
 
         {/* Visit Details Summary Section */}
-        {visitRecordId && (
-          <div className="space-y-4 p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-purple-600" />
-              <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
-                Visit Details Summary
-              </h3>
-              <Badge variant="outline" className="ml-auto">
-                Auto-populated from visit
-              </Badge>
-              {(isLoadingTasks || isLoadingVitals) && (
-                <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+        <div className="space-y-4 p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <FileText className="h-5 w-5 text-purple-600" />
+            <h3 className="text-lg font-semibold text-purple-900 dark:text-purple-100">
+              Visit Details Summary
+            </h3>
+            <Badge variant="outline" className="ml-auto">
+              {visitRecordId ? (
+                <>
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Auto-populated from visit
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  No visit record
+                </>
               )}
-            </div>
+            </Badge>
+            {visitRecordId && (isLoadingTasks || isLoadingVitals) && (
+              <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+            )}
+          </div>
 
+          {/* Loading indicator */}
+          {visitRecordId && (isLoadingTasks || isLoadingVitals) && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              <p className="ml-3 text-sm text-muted-foreground">Loading visit details...</p>
+            </div>
+          )}
+
+          {/* Show content if visitRecordId exists, otherwise show helpful message */}
+          {!visitRecordId ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <FileText className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium mb-2">No Visit Record Found</p>
+              <p className="text-sm max-w-md mx-auto">
+                This appointment doesn't have an associated visit record yet. 
+                Visit records are created when a carer starts and completes a visit through the mobile app.
+              </p>
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-700 max-w-md mx-auto">
+                <p className="text-xs text-left">
+                  <strong>Note:</strong> You can still create a service report manually by filling out the form below. 
+                  The Visit Details Summary will be available for visits that were tracked through the system.
+                </p>
+              </div>
+            </div>
+          ) : (
             <ScrollArea className="max-h-[600px] pr-4">
               <div className="space-y-6">
                 
@@ -755,7 +789,7 @@ export function CreateServiceReportDialog({
                   </Card>
                 )}
 
-                {/* Empty State */}
+                {/* Empty State - when visitRecordId exists but no data */}
                 {!visitTasks?.length && 
                  !visitMedications?.length && 
                  !news2Readings?.length && 
@@ -768,15 +802,18 @@ export function CreateServiceReportDialog({
                  !fullVisitRecord?.client_signature_data && (
                   <div className="text-center py-8 text-muted-foreground">
                     <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No visit details available yet</p>
-                    <p className="text-xs mt-1">Complete visit tasks and activities to see them here</p>
+                    <p className="text-sm font-medium">Visit Started But No Details Recorded</p>
+                    <p className="text-xs mt-2 max-w-sm mx-auto">
+                      The visit was started but no tasks, medications, vitals, or notes were recorded during the visit. 
+                      You can still complete the service report form below.
+                    </p>
                   </div>
                 )}
 
               </div>
             </ScrollArea>
-          </div>
-        )}
+          )}
+        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
