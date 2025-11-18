@@ -31,7 +31,7 @@ import React from "react";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
 import { CarerSidebarProvider } from "@/components/carer/CarerSidebarProvider";
 
-const RequireCarerAuth = () => {
+const RequireCarerAuth: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
   const { isAuthenticated, loading, error, signOut, isCarerRole, carerProfile } = useUnifiedCarerAuth();
   const [showTimeout, setShowTimeout] = React.useState(false);
@@ -202,7 +202,7 @@ const RequireCarerAuth = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 /**
@@ -210,37 +210,41 @@ const RequireCarerAuth = () => {
  * Returns an array of Route elements for consistent usage in App.tsx
  */
 const CarerRoutes = () => [
-  <Route key="carer-auth" element={<RequireCarerAuth />}>
-    <Route path="carer-dashboard" element={
-      <CarerSidebarProvider>
-        <CarerDashboard />
-      </CarerSidebarProvider>
-    }>
-      <Route index element={<CarerOverview />} />
-      <Route path="profile" element={<CarerProfile />} />
-      <Route path="schedule" element={<CarerSchedule />} />
-      <Route path="appointments" element={<CarerAppointments />} />
-      <Route path="careplans" element={<CarerCarePlans />} />
-      <Route path="agreements" element={<CarerAgreements />} />
-      <Route path="forms" element={<CarerAssignedForms />} />
-      <Route path="forms/:formId" element={<CarerFillForm />} />
-      <Route path="library" element={<CarerLibrary />} />
-      <Route path="tasks" element={<CarerTasks />} />
-      <Route path="my-tasks" element={<CarerMyTasks />} />
-      <Route path="news2" element={<CarerNews2 />} />
-      <Route path="reports" element={<CarerReports />} />
-      <Route path="service-reports" element={<CarerReportsTab />} />
-      <Route path="payments" element={<CarerPayments />} />
-      <Route path="training" element={<CarerTraining />} />
-      <Route path="clients" element={<CarerClients />} />
-      <Route path="clients/:clientId" element={<CarerClientDetail />} />
-      <Route path="attendance" element={<CarerAttendance />} />
-      <Route path="documents" element={<CarerDocuments />} />
-      <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
-      <Route path="messages" element={<CarerMessages />} />
-      <Route path="notifications" element={<CarerNotifications />} />
-      <Route path="leave" element={<CarerLeave />} />
-    </Route>
+  <Route 
+    key="carer-dashboard" 
+    path="carer-dashboard" 
+    element={
+      <RequireCarerAuth>
+        <CarerSidebarProvider>
+          <CarerDashboard />
+        </CarerSidebarProvider>
+      </RequireCarerAuth>
+    }
+  >
+    <Route index element={<CarerOverview />} />
+    <Route path="profile" element={<CarerProfile />} />
+    <Route path="schedule" element={<CarerSchedule />} />
+    <Route path="appointments" element={<CarerAppointments />} />
+    <Route path="careplans" element={<CarerCarePlans />} />
+    <Route path="agreements" element={<CarerAgreements />} />
+    <Route path="forms" element={<CarerAssignedForms />} />
+    <Route path="forms/:formId" element={<CarerFillForm />} />
+    <Route path="library" element={<CarerLibrary />} />
+    <Route path="tasks" element={<CarerTasks />} />
+    <Route path="my-tasks" element={<CarerMyTasks />} />
+    <Route path="news2" element={<CarerNews2 />} />
+    <Route path="reports" element={<CarerReports />} />
+    <Route path="service-reports" element={<CarerReportsTab />} />
+    <Route path="payments" element={<CarerPayments />} />
+    <Route path="training" element={<CarerTraining />} />
+    <Route path="clients" element={<CarerClients />} />
+    <Route path="clients/:clientId" element={<CarerClientDetail />} />
+    <Route path="attendance" element={<CarerAttendance />} />
+    <Route path="documents" element={<CarerDocuments />} />
+    <Route path="visit/:appointmentId" element={<CarerVisitWorkflow />} />
+    <Route path="messages" element={<CarerMessages />} />
+    <Route path="notifications" element={<CarerNotifications />} />
+    <Route path="leave" element={<CarerLeave />} />
   </Route>
 ];
 
