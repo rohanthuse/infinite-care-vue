@@ -374,7 +374,7 @@ export function WizardStep14Review({ form }: WizardStep14ReviewProps) {
               <div>
                 <h4 className="font-medium text-green-800 mb-1">Ready to Finalize</h4>
                 <p className="text-sm text-green-700">
-                  This care plan will be sent for staff approval before becoming active. 
+                  This care plan will be sent to the client for approval before becoming active. 
                   You can still make changes during the approval process if needed.
                 </p>
               </div>
