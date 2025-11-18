@@ -136,7 +136,7 @@ export function CarePlanWizardFooter({
       }
       return "Please select a provider type and assign";
     }
-    return "Send for staff approval";
+    return "Send to client for approval";
   };
 
   return (
@@ -177,7 +177,7 @@ export function CarePlanWizardFooter({
                   ? "bg-green-600 hover:bg-green-700" 
                   : "bg-gray-400 hover:bg-gray-400 cursor-not-allowed"
               }`}
-              title={!canFinalize ? getFinalizationMessage() : "Send for staff approval"}
+              title={!canFinalize ? getFinalizationMessage() : "Send to client for approval"}
             >
               <CheckCircle className="h-4 w-4" />
               <span>{isLoading ? "Finalizing..." : "Send for Approval"}</span>

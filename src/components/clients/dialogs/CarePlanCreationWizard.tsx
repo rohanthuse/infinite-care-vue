@@ -611,7 +611,7 @@ export function CarePlanCreationWizard({
 
       const successMessage = isEditingChangeRequest 
         ? "Care plan updated and sent back to client for approval!"
-        : "Care plan sent for staff approval successfully!";
+        : "Care plan sent to client for approval successfully!";
       
       toast.success(successMessage);
       onClose();

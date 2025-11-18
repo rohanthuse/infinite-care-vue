@@ -57,7 +57,7 @@ export function CarePlanStatusTracker({ carePlan, viewerType }: CarePlanStatusTr
       
       // Insert rejected step after the appropriate stage
       if ((carePlan as any).approved_at) {
-        // Rejected after staff approval, before client approval
+        // Rejected during client review process
         steps.splice(1, 0, rejectedStep);
       }
     }
