@@ -21,7 +21,6 @@ import { useCarerContext } from '@/hooks/useCarerContext';
 import { format } from 'date-fns';
 import { Calendar, CalendarIcon, Clock, Plus, X, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useServices } from '@/data/hooks/useServices';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +30,6 @@ const formSchema = z.object({
   booking_id: z.string().optional(),
   service_date: z.string().min(1, 'Service date is required'),
   service_duration_minutes: z.number().min(1, 'Duration is required'),
-  services_provided: z.array(z.string()).min(1, 'At least one service must be provided'),
   tasks_completed: z.array(z.string()).optional(),
   client_mood: z.string().min(1, 'Client mood is required'),
   client_engagement: z.string().min(1, 'Client engagement is required'),
@@ -84,8 +82,6 @@ export function CreateServiceReportDialog({
   const { data: carerContext } = useCarerContext();
   const createServiceReport = useCreateServiceReport();
   const updateServiceReport = useUpdateServiceReport();
-  const { data: availableServices = [], isLoading: servicesLoading } = useServices();
-  const [newService, setNewService] = useState('');
   const [newTask, setNewTask] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
@@ -107,13 +103,30 @@ export function CreateServiceReportDialog({
     enabled: !!visitRecordId && open,
   });
 
+  // Fetch visit record details when visitRecordId is provided
+  const { data: visitRecord } = useQuery({
+    queryKey: ['visit-record-details', visitRecordId],
+    queryFn: async () => {
+      if (!visitRecordId) return null;
+      
+      const { data, error } = await supabase
+        .from('visit_records')
+        .select('visit_start_time, visit_end_time, status')
+        .eq('id', visitRecordId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!visitRecordId && open,
+  });
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       client_id: preSelectedClient?.id || '',
       service_date: preSelectedDate || format(new Date(), 'yyyy-MM-dd'),
       service_duration_minutes: 60,
-      services_provided: [],
       tasks_completed: [],
       client_mood: '',
       client_engagement: '',
@@ -137,14 +150,6 @@ export function CreateServiceReportDialog({
       );
       form.setValue('service_duration_minutes', duration);
       form.setValue('service_date', format(new Date(preSelectedBooking.start_time), 'yyyy-MM-dd'));
-      
-      // Auto-select the booked service
-      if (preSelectedBooking.service_name) {
-        const currentServices = form.getValues('services_provided') || [];
-        if (!currentServices.includes(preSelectedBooking.service_name)) {
-          form.setValue('services_provided', [preSelectedBooking.service_name]);
-        }
-      }
     }
   }, [preSelectedBooking, form]);
 
@@ -188,7 +193,6 @@ export function CreateServiceReportDialog({
         booking_id: existingReport.booking_id || '',
         service_date: existingReport.service_date,
         service_duration_minutes: existingReport.service_duration_minutes,
-        services_provided: existingReport.services_provided || [],
         tasks_completed: existingReport.tasks_completed || [],
         client_mood: existingReport.client_mood || '',
         client_engagement: existingReport.client_engagement || '',
@@ -208,19 +212,6 @@ export function CreateServiceReportDialog({
   const { data: completedBookings = [] } = useClientCompletedBookings(
     preSelectedClient?.id || selectedClientId
   );
-
-  const handleAddService = () => {
-    if (newService.trim()) {
-      const current = form.getValues('services_provided') || [];
-      form.setValue('services_provided', [...current, newService.trim()]);
-      setNewService('');
-    }
-  };
-
-  const handleRemoveService = (index: number) => {
-    const current = form.getValues('services_provided') || [];
-    form.setValue('services_provided', current.filter((_, i) => i !== index));
-  };
 
   const handleAddTask = () => {
     if (newTask.trim()) {
@@ -245,7 +236,6 @@ export function CreateServiceReportDialog({
       booking_id: bookingId || data.booking_id || null,
       service_date: data.service_date,
       service_duration_minutes: data.service_duration_minutes,
-      services_provided: data.services_provided,
       tasks_completed: data.tasks_completed,
       client_mood: data.client_mood,
       client_engagement: data.client_engagement,
@@ -292,7 +282,6 @@ export function CreateServiceReportDialog({
     }
   };
 
-  const servicesProvided = form.watch('services_provided') || [];
   const tasksCompleted = form.watch('tasks_completed') || [];
   const medicationAdministered = form.watch('medication_administered');
   const incidentOccurred = form.watch('incident_occurred');
@@ -517,82 +506,6 @@ export function CreateServiceReportDialog({
                 </div>
               </div>
             )}
-
-                {/* Services Provided */}
-                <div className="space-y-4">
-                  <FormLabel>Services Provided</FormLabel>
-                  
-                  {/* Loading State */}
-                  {servicesLoading && (
-                    <p className="text-sm text-muted-foreground">Loading services...</p>
-                  )}
-                  
-                  {/* Dynamic Service Badges */}
-                  {!servicesLoading && availableServices.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {availableServices.map((service) => {
-                        const isSelected = servicesProvided.includes(service.title);
-                        const isBookedService = preSelectedBooking?.service_name === service.title;
-                        
-                        return (
-                          <Badge
-                            key={service.id}
-                            variant={isSelected ? "default" : "outline"}
-                            className={`cursor-pointer transition-all ${
-                              isBookedService ? 'ring-2 ring-blue-500 ring-offset-2' : ''
-                            }`}
-                            onClick={() => {
-                              const current = form.getValues('services_provided') || [];
-                              if (current.includes(service.title)) {
-                                form.setValue('services_provided', current.filter(s => s !== service.title));
-                              } else {
-                                form.setValue('services_provided', [...current, service.title]);
-                              }
-                            }}
-                          >
-                            {isBookedService && '⭐ '}
-                            {service.title}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  {/* Booked Service Indicator */}
-                  {preSelectedBooking?.service_name && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                      <span>⭐</span>
-                      <span>Star indicates the originally booked service</span>
-                    </p>
-                  )}
-              
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Add custom service..."
-                  value={newService}
-                  onChange={(e) => setNewService(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddService())}
-                />
-                <Button type="button" onClick={handleAddService} size="icon">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {servicesProvided.map((service, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {service}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveService(index)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
 
             {/* Tasks Completed */}
             <div className="space-y-4">
