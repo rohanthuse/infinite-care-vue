@@ -318,49 +318,96 @@ export function CreateServiceReportDialog({
               </h3>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {/* Date */}
-              <div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Date</p>
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4 text-blue-600" />
+            {/* Scheduled Times Section */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase">
+                Scheduled
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Date */}
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Date</p>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      {format(new Date(preSelectedBooking.start_time), 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Scheduled Time */}
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Time</p>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      {format(new Date(preSelectedBooking.start_time), 'HH:mm')} - {format(new Date(preSelectedBooking.end_time), 'HH:mm')}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Duration */}
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Duration</p>
                   <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    {format(new Date(preSelectedBooking.start_time), 'MMM dd, yyyy')}
+                    {Math.round(
+                      (new Date(preSelectedBooking.end_time).getTime() - new Date(preSelectedBooking.start_time).getTime()) / 60000
+                    )} minutes
                   </p>
                 </div>
-              </div>
-              
-              {/* Time */}
-              <div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Time</p>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    {format(new Date(preSelectedBooking.start_time), 'HH:mm')} - 
-                    {format(new Date(preSelectedBooking.end_time), 'HH:mm')}
-                  </p>
+                
+                {/* Booked Service */}
+                <div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Booked Service</p>
+                  <Badge variant="default" className="text-xs">
+                    {preSelectedBooking.service_name || 'General Service'}
+                  </Badge>
                 </div>
-              </div>
-              
-              {/* Duration */}
-              <div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Duration</p>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  {Math.round(
-                    (new Date(preSelectedBooking.end_time).getTime() - 
-                     new Date(preSelectedBooking.start_time).getTime()) / 60000
-                  )} minutes
-                </p>
-              </div>
-              
-              {/* Service Type */}
-              <div>
-                <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">Booked Service</p>
-                <Badge variant="default" className="text-xs">
-                  ⭐ {preSelectedBooking.service_name || 'General Service'}
-                </Badge>
               </div>
             </div>
+
+            {/* Actual Visit Times Section */}
+            {visitRecord && visitRecord.visit_start_time && visitRecord.visit_end_time && (
+              <div className="pt-3 border-t border-blue-200 dark:border-blue-700 space-y-3">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase">
+                  Actual Visit Times
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Actual Start Time */}
+                  <div>
+                    <p className="text-xs text-green-700 dark:text-green-300 mb-1">Actual Start</p>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4 text-green-600" />
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                        {format(new Date(visitRecord.visit_start_time), 'HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Actual End Time */}
+                  <div>
+                    <p className="text-xs text-green-700 dark:text-green-300 mb-1">Actual End</p>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4 text-green-600" />
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                        {format(new Date(visitRecord.visit_end_time), 'HH:mm')}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Total Duration (Actual) */}
+                  <div>
+                    <p className="text-xs text-green-700 dark:text-green-300 mb-1">Total Duration</p>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                      {Math.round(
+                        (new Date(visitRecord.visit_end_time).getTime() - 
+                         new Date(visitRecord.visit_start_time).getTime()) / 60000
+                      )} minutes
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Booking Notes Section */}
             {preSelectedBooking.notes && (
