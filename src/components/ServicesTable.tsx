@@ -36,6 +36,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 import { EditServiceDialog } from "./EditServiceDialog";
 
 interface Service {
@@ -69,18 +70,27 @@ export function ServicesTable({
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { data: services, isLoading, error } = useQuery<Service[]>({
-    queryKey: ['services'],
+    queryKey: ['services', organization?.id],
     queryFn: async () => {
+      if (!organization?.id) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .eq('organization_id', organization.id)
         .eq('status', 'active')
         .order('title', { ascending: true });
+      
       if (error) throw new Error(error.message);
-      return data;
+      
+      return data ?? [];
     },
+    enabled: !!organization?.id,
   });
 
   const deleteMutation = useMutation({
@@ -139,9 +149,9 @@ export function ServicesTable({
       
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['services'] });
+        queryClient.invalidateQueries({ queryKey: ['services', organization?.id] });
         queryClient.invalidateQueries({ queryKey: ['branch-services'] });
-        queryClient.invalidateQueries({ queryKey: ['organization-services'] });
+        queryClient.invalidateQueries({ queryKey: ['organization-services', organization?.id] });
       }, 100);
     },
     onError: (error) => {

@@ -67,8 +67,8 @@ export function AddServiceDialog({ isOpen, onClose }: AddServiceDialogProps) {
         title: "Service added",
         description: `${title} has been added successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['services'] });
-      queryClient.invalidateQueries({ queryKey: ['organization-services'] });
+      queryClient.invalidateQueries({ queryKey: ['services', organization?.id] });
+      queryClient.invalidateQueries({ queryKey: ['organization-services', organization?.id] });
       // Reset form and close dialog
       setTitle("");
       setCategory("");
