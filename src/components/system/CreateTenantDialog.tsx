@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemAuth } from '@/contexts/SystemAuthContext';
@@ -15,8 +15,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Building, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const SUBSCRIPTION_PLANS = [
+  { value: '0-10', users: '0–10 Users', monthly: 99, yearly: 1070 },
+  { value: '11-25', users: '11–25 Users', monthly: 149, yearly: 1610 },
+  { value: '26-50', users: '26–50 Users', monthly: 249, yearly: 2690 },
+  { value: '51-100', users: '51–100 Users', monthly: 499, yearly: 5390 },
+  { value: '101-250', users: '101–250 Users', monthly: 749, yearly: 8090 },
+  { value: '251-500', users: '251–500 Users', monthly: 999, yearly: 10790 },
+  { value: '500+', users: '500+ Users', monthly: null, yearly: null, label: 'Bespoke pricing' },
+];
+
+const formatPlanOption = (plan: typeof SUBSCRIPTION_PLANS[0]) => {
+  if (plan.value === '500+') {
+    return `${plan.users} — Bespoke pricing`;
+  }
+  return `${plan.users} — £${plan.monthly}/month — £${plan.yearly}/year (10% discount)`;
+};
 
 interface CreateTenantDialogProps {
   open: boolean;
@@ -34,7 +57,23 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     contact_phone: '',
     address: '',
     subscription_plan: '0-10',
+    billing_cycle: 'monthly' as 'monthly' | 'yearly',
+    subscription_start_date: new Date(),
+    subscription_end_date: null as Date | null,
   });
+
+  // Calculate end date when start date or billing cycle changes
+  useEffect(() => {
+    if (formData.subscription_start_date) {
+      const endDate = new Date(formData.subscription_start_date);
+      if (formData.billing_cycle === 'yearly') {
+        endDate.setFullYear(endDate.getFullYear() + 1);
+      } else {
+        endDate.setMonth(endDate.getMonth() + 1);
+      }
+      setFormData(prev => ({ ...prev, subscription_end_date: endDate }));
+    }
+  }, [formData.subscription_start_date, formData.billing_cycle]);
 
   const createTenant = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -49,6 +88,9 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           contactPhone: data.contact_phone,
           address: data.address,
           subscriptionPlan: data.subscription_plan,
+          billingCycle: data.billing_cycle,
+          subscriptionStartDate: data.subscription_start_date.toISOString(),
+          subscriptionEndDate: data.subscription_end_date?.toISOString(),
           creatorEmail: user.email,
           creatorUserId: user.id
         }
@@ -101,7 +143,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     createTenant.mutate(formData);
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | Date) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -113,6 +155,9 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       contact_phone: '',
       address: '',
       subscription_plan: '0-10',
+      billing_cycle: 'monthly',
+      subscription_start_date: new Date(),
+      subscription_end_date: null,
     });
   };
 
@@ -197,25 +242,94 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="subscription_plan">Subscription Plan</Label>
-            <Select
-              value={formData.subscription_plan}
-              onValueChange={(value) => handleInputChange('subscription_plan', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0-10">0–10 users | £99/month | £1,070/year (10% discount)</SelectItem>
-                <SelectItem value="11-25">11–25 users | £149/month | £1,610/year (10% discount)</SelectItem>
-                <SelectItem value="26-50">26–50 users | £249/month | £2,690/year (10% discount)</SelectItem>
-                <SelectItem value="51-100">51–100 users | £499/month | £5,390/year (10% discount)</SelectItem>
-                <SelectItem value="101-250">101–250 users | £749/month | £8,090/year (10% discount)</SelectItem>
-                <SelectItem value="251-500">251–500 users | £999/month | £10,790/year (10% discount)</SelectItem>
-                <SelectItem value="500+">500+ users | Bespoke pricing</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="text-sm font-medium">Subscription Details</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="subscription_plan">Subscription Plan</Label>
+              <Select
+                value={formData.subscription_plan}
+                onValueChange={(value) => handleInputChange('subscription_plan', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUBSCRIPTION_PLANS.map((plan) => (
+                    <SelectItem key={plan.value} value={plan.value}>
+                      {formatPlanOption(plan)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Billing Cycle</Label>
+              <RadioGroup
+                value={formData.billing_cycle}
+                onValueChange={(value) => handleInputChange('billing_cycle', value)}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="monthly" id="monthly" />
+                  <Label htmlFor="monthly" className="font-normal cursor-pointer">
+                    Monthly
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yearly" id="yearly" />
+                  <Label htmlFor="yearly" className="font-normal cursor-pointer">
+                    Yearly (10% discount)
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="subscription_start_date">Subscription Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.subscription_start_date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.subscription_start_date ? (
+                        format(formData.subscription_start_date, 'PPP')
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.subscription_start_date}
+                      onSelect={(date) => handleInputChange('subscription_start_date', date || new Date())}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subscription_end_date">Subscription End Date</Label>
+                <Input
+                  id="subscription_end_date"
+                  value={formData.subscription_end_date ? format(formData.subscription_end_date, 'PPP') : ''}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Auto-calculated based on billing cycle
+                </p>
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
