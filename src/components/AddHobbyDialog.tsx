@@ -16,15 +16,17 @@ import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 export function AddHobbyDialog() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { mutate: addHobby, isPending } = useMutation({
-    mutationFn: async (newHobby: { title: string; status: string }) => {
+    mutationFn: async (newHobby: { title: string; status: string; organization_id?: string }) => {
       const { data, error } = await supabase.from('hobbies').insert([newHobby]).select();
       if (error) throw error;
       return data;
@@ -34,7 +36,7 @@ export function AddHobbyDialog() {
         title: "Hobby added",
         description: `${title} has been added successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+      queryClient.invalidateQueries({ queryKey: ['hobbies', organization?.id] });
       setTitle("");
       setOpen(false);
     },
@@ -58,7 +60,7 @@ export function AddHobbyDialog() {
       return;
     }
 
-    addHobby({ title, status: "Active" });
+    addHobby({ title, status: "Active", organization_id: organization?.id });
   };
 
   return (

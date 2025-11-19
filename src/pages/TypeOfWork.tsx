@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
@@ -22,19 +21,26 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-const fetchWorkTypes = async () => {
-    const { data, error } = await supabase.from('work_types').select('*').order('title');
-    if (error) throw error;
-    return data;
-};
+import { useTenant } from "@/contexts/TenantContext";
 
 const TypeOfWork = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { organization } = useTenant();
+  
   const { data: workTypes, isLoading, error } = useQuery({
-      queryKey: ['work_types'],
-      queryFn: fetchWorkTypes,
+    queryKey: ['work_types', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+      const { data, error } = await supabase
+        .from('work_types')
+        .select('*')
+        .or(`organization_id.eq.${organization.id},organization_id.is.null`)
+        .order('title');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!organization?.id,
   });
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -60,7 +66,7 @@ const TypeOfWork = () => {
 
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['work_types'] });
+        queryClient.invalidateQueries({ queryKey: ['work_types', organization?.id] });
       }, 300);
     },
     onError: (error: any) => {

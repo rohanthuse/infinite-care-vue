@@ -1,16 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 export interface Hobby {
   id: string;
   title: string;
   status: string;
+  organization_id?: string;
 }
 
-async function fetchHobbies() {
+async function fetchHobbies(organizationId?: string) {
+  if (!organizationId) return [];
+  
   const { data, error } = await supabase
     .from("hobbies")
-    .select("id, title, status")
+    .select("id, title, status, organization_id")
+    .or(`organization_id.eq.${organizationId},organization_id.is.null`)
     .in("status", ["active", "Active"])
     .order("title");
   
@@ -19,8 +24,11 @@ async function fetchHobbies() {
 }
 
 export function useHobbies() {
+  const { organization } = useTenant();
+  
   return useQuery({
-    queryKey: ["hobbies"],
-    queryFn: fetchHobbies,
+    queryKey: ["hobbies", organization?.id],
+    queryFn: () => fetchHobbies(organization?.id),
+    enabled: !!organization?.id,
   });
 }

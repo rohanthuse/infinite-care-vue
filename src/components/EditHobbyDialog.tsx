@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -16,6 +15,7 @@ import { Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface Hobby {
   id: string;
@@ -34,6 +34,7 @@ export function EditHobbyDialog({ isOpen, onClose, hobby }: EditHobbyDialogProps
   const [status, setStatus] = useState("Active");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   useEffect(() => {
     if (hobby) {
@@ -67,7 +68,7 @@ export function EditHobbyDialog({ isOpen, onClose, hobby }: EditHobbyDialogProps
       
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+        queryClient.invalidateQueries({ queryKey: ['hobbies', organization?.id] });
       }, 300);
     },
     onError: (error) => {

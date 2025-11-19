@@ -6,10 +6,11 @@ import { Brain, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddSkillDialog } from "@/components/AddSkillDialog";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EditSkillDialog } from "@/components/EditSkillDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,23 +21,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-const fetchSkills = async () => {
-  let query = supabase.from('skills').select('*').order('name', { ascending: true });
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
-};
+import { useQuery } from "@tanstack/react-query";
 
 const Skills = () => {
   const [editingSkill, setEditingSkill] = useState<any>(null);
   const [deletingSkill, setDeletingSkill] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { data: skills, isLoading, error } = useQuery({
-    queryKey: ['skills'],
-    queryFn: fetchSkills,
+    queryKey: ['skills', organization?.id],
+    queryFn: async () => {
+      if (!organization?.id) return [];
+      const { data, error } = await supabase
+        .from('skills')
+        .select('*')
+        .or(`organization_id.eq.${organization.id},organization_id.is.null`)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!organization?.id,
   });
 
   const { mutate: deleteSkill, isPending: isDeleting } = useMutation({
@@ -56,7 +62,7 @@ const Skills = () => {
 
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['skills'] });
+        queryClient.invalidateQueries({ queryKey: ['skills', organization?.id] });
       }, 300);
     },
     onError: (error: any) => {

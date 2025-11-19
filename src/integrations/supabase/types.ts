@@ -816,6 +816,7 @@ export type Database = {
           created_at: string
           id: string
           letter: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -825,6 +826,7 @@ export type Database = {
           created_at?: string
           id?: string
           letter: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -834,11 +836,20 @@ export type Database = {
           created_at?: string
           id?: string
           letter?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "body_map_points_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       booking_unavailability_requests: {
         Row: {
@@ -5375,6 +5386,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -5382,6 +5394,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -5389,11 +5402,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hobbies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_email_queue: {
         Row: {
@@ -5852,6 +5874,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          organization_id: string | null
           status: string
           updated_at: string
         }
@@ -5859,6 +5882,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -5866,10 +5890,19 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "medical_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       medical_conditions: {
         Row: {
@@ -5877,6 +5910,7 @@ export type Database = {
           created_at: string
           field_caption: string | null
           id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -5886,6 +5920,7 @@ export type Database = {
           created_at?: string
           field_caption?: string | null
           id?: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -5895,6 +5930,7 @@ export type Database = {
           created_at?: string
           field_caption?: string | null
           id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -5905,6 +5941,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "medical_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_conditions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -7381,6 +7424,7 @@ export type Database = {
           explanation: string | null
           id: string
           name: string
+          organization_id: string | null
           status: string
           updated_at: string
         }
@@ -7389,6 +7433,7 @@ export type Database = {
           explanation?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -7397,10 +7442,19 @@ export type Database = {
           explanation?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "skills_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff: {
         Row: {
@@ -10196,6 +10250,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          organization_id: string | null
           status: string
           title: string
           updated_at: string
@@ -10203,6 +10258,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -10210,11 +10266,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          organization_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "work_types_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

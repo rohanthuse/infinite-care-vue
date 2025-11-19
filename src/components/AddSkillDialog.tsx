@@ -17,6 +17,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 export function AddSkillDialog() {
   const [open, setOpen] = useState(false);
@@ -24,9 +25,10 @@ export function AddSkillDialog() {
   const [explanation, setExplanation] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { mutate: addSkill, isPending } = useMutation({
-    mutationFn: async (newSkill: { name: string; explanation: string; status: string }) => {
+    mutationFn: async (newSkill: { name: string; explanation: string; status: string; organization_id?: string }) => {
       const { data, error } = await supabase.from('skills').insert([newSkill]).select();
       if (error) throw error;
       return data;
@@ -36,7 +38,7 @@ export function AddSkillDialog() {
         title: "Skill added",
         description: `${name} has been added successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['skills'] });
+      queryClient.invalidateQueries({ queryKey: ['skills', organization?.id] });
       setName("");
       setExplanation("");
       setOpen(false);
@@ -61,7 +63,7 @@ export function AddSkillDialog() {
       return;
     }
 
-    addSkill({ name, explanation, status: "Active" });
+    addSkill({ name, explanation, status: "Active", organization_id: organization?.id });
   };
 
   return (

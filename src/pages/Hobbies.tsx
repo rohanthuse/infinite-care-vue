@@ -6,10 +6,12 @@ import { Heart, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { AddHobbyDialog } from "@/components/AddHobbyDialog";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EditHobbyDialog } from "@/components/EditHobbyDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
+import { useHobbies } from "@/data/hooks/useHobbies";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,23 +23,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const fetchHobbies = async () => {
-  let query = supabase.from('hobbies').select('*').order('title', { ascending: true });
-  const { data, error } = await query;
-  if (error) throw error;
-  return data;
-};
-
 const Hobbies = () => {
   const [editingHobby, setEditingHobby] = useState<any>(null);
   const [deletingHobby, setDeletingHobby] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
-  const { data: hobbies, isLoading, error } = useQuery({
-    queryKey: ['hobbies'],
-    queryFn: fetchHobbies,
-  });
+  const { data: hobbies, isLoading, error } = useHobbies();
 
   const { mutate: deleteHobby, isPending: isDeleting } = useMutation({
     mutationFn: async (hobbyId: string) => {
@@ -56,7 +49,7 @@ const Hobbies = () => {
 
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['hobbies'] });
+        queryClient.invalidateQueries({ queryKey: ['hobbies', organization?.id] });
       }, 300);
     },
     onError: (error: Error) => {

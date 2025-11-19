@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -17,6 +16,7 @@ import { Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface Skill {
   id: string;
@@ -37,6 +37,7 @@ export function EditSkillDialog({ isOpen, onClose, skill }: EditSkillDialogProps
   const [status, setStatus] = useState("Active");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   useEffect(() => {
     if (skill) {
@@ -71,7 +72,7 @@ export function EditSkillDialog({ isOpen, onClose, skill }: EditSkillDialogProps
       
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['skills'] });
+        queryClient.invalidateQueries({ queryKey: ['skills', organization?.id] });
       }, 300);
     },
     onError: (error: any) => {
