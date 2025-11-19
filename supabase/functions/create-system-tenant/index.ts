@@ -28,21 +28,25 @@ serve(async (req) => {
     address, 
     subscriptionPlan,
     billingCycle,
+    subscriptionDuration,
     subscriptionStartDate,
     subscriptionEndDate,
+    totalAmount,
     creatorEmail,
     creatorUserId
   } = await req.json()
 
-    console.log('Creating organization with data:', { 
-      name, 
-      slug, 
-      contactEmail, 
-      subscriptionPlan, 
-      billingCycle,
-      subscriptionStartDate,
-      subscriptionEndDate 
-    })
+  console.log('Creating organization with data:', { 
+    name, 
+    slug, 
+    contactEmail, 
+    subscriptionPlan, 
+    billingCycle,
+    subscriptionDuration,
+    subscriptionStartDate,
+    subscriptionEndDate,
+    totalAmount
+  })
 
     // Validate required fields
     if (!name || !slug || !contactEmail) {
@@ -92,7 +96,9 @@ serve(async (req) => {
       subscription_expires_at: subscriptionEndDate || null,
       settings: {
         billing_cycle: billingCycle || 'monthly',
-        subscription_start_date: subscriptionStartDate || new Date().toISOString()
+        subscription_start_date: subscriptionStartDate || new Date().toISOString(),
+        subscription_duration: subscriptionDuration || 1,
+        total_amount: totalAmount || 0
       }
     })
     .select()
