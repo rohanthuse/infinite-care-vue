@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 interface AddClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,6 +28,7 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   const {
     toast
   } = useToast();
+  const { canAddClient, remainingSlots, maxClients, currentClientCount } = useSubscriptionLimits();
   const [isLoading, setIsLoading] = useState(false);
   
   const defaultFormData = {
@@ -214,7 +216,17 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         });
         // Don't close dialog here - let it fall through to common cleanup
       } else {
-        // INSERT new client
+        // INSERT new client - Check subscription limit first
+        if (!canAddClient) {
+          toast({
+            title: "Subscription Limit Reached",
+            description: `You have reached your plan limit of ${maxClients} clients. Current usage: ${currentClientCount}/${maxClients}. Please upgrade your subscription to add more clients.`,
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
         const newClientData = {
           ...clientData,
           registered_on: new Date().toISOString().split('T')[0]
@@ -641,16 +653,25 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
           </div>
 
           {/* Form Actions */}
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading 
-                ? (mode === 'edit' ? 'Updating...' : 'Adding...') 
-                : (mode === 'edit' ? 'Update Client' : 'Add Client')
-              }
-            </Button>
+          <div className="flex flex-col gap-3 pt-4 border-t">
+            {mode === 'add' && (
+              <div className="text-sm text-muted-foreground">
+                <span className={remainingSlots === 0 ? 'text-red-500 font-semibold' : remainingSlots <= 5 ? 'text-yellow-600' : ''}>
+                  Remaining: {remainingSlots} / {maxClients} slots
+                </span>
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading 
+                  ? (mode === 'edit' ? 'Updating...' : 'Adding...') 
+                  : (mode === 'edit' ? 'Update Client' : 'Add Client')
+                }
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>
