@@ -23,6 +23,7 @@ import { AgreementTemplates } from "@/components/agreements/AgreementTemplates";
 import { SignAgreementDialog } from "@/components/agreements/SignAgreementDialog";
 import { ScheduleAgreementDialog } from "@/components/agreements/ScheduleAgreementDialog";
 import { CreateTemplateDialog } from "@/components/agreements/CreateTemplateDialog";
+import { SubscriptionDetails } from "@/components/agreements/SubscriptionDetails";
 
 const Agreement = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,10 +112,11 @@ const Agreement = () => {
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b border-border p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <TabsList className="grid w-full grid-cols-3 sm:w-auto">
+              <TabsList className="grid w-full grid-cols-4 sm:w-auto">
                 <TabsTrigger value="signed">Signed</TabsTrigger>
                 <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
                 <TabsTrigger value="templates">Templates</TabsTrigger>
+                <TabsTrigger value="subscription">Subscription</TabsTrigger>
               </TabsList>
             
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -180,6 +182,10 @@ const Agreement = () => {
                 typeFilter={typeFilter}
                 isOrganizationLevel={true}
               />
+            </TabsContent>
+
+            <TabsContent value="subscription" className="focus-visible:ring-0">
+              <SubscriptionDetails />
             </TabsContent>
           </Tabs>
         </div>

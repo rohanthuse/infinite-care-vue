@@ -20,6 +20,8 @@ interface Organization {
   max_users: number;
   max_branches: number;
   settings: Record<string, any>;
+  created_at?: string;
+  subscription_expires_at?: string;
 }
 
 interface TenantContextType {
