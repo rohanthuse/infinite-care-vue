@@ -231,7 +231,9 @@ export const SystemUsersTable: React.FC = () => {
           <DeleteSystemUserDialog
             user={deleteDialogUser}
             open={!!deleteDialogUser}
-            onOpenChange={(open) => !open && setDeleteDialogUser(null)}
+            onOpenChange={(open) => {
+              if (!open) setDeleteDialogUser(null);
+            }}
           />
         )}
       </div>
