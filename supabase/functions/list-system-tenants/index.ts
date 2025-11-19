@@ -27,7 +27,7 @@ serve(async (req) => {
       console.log('[list-system-tenants] Falling back to basic organization fetch...')
       const { data: orgs, error: orgErr } = await supabaseAdmin
         .from('organizations')
-        .select('id, name, slug, contact_email, contact_phone, subscription_plan, subscription_status, created_at')
+        .select('id, name, slug, contact_email, contact_phone, subscription_plan, subscription_status, subscription_expires_at, settings, created_at')
         .order('created_at', { ascending: false })
 
       if (orgErr) {
@@ -78,6 +78,9 @@ serve(async (req) => {
 
           return {
             ...org,
+            subscription_expires_at: org.subscription_expires_at,
+            subscription_duration: org.settings?.subscription_duration || null,
+            billing_cycle: org.settings?.billing_cycle || 'monthly',
             total_users: totalUsers || 0,
             active_users: activeUsers,
             recent_activity_count: activeUsers
@@ -104,6 +107,9 @@ serve(async (req) => {
     // Format the optimized data to ensure proper number formatting
     const formattedTenants = (tenantsData || []).map((tenant: any) => ({
       ...tenant,
+      subscription_expires_at: tenant.subscription_expires_at,
+      subscription_duration: tenant.settings?.subscription_duration || null,
+      billing_cycle: tenant.settings?.billing_cycle || 'monthly',
       total_users: parseInt(tenant.total_users) || 0,
       active_users: parseInt(tenant.active_users) || 0,
       recent_activity_count: parseInt(tenant.recent_activity_count) || 0
