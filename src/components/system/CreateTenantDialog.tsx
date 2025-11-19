@@ -58,22 +58,52 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     address: '',
     subscription_plan: '0-10',
     billing_cycle: 'monthly' as 'monthly' | 'yearly',
+    subscription_duration: 1,
     subscription_start_date: new Date(),
     subscription_end_date: null as Date | null,
+    total_amount: 0,
   });
 
-  // Calculate end date when start date or billing cycle changes
+  // Calculate end date and total amount when any relevant field changes
   useEffect(() => {
-    if (formData.subscription_start_date) {
+    if (formData.subscription_start_date && formData.subscription_duration > 0) {
+      // Calculate end date
       const endDate = new Date(formData.subscription_start_date);
       if (formData.billing_cycle === 'yearly') {
-        endDate.setFullYear(endDate.getFullYear() + 1);
+        endDate.setFullYear(endDate.getFullYear() + formData.subscription_duration);
       } else {
-        endDate.setMonth(endDate.getMonth() + 1);
+        endDate.setMonth(endDate.getMonth() + formData.subscription_duration);
       }
-      setFormData(prev => ({ ...prev, subscription_end_date: endDate }));
+      
+      // Calculate total amount
+      const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.value === formData.subscription_plan);
+      let totalAmount = 0;
+      
+      if (selectedPlan && selectedPlan.value !== '500+') {
+        if (formData.billing_cycle === 'yearly') {
+          totalAmount = (selectedPlan.yearly || 0) * formData.subscription_duration;
+        } else {
+          totalAmount = (selectedPlan.monthly || 0) * formData.subscription_duration;
+        }
+      }
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        subscription_end_date: endDate,
+        total_amount: totalAmount 
+      }));
     }
-  }, [formData.subscription_start_date, formData.billing_cycle]);
+  }, [
+    formData.subscription_start_date, 
+    formData.billing_cycle, 
+    formData.subscription_plan,
+    formData.subscription_duration
+  ]);
+
+  // Reset duration to 1 when billing cycle changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, subscription_duration: 1 }));
+  }, [formData.billing_cycle]);
 
   const createTenant = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -89,8 +119,10 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           address: data.address,
           subscriptionPlan: data.subscription_plan,
           billingCycle: data.billing_cycle,
+          subscriptionDuration: data.subscription_duration,
           subscriptionStartDate: data.subscription_start_date.toISOString(),
           subscriptionEndDate: data.subscription_end_date?.toISOString(),
+          totalAmount: data.total_amount,
           creatorEmail: user.email,
           creatorUserId: user.id
         }
@@ -143,7 +175,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     createTenant.mutate(formData);
   };
 
-  const handleInputChange = (field: string, value: string | Date) => {
+  const handleInputChange = (field: string, value: string | Date | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -156,8 +188,10 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       address: '',
       subscription_plan: '0-10',
       billing_cycle: 'monthly',
+      subscription_duration: 1,
       subscription_start_date: new Date(),
       subscription_end_date: null,
+      total_amount: 0,
     });
   };
 
@@ -286,6 +320,40 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
               </RadioGroup>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="subscription_duration">Subscription Duration</Label>
+              <Select
+                value={formData.subscription_duration.toString()}
+                onValueChange={(value) => handleInputChange('subscription_duration', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {formData.billing_cycle === 'monthly' ? (
+                    // Monthly: 1-24 months
+                    Array.from({ length: 24 }, (_, i) => i + 1).map((months) => (
+                      <SelectItem key={months} value={months.toString()}>
+                        {months} {months === 1 ? 'Month' : 'Months'}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    // Yearly: 1-5 years
+                    Array.from({ length: 5 }, (_, i) => i + 1).map((years) => (
+                      <SelectItem key={years} value={years.toString()}>
+                        {years} {years === 1 ? 'Year' : 'Years'}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {formData.billing_cycle === 'monthly' 
+                  ? 'Select 1-24 months' 
+                  : 'Select 1-5 years'}
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subscription_start_date">Subscription Start Date</Label>
@@ -326,9 +394,26 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
                   className="bg-muted"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Auto-calculated based on billing cycle
+                  Auto-calculated based on billing cycle and duration
                 </p>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="total_amount">Total Amount</Label>
+              <Input
+                id="total_amount"
+                value={
+                  formData.subscription_plan === '500+' 
+                    ? 'Bespoke - Contact for pricing' 
+                    : `£${formData.total_amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                }
+                disabled
+                className="bg-muted font-semibold text-base"
+              />
+              <p className="text-xs text-muted-foreground">
+                Auto-calculated: {formData.billing_cycle === 'yearly' ? 'Yearly' : 'Monthly'} Fee × Duration
+              </p>
             </div>
           </div>
 
