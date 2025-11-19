@@ -20,7 +20,6 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
   const [form, setForm] = useState({
     name: '',
     slug: '',
-    subscription_plan: 'basic',
     subscription_status: 'active',
     contact_email: '',
     contact_phone: '',
@@ -31,7 +30,6 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
       setForm({
         name: tenant.name || '',
         slug: tenant.slug || '',
-        subscription_plan: tenant.subscription_plan || 'basic',
         subscription_status: tenant.subscription_status || 'active',
         contact_email: tenant.contact_email || '',
         contact_phone: tenant.contact_phone || '',
@@ -86,14 +84,6 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
             <div>
               <Label htmlFor="slug">URL Slug</Label>
               <Input id="slug" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} required />
-            </div>
-            <div>
-              <Label htmlFor="plan">Plan</Label>
-              <select id="plan" className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.subscription_plan} onChange={(e) => setForm({ ...form, subscription_plan: e.target.value })}>
-                <option value="basic">basic</option>
-                <option value="pro">pro</option>
-                <option value="enterprise">enterprise</option>
-              </select>
             </div>
             <div>
               <Label htmlFor="status">Status</Label>
