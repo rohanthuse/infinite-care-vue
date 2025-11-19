@@ -33,7 +33,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     contact_email: '',
     contact_phone: '',
     address: '',
-    subscription_plan: 'basic',
+    subscription_plan: '0-10',
   });
 
   const createTenant = useMutation({
@@ -112,7 +112,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       contact_email: '',
       contact_phone: '',
       address: '',
-      subscription_plan: 'basic',
+      subscription_plan: '0-10',
     });
   };
 
@@ -207,9 +207,13 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="basic">Basic - Up to 50 users</SelectItem>
-                <SelectItem value="professional">Professional - Up to 200 users</SelectItem>
-                <SelectItem value="enterprise">Enterprise - Unlimited users</SelectItem>
+                <SelectItem value="0-10">0–10 users | £99/month | £1,070/year (10% discount)</SelectItem>
+                <SelectItem value="11-25">11–25 users | £149/month | £1,610/year (10% discount)</SelectItem>
+                <SelectItem value="26-50">26–50 users | £249/month | £2,690/year (10% discount)</SelectItem>
+                <SelectItem value="51-100">51–100 users | £499/month | £5,390/year (10% discount)</SelectItem>
+                <SelectItem value="101-250">101–250 users | £749/month | £8,090/year (10% discount)</SelectItem>
+                <SelectItem value="251-500">251–500 users | £999/month | £10,790/year (10% discount)</SelectItem>
+                <SelectItem value="500+">500+ users | Bespoke pricing</SelectItem>
               </SelectContent>
             </Select>
           </div>
