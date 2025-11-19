@@ -5,6 +5,7 @@ export interface OrganizationOption {
   id: string;
   name: string;
   slug: string;
+  subscription_plan?: string;
 }
 
 const fetchOrganizations = async (): Promise<OrganizationOption[]> => {

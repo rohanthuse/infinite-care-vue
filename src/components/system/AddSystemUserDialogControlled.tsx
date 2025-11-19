@@ -19,7 +19,7 @@ import {
 import { SearchableOrganizationSelect } from './SearchableOrganizationSelect';
 import { Plus, Loader2 } from 'lucide-react';
 import { useCreateSystemUser } from '@/hooks/useSystemUsers';
-import { useOrganizations } from '@/hooks/useOrganizations';
+import { useOrganizationsForUserAssignment } from '@/hooks/useOrganizationsForUserAssignment';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -38,14 +38,18 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
     last_name: '',
     password: '',
     confirmPassword: '',
-    role: 'super_admin' as 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer',
     organization_id: '',
   });
+
+  const [selectedOrg, setSelectedOrg] = useState<{
+    name: string;
+    subscription_plan: string;
+  } | null>(null);
 
   const [orgError, setOrgError] = useState<string | null>(null);
 
   const createUser = useCreateSystemUser();
-  const { data: organizations, isLoading: orgLoading } = useOrganizations();
+  const { data: organizations, isLoading: orgLoading } = useOrganizationsForUserAssignment();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +75,7 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
         first_name: formData.first_name,
         last_name: formData.last_name,
         password: formData.password,
-        role: formData.role,
+        role: 'super_admin', // Hardcoded - always Super Admin
       });
 
       // Assign user to an organization (required)
@@ -105,9 +109,9 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
         last_name: '',
         password: '',
         confirmPassword: '',
-        role: 'super_admin',
         organization_id: '',
       });
+      setSelectedOrg(null);
       setOrgError(null);
       onOpenChange(false);
     } catch (error) {
@@ -119,6 +123,16 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
     setFormData({ ...formData, [field]: value });
     if (field === 'organization_id') {
       setOrgError(null);
+      // Find and store selected organization info
+      const selectedOrganization = organizations?.find(org => org.id === value);
+      if (selectedOrganization) {
+        setSelectedOrg({
+          name: selectedOrganization.name,
+          subscription_plan: selectedOrganization.subscription_plan,
+        });
+      } else {
+        setSelectedOrg(null);
+      }
     }
   };
 
@@ -177,8 +191,17 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
             />
           </div>
 
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3">
+            <p className="text-sm text-blue-900 dark:text-blue-100">
+              <strong>Role:</strong> Super Admin (automatically assigned)
+            </p>
+            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+              Each organisation can have only one Super Admin user
+            </p>
+          </div>
+
           <div className="space-y-2">
-            <Label htmlFor="organization">Organisation</Label>
+            <Label htmlFor="organization">Organisation <span aria-hidden="true">*</span></Label>
             <SearchableOrganizationSelect
               organizations={organizations || []}
               value={formData.organization_id}
@@ -187,27 +210,38 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
               error={orgError || undefined}
             />
             {orgError && (
-              <p className="text-sm text-red-500">{orgError}</p>
+              <p className="text-sm text-destructive">{orgError}</p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Only organisations without an existing Super Admin are shown
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select
-              value={formData.role}
-              onValueChange={(value) => handleInputChange('role', value as any)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
-                <SelectItem value="tenant_manager">Tenant Manager</SelectItem>
-                <SelectItem value="support_admin">Support Admin</SelectItem>
-                <SelectItem value="analytics_viewer">Analytics Viewer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {organizations && organizations.length === 0 && !orgLoading && (
+            <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
+              <p className="text-sm text-yellow-900 dark:text-yellow-100">
+                <strong>No organisations available</strong>
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                All organisations already have a Super Admin assigned. Create a new organisation first.
+              </p>
+            </div>
+          )}
+
+          {selectedOrg && (
+            <div className="space-y-2">
+              <Label htmlFor="subscription_plan">Subscription Plan</Label>
+              <Input
+                id="subscription_plan"
+                value={selectedOrg.subscription_plan.charAt(0).toUpperCase() + selectedOrg.subscription_plan.slice(1).replace(/-/g, ' ')}
+                disabled
+                className="bg-muted cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground">
+                Current plan for {selectedOrg.name}
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
