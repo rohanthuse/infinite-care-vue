@@ -20,18 +20,29 @@ serve(async (req) => {
       }
     })
 
-    const { 
+  const { 
+    name, 
+    slug, 
+    contactEmail, 
+    contactPhone, 
+    address, 
+    subscriptionPlan,
+    billingCycle,
+    subscriptionStartDate,
+    subscriptionEndDate,
+    creatorEmail,
+    creatorUserId
+  } = await req.json()
+
+    console.log('Creating organization with data:', { 
       name, 
       slug, 
       contactEmail, 
-      contactPhone, 
-      address, 
-      subscriptionPlan,
-      creatorEmail,
-      creatorUserId
-    } = await req.json()
-
-    console.log('Creating organization with data:', { name, slug, contactEmail })
+      subscriptionPlan, 
+      billingCycle,
+      subscriptionStartDate,
+      subscriptionEndDate 
+    })
 
     // Validate required fields
     if (!name || !slug || !contactEmail) {
@@ -68,19 +79,24 @@ serve(async (req) => {
     }
 
     // Create the organization
-    const { data: organization, error: orgError } = await supabaseAdmin
-      .from('organizations')
-      .insert({
-        name,
-        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
-        contact_email: contactEmail,
-        contact_phone: contactPhone,
-        address,
-        subscription_plan: subscriptionPlan || 'basic',
-        subscription_status: 'active'
-      })
-      .select()
-      .single()
+  const { data: organization, error: orgError } = await supabaseAdmin
+    .from('organizations')
+    .insert({
+      name,
+      slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+      contact_email: contactEmail,
+      contact_phone: contactPhone,
+      address,
+      subscription_plan: subscriptionPlan || '0-10',
+      subscription_status: 'active',
+      subscription_expires_at: subscriptionEndDate || null,
+      settings: {
+        billing_cycle: billingCycle || 'monthly',
+        subscription_start_date: subscriptionStartDate || new Date().toISOString()
+      }
+    })
+    .select()
+    .single()
 
     if (orgError) {
       console.error('Error creating organization:', orgError)
