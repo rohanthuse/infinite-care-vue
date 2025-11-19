@@ -52,9 +52,7 @@ const TenantDashboard = () => {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // PHASE 1: Clear navigation intent flags AFTER dashboard is fully loaded
   useEffect(() => {
-    // Delay clearing to ensure navigation is complete
     const timer = setTimeout(() => {
       console.log('[TenantDashboard] Clearing navigation flags after successful load');
       sessionStorage.removeItem('navigating_to_dashboard');
@@ -67,7 +65,6 @@ const TenantDashboard = () => {
 
   useEffect(() => {
     const loadCachedDataIfAvailable = () => {
-      // Check if we have recently cached data (within last 10 seconds)
       const cachedOrgData = sessionStorage.getItem('cached_org_data');
       const cachedTimestamp = sessionStorage.getItem('cached_org_timestamp');
       const cachedUserRole = sessionStorage.getItem('cached_user_role');
@@ -75,7 +72,6 @@ const TenantDashboard = () => {
       if (cachedOrgData && cachedTimestamp && cachedUserRole) {
         const age = Date.now() - parseInt(cachedTimestamp);
         
-        // Use cached data if it's less than 10 seconds old (fresh from login)
         if (age < 10000) {
           console.log('[TenantDashboard] Using cached organization data from login');
           
@@ -87,7 +83,6 @@ const TenantDashboard = () => {
             setUserRole(roleData);
             setLoading(false);
             
-            // Apply branding immediately
             try {
               if (orgData.primary_color) {
                 const primaryHsl = normalizeToHslVar(orgData.primary_color);
@@ -103,221 +98,156 @@ const TenantDashboard = () => {
               document.documentElement.style.setProperty('--secondary', '210 40% 96%');
             }
             
-            document.title = `${orgData.name} - Dashboard`;
-            
-            // Clear cached data after use
-            sessionStorage.removeItem('cached_org_data');
-            sessionStorage.removeItem('cached_org_timestamp');
-            sessionStorage.removeItem('cached_user_role');
-            
-            return true; // Cached data was used
+            return true;
           } catch (error) {
             console.error('[TenantDashboard] Error parsing cached data:', error);
           }
-        } else {
-          console.log('[TenantDashboard] Cached data too old, fetching fresh data');
-          // Clear old cache
-          sessionStorage.removeItem('cached_org_data');
-          sessionStorage.removeItem('cached_org_timestamp');
-          sessionStorage.removeItem('cached_user_role');
         }
       }
       
-      return false; // No cached data available
+      return false;
     };
 
-    const fetchTenantData = async () => {
+    const fetchOrganizationAndRole = async () => {
       if (!user || !tenantSlug) {
-        navigate('/');
+        console.error('[TenantDashboard] Missing user or tenantSlug');
         return;
       }
 
+      const usedCache = loadCachedDataIfAvailable();
+      if (usedCache) {
+        console.log('[TenantDashboard] Successfully used cached data');
+        return;
+      }
+
+      console.log('[TenantDashboard] No valid cache, fetching fresh data...');
+      
       try {
-        // Fetch organization
-        const { data: orgData, error: orgError } = await supabase
-          .from('organizations')
-          .select('*')
-          .eq('slug', tenantSlug)
-          .single();
-
-        if (orgError || !orgData) {
-          toast({
-            title: 'Organization Not Found',
-            description: 'The organization doesn\'t exist.',
-            variant: 'destructive',
-          });
-          navigate('/');
-          return;
-        }
-
-        // Verify user access - check both organization membership and system role
-        const { data: memberData, error: memberError } = await supabase
+        const { data: orgsData, error: orgsError } = await supabase
           .from('organization_members')
-          .select('role, status')
-          .eq('organization_id', orgData.id)
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .single();
+          .select(`
+            role,
+            organization:organizations(
+              id,
+              name,
+              slug,
+              logo_url,
+              primary_color,
+              secondary_color,
+              subscription_plan,
+              subscription_status
+            )
+          `)
+          .eq('user_id', user.id);
 
-        // Allow access if user is a super_admin (system role) or has organization membership
-        const hasSystemAccess = systemUserRole?.role === 'super_admin';
-        const hasOrgAccess = memberData && !memberError;
-
-        if (!hasSystemAccess && !hasOrgAccess) {
-          toast({
-            title: 'Access Denied',
-            description: 'You don\'t have permission to access this organization.',
-            variant: 'destructive',
-          });
-          await signOut();
-          navigate('/');
-          return;
+        if (orgsError) {
+          console.error('[TenantDashboard] Error fetching organizations:', orgsError);
+          throw orgsError;
         }
 
-        setOrganization(orgData);
-        // Prioritize super_admin system role over organization membership role
-        if (systemUserRole?.role === 'super_admin') {
-          setUserRole({ role: 'super_admin', status: 'active' });
-        } else {
-          // Use organization role if available, otherwise use system role
-          setUserRole(memberData || { role: systemUserRole?.role || 'member', status: 'active' });
+        const orgMembership = orgsData?.find(
+          (membership: any) => membership.organization?.slug === tenantSlug
+        );
+
+        if (!orgMembership || !orgMembership.organization) {
+          throw new Error('Organization not found or user is not a member');
         }
-        
-        // Apply branding
+
+        const org = orgMembership.organization as Organization;
+        const role = { role: orgMembership.role, status: 'active' };
+
+        setOrganization(org);
+        setUserRole(role);
+
         try {
-          if (orgData.primary_color) {
-            const primaryHsl = normalizeToHslVar(orgData.primary_color);
+          if (org.primary_color) {
+            const primaryHsl = normalizeToHslVar(org.primary_color);
             document.documentElement.style.setProperty('--primary', primaryHsl);
           }
-          if (orgData.secondary_color) {
-            const secondaryHsl = normalizeToHslVar(orgData.secondary_color);
+          if (org.secondary_color) {
+            const secondaryHsl = normalizeToHslVar(org.secondary_color);
             document.documentElement.style.setProperty('--secondary', secondaryHsl);
           }
-        } catch (error) {
-          console.error('Error applying organization colors:', error);
-          // Fallback to default colors if normalization fails
+        } catch (colorError) {
+          console.error('Error applying organization colors:', colorError);
           document.documentElement.style.setProperty('--primary', '222.2 84% 4.9%');
           document.documentElement.style.setProperty('--secondary', '210 40% 96%');
         }
-        
-        document.title = `${orgData.name} - Dashboard`;
-      } catch (error) {
-        console.error('Error fetching tenant data:', error);
+
+        setLoading(false);
+      } catch (error: any) {
+        console.error('[TenantDashboard] Error fetching organization:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load organization data.',
+          description: error.message || 'Failed to load organization',
           variant: 'destructive',
         });
-        navigate('/');
-      } finally {
         setLoading(false);
+        navigate('/');
       }
     };
 
-    // Try to use cached data first, otherwise fetch
-    const usedCache = loadCachedDataIfAvailable();
-    if (!usedCache) {
-      fetchTenantData();
-    }
-  }, [user, tenantSlug, navigate, toast, signOut, systemUserRole]);
+    fetchOrganizationAndRole();
+  }, [user, tenantSlug, navigate, toast]);
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast({
-        title: 'Signed Out',
-        description: 'You have been successfully signed out.',
-      });
-      navigate('/');
+      sessionStorage.clear();
+      navigate('/login');
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Error signing out:', error);
       toast({
         title: 'Error',
-        description: 'Failed to sign out.',
+        description: 'Failed to sign out',
         variant: 'destructive',
       });
     }
   };
 
-  if (loading || isRoleLoading) {
+  if (loading || !organization || !userRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="animate-pulse">
-          <div className="w-8 h-8 bg-blue-600 rounded-full"></div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (!organization || !userRole) {
-    return null;
-  }
-
-  // Check if user has admin role (owner/admin/super_admin/branch_admin) to show admin dashboard
-  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin' || userRole.role === 'branch_admin');
-
-  // If user is organization admin, show the old Dashboard style interface
-  if (isOrganizationAdmin) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
-        <DashboardHeader />
-        <DashboardNavbar />
-        
-        <motion.main 
-          className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Organization Branch Navigation */}
-          <TenantBranchNavigation organizationId={organization.id} />
-          
-          <div className="flex justify-between items-center mb-6 md:mb-8">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
-                {organization.name} - Organisation Management
-              </h1>
-              <p className="text-gray-500 mt-2 font-medium">
-                Manage and monitor all {organization.name} administrators and branches.
-              </p>
-            </div>
-          </div>
-
-          <OrganizationAdminsTable organizationId={organization.id} />
-        </motion.main>
-      </div>
-    );
-  }
-
-  // Regular tenant dashboard for non-admin users
   const quickActions = [
     {
-      title: 'User Management',
-      description: 'Manage organization users and permissions',
-      icon: Users,
-      href: `/${tenantSlug}/users`,
+      title: 'Dashboard',
+      description: 'View overview and analytics',
+      icon: BarChart3,
+      href: `/${tenantSlug}/dashboard`,
       color: 'bg-blue-500',
     },
     {
-      title: 'Analytics',
-      description: 'View organization performance metrics',
-      icon: BarChart3,
-      href: `/${tenantSlug}/analytics`,
+      title: 'Branch Management',
+      description: 'Manage branches and locations',
+      icon: Building2,
+      href: `/${tenantSlug}/branches`,
       color: 'bg-green-500',
     },
     {
+      title: 'User Management',
+      description: 'Manage team members',
+      icon: Users,
+      href: `/${tenantSlug}/users`,
+      color: 'bg-purple-500',
+    },
+    {
       title: 'Calendar',
-      description: 'Manage schedules and appointments',
+      description: 'View and manage events',
       icon: Calendar,
       href: `/${tenantSlug}/calendar`,
-      color: 'bg-purple-500',
+      color: 'bg-yellow-500',
     },
     {
       title: 'Reports',
       description: 'Generate and view reports',
       icon: FileText,
       href: `/${tenantSlug}/reports`,
-      color: 'bg-orange-500',
+      color: 'bg-indigo-500',
     },
     {
       title: 'Settings',
@@ -337,7 +267,6 @@ const TenantDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -378,14 +307,12 @@ const TenantDashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Welcome Section */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
               Welcome to {organization.name}
@@ -395,7 +322,6 @@ const TenantDashboard = () => {
             </p>
           </div>
 
-          {/* Organization Info */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <SubscriptionDetailsCard organizationId={organization.id} />
 
@@ -428,7 +354,6 @@ const TenantDashboard = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
           <div>
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -439,8 +364,10 @@ const TenantDashboard = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => navigate(action.href)}>
+                  <Card 
+                    className="hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => navigate(action.href)}
+                  >
                     <CardHeader className="flex flex-row items-center space-y-0 pb-2">
                       <div className={`w-10 h-10 ${action.color} rounded-lg flex items-center justify-center mr-4`}>
                         <action.icon className="w-5 h-5 text-white" />
