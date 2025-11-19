@@ -39,6 +39,7 @@ interface OrganizationMember {
   status: string;
   join_date: string;
   permissions?: any;
+  is_system_user: boolean;
 }
 
 interface OrganizationAdminsTableProps {
@@ -65,7 +66,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
     queryFn: async () => {
       console.log('Fetching organisation members for:', organizationId);
       
-      // Get organization members
+      // PART 1: Fetch regular organization members
       const { data: orgMembers, error: membersError } = await supabase
         .from('organization_members')
         .select(`
@@ -84,13 +85,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         throw membersError;
       }
 
-      if (!orgMembers || orgMembers.length === 0) {
-        console.log('No organisation members found');
-        return [];
-      }
-
       // Get user IDs to fetch profiles
-      const userIds = orgMembers.map(member => member.user_id);
+      const userIds = orgMembers?.map(member => member.user_id) || [];
       
       // Fetch user profiles from the profiles table
       const { data: profiles, error: profilesError } = await supabase
@@ -102,11 +98,33 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         console.error('Error fetching profiles:', profilesError);
       }
 
-      console.log('Organization members data:', orgMembers);
-      console.log('Profiles data:', profiles);
+      // PART 2: Fetch System Portal users
+      const { data: systemUsers, error: systemUsersError } = await supabase
+        .from('system_user_organizations')
+        .select(`
+          id,
+          system_user_id,
+          role,
+          assigned_at,
+          system_users (
+            id,
+            first_name,
+            last_name,
+            email,
+            is_active
+          )
+        `)
+        .eq('organization_id', organizationId);
 
-      // Combine the data with profiles
-      const membersWithProfiles = orgMembers.map(member => {
+      if (systemUsersError) {
+        console.error('Error fetching system users:', systemUsersError);
+      }
+
+      console.log('Regular members:', orgMembers);
+      console.log('System Portal users:', systemUsers);
+
+      // PART 3: Combine both data sources into unified format
+      const regularMembers = (orgMembers || []).map(member => {
         const profile = profiles?.find(p => p.id === member.user_id);
         
         return {
@@ -117,13 +135,36 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           last_name: profile?.last_name,
           role: member.role,
           status: member.status,
-          joined_at: member.joined_at,
+          join_date: member.joined_at,
           permissions: member.permissions,
+          is_system_user: false,
         };
       });
 
-      console.log('Members with profiles:', membersWithProfiles);
-      return membersWithProfiles;
+      const systemMembers = (systemUsers || []).map(item => {
+        const systemUser = Array.isArray(item.system_users) 
+          ? item.system_users[0] 
+          : item.system_users;
+        
+        return {
+          id: item.id,
+          user_id: item.system_user_id,
+          email: systemUser?.email || 'Unknown',
+          first_name: systemUser?.first_name,
+          last_name: systemUser?.last_name,
+          role: 'super_admin',
+          status: systemUser?.is_active ? 'active' : 'inactive',
+          join_date: item.assigned_at,
+          permissions: null,
+          is_system_user: true,
+        };
+      });
+
+      // Combine and return all members
+      const allMembers = [...regularMembers, ...systemMembers];
+      console.log('Combined members:', allMembers);
+      
+      return allMembers;
     },
     enabled: !!organizationId,
     retry: 3,
@@ -152,8 +193,9 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
 
   const filteredMembers = members.filter((member) =>
     member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${member.first_name} ${member.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.role.toLowerCase().includes(searchTerm.toLowerCase())
+    `${member.first_name || ''} ${member.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (member.is_system_user && 'system portal'.includes(searchTerm.toLowerCase()))
   );
 
   if (error) {
@@ -216,13 +258,31 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
               filteredMembers.map((member) => (
                 <TableRow key={member.id}>
                   <TableCell className="font-medium">
-                    {member.first_name && member.last_name
-                      ? `${member.first_name} ${member.last_name}`
-                      : 'N/A'}
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {member.first_name && member.last_name
+                          ? `${member.first_name} ${member.last_name}`
+                          : 'N/A'}
+                      </span>
+                      {member.is_system_user && (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs bg-purple-50 text-purple-700 border-purple-200"
+                        >
+                          ⭐ System Portal
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>{member.email}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="capitalize">
+                    <Badge 
+                      variant={member.is_system_user ? "default" : "secondary"} 
+                      className={member.is_system_user 
+                        ? "capitalize bg-purple-600 text-white" 
+                        : "capitalize"
+                      }
+                    >
                       {member.role.replace('_', ' ')}
                     </Badge>
                   </TableCell>
@@ -242,54 +302,66 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                     </div>
                   </TableCell>
                   <TableCell>
-                    {new Date(member.joined_at).toLocaleDateString()}
+                    {new Date(member.join_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedMember({
-                            id: member.id,
-                            name: member.first_name && member.last_name 
-                              ? `${member.first_name} ${member.last_name}` 
-                              : 'N/A',
-                            email: member.email,
-                            role: member.role,
-                            first_name: member.first_name,
-                            last_name: member.last_name
-                          });
-                          setIsPermissionsDialogOpen(true);
-                        }}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Member</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to remove this member from the organisation? 
-                              They will lose access to all organisation resources.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteMember(member.id, member.email)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      {!member.is_system_user && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedMember({
+                              id: member.id,
+                              name: member.first_name && member.last_name 
+                                ? `${member.first_name} ${member.last_name}` 
+                                : 'N/A',
+                              email: member.email,
+                              role: member.role,
+                              first_name: member.first_name,
+                              last_name: member.last_name
+                            });
+                            setIsPermissionsDialogOpen(true);
+                          }}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      )}
+                      
+                      {!member.is_system_user ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to remove this member from the organisation? 
+                                They will lose access to all organisation resources.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteMember(member.id, member.email)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : (
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs text-gray-500 cursor-not-allowed"
+                        >
+                          System User
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
