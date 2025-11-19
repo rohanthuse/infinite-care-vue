@@ -17,12 +17,34 @@ export const SearchableOrganizationSelect: React.FC<SearchableOrganizationSelect
   isLoading = false,
   error,
 }) => {
+  // Map subscription plan values to display names
+  const formatSubscriptionPlan = (plan?: string): string => {
+    if (!plan) return '';
+    const planMap: Record<string, string> = {
+      'basic': 'Basic Plan',
+      'professional': 'Professional Plan',
+      'pro': 'Pro Plan',
+      'enterprise': 'Enterprise Plan',
+      '0-10': '0-10 Users',
+      '11-25': '11-25 Users',
+      '26-50': '26-50 Users',
+      '51-100': '51-100 Users',
+      '101-250': '101-250 Users',
+      '251-500': '251-500 Users',
+      '500+': '500+ Users',
+    };
+    return planMap[plan] || plan;
+  };
+
   // Transform organizations into the format expected by Combobox
-  const options = organizations.map(org => ({
-    value: org.id,
-    label: org.name,
-    description: org.slug,
-  }));
+  const options = organizations.map(org => {
+    const planDisplay = formatSubscriptionPlan(org.subscription_plan);
+    return {
+      value: org.id,
+      label: org.name,
+      description: planDisplay ? `${org.slug} • ${planDisplay}` : org.slug,
+    };
+  });
 
   return (
     <div className="space-y-1">
