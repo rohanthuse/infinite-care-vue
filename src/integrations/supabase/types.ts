@@ -10513,6 +10513,10 @@ export type Database = {
         Args: { admin_user_id: string }
         Returns: Json
       }
+      delete_organization_cascade: {
+        Args: { p_organization_id: string; p_system_user_id: string }
+        Returns: Json
+      }
       delete_system_user_with_session: {
         Args: { p_session_token: string; p_user_id: string }
         Returns: Json
