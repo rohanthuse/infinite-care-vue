@@ -177,7 +177,7 @@ export default function SystemDashboard() {
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <Users className="h-6 w-6 text-primary" />
                       </div>
-                      <span className="font-medium">Add System User</span>
+                      <span className="font-medium">Add Tenant User</span>
                     </Button>
                   </>
                 )}

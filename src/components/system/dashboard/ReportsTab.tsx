@@ -22,7 +22,7 @@ export const ReportsTab: React.FC = () => {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Comprehensive analytics and insights across tenant organisations and system users
+                Comprehensive analytics and insights across tenant organisations and tenant users
               </p>
             </div>
             

@@ -119,12 +119,12 @@ export const SystemReports: React.FC = () => {
         </div>
       </section>
 
-      {/* System Users Section */}
+      {/* Tenant Users Section */}
       <section>
         <div className="border-b border-border/50 pb-4 mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Users className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">System Users</h3>
+            <h3 className="text-lg font-semibold text-foreground">Tenant Users</h3>
             <Badge variant="secondary" className="text-xs">
               {userStats?.total ?? 0} total
             </Badge>

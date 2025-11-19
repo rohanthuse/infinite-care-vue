@@ -38,7 +38,7 @@ export const SystemDashboardStats = ({
       />
       
       <DashboardStat
-        title="System Users"
+        title="Tenant Users"
         value={stats.totalUsers.toString()}
         change="+3 this week"
         icon={<Users className="h-5 w-5" />}

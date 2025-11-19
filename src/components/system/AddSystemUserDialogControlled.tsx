@@ -135,7 +135,7 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create System User</DialogTitle>
+          <DialogTitle>Create Tenant User</DialogTitle>
           <DialogDescription>
             Add a new organization super admin user. They will receive an email with login instructions.
           </DialogDescription>

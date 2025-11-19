@@ -7,7 +7,7 @@ export const SystemUsersTab: React.FC = () => {
       <SystemUsersStats stats={undefined} isLoading={false} />
 
       <div className="bg-card border border-border rounded-lg p-4">
-        <h3 className="text-lg font-semibold mb-2">System Users</h3>
+        <h3 className="text-lg font-semibold mb-2">Tenant Users</h3>
         <p className="text-muted-foreground">
           Manage organization super admins and their roles. A detailed users list will appear here.
         </p>

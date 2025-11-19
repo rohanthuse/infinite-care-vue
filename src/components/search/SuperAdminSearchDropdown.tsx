@@ -22,7 +22,7 @@ interface ModuleShortcut {
 
 const superAdminModules: ModuleShortcut[] = [
   { name: 'Dashboard Home', keywords: ['home', 'dashboard', 'main'], path: '/dashboard', icon: LayoutDashboard },
-  { name: 'System Users', keywords: ['user', 'system user', 'admin'], path: '/system/users', icon: Users },
+  { name: 'Tenant Users', keywords: ['user', 'tenant user', 'admin'], path: '/system/users', icon: Users },
   { name: 'System Tenants', keywords: ['tenant', 'organization', 'company'], path: '/system/tenants', icon: Building2 },
   { name: 'System Settings', keywords: ['setting', 'config', 'system'], path: '/system/settings', icon: Settings },
   { name: 'System Analytics', keywords: ['analytic', 'stats', 'report'], path: '/system/analytics', icon: BarChart },

@@ -209,7 +209,7 @@ export const SetSystemUserPasswordDialog = ({ open, onOpenChange, user }: SetSys
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Make sure to securely share this password with the system user
+                Make sure to securely share this password with the tenant user
               </p>
             </div>
           )}

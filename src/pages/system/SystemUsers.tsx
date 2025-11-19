@@ -60,7 +60,7 @@ export default function SystemUsers() {
                 <Users className="h-8 w-8 text-primary" />
               </div>
               <div>
-            <h1 className="text-2xl font-bold text-foreground">System Users</h1>
+            <h1 className="text-2xl font-bold text-foreground">Tenant Users</h1>
             <p className="text-muted-foreground mt-1">
               Manage organisation super admins
             </p>
