@@ -15,7 +15,7 @@ async function fetchHobbies(organizationId?: string) {
   const { data, error } = await supabase
     .from("hobbies")
     .select("id, title, status, organization_id")
-    .or(`organization_id.eq.${organizationId},organization_id.is.null`)
+    .eq('organization_id', organizationId)
     .in("status", ["active", "Active"])
     .order("title");
   

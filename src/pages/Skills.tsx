@@ -37,7 +37,7 @@ const Skills = () => {
       const { data, error } = await supabase
         .from('skills')
         .select('*')
-        .or(`organization_id.eq.${organization.id},organization_id.is.null`)
+        .eq('organization_id', organization.id)
         .order('name', { ascending: true });
       if (error) throw error;
       return data;
