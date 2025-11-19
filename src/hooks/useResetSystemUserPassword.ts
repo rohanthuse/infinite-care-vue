@@ -59,7 +59,7 @@ export const useResetSystemUserPassword = () => {
       queryClient.invalidateQueries({ queryKey: ["system-user-stats"] });
       
       toast.success("Password reset successfully", {
-        description: "The system user can now sign in with their new password."
+        description: "The tenant user can now sign in with their new password."
       });
     },
     onError: (error: any) => {
@@ -70,13 +70,13 @@ export const useResetSystemUserPassword = () => {
       
       if (error.message.includes('Insufficient permissions')) {
         errorMessage = "Access denied";
-        description = "You don't have permission to reset passwords for system users.";
+        description = "You don't have permission to reset passwords for tenant users.";
       } else if (error.message.includes('System user not found')) {
         errorMessage = "User not found";
-        description = "The specified system user could not be found.";
+        description = "The specified tenant user could not be found.";
       } else if (error.message.includes('Auth user not found')) {
         errorMessage = "Authentication error";
-        description = "No authentication record found for this system user.";
+        description = "No authentication record found for this tenant user.";
       } else if (error.message) {
         description = error.message;
       }

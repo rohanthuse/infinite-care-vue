@@ -85,7 +85,7 @@ export const useSystemUserStats = () => {
 
       const result = data as any;
       if (!result?.success) {
-        const msg = result?.error || 'Failed to fetch system user stats';
+        const msg = result?.error || 'Failed to fetch tenant user stats';
         console.error('[useSystemUserStats] RPC returned failure:', msg);
         throw new Error(msg);
       }
@@ -129,7 +129,7 @@ export const useCreateSystemUser = () => {
 
       const result = data as { success: boolean; error?: string; user?: any };
       if (!result?.success) {
-        const msg = result?.error || 'Failed to create system user';
+        const msg = result?.error || 'Failed to create tenant user';
         console.error('[useCreateSystemUser] RPC returned failure:', msg);
         throw new Error(msg);
       }
@@ -142,14 +142,14 @@ export const useCreateSystemUser = () => {
       queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
       toast({
         title: "User Created",
-        description: "System user has been created successfully.",
+        description: "Tenant user has been created successfully.",
       });
     },
     onError: (error: any) => {
       // Keep toast UX unchanged
       toast({
         title: "Error",
-        description: error?.message || "Failed to create system user.",
+        description: error?.message || "Failed to create tenant user.",
         variant: "destructive",
       });
     },
@@ -275,7 +275,7 @@ export const useUpdateSystemUser = () => {
 
       const result = data as { success: boolean; error?: string; user?: any };
       if (!result?.success) {
-        const msg = result?.error || 'Failed to update system user';
+        const msg = result?.error || 'Failed to update tenant user';
         console.error('[useUpdateSystemUser] RPC returned failure:', msg);
         throw new Error(msg);
       }
@@ -287,13 +287,13 @@ export const useUpdateSystemUser = () => {
       queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
       toast({
         title: 'User Updated',
-        description: 'System user has been updated successfully.'
+        description: 'Tenant user has been updated successfully.'
       });
     },
     onError: (error: any) => {
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to update system user.',
+        description: error?.message || 'Failed to update tenant user.',
         variant: 'destructive',
       });
     },
@@ -336,27 +336,27 @@ export const useDeleteSystemUser = () => {
 
       if (error) {
         console.error('[useDeleteSystemUser] Supabase error:', error);
-        throw new Error(error.message || 'Failed to delete system user');
+        throw new Error(error.message || 'Failed to delete tenant user');
       }
 
       const result = data as unknown as DeleteSystemUserResponse;
       if (!result?.success) {
         console.error('[useDeleteSystemUser] Operation failed:', result?.error);
-        throw new Error(result?.error || 'Failed to delete system user');
+        throw new Error(result?.error || 'Failed to delete tenant user');
       }
 
       console.log('[useDeleteSystemUser] User deleted successfully:', result);
       return result;
     },
     onSuccess: (data) => {
-      // Invalidate and refetch system users data
+      // Invalidate and refetch tenant users data
       queryClient.invalidateQueries({ queryKey: ['system-users'] });
       queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
       
       // Show success toast
       toast({
         title: "Success",
-        description: `System user ${data.deleted_user?.name || 'user'} has been deleted successfully.`,
+        description: `Tenant user ${data.deleted_user?.name || 'user'} has been deleted successfully.`,
         variant: "default",
       });
     },
@@ -371,7 +371,7 @@ export const useDeleteSystemUser = () => {
       } else if (error.message.includes('Cannot delete the last super admin')) {
         description = 'Cannot delete the last super admin user in the system.';
       } else if (error.message.includes('Insufficient permissions')) {
-        description = 'You do not have permission to delete system users.';
+        description = 'You do not have permission to delete tenant users.';
       } else if (error.message.includes('Invalid or expired session')) {
         description = 'Your session has expired. Please log in again.';
       } else if (error.message.includes('User not found')) {

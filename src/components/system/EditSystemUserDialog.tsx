@@ -89,8 +89,8 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit System User</DialogTitle>
-          <DialogDescription className="sr-only">Update system user information and role.</DialogDescription>
+          <DialogTitle>Edit Tenant User</DialogTitle>
+          <DialogDescription className="sr-only">Update tenant user information and role.</DialogDescription>
         </DialogHeader>
         {formData && (
           <form onSubmit={handleSubmit} className="space-y-4">

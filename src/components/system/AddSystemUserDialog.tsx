@@ -133,8 +133,8 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add System User</DialogTitle>
-          <DialogDescription className="sr-only">Create a new system user and optionally assign an organization.</DialogDescription>
+          <DialogTitle>Add Tenant User</DialogTitle>
+          <DialogDescription className="sr-only">Create a new tenant user and optionally assign to an organization.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

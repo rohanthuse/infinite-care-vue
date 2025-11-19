@@ -63,11 +63,11 @@ export const DeleteSystemUserDialog: React.FC<DeleteSystemUserDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            Delete System User
+            Delete Tenant User
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3 text-left">
             <p>
-              You are about to permanently delete the system user:
+              You are about to permanently delete the tenant user:
             </p>
             <div className="bg-muted p-3 rounded-lg">
               <p className="font-semibold">{userFullName}</p>
