@@ -16,15 +16,17 @@ import { Loader2, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 export function AddWorkTypeDialog() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   const { mutate: addWorkType, isPending } = useMutation({
-    mutationFn: async (newWorkType: { title: string; status: string }) => {
+    mutationFn: async (newWorkType: { title: string; status: string; organization_id?: string }) => {
       const { data, error } = await supabase.from('work_types').insert([newWorkType]).select();
       if (error) throw error;
       return data;
@@ -34,7 +36,7 @@ export function AddWorkTypeDialog() {
         title: "Work Type added",
         description: `${data[0].title} has been added successfully`,
       });
-      queryClient.invalidateQueries({ queryKey: ['work_types'] });
+      queryClient.invalidateQueries({ queryKey: ['work_types', organization?.id] });
       setTitle("");
       setOpen(false);
     },
@@ -58,7 +60,7 @@ export function AddWorkTypeDialog() {
       return;
     }
 
-    addWorkType({ title, status: "Active" });
+    addWorkType({ title, status: "Active", organization_id: organization?.id });
   };
 
   return (
