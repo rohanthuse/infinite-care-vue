@@ -78,11 +78,11 @@ export const createTenantQuery = (organizationId: string) => ({
       .eq('branches.organization_id', organizationId),
 
   // Get organization services
-  services: () =>
-    supabase
-      .from('services')
-      .select('*')
-      .or(`organization_id.eq.${organizationId},organization_id.is.null`),
+    services: () =>
+      supabase
+        .from('services')
+        .select('*')
+        .eq('organization_id', organizationId),
 
   // Get organization documents through branches
   documents: () =>

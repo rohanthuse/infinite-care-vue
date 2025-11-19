@@ -35,7 +35,7 @@ const TypeOfWork = () => {
       const { data, error } = await supabase
         .from('work_types')
         .select('*')
-        .or(`organization_id.eq.${organization.id},organization_id.is.null`)
+        .eq('organization_id', organization.id)
         .order('title');
       if (error) throw error;
       return data;

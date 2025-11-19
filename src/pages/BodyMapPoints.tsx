@@ -22,19 +22,28 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useTenant } from "@/contexts/TenantContext";
 
-const fetchBodyMapPoints = async () => {
-    const { data, error } = await supabase.from('body_map_points').select('*').order('letter');
+const fetchBodyMapPoints = async (organizationId?: string) => {
+    if (!organizationId) return [];
+    
+    const { data, error } = await supabase
+        .from('body_map_points')
+        .select('*')
+        .eq('organization_id', organizationId)
+        .order('letter');
     if (error) throw error;
     return data;
 };
 
 const BodyMapPoints = () => {
+  const { organization } = useTenant();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: bodyMapPoints, isLoading, error } = useQuery({
-      queryKey: ['body_map_points'],
-      queryFn: fetchBodyMapPoints,
+      queryKey: ['body_map_points', organization?.id],
+      queryFn: () => fetchBodyMapPoints(organization?.id),
+      enabled: !!organization?.id,
   });
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -60,7 +69,7 @@ const BodyMapPoints = () => {
 
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['body_map_points'] });
+        queryClient.invalidateQueries({ queryKey: ['body_map_points', organization?.id] });
       }, 300);
     },
     onError: (error: any) => {

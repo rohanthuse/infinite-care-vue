@@ -13,6 +13,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +25,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const fetchConditions = async () => {
+const fetchConditions = async (organizationId?: string) => {
+    if (!organizationId) return [];
+    
     const { data, error } = await supabase
         .from('medical_conditions')
         .select(`
@@ -35,6 +38,7 @@ const fetchConditions = async () => {
             category_id,
             medical_categories ( name )
         `)
+        .eq('organization_id', organizationId)
         .order('title', { ascending: true });
 
     if (error) throw error;
@@ -45,16 +49,20 @@ const fetchConditions = async () => {
     }));
 };
 
-const fetchCategories = async () => {
+const fetchCategories = async (organizationId?: string) => {
+    if (!organizationId) return [];
+    
     const { data, error } = await supabase
         .from('medical_categories')
         .select('*')
+        .eq('organization_id', organizationId)
         .order('name', { ascending: true });
     if (error) throw error;
     return data;
 };
 
 const MedicalMental = () => {
+  const { organization } = useTenant();
   const [activeTab, setActiveTab] = useState("conditions");
   const [showConditionDialog, setShowConditionDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -66,13 +74,15 @@ const MedicalMental = () => {
   const queryClient = useQueryClient();
 
   const { data: conditions, isLoading: isLoadingConditions, error: errorConditions } = useQuery({
-    queryKey: ['medical_conditions'],
-    queryFn: fetchConditions,
+    queryKey: ['medical_conditions', organization?.id],
+    queryFn: () => fetchConditions(organization?.id),
+    enabled: !!organization?.id,
   });
 
   const { data: categories, isLoading: isLoadingCategories, error: errorCategories } = useQuery({
-    queryKey: ['medical_categories'],
-    queryFn: fetchCategories,
+    queryKey: ['medical_categories', organization?.id],
+    queryFn: () => fetchCategories(organization?.id),
+    enabled: !!organization?.id,
   });
 
   const { mutate: deleteCondition, isPending: isDeletingCondition } = useMutation({
@@ -92,7 +102,7 @@ const MedicalMental = () => {
 
       // Delay invalidation to avoid focus/aria-hidden race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+        queryClient.invalidateQueries({ queryKey: ['medical_conditions', organization?.id] });
       }, 300);
     },
     onError: (error: any) => {
@@ -124,8 +134,8 @@ const MedicalMental = () => {
 
       // Delay invalidations to avoid race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['medical_categories'] });
-        queryClient.invalidateQueries({ queryKey: ['medical_conditions'] });
+        queryClient.invalidateQueries({ queryKey: ['medical_categories', organization?.id] });
+        queryClient.invalidateQueries({ queryKey: ['medical_conditions', organization?.id] });
       }, 300);
     },
     onError: (error: any) => {
