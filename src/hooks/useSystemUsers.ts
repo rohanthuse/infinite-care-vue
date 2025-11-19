@@ -320,7 +320,12 @@ export const useDeleteSystemUser = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  return useMutation<DeleteSystemUserResponse, Error, DeleteSystemUserData>({
+  return useMutation<
+    DeleteSystemUserResponse, 
+    Error, 
+    DeleteSystemUserData,
+    { previousUsers?: SystemUser[]; previousStats?: { total: number; active: number; inactive: number; superAdmins: number } }
+  >({
     mutationFn: async ({ userId }) => {
       console.log('[useDeleteSystemUser] Attempting to delete user:', userId);
       
@@ -348,10 +353,55 @@ export const useDeleteSystemUser = () => {
       console.log('[useDeleteSystemUser] User deleted successfully:', result);
       return result;
     },
+    
+    // Optimistic update - remove user immediately from cache
+    onMutate: async ({ userId }) => {
+      // Cancel any in-flight queries to prevent race conditions
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: ['system-users'] }),
+        queryClient.cancelQueries({ queryKey: ['system-user-stats'] }),
+      ]);
+
+      // Snapshot current state for rollback
+      const previousUsers = queryClient.getQueryData<SystemUser[]>(['system-users']);
+      const previousStats = queryClient.getQueryData<{ total: number; active: number; inactive: number; superAdmins: number }>(['system-user-stats']);
+
+      // Find the user being deleted
+      const userToDelete = previousUsers?.find(u => u.id === userId);
+
+      // Optimistically remove from cache
+      if (previousUsers) {
+        queryClient.setQueryData<SystemUser[]>(
+          ['system-users'],
+          previousUsers.filter(u => u.id !== userId)
+        );
+      }
+
+      // Update stats optimistically
+      if (previousStats && userToDelete) {
+        const updatedStats = { ...previousStats };
+        updatedStats.total = Math.max(0, updatedStats.total - 1);
+        
+        if (userToDelete.is_active) {
+          updatedStats.active = Math.max(0, updatedStats.active - 1);
+        } else {
+          updatedStats.inactive = Math.max(0, updatedStats.inactive - 1);
+        }
+        
+        if (userToDelete.role === 'super_admin') {
+          updatedStats.superAdmins = Math.max(0, updatedStats.superAdmins - 1);
+        }
+        
+        queryClient.setQueryData(['system-user-stats'], updatedStats);
+      }
+
+      return { previousUsers, previousStats };
+    },
+    
     onSuccess: (data) => {
-      // Invalidate and refetch tenant users data
-      queryClient.invalidateQueries({ queryKey: ['system-users'] });
-      queryClient.invalidateQueries({ queryKey: ['system-user-stats'] });
+      // Force immediate refetch instead of just invalidating
+      queryClient.refetchQueries({ queryKey: ['system-users'] });
+      queryClient.refetchQueries({ queryKey: ['system-user-stats'] });
       
       // Show success toast
       toast({
@@ -360,7 +410,16 @@ export const useDeleteSystemUser = () => {
         variant: "default",
       });
     },
-    onError: (error: Error) => {
+    
+    onError: (error: Error, _variables, context) => {
+      // Rollback optimistic update
+      if (context?.previousUsers) {
+        queryClient.setQueryData(['system-users'], context.previousUsers);
+      }
+      if (context?.previousStats) {
+        queryClient.setQueryData(['system-user-stats'], context.previousStats);
+      }
+      
       console.error('[useDeleteSystemUser] Delete failed:', error.message);
       
       // Show specific error toast based on error message

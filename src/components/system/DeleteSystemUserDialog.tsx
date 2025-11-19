@@ -44,9 +44,13 @@ export const DeleteSystemUserDialog: React.FC<DeleteSystemUserDialogProps> = ({
     deleteUser(
       { userId: user.id },
       {
-        onSuccess: () => {
-          onOpenChange(false);
-          setConfirmText('');
+        onSettled: () => {
+          // Close dialog after mutation completes (success or error)
+          // Small delay ensures refetch has started and UI is ready
+          setTimeout(() => {
+            onOpenChange(false);
+            setConfirmText('');
+          }, 150);
         },
       }
     );
