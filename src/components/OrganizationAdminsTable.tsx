@@ -286,21 +286,27 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                       {member.role.replace('_', ' ')}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <Badge 
-                        variant={member.status === 'active' ? "default" : "destructive"}
-                        className="text-xs"
-                      >
-                        {member.status}
-                      </Badge>
-                      {member.permissions && (
-                        <div className="text-xs text-gray-500">
-                          {getPermissionsSummary(member.permissions as any)}
-                        </div>
-                      )}
+            <TableCell>
+              <div className="space-y-1">
+                <Badge 
+                  variant={member.status === 'active' ? "default" : "destructive"}
+                  className="text-xs"
+                >
+                  {member.status}
+                </Badge>
+                {member.is_system_user ? (
+                  <div className="text-xs text-purple-600 font-medium">
+                    Full Access — System Portal
+                  </div>
+                ) : (
+                  member.permissions && (
+                    <div className="text-xs text-gray-500">
+                      {getPermissionsSummary(member.permissions as any)}
                     </div>
-                  </TableCell>
+                  )
+                )}
+              </div>
+            </TableCell>
                   <TableCell>
                     {new Date(member.join_date).toLocaleDateString()}
                   </TableCell>

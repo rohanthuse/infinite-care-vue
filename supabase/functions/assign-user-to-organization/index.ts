@@ -45,7 +45,7 @@ serve(async (req) => {
       {
         p_system_user_id: system_user_id,
         p_organization_id: organization_id,
-        p_role: role || 'member'
+        p_role: role || 'super_admin' // System Portal users are always super admins
       }
     );
 
