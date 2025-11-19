@@ -8,6 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/ui/combobox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { useOrganizationSubscription } from "@/hooks/useOrganizationSubscription";
+import { useTenant } from "@/contexts/TenantContext";
 interface AddClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,10 +28,20 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   clientToEdit,
   mode = 'add'
 }) => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const { organization } = useTenant();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Get subscription limits
+  const { 
+    isAtLimit, 
+    remainingSlots, 
+    planLimit,
+    plan,
+    currentClientCount,
+    isLoading: isSubscriptionLoading,
+    refetch: refetchSubscription
+  } = useOrganizationSubscription(organization?.id);
   
   const defaultFormData = {
     client_id: "",
@@ -144,6 +158,18 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    
+    // Check subscription limit before proceeding (only for new clients)
+    if (mode === 'add' && isAtLimit) {
+      toast({
+        title: "Subscription Limit Reached",
+        description: `Your ${plan} plan allows up to ${planLimit} clients. You currently have ${currentClientCount} clients. Please upgrade your plan to add more clients.`,
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       // Check authentication first
       const {
@@ -232,8 +258,17 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         if (error) {
           console.error("Error adding client:", error);
 
-          // Provide specific error messages
-          if (error.message.includes('row-level security policy')) {
+          // Check if it's a subscription limit error from database trigger
+          if (error.code === '23514' && error.message.includes('Subscription limit reached')) {
+            const match = error.message.match(/(\S+) plan allows maximum (\d+) clients, currently have (\d+)/);
+            const [, detectedPlan, limit, current] = match || [];
+            
+            toast({
+              title: "Subscription Limit Reached",
+              description: `Your ${detectedPlan || plan} plan allows up to ${limit || planLimit} clients. You currently have ${current || currentClientCount} clients. Please upgrade your plan to add more clients.`,
+              variant: "destructive"
+            });
+          } else if (error.message.includes('row-level security policy')) {
             toast({
               title: "Permission Error",
               description: "You don't have permission to add clients to this branch. Please contact your administrator.",
@@ -267,6 +302,11 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
       // Common cleanup for both INSERT and UPDATE - Clear loading state BEFORE closing dialog
       setIsLoading(false);
       
+      // Refetch subscription data after client creation
+      if (mode === 'add') {
+        refetchSubscription();
+      }
+      
       // Reset form and close dialog
       setFormData(defaultFormData);
       onOpenChange(false);
@@ -293,6 +333,31 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             }
           </DialogDescription>
         </DialogHeader>
+
+        {/* Subscription Limit Warning/Error Banners */}
+        {mode === 'add' && !isSubscriptionLoading && (
+          <>
+            {isAtLimit && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Client Limit Reached</AlertTitle>
+                <AlertDescription>
+                  Your {plan} plan limit of {planLimit} clients has been reached. Upgrade your plan to add more clients.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {!isAtLimit && remainingSlots <= 3 && (
+              <Alert variant="warning">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Low Capacity Warning</AlertTitle>
+                <AlertDescription>
+                  You have {remainingSlots} client slot{remainingSlots !== 1 ? 's' : ''} remaining on your {plan} plan. Consider upgrading soon.
+                </AlertDescription>
+              </Alert>
+            )}
+          </>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-6">
           
@@ -645,7 +710,10 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading || (mode === 'add' && isAtLimit)}
+            >
               {isLoading 
                 ? (mode === 'edit' ? 'Updating...' : 'Adding...') 
                 : (mode === 'edit' ? 'Update Client' : 'Add Client')
