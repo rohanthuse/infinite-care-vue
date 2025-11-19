@@ -43,8 +43,8 @@ serve(async (req) => {
           p_session_token: systemSessionToken
         })
         
-        if (!authErr && authResult?.user_id) {
-          userId = authResult.user_id
+        if (!authErr && authResult?.success && authResult?.user?.id) {
+          userId = authResult.user.id
           hasValidAuth = true
         }
       } catch (err) {
@@ -61,9 +61,9 @@ serve(async (req) => {
 
     // Check if user has super_admin role
     const { data: roles, error: roleErr } = await supabaseAdmin
-      .from('user_roles')
+      .from('system_user_roles')
       .select('role')
-      .eq('user_id', userId)
+      .eq('system_user_id', userId)
 
     if (roleErr || !roles?.some(r => r.role === 'super_admin')) {
       return new Response(JSON.stringify({ success: false, error: 'Forbidden' }), {
