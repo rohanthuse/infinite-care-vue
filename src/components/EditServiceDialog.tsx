@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { X, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface Service {
   id: string;
@@ -53,6 +54,7 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
   const [doubleHanded, setDoubleHanded] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { organization } = useTenant();
 
   useEffect(() => {
     if (service) {
@@ -88,9 +90,9 @@ export function EditServiceDialog({ isOpen, onClose, service }: EditServiceDialo
       
       // Delay query invalidations to prevent race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['services'] });
+        queryClient.invalidateQueries({ queryKey: ['services', organization?.id] });
         queryClient.invalidateQueries({ queryKey: ['branch-services'] });
-        queryClient.invalidateQueries({ queryKey: ['organization-services'] });
+        queryClient.invalidateQueries({ queryKey: ['organization-services', organization?.id] });
       }, 300);
     },
     onError: (error) => {
