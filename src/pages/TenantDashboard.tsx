@@ -22,6 +22,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
 import { OrganizationAdminsTable } from "@/components/OrganizationAdminsTable";
 import { TenantBranchNavigation } from "@/components/dashboard/TenantBranchNavigation";
+import { SubscriptionDetailsCard } from "@/components/organization/SubscriptionDetailsCard";
 import { normalizeToHslVar } from '@/lib/colors';
 
 interface Organization {
@@ -395,29 +396,28 @@ const TenantDashboard = () => {
           </div>
 
           {/* Organization Info */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Subscription Plan</CardTitle>
-                <Shield className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold capitalize">{organization.subscription_plan}</div>
-                <p className="text-xs text-muted-foreground">
-                  Status: <span className="capitalize">{organization.subscription_status}</span>
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <SubscriptionDetailsCard organizationId={organization.id} />
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Your Role</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold capitalize">{userRole.role.replace('_', ' ')}</div>
-                <p className="text-xs text-muted-foreground">
-                  Status: Active
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Your Role</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold capitalize">{userRole.role.replace('_', ' ')}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Status: Active
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Organization ID</CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
                 </p>
               </CardContent>
             </Card>
@@ -432,8 +432,9 @@ const TenantDashboard = () => {
                 <p className="text-xs text-muted-foreground">
                   Slug: /{organization.slug}
                 </p>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Quick Actions */}
