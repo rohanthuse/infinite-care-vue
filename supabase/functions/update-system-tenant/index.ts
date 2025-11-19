@@ -86,7 +86,7 @@ serve(async (req) => {
 
     const allowed = [
       'name', 'subdomain', 'contact_email', 'contact_phone', 'address', 'billing_email',
-      'subscription_plan', 'subscription_status', 'logo_url', 'primary_color', 'secondary_color', 'slug'
+      'subscription_status', 'logo_url', 'primary_color', 'secondary_color', 'slug'
     ] as const
 
     const filteredUpdates: Record<string, any> = {}
