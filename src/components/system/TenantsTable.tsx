@@ -14,8 +14,10 @@ interface Tenant {
   contact_email: string | null;
   subscription_plan: string;
   subscription_status: string;
+  subscription_expires_at: string | null;
+  subscription_duration: number | null;
+  billing_cycle?: string;
   created_at: string;
-  activeUsers: number;
 }
 interface TenantsTableProps {
   tenants: Tenant[] | undefined;
@@ -53,7 +55,12 @@ export const TenantsTable = ({
       'Contact Email': tenant.contact_email || '',
       Plan: tenant.subscription_plan,
       Status: tenant.subscription_status,
-      'Active Users': tenant.activeUsers,
+      'Subscription End Date': tenant.subscription_expires_at 
+        ? format(new Date(tenant.subscription_expires_at), 'yyyy-MM-dd')
+        : 'Not set',
+      'Subscription Duration': tenant.subscription_duration 
+        ? `${tenant.subscription_duration} ${tenant.billing_cycle === 'yearly' ? (tenant.subscription_duration === 1 ? 'Year' : 'Years') : (tenant.subscription_duration === 1 ? 'Month' : 'Months')}`
+        : 'Not set',
       'Created Date': format(new Date(tenant.created_at), 'yyyy-MM-dd')
     }));
     const headers = Object.keys(csvData[0]).join(',');
@@ -138,17 +145,18 @@ export const TenantsTable = ({
       <CardContent className="p-0">
         <div className="border-t">
           <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Organisation</TableHead>
-                <TableHead className="font-semibold">URL Slug</TableHead>
-                <TableHead className="font-semibold">Plan</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="font-semibold">Users</TableHead>
-                <TableHead className="font-semibold">Created</TableHead>
-                <TableHead className="font-semibold text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="font-semibold">Organisation</TableHead>
+            <TableHead className="font-semibold">URL Slug</TableHead>
+            <TableHead className="font-semibold">Plan</TableHead>
+            <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Subscription End</TableHead>
+            <TableHead className="font-semibold">Duration</TableHead>
+            <TableHead className="font-semibold">Created</TableHead>
+            <TableHead className="font-semibold text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
             <TableBody>
               {filteredTenants.map(tenant => <TableRow key={tenant.id} className="hover:bg-muted/50">
                   <TableCell>
@@ -178,10 +186,29 @@ export const TenantsTable = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{tenant.activeUsers}</span>
-                      <span className="text-xs text-muted-foreground">active</span>
-                    </div>
+                    {tenant.subscription_expires_at ? (
+                      <span className="text-sm text-foreground">
+                        {format(new Date(tenant.subscription_expires_at), 'MMM dd, yyyy')}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Not set</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {tenant.subscription_duration ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium text-foreground">
+                          {tenant.subscription_duration}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {tenant.billing_cycle === 'yearly' 
+                            ? (tenant.subscription_duration === 1 ? 'Year' : 'Years')
+                            : (tenant.subscription_duration === 1 ? 'Month' : 'Months')}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Not set</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">
