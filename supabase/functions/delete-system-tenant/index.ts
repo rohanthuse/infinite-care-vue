@@ -79,37 +79,31 @@ serve(async (req) => {
       })
     }
 
-    // Password is only required for UI confirmation, not backend validation
+    // Use comprehensive cascade delete function to handle all dependencies
+    console.log('[delete-system-tenant] Starting cascade delete for organization:', id)
+    
+    const { data: deleteResult, error: deleteErr } = await supabaseAdmin.rpc('delete_organization_cascade', {
+      p_organization_id: id,
+      p_system_user_id: userId
+    })
 
-    // Password validation is handled by the system session authentication above
-    // No additional password validation needed for system sessions
-
-    // Delete members first to avoid FK constraints, then delete org
-    const { error: memErr } = await supabaseAdmin
-      .from('organization_members')
-      .delete()
-      .eq('organization_id', id)
-
-    if (memErr) {
-      console.error('[delete-system-tenant] Error deleting members:', memErr)
-      return new Response(JSON.stringify({ success: false, error: memErr.message }), {
+    if (deleteErr) {
+      console.error('[delete-system-tenant] RPC error:', deleteErr)
+      return new Response(JSON.stringify({ success: false, error: deleteErr.message }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    const { error: orgErr } = await supabaseAdmin
-      .from('organizations')
-      .delete()
-      .eq('id', id)
-
-    if (orgErr) {
-      console.error('[delete-system-tenant] Error deleting organization:', orgErr)
-      return new Response(JSON.stringify({ success: false, error: orgErr.message }), {
+    if (!deleteResult?.success) {
+      console.error('[delete-system-tenant] Delete failed:', deleteResult?.error)
+      return new Response(JSON.stringify({ success: false, error: deleteResult?.error || 'Delete failed' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
+
+    console.log('[delete-system-tenant] Successfully deleted organization:', deleteResult?.organization_name)
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
