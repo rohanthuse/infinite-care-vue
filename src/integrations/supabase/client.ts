@@ -20,15 +20,17 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       'apikey': SUPABASE_PUBLISHABLE_KEY,
     },
     // Add fetch wrapper to include dynamic session token headers
-    fetch: (url, options = {}) => {
+    fetch: (url, options) => {
       const sessionToken = getSystemSessionToken();
+      const headers = new Headers(options?.headers);
+      
+      if (sessionToken) {
+        headers.set('x-system-session-token', sessionToken);
+      }
       
       return fetch(url, {
         ...options,
-        headers: {
-          ...options.headers,
-          ...(sessionToken ? { 'x-system-session-token': sessionToken } : {}),
-        },
+        headers,
       });
     },
   },
