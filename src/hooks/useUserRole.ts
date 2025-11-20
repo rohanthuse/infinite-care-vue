@@ -21,7 +21,7 @@ export const useUserRole = () => {
   const { user: authUser } = useAuth();
   
   return useQuery<UserWithRole | null>({
-    queryKey: ['userRole', authUser?.id],
+    queryKey: ['userRole', authUser?.id, 'v2'], // v2 to bust cache after system_user_organizations fix
     queryFn: async (): Promise<UserWithRole | null> => {
       // Immediate return if no user
       if (!authUser) {
@@ -163,7 +163,8 @@ export const useUserRole = () => {
           }
           
           // For super_admin and branch_admin, fetch organization slug
-          const { data: orgMember } = await supabase
+          // First check organization_members (regular tenant users)
+          let { data: orgMember } = await supabase
             .from('organization_members')
             .select('organization:organizations(slug)')
             .eq('user_id', user.id)
@@ -172,6 +173,32 @@ export const useUserRole = () => {
             
           if (orgMember && orgMember.organization) {
             additionalData.organizationSlug = (orgMember.organization as any).slug;
+          } else if (role === 'super_admin') {
+            // If not found in organization_members, check system_user_organizations
+            // (for System Portal users assigned to organizations)
+            console.log('[useUserRole] No organization_members record, checking system_user_organizations');
+            
+            // First find the system_user record by email
+            const { data: systemUser } = await supabase
+              .from('system_users')
+              .select('id')
+              .eq('email', user.email)
+              .single();
+              
+            if (systemUser) {
+              // Get organization assignment from system_user_organizations
+              const { data: systemUserOrg } = await supabase
+                .from('system_user_organizations')
+                .select('organization:organizations(slug)')
+                .eq('system_user_id', systemUser.id)
+                .limit(1)
+                .single();
+                
+              if (systemUserOrg && systemUserOrg.organization) {
+                additionalData.organizationSlug = (systemUserOrg.organization as any).slug;
+                console.log('[useUserRole] Found organization from system_user_organizations:', additionalData.organizationSlug);
+              }
+            }
           }
         }
 
