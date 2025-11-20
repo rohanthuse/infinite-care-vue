@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { formatSafeDate } from '@/lib/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,10 +58,10 @@ export const TenantsTable = ({
       Status: tenant.subscription_status,
       'Subscription End Date': tenant.subscription_expires_at 
         ? format(new Date(tenant.subscription_expires_at), 'yyyy-MM-dd')
-        : 'Not set',
+        : '--',
       'Subscription Duration': tenant.subscription_duration 
         ? `${tenant.subscription_duration} ${tenant.billing_cycle === 'yearly' ? (tenant.subscription_duration === 1 ? 'Year' : 'Years') : (tenant.subscription_duration === 1 ? 'Month' : 'Months')}`
-        : 'Not set',
+        : '--',
       'Created Date': format(new Date(tenant.created_at), 'yyyy-MM-dd')
     }));
     const headers = Object.keys(csvData[0]).join(',');
@@ -188,10 +189,10 @@ export const TenantsTable = ({
                   <TableCell>
                     {tenant.subscription_expires_at ? (
                       <span className="text-sm text-foreground">
-                        {format(new Date(tenant.subscription_expires_at), 'MMM dd, yyyy')}
+                        {formatSafeDate(tenant.subscription_expires_at, 'MMM dd, yyyy', '--')}
                       </span>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Not set</span>
+                      <span className="text-sm text-muted-foreground">--</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -207,7 +208,7 @@ export const TenantsTable = ({
                         </span>
                       </div>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Not set</span>
+                      <span className="text-sm text-muted-foreground">--</span>
                     )}
                   </TableCell>
                   <TableCell>
