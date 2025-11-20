@@ -82,7 +82,7 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 command-dropdown" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder={searchPlaceholder}
             value={searchValue}
