@@ -25,14 +25,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-      const { data: plans, isLoading } = useActiveSubscriptionPlans();
-      
-      const planOptions = plans?.map(plan => ({
-        value: plan.id,
-        label: `${plan.name} - ${plan.max_users || 'Unlimited'} Users - £${plan.price_monthly}/mo`,
-        maxUsers: plan.max_users || 999999,
-      })) || [];
-
 interface CreateTenantDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -42,13 +34,15 @@ interface CreateTenantDialogProps {
 export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTenantDialogProps) {
   const { user } = useSystemAuth();
   const queryClient = useQueryClient();
+  const { data: plans, isLoading: plansLoading } = useActiveSubscriptionPlans();
+  
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
     contact_email: '',
     contact_phone: '',
     address: '',
-    subscription_plan: '0-10',
+    subscription_plan_id: plans?.[0]?.id || '',
     billing_cycle: 'monthly' as 'monthly' | 'yearly',
     subscription_duration: 1,
     subscription_start_date: new Date(),
@@ -58,7 +52,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
 
   // Calculate end date and total amount when any relevant field changes
   useEffect(() => {
-    if (formData.subscription_start_date && formData.subscription_duration > 0) {
+    if (formData.subscription_start_date && formData.subscription_duration > 0 && plans) {
       // Calculate end date
       const endDate = new Date(formData.subscription_start_date);
       if (formData.billing_cycle === 'yearly') {
@@ -68,14 +62,14 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       }
       
       // Calculate total amount
-      const selectedPlan = SUBSCRIPTION_PLANS.find(p => p.value === formData.subscription_plan);
+      const selectedPlan = plans.find(p => p.id === formData.subscription_plan_id);
       let totalAmount = 0;
       
-      if (selectedPlan && selectedPlan.value !== '500+') {
+      if (selectedPlan) {
         if (formData.billing_cycle === 'yearly') {
-          totalAmount = (selectedPlan.yearly || 0) * formData.subscription_duration;
+          totalAmount = selectedPlan.price_yearly * formData.subscription_duration;
         } else {
-          totalAmount = (selectedPlan.monthly || 0) * formData.subscription_duration;
+          totalAmount = selectedPlan.price_monthly * formData.subscription_duration;
         }
       }
       
@@ -88,8 +82,9 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
   }, [
     formData.subscription_start_date, 
     formData.billing_cycle, 
-    formData.subscription_plan,
-    formData.subscription_duration
+    formData.subscription_plan_id,
+    formData.subscription_duration,
+    plans
   ]);
 
   // Reset duration to 1 when billing cycle changes
@@ -109,7 +104,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           contactEmail: data.contact_email,
           contactPhone: data.contact_phone,
           address: data.address,
-          subscriptionPlan: data.subscription_plan,
+          subscriptionPlanId: data.subscription_plan_id,
           billingCycle: data.billing_cycle,
           subscriptionDuration: data.subscription_duration,
           subscriptionStartDate: data.subscription_start_date.toISOString(),
@@ -178,7 +173,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       contact_email: '',
       contact_phone: '',
       address: '',
-      subscription_plan: '0-10',
+      subscription_plan_id: plans?.[0]?.id || '',
       billing_cycle: 'monthly',
       subscription_duration: 1,
       subscription_start_date: new Date(),
@@ -274,16 +269,17 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
             <div className="space-y-2">
               <Label htmlFor="subscription_plan">Subscription Plan</Label>
               <Select
-                value={formData.subscription_plan}
-                onValueChange={(value) => handleInputChange('subscription_plan', value)}
+                value={formData.subscription_plan_id}
+                onValueChange={(value) => handleInputChange('subscription_plan_id', value)}
+                disabled={plansLoading || !plans || plans.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder={plansLoading ? "Loading plans..." : "Select a plan"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {SUBSCRIPTION_PLANS.map((plan) => (
-                    <SelectItem key={plan.value} value={plan.value}>
-                      {formatPlanOption(plan)}
+                  {plans?.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} - {plan.max_users || 'Unlimited'} Users - £{plan.price_monthly}/mo
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -395,11 +391,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
               <Label htmlFor="total_amount">Total Amount</Label>
               <Input
                 id="total_amount"
-                value={
-                  formData.subscription_plan === '500+' 
-                    ? 'Bespoke - Contact for pricing' 
-                    : `£${formData.total_amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                }
+                value={`£${formData.total_amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 disabled
                 className="bg-muted font-semibold text-base"
               />
