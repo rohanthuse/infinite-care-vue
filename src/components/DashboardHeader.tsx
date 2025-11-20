@@ -151,9 +151,37 @@ export function DashboardHeader() {
     return userRole.email || "User";
   };
 
+  // Helper function to format role names
+  const formatRoleName = (role: string): string => {
+    const roleMap: Record<string, string> = {
+      'owner': 'Owner',
+      'admin': 'Admin',
+      'manager': 'Manager',
+      'member': 'Member',
+      'branch_admin': 'Branch Admin',
+      'super_admin': 'Super Admin',
+      'carer': 'Carer',
+      'client': 'Client'
+    };
+    return roleMap[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const getUserRole = () => {
     if (!userRole) return "Loading...";
     
+    // Try to get cached organization role first
+    const cachedOrgRole = sessionStorage.getItem('cached_org_role');
+    const cachedTimestamp = sessionStorage.getItem('cached_org_role_timestamp');
+    
+    // Use cached role if it's less than 10 seconds old (matches org data cache TTL)
+    if (cachedOrgRole && cachedTimestamp) {
+      const age = Date.now() - parseInt(cachedTimestamp);
+      if (age < 10000) {
+        return formatRoleName(cachedOrgRole);
+      }
+    }
+    
+    // Fallback to system roles from useUserRole hook
     switch (userRole.role) {
       case 'super_admin':
         return "Super Admin";

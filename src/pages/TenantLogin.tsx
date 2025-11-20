@@ -11,6 +11,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
 
+// Helper function to format role names for display
+const formatRoleName = (role: string): string => {
+  const roleMap: Record<string, string> = {
+    'owner': 'Owner',
+    'admin': 'Admin',
+    'manager': 'Manager',
+    'member': 'Member',
+    'branch_admin': 'Branch Admin',
+    'super_admin': 'Super Admin'
+  };
+  return roleMap[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
 const TenantLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -133,12 +146,19 @@ const TenantLogin = () => {
           .maybeSingle();
         
         memberData = orgMemberData || { role: 'admin', status: 'active' }; // Default super admin privileges
+        
+        // Cache organization role for DashboardHeader access
+        if (memberData && memberData.role) {
+          sessionStorage.setItem('cached_org_role', memberData.role);
+          sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
+        }
       }
 
-      // Success - show welcome toast
+      // Success - show welcome toast with role
+      const roleDisplay = formatRoleName(memberData?.role || (isSuperAdmin ? 'super_admin' : 'admin'));
       toast({
-        title: 'Welcome!',
-        description: `Successfully logged in to ${organization.name}.`,
+        title: 'Login Successful',
+        description: `Role: ${roleDisplay}`,
       });
 
       // PHASE 3 & 6: Determine target path based on role with proper branch context
