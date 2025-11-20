@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { useTenantSafe } from "@/hooks/useTenantSafe";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface NavTileProps {
   icon: React.ElementType;
@@ -124,7 +124,7 @@ const SubNavTile = ({
 export function DashboardNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { tenantSlug } = useTenantSafe();
+  const { tenantSlug } = useTenant();
   const [activeItem, setActiveItem] = useState("Home");
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
