@@ -8965,6 +8965,73 @@ export type Database = {
           },
         ]
       }
+      system_user_organization_audit: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          new_role: string | null
+          old_role: string | null
+          organization_id: string
+          performed_at: string | null
+          performed_by: string | null
+          success: boolean
+          system_user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          new_role?: string | null
+          old_role?: string | null
+          organization_id: string
+          performed_at?: string | null
+          performed_by?: string | null
+          success: boolean
+          system_user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          new_role?: string | null
+          old_role?: string | null
+          organization_id?: string
+          performed_at?: string | null
+          performed_by?: string | null
+          success?: boolean
+          system_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_user_organization_audit_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_user_organization_audit_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_user_organization_audit_system_user_id_fkey"
+            columns: ["system_user_id"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_user_organizations: {
         Row: {
           assigned_at: string
@@ -10947,6 +11014,7 @@ export type Database = {
       }
       notify_unassigned_bookings: { Args: never; Returns: undefined }
       process_expiring_agreements: { Args: never; Returns: Json }
+      repair_system_user_organization_sync: { Args: never; Returns: Json }
       reset_system_user_password_with_session:
         | {
             Args: {
@@ -11138,6 +11206,17 @@ export type Database = {
       validate_system_session: {
         Args: { p_session_token: string }
         Returns: string
+      }
+      validate_system_user_organization_integrity: {
+        Args: never
+        Returns: {
+          email: string
+          missing_in_organization_members: boolean
+          missing_in_system_user_organizations: boolean
+          organization_id: string
+          organization_name: string
+          system_user_id: string
+        }[]
       }
       verify_staff_auth_context: { Args: never; Returns: string }
     }
