@@ -18,7 +18,7 @@ serve(async (req) => {
     // Validate user (must be super_admin) - support both standard auth and system session
     const authHeader = req.headers.get('Authorization')
     const body = await req.json()
-    const { id, systemSessionToken, password } = body || {}
+    const { id, systemSessionToken } = body || {}
     
     let userId = null;
     let hasValidAuth = false;
