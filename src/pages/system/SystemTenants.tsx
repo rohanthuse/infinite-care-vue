@@ -101,7 +101,7 @@ export default function SystemTenants() {
         growthRate: `${growthRate >= 0 ? '+' : ''}${growthRate}%`
       }
     },
-    enabled: !!user,
+    enabled: true,
     retry: 2
   });
 
@@ -126,7 +126,7 @@ export default function SystemTenants() {
       console.log('[SystemTenants] Tenants fetched (edge):', tenants.length)
       return tenants
     },
-    enabled: !!user,
+    enabled: true,
     retry: 2
   });
 
