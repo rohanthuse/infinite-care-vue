@@ -41,7 +41,6 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead>Plan Name</TableHead>
-              <TableHead>Plan Code</TableHead>
               <TableHead>Max Users</TableHead>
               <TableHead>Monthly Price</TableHead>
               <TableHead>Yearly Price</TableHead>
@@ -53,7 +52,6 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
             {[1, 2, 3].map((i) => (
               <TableRow key={i}>
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
@@ -81,7 +79,6 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead>Plan Name</TableHead>
-            <TableHead>Plan Code</TableHead>
             <TableHead>Max Users</TableHead>
             <TableHead>Monthly Price</TableHead>
             <TableHead>Yearly Price</TableHead>
@@ -94,7 +91,6 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
             <TableRow key={plan.id}>
               <TableCell className="font-medium">{plan.name}</TableCell>
               <TableCell>{plan.max_users?.toLocaleString() || 'N/A'}</TableCell>
-              <TableCell>{plan.max_branches?.toLocaleString() || 'N/A'}</TableCell>
               <TableCell>£{plan.price_monthly.toFixed(2)}</TableCell>
               <TableCell>£{plan.price_yearly.toFixed(2)}</TableCell>
               <TableCell>

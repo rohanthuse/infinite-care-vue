@@ -30,7 +30,6 @@ export function CreateSubscriptionPlanDialog({
     name: '',
     description: '',
     max_users: 10,
-    max_branches: 1,
     price_monthly: 0,
     price_yearly: 0,
     is_active: true,
@@ -44,15 +43,14 @@ export function CreateSubscriptionPlanDialog({
       onSuccess: () => {
         onSuccess?.();
         onOpenChange(false);
-        setFormData({
-          name: '',
-          description: '',
-          max_users: 10,
-          max_branches: 1,
-          price_monthly: 0,
-          price_yearly: 0,
-          is_active: true,
-        });
+      setFormData({
+        name: '',
+        description: '',
+        max_users: 10,
+        price_monthly: 0,
+        price_yearly: 0,
+        is_active: true,
+      });
       },
     });
   };
@@ -91,29 +89,16 @@ export function CreateSubscriptionPlanDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="max_users">Max Users *</Label>
-                <Input
-                  id="max_users"
-                  type="number"
-                  min="1"
-                  value={formData.max_users}
-                  onChange={(e) => setFormData({ ...formData, max_users: parseInt(e.target.value) || 0 })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max_branches">Max Branches</Label>
-                <Input
-                  id="max_branches"
-                  type="number"
-                  min="1"
-                  value={formData.max_branches}
-                  onChange={(e) => setFormData({ ...formData, max_branches: parseInt(e.target.value) || 1 })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="max_users">Max Users *</Label>
+              <Input
+                id="max_users"
+                type="number"
+                min="1"
+                value={formData.max_users}
+                onChange={(e) => setFormData({ ...formData, max_users: parseInt(e.target.value) || 0 })}
+                required
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
