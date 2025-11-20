@@ -174,12 +174,17 @@ const TenantDashboard = () => {
         }
 
         setOrganization(orgData);
-        // Prioritize system roles (super_admin AND branch_admin) over organization membership role
-        if (systemUserRole?.role === 'super_admin' || systemUserRole?.role === 'branch_admin') {
+        // Priority: 1) Organization Membership, 2) System Roles
+        // If user is an active organization member, that's their PRIMARY role
+        if (memberData) {
+          // User is an organization member (owner, admin, manager, member)
+          setUserRole(memberData);
+        } else if (systemUserRole?.role === 'super_admin' || systemUserRole?.role === 'branch_admin') {
+          // User is NOT an org member, but has system role (super_admin or branch_admin)
           setUserRole({ role: systemUserRole.role, status: 'active' });
         } else {
-          // Use organization role if available, otherwise use system role
-          setUserRole(memberData || { role: systemUserRole?.role || 'member', status: 'active' });
+          // Fallback for edge cases
+          setUserRole({ role: systemUserRole?.role || 'member', status: 'active' });
         }
         
         // Apply branding
