@@ -10659,7 +10659,7 @@ export type Database = {
         }
         Returns: Json
       }
-      get_current_system_session: { Args: never; Returns: string }
+      get_current_system_session_id: { Args: never; Returns: string }
       get_current_system_user_id: { Args: never; Returns: string }
       get_current_user_organization_id: { Args: never; Returns: string }
       get_day_type: {
@@ -11021,6 +11021,10 @@ export type Database = {
       }
       update_resource_stats: {
         Args: { resource_id: string; stat_type: string }
+        Returns: undefined
+      }
+      update_system_session_activity: {
+        Args: { p_session_id: string }
         Returns: undefined
       }
       update_system_user_with_session: {
