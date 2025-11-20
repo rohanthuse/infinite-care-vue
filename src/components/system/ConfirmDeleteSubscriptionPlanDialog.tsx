@@ -30,35 +30,39 @@ export function ConfirmDeleteSubscriptionPlanDialog({
   const [confirmText, setConfirmText] = useState('');
   const deletePlan = useDeleteSubscriptionPlan();
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!plan || confirmText !== 'DELETE' || deletePlan.isPending) return;
 
-    deletePlan.mutate(plan.id, {
-      onSuccess: () => {
-        setConfirmText('');
-        onOpenChange(false);
-        onSuccess?.();
-      },
-      onError: () => {
-        // Error is handled by the hook's onError
-        // Reset the input so user can retry
-        setConfirmText('');
-      },
-    });
+    try {
+      await deletePlan.mutateAsync(plan.id);
+      // Success handled by mutation's onSuccess callback
+      setConfirmText('');
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      // Error is handled by the hook's onError callback
+      // Just reset the input so user can retry
+      setConfirmText('');
+    }
   };
 
-  const handleClose = () => {
-    if (!deletePlan.isPending) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    // Prevent closing while deletion is in progress
+    if (!nextOpen && deletePlan.isPending) return;
+    
+    // Clean up state when closing
+    if (!nextOpen) {
       setConfirmText('');
       deletePlan.reset();
-      onOpenChange(false);
     }
+    
+    onOpenChange(nextOpen);
   };
 
   if (!plan) return null;
 
   return (
-    <AlertDialog open={open} onOpenChange={handleClose}>
+    <AlertDialog open={open} onOpenChange={handleOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-center gap-2">
@@ -91,7 +95,11 @@ export function ConfirmDeleteSubscriptionPlanDialog({
         </div>
 
         <AlertDialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={deletePlan.isPending}>
+          <Button 
+            variant="outline" 
+            onClick={() => handleOpenChange(false)} 
+            disabled={deletePlan.isPending}
+          >
             Cancel
           </Button>
           <Button
