@@ -554,7 +554,7 @@ const UnifiedLogin = () => {
                 status: 'active'
               }));
               
-              // Also cache the user's organization role if available
+              // Cache the user's organization role if available (prioritize org membership)
               const { data: orgMemberData } = await supabase
                 .from('organization_members')
                 .select('role')
@@ -564,7 +564,12 @@ const UnifiedLogin = () => {
                 .maybeSingle();
 
               if (orgMemberData) {
+                // User has organization membership - cache their org role
                 sessionStorage.setItem('cached_org_role', orgMemberData.role);
+                sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
+              } else {
+                // No org membership - cache super_admin as the role
+                sessionStorage.setItem('cached_org_role', 'super_admin');
                 sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
               }
               

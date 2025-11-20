@@ -136,7 +136,7 @@ const TenantLogin = () => {
         }
         memberData = orgMemberData;
       } else {
-        // For super admins, check if they also have organization membership
+        // Check organization membership for ALL users (not just super admins)
         const { data: orgMemberData } = await supabase
           .from('organization_members')
           .select('role, status')
@@ -145,13 +145,22 @@ const TenantLogin = () => {
           .eq('status', 'active')
           .maybeSingle();
         
-        memberData = orgMemberData || { role: 'admin', status: 'active' }; // Default super admin privileges
-        
-        // Cache organization role for DashboardHeader access
-        if (memberData && memberData.role) {
-          sessionStorage.setItem('cached_org_role', memberData.role);
-          sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
+        if (orgMemberData) {
+          // User is an organization member - use their org role
+          memberData = orgMemberData;
+        } else if (isSuperAdmin) {
+          // Super admin without org membership - give default admin privileges
+          memberData = { role: 'admin', status: 'active' };
+        } else {
+          // Not an org member and not super admin - use member role
+          memberData = { role: 'member', status: 'active' };
         }
+      }
+      
+      // Cache organization role for DashboardHeader access
+      if (memberData && memberData.role) {
+        sessionStorage.setItem('cached_org_role', memberData.role);
+        sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
       }
 
       // Success - show welcome toast with role
