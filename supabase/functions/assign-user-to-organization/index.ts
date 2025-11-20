@@ -1,6 +1,7 @@
 // Supabase Edge Function: assign-user-to-organization
 // Links a system user to an organization via system_user_organizations table
 // CORS enabled for browser calls
+// Includes audit trail logging
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
@@ -51,6 +52,21 @@ serve(async (req) => {
 
     if (syncError) {
       console.error('[assign-user-to-organization] sync error:', syncError);
+      
+      // Log failure to audit trail
+      await supabase.from('system_user_organization_audit').insert({
+        system_user_id,
+        organization_id,
+        action: 'assigned',
+        new_role: role || 'member',
+        success: false,
+        error_message: syncError.message,
+        metadata: {
+          source: 'edge_function',
+          error_code: syncError.code,
+        }
+      });
+      
       return new Response(JSON.stringify({ success: false, error: syncError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
@@ -60,11 +76,39 @@ serve(async (req) => {
     // Check if the sync was successful
     if (!syncResult?.success) {
       console.error('[assign-user-to-organization] sync failed:', syncResult);
+      
+      // Log failure to audit trail
+      await supabase.from('system_user_organization_audit').insert({
+        system_user_id,
+        organization_id,
+        action: 'assigned',
+        new_role: role || 'member',
+        success: false,
+        error_message: syncResult?.error || 'Sync operation failed',
+        metadata: {
+          source: 'edge_function',
+          sync_result: syncResult,
+        }
+      });
+      
       return new Response(JSON.stringify({ success: false, error: syncResult?.error || 'Sync operation failed' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
+
+    // Log success to audit trail
+    await supabase.from('system_user_organization_audit').insert({
+      system_user_id,
+      organization_id,
+      action: 'assigned',
+      new_role: role || 'member',
+      success: true,
+      metadata: {
+        source: 'edge_function',
+        sync_result: syncResult,
+      }
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 

@@ -38,10 +38,19 @@ import { DeleteSystemUserDialog } from '@/components/system/DeleteSystemUserDial
 import { SystemUsersBulkActionsBar } from '@/components/system/SystemUsersBulkActionsBar';
 import { BulkDeleteSystemUsersDialog } from '@/components/system/BulkDeleteSystemUsersDialog';
 import { useDeleteMultipleSystemUsers } from '@/hooks/useDeleteMultipleSystemUsers';
+import { useDataIntegrityValidation } from '@/hooks/useDataIntegrityValidation';
+import { AlertTriangle } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export const SystemUsersTable: React.FC = () => {
   const { data: users, isLoading } = useSystemUsers();
   const toggleUserStatus = useToggleUserStatus();
+  const { data: integrityIssues } = useDataIntegrityValidation();
   const [editingUser, setEditingUser] = React.useState<any | null>(null);
   const [passwordResetUser, setPasswordResetUser] = React.useState<any | null>(null);
   const [deleteDialogUser, setDeleteDialogUser] = React.useState<any | null>(null);
@@ -160,6 +169,7 @@ export const SystemUsersTable: React.FC = () => {
         <TableBody>
           {users.map((user) => {
             const isSelected = selectedUserIds.has(user.id);
+            const hasIntegrityIssue = integrityIssues?.some(issue => issue.system_user_id === user.id);
             
             return (
               <TableRow 
@@ -179,8 +189,21 @@ export const SystemUsersTable: React.FC = () => {
                     <User className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground flex items-center gap-2">
                       {user.first_name} {user.last_name}
+                      {hasIntegrityIssue && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertTriangle className="h-4 w-4 text-destructive" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-sm">Data integrity issue detected</p>
+                              <p className="text-xs text-muted-foreground">Inconsistent organization assignment</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {user.email}

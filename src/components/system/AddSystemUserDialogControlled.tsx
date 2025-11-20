@@ -78,27 +78,74 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
         role: 'super_admin', // Hardcoded - always Super Admin
       });
 
-      // Assign user to an organization (required)
-      try {
-        const { data: assignData, error: assignError } = await supabase.functions.invoke(
-          'assign-user-to-organization',
-          {
-            body: {
-              system_user_id: newUser.id,
-              organization_id: formData.organization_id,
-            },
+      // Assign user to organization with retry logic
+      let assignmentSuccess = false;
+      let retryCount = 0;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+
+      while (!assignmentSuccess && retryCount < maxRetries) {
+        try {
+          console.log(`[AddSystemUserDialogControlled] Assigning user to organization (attempt ${retryCount + 1}/${maxRetries})`);
+          
+          const { data: assignData, error: assignError } = await supabase.functions.invoke(
+            'assign-user-to-organization',
+            {
+              body: {
+                system_user_id: newUser.id,
+                organization_id: formData.organization_id,
+                role: 'super_admin',
+              },
+            }
+          );
+
+          if (assignError) {
+            throw new Error(assignError.message || 'Failed to assign user to organization');
           }
-        );
-        if (assignError || assignData?.success === false) {
-          throw new Error(assignError?.message || assignData?.error || 'Failed to assign user to organization');
+
+          if (!assignData?.success) {
+            throw new Error(assignData?.error || 'Assignment operation returned unsuccessful');
+          }
+
+          assignmentSuccess = true;
+          console.log('[AddSystemUserDialogControlled] Organization assignment successful');
+        } catch (err: any) {
+          lastError = err;
+          retryCount++;
+          console.error(`[AddSystemUserDialogControlled] Assignment attempt ${retryCount} failed:`, err);
+          
+          if (retryCount < maxRetries) {
+            // Wait before retrying (exponential backoff)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
         }
-      } catch (err: any) {
-        console.error('[AddSystemUserDialogControlled] Organization assignment failed:', err);
+      }
+
+      if (!assignmentSuccess) {
+        console.error('[AddSystemUserDialogControlled] All assignment attempts failed:', lastError);
         toast({
           title: 'Assignment failed',
-          description: err?.message || 'Could not link user to organization.',
+          description: `Could not link user to organization after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
           variant: 'destructive',
         });
+        
+        toast({
+          title: 'User created but not assigned',
+          description: 'The user was created but needs manual organization assignment. Please edit the user to assign them.',
+          variant: 'default',
+        });
+        
+        setFormData({
+          email: '',
+          first_name: '',
+          last_name: '',
+          password: '',
+          confirmPassword: '',
+          organization_id: '',
+        });
+        setSelectedOrg(null);
+        setOrgError(null);
+        onOpenChange(false);
         return;
       }
 
