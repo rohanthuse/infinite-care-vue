@@ -124,7 +124,16 @@ const SubNavTile = ({
 export function DashboardNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { tenantSlug } = useTenant();
+  
+  // Safely get tenant context - may not be available in system-level routes
+  let tenantSlug = null;
+  try {
+    const tenantContext = useTenant();
+    tenantSlug = tenantContext.tenantSlug;
+  } catch (error) {
+    console.log('[DashboardNavbar] Not in tenant context, using system-level routing');
+  }
+  
   const [activeItem, setActiveItem] = useState("Home");
   const [activeSubItem, setActiveSubItem] = useState("");
   const [isSubmenuOpen, setIsSubmenuOpen] = useState(false);
