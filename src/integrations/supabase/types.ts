@@ -10469,6 +10469,20 @@ export type Database = {
         Returns: string
       }
       create_overdue_booking_notifications: { Args: never; Returns: undefined }
+      create_subscription_plan_as_admin: {
+        Args: {
+          p_description: string
+          p_features: Json
+          p_is_active: boolean
+          p_max_branches: number
+          p_max_users: number
+          p_name: string
+          p_price_monthly: number
+          p_price_yearly: number
+          p_session_token: string
+        }
+        Returns: string
+      }
       create_system_user_and_role: {
         Args: {
           p_email: string
@@ -10516,6 +10530,10 @@ export type Database = {
       delete_organization_cascade: {
         Args: { p_organization_id: string; p_system_user_id: string }
         Returns: Json
+      }
+      delete_subscription_plan_as_admin: {
+        Args: { p_plan_id: string; p_session_token: string }
+        Returns: boolean
       }
       delete_system_user_with_session: {
         Args: { p_session_token: string; p_user_id: string }
@@ -11023,6 +11041,21 @@ export type Database = {
         Args: { resource_id: string; stat_type: string }
         Returns: undefined
       }
+      update_subscription_plan_as_admin: {
+        Args: {
+          p_description: string
+          p_features: Json
+          p_is_active: boolean
+          p_max_branches: number
+          p_max_users: number
+          p_name: string
+          p_plan_id: string
+          p_price_monthly: number
+          p_price_yearly: number
+          p_session_token: string
+        }
+        Returns: boolean
+      }
       update_system_session_activity: {
         Args: { p_session_id: string }
         Returns: undefined
@@ -11099,6 +11132,10 @@ export type Database = {
           issue_type: string
           user_id: string
         }[]
+      }
+      validate_system_session: {
+        Args: { p_session_token: string }
+        Returns: string
       }
       verify_staff_auth_context: { Args: never; Returns: string }
     }
