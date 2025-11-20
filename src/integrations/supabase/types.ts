@@ -10751,7 +10751,9 @@ export type Database = {
           id: string
           name: string
           recent_activity_count: number
+          settings: Json
           slug: string
+          subscription_expires_at: string
           subscription_plan: string
           subscription_status: string
           total_users: number
