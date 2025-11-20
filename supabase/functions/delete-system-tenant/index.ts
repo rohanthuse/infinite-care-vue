@@ -97,6 +97,19 @@ serve(async (req) => {
 
     if (!deleteResult?.success) {
       console.error('[delete-system-tenant] Delete failed:', deleteResult?.error)
+      
+      // Handle "Organization not found" as a 404 instead of 500
+      if (deleteResult?.error === 'Organization not found') {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Organization not found',
+          message: 'The organization does not exist or has already been deleted.'
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+      
       return new Response(JSON.stringify({ success: false, error: deleteResult?.error || 'Delete failed' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
