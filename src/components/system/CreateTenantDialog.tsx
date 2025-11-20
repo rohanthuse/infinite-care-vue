@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useSystemAuth } from '@/contexts/SystemAuthContext';
+import { useActiveSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import {
   Dialog,
   DialogContent,
@@ -24,22 +25,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const SUBSCRIPTION_PLANS = [
-  { value: '0-10', users: '0–10 Users', monthly: 99, yearly: 1070 },
-  { value: '11-25', users: '11–25 Users', monthly: 149, yearly: 1610 },
-  { value: '26-50', users: '26–50 Users', monthly: 249, yearly: 2690 },
-  { value: '51-100', users: '51–100 Users', monthly: 499, yearly: 5390 },
-  { value: '101-250', users: '101–250 Users', monthly: 749, yearly: 8090 },
-  { value: '251-500', users: '251–500 Users', monthly: 999, yearly: 10790 },
-  { value: '500+', users: '500+ Users', monthly: null, yearly: null, label: 'Bespoke pricing' },
-];
-
-const formatPlanOption = (plan: typeof SUBSCRIPTION_PLANS[0]) => {
-  if (plan.value === '500+') {
-    return `${plan.users} — Bespoke pricing`;
-  }
-  return `${plan.users} — £${plan.monthly}/month — £${plan.yearly}/year (10% discount)`;
-};
+      const { data: plans, isLoading } = useActiveSubscriptionPlans();
+      
+      const planOptions = plans?.map(plan => ({
+        value: plan.id,
+        label: `${plan.name} - ${plan.max_users || 'Unlimited'} Users - £${plan.price_monthly}/mo`,
+        maxUsers: plan.max_users || 999999,
+      })) || [];
 
 interface CreateTenantDialogProps {
   open: boolean;

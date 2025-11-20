@@ -28,6 +28,7 @@ import SystemLogin from "./pages/SystemLogin";
 import SystemDashboard from "./pages/SystemDashboard";
 import SystemTenants from "./pages/system/SystemTenants";
 import SystemUsers from "./pages/system/SystemUsers";
+import SystemSubscriptionPlans from "./pages/system/SystemSubscriptionPlans";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
 import Dashboard from "./pages/Dashboard";
@@ -272,6 +273,13 @@ const AppContent = () => {
                 <SystemAuthProvider>
                   <SystemGuard>
                     <SystemUsers />
+                  </SystemGuard>
+                </SystemAuthProvider>
+              } />
+              <Route path="/system-dashboard/subscription-plans" element={
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemSubscriptionPlans />
                   </SystemGuard>
                 </SystemAuthProvider>
               } />
