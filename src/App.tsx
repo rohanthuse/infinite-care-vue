@@ -306,9 +306,11 @@ const AppContent = () => {
               
               {/* Main Admin Dashboard Route for Super Admins */}
               <Route path="/dashboard" element={
-                <SuperAdminGuard>
-                  <Dashboard />
-                </SuperAdminGuard>
+                <TenantProvider>
+                  <SuperAdminGuard>
+                    <Dashboard />
+                  </SuperAdminGuard>
+                </TenantProvider>
               } />
               
               {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}

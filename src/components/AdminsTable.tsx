@@ -60,8 +60,19 @@ export const AdminsTable = () => {
   // Get current user authentication state with enhanced error handling
   const { data: currentUser, isLoading: authLoading, error: authError } = useUserRole();
   
-  // Get current organization context for tenant isolation
-  const { organization, isLoading: tenantLoading, error: tenantError } = useTenant();
+  // Safely get tenant context - may not be available in system-level routes
+  let organization = null;
+  let tenantLoading = false;
+  let tenantError = null;
+
+  try {
+    const tenantContext = useTenant();
+    organization = tenantContext.organization;
+    tenantLoading = tenantContext.isLoading;
+    tenantError = tenantContext.error;
+  } catch (error) {
+    console.log('[AdminsTable] Not in tenant context, operating in system-level mode');
+  }
 
   // Fetch branch admins filtered by organization
   const { data: admins = [], isLoading, error, refetch } = useQuery({
