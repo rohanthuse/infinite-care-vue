@@ -66,7 +66,42 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
     queryFn: async () => {
       console.log('Fetching organisation members for:', organizationId);
       
-      // PART 1: Fetch regular organization members
+      // PART 1: Fetch System Portal users FIRST to get their auth_user_ids
+      const { data: systemUsers, error: systemUsersError } = await supabase
+        .from('system_user_organizations')
+        .select(`
+          id,
+          system_user_id,
+          role,
+          assigned_at,
+          system_users (
+            id,
+            first_name,
+            last_name,
+            email,
+            is_active,
+            auth_user_id
+          )
+        `)
+        .eq('organization_id', organizationId);
+
+      if (systemUsersError) {
+        console.error('Error fetching system users:', systemUsersError);
+      }
+
+      // Get auth_user_ids of System Portal users to exclude from organization_members query
+      const systemUserAuthIds = (systemUsers || [])
+        .map(item => {
+          const systemUser = Array.isArray(item.system_users) 
+            ? item.system_users[0] 
+            : item.system_users;
+          return systemUser?.auth_user_id;
+        })
+        .filter(Boolean);
+
+      console.log('System Portal users auth_user_ids to exclude:', systemUserAuthIds);
+
+      // PART 2: Fetch regular organization members, EXCLUDING System Portal users
       const { data: orgMembers, error: membersError } = await supabase
         .from('organization_members')
         .select(`
@@ -78,7 +113,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           permissions
         `)
         .eq('organization_id', organizationId)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .not('user_id', 'in', `(${systemUserAuthIds.length > 0 ? systemUserAuthIds.join(',') : '00000000-0000-0000-0000-000000000000'})`);
 
       if (membersError) {
         console.error('Error fetching organisation members:', membersError);
@@ -98,29 +134,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         console.error('Error fetching profiles:', profilesError);
       }
 
-      // PART 2: Fetch System Portal users
-      const { data: systemUsers, error: systemUsersError } = await supabase
-        .from('system_user_organizations')
-        .select(`
-          id,
-          system_user_id,
-          role,
-          assigned_at,
-          system_users (
-            id,
-            first_name,
-            last_name,
-            email,
-            is_active
-          )
-        `)
-        .eq('organization_id', organizationId);
-
-      if (systemUsersError) {
-        console.error('Error fetching system users:', systemUsersError);
-      }
-
-      console.log('Regular members:', orgMembers);
+      console.log('Regular members (excluding System Portal users):', orgMembers);
       console.log('System Portal users:', systemUsers);
 
       // PART 3: Combine both data sources into unified format
