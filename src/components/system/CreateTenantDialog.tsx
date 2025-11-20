@@ -47,6 +47,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     subscription_duration: 1,
     subscription_start_date: new Date(),
     subscription_end_date: null as Date | null,
+    discount: 0,
     total_amount: 0,
   });
 
@@ -61,16 +62,21 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
         endDate.setMonth(endDate.getMonth() + formData.subscription_duration);
       }
       
-      // Calculate total amount
+      // Calculate total amount with discount
       const selectedPlan = plans.find(p => p.id === formData.subscription_plan_id);
+      let subtotal = 0;
       let totalAmount = 0;
       
       if (selectedPlan) {
         if (formData.billing_cycle === 'yearly') {
-          totalAmount = selectedPlan.price_yearly * formData.subscription_duration;
+          subtotal = selectedPlan.price_yearly * formData.subscription_duration;
         } else {
-          totalAmount = selectedPlan.price_monthly * formData.subscription_duration;
+          subtotal = selectedPlan.price_monthly * formData.subscription_duration;
         }
+        
+        // Apply discount
+        const discountMultiplier = 1 - (formData.discount / 100);
+        totalAmount = subtotal * discountMultiplier;
       }
       
       setFormData(prev => ({ 
@@ -84,6 +90,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     formData.billing_cycle, 
     formData.subscription_plan_id,
     formData.subscription_duration,
+    formData.discount,
     plans
   ]);
 
@@ -109,6 +116,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           subscriptionDuration: data.subscription_duration,
           subscriptionStartDate: data.subscription_start_date.toISOString(),
           subscriptionEndDate: data.subscription_end_date?.toISOString(),
+          discount: data.discount,
           totalAmount: data.total_amount,
           creatorEmail: user.email,
           creatorUserId: user.id
@@ -178,6 +186,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       subscription_duration: 1,
       subscription_start_date: new Date(),
       subscription_end_date: null,
+      discount: 0,
       total_amount: 0,
     });
   };
@@ -342,6 +351,27 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
               </p>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="discount">Discount (%)</Label>
+              <Input
+                id="discount"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="0"
+                value={formData.discount || ''}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  const clampedValue = Math.min(Math.max(value, 0), 100);
+                  handleInputChange('discount', clampedValue);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter a discount percentage (0-100)
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subscription_start_date">Subscription Start Date</Label>
@@ -395,8 +425,38 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
                 disabled
                 className="bg-muted font-semibold text-base"
               />
+              {formData.discount > 0 && (
+                <div className="text-xs space-y-1 p-2 bg-muted/50 rounded">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal:</span>
+                    <span>£{(() => {
+                      const selectedPlan = plans?.find(p => p.id === formData.subscription_plan_id);
+                      if (!selectedPlan) return '0.00';
+                      const subtotal = formData.billing_cycle === 'yearly' 
+                        ? selectedPlan.price_yearly * formData.subscription_duration
+                        : selectedPlan.price_monthly * formData.subscription_duration;
+                      return subtotal.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    })()}</span>
+                  </div>
+                  <div className="flex justify-between text-green-600 dark:text-green-400">
+                    <span>Discount ({formData.discount}%):</span>
+                    <span>-£{(() => {
+                      const selectedPlan = plans?.find(p => p.id === formData.subscription_plan_id);
+                      if (!selectedPlan) return '0.00';
+                      const subtotal = formData.billing_cycle === 'yearly' 
+                        ? selectedPlan.price_yearly * formData.subscription_duration
+                        : selectedPlan.price_monthly * formData.subscription_duration;
+                      const discountAmount = subtotal * (formData.discount / 100);
+                      return discountAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    })()}</span>
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
-                Auto-calculated: {formData.billing_cycle === 'yearly' ? 'Yearly' : 'Monthly'} Fee × Duration
+                {formData.discount > 0 
+                  ? `Price after ${formData.discount}% discount` 
+                  : `Auto-calculated: ${formData.billing_cycle === 'yearly' ? 'Yearly' : 'Monthly'} Fee × Duration`
+                }
               </p>
             </div>
           </div>
