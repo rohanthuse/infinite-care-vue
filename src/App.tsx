@@ -54,17 +54,74 @@ import { StuckStateRecovery } from "@/components/StuckStateRecovery";
 import { queryClient } from "./lib/queryClient";
 
 // Fallback component for routing errors
-const RoutingErrorFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="text-center">
-      <h1 className="text-2xl font-bold text-foreground mb-4">Page Not Found</h1>
-      <p className="text-muted-foreground mb-4">The page you're looking for doesn't exist.</p>
-      <a href="/" className="text-primary hover:text-primary/80 underline">
-        Return to Home
-      </a>
+const RoutingErrorFallback = ({ error, errorInfo }: { error?: Error | null; errorInfo?: React.ErrorInfo | null }) => {
+  const clearCacheAndReload = () => {
+    console.log('[RoutingErrorFallback] Clearing cache and reloading...');
+    sessionStorage.clear();
+    localStorage.removeItem('navigating_to_dashboard');
+    localStorage.removeItem('target_dashboard');
+    localStorage.removeItem('redirect_in_progress');
+    window.location.href = '/';
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center max-w-lg p-8">
+        <h1 className="text-2xl font-bold text-foreground mb-4">Page Not Found</h1>
+        <p className="text-muted-foreground mb-6">
+          The page you're looking for doesn't exist or failed to load.
+        </p>
+        
+        {process.env.NODE_ENV === 'development' && error && (
+          <details className="mt-4 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded text-left mb-4">
+            <summary className="cursor-pointer font-semibold text-red-700 dark:text-red-400 mb-2">
+              Error Details (Dev Mode)
+            </summary>
+            <div className="text-xs space-y-2">
+              <div>
+                <strong>Error:</strong>
+                <pre className="mt-1 p-2 bg-red-100 dark:bg-red-900 rounded overflow-auto">
+                  {error.toString()}
+                </pre>
+              </div>
+              {error.stack && (
+                <div>
+                  <strong>Stack:</strong>
+                  <pre className="mt-1 p-2 bg-red-100 dark:bg-red-900 rounded overflow-auto text-xs">
+                    {error.stack}
+                  </pre>
+                </div>
+              )}
+              {errorInfo?.componentStack && (
+                <div>
+                  <strong>Component Stack:</strong>
+                  <pre className="mt-1 p-2 bg-red-100 dark:bg-red-900 rounded overflow-auto text-xs">
+                    {errorInfo.componentStack}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </details>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button
+            onClick={clearCacheAndReload}
+            className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+          >
+            Clear Cache & Reload
+          </button>
+          <a
+            href="/"
+            className="px-6 py-2 border border-border rounded-lg hover:bg-accent transition-colors font-medium"
+          >
+            Return to Home
+          </a>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Notification email sender component - only initializes when user is authenticated
 const NotificationEmailManager = () => {
@@ -89,7 +146,8 @@ const AppContent = () => {
       if (navigating === 'true') {
         if (flagTimestamp) {
           const age = Date.now() - parseInt(flagTimestamp);
-          if (age > 3000) {
+          // Reduced timeout from 3000ms to 2000ms for faster recovery
+          if (age > 2000) {
             console.warn('[App] Detected stuck navigation flags (age:', age, 'ms), clearing');
             sessionStorage.removeItem('navigating_to_dashboard');
             sessionStorage.removeItem('target_dashboard');
@@ -97,8 +155,8 @@ const AppContent = () => {
             sessionStorage.removeItem('navigation_flag_timestamp');
           }
         } else {
-          // No timestamp but flag is set - clear it
-          console.warn('[App] Navigation flag without timestamp, clearing');
+          // No timestamp but flag is set - clear immediately
+          console.warn('[App] Navigation flag without timestamp, clearing immediately');
           sessionStorage.removeItem('navigating_to_dashboard');
           sessionStorage.removeItem('target_dashboard');
           sessionStorage.removeItem('redirect_in_progress');
@@ -109,8 +167,8 @@ const AppContent = () => {
     // Check immediately on mount
     checkStuckFlags();
     
-    // Check again after 1 second as failsafe
-    const timeoutId = setTimeout(checkStuckFlags, 1000);
+    // Check again after 500ms as failsafe
+    const timeoutId = setTimeout(checkStuckFlags, 500);
     
     return () => clearTimeout(timeoutId);
   }, []);
@@ -144,7 +202,7 @@ const AppContent = () => {
         <LoginNavigationInterceptor />
         <NavigationProvider>
           <TaskProvider>
-            <ErrorBoundary fallback={<RoutingErrorFallback />}>
+            <ErrorBoundary fallback={(error, errorInfo) => <RoutingErrorFallback error={error} errorInfo={errorInfo} />}>
               <NavigationGuard />
               <PWAInstallPrompt />
               <OfflineIndicator />

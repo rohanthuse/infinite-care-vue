@@ -7,35 +7,42 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Props {
   children: ReactNode;
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((error: Error | null, errorInfo: ErrorInfo | null) => ReactNode);
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
+    errorInfo: null,
   };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('[ErrorBoundary] Uncaught error:', error, errorInfo);
+    this.setState({ errorInfo });
   }
 
   private handleRetry = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   public render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
+        // Support function fallbacks that receive error details
+        if (typeof this.props.fallback === 'function') {
+          return this.props.fallback(this.state.error, this.state.errorInfo);
+        }
         return this.props.fallback;
       }
 
