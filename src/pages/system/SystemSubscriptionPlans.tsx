@@ -11,7 +11,19 @@ import { CreateSubscriptionPlanDialog } from '@/components/system/CreateSubscrip
 import { EditSubscriptionPlanDialog } from '@/components/system/EditSubscriptionPlanDialog';
 import { ViewSubscriptionPlanDialog } from '@/components/system/ViewSubscriptionPlanDialog';
 import { ConfirmDeleteSubscriptionPlanDialog } from '@/components/system/ConfirmDeleteSubscriptionPlanDialog';
+import { SubscriptionPlanBulkActionsBar } from '@/components/system/SubscriptionPlanBulkActionsBar';
 import { useSubscriptionPlans, SubscriptionPlan } from '@/hooks/useSubscriptionPlans';
+import { useBulkDeleteSubscriptionPlans } from '@/hooks/useBulkDeleteSubscriptionPlans';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function SystemSubscriptionPlans() {
   const { data: plans, isLoading } = useSubscriptionPlans();
@@ -20,6 +32,10 @@ export default function SystemSubscriptionPlans() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [selectedPlanIds, setSelectedPlanIds] = useState<string[]>([]);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
+  const { mutate: bulkDeletePlans, isPending: isBulkDeleting } = useBulkDeleteSubscriptionPlans();
 
   const handleView = (plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
@@ -34,6 +50,37 @@ export default function SystemSubscriptionPlans() {
   const handleDelete = (plan: SubscriptionPlan) => {
     setSelectedPlan(plan);
     setShowDeleteDialog(true);
+  };
+
+  const handleSelectPlan = (planId: string) => {
+    setSelectedPlanIds((prev) =>
+      prev.includes(planId) ? prev.filter((id) => id !== planId) : [...prev, planId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPlanIds.length === plans?.length) {
+      setSelectedPlanIds([]);
+    } else {
+      setSelectedPlanIds(plans?.map((plan) => plan.id) || []);
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedPlanIds([]);
+  };
+
+  const handleBulkDelete = () => {
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleConfirmBulkDelete = () => {
+    bulkDeletePlans(selectedPlanIds, {
+      onSuccess: () => {
+        setSelectedPlanIds([]);
+        setShowBulkDeleteDialog(false);
+      },
+    });
   };
 
   return (
@@ -74,6 +121,9 @@ export default function SystemSubscriptionPlans() {
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              selectedPlanIds={selectedPlanIds}
+              onSelectPlan={handleSelectPlan}
+              onSelectAll={handleSelectAll}
             />
           </TabsContent>
         </Tabs>
@@ -119,6 +169,36 @@ export default function SystemSubscriptionPlans() {
           setSelectedPlan(null);
         }}
       />
+
+      <SubscriptionPlanBulkActionsBar
+        selectedCount={selectedPlanIds.length}
+        onClearSelection={handleClearSelection}
+        onBulkDelete={handleBulkDelete}
+        isDeleting={isBulkDeleting}
+      />
+
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedPlanIds.length} Subscription Plan{selectedPlanIds.length > 1 ? 's' : ''}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the selected subscription plan{selectedPlanIds.length > 1 ? 's' : ''}. 
+              {selectedPlanIds.length > 1 && ' Some plans may fail to delete if they are currently in use by organizations.'}
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
