@@ -79,7 +79,7 @@ export default function SystemTenants() {
 
       const tenants = (data as any)?.tenants || []
       const totalTenants = tenants.length
-      const activeUsers = tenants.reduce((sum: number, t: any) => sum + (t.activeUsers || 0), 0)
+      const activeUsers = tenants.reduce((sum: number, t: any) => sum + (t.active_users ?? t.activeUsers ?? 0), 0)
 
       const now = new Date()
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
