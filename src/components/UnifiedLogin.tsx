@@ -12,6 +12,20 @@ import { useAuth } from "@/contexts/UnifiedAuthProvider";
 
 
 
+const formatRoleName = (role: string): string => {
+  const roleMap: Record<string, string> = {
+    'owner': 'Owner',
+    'admin': 'Admin',
+    'manager': 'Manager',
+    'member': 'Member',
+    'branch_admin': 'Branch Admin',
+    'super_admin': 'Super Admin',
+    'carer': 'Carer',
+    'client': 'Client'
+  };
+  return roleMap[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -492,6 +506,30 @@ const UnifiedLogin = () => {
       console.log('[LOGIN DEBUG] Final user role:', userRole);
       setLoadingMessage("Loading your workspace...");
 
+      // CRITICAL FIX: Check organization membership BEFORE using system role
+      // Organization members should NEVER be routed as carers/clients
+      console.log('[LOGIN DEBUG] Checking organization membership before routing');
+
+      const { data: orgMembership } = await supabase
+        .from('organization_members')
+        .select('role, status, organization_id, organizations(slug)')
+        .eq('user_id', authData.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (orgMembership && orgMembership.organizations?.slug) {
+        console.log('[LOGIN DEBUG] User is an organization member, overriding system role');
+        console.log('[LOGIN DEBUG] Organization role:', orgMembership.role, 'System role:', userRole);
+        
+        // Override userRole with organization membership
+        userRole = 'organization_member'; // Create a special marker for org members
+        orgSlug = orgMembership.organizations.slug;
+        
+        // Cache the actual organization role for later use
+        sessionStorage.setItem('actual_org_role', orgMembership.role);
+        sessionStorage.setItem('is_org_member', 'true');
+      }
+
       // Handle third-party access redemption first
       if (thirdPartyInfo) {
         console.log('[LOGIN DEBUG] Processing third-party invitation');
@@ -642,6 +680,55 @@ const UnifiedLogin = () => {
           await supabase.auth.signOut();
           return;
         }
+      }
+
+      // Check if user is an organization member (takes priority over system roles)
+      const isOrgMember = sessionStorage.getItem('is_org_member') === 'true';
+
+      if (isOrgMember) {
+        console.log('[LOGIN DEBUG] Organization member detected, routing to organization dashboard');
+        
+        // Pre-cache organization data
+        try {
+          const { data: orgData } = await supabase
+            .from('organizations')
+            .select('*')
+            .eq('slug', orgSlug)
+            .single();
+          
+          if (orgData) {
+            sessionStorage.setItem('cached_org_data', JSON.stringify(orgData));
+            sessionStorage.setItem('cached_org_timestamp', Date.now().toString());
+            
+            const actualRole = sessionStorage.getItem('actual_org_role') || 'member';
+            sessionStorage.setItem('cached_org_role', actualRole);
+            sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
+            
+            console.log('[LOGIN DEBUG] Organization member - data cached, role:', actualRole);
+          }
+        } catch (error) {
+          console.warn('[LOGIN DEBUG] Failed to pre-cache org data:', error);
+        }
+        
+        const dashboardPath = `/${orgSlug}/dashboard`;
+        
+        const actualRole = sessionStorage.getItem('actual_org_role') || 'member';
+        const roleDisplay = formatRoleName(actualRole);
+        toast.success(`Login Successful – Role: ${roleDisplay}`);
+        
+        console.log('[LOGIN DEBUG] Organization member redirecting to:', dashboardPath);
+        
+        sessionStorage.setItem('redirect_in_progress', 'true');
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
+        sessionStorage.setItem('target_dashboard', dashboardPath);
+        setTimeout(() => {
+          sessionStorage.removeItem('redirect_in_progress');
+          sessionStorage.removeItem('is_org_member');
+          sessionStorage.removeItem('actual_org_role');
+        }, 3000);
+        
+        window.location.href = dashboardPath;
+        return;
       }
 
       // Route to appropriate dashboard based on role
