@@ -58,7 +58,12 @@ export function EditSubscriptionPlanDialog({
     if (!plan) return;
 
     updatePlan.mutate(
-      { id: plan.id, ...formData },
+      { 
+        id: plan.id, 
+        ...formData,
+        max_branches: plan.max_branches,
+        features: plan.features,
+      },
       {
         onSuccess: () => {
           onSuccess?.();
