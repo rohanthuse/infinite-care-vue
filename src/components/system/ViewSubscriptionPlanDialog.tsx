@@ -61,17 +61,6 @@ export function ViewSubscriptionPlanDialog({
             </div>
           </div>
 
-          {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-2">Features</p>
-              <ul className="list-disc list-inside space-y-1">
-                {plan.features.map((feature: any, index: number) => (
-                  <li key={index} className="text-sm">{feature}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Status</p>
