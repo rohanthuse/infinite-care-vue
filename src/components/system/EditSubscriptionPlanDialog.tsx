@@ -33,7 +33,6 @@ export function EditSubscriptionPlanDialog({
     name: '',
     description: '',
     max_users: 10,
-    max_branches: 1,
     price_monthly: 0,
     price_yearly: 0,
     is_active: true,
@@ -47,7 +46,6 @@ export function EditSubscriptionPlanDialog({
         name: plan.name,
         description: plan.description || '',
         max_users: plan.max_users || 10,
-        max_branches: plan.max_branches || 1,
         price_monthly: plan.price_monthly,
         price_yearly: plan.price_yearly,
         is_active: plan.is_active ?? true,
@@ -100,29 +98,16 @@ export function EditSubscriptionPlanDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="max_users">Max Users *</Label>
-                <Input
-                  id="max_users"
-                  type="number"
-                  min="1"
-                  value={formData.max_users}
-                  onChange={(e) => setFormData({ ...formData, max_users: parseInt(e.target.value) || 0 })}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max_branches">Max Branches</Label>
-                <Input
-                  id="max_branches"
-                  type="number"
-                  min="1"
-                  value={formData.max_branches}
-                  onChange={(e) => setFormData({ ...formData, max_branches: parseInt(e.target.value) || 1 })}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="max_users">Max Users *</Label>
+              <Input
+                id="max_users"
+                type="number"
+                min="1"
+                value={formData.max_users}
+                onChange={(e) => setFormData({ ...formData, max_users: parseInt(e.target.value) || 0 })}
+                required
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
