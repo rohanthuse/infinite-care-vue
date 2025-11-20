@@ -174,9 +174,9 @@ const TenantDashboard = () => {
         }
 
         setOrganization(orgData);
-        // Prioritize super_admin system role over organization membership role
-        if (systemUserRole?.role === 'super_admin') {
-          setUserRole({ role: 'super_admin', status: 'active' });
+        // Prioritize system roles (super_admin AND branch_admin) over organization membership role
+        if (systemUserRole?.role === 'super_admin' || systemUserRole?.role === 'branch_admin') {
+          setUserRole({ role: systemUserRole.role, status: 'active' });
         } else {
           // Use organization role if available, otherwise use system role
           setUserRole(memberData || { role: systemUserRole?.role || 'member', status: 'active' });
