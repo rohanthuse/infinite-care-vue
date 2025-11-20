@@ -279,7 +279,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
                 <SelectContent>
                   {plans?.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} - {plan.max_users || 'Unlimited'} Users - £{plan.price_monthly}/mo
+                      {plan.name} – {plan.max_users || 'Unlimited'} Users – £{plan.price_monthly.toFixed(2)}/mo – £{plan.price_yearly.toFixed(2)}/yr
                     </SelectItem>
                   ))}
                 </SelectContent>
