@@ -40,8 +40,45 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
     queryFn: async () => {
       console.log('Fetching branches for organization:', organizationId, 'with role:', userRole?.role);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user');
+        return [];
+      }
+
+      // Check organization membership first (takes priority)
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('role, status')
+        .eq('organization_id', organizationId)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      // If user is an organization member (any role), they see all branches
+      if (orgMember) {
+        console.log('Fetching all branches for organization member:', orgMember.role);
+        
+        const { data, error } = await supabase
+          .from('branches')
+          .select('*')
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active');
+
+        if (error) {
+          console.error('Error fetching organization branches:', error);
+          throw error;
+        }
+
+        console.log('Organisation branches:', data, 'for org member role:', orgMember.role);
+        return data || [];
+      }
+
+      // If not an org member, check if they're a super admin
       if (userRole?.role === 'super_admin') {
-        // Super admins can see all branches in the organization
+        console.log('Fetching all branches for super admin');
+        
         const { data, error } = await supabase
           .from('branches')
           .select('*')
@@ -55,13 +92,14 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
         console.log('Organisation branches (super admin):', data);
         return data || [];
-      } else if (userRole?.role === 'branch_admin') {
-        // Branch admins can only see their assigned branches
-        // First get the assigned branch IDs
+      }
+
+      // If branch admin, only show assigned branches
+      if (userRole?.role === 'branch_admin') {
         const { data: adminBranches, error: adminError } = await supabase
           .from('admin_branches')
           .select('branch_id')
-          .eq('admin_id', userRole.id);
+          .eq('admin_id', user.id);
 
         if (adminError) {
           console.error('Error fetching admin branches:', adminError);
@@ -75,7 +113,6 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
         const branchIds = adminBranches.map(ab => ab.branch_id);
 
-        // Then get the actual branches
         const { data, error } = await supabase
           .from('branches')
           .select('*')
@@ -90,11 +127,11 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
         console.log('Branch admin branches:', data);
         return data || [];
-      } else {
-        // Other roles have no branch access
-        console.log('User role has no branch access:', userRole?.role);
-        return [];
       }
+
+      // Unknown roles have no branch access
+      console.log('User has no branch access');
+      return [];
     },
     enabled: !!organizationId && !!userRole && !roleLoading,
   });

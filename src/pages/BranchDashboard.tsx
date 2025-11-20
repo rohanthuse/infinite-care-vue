@@ -4,6 +4,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { BranchInfoHeader } from "@/components/BranchInfoHeader";
 import { BranchRightSidebar } from "@/components/branch-dashboard/BranchRightSidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { supabase } from "@/integrations/supabase/client";
 
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
@@ -241,48 +242,83 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
       return () => clearTimeout(loadingTimeout);
     }
 
-    // Super admins have immediate access
-    if (userRole.role === 'super_admin') {
-      console.log('[BranchDashboard] Super admin access granted');
-      clearTimeout(loadingTimeout);
-      setAccessDenied(false);
-      setIsInitializing(false);
-      return;
-    }
+    // Check if user is an organization member (takes priority over system roles)
+    const checkOrgMembership = async () => {
+      if (!session?.user?.id) return false;
+      
+      // Get organization ID from branch
+      const { data: branch } = await supabase
+        .from('branches')
+        .select('organization_id')
+        .eq('id', id)
+        .single();
 
-    // Branch admins need access verification
-    if (userRole.role === 'branch_admin') {
-      // Still loading access check
-      if (accessLoading) {
-        console.log('[BranchDashboard] Branch admin access check in progress');
-        return () => clearTimeout(loadingTimeout);
-      }
+      if (!branch?.organization_id) return false;
 
-      // Access check completed or timed out
-      if (branchAccess?.canAccess) {
-        console.log('[BranchDashboard] Branch admin access granted');
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('role, status')
+        .eq('organization_id', branch.organization_id)
+        .eq('user_id', session.user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      return !!orgMember;
+    };
+
+    // Check organization membership
+    checkOrgMembership().then(isOrgMember => {
+      if (isOrgMember) {
+        console.log('[BranchDashboard] Organization member access granted');
         clearTimeout(loadingTimeout);
         setAccessDenied(false);
         setIsInitializing(false);
-      } else if (accessError?.message?.includes('timed out')) {
-        console.log('[BranchDashboard] Branch access check timed out, denying access');
-        clearTimeout(loadingTimeout);
-        setAccessDenied(true);
-        setIsInitializing(false);
-      } else {
-        console.log('[BranchDashboard] Branch admin access denied');
-        clearTimeout(loadingTimeout);
-        setAccessDenied(true);
-        setIsInitializing(false);
+        return;
       }
-      return () => clearTimeout(loadingTimeout);
-    }
 
-    // Other roles don't have access
-    console.log('[BranchDashboard] User role does not have access:', userRole.role);
-    clearTimeout(loadingTimeout);
-    setAccessDenied(true);
-    setIsInitializing(false);
+      // Super admins have immediate access
+      if (userRole.role === 'super_admin') {
+        console.log('[BranchDashboard] Super admin access granted');
+        clearTimeout(loadingTimeout);
+        setAccessDenied(false);
+        setIsInitializing(false);
+        return;
+      }
+
+      // Branch admins need access verification
+      if (userRole.role === 'branch_admin') {
+        // Still loading access check
+        if (accessLoading) {
+          console.log('[BranchDashboard] Branch admin access check in progress');
+          return;
+        }
+
+        // Access check completed or timed out
+        if (branchAccess?.canAccess) {
+          console.log('[BranchDashboard] Branch admin access granted');
+          clearTimeout(loadingTimeout);
+          setAccessDenied(false);
+          setIsInitializing(false);
+        } else if (accessError?.message?.includes('timed out')) {
+          console.log('[BranchDashboard] Branch access check timed out, denying access');
+          clearTimeout(loadingTimeout);
+          setAccessDenied(true);
+          setIsInitializing(false);
+        } else {
+          console.log('[BranchDashboard] Branch admin access denied');
+          clearTimeout(loadingTimeout);
+          setAccessDenied(true);
+          setIsInitializing(false);
+        }
+        return;
+      }
+
+      // Unknown roles don't have access
+      console.log('[BranchDashboard] User role does not have access:', userRole.role);
+      clearTimeout(loadingTimeout);
+      setAccessDenied(true);
+      setIsInitializing(false);
+    });
 
     return () => clearTimeout(loadingTimeout);
   }, [authLoading, roleLoading, accessLoading, session, userRole, branchAccess, id, navigate, accessError]);
