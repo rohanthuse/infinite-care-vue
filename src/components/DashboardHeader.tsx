@@ -170,13 +170,7 @@ export function DashboardHeader() {
 
   // Handle navigation back to admin dashboard
   const handleLogoClick = () => {
-    // Super admins go to main dashboard with branch navigation
-    if (userRole?.role === 'super_admin') {
-      navigate('/dashboard');
-      return;
-    }
-    
-    // Other roles navigate to appropriate admin dashboard based on tenant context
+    // All admin roles navigate to tenant-aware dashboard
     const adminPath = tenantSlug ? `/${tenantSlug}/dashboard` : '/dashboard';
     navigate(adminPath);
   };

@@ -29,22 +29,18 @@ export const BranchInfoHeader = ({
   
   // Determine back destination based on user role
   const handleBack = () => {
-    if (userRole?.role === 'super_admin') {
-      // Navigate to tenant-specific dashboard
-      if (tenantSlug) {
-        navigate(`/${tenantSlug}/dashboard`);
-      } else {
-        navigate('/dashboard');
-      }
+    // All admin roles (super_admin, branch_admin, owner, admin) go to tenant dashboard
+    if (tenantSlug) {
+      navigate(`/${tenantSlug}/dashboard`);
     } else {
-      navigate('/branch-selection');
+      navigate('/dashboard');
     }
   };
   
   // Create breadcrumb items
   const breadcrumbItems = [
     {
-      label: userRole?.role === 'super_admin' ? 'All Tenants' : 'Dashboard',
+      label: userRole?.role === 'super_admin' ? 'Organisation Management' : 'Organisation Branches',
       onClick: handleBack
     },
     {
