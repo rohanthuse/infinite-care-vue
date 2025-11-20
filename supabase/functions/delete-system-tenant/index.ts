@@ -82,6 +82,14 @@ serve(async (req) => {
     // Use comprehensive cascade delete function to handle all dependencies
     console.log('[delete-system-tenant] Starting cascade delete for organization:', id)
     
+    // Set a longer statement timeout for this operation (60 seconds)
+    await supabaseAdmin.rpc('exec_sql', { 
+      sql: 'SET statement_timeout = 60000' 
+    }).catch(() => {
+      // If exec_sql doesn't exist, try setting it directly in the connection
+      console.log('[delete-system-tenant] Could not set timeout via exec_sql')
+    })
+    
     const { data: deleteResult, error: deleteErr } = await supabaseAdmin.rpc('delete_organization_cascade', {
       p_organization_id: id,
       p_system_user_id: userId
