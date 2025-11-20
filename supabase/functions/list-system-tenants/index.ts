@@ -83,7 +83,15 @@ serve(async (req) => {
             billing_cycle: org.settings?.billing_cycle || 'monthly',
             total_users: totalUsers || 0,
             active_users: activeUsers,
-            recent_activity_count: activeUsers
+            super_admin_first_name: null,
+            super_admin_last_name: null,
+            super_admin_email: null,
+            plan_max_users: null,
+            plan_price_monthly: null,
+            plan_price_yearly: null,
+            total_branches: 0,
+            total_clients: 0,
+            active_clients: 0,
           }
         } catch (error) {
           console.error(`[list-system-tenants] Error calculating user counts for org ${org.id}:`, error)
@@ -91,7 +99,15 @@ serve(async (req) => {
             ...org,
             total_users: 0,
             active_users: 0,
-            recent_activity_count: 0
+            super_admin_first_name: null,
+            super_admin_last_name: null,
+            super_admin_email: null,
+            plan_max_users: null,
+            plan_price_monthly: null,
+            plan_price_yearly: null,
+            total_branches: 0,
+            total_clients: 0,
+            active_clients: 0,
           }
         }
       }))
@@ -104,7 +120,7 @@ serve(async (req) => {
 
     console.log(`[list-system-tenants] Successfully fetched ${tenantsData?.length || 0} tenants with optimized data`)
     
-    // Format the optimized data to ensure proper number formatting
+    // Format the optimized data to ensure proper number formatting and include all new fields
     const formattedTenants = (tenantsData || []).map((tenant: any) => ({
       ...tenant,
       subscription_expires_at: tenant.subscription_expires_at,
@@ -112,7 +128,15 @@ serve(async (req) => {
       billing_cycle: tenant.settings?.billing_cycle || 'monthly',
       total_users: parseInt(tenant.total_users) || 0,
       active_users: parseInt(tenant.active_users) || 0,
-      recent_activity_count: parseInt(tenant.recent_activity_count) || 0
+      super_admin_first_name: tenant.super_admin_first_name,
+      super_admin_last_name: tenant.super_admin_last_name,
+      super_admin_email: tenant.super_admin_email,
+      plan_max_users: tenant.plan_max_users,
+      plan_price_monthly: tenant.plan_price_monthly ? parseFloat(tenant.plan_price_monthly) : null,
+      plan_price_yearly: tenant.plan_price_yearly ? parseFloat(tenant.plan_price_yearly) : null,
+      total_branches: parseInt(tenant.total_branches) || 0,
+      total_clients: parseInt(tenant.total_clients) || 0,
+      active_clients: parseInt(tenant.active_clients) || 0,
     }))
 
     return new Response(

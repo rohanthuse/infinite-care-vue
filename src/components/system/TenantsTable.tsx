@@ -19,6 +19,22 @@ interface Tenant {
   subscription_duration: number | null;
   billing_cycle?: string;
   created_at: string;
+  settings?: {
+    subscription_duration?: number;
+    billing_cycle?: string;
+    subscription_start_date?: string;
+  };
+  super_admin_first_name?: string;
+  super_admin_last_name?: string;
+  super_admin_email?: string;
+  plan_max_users?: number;
+  plan_price_monthly?: number;
+  plan_price_yearly?: number;
+  total_branches?: number;
+  total_clients?: number;
+  active_clients?: number;
+  total_users?: number;
+  active_users?: number;
 }
 interface TenantsTableProps {
   tenants: Tenant[] | undefined;
