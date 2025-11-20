@@ -20,12 +20,24 @@ export function useDeleteSubscriptionPlan() {
         throw new Error('Cannot delete plan: organizations are currently using this plan');
       }
 
-      const { error } = await supabase
+      // Attempt deletion with count to verify success
+      const { error, count } = await supabase
         .from('subscription_plans')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', planId);
 
-      if (error) throw error;
+      if (error) {
+        // Check for RLS permission error
+        if (error.code === '42501' || error.message.includes('permission')) {
+          throw new Error('Permission denied: You must be logged in as a system administrator to delete subscription plans');
+        }
+        throw error;
+      }
+
+      // Verify the deletion actually happened
+      if (count === 0) {
+        throw new Error('Failed to delete plan: Permission denied or plan not found. Please ensure you are logged in as a system administrator.');
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
