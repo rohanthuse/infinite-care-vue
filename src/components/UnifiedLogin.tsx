@@ -309,29 +309,40 @@ const UnifiedLogin = () => {
       }
 
       // Final fallback: check system_user_organizations for super admins
-      // Step 1: Find system_users row for this auth user
-      const { data: systemUser } = await supabase
+      const { data: systemUserOrgs, error: systemUserError } = await supabase
+        .from('system_user_organizations')
+        .select(`
+          organization_id,
+          organizations!inner(slug)
+        `)
+        .eq('system_users.auth_user_id', userId)
+        .maybeSingle();
+
+      console.log('[detectUserOrganization] System user org result:', { systemUserOrgs, systemUserError });
+
+      if (systemUserOrgs?.organizations?.slug) {
+        const orgSlug = systemUserOrgs.organizations.slug;
+        console.log('[detectUserOrganization] Found organization via system user:', orgSlug);
+        return orgSlug;
+      }
+      
+      // Alternative query if the first one fails
+      const { data: directSystemOrg } = await supabase
         .from('system_users')
         .select('id')
         .eq('auth_user_id', userId)
         .maybeSingle();
-
-      console.log('[detectUserOrganization] System user lookup:', { systemUser });
-
-      if (systemUser?.id) {
-        // Step 2: Find their organization via system_user_organizations
-        const { data: userOrg, error: userOrgError } = await supabase
+      
+      if (directSystemOrg?.id) {
+        const { data: userOrg } = await supabase
           .from('system_user_organizations')
           .select('organizations(slug)')
-          .eq('system_user_id', systemUser.id)
+          .eq('system_user_id', directSystemOrg.id)
           .maybeSingle();
-
-        console.log('[detectUserOrganization] System user org result:', { userOrg, userOrgError });
-
+        
         if (userOrg?.organizations?.slug) {
-          const orgSlug = userOrg.organizations.slug;
-          console.log('[detectUserOrganization] Found organization via system user:', orgSlug);
-          return orgSlug;
+          console.log('[detectUserOrganization] Found organization via direct query:', userOrg.organizations.slug);
+          return userOrg.organizations.slug;
         }
       }
 
@@ -538,13 +549,12 @@ const UnifiedLogin = () => {
 
       setLoadingMessage("Redirecting to dashboard...");
 
-      // For super admins, always redirect to /dashboard
+      // For super admins, route to tenant-specific dashboard if orgSlug available
       if (userRole === 'super_admin') {
-        console.log('[LOGIN DEBUG] Super admin detected');
-        
-        // PRE-CACHE: If orgSlug available, fetch and store organization data (for performance)
         if (orgSlug) {
-          console.log('[LOGIN DEBUG] Pre-caching org data for:', orgSlug);
+          console.log('[LOGIN DEBUG] Super admin detected, pre-caching org data');
+          
+          // PRE-CACHE: Fetch and store organization data
           try {
             const { data: orgData } = await supabase
               .from('organizations')
@@ -568,20 +578,32 @@ const UnifiedLogin = () => {
             console.warn('[LOGIN DEBUG] Failed to pre-cache org data:', error);
             // Continue anyway - dashboard will fetch as fallback
           }
+          
+          console.log('[LOGIN DEBUG] Redirecting to tenant dashboard:', `/${orgSlug}/dashboard`);
+          toast.success("Welcome back, Super Administrator!");
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', `/${orgSlug}/dashboard`);
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
+          window.location.href = `/${orgSlug}/dashboard`;
+          return;
+        } else {
+          // Fallback: Super admin without organization - still redirect to main dashboard
+          console.warn('[LOGIN DEBUG] Super admin without organization detected. This may indicate missing organization assignment.');
+          console.log('[LOGIN DEBUG] Redirecting to main dashboard as fallback');
+          toast.success("Welcome back, Super Administrator!");
+          toast.info("Note: No organization found. Contact support if this is unexpected.", { duration: 5000 });
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', '/dashboard');
+          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+          
+          window.location.href = '/dashboard';
+          return;
         }
-        
-        // Always redirect to /dashboard for Super Admins
-        const redirectTarget = '/dashboard';
-        console.log('[LOGIN DEBUG] Redirecting Super Admin to:', redirectTarget);
-        toast.success("Welcome back, Super Administrator!");
-        
-        sessionStorage.setItem('redirect_in_progress', 'true');
-        sessionStorage.setItem('navigating_to_dashboard', 'true');
-        sessionStorage.setItem('target_dashboard', redirectTarget);
-        setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
-        
-        window.location.href = redirectTarget;
-        return;
       }
 
       // For app_admin (system administrators), route to system dashboard

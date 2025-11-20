@@ -19,15 +19,6 @@ export const SuperAdminGuard: React.FC<SuperAdminGuardProps> = ({
   const isLoading = authLoading || roleLoading;
 
   useEffect(() => {
-    console.log('[SuperAdminGuard] State check:', {
-      isLoading,
-      hasUser: !!user,
-      authLoading,
-      roleLoading,
-      role: userRoleData?.role,
-      userEmail: user?.email
-    });
-
     if (!isLoading) {
       if (!user) {
         console.log('[SuperAdminGuard] No user found, redirecting to', fallbackPath);
@@ -36,12 +27,12 @@ export const SuperAdminGuard: React.FC<SuperAdminGuardProps> = ({
       }
 
       if (!userRoleData || userRoleData.role !== 'super_admin') {
-        console.log('[SuperAdminGuard] User is not super admin (role:', userRoleData?.role, '), redirecting to home');
+        console.log('[SuperAdminGuard] User is not super admin, redirecting to home');
         navigate('/', { replace: true });
         return;
       }
       
-      console.log('[SuperAdminGuard] ✓ Super admin authentication check passed for user:', user.email);
+      console.log('[SuperAdminGuard] Super admin authentication check passed for user:', user.email);
     }
   }, [user, userRoleData, isLoading, navigate, fallbackPath]);
 
