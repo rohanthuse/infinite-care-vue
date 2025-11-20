@@ -13,9 +13,35 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const { data: userRole, isLoading: roleLoading, error: roleError } = useUserRole();
   const hasRedirected = useRef(false);
+  
+  // Defensive auth hook with error handling
+  let user = null;
+  let authLoading = false;
+  
+  try {
+    const auth = useAuth();
+    user = auth.user;
+    authLoading = auth.loading;
+  } catch (error) {
+    console.error('[Index] Auth context error:', error);
+    // Landing page is public - continue rendering without auth
+  }
+  
+  // Defensive user role hook with error handling
+  let userRole = null;
+  let roleLoading = false;
+  let roleError = null;
+  
+  try {
+    const roleData = useUserRole();
+    userRole = roleData.data;
+    roleLoading = roleData.isLoading;
+    roleError = roleData.error;
+  } catch (error) {
+    console.error('[Index] UserRole hook error:', error);
+    // Continue rendering without role data
+  }
 
   // PHASE 1: Defensive flag clearing on mount - always runs first
   useEffect(() => {
