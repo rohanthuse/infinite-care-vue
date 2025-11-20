@@ -2,10 +2,10 @@ import React from "react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 
-// Shared system-level tabs shown across System Dashboard, Tenants, Users, and Reports
+// Shared system-level tabs shown across System Dashboard, Tenants, Users, Subscription Plans, and Reports
 // This component only renders the TabsList + Triggers. Parent should wrap with <Tabs value=...>
 // Navigation is handled here to keep behavior consistent.
-export type SystemTabValue = "dashboard" | "tenants" | "users" | "reports";
+export type SystemTabValue = "dashboard" | "tenants" | "users" | "subscription-plans" | "reports";
 
 interface SystemSectionTabsProps {
   value: SystemTabValue;
@@ -15,7 +15,7 @@ export const SystemSectionTabs: React.FC<SystemSectionTabsProps> = ({ value }) =
   const navigate = useNavigate();
 
   return (
-    <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 mb-6">
+    <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 mb-6">
       <TabsTrigger
         value="dashboard"
         data-active={value === "dashboard"}
@@ -36,6 +36,13 @@ export const SystemSectionTabs: React.FC<SystemSectionTabsProps> = ({ value }) =
         onClick={() => navigate("/system-dashboard/users")}
       >
         Tenant Users
+      </TabsTrigger>
+      <TabsTrigger
+        value="subscription-plans"
+        data-active={value === "subscription-plans"}
+        onClick={() => navigate("/system-dashboard/subscription-plans")}
+      >
+        Subscription Plans
       </TabsTrigger>
       <TabsTrigger
         value="reports"
