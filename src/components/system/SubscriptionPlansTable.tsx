@@ -10,13 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Eye, Edit, Trash2, MoreHorizontal } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 import { SubscriptionPlan } from '@/hooks/useSubscriptionPlans';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -73,7 +67,13 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
-                <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-end gap-1">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -130,30 +130,33 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onView(plan)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(plan)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDelete(plan)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center justify-end gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onView(plan)}
+                    aria-label={`View ${plan.name}`}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onEdit(plan)}
+                    aria-label={`Edit ${plan.name}`}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onDelete(plan)}
+                    className="text-destructive hover:text-destructive"
+                    aria-label={`Delete ${plan.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
