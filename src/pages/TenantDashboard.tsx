@@ -252,11 +252,47 @@ const TenantDashboard = () => {
     return null;
   }
 
-  // Check if user has admin role (owner/admin/super_admin/branch_admin) to show admin dashboard
-  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin' || userRole.role === 'branch_admin');
+  // Split role checks for granular permission control
+  const isSuperAdmin = userRole && userRole.role === 'super_admin';
+  const isBranchAdmin = userRole && userRole.role === 'branch_admin';
+  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin');
 
-  // If user is organization admin, show the old Dashboard style interface
-  if (isOrganizationAdmin) {
+  // Branch Admin View - LIMITED to assigned branches ONLY
+  if (isBranchAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+        <DashboardHeader />
+        {/* NO DashboardNavbar for Branch Admins */}
+        
+        <motion.main 
+          className="flex-1 px-4 md:px-8 py-6 md:py-8 w-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+                Organisation Branches
+              </h1>
+              <p className="text-gray-500 mt-2 font-medium">
+                Access your assigned branches below.
+              </p>
+            </div>
+          </div>
+
+          {/* ONLY show branch navigation - automatically filtered to assigned branches */}
+          <TenantBranchNavigation organizationId={organization.id} />
+          
+          {/* NO OrganizationAdminsTable */}
+          {/* NO Organization Management heading */}
+        </motion.main>
+      </div>
+    );
+  }
+
+  // Super Admin View - FULL organization management access
+  if (isSuperAdmin || isOrganizationAdmin) {
     return (
       <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
         <DashboardHeader />
