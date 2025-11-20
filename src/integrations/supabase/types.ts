@@ -9116,61 +9116,169 @@ export type Database = {
       }
       system_tenant_agreements: {
         Row: {
+          agreement_reference: string | null
+          confidentiality_clause: string | null
           content: string | null
           created_at: string
           created_by: string | null
+          currency: string | null
+          data_protection_privacy: string | null
+          discount_amount: number | null
+          discount_percentage: number | null
           expiry_date: string | null
+          governing_law: string | null
           id: string
+          jurisdiction: string | null
+          late_payment_penalty: string | null
+          liability_indemnity: string | null
+          payment_mode: string | null
+          payment_terms: string | null
+          previous_version_id: string | null
+          price_amount: number | null
+          provider_address: string | null
+          provider_company_name: string | null
+          provider_contact_person: string | null
+          provider_email: string | null
+          provider_phone: string | null
           renewal_date: string | null
+          services_included: string | null
           signed_at: string | null
           signed_by_system: string | null
           signed_by_tenant: string | null
+          software_service_name: string | null
+          start_date: string | null
           status: Database["public"]["Enums"]["system_tenant_agreement_status"]
+          subscription_plan: string | null
+          support_maintenance: string | null
+          system_digital_signature: string | null
+          system_signature_date: string | null
           system_signature_file_id: string | null
           template_id: string | null
+          tenant_address: string | null
+          tenant_contact_person: string | null
+          tenant_digital_signature: string | null
+          tenant_email: string | null
           tenant_id: string
+          tenant_phone: string | null
+          tenant_signature_date: string | null
           tenant_signature_file_id: string | null
+          termination_clause: string | null
           title: string
+          training_onboarding: string | null
           type_id: string | null
           updated_at: string
+          user_limitations: string | null
+          version_number: number | null
         }
         Insert: {
+          agreement_reference?: string | null
+          confidentiality_clause?: string | null
           content?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
+          data_protection_privacy?: string | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
           expiry_date?: string | null
+          governing_law?: string | null
           id?: string
+          jurisdiction?: string | null
+          late_payment_penalty?: string | null
+          liability_indemnity?: string | null
+          payment_mode?: string | null
+          payment_terms?: string | null
+          previous_version_id?: string | null
+          price_amount?: number | null
+          provider_address?: string | null
+          provider_company_name?: string | null
+          provider_contact_person?: string | null
+          provider_email?: string | null
+          provider_phone?: string | null
           renewal_date?: string | null
+          services_included?: string | null
           signed_at?: string | null
           signed_by_system?: string | null
           signed_by_tenant?: string | null
+          software_service_name?: string | null
+          start_date?: string | null
           status?: Database["public"]["Enums"]["system_tenant_agreement_status"]
+          subscription_plan?: string | null
+          support_maintenance?: string | null
+          system_digital_signature?: string | null
+          system_signature_date?: string | null
           system_signature_file_id?: string | null
           template_id?: string | null
+          tenant_address?: string | null
+          tenant_contact_person?: string | null
+          tenant_digital_signature?: string | null
+          tenant_email?: string | null
           tenant_id: string
+          tenant_phone?: string | null
+          tenant_signature_date?: string | null
           tenant_signature_file_id?: string | null
+          termination_clause?: string | null
           title: string
+          training_onboarding?: string | null
           type_id?: string | null
           updated_at?: string
+          user_limitations?: string | null
+          version_number?: number | null
         }
         Update: {
+          agreement_reference?: string | null
+          confidentiality_clause?: string | null
           content?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string | null
+          data_protection_privacy?: string | null
+          discount_amount?: number | null
+          discount_percentage?: number | null
           expiry_date?: string | null
+          governing_law?: string | null
           id?: string
+          jurisdiction?: string | null
+          late_payment_penalty?: string | null
+          liability_indemnity?: string | null
+          payment_mode?: string | null
+          payment_terms?: string | null
+          previous_version_id?: string | null
+          price_amount?: number | null
+          provider_address?: string | null
+          provider_company_name?: string | null
+          provider_contact_person?: string | null
+          provider_email?: string | null
+          provider_phone?: string | null
           renewal_date?: string | null
+          services_included?: string | null
           signed_at?: string | null
           signed_by_system?: string | null
           signed_by_tenant?: string | null
+          software_service_name?: string | null
+          start_date?: string | null
           status?: Database["public"]["Enums"]["system_tenant_agreement_status"]
+          subscription_plan?: string | null
+          support_maintenance?: string | null
+          system_digital_signature?: string | null
+          system_signature_date?: string | null
           system_signature_file_id?: string | null
           template_id?: string | null
+          tenant_address?: string | null
+          tenant_contact_person?: string | null
+          tenant_digital_signature?: string | null
+          tenant_email?: string | null
           tenant_id?: string
+          tenant_phone?: string | null
+          tenant_signature_date?: string | null
           tenant_signature_file_id?: string | null
+          termination_clause?: string | null
           title?: string
+          training_onboarding?: string | null
           type_id?: string | null
           updated_at?: string
+          user_limitations?: string | null
+          version_number?: number | null
         }
         Relationships: [
           {
@@ -9192,6 +9300,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreements_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreements"
             referencedColumns: ["id"]
           },
           {
@@ -11516,6 +11631,7 @@ export type Database = {
         | "Pending"
         | "Expired"
         | "Terminated"
+        | "Draft"
       third_party_access_type: "client" | "staff" | "both"
       third_party_request_status:
         | "pending"
@@ -11701,6 +11817,7 @@ export const Constants = {
         "Pending",
         "Expired",
         "Terminated",
+        "Draft",
       ],
       third_party_access_type: ["client", "staff", "both"],
       third_party_request_status: [
