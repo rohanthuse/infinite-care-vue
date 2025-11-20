@@ -510,6 +510,9 @@ const UnifiedLogin = () => {
       // Organization members should NEVER be routed as carers/clients
       console.log('[LOGIN DEBUG] Checking organization membership before routing');
 
+      // Declare orgSlug early so it can be used in org membership check
+      let orgSlug: string | null = null;
+
       const { data: orgMembership } = await supabase
         .from('organization_members')
         .select('role, status, organization_id, organizations(slug)')
@@ -550,20 +553,21 @@ const UnifiedLogin = () => {
         }
       }
 
-      // Try optimized organization detection first, fallback to direct call
-      let orgSlug = null;
-      try {
-        console.log('[LOGIN DEBUG] Attempting optimized organization detection');
-        orgSlug = await getOrganizationWithOptimization(authData.user.id);
-        console.log('[LOGIN DEBUG] Optimized organization detection result:', orgSlug);
-      } catch (optimizedOrgError) {
-        console.warn('[LOGIN DEBUG] Optimized organization detection failed, using fallback:', optimizedOrgError);
+      // Try optimized organization detection first (if not already set by org membership), fallback to direct call
+      if (!orgSlug) {
         try {
-          orgSlug = await detectUserOrganization(authData.user.id);
-          console.log('[LOGIN DEBUG] Fallback organization detection result:', orgSlug);
-        } catch (fallbackOrgError) {
-          console.error('[LOGIN DEBUG] Both organization detection methods failed:', fallbackOrgError);
-          // Don't throw here - some users might not need organization detection
+          console.log('[LOGIN DEBUG] Attempting optimized organization detection');
+          orgSlug = await getOrganizationWithOptimization(authData.user.id);
+          console.log('[LOGIN DEBUG] Optimized organization detection result:', orgSlug);
+        } catch (optimizedOrgError) {
+          console.warn('[LOGIN DEBUG] Optimized organization detection failed, using fallback:', optimizedOrgError);
+          try {
+            orgSlug = await detectUserOrganization(authData.user.id);
+            console.log('[LOGIN DEBUG] Fallback organization detection result:', orgSlug);
+          } catch (fallbackOrgError) {
+            console.error('[LOGIN DEBUG] Both organization detection methods failed:', fallbackOrgError);
+            // Don't throw here - some users might not need organization detection
+          }
         }
       }
 
