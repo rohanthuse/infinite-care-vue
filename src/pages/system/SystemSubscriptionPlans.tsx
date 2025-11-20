@@ -87,22 +87,37 @@ export default function SystemSubscriptionPlans() {
 
       <EditSubscriptionPlanDialog
         open={showEditDialog}
-        onOpenChange={setShowEditDialog}
+        onOpenChange={(open) => {
+          setShowEditDialog(open);
+          if (!open) setSelectedPlan(null);
+        }}
         plan={selectedPlan}
-        onSuccess={() => setShowEditDialog(false)}
+        onSuccess={() => {
+          setShowEditDialog(false);
+          setSelectedPlan(null);
+        }}
       />
 
       <ViewSubscriptionPlanDialog
         open={showViewDialog}
-        onOpenChange={setShowViewDialog}
+        onOpenChange={(open) => {
+          setShowViewDialog(open);
+          if (!open) setSelectedPlan(null);
+        }}
         plan={selectedPlan}
       />
 
       <ConfirmDeleteSubscriptionPlanDialog
         open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open);
+          if (!open) setSelectedPlan(null);
+        }}
         plan={selectedPlan}
-        onSuccess={() => setShowDeleteDialog(false)}
+        onSuccess={() => {
+          setShowDeleteDialog(false);
+          setSelectedPlan(null);
+        }}
       />
     </div>
   );

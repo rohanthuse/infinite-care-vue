@@ -31,12 +31,17 @@ export function ConfirmDeleteSubscriptionPlanDialog({
   const deletePlan = useDeleteSubscriptionPlan();
 
   const handleDelete = () => {
-    if (!plan || confirmText !== 'DELETE') return;
+    if (!plan || confirmText !== 'DELETE' || deletePlan.isPending) return;
 
     deletePlan.mutate(plan.id, {
       onSuccess: () => {
-        onSuccess?.();
+        setConfirmText('');
         onOpenChange(false);
+        onSuccess?.();
+      },
+      onError: () => {
+        // Error is handled by the hook's onError
+        // Reset the input so user can retry
         setConfirmText('');
       },
     });
@@ -45,6 +50,7 @@ export function ConfirmDeleteSubscriptionPlanDialog({
   const handleClose = () => {
     if (!deletePlan.isPending) {
       setConfirmText('');
+      deletePlan.reset();
       onOpenChange(false);
     }
   };
