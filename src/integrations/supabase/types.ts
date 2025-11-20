@@ -8965,6 +8965,258 @@ export type Database = {
           },
         ]
       }
+      system_tenant_agreement_files: {
+        Row: {
+          agreement_id: string | null
+          created_at: string
+          file_category: Database["public"]["Enums"]["system_tenant_agreement_file_category"]
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          storage_path: string
+          template_id: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          agreement_id?: string | null
+          created_at?: string
+          file_category?: Database["public"]["Enums"]["system_tenant_agreement_file_category"]
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          storage_path: string
+          template_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          agreement_id?: string | null
+          created_at?: string
+          file_category?: Database["public"]["Enums"]["system_tenant_agreement_file_category"]
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          storage_path?: string
+          template_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_tenant_agreement_files_agreement_id_fkey"
+            columns: ["agreement_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreement_files_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreement_files_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_tenant_agreement_templates: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          template_file_id: string | null
+          title: string
+          type_id: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          template_file_id?: string | null
+          title: string
+          type_id?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          template_file_id?: string | null
+          title?: string
+          type_id?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_template_file"
+            columns: ["template_file_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreement_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreement_templates_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_tenant_agreement_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_tenant_agreements: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string | null
+          expiry_date: string | null
+          id: string
+          renewal_date: string | null
+          signed_at: string | null
+          signed_by_system: string | null
+          signed_by_tenant: string | null
+          status: Database["public"]["Enums"]["system_tenant_agreement_status"]
+          system_signature_file_id: string | null
+          template_id: string | null
+          tenant_id: string
+          tenant_signature_file_id: string | null
+          title: string
+          type_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          renewal_date?: string | null
+          signed_at?: string | null
+          signed_by_system?: string | null
+          signed_by_tenant?: string | null
+          status?: Database["public"]["Enums"]["system_tenant_agreement_status"]
+          system_signature_file_id?: string | null
+          template_id?: string | null
+          tenant_id: string
+          tenant_signature_file_id?: string | null
+          title: string
+          type_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          id?: string
+          renewal_date?: string | null
+          signed_at?: string | null
+          signed_by_system?: string | null
+          signed_by_tenant?: string | null
+          status?: Database["public"]["Enums"]["system_tenant_agreement_status"]
+          system_signature_file_id?: string | null
+          template_id?: string | null
+          tenant_id?: string
+          tenant_signature_file_id?: string | null
+          title?: string
+          type_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_system_signature_file"
+            columns: ["system_signature_file_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_tenant_signature_file"
+            columns: ["tenant_signature_file_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreements_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_tenant_agreements_type_id_fkey"
+            columns: ["type_id"]
+            isOneToOne: false
+            referencedRelation: "system_tenant_agreement_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_user_organization_audit: {
         Row: {
           action: string
@@ -11254,6 +11506,16 @@ export type Database = {
         | "tenant_manager"
         | "support_admin"
         | "analytics_viewer"
+      system_tenant_agreement_file_category:
+        | "document"
+        | "signature"
+        | "template"
+        | "attachment"
+      system_tenant_agreement_status:
+        | "Active"
+        | "Pending"
+        | "Expired"
+        | "Terminated"
       third_party_access_type: "client" | "staff" | "both"
       third_party_request_status:
         | "pending"
@@ -11427,6 +11689,18 @@ export const Constants = {
         "tenant_manager",
         "support_admin",
         "analytics_viewer",
+      ],
+      system_tenant_agreement_file_category: [
+        "document",
+        "signature",
+        "template",
+        "attachment",
+      ],
+      system_tenant_agreement_status: [
+        "Active",
+        "Pending",
+        "Expired",
+        "Terminated",
       ],
       third_party_access_type: ["client", "staff", "both"],
       third_party_request_status: [
