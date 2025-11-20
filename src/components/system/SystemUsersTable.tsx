@@ -10,6 +10,7 @@ import {
 import { CustomButton } from '@/components/ui/CustomButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   MoreHorizontal, 
   Edit, 
@@ -34,6 +35,9 @@ import { format } from 'date-fns';
 import { EditSystemUserDialog } from '@/components/system/EditSystemUserDialog';
 import { SetSystemUserPasswordDialog } from '@/components/system/SetSystemUserPasswordDialog';
 import { DeleteSystemUserDialog } from '@/components/system/DeleteSystemUserDialog';
+import { SystemUsersBulkActionsBar } from '@/components/system/SystemUsersBulkActionsBar';
+import { BulkDeleteSystemUsersDialog } from '@/components/system/BulkDeleteSystemUsersDialog';
+import { useDeleteMultipleSystemUsers } from '@/hooks/useDeleteMultipleSystemUsers';
 
 export const SystemUsersTable: React.FC = () => {
   const { data: users, isLoading } = useSystemUsers();
@@ -41,6 +45,62 @@ export const SystemUsersTable: React.FC = () => {
   const [editingUser, setEditingUser] = React.useState<any | null>(null);
   const [passwordResetUser, setPasswordResetUser] = React.useState<any | null>(null);
   const [deleteDialogUser, setDeleteDialogUser] = React.useState<any | null>(null);
+  
+  // Bulk delete state
+  const [selectedUserIds, setSelectedUserIds] = React.useState<Set<string>>(new Set());
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
+  const deleteMultipleUsers = useDeleteMultipleSystemUsers();
+
+  // Selection handlers
+  const handleSelectAll = () => {
+    if (!users) return;
+    
+    if (selectedUserIds.size === users.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(users.map(u => u.id)));
+    }
+  };
+
+  const handleSelectUser = (userId: string) => {
+    const newSelection = new Set(selectedUserIds);
+    if (newSelection.has(userId)) {
+      newSelection.delete(userId);
+    } else {
+      newSelection.add(userId);
+    }
+    setSelectedUserIds(newSelection);
+  };
+
+  const handleClearSelection = () => {
+    setSelectedUserIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    setShowBulkDeleteDialog(true);
+  };
+
+  const handleConfirmBulkDelete = () => {
+    if (!users || selectedUserIds.size === 0) return;
+
+    const usersToDelete = users.filter(u => selectedUserIds.has(u.id));
+    
+    deleteMultipleUsers.mutate(
+      {
+        userIds: Array.from(selectedUserIds),
+        users: usersToDelete,
+      },
+      {
+        onSuccess: () => {
+          setShowBulkDeleteDialog(false);
+          setSelectedUserIds(new Set());
+        },
+      }
+    );
+  };
+
+  const isAllSelected = users && users.length > 0 && selectedUserIds.size === users.length;
+  const isSomeSelected = selectedUserIds.size > 0 && !isAllSelected;
 
   const handleToggleStatus = (userId: string, currentStatus: boolean) => {
     toggleUserStatus.mutate({ userId, isActive: !currentStatus });
@@ -77,22 +137,43 @@ export const SystemUsersTable: React.FC = () => {
   }
 
   return (
-    <div className="border border-border/50 rounded-xl overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/30">
-            <TableHead>User</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead>Organisations</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[70px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
+    <>
+      <div className="border border-border/50 rounded-xl overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30">
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={isAllSelected || isSomeSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all users"
+                />
+              </TableHead>
+              <TableHead>User</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Organisations</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead className="w-[70px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
         <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id} className="hover:bg-muted/20">
-              <TableCell>
+          {users.map((user) => {
+            const isSelected = selectedUserIds.has(user.id);
+            
+            return (
+              <TableRow 
+                key={user.id} 
+                className={isSelected ? 'bg-muted/50 hover:bg-muted/60' : 'hover:bg-muted/20'}
+              >
+                <TableCell>
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => handleSelectUser(user.id)}
+                    aria-label={`Select ${user.first_name} ${user.last_name}`}
+                  />
+                </TableCell>
+                <TableCell>
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-primary" />
@@ -210,32 +291,49 @@ export const SystemUsersTable: React.FC = () => {
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
+          );
+          })}
         </TableBody>
-        </Table>
-        {editingUser && (
-          <EditSystemUserDialog
-            open={!!editingUser}
-            onOpenChange={(o) => { if (!o) setEditingUser(null); }}
-            user={editingUser}
-          />
-        )}
-        {passwordResetUser && (
-          <SetSystemUserPasswordDialog
-            open={!!passwordResetUser}
-            onOpenChange={(o) => { if (!o) setPasswordResetUser(null); }}
-            user={passwordResetUser}
-          />
-        )}
-        {deleteDialogUser && (
-          <DeleteSystemUserDialog
-            user={deleteDialogUser}
-            open={!!deleteDialogUser}
-            onOpenChange={(open) => {
-              if (!open) setDeleteDialogUser(null);
-            }}
-          />
-        )}
-      </div>
+      </Table>
+    </div>
+
+    <SystemUsersBulkActionsBar
+      selectedCount={selectedUserIds.size}
+      onClearSelection={handleClearSelection}
+      onBulkDelete={handleBulkDelete}
+      isDeleting={deleteMultipleUsers.isPending}
+    />
+
+    <BulkDeleteSystemUsersDialog
+      users={users?.filter(u => selectedUserIds.has(u.id)) || []}
+      open={showBulkDeleteDialog}
+      onOpenChange={setShowBulkDeleteDialog}
+      onConfirm={handleConfirmBulkDelete}
+    />
+
+    {editingUser && (
+      <EditSystemUserDialog
+        open={!!editingUser}
+        onOpenChange={(o) => { if (!o) setEditingUser(null); }}
+        user={editingUser}
+      />
+    )}
+    {passwordResetUser && (
+      <SetSystemUserPasswordDialog
+        open={!!passwordResetUser}
+        onOpenChange={(o) => { if (!o) setPasswordResetUser(null); }}
+        user={passwordResetUser}
+      />
+    )}
+    {deleteDialogUser && (
+      <DeleteSystemUserDialog
+        user={deleteDialogUser}
+        open={!!deleteDialogUser}
+        onOpenChange={(open) => {
+          if (!open) setDeleteDialogUser(null);
+        }}
+      />
+    )}
+    </>
   );
 };
