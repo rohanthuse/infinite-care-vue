@@ -554,6 +554,20 @@ const UnifiedLogin = () => {
                 status: 'active'
               }));
               
+              // Also cache the user's organization role if available
+              const { data: orgMemberData } = await supabase
+                .from('organization_members')
+                .select('role')
+                .eq('organization_id', orgData.id)
+                .eq('user_id', authData.user.id)
+                .eq('status', 'active')
+                .maybeSingle();
+
+              if (orgMemberData) {
+                sessionStorage.setItem('cached_org_role', orgMemberData.role);
+                sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
+              }
+              
               console.log('[LOGIN DEBUG] Organization data cached successfully');
             }
           } catch (error) {
@@ -647,6 +661,11 @@ const UnifiedLogin = () => {
                 role: 'branch_admin',
                 status: 'active'
               }));
+              
+              // Cache branch_admin role explicitly
+              sessionStorage.setItem('cached_org_role', 'branch_admin');
+              sessionStorage.setItem('cached_org_role_timestamp', Date.now().toString());
+              
               console.log('[LOGIN DEBUG] Branch admin - organization data cached');
             }
           } catch (error) {
