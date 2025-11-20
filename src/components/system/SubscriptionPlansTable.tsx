@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Eye, Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
@@ -25,6 +26,9 @@ interface SubscriptionPlansTableProps {
   onView: (plan: SubscriptionPlan) => void;
   onEdit: (plan: SubscriptionPlan) => void;
   onDelete: (plan: SubscriptionPlan) => void;
+  selectedPlanIds: string[];
+  onSelectPlan: (planId: string) => void;
+  onSelectAll: () => void;
 }
 
 export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
@@ -33,13 +37,25 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
   onView,
   onEdit,
   onDelete,
+  selectedPlanIds,
+  onSelectPlan,
+  onSelectAll,
 }) => {
+  const allSelected = plans.length > 0 && selectedPlanIds.length === plans.length;
+  const someSelected = selectedPlanIds.length > 0 && selectedPlanIds.length < plans.length;
   if (isLoading) {
     return (
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={onSelectAll}
+                  aria-label="Select all"
+                />
+              </TableHead>
               <TableHead>Plan Name</TableHead>
               <TableHead>Max Users</TableHead>
               <TableHead>Monthly Price</TableHead>
@@ -51,6 +67,7 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
           <TableBody>
             {[1, 2, 3].map((i) => (
               <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-32" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                 <TableCell><Skeleton className="h-4 w-20" /></TableCell>
@@ -78,6 +95,13 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={onSelectAll}
+                aria-label="Select all"
+              />
+            </TableHead>
             <TableHead>Plan Name</TableHead>
             <TableHead>Max Users</TableHead>
             <TableHead>Monthly Price</TableHead>
@@ -89,6 +113,13 @@ export const SubscriptionPlansTable: React.FC<SubscriptionPlansTableProps> = ({
         <TableBody>
           {plans.map((plan) => (
             <TableRow key={plan.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedPlanIds.includes(plan.id)}
+                  onCheckedChange={() => onSelectPlan(plan.id)}
+                  aria-label={`Select ${plan.name}`}
+                />
+              </TableCell>
               <TableCell className="font-medium">{plan.name}</TableCell>
               <TableCell>{plan.max_users?.toLocaleString() || 'N/A'}</TableCell>
               <TableCell>£{plan.price_monthly.toFixed(2)}</TableCell>
