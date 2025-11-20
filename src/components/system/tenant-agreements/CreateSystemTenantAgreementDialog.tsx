@@ -155,29 +155,61 @@ export function CreateSystemTenantAgreementDialog() {
 
   // Fetch dropdown data when dialog opens
   useEffect(() => {
-    if (open) {
-      // Fetch tenants (organizations)
-      supabase
-        .from('organizations')
-        .select('id, name')
-        .order('name')
-        .then(({ data }) => setTenants(data || []));
+    const fetchDropdownData = async (): Promise<void> => {
+      if (!open) return;
       
-      // Fetch agreement types
-      supabase
-        .from('system_tenant_agreement_types')
-        .select('id, name')
-        .eq('is_active', true)
-        .order('name')
-        .then(({ data }) => setAgreementTypes(data || []));
-      
-      // Fetch templates
-      supabase
-        .from('system_tenant_agreement_templates')
-        .select('id, title')
-        .order('title')
-        .then(({ data }) => setTemplates(data || []));
-    }
+      try {
+        // Fetch tenants
+        // @ts-ignore - Known Supabase TypeScript depth issue
+        const tenantsResult = await supabase
+          .from('organizations')
+          .select('id, name')
+          .order('name');
+        
+        const tenantsData: Array<{ id: string; name: string }> = [];
+        if (tenantsResult.data) {
+          for (const item of tenantsResult.data) {
+            tenantsData.push({ id: String(item.id), name: String(item.name) });
+          }
+        }
+        setTenants(tenantsData);
+        
+        // Fetch agreement types
+        // @ts-ignore - Known Supabase TypeScript depth issue
+        const typesResult = await supabase
+          .from('system_tenant_agreement_types')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name');
+        
+        const typesData: Array<{ id: string; name: string }> = [];
+        if (typesResult.data) {
+          for (const item of typesResult.data) {
+            typesData.push({ id: String(item.id), name: String(item.name) });
+          }
+        }
+        setAgreementTypes(typesData);
+        
+        // Fetch templates
+        // @ts-ignore - Known Supabase TypeScript depth issue
+        const templatesResult = await supabase
+          .from('system_tenant_agreement_templates')
+          .select('id, title')
+          .order('title');
+        
+        const templatesData: Array<{ id: string; title: string }> = [];
+        if (templatesResult.data) {
+          for (const item of templatesResult.data) {
+            templatesData.push({ id: String(item.id), title: String(item.title) });
+          }
+        }
+        setTemplates(templatesData);
+      } catch (error) {
+        console.error('Error fetching dropdown data:', error);
+      }
+    };
+    
+    fetchDropdownData();
   }, [open]);
 
   // Auto-generate agreement reference
@@ -203,38 +235,48 @@ export function CreateSystemTenantAgreementDialog() {
 
   // Auto-fill tenant name when selected
   useEffect(() => {
-    if (agreementDetails.tenant_id) {
-      supabase
+    const fetchTenantName = async (): Promise<void> => {
+      if (!agreementDetails.tenant_id) return;
+      
+      // @ts-ignore - Known Supabase TypeScript depth issue
+      const result = await supabase
         .from('organizations')
         .select('name')
         .eq('id', agreementDetails.tenant_id)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setTenantDetails(prev => ({ ...prev, name: data.name }));
-          }
-        });
-    }
+        .single();
+      
+      if (result.data && result.data.name) {
+        setTenantDetails(prev => ({ ...prev, name: String(result.data.name) }));
+      }
+    };
+    
+    fetchTenantName();
   }, [agreementDetails.tenant_id]);
 
   // Auto-fill from template
   useEffect(() => {
-    if (agreementDetails.template_id) {
-      supabase
+    const fetchTemplate = async (): Promise<void> => {
+      if (!agreementDetails.template_id) return;
+      
+      // @ts-ignore - Known Supabase TypeScript depth issue
+      const result = await supabase
         .from('system_tenant_agreement_templates')
         .select('title, content')
         .eq('id', agreementDetails.template_id)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setAgreementDetails(prev => ({
-              ...prev,
-              title: prev.title || data.title || '',
-              content: data.content || ''
-            }));
-          }
-        });
-    }
+        .single();
+      
+      if (result.data) {
+        const templateTitle = String(result.data.title || '');
+        const templateContent = String(result.data.content || '');
+        setAgreementDetails(prev => ({
+          ...prev,
+          title: prev.title || templateTitle,
+          content: templateContent
+        }));
+      }
+    };
+    
+    fetchTemplate();
   }, [agreementDetails.template_id]);
 
   const validateForm = (): string[] => {
@@ -291,6 +333,7 @@ export function CreateSystemTenantAgreementDialog() {
       setIsSubmitting(true);
       
       // Get current user ID
+      // @ts-ignore - Known Supabase TypeScript depth issue
       const { data: { user } } = await supabase.auth.getUser();
       
       // Combine all state slices
