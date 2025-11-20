@@ -25,7 +25,8 @@ const SuperAdminLogin = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!loading && session) {
-      navigate("/dashboard");
+      console.log('[SuperAdminLogin] User already authenticated, redirecting to dashboard');
+      navigate("/dashboard", { replace: true });
     }
   }, [session, loading, navigate]);
 
