@@ -23,6 +23,7 @@ import { useOrganizationsForUserAssignment } from '@/hooks/useOrganizationsForUs
 import { SearchableOrganizationSelect } from './SearchableOrganizationSelect';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AddSystemUserDialogProps {
   children?: React.ReactNode;
@@ -49,6 +50,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
   const createUser = useCreateSystemUser();
   const { data: organizations, isLoading: orgLoading } = useOrganizationsForUserAssignment();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,6 +126,11 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
 
           assignmentSuccess = true;
           console.log('[AddSystemUserDialog] Organization assignment successful');
+          
+          // Refresh tenant user data and related views now that assignment is done
+          queryClient.invalidateQueries({ queryKey: ['system-users'] });
+          queryClient.invalidateQueries({ queryKey: ['organizations-with-users'] });
+          queryClient.invalidateQueries({ queryKey: ['organizations', 'system-tenants'] });
         } catch (err: any) {
           lastError = err;
           retryCount++;
