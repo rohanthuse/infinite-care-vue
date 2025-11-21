@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { formatSafeDate } from '@/lib/dateUtils';
 import { formatCurrency } from '@/lib/utils';
 import type { SystemTenantAgreement } from '@/types/systemTenantAgreements';
@@ -70,7 +70,7 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -81,9 +81,8 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0">
-          <ScrollArea className="h-full pr-4">
-            <Accordion type="multiple" defaultValue={["details"]} className="space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-4">
+          <Accordion type="multiple" defaultValue={["details"]} className="space-y-4">
             {/* Section 1: Agreement Details */}
             <AccordionItem value="details" className="border rounded-lg px-4">
               <AccordionTrigger className="hover:no-underline">
@@ -331,8 +330,7 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
                 </AccordionContent>
               </AccordionItem>
             )}
-            </Accordion>
-          </ScrollArea>
+          </Accordion>
         </div>
 
         <DialogFooter>
