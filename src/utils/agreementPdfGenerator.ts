@@ -17,7 +17,23 @@ const sanitizeFilename = (title: string): string => {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 };
 
-export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => {
+const loadImageAsBase64 = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Failed to load logo:', error);
+    return '';
+  }
+};
+
+export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Promise<void> => {
   const doc = new jsPDF();
   let yPos = 20;
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -25,14 +41,72 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
   const rightMargin = pageWidth - 14;
   const contentWidth = rightMargin - leftMargin;
 
-  // Header - Agreement Title
+  // Load logo
+  const logoUrl = '/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png';
+  const logoBase64 = await loadImageAsBase64(logoUrl);
+
+  // Function to add header to any page
+  const addHeaderToPage = () => {
+    const headerHeight = 40;
+    
+    // Add light blue background for header
+    doc.setFillColor(240, 248, 255);
+    doc.rect(0, 0, pageWidth, headerHeight, 'F');
+
+    // Add logo on the left (if loaded successfully)
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'PNG', leftMargin, 10, 20, 20);
+      } catch (error) {
+        console.error('Failed to add logo to PDF:', error);
+      }
+    }
+
+    // Company name and details on the right
+    const companyDetailsX = pageWidth - leftMargin;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(41, 98, 255);
+    doc.text('MED-INFINITE ENDLESS CARE', companyDetailsX, 12, { align: 'right' });
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+
+    const companyDetails = [
+      agreement.provider_address || 'Healthcare Address',
+      agreement.provider_email || 'info@med-infinite.com',
+      agreement.provider_phone || '+44 (0) 20 XXXX XXXX',
+    ];
+
+    let detailsY = 18;
+    companyDetails.forEach(detail => {
+      doc.text(detail, companyDetailsX, detailsY, { align: 'right' });
+      detailsY += 4;
+    });
+
+    // Add separator line below header
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(leftMargin, headerHeight, pageWidth - leftMargin, headerHeight);
+  };
+
+  // === HEADER SECTION ===
+  const headerHeight = 40;
+  addHeaderToPage();
+  yPos = headerHeight + 10;
+
+  // === AGREEMENT TITLE SECTION ===
   doc.setFontSize(20);
   doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'bold');
   doc.text(agreement.title || 'Agreement', pageWidth / 2, yPos, { align: 'center' });
   yPos += 10;
 
   // Agreement Reference and Status
   doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
   doc.text(`Reference: ${agreement.agreement_reference || 'N/A'}`, pageWidth / 2, yPos, { align: 'center' });
   yPos += 6;
@@ -123,7 +197,8 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
   // Check if we need a new page
   if (yPos > 250) {
     doc.addPage();
-    yPos = 20;
+    addHeaderToPage();
+    yPos = headerHeight + 10;
   }
 
   // Section: Financial Terms
@@ -163,7 +238,8 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
   // Check if we need a new page
   if (yPos > 250) {
     doc.addPage();
-    yPos = 20;
+    addHeaderToPage();
+    yPos = headerHeight + 10;
   }
 
   // Section: Service Scope
@@ -199,7 +275,8 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
   // Check if we need a new page
   if (yPos > 230) {
     doc.addPage();
-    yPos = 20;
+    addHeaderToPage();
+    yPos = headerHeight + 10;
   }
 
   // Section: Legal Terms
@@ -237,7 +314,8 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
   // Check if we need a new page
   if (yPos > 240) {
     doc.addPage();
-    yPos = 20;
+    addHeaderToPage();
+    yPos = headerHeight + 10;
   }
 
   // Section: Signatures
@@ -278,10 +356,17 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
   doc.setTextColor(100, 100, 100);
   doc.text('(Digital signature on file)', leftMargin + 5, yPos);
 
-  // Footer
+  // Footer - add to all pages
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    
+    // Add header to additional pages
+    if (i > 1) {
+      addHeaderToPage();
+    }
+    
+    // Footer text
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text(
@@ -291,7 +376,7 @@ export const generateAgreementPDF = (agreement: SystemTenantAgreement): void => 
     );
     doc.text(
       `Page ${i} of ${pageCount}`,
-      rightMargin,
+      pageWidth - leftMargin,
       doc.internal.pageSize.getHeight() - 10,
       { align: 'right' }
     );
