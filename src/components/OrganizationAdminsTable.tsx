@@ -67,7 +67,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           permissions
         `)
         .eq('organization_id', organizationId)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .eq('role', 'super_admin');
 
       if (membersError) {
         console.error('Error fetching organisation members:', membersError);
@@ -205,7 +206,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
-            placeholder="Search organisation members..."
+            placeholder="Search super admins..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -240,7 +241,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
             ) : filteredMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  {searchTerm ? "No members match your search." : "No organisation members found."}
+                  {searchTerm ? "No super admins match your search." : "No super admins found."}
                 </TableCell>
               </TableRow>
             ) : (
