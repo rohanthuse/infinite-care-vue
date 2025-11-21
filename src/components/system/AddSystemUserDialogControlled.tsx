@@ -20,9 +20,9 @@ import { SearchableOrganizationSelect } from './SearchableOrganizationSelect';
 import { Plus, Loader2 } from 'lucide-react';
 import { useCreateSystemUser } from '@/hooks/useSystemUsers';
 import { useOrganizationsForUserAssignment } from '@/hooks/useOrganizationsForUserAssignment';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { useAssignUserToOrganization } from '@/hooks/useOrganizationAssignment';
 
 interface AddSystemUserDialogControlledProps {
   open: boolean;
@@ -53,6 +53,7 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
   const { data: organizations, isLoading: orgLoading } = useOrganizationsForUserAssignment();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const assignUserToOrganization = useAssignUserToOrganization();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,24 +91,13 @@ export const AddSystemUserDialogControlled: React.FC<AddSystemUserDialogControll
         try {
           console.log(`[AddSystemUserDialogControlled] Assigning user to organization (attempt ${retryCount + 1}/${maxRetries})`);
           
-          const { data: assignData, error: assignError } = await supabase.functions.invoke(
-            'assign-user-to-organization',
-            {
-              body: {
-                system_user_id: newUser.id,
-                organization_id: formData.organization_id,
-                role: 'super_admin',
-              },
-            }
-          );
+          const result = await assignUserToOrganization.mutateAsync({
+            systemUserId: newUser.id,
+            organizationId: formData.organization_id,
+            role: 'super_admin',
+          });
 
-          if (assignError) {
-            throw new Error(assignError.message || 'Failed to assign user to organization');
-          }
-
-          if (!assignData?.success) {
-            throw new Error(assignData?.error || 'Assignment operation returned unsuccessful');
-          }
+          console.log('[AddSystemUserDialogControlled] Assignment result:', result);
 
           assignmentSuccess = true;
           console.log('[AddSystemUserDialogControlled] Organization assignment successful');
