@@ -136,18 +136,22 @@ serve(async (req) => {
       console.error('[assign-user-to-organization] Insert error:', insertError);
       
       // Log failure to audit trail if table exists
-      await supabase.from('system_user_organization_audit').insert({
-        system_user_id,
-        organization_id,
-        action: 'assigned',
-        new_role: role || 'member',
-        success: false,
-        error_message: insertError.message,
-        metadata: {
-          source: 'edge_function',
-          error_code: insertError.code,
-        }
-      }).catch(err => console.error('[assign-user-to-organization] Audit log error:', err));
+      try {
+        await supabase.from('system_user_organization_audit').insert({
+          system_user_id,
+          organization_id,
+          action: 'assigned',
+          new_role: role || 'member',
+          success: false,
+          error_message: insertError.message,
+          metadata: {
+            source: 'edge_function',
+            error_code: insertError.code,
+          }
+        });
+      } catch (err) {
+        console.error('[assign-user-to-organization] Audit log error:', err);
+      }
       
       return new Response(JSON.stringify({ success: false, error: insertError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -176,17 +180,21 @@ serve(async (req) => {
     }
 
     // Log success to audit trail
-    await supabase.from('system_user_organization_audit').insert({
-      system_user_id,
-      organization_id,
-      action: 'assigned',
-      new_role: role || 'member',
-      success: true,
-      metadata: {
-        source: 'edge_function',
-        assignment: newAssignment,
-      }
-    }).catch(err => console.error('[assign-user-to-organization] Audit log error:', err));
+    try {
+      await supabase.from('system_user_organization_audit').insert({
+        system_user_id,
+        organization_id,
+        action: 'assigned',
+        new_role: role || 'member',
+        success: true,
+        metadata: {
+          source: 'edge_function',
+          assignment: newAssignment,
+        }
+      });
+    } catch (err) {
+      console.error('[assign-user-to-organization] Audit log error:', err);
+    }
 
     console.log('[assign-user-to-organization] Assignment completed successfully');
     return new Response(JSON.stringify({ 
