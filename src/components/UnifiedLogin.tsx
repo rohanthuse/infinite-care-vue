@@ -220,7 +220,33 @@ const UnifiedLogin = () => {
     try {
       console.log('[detectUserOrganization] Checking organization for user:', userId);
       
-      // First check organization_members (for regular org members and system users)
+      // For super_admin and app_admin users, check system_user_organizations FIRST
+      console.log('[detectUserOrganization] Checking system_user_organizations first for admin users');
+
+      const { data: systemUserData, error: systemUserLookupError } = await supabase
+        .from('system_users')
+        .select('id')
+        .eq('auth_user_id', userId)
+        .maybeSingle();
+
+      if (systemUserData?.id) {
+        const { data: systemOrgAssignment, error: systemOrgError } = await supabase
+          .from('system_user_organizations')
+          .select('role, organization_id, organizations(slug, name)')
+          .eq('system_user_id', systemUserData.id)
+          .limit(1)
+          .maybeSingle();
+
+        // If user is super_admin or app_admin in system_user_organizations, use that org
+        if (systemOrgAssignment?.organizations?.slug && 
+            (systemOrgAssignment.role === 'super_admin' || systemOrgAssignment.role === 'app_admin')) {
+          const orgSlug = (systemOrgAssignment.organizations as any).slug;
+          console.log('[detectUserOrganization] Found admin organization via system_user_organizations:', orgSlug);
+          return orgSlug;
+        }
+      }
+      
+      // Then check organization_members (for regular org members)
       const { data: memberships, error: membershipError } = await supabase
         .from('organization_members')
         .select('role, organization_id, joined_at, organizations(slug)')
@@ -323,23 +349,30 @@ const UnifiedLogin = () => {
       }
 
       // Final fallback: check system_user_organizations via system_users table
-      const { data: systemUser, error: systemUserError } = await supabase
+      // Use a more reliable two-step query instead of nested select
+      const { data: systemUserFallback, error: systemUserFallbackError } = await supabase
         .from('system_users')
-        .select(`
-          system_user_organizations(
-            organization_id,
-            organizations(slug)
-          )
-        `)
+        .select('id')
         .eq('auth_user_id', userId)
         .maybeSingle();
 
-      console.log('[detectUserOrganization] System user result:', { systemUser, systemUserError });
+      console.log('[detectUserOrganization] System user fallback lookup:', { systemUserFallback, systemUserFallbackError });
 
-      if (systemUser?.system_user_organizations?.[0]?.organizations?.slug) {
-        const orgSlug = systemUser.system_user_organizations[0].organizations.slug;
-        console.log('[detectUserOrganization] Found organization via system user:', orgSlug);
-        return orgSlug;
+      if (systemUserFallback?.id) {
+        const { data: systemOrgFallback, error: systemOrgFallbackError } = await supabase
+          .from('system_user_organizations')
+          .select('organization_id, organizations(slug)')
+          .eq('system_user_id', systemUserFallback.id)
+          .limit(1)
+          .maybeSingle();
+
+        console.log('[detectUserOrganization] System org fallback assignment:', { systemOrgFallback, systemOrgFallbackError });
+
+        if (systemOrgFallback?.organizations?.slug) {
+          const orgSlug = (systemOrgFallback.organizations as any).slug;
+          console.log('[detectUserOrganization] Found organization via system user fallback:', orgSlug);
+          return orgSlug;
+        }
       }
 
       console.log('[detectUserOrganization] No organization found for user:', userId);
@@ -575,6 +608,17 @@ const UnifiedLogin = () => {
 
       // For super admins, route to tenant-specific dashboard if orgSlug available
       if (userRole === 'super_admin') {
+        console.log('[LOGIN DEBUG] Super admin detected, orgSlug:', orgSlug);
+        
+        if (!orgSlug) {
+          console.error('[LOGIN DEBUG] CRITICAL: Super admin has no organization! User:', authData.user.email);
+          clearTimeout(timeoutId);
+          setLoading(false);
+          toast.error("Organization assignment missing. Please contact system administrator.");
+          await supabase.auth.signOut();
+          return;
+        }
+        
         if (orgSlug) {
           console.log('[LOGIN DEBUG] Super admin detected, pre-caching org data');
           
@@ -631,18 +675,6 @@ const UnifiedLogin = () => {
           setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
           
           window.location.href = `/${orgSlug}/dashboard`;
-          return;
-        } else {
-          // Fallback: if no organization found, redirect to main dashboard
-          console.log('[LOGIN DEBUG] Super admin without organization, redirecting to main dashboard');
-          toast.success("Welcome back, Super Administrator!");
-          
-          sessionStorage.setItem('redirect_in_progress', 'true');
-          sessionStorage.setItem('navigating_to_dashboard', 'true');
-          sessionStorage.setItem('target_dashboard', '/dashboard');
-          setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
-          
-          window.location.href = '/dashboard';
           return;
         }
       }
