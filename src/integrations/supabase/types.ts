@@ -11463,6 +11463,14 @@ export type Database = {
             Returns: Json
           }
         | { Args: { p_email: string; p_password: string }; Returns: Json }
+      system_create_session_for_auth_user: {
+        Args: {
+          p_auth_user_id: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
       system_logout: { Args: { p_session_token: string }; Returns: Json }
       system_validate_session: {
         Args: { p_session_token: string }
