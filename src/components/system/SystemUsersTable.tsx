@@ -160,7 +160,7 @@ export const SystemUsersTable: React.FC = () => {
               </TableHead>
               <TableHead>User</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Organisations</TableHead>
+              <TableHead>Tenant</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="w-[70px]">Actions</TableHead>
@@ -243,7 +243,7 @@ export const SystemUsersTable: React.FC = () => {
                   ) : (
                     <Badge variant="secondary" className="text-xs flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      Not Assigned
+                      No Tenant
                     </Badge>
                   )}
                 </div>
