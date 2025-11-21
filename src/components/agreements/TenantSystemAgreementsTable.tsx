@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, FileText, Calendar, Loader2 } from "lucide-react";
+import { Eye, FileText, Calendar, Loader2, Download } from "lucide-react";
 import { format } from "date-fns";
 import { useTenantSystemAgreements } from "@/hooks/useTenantSystemAgreements";
 import { ViewSystemTenantAgreementDialog } from "@/components/system/tenant-agreements/ViewSystemTenantAgreementDialog";
 import type { SystemTenantAgreement } from "@/types/systemTenantAgreements";
+import { generateAgreementPDF } from "@/utils/agreementPdfGenerator";
 
 export function TenantSystemAgreementsTable() {
   const { data: agreements, isLoading, isError, error } = useTenantSystemAgreements();
@@ -33,6 +34,14 @@ export function TenantSystemAgreementsTable() {
       return format(new Date(dateValue), 'dd MMM yyyy');
     } catch {
       return 'Invalid date';
+    }
+  };
+
+  const handleDownloadPDF = (agreement: SystemTenantAgreement) => {
+    try {
+      generateAgreementPDF(agreement);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
     }
   };
 
@@ -108,14 +117,26 @@ export function TenantSystemAgreementsTable() {
                     {getStatusBadge(agreement.status)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setViewingAgreementId(agreement.id)}
-                    >
-                      <Eye className="h-4 w-4 text-primary" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setViewingAgreementId(agreement.id)}
+                        title="View agreement details"
+                      >
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleDownloadPDF(agreement)}
+                        title="Download PDF"
+                      >
+                        <Download className="h-4 w-4 text-primary" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
