@@ -12,11 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Settings, Trash2, Loader2 } from "lucide-react";
+import { Search, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
-import { EditOrganizationMemberPermissionsDialog } from "@/components/EditOrganizationMemberPermissionsDialog";
-import { getPermissionsSummary } from "@/hooks/useOrganizationMemberPermissions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,15 +48,6 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
   organizationId 
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMember, setSelectedMember] = useState<{
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    first_name?: string;
-    last_name?: string;
-  } | null>(null);
-  const [isPermissionsDialogOpen, setIsPermissionsDialogOpen] = useState(false);
 
   // Fetch organization members with their profile data
   const { data: members = [], isLoading, error, refetch } = useQuery({
@@ -287,47 +276,18 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <Badge 
-                        variant={member.status === 'active' ? "default" : "destructive"}
-                        className="text-xs"
-                      >
-                        {member.status}
-                      </Badge>
-                      {member.permissions && (
-                        <div className="text-xs text-gray-500">
-                          {getPermissionsSummary(member.permissions as any)}
-                        </div>
-                      )}
-                    </div>
+                    <Badge 
+                      variant={member.status === 'active' ? "default" : "destructive"}
+                      className="text-xs"
+                    >
+                      {member.status}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     {new Date(member.join_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      {!member.is_system_user && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedMember({
-                              id: member.id,
-                              name: member.first_name && member.last_name 
-                                ? `${member.first_name} ${member.last_name}` 
-                                : 'N/A',
-                              email: member.email,
-                              role: member.role,
-                              first_name: member.first_name,
-                              last_name: member.last_name
-                            });
-                            setIsPermissionsDialogOpen(true);
-                          }}
-                        >
-                          <Settings className="h-4 w-4" />
-                        </Button>
-                      )}
-                      
                       {!member.is_system_user ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -370,24 +330,6 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           </TableBody>
         </Table>
       </div>
-
-      {/* Edit Permissions Dialog */}
-      {selectedMember && (
-        <EditOrganizationMemberPermissionsDialog
-          isOpen={isPermissionsDialogOpen}
-          onClose={() => {
-            setIsPermissionsDialogOpen(false);
-            setSelectedMember(null);
-            refetch(); // Refetch data when dialog closes
-          }}
-                      memberId={selectedMember.id}
-                      memberName={selectedMember.first_name && selectedMember.last_name
-                        ? `${selectedMember.first_name} ${selectedMember.last_name}`
-                        : selectedMember.email}
-                      memberEmail={selectedMember.email}
-                      memberRole={selectedMember.role}
-        />
-      )}
     </div>
   );
 };
