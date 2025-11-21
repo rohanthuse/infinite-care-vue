@@ -3,8 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Combobox } from "@/components/ui/combobox";
-import { Plus, UserPlus, Loader2, User } from "lucide-react";
+import { Plus, UserPlus, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +21,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<string>("");
+  const [role] = useState<string>("super_admin");
   const { toast } = useToast();
   const { organization } = useTenant();
   const queryClient = useQueryClient();
@@ -56,8 +55,8 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     },
     onSuccess: () => {
       toast({
-        title: "Member Added",
-        description: "New member has been successfully added to the organisation.",
+        title: "Super Admin Added",
+        description: "New super admin has been successfully added to the organisation.",
       });
       queryClient.invalidateQueries({ queryKey: ["organization-members"] });
       setOpen(false);
@@ -66,7 +65,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add member.",
+        description: error.message || "Failed to add super admin.",
         variant: "destructive",
       });
     },
@@ -77,7 +76,6 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
     setFirstName("");
     setLastName("");
     setPassword("");
-    setRole("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -109,7 +107,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
       <DialogTrigger asChild>
         <Button className={`bg-primary hover:bg-primary/90 text-primary-foreground ${triggerClassName}`}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Member
+          Add Super Admin
         </Button>
       </DialogTrigger>
       
@@ -117,7 +115,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Add Organisation Member
+            Add Organisation Super Admin
           </DialogTitle>
         </DialogHeader>
         
@@ -174,19 +172,16 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="role">Role *</Label>
-            <Combobox
-              options={[
-                { value: "member", label: "Member" },
-                { value: "manager", label: "Manager" },
-                { value: "admin", label: "Admin" },
-              ]}
-              value={role}
-              onValueChange={setRole}
-              placeholder="Select or enter a role"
-              searchPlaceholder="Search roles..."
-              emptyText="No roles found."
-              allowCustom={true}
+            <Input
+              id="role"
+              type="text"
+              value="Super Admin"
+              disabled
+              className="bg-muted cursor-not-allowed"
             />
+            <p className="text-xs text-muted-foreground">
+              This member will be assigned the Super Admin role with full organisation access.
+            </p>
           </div>
 
           <div className="flex justify-end space-x-2 pt-4 border-t">
@@ -212,7 +207,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
                   Adding...
                 </>
               ) : (
-                'Add Member'
+                'Add Super Admin'
               )}
             </Button>
           </div>
