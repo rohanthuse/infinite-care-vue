@@ -81,8 +81,9 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <Accordion type="multiple" defaultValue={["details"]} className="space-y-4">
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full pr-4">
+            <Accordion type="multiple" defaultValue={["details"]} className="space-y-4">
             {/* Section 1: Agreement Details */}
             <AccordionItem value="details" className="border rounded-lg px-4">
               <AccordionTrigger className="hover:no-underline">
@@ -330,8 +331,9 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
                 </AccordionContent>
               </AccordionItem>
             )}
-          </Accordion>
-        </ScrollArea>
+            </Accordion>
+          </ScrollArea>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
