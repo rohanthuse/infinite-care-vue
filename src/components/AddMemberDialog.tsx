@@ -58,7 +58,7 @@ export const AddMemberDialog: React.FC<AddMemberDialogProps> = ({
         title: "Super Admin Added",
         description: "New super admin has been successfully added to the organisation.",
       });
-      queryClient.invalidateQueries({ queryKey: ["organization-members"] });
+      queryClient.invalidateQueries({ queryKey: ["organization-super-admins"] });
       setOpen(false);
       resetForm();
     },
