@@ -248,12 +248,12 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
               <strong>Role:</strong> Super Admin (automatically assigned)
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-              Each organisation can have only one Super Admin user
+              Each tenant can have only one Super Admin user
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organization">Organisation <span aria-hidden="true">*</span></Label>
+            <Label htmlFor="organization">Tenant <span aria-hidden="true">*</span></Label>
             <SearchableOrganizationSelect
               organizations={organizations || []}
               value={formData.organization_id}
@@ -265,17 +265,17 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
               <p className="text-sm text-destructive">{orgError}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Only organisations without an existing Super Admin are shown
+              Only tenants without an existing Super Admin are shown
             </p>
           </div>
 
           {organizations && organizations.length === 0 && !orgLoading && (
             <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
               <p className="text-sm text-yellow-900 dark:text-yellow-100">
-                <strong>No organisations available</strong>
+                <strong>No tenants available</strong>
               </p>
               <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                All organisations already have a Super Admin assigned. Create a new organisation first.
+                All tenants already have a Super Admin assigned. Create a new tenant first.
               </p>
             </div>
           )}

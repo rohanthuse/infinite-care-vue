@@ -52,9 +52,9 @@ export const SearchableOrganizationSelect: React.FC<SearchableOrganizationSelect
         options={options}
         value={value}
         onValueChange={onValueChange}
-        placeholder="Select organisation..."
-        searchPlaceholder="Search organisations..."
-        emptyText={isLoading ? "Loading organisations..." : "No organisations found"}
+        placeholder="Select tenant..."
+        searchPlaceholder="Search tenants..."
+        emptyText={isLoading ? "Loading tenants..." : "No tenants found"}
         className={error ? 'border-red-500' : ''}
       />
     </div>
