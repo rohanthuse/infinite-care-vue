@@ -58,6 +58,10 @@ export function useSubscriptionLimits(): SubscriptionLimits {
       };
     },
     enabled: !!organization?.id,
+    staleTime: 0, // Always treat as stale - refetch on every mount
+    gcTime: 1000 * 60, // Keep in cache for 1 minute only
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus (multi-tab support)
   });
 
   const maxClients = getSubscriptionLimit(
