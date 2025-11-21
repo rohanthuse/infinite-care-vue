@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelect, SafeSelectContent, SafeSelectItem, SafeSelectTrigger, SafeSelectValue } from "@/components/ui/safe-select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -189,6 +189,7 @@ export function CreateSystemTenantAgreementDialog() {
           }
         }
         setAgreementTypes(typesData);
+        console.log('Loaded agreement types:', typesData);
         
         // Fetch templates
         // @ts-ignore - Known Supabase TypeScript depth issue
@@ -525,21 +526,25 @@ export function CreateSystemTenantAgreementDialog() {
                     
                     <div>
                       <Label>Tenant Name <span className="text-red-500">*</span></Label>
-                      <Select
-                        value={agreementDetails.tenant_id}
-                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, tenant_id: value }))}
+                      <SafeSelect
+                        value={agreementDetails.tenant_id || undefined}
+                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, tenant_id: value || '' }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select tenant" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tenants.map(tenant => (
-                            <SelectItem key={tenant.id} value={tenant.id}>
-                              {tenant.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <SafeSelectTrigger>
+                          <SafeSelectValue placeholder="Select tenant" />
+                        </SafeSelectTrigger>
+                        <SafeSelectContent>
+                          {tenants.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">Loading tenants...</div>
+                          ) : (
+                            tenants.map(tenant => (
+                              <SafeSelectItem key={tenant.id} value={tenant.id}>
+                                {tenant.name}
+                              </SafeSelectItem>
+                            ))
+                          )}
+                        </SafeSelectContent>
+                      </SafeSelect>
                     </div>
                     
                     <div>
@@ -552,59 +557,67 @@ export function CreateSystemTenantAgreementDialog() {
                     
                     <div>
                       <Label>Agreement Type <span className="text-red-500">*</span></Label>
-                      <Select
-                        value={agreementDetails.type_id}
-                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, type_id: value }))}
+                      <SafeSelect
+                        value={agreementDetails.type_id || undefined}
+                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, type_id: value || '' }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {agreementTypes.map(type => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {type.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <SafeSelectTrigger>
+                          <SafeSelectValue placeholder="Select type" />
+                        </SafeSelectTrigger>
+                        <SafeSelectContent>
+                          {agreementTypes.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">Loading types...</div>
+                          ) : (
+                            agreementTypes.map(type => (
+                              <SafeSelectItem key={type.id} value={type.id}>
+                                {type.name}
+                              </SafeSelectItem>
+                            ))
+                          )}
+                        </SafeSelectContent>
+                      </SafeSelect>
                     </div>
                     
                     <div>
                       <Label>Template (Optional)</Label>
-                      <Select
-                        value={agreementDetails.template_id}
-                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, template_id: value }))}
+                      <SafeSelect
+                        value={agreementDetails.template_id || undefined}
+                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, template_id: value || '' }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select template" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {templates.map(template => (
-                            <SelectItem key={template.id} value={template.id}>
-                              {template.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <SafeSelectTrigger>
+                          <SafeSelectValue placeholder="Select template (optional)" />
+                        </SafeSelectTrigger>
+                        <SafeSelectContent>
+                          {templates.length === 0 ? (
+                            <div className="p-2 text-sm text-muted-foreground">No templates available</div>
+                          ) : (
+                            templates.map(template => (
+                              <SafeSelectItem key={template.id} value={template.id}>
+                                {template.title}
+                              </SafeSelectItem>
+                            ))
+                          )}
+                        </SafeSelectContent>
+                      </SafeSelect>
                     </div>
                     
                     <div>
                       <Label>Status</Label>
-                      <Select
-                        value={agreementDetails.status}
-                        onValueChange={(value: SystemTenantAgreementStatus) => setAgreementDetails(prev => ({ ...prev, status: value }))}
+                      <SafeSelect
+                        value={agreementDetails.status || undefined}
+                        onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, status: value as SystemTenantAgreementStatus }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Draft">Draft</SelectItem>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Expired">Expired</SelectItem>
-                          <SelectItem value="Terminated">Terminated</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <SafeSelectTrigger>
+                          <SafeSelectValue placeholder="Select status" />
+                        </SafeSelectTrigger>
+                        <SafeSelectContent>
+                          <SafeSelectItem value="Draft">Draft</SafeSelectItem>
+                          <SafeSelectItem value="Pending">Pending</SafeSelectItem>
+                          <SafeSelectItem value="Active">Active</SafeSelectItem>
+                          <SafeSelectItem value="Expired">Expired</SafeSelectItem>
+                          <SafeSelectItem value="Terminated">Terminated</SafeSelectItem>
+                        </SafeSelectContent>
+                      </SafeSelect>
                     </div>
                     
                     <div>
@@ -781,19 +794,19 @@ export function CreateSystemTenantAgreementDialog() {
                     
                     <div>
                       <Label>Payment Terms</Label>
-                      <Select
-                        value={financialTerms.payment_terms}
-                        onValueChange={(value: PaymentTerms) => setFinancialTerms(prev => ({ ...prev, payment_terms: value }))}
+                      <SafeSelect
+                        value={financialTerms.payment_terms || undefined}
+                        onValueChange={(value) => setFinancialTerms(prev => ({ ...prev, payment_terms: value as PaymentTerms }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment terms" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Monthly">Monthly</SelectItem>
-                          <SelectItem value="Quarterly">Quarterly</SelectItem>
-                          <SelectItem value="Yearly">Yearly</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <SafeSelectTrigger>
+                          <SafeSelectValue placeholder="Select payment terms" />
+                        </SafeSelectTrigger>
+                        <SafeSelectContent>
+                          <SafeSelectItem value="Monthly">Monthly</SafeSelectItem>
+                          <SafeSelectItem value="Quarterly">Quarterly</SafeSelectItem>
+                          <SafeSelectItem value="Yearly">Yearly</SafeSelectItem>
+                        </SafeSelectContent>
+                      </SafeSelect>
                     </div>
                     
                     <div>
@@ -834,20 +847,20 @@ export function CreateSystemTenantAgreementDialog() {
                     
                     <div>
                       <Label>Payment Mode</Label>
-                      <Select
-                        value={financialTerms.payment_mode}
-                        onValueChange={(value: PaymentMode) => setFinancialTerms(prev => ({ ...prev, payment_mode: value }))}
+                      <SafeSelect
+                        value={financialTerms.payment_mode || undefined}
+                        onValueChange={(value) => setFinancialTerms(prev => ({ ...prev, payment_mode: value as PaymentMode }))}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment mode" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                          <SelectItem value="Credit Card">Credit Card</SelectItem>
-                          <SelectItem value="Direct Debit">Direct Debit</SelectItem>
-                          <SelectItem value="Cheque">Cheque</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <SafeSelectTrigger>
+                          <SafeSelectValue placeholder="Select payment mode" />
+                        </SafeSelectTrigger>
+                        <SafeSelectContent>
+                          <SafeSelectItem value="Bank Transfer">Bank Transfer</SafeSelectItem>
+                          <SafeSelectItem value="Credit Card">Credit Card</SafeSelectItem>
+                          <SafeSelectItem value="Direct Debit">Direct Debit</SafeSelectItem>
+                          <SafeSelectItem value="Cheque">Cheque</SafeSelectItem>
+                        </SafeSelectContent>
+                      </SafeSelect>
                     </div>
                     
                     <div className="col-span-2">
