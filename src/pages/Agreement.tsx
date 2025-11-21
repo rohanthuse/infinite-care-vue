@@ -2,27 +2,18 @@
 import React, { useState, useEffect } from "react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { DashboardNavbar } from "@/components/DashboardNavbar";
-import { SignedAgreements } from "@/components/agreements/SignedAgreements";
+import { TenantSystemAgreementsTable } from "@/components/agreements/TenantSystemAgreementsTable";
 import { ExpiringAgreementsBanner } from "@/components/agreements/ExpiringAgreementsBanner";
 import { 
   FileText, 
   Filter, 
-  Search, 
-  FileSignature, 
-  CalendarPlus, 
-  PlusCircle 
+  Search
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
-import { CustomButton } from "@/components/ui/CustomButton";
 import { toast } from "sonner";
 import { useAgreementTypes } from "@/data/hooks/agreements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScheduledAgreements } from "@/components/agreements/ScheduledAgreements";
-import { AgreementTemplates } from "@/components/agreements/AgreementTemplates";
-import { SignAgreementDialog } from "@/components/agreements/SignAgreementDialog";
-import { ScheduleAgreementDialog } from "@/components/agreements/ScheduleAgreementDialog";
-import { CreateTemplateDialog } from "@/components/agreements/CreateTemplateDialog";
 import { SubscriptionDetails } from "@/components/agreements/SubscriptionDetails";
 
 const Agreement = () => {
@@ -32,9 +23,6 @@ const Agreement = () => {
   const [dateFilter, setDateFilter] = useState("all");
   const [approvalFilter, setApprovalFilter] = useState<"all" | "pending_review" | "approved" | "rejected" | "archived">("all");
   const [activeTab, setActiveTab] = useState("signed");
-  const [showSignDialog, setShowSignDialog] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [showCreateTemplateDialog, setShowCreateTemplateDialog] = useState(false);
   
   const { data: agreementTypes } = useAgreementTypes();
 
@@ -69,7 +57,7 @@ const Agreement = () => {
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Agreements</h1>
-                <p className="text-muted-foreground text-sm md:text-base">Manage all company agreements</p>
+                <p className="text-muted-foreground text-sm md:text-base">Manage tenant agreements</p>
               </div>
             </div>
             
@@ -83,28 +71,6 @@ const Agreement = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              
-              <CustomButton
-                variant="pill"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20"
-                onClick={() => setShowSignDialog(true)}
-              >
-                <FileSignature className="mr-1.5 h-4 w-4" /> Sign Agreement
-              </CustomButton>
-              <CustomButton
-                variant="pill"
-                className="bg-card hover:bg-accent text-foreground border border-border"
-                onClick={() => setShowScheduleDialog(true)}
-              >
-                <CalendarPlus className="mr-1.5 h-4 w-4" /> Schedule
-              </CustomButton>
-              <CustomButton
-                variant="pill"
-                className="bg-card hover:bg-accent text-foreground border border-border"
-                onClick={() => setShowCreateTemplateDialog(true)}
-              >
-                <PlusCircle className="mr-1.5 h-4 w-4" /> New Template
-              </CustomButton>
             </div>
           </div>
         </div>
@@ -112,10 +78,8 @@ const Agreement = () => {
         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="border-b border-border p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <TabsList className="grid w-full grid-cols-4 sm:w-auto">
+              <TabsList className="grid w-full grid-cols-2 sm:w-auto">
                 <TabsTrigger value="signed">Signed</TabsTrigger>
-                <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-                <TabsTrigger value="templates">Templates</TabsTrigger>
                 <TabsTrigger value="subscription">Subscription</TabsTrigger>
               </TabsList>
             
@@ -158,30 +122,7 @@ const Agreement = () => {
             <ExpiringAgreementsBanner isOrganizationLevel={true} />
 
             <TabsContent value="signed" className="focus-visible:ring-0">
-              <SignedAgreements
-                searchQuery={debouncedSearchQuery} 
-                typeFilter={typeFilter} 
-                dateFilter={dateFilter}
-                approvalFilter={approvalFilter}
-                isOrganizationLevel={true}
-              />
-            </TabsContent>
-            
-            <TabsContent value="scheduled" className="focus-visible:ring-0">
-              <ScheduledAgreements 
-                searchQuery={debouncedSearchQuery} 
-                typeFilter={typeFilter} 
-                dateFilter={dateFilter}
-                isOrganizationLevel={true}
-              />
-            </TabsContent>
-
-            <TabsContent value="templates" className="focus-visible:ring-0">
-              <AgreementTemplates
-                searchQuery={debouncedSearchQuery}
-                typeFilter={typeFilter}
-                isOrganizationLevel={true}
-              />
+              <TenantSystemAgreementsTable />
             </TabsContent>
 
             <TabsContent value="subscription" className="focus-visible:ring-0">
@@ -190,10 +131,6 @@ const Agreement = () => {
           </Tabs>
         </div>
       </motion.main>
-      
-      <SignAgreementDialog open={showSignDialog} onOpenChange={setShowSignDialog} isOrganizationLevel={true} />
-      <ScheduleAgreementDialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog} isOrganizationLevel={true} />
-      <CreateTemplateDialog open={showCreateTemplateDialog} onOpenChange={setShowCreateTemplateDialog} isOrganizationLevel={true} />
     </div>
   );
 };
