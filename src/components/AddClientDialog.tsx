@@ -9,6 +9,9 @@ import { Combobox } from "@/components/ui/combobox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTenant } from "@/contexts/TenantContext";
+import { getSubscriptionLimit } from "@/lib/subscriptionLimits";
 interface AddClientDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,9 +28,9 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
   clientToEdit,
   mode = 'add'
 }) => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { organization } = useTenant();
   const { canAddClient, remainingSlots, maxClients, currentClientCount } = useSubscriptionLimits();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -216,11 +219,56 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         });
         // Don't close dialog here - let it fall through to common cleanup
       } else {
-        // INSERT new client - Check subscription limit first
-        if (!canAddClient) {
+        // INSERT new client - Fetch fresh subscription limits before validation
+        if (!organization?.id) {
+          toast({
+            title: "Error",
+            description: "Organization not found. Please refresh the page.",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Force refetch fresh subscription data right before validation
+        const freshLimits = await queryClient.fetchQuery({
+          queryKey: ['subscription-limits', organization.id],
+          queryFn: async () => {
+            const { data: branches } = await supabase
+              .from('branches')
+              .select('id')
+              .eq('organization_id', organization.id);
+            
+            const branchIds = branches?.map(b => b.id) || [];
+            
+            let clientCount = 0;
+            if (branchIds.length > 0) {
+              const { count } = await supabase
+                .from('clients')
+                .select('*', { count: 'exact', head: true })
+                .in('branch_id', branchIds);
+              clientCount = count || 0;
+            }
+            
+            return { 
+              clientCount, 
+              maxUsers: organization.max_users, 
+              subscriptionPlan: organization.subscription_plan 
+            };
+          },
+          staleTime: 0, // Always fetch fresh
+        });
+
+        const freshMaxClients = getSubscriptionLimit(
+          freshLimits.subscriptionPlan, 
+          freshLimits.maxUsers
+        );
+        const freshCanAddClient = (freshLimits.clientCount || 0) < freshMaxClients;
+
+        if (!freshCanAddClient) {
           toast({
             title: "Subscription Limit Reached",
-            description: `You have reached your plan limit of ${maxClients} clients. Current usage: ${currentClientCount}/${maxClients}. Please upgrade your subscription to add more clients.`,
+            description: `You have reached your plan limit of ${freshMaxClients} clients. Current usage: ${freshLimits.clientCount}/${freshMaxClients}. Please upgrade your subscription to add more clients.`,
             variant: "destructive"
           });
           setIsLoading(false);
@@ -251,6 +299,13 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               description: "You don't have permission to add clients to this branch. Please contact your administrator.",
               variant: "destructive"
             });
+          } else if (error.message.includes('Subscription limit reached')) {
+            // Handle database trigger error
+            toast({
+              title: "Subscription Limit Reached",
+              description: error.message,
+              variant: "destructive"
+            });
           } else if (error.message.includes('duplicate key')) {
             toast({
               title: "Duplicate Client",
@@ -269,6 +324,12 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
         }
 
         console.log("Client added successfully:", data);
+        
+        // Invalidate subscription limits and client queries immediately
+        queryClient.invalidateQueries({ queryKey: ['subscription-limits'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-clients'] });
+        queryClient.invalidateQueries({ queryKey: ['branch-clients'] });
+        
         toast({
           title: "Success",
           description: "Client has been added successfully."
@@ -304,6 +365,32 @@ export const AddClientDialog: React.FC<AddClientDialogProps> = ({
               : 'Create a new client record with their personal details and contact information.'
             }
           </DialogDescription>
+          
+          {/* Subscription Status Indicator - Only show in add mode */}
+          {mode === 'add' && !isLoading && (
+            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-blue-700 dark:text-blue-400">
+                  Client Usage: {currentClientCount} / {maxClients}
+                </span>
+                <span className={`font-medium ${
+                  remainingSlots <= 2 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                }`}>
+                  {remainingSlots} slots remaining
+                </span>
+              </div>
+              {remainingSlots <= 2 && remainingSlots > 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  ⚠️ You're approaching your subscription limit
+                </p>
+              )}
+              {remainingSlots === 0 && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  ⚠️ You've reached your limit. Please upgrade to add more clients.
+                </p>
+              )}
+            </div>
+          )}
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
