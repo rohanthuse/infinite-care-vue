@@ -38,7 +38,6 @@ interface EditSystemUserDialogProps {
 export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open, onOpenChange, user }) => {
   const [formData, setFormData] = useState<UpdateSystemUserData | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
-  const [selectedOrgRole, setSelectedOrgRole] = useState<string>('member');
   const updateUser = useUpdateSystemUser();
   const { data: organizations } = useOrganizations();
   const assignUserToOrg = useAssignUserToOrganization();
@@ -76,10 +75,9 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
       await assignUserToOrg.mutateAsync({
         systemUserId: user.id,
         organizationId: selectedOrgId,
-        role: selectedOrgRole
+        role: 'super_admin'
       });
       setSelectedOrgId('');
-      setSelectedOrgRole('member');
     } catch (_) {
       // toast handled in hook
     }
@@ -128,17 +126,9 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value as UpdateSystemUserData['role'])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="support_admin">Support Admin</SelectItem>
-                  <SelectItem value="tenant_manager">Tenant Manager</SelectItem>
-                  <SelectItem value="analytics_viewer">Analytics Viewer</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="px-3 py-2 bg-muted rounded-md border border-input">
+                <span className="text-sm font-medium">Super Admin</span>
+              </div>
             </div>
 
             {/* Organisation Assignments */}
@@ -164,29 +154,17 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
               )}
 
               {/* Add New Assignment */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select organisation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {organizations?.map((org) => (
-                        <SelectItem key={org.id} value={org.id}>
-                          {org.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Select value={selectedOrgRole} onValueChange={setSelectedOrgRole}>
+              <div className="space-y-2">
+                <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select organisation" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="owner">Owner</SelectItem>
+                    {organizations?.map((org) => (
+                      <SelectItem key={org.id} value={org.id}>
+                        {org.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -200,7 +178,7 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
                 className="w-full"
               >
                 {assignUserToOrg.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Assign to Organisation
+                Assign as Super Admin
               </CustomButton>
             </div>
 
