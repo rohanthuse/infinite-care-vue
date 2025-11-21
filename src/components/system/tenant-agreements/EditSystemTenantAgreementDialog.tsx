@@ -37,6 +37,34 @@ interface EditSystemTenantAgreementDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Formats a date value for HTML date input (YYYY-MM-DD format)
+ * @param dateValue - Date string, Date object, or null/undefined
+ * @returns Formatted date string or empty string if invalid
+ */
+const formatDateForInput = (dateValue: string | Date | null | undefined): string => {
+  if (!dateValue) return '';
+  
+  try {
+    const date = new Date(dateValue);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
+    // Extract year, month, day
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('Error formatting date for input:', dateValue, error);
+    return '';
+  }
+};
+
 export const EditSystemTenantAgreementDialog: React.FC<EditSystemTenantAgreementDialogProps> = ({
   agreement,
   open,
@@ -122,8 +150,8 @@ export const EditSystemTenantAgreementDialog: React.FC<EditSystemTenantAgreement
         title: agreement.title || '',
         type_id: agreement.type_id || '',
         status: agreement.status || 'Active',
-        start_date: agreement.start_date || '',
-        expiry_date: agreement.expiry_date || '',
+        start_date: formatDateForInput(agreement.start_date),
+        expiry_date: formatDateForInput(agreement.expiry_date),
         content: agreement.content || '',
         currency: agreement.currency || 'GBP',
       });
@@ -177,9 +205,9 @@ export const EditSystemTenantAgreementDialog: React.FC<EditSystemTenantAgreement
       // Signatures
       setSignatures({
         tenant_representative: agreement.signed_by_tenant || '',
-        tenant_signature_date: agreement.tenant_signature_date || '',
+        tenant_signature_date: formatDateForInput(agreement.tenant_signature_date),
         system_representative: agreement.signed_by_system || '',
-        system_signature_date: agreement.system_signature_date || '',
+        system_signature_date: formatDateForInput(agreement.system_signature_date),
       });
     }
   }, [agreement, open]);
