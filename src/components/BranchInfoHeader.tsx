@@ -1,5 +1,5 @@
 import React from "react";
-import { Phone, Mail, MapPin, Clock, CalendarRange, Plus } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, CalendarRange, Plus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
@@ -9,6 +9,7 @@ import { BreadcrumbNavigation } from "@/components/navigation/BreadcrumbNavigati
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
+import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
 
 interface BranchInfoHeaderProps {
   branchName: string;
@@ -26,6 +27,7 @@ export const BranchInfoHeader = ({
   const { data: userRole } = useUserRole();
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
+  const { handleTabChange } = useBranchDashboardNavigation();
   
   // Determine back destination based on user role
   const handleBack = () => {
@@ -110,7 +112,16 @@ export const BranchInfoHeader = ({
           
         </div>
         
-        <div className="flex justify-start md:justify-end">
+        <div className="flex gap-2 justify-start md:justify-end">
+          <Button 
+            onClick={() => handleTabChange('communication')}
+            variant="outline"
+            className="h-9 rounded-full px-3 shadow-sm"
+          >
+            <MessageSquare className="h-4 w-4 mr-1" />
+            <span>Communication</span>
+          </Button>
+          
           <Button 
             onClick={onNewBooking} 
             variant="default"
