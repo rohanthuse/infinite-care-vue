@@ -8,10 +8,12 @@ import { useTenantSystemAgreements } from "@/hooks/useTenantSystemAgreements";
 import { ViewSystemTenantAgreementDialog } from "@/components/system/tenant-agreements/ViewSystemTenantAgreementDialog";
 import type { SystemTenantAgreement } from "@/types/systemTenantAgreements";
 import { generateAgreementPDF } from "@/utils/agreementPdfGenerator";
+import { useToast } from "@/hooks/use-toast";
 
 export function TenantSystemAgreementsTable() {
   const { data: agreements, isLoading, isError, error } = useTenantSystemAgreements();
   const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
+  const { toast } = useToast();
   
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
@@ -37,11 +39,20 @@ export function TenantSystemAgreementsTable() {
     }
   };
 
-  const handleDownloadPDF = (agreement: SystemTenantAgreement) => {
+  const handleDownloadPDF = async (agreement: SystemTenantAgreement) => {
     try {
-      generateAgreementPDF(agreement);
+      await generateAgreementPDF(agreement);
+      toast({
+        title: "PDF Generated",
+        description: "Agreement PDF has been downloaded successfully.",
+      });
     } catch (error) {
       console.error('Failed to generate PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
