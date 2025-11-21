@@ -22,7 +22,43 @@ serve(async (req) => {
 
   try {
     console.log('[assign-user-to-organization] Parsing request body...');
-    const { system_user_id, organization_id, role } = await req.json();
+    
+    // Check content-type header
+    const contentType = req.headers.get('content-type');
+    console.log('[assign-user-to-organization] Content-Type:', contentType);
+    
+    // Read raw body to check if it exists
+    const rawBody = await req.text();
+    console.log('[assign-user-to-organization] Raw body length:', rawBody?.length || 0);
+    console.log('[assign-user-to-organization] Raw body content:', rawBody);
+    
+    if (!rawBody || rawBody.trim() === '') {
+      console.error('[assign-user-to-organization] Empty request body received');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Empty request body. Please ensure system_user_id, organization_id, and role are provided.' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+    
+    // Parse JSON from raw body
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('[assign-user-to-organization] JSON parse error:', parseError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: `Invalid JSON in request body: ${parseError.message}` 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+    
+    const { system_user_id, organization_id, role } = parsedBody;
     console.log('[assign-user-to-organization] Request params:', { system_user_id, organization_id, role });
 
     if (!system_user_id || !organization_id) {
