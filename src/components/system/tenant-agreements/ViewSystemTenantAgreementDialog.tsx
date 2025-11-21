@@ -94,7 +94,7 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
               <AccordionContent className="pt-4">
                 <dl className="space-y-0">
                   <InfoRow label="Agreement Reference" value={agreement.agreement_reference} />
-                  <InfoRow label="Tenant Organization" value={agreement.system_tenant_organizations?.name} />
+                  <InfoRow label="Tenant Organization" value={agreement.organizations?.name} />
                   <InfoRow label="Software/Service Name" value={agreement.software_service_name} />
                   <InfoRow label="Agreement Type" value={agreement.system_tenant_agreement_types?.name} />
                   <InfoRow label="Status" value={getStatusBadge(agreement.status)} />
@@ -134,7 +134,7 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <InfoRow label="Organization" value={agreement.system_tenant_organizations?.name} />
+                        <InfoRow label="Organization" value={agreement.organizations?.name} />
                         <InfoRow label="Address" value={agreement.tenant_address} />
                         <InfoRow label="Contact Person" value={agreement.tenant_contact_person} />
                         <InfoRow label="Email" value={agreement.tenant_email} />
