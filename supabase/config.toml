@@ -82,6 +82,9 @@ verify_jwt = false
 [functions.create-organization-member]
 verify_jwt = true
 
+[functions.update-organization-member]
+verify_jwt = true
+
 [functions.create-service-report-notifications]
 verify_jwt = false
 

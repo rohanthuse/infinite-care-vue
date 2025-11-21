@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Trash2, Loader2 } from "lucide-react";
+import { Search, Plus, Trash2, Loader2, Edit, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { AddMemberDialog } from "@/components/AddMemberDialog";
 import {
@@ -26,6 +26,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { EditSuperAdminDialog } from "@/components/EditSuperAdminDialog";
+import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
+import { useUpdateMemberStatus } from "@/hooks/useUpdateMemberStatus";
 
 interface OrganizationMember {
   id: string;
@@ -48,6 +58,12 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
   organizationId 
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingMember, setEditingMember] = useState<OrganizationMember | null>(null);
+  const [resettingPasswordMember, setResettingPasswordMember] = useState<OrganizationMember | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  
+  const updateStatusMutation = useUpdateMemberStatus();
 
   // Fetch organization members with their profile data
   const { data: members = [], isLoading, error, refetch } = useQuery({
@@ -182,6 +198,27 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
     }
   };
 
+  const handleStatusToggle = (member: OrganizationMember, checked: boolean) => {
+    const newStatus = checked ? 'active' : 'inactive';
+    
+    updateStatusMutation.mutate({
+      memberId: member.id,
+      userId: member.user_id,
+      status: newStatus,
+      isSystemUser: member.is_system_user,
+    });
+  };
+
+  const handleEditClick = (member: OrganizationMember) => {
+    setEditingMember(member);
+    setEditDialogOpen(true);
+  };
+
+  const handleResetPasswordClick = (member: OrganizationMember) => {
+    setResettingPasswordMember(member);
+    setResetPasswordDialogOpen(true);
+  };
+
   const filteredMembers = members.filter((member) =>
     member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${member.first_name || ''} ${member.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -289,42 +326,95 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
                     {new Date(member.join_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      {!member.is_system_user ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4" />
+                    <TooltipProvider>
+                      <div className="flex justify-end gap-2 items-center">
+                        {/* Edit Button */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(member)}
+                              disabled={member.is_system_user}
+                            >
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Member</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to remove this member from the organisation? 
-                                They will lose access to all organisation resources.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteMember(member.id, member.email)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs text-gray-500 cursor-not-allowed"
-                        >
-                          System User
-                        </Badge>
-                      )}
-                    </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{member.is_system_user ? 'System users cannot be edited' : 'Edit details'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {/* Reset Password Button */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResetPasswordClick(member)}
+                              disabled={member.is_system_user}
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{member.is_system_user ? 'System users cannot have password reset' : 'Reset password'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {/* Status Toggle */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div>
+                              <Switch
+                                checked={member.status === 'active'}
+                                onCheckedChange={(checked) => handleStatusToggle(member, checked)}
+                                disabled={member.is_system_user || updateStatusMutation.isPending}
+                              />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{member.is_system_user ? 'System users cannot be toggled' : 'Toggle active status'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {/* Delete Button */}
+                        {!member.is_system_user && (
+                          <AlertDialog>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remove from organisation</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to remove this member from the organisation? 
+                                  They will lose access to all organisation resources.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteMember(member.id, member.email)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    </TooltipProvider>
                   </TableCell>
                 </TableRow>
               ))
@@ -332,6 +422,25 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit Dialog */}
+      {editingMember && (
+        <EditSuperAdminDialog
+          member={editingMember}
+          organizationId={organizationId}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+        />
+      )}
+
+      {/* Reset Password Dialog */}
+      {resettingPasswordMember && (
+        <ResetPasswordDialog
+          member={resettingPasswordMember}
+          open={resetPasswordDialogOpen}
+          onOpenChange={setResetPasswordDialogOpen}
+        />
+      )}
     </div>
   );
 };
