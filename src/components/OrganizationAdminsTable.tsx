@@ -51,7 +51,7 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
 
   // Fetch organization members with their profile data
   const { data: members = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['organization-members', organizationId],
+    queryKey: ['organization-super-admins', organizationId],
     queryFn: async () => {
       console.log('Fetching organisation members for:', organizationId);
       
@@ -104,7 +104,8 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
             is_active
           )
         `)
-        .eq('organization_id', organizationId);
+        .eq('organization_id', organizationId)
+        .eq('role', 'super_admin');
 
       if (systemUsersError) {
         console.error('Error fetching system users:', systemUsersError);
