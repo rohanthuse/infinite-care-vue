@@ -80,6 +80,10 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
         role: 'super_admin', // Hardcoded - always Super Admin
       });
 
+      // Wait for user record to be fully committed before assignment
+      console.log('[AddSystemUserDialog] Waiting 800ms for user record to be committed...');
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       // Assign user to organization with retry logic
       let assignmentSuccess = false;
       let retryCount = 0;
@@ -88,7 +92,11 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
 
       while (!assignmentSuccess && retryCount < maxRetries) {
         try {
-          console.log(`[AddSystemUserDialog] Assigning user to organization (attempt ${retryCount + 1}/${maxRetries})`);
+          console.log(`[AddSystemUserDialog] Assigning user to organization (attempt ${retryCount + 1}/${maxRetries})`, {
+            system_user_id: newUser.id,
+            organization_id: formData.organization_id,
+            role: 'super_admin',
+          });
           
           const { data: assignData, error: assignError } = await supabase.functions.invoke(
             'assign-user-to-organization',
@@ -98,8 +106,13 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
                 organization_id: formData.organization_id,
                 role: 'super_admin',
               },
+              headers: {
+                'Content-Type': 'application/json',
+              },
             }
           );
+          
+          console.log('[AddSystemUserDialog] Assignment response:', { assignData, assignError });
 
           if (assignError) {
             throw new Error(assignError.message || 'Failed to assign user to organization');
