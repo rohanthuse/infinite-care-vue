@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
-import { getSubscriptionLimit } from '@/lib/subscriptionLimits';
+import { getSubscriptionLimit, SUBSCRIPTION_LIMITS } from '@/lib/subscriptionLimits';
+import { useEffect } from 'react';
 
 export interface SubscriptionLimits {
   currentClientCount: number;
@@ -68,6 +69,19 @@ export function useSubscriptionLimits(): SubscriptionLimits {
   const remainingSlots = Math.max(0, maxClients - currentClientCount);
   const canAddClient = remainingSlots > 0;
   const usagePercentage = maxClients > 0 ? (currentClientCount / maxClients) * 100 : 0;
+
+  // Add validation warning if values are out of sync
+  useEffect(() => {
+    if (data?.subscriptionPlan && data?.maxUsers) {
+      const expectedLimit = SUBSCRIPTION_LIMITS[data.subscriptionPlan.toLowerCase()];
+      if (expectedLimit && expectedLimit !== data.maxUsers) {
+        console.warn(
+          `Subscription limit mismatch: plan="${data.subscriptionPlan}" ` +
+          `expects ${expectedLimit} but max_users=${data.maxUsers}`
+        );
+      }
+    }
+  }, [data]);
 
   return {
     currentClientCount,

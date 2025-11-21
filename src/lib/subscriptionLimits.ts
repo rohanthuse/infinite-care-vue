@@ -24,12 +24,7 @@ export function getSubscriptionLimit(
   subscriptionPlan: string | null,
   maxUsers: number | null
 ): number {
-  // If max_users is explicitly set, use that
-  if (maxUsers !== null && maxUsers > 0) {
-    return maxUsers;
-  }
-
-  // Otherwise, try to parse the subscription plan string
+  // First, try to parse the subscription plan string (more reliable)
   if (subscriptionPlan) {
     const normalizedPlan = subscriptionPlan.toLowerCase().trim();
     
@@ -44,6 +39,11 @@ export function getSubscriptionLimit(
         return value;
       }
     }
+  }
+
+  // Fallback to max_users if explicitly set (but plan parsing takes priority)
+  if (maxUsers !== null && maxUsers > 0) {
+    return maxUsers;
   }
 
   // Default to 50 if we can't determine the limit
