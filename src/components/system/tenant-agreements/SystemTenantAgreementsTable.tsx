@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import type { SystemTenantAgreement } from '@/types/systemTenantAgreements';
+import { formatSafeDate } from '@/lib/dateUtils';
 import { ViewSystemTenantAgreementDialog } from './ViewSystemTenantAgreementDialog';
 import { EditSystemTenantAgreementDialog } from './EditSystemTenantAgreementDialog';
 import { useDeleteSystemTenantAgreement } from '@/hooks/useSystemTenantAgreements';
@@ -86,7 +87,11 @@ export const SystemTenantAgreementsTable: React.FC<SystemTenantAgreementsTablePr
               <TableCell>{agreement.system_tenant_agreement_types?.name || 'N/A'}</TableCell>
               <TableCell>{getStatusBadge(agreement.status)}</TableCell>
               <TableCell>
-                {agreement.signed_at ? format(new Date(agreement.signed_at), 'PP') : 'Not signed'}
+                {formatSafeDate(
+                  agreement.tenant_signature_date || agreement.system_signature_date,
+                  'PP',
+                  'Not signed'
+                )}
               </TableCell>
               <TableCell>
                 {agreement.expiry_date ? format(new Date(agreement.expiry_date), 'PP') : 'N/A'}
