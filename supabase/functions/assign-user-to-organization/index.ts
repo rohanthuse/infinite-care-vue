@@ -12,14 +12,20 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log('[assign-user-to-organization] Function invoked');
+  
   if (req.method === 'OPTIONS') {
+    console.log('[assign-user-to-organization] CORS preflight request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('[assign-user-to-organization] Parsing request body...');
     const { system_user_id, organization_id, role } = await req.json();
+    console.log('[assign-user-to-organization] Request params:', { system_user_id, organization_id, role });
 
     if (!system_user_id || !organization_id) {
+      console.error('[assign-user-to-organization] Missing required parameters');
       return new Response(JSON.stringify({ success: false, error: 'Missing system_user_id or organization_id' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -30,71 +36,106 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[assign-user-to-organization] Missing environment variables');
       return new Response(JSON.stringify({ success: false, error: 'Missing Supabase environment variables' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
+    console.log('[assign-user-to-organization] Creating Supabase client...');
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       global: { headers: { 'x-client-info': 'assign-user-to-organization' } },
     });
 
-    // Use the new sync function to handle both system_user_organizations AND organization_members
-    const { data: syncResult, error: syncError } = await supabase.rpc(
-      'sync_system_user_to_organization',
-      {
-        p_system_user_id: system_user_id,
-        p_organization_id: organization_id,
-        p_role: role || 'member'
-      }
-    );
+    // First, check if assignment already exists
+    console.log('[assign-user-to-organization] Checking for existing assignment...');
+    const { data: existingAssignment } = await supabase
+      .from('system_user_organizations')
+      .select('*')
+      .eq('system_user_id', system_user_id)
+      .eq('organization_id', organization_id)
+      .single();
 
-    if (syncError) {
-      console.error('[assign-user-to-organization] sync error:', syncError);
+    if (existingAssignment) {
+      console.log('[assign-user-to-organization] Assignment already exists, updating role...');
+      const { error: updateError } = await supabase
+        .from('system_user_organizations')
+        .update({ role: role || 'member', updated_at: new Date().toISOString() })
+        .eq('system_user_id', system_user_id)
+        .eq('organization_id', organization_id);
+
+      if (updateError) {
+        console.error('[assign-user-to-organization] Update error:', updateError);
+        return new Response(JSON.stringify({ success: false, error: updateError.message }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
+
+      console.log('[assign-user-to-organization] Successfully updated existing assignment');
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'User assignment updated successfully'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // Create new assignment in system_user_organizations
+    console.log('[assign-user-to-organization] Creating new assignment...');
+    const { data: newAssignment, error: insertError } = await supabase
+      .from('system_user_organizations')
+      .insert({
+        system_user_id,
+        organization_id,
+        role: role || 'member'
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('[assign-user-to-organization] Insert error:', insertError);
       
-      // Log failure to audit trail
+      // Log failure to audit trail if table exists
       await supabase.from('system_user_organization_audit').insert({
         system_user_id,
         organization_id,
         action: 'assigned',
         new_role: role || 'member',
         success: false,
-        error_message: syncError.message,
+        error_message: insertError.message,
         metadata: {
           source: 'edge_function',
-          error_code: syncError.code,
+          error_code: insertError.code,
         }
-      });
+      }).catch(err => console.error('[assign-user-to-organization] Audit log error:', err));
       
-      return new Response(JSON.stringify({ success: false, error: syncError.message }), {
+      return new Response(JSON.stringify({ success: false, error: insertError.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
-    // Check if the sync was successful
-    if (!syncResult?.success) {
-      console.error('[assign-user-to-organization] sync failed:', syncResult);
-      
-      // Log failure to audit trail
-      await supabase.from('system_user_organization_audit').insert({
-        system_user_id,
+    console.log('[assign-user-to-organization] Successfully created assignment:', newAssignment);
+
+    // Also create entry in organization_members for consistency
+    console.log('[assign-user-to-organization] Creating organization_members entry...');
+    const { error: memberError } = await supabase
+      .from('organization_members')
+      .insert({
+        user_id: system_user_id,
         organization_id,
-        action: 'assigned',
-        new_role: role || 'member',
-        success: false,
-        error_message: syncResult?.error || 'Sync operation failed',
-        metadata: {
-          source: 'edge_function',
-          sync_result: syncResult,
-        }
+        role: role || 'member'
+      })
+      .catch(err => {
+        console.log('[assign-user-to-organization] organization_members insert failed (might not exist):', err);
+        return { error: null }; // Don't fail if this table doesn't exist
       });
-      
-      return new Response(JSON.stringify({ success: false, error: syncResult?.error || 'Sync operation failed' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
+
+    if (memberError) {
+      console.log('[assign-user-to-organization] organization_members error (non-critical):', memberError);
     }
 
     // Log success to audit trail
@@ -106,14 +147,15 @@ serve(async (req) => {
       success: true,
       metadata: {
         source: 'edge_function',
-        sync_result: syncResult,
+        assignment: newAssignment,
       }
-    });
+    }).catch(err => console.error('[assign-user-to-organization] Audit log error:', err));
 
+    console.log('[assign-user-to-organization] Assignment completed successfully');
     return new Response(JSON.stringify({ 
       success: true, 
-      relation: syncResult,
-      message: 'User successfully assigned to organization with auth setup'
+      relation: newAssignment,
+      message: 'User successfully assigned to organization'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
