@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Search, ArrowRight, MapPin, Globe, Loader2, Plus } from 'lucide-react';
+import { Building2, Search, ArrowRight, MapPin, Globe, Loader2, Plus, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ interface Branch {
   status: string;
   branch_type: string;
   organization_id: string;
+  client_count?: number;
 }
 
 interface TenantBranchNavigationProps {
@@ -62,7 +63,10 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         
         const { data, error } = await supabase
           .from('branches')
-          .select('*')
+          .select(`
+            *,
+            clients:clients(count)
+          `)
           .eq('organization_id', organizationId)
           .ilike('status', 'active');
 
@@ -71,8 +75,14 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
-        console.log('Organisation branches:', data, 'for org member role:', orgMember.role);
-        return data || [];
+        // Transform the data to extract client count
+        const transformedData = data?.map(branch => ({
+          ...branch,
+          client_count: (branch.clients as any)?.[0]?.count || 0
+        }));
+
+        console.log('Organisation branches:', transformedData, 'for org member role:', orgMember.role);
+        return transformedData || [];
       }
 
       // If not an org member, check if they're a super admin
@@ -81,7 +91,10 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         
         const { data, error } = await supabase
           .from('branches')
-          .select('*')
+          .select(`
+            *,
+            clients:clients(count)
+          `)
           .eq('organization_id', organizationId)
           .ilike('status', 'active');
 
@@ -90,8 +103,14 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
-        console.log('Organisation branches (super admin):', data);
-        return data || [];
+        // Transform the data to extract client count
+        const transformedData = data?.map(branch => ({
+          ...branch,
+          client_count: (branch.clients as any)?.[0]?.count || 0
+        }));
+
+        console.log('Organisation branches (super admin):', transformedData);
+        return transformedData || [];
       }
 
       // If branch admin, only show assigned branches
@@ -115,7 +134,10 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
         const { data, error } = await supabase
           .from('branches')
-          .select('*')
+          .select(`
+            *,
+            clients:clients(count)
+          `)
           .eq('organization_id', organizationId)
           .ilike('status', 'active')
           .in('id', branchIds);
@@ -125,8 +147,14 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           throw error;
         }
 
-        console.log('Branch admin branches:', data);
-        return data || [];
+        // Transform the data to extract client count
+        const transformedData = data?.map(branch => ({
+          ...branch,
+          client_count: (branch.clients as any)?.[0]?.count || 0
+        }));
+
+        console.log('Branch admin branches:', transformedData);
+        return transformedData || [];
       }
 
       // Unknown roles have no branch access
@@ -267,12 +295,24 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                    <span className="flex items-center gap-1">
-                      <Globe className="h-3 w-3" />
-                      {branch.currency}
-                    </span>
-                    <span className="capitalize">{branch.branch_type}</span>
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Globe className="h-3 w-3" />
+                        {branch.currency}
+                      </span>
+                      <span className="capitalize">{branch.branch_type}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-md">
+                        <Users className="h-3 w-3" />
+                        <span className="font-medium">{branch.client_count || 0}</span>
+                        <span className="text-blue-600/70 dark:text-blue-400/70">
+                          {branch.client_count === 1 ? 'client' : 'clients'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   <Button
