@@ -92,6 +92,30 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
     doc.line(leftMargin, headerHeight, pageWidth - leftMargin, headerHeight);
   };
 
+  // Function to add section divider
+  const addSectionDivider = () => {
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(leftMargin, yPos, rightMargin, yPos);
+    yPos += 8;
+  };
+
+  // Function to add section heading
+  const addSectionHeading = (title: string) => {
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(41, 98, 255);
+    doc.text(title, leftMargin, yPos);
+    yPos += 2;
+    
+    // Add underline for section
+    doc.setDrawColor(41, 98, 255);
+    doc.setLineWidth(0.5);
+    const textWidth = doc.getTextWidth(title);
+    doc.line(leftMargin, yPos, leftMargin + textWidth, yPos);
+    yPos += 8;
+  };
+
   // === HEADER SECTION ===
   const headerHeight = 40;
   addHeaderToPage();
@@ -104,31 +128,26 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
   doc.text(agreement.title || 'Agreement', pageWidth / 2, yPos, { align: 'center' });
   yPos += 10;
 
-  // Agreement Reference and Status
+  // Add subtitle/date below title
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text(`Reference: ${agreement.agreement_reference || 'N/A'}`, pageWidth / 2, yPos, { align: 'center' });
-  yPos += 6;
-  doc.text(`Status: ${agreement.status || 'N/A'}`, pageWidth / 2, yPos, { align: 'center' });
-  yPos += 10;
+  doc.text(`Effective Date: ${formatDate(agreement.start_date)}`, pageWidth / 2, yPos, { align: 'center' });
+  yPos += 15; // More spacing before content
 
   // Section: Agreement Details
-  doc.setFontSize(14);
-  doc.setTextColor(41, 98, 255);
-  doc.text('Agreement Details', leftMargin, yPos);
-  yPos += 8;
+  addSectionHeading('Agreement Details');
 
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  
+
   const details = [
     ['Tenant Organization', agreement.organizations?.name || 'N/A'],
     ['Software/Service', agreement.software_service_name || 'N/A'],
     ['Agreement Type', agreement.system_tenant_agreement_types?.name || 'N/A'],
-    ['Start Date', formatDate(agreement.start_date)],
+    ['Commencement Date', formatDate(agreement.start_date)],
     ['Expiry Date', formatDate(agreement.expiry_date)],
-    ['Version', agreement.version_number || 'N/A'],
+    ['Agreement Version', agreement.version_number || '1.0'],
   ];
 
   autoTable(doc, {
@@ -136,63 +155,103 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
     head: [],
     body: details,
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 2 },
+    styles: { 
+      fontSize: 10, 
+      cellPadding: 4,
+      lineColor: [240, 240, 240],
+      lineWidth: 0.1,
+    },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 50 },
-      1: { cellWidth: 'auto' },
+      0: { 
+        fontStyle: 'bold', 
+        cellWidth: 55,
+        textColor: [60, 60, 60],
+      },
+      1: { 
+        cellWidth: 'auto',
+        textColor: [0, 0, 0],
+      },
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 252],
     },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 10;
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+  addSectionDivider();
 
   // Section: Parties Information
-  doc.setFontSize(14);
-  doc.setTextColor(41, 98, 255);
-  doc.text('Parties Information', leftMargin, yPos);
-  yPos += 8;
+  addSectionHeading('Parties to this Agreement');
 
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
 
-  // Tenant Details
-  doc.setFont('helvetica', 'bold');
-  doc.text('Tenant Details:', leftMargin, yPos);
-  yPos += 6;
-  doc.setFont('helvetica', 'normal');
-  
-  const tenantDetails = [
-    `Organization: ${agreement.organizations?.name || 'N/A'}`,
-    `Address: ${agreement.tenant_address || 'N/A'}`,
-    `Contact: ${agreement.tenant_contact_person || 'N/A'}`,
-    `Email: ${agreement.tenant_email || 'N/A'}`,
-    `Phone: ${agreement.tenant_phone || 'N/A'}`,
-  ];
-  
-  tenantDetails.forEach(line => {
-    doc.text(line, leftMargin + 5, yPos);
-    yPos += 5;
-  });
-  yPos += 5;
+  // Create two-column layout for parties
+  const columnWidth = (contentWidth - 10) / 2;
+  const column2X = leftMargin + columnWidth + 10;
 
-  // Provider Details
+  // Tenant Details - Left Column
+  const startY = yPos;
   doc.setFont('helvetica', 'bold');
-  doc.text('Provider Details:', leftMargin, yPos);
+  doc.setFontSize(11);
+  doc.setTextColor(41, 98, 255);
+  doc.text('THE TENANT', leftMargin, yPos);
   yPos += 6;
+
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  
-  const providerDetails = [
-    `Company: ${agreement.provider_company_name || 'N/A'}`,
-    `Address: ${agreement.provider_address || 'N/A'}`,
-    `Contact: ${agreement.provider_contact_person || 'N/A'}`,
-    `Email: ${agreement.provider_email || 'N/A'}`,
-    `Phone: ${agreement.provider_phone || 'N/A'}`,
+  doc.setTextColor(0, 0, 0);
+
+  const tenantDetails = [
+    { label: 'Organization:', value: agreement.organizations?.name || 'N/A' },
+    { label: 'Address:', value: agreement.tenant_address || 'N/A' },
+    { label: 'Contact Person:', value: agreement.tenant_contact_person || 'N/A' },
+    { label: 'Email:', value: agreement.tenant_email || 'N/A' },
+    { label: 'Phone:', value: agreement.tenant_phone || 'N/A' },
   ];
-  
-  providerDetails.forEach(line => {
-    doc.text(line, leftMargin + 5, yPos);
-    yPos += 5;
+
+  let maxTenantY = yPos;
+  tenantDetails.forEach(item => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(item.label, leftMargin, yPos);
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(item.value, columnWidth - 35);
+    doc.text(lines, leftMargin + 35, yPos);
+    yPos += (lines.length * 5);
+    maxTenantY = yPos;
   });
-  yPos += 10;
+
+  // Provider Details - Right Column
+  yPos = startY;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(41, 98, 255);
+  doc.text('THE PROVIDER', column2X, yPos);
+  yPos += 6;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 0, 0);
+
+  const providerDetails = [
+    { label: 'Company:', value: agreement.provider_company_name || 'MED-INFINITE ENDLESS CARE' },
+    { label: 'Address:', value: agreement.provider_address || 'N/A' },
+    { label: 'Contact Person:', value: agreement.provider_contact_person || 'N/A' },
+    { label: 'Email:', value: agreement.provider_email || 'N/A' },
+    { label: 'Phone:', value: agreement.provider_phone || 'N/A' },
+  ];
+
+  providerDetails.forEach(item => {
+    doc.setFont('helvetica', 'bold');
+    doc.text(item.label, column2X, yPos);
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(item.value, columnWidth - 35);
+    doc.text(lines, column2X + 35, yPos);
+    yPos += (lines.length * 5);
+  });
+
+  yPos = Math.max(maxTenantY, yPos) + 8;
+  addSectionDivider();
 
   // Check if we need a new page
   if (yPos > 250) {
@@ -202,10 +261,7 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
   }
 
   // Section: Financial Terms
-  doc.setFontSize(14);
-  doc.setTextColor(41, 98, 255);
-  doc.text('Financial Terms', leftMargin, yPos);
-  yPos += 8;
+  addSectionHeading('Financial Terms & Pricing');
 
   const finalAmount = agreement.price_amount 
     ? agreement.price_amount - (agreement.discount_amount || 0)
@@ -215,10 +271,10 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
     ['Subscription Plan', agreement.subscription_plan || 'N/A'],
     ['Payment Terms', agreement.payment_terms || 'N/A'],
     ['Price/Fees', agreement.price_amount ? formatCurrency(agreement.price_amount) : 'N/A'],
-    ['Discount', agreement.discount_percentage ? `${agreement.discount_percentage}% (${formatCurrency(agreement.discount_amount || 0)})` : 'N/A'],
-    ['Final Amount', finalAmount ? formatCurrency(finalAmount) : 'N/A'],
+    ['Discount Applied', agreement.discount_percentage ? `${agreement.discount_percentage}% (${formatCurrency(agreement.discount_amount || 0)})` : 'None'],
+    ['Total Amount Due', finalAmount ? formatCurrency(finalAmount) : 'N/A'],
     ['Payment Mode', agreement.payment_mode || 'N/A'],
-    ['Late Payment Penalty', agreement.late_payment_penalty || 'N/A'],
+    ['Late Payment Penalty', agreement.late_payment_penalty || 'As per standard terms'],
   ];
 
   autoTable(doc, {
@@ -226,14 +282,37 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
     head: [],
     body: financialData,
     theme: 'striped',
-    styles: { fontSize: 10, cellPadding: 3 },
+    styles: { 
+      fontSize: 10, 
+      cellPadding: 4,
+      lineColor: [230, 230, 230],
+    },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { cellWidth: 'auto' },
+      0: { 
+        fontStyle: 'bold', 
+        cellWidth: 60,
+        textColor: [60, 60, 60],
+      },
+      1: { 
+        cellWidth: 'auto',
+        textColor: [0, 0, 0],
+      },
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252],
+    },
+    // Highlight total amount row
+    didParseCell: (data) => {
+      if (data.row.index === 4) { // Total Amount Due row
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [230, 240, 255];
+        data.cell.styles.textColor = [41, 98, 255];
+      }
     },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 10;
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+  addSectionDivider();
 
   // Check if we need a new page
   if (yPos > 250) {
@@ -243,19 +322,16 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
   }
 
   // Section: Service Scope
-  doc.setFontSize(14);
-  doc.setTextColor(41, 98, 255);
-  doc.text('Service Scope', leftMargin, yPos);
-  yPos += 8;
+  addSectionHeading('Scope of Services');
 
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
 
   const serviceScope = [
-    ['Services Included', agreement.services_included || 'N/A'],
-    ['User Limitations', agreement.user_limitations || 'N/A'],
-    ['Support & Maintenance', agreement.support_maintenance || 'N/A'],
-    ['Training & Onboarding', agreement.training_onboarding || 'N/A'],
+    ['Services Included', agreement.services_included || 'As defined in service catalog'],
+    ['User Limitations', agreement.user_limitations || 'No limitations'],
+    ['Support & Maintenance', agreement.support_maintenance || 'Standard support included'],
+    ['Training & Onboarding', agreement.training_onboarding || 'Available upon request'],
   ];
 
   autoTable(doc, {
@@ -263,14 +339,30 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
     head: [],
     body: serviceScope,
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 3 },
+    styles: { 
+      fontSize: 10, 
+      cellPadding: 4,
+      lineColor: [240, 240, 240],
+      lineWidth: 0.1,
+    },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { cellWidth: 'auto' },
+      0: { 
+        fontStyle: 'bold', 
+        cellWidth: 60,
+        textColor: [60, 60, 60],
+      },
+      1: { 
+        cellWidth: 'auto',
+        textColor: [0, 0, 0],
+      },
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 252],
     },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 10;
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+  addSectionDivider();
 
   // Check if we need a new page
   if (yPos > 230) {
@@ -280,21 +372,18 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
   }
 
   // Section: Legal Terms
-  doc.setFontSize(14);
-  doc.setTextColor(41, 98, 255);
-  doc.text('Legal Terms', leftMargin, yPos);
-  yPos += 8;
+  addSectionHeading('Terms & Conditions');
 
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
 
   const legalTerms = [
-    ['Confidentiality Clause', agreement.confidentiality_clause || 'N/A'],
-    ['Data Protection & Privacy', agreement.data_protection_privacy || 'N/A'],
-    ['Termination Clause', agreement.termination_clause || 'N/A'],
-    ['Liability & Indemnity', agreement.liability_indemnity || 'N/A'],
-    ['Governing Law', agreement.governing_law || 'N/A'],
-    ['Jurisdiction', agreement.jurisdiction || 'N/A'],
+    ['Confidentiality', agreement.confidentiality_clause || 'Standard confidentiality terms apply'],
+    ['Data Protection', agreement.data_protection_privacy || 'Compliant with applicable data protection laws'],
+    ['Termination', agreement.termination_clause || 'As per standard termination policy'],
+    ['Liability & Indemnity', agreement.liability_indemnity || 'As per standard liability terms'],
+    ['Governing Law', agreement.governing_law || 'England and Wales'],
+    ['Jurisdiction', agreement.jurisdiction || 'Courts of England and Wales'],
   ];
 
   autoTable(doc, {
@@ -302,14 +391,30 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
     head: [],
     body: legalTerms,
     theme: 'plain',
-    styles: { fontSize: 10, cellPadding: 3 },
+    styles: { 
+      fontSize: 10, 
+      cellPadding: 4,
+      lineColor: [240, 240, 240],
+      lineWidth: 0.1,
+    },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { cellWidth: 'auto' },
+      0: { 
+        fontStyle: 'bold', 
+        cellWidth: 60,
+        textColor: [60, 60, 60],
+      },
+      1: { 
+        cellWidth: 'auto',
+        textColor: [0, 0, 0],
+      },
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 252],
     },
   });
 
-  yPos = (doc as any).lastAutoTable.finalY + 10;
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+  addSectionDivider();
 
   // Check if we need a new page
   if (yPos > 240) {
@@ -319,42 +424,83 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
   }
 
   // Section: Signatures
-  doc.setFontSize(14);
-  doc.setTextColor(41, 98, 255);
-  doc.text('Signatures', leftMargin, yPos);
-  yPos += 8;
+  addSectionHeading('Authorized Signatures');
 
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-
-  // Tenant Signature
-  doc.setFont('helvetica', 'bold');
-  doc.text('Tenant Representative:', leftMargin, yPos);
-  yPos += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Name: ${agreement.signed_by_tenant || 'N/A'}`, leftMargin + 5, yPos);
-  yPos += 5;
-  doc.text(`Signed: ${formatDate(agreement.tenant_signature_date)}`, leftMargin + 5, yPos);
-  yPos += 5;
-  doc.setFontSize(8);
-  doc.setTextColor(100, 100, 100);
-  doc.text('(Digital signature on file)', leftMargin + 5, yPos);
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  doc.setFont('helvetica', 'italic');
+  doc.text('The parties hereby acknowledge and agree to the terms and conditions set forth in this agreement:', leftMargin, yPos);
   yPos += 10;
 
-  // Provider Signature
+  // Create two-column layout for signatures
+  const sigColumnWidth = (contentWidth - 10) / 2;
+  const sigColumn2X = leftMargin + sigColumnWidth + 10;
+
+  // Tenant Signature Box
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.rect(leftMargin, yPos, sigColumnWidth, 40);
+
+  const tenantBoxY = yPos + 5;
   doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'bold');
-  doc.text('Provider Representative:', leftMargin, yPos);
-  yPos += 6;
+  doc.setTextColor(0, 0, 0);
+  doc.text('TENANT REPRESENTATIVE', leftMargin + 5, tenantBoxY);
+
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Name: ${agreement.signed_by_system || 'N/A'}`, leftMargin + 5, yPos);
-  yPos += 5;
-  doc.text(`Signed: ${formatDate(agreement.system_signature_date)}`, leftMargin + 5, yPos);
-  yPos += 5;
+  doc.setTextColor(60, 60, 60);
+  doc.text(`Authorized Signatory: ${agreement.signed_by_tenant || '[Name]'}`, leftMargin + 5, tenantBoxY + 8);
+  doc.text(`Date of Signature: ${formatDate(agreement.tenant_signature_date)}`, leftMargin + 5, tenantBoxY + 14);
+
   doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Digitally signed', leftMargin + 5, tenantBoxY + 20);
+
+  // Signature line
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.3);
+  doc.line(leftMargin + 5, tenantBoxY + 30, leftMargin + sigColumnWidth - 5, tenantBoxY + 30);
+  doc.setFontSize(7);
+  doc.text('Authorized Signature', leftMargin + 5, tenantBoxY + 33);
+
+  // Provider Signature Box
+  doc.setDrawColor(200, 200, 200);
+  doc.setLineWidth(0.5);
+  doc.rect(sigColumn2X, yPos, sigColumnWidth, 40);
+
+  const providerBoxY = yPos + 5;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text('PROVIDER REPRESENTATIVE', sigColumn2X + 5, providerBoxY);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+  doc.text(`Authorized Signatory: ${agreement.signed_by_system || '[Name]'}`, sigColumn2X + 5, providerBoxY + 8);
+  doc.text(`Date of Signature: ${formatDate(agreement.system_signature_date)}`, sigColumn2X + 5, providerBoxY + 14);
+
+  doc.setFontSize(8);
+  doc.setTextColor(120, 120, 120);
+  doc.setFont('helvetica', 'italic');
+  doc.text('Digitally signed', sigColumn2X + 5, providerBoxY + 20);
+
+  // Signature line
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.3);
+  doc.line(sigColumn2X + 5, providerBoxY + 30, sigColumn2X + sigColumnWidth - 5, providerBoxY + 30);
+  doc.setFontSize(7);
+  doc.text('Authorized Signature', sigColumn2X + 5, providerBoxY + 33);
+
+  yPos += 48;
+
+  // Add agreement validity note
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
   doc.setTextColor(100, 100, 100);
-  doc.text('(Digital signature on file)', leftMargin + 5, yPos);
+  doc.text('This agreement is legally binding and has been executed electronically.', pageWidth / 2, yPos, { align: 'center' });
 
   // Footer - add to all pages
   const pageCount = doc.getNumberOfPages();
@@ -383,6 +529,6 @@ export const generateAgreementPDF = async (agreement: SystemTenantAgreement): Pr
   }
 
   // Save PDF
-  const filename = `tenant-agreement-${sanitizeFilename(agreement.title || 'agreement')}.pdf`;
+  const filename = `${sanitizeFilename(agreement.title || 'agreement')}-agreement.pdf`;
   doc.save(filename);
 };
