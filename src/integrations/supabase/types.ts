@@ -11158,6 +11158,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_max_users_from_plan: { Args: { plan_text: string }; Returns: number }
       get_notification_stats: {
         Args: { p_branch_id?: string; p_user_id: string }
         Returns: {
