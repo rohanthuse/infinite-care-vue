@@ -3,11 +3,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck, AlertTriangle, Building2, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Loader2, ShieldCheck, AlertTriangle, Building2,
+  LayoutDashboard, Calendar, Users, ClipboardList,
+  PoundSterling, Star, MessageSquare, Workflow,
+  ListChecks, Pill, FileText, Bell, ClipboardCheck,
+  FileUp, Folder, UserPlus, BarChart4, Settings
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+
 const initialPermissions = {
   dashboard: true,
   bookings: true,
@@ -32,11 +39,14 @@ const initialPermissions = {
   reports: true,
   system: true
 };
+
 type Permissions = typeof initialPermissions;
+
 interface AdminBranch {
   branch_id: string;
   branch_name: string;
 }
+
 interface EditAdminPermissionsDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -47,6 +57,7 @@ interface EditAdminPermissionsDialogProps {
   adminBranches?: AdminBranch[];
   onBranchSwitch?: (branchId: string, branchName: string) => void;
 }
+
 export function EditAdminPermissionsDialog({
   isOpen,
   onClose,
@@ -228,10 +239,7 @@ export function EditAdminPermissionsDialog({
       }
     }
   };
-  const renderPermissionSwitch = (key: keyof Permissions, label: string) => <div className="flex items-center justify-between py-1 px-2 rounded-md hover:bg-white/50 transition-colors">
-      <Label htmlFor={key} className="text-gray-700 text-sm cursor-pointer flex-1">{label}</Label>
-      <Switch id={key} checked={permissions[key]} onCheckedChange={value => handlePermissionChange(key, value)} className="ml-2" />
-    </div>;
+
   return <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[650px] max-h-[90vh] p-0 overflow-hidden rounded-xl flex flex-col">
@@ -266,39 +274,165 @@ export function EditAdminPermissionsDialog({
                   <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                   <span className="ml-2 text-gray-600">Loading Permissions...</span>
                 </div> : <>
-                  {/* Core Features */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-blue-100/30">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-base"> Core Features</h3>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                      {renderPermissionSwitch('dashboard', 'Dashboard')}
-                      {renderPermissionSwitch('bookings', 'Bookings')}
-                      {renderPermissionSwitch('clients', 'Clients')}
-                      {renderPermissionSwitch('carers', 'Carers')}
-                      {renderPermissionSwitch('communication', 'Communication')}
-                      {renderPermissionSwitch('finance', 'Finance')}
+                  {/* Primary Modules Section */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-blue-50/30">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <LayoutDashboard className="h-5 w-5 text-blue-600" />
+                      <h3 className="font-semibold text-blue-900">Primary Modules</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                        { key: 'bookings', label: 'Bookings', icon: Calendar },
+                        { key: 'clients', label: 'Clients', icon: Users },
+                        { key: 'carers', label: 'Staff', icon: Users },
+                        { key: 'care_plan', label: 'Care Plan', icon: ClipboardList },
+                        { key: 'finance', label: 'Finance', icon: PoundSterling },
+                        { key: 'reviews', label: 'Feedbacks', icon: Star },
+                        { key: 'communication', label: 'Communication', icon: MessageSquare },
+                      ].map(({ key, label, icon: Icon }) => (
+                        <div key={key} className="flex items-center justify-between p-2 rounded-lg border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                          </div>
+                          <Switch
+                            id={key}
+                            checked={permissions[key as keyof Permissions]}
+                            onCheckedChange={(value) => handlePermissionChange(key as keyof Permissions, value)}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Advanced Features */}
-                  <div className="space-y-4 border rounded-lg p-4 bg-gradient-to-br from-green-50 to-green-100/30">
-                    <h3 className="font-semibold text-gray-800 flex items-center text-base"> Advanced Features</h3>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3">
-                      {renderPermissionSwitch('reviews', 'Feedbacks')}
-                      {renderPermissionSwitch('medication', 'Medication')}
-                      {renderPermissionSwitch('workflow', 'Workflow')}
-                      {renderPermissionSwitch('key_parameters', 'Core Settings')}
-                      {renderPermissionSwitch('care_plan', 'Care Plan')}
-                      {renderPermissionSwitch('under_review_care_plan', 'Under Review Care Plan')}
-                      {renderPermissionSwitch('agreements', 'Agreements')}
-                      {renderPermissionSwitch('events_logs', 'Events Logs')}
-                      {renderPermissionSwitch('attendance', 'Attendance')}
-                      {renderPermissionSwitch('form_builder', 'Form Builder')}
-                      {renderPermissionSwitch('documents', 'Documents')}
-                      {renderPermissionSwitch('notifications', 'Notifications')}
-                      {renderPermissionSwitch('library', 'Library')}
-                      {renderPermissionSwitch('third_party', 'Third Party')}
-                      {renderPermissionSwitch('reports', 'Reports')}
-                      {renderPermissionSwitch('system', 'System')}
+                  {/* Operations Section */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-purple-50/30">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <Workflow className="h-5 w-5 text-purple-600" />
+                      <h3 className="font-semibold text-purple-900">Operations</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[
+                        { key: 'workflow', label: 'Workflow', icon: Workflow },
+                        { key: 'key_parameters', label: 'Core Settings', icon: ListChecks },
+                        { key: 'medication', label: 'Medication', icon: Pill },
+                      ].map(({ key, label, icon: Icon }) => (
+                        <div key={key} className="flex items-center justify-between p-2 rounded-lg border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                          </div>
+                          <Switch
+                            id={key}
+                            checked={permissions[key as keyof Permissions]}
+                            onCheckedChange={(value) => handlePermissionChange(key as keyof Permissions, value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Administration Section */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-amber-50/30">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <FileText className="h-5 w-5 text-amber-600" />
+                      <h3 className="font-semibold text-amber-900">Administration</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[
+                        { key: 'agreements', label: 'Agreements', icon: FileText },
+                        { key: 'events_logs', label: 'Events & Logs', icon: Bell },
+                        { key: 'attendance', label: 'Attendance', icon: ClipboardCheck },
+                      ].map(({ key, label, icon: Icon }) => (
+                        <div key={key} className="flex items-center justify-between p-2 rounded-lg border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                          </div>
+                          <Switch
+                            id={key}
+                            checked={permissions[key as keyof Permissions]}
+                            onCheckedChange={(value) => handlePermissionChange(key as keyof Permissions, value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resources Section */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-green-50/30">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <Folder className="h-5 w-5 text-green-600" />
+                      <h3 className="font-semibold text-green-900">Resources</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: 'form_builder', label: 'Form Builder', icon: FileUp },
+                        { key: 'documents', label: 'Documents', icon: Folder },
+                        { key: 'notifications', label: 'Notifications', icon: Bell },
+                        { key: 'library', label: 'Library', icon: Folder },
+                        { key: 'third_party', label: 'Third Party Access', icon: UserPlus },
+                      ].map(({ key, label, icon: Icon }) => (
+                        <div key={key} className="flex items-center justify-between p-2 rounded-lg border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                          </div>
+                          <Switch
+                            id={key}
+                            checked={permissions[key as keyof Permissions]}
+                            onCheckedChange={(value) => handlePermissionChange(key as keyof Permissions, value)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Reports Section */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-indigo-50/30">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <BarChart4 className="h-5 w-5 text-indigo-600" />
+                      <h3 className="font-semibold text-indigo-900">Reports</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center justify-between p-2 rounded-lg border bg-white">
+                        <div className="flex items-center gap-2">
+                          <BarChart4 className="h-4 w-4 text-muted-foreground" />
+                          <Label htmlFor="reports" className="text-sm cursor-pointer">Reports</Label>
+                        </div>
+                        <Switch
+                          id="reports"
+                          checked={permissions.reports}
+                          onCheckedChange={(value) => handlePermissionChange('reports', value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* System & Advanced Section */}
+                  <div className="space-y-4 border rounded-lg p-4 bg-red-50/30">
+                    <div className="flex items-center gap-2 border-b pb-2">
+                      <Settings className="h-5 w-5 text-red-600" />
+                      <h3 className="font-semibold text-red-900">System & Advanced</h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[
+                        { key: 'system', label: 'System Administration', icon: Settings },
+                        { key: 'under_review_care_plan', label: 'Under Review Care Plan', icon: ClipboardList },
+                      ].map(({ key, label, icon: Icon }) => (
+                        <div key={key} className="flex items-center justify-between p-2 rounded-lg border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
+                          </div>
+                          <Switch
+                            id={key}
+                            checked={permissions[key as keyof Permissions]}
+                            onCheckedChange={(value) => handlePermissionChange(key as keyof Permissions, value)}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </>}
