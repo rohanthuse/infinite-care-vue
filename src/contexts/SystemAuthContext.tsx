@@ -68,6 +68,31 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           return;
         }
 
+        // Check if system session token exists, create one if not
+        const existingToken = localStorage.getItem('system_session_token');
+        
+        if (!existingToken) {
+          console.log('[SystemAuth] No system session token found during validation, creating one...');
+          try {
+            const { data: systemSessionData, error: systemSessionError } = await supabase.rpc('system_create_session_for_auth_user', {
+              p_auth_user_id: session.user.id,
+              p_ip_address: null,
+              p_user_agent: navigator.userAgent
+            });
+
+            const sessionData = systemSessionData as { success?: boolean; session_token?: string; error?: string } | null;
+            
+            if (!systemSessionError && sessionData?.session_token) {
+              localStorage.setItem('system_session_token', sessionData.session_token);
+              console.log('[SystemAuth] System session token created during validation');
+            } else {
+              console.warn('[SystemAuth] Could not create system session token during validation:', systemSessionError);
+            }
+          } catch (err) {
+            console.warn('[SystemAuth] System session creation failed during validation:', err);
+          }
+        }
+
         // Set authenticated user state
         const systemUser = {
           id: session.user.id,
@@ -215,6 +240,30 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
           // Don't sign out other user types - they should use regular AuthContext
           setError('This account is not a system administrator');
           return { error: 'This account is not a system administrator' };
+        }
+
+        // Create system session token for app_admin users
+        // This ensures RLS policies that check system sessions will work
+        try {
+          console.log('[SystemAuth] Creating system session token for app_admin user');
+          const { data: systemSessionData, error: systemSessionError } = await supabase.rpc('system_create_session_for_auth_user', {
+            p_auth_user_id: authData.user.id,
+            p_ip_address: null,
+            p_user_agent: navigator.userAgent
+          });
+
+          const sessionData = systemSessionData as { success?: boolean; session_token?: string; error?: string } | null;
+
+          if (!systemSessionError && sessionData?.session_token) {
+            console.log('[SystemAuth] System session token created successfully');
+            localStorage.setItem('system_session_token', sessionData.session_token);
+          } else {
+            console.warn('[SystemAuth] Could not create system session token:', systemSessionError);
+            // Don't fail the login, but log the warning
+          }
+        } catch (sessionError) {
+          console.warn('[SystemAuth] System session creation failed:', sessionError);
+          // Don't fail the login, but log the warning
         }
 
         const user = {
