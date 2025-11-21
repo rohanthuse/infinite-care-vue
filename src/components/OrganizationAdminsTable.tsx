@@ -83,7 +83,6 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
           permissions
         `)
         .eq('organization_id', organizationId)
-        .eq('status', 'active')
         .eq('role', 'super_admin');
 
       if (membersError) {
@@ -284,7 +283,10 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
               </TableRow>
             ) : (
               filteredMembers.map((member) => (
-                <TableRow key={member.id}>
+                <TableRow 
+                  key={member.id}
+                  className={member.status === 'inactive' ? 'opacity-60 bg-muted/30' : ''}
+                >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       <span>
