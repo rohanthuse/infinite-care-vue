@@ -98,7 +98,7 @@ serve(async (req) => {
       console.log('[assign-user-to-organization] Assignment already exists, updating role...');
       const { error: updateError } = await supabase
         .from('system_user_organizations')
-        .update({ role: role || 'member', updated_at: new Date().toISOString() })
+        .update({ role: role || 'member' })
         .eq('system_user_id', system_user_id)
         .eq('organization_id', organization_id);
 
