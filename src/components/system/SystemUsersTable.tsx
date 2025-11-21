@@ -241,7 +241,10 @@ export const SystemUsersTable: React.FC = () => {
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-sm text-muted-foreground">System Admin</span>
+                    <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Not Assigned
+                    </Badge>
                   )}
                 </div>
               </TableCell>
