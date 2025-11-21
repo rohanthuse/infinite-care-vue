@@ -23,6 +23,7 @@ import {
   Settings,
   Scale,
   FileSignature,
+  PenTool,
 } from 'lucide-react';
 
 interface ViewSystemTenantAgreementDialogProps {
@@ -301,9 +302,13 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
                 </AccordionTrigger>
                 <AccordionContent className="pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Tenant Signature */}
                     <Card>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Tenant Representative</CardTitle>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <PenTool className="h-4 w-4" />
+                          Tenant Representative
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <InfoRow label="Representative" value={agreement.signed_by_tenant || 'Not signed'} />
@@ -311,12 +316,37 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
                           label="Signature Date" 
                           value={formatSafeDate(agreement.tenant_signature_date, 'PPP', 'Not signed')} 
                         />
+                        
+                        {/* Signature Image Display */}
+                        {agreement.tenant_digital_signature ? (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Signature</p>
+                            <div className="border-2 border-border rounded-md p-4 bg-white dark:bg-muted/20 min-h-[150px] flex items-center justify-center">
+                              <img 
+                                src={agreement.tenant_digital_signature} 
+                                alt="Tenant signature" 
+                                className="max-h-[120px] max-w-full object-contain"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Signature</p>
+                            <div className="border-2 border-dashed border-border rounded-md p-4 min-h-[150px] flex items-center justify-center">
+                              <p className="text-sm text-muted-foreground">No signature recorded</p>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
+                    {/* System/Med-Infinite Signature */}
                     <Card>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Med-Infinite Representative</CardTitle>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <PenTool className="h-4 w-4" />
+                          Med-Infinite Representative
+                        </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <InfoRow label="Representative" value={agreement.signed_by_system || 'Not signed'} />
@@ -324,6 +354,27 @@ export const ViewSystemTenantAgreementDialog: React.FC<ViewSystemTenantAgreement
                           label="Signature Date" 
                           value={formatSafeDate(agreement.system_signature_date, 'PPP', 'Not signed')} 
                         />
+                        
+                        {/* Signature Image Display */}
+                        {agreement.system_digital_signature ? (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Signature</p>
+                            <div className="border-2 border-border rounded-md p-4 bg-white dark:bg-muted/20 min-h-[150px] flex items-center justify-center">
+                              <img 
+                                src={agreement.system_digital_signature} 
+                                alt="Med-Infinite signature" 
+                                className="max-h-[120px] max-w-full object-contain"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-3">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Signature</p>
+                            <div className="border-2 border-dashed border-border rounded-md p-4 min-h-[150px] flex items-center justify-center">
+                              <p className="text-sm text-muted-foreground">No signature recorded</p>
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
