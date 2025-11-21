@@ -179,7 +179,7 @@ export function CreateSystemTenantAgreementDialog() {
         const typesResult = await supabase
           .from('system_tenant_agreement_types')
           .select('id, name')
-          .eq('is_active', true)
+          .eq('status', 'Active')
           .order('name');
         
         const typesData: Array<{ id: string; name: string }> = [];
