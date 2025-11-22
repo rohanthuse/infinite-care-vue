@@ -80,7 +80,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
         first_name: formData.first_name,
         last_name: formData.last_name,
         password: formData.password,
-        role: 'admin', // Regular Admin - matches vishalg@gmail.com
+        role: 'super_admin', // System-level role (required by RPC)
       });
 
       // Wait for user record to be fully committed before assignment
@@ -104,7 +104,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           const result = await assignUserToOrganization.mutateAsync({
             systemUserId: newUser.id,
             organizationId: formData.organization_id,
-            role: 'admin',
+            role: 'admin', // Organization role - determines actual user permissions
           });
 
           console.log('[AddSystemUserDialog] Assignment result:', result);
