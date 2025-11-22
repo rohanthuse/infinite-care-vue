@@ -80,7 +80,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
         first_name: formData.first_name,
         last_name: formData.last_name,
         password: formData.password,
-        role: 'super_admin', // Hardcoded - always Super Admin
+        role: 'admin', // Regular Admin - matches vishalg@gmail.com
       });
 
       // Wait for user record to be fully committed before assignment
@@ -104,7 +104,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
           const result = await assignUserToOrganization.mutateAsync({
             systemUserId: newUser.id,
             organizationId: formData.organization_id,
-            role: 'super_admin',
+            role: 'admin',
           });
 
           console.log('[AddSystemUserDialog] Assignment result:', result);
@@ -237,10 +237,10 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
 
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md p-3">
             <p className="text-sm text-blue-900 dark:text-blue-100">
-              <strong>Role:</strong> Super Admin (automatically assigned)
+              <strong>Role:</strong> Regular Admin (automatically assigned)
             </p>
             <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-              Each tenant can have only one Super Admin user
+              Regular admins can manage users, branches, carers, and clients
             </p>
           </div>
 
@@ -257,7 +257,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
               <p className="text-sm text-destructive">{orgError}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              Only tenants without an existing Super Admin are shown
+              Select the organisation to assign this admin user
             </p>
           </div>
 
@@ -267,7 +267,7 @@ export const AddSystemUserDialog: React.FC<AddSystemUserDialogProps> = ({ childr
                 <strong>No tenants available</strong>
               </p>
               <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                All tenants already have a Super Admin assigned. Create a new tenant first.
+                No organisations are available. Create a new tenant first.
               </p>
             </div>
           )}

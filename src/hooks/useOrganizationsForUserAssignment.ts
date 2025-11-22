@@ -6,7 +6,7 @@ export interface OrganizationForAssignment {
   name: string;
   slug: string;
   subscription_plan: string;
-  has_super_admin: boolean;
+  has_super_admin: boolean; // Legacy field - always false now
   user_count: number;
 }
 
@@ -37,21 +37,17 @@ const fetchOrganizationsForAssignment = async (): Promise<OrganizationForAssignm
         };
       }
 
-      const hasSuperAdmin = userAssocs?.some(
-        (assoc) => assoc.role === 'super_admin'
-      ) || false;
-
       return {
         ...org,
         subscription_plan: org.subscription_plan || 'basic',
-        has_super_admin: hasSuperAdmin,
+        has_super_admin: false, // Not checking for super_admin anymore
         user_count: userAssocs?.length || 0,
       };
     })
   );
 
-  // Filter out organizations that already have a Super Admin
-  return orgsWithUserInfo.filter((org) => !org.has_super_admin);
+  // Return all organizations (allow multiple admins per org)
+  return orgsWithUserInfo;
 };
 
 export const useOrganizationsForUserAssignment = () => {
