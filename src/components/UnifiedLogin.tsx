@@ -489,6 +489,7 @@ const UnifiedLogin = () => {
 
       // Add longer timeout and better error handling for role detection
       let userRole = null;
+      let orgSlug: string | null = null; // Declare early so fallbacks can capture it
       let retryCount = 0;
       const maxRetries = 2;
 
@@ -552,10 +553,17 @@ const UnifiedLogin = () => {
 
           if (!systemOrgErr && systemOrg?.role === 'super_admin') {
             userRole = 'super_admin';
+            // Capture orgSlug from the same query result
+            if (systemOrg.organizations?.slug) {
+              orgSlug = (systemOrg.organizations as any).slug;
+              console.log('[LOGIN DEBUG] Fallback: captured orgSlug from system_user_organizations:', orgSlug);
+            }
             console.log('[LOGIN DEBUG] Fallback: using system_user_organizations role super_admin');
           }
         }
       }
+
+      console.log('[LOGIN DEBUG] After fallback - userRole:', userRole, 'orgSlug:', orgSlug);
 
       if (!userRole) {
         console.error('[LOGIN DEBUG] Role detection failure', {
@@ -577,8 +585,7 @@ const UnifiedLogin = () => {
       // Organization members should NEVER be routed as carers/clients
       console.log('[LOGIN DEBUG] Checking organization membership before routing');
 
-      // Declare orgSlug early so it can be used in org membership check
-      let orgSlug: string | null = null;
+      // Note: orgSlug already declared earlier (line 492) and may have been set in fallback
 
       const { data: orgMembership } = await supabase
         .from('organization_members')
