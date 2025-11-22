@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Mail, Lock, Heart, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, validatePreLoginState, withProgressiveTimeout } from "@/utils/authRecovery";
+import { checkNetworkHealth } from "@/utils/sessionRecovery";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
 
@@ -714,15 +715,15 @@ const UnifiedLogin = () => {
             // Continue anyway - dashboard will fetch as fallback
           }
           
-          console.log('[LOGIN DEBUG] Redirecting to tenant dashboard:', `/${orgSlug}/dashboard`);
+          console.log('[LOGIN DEBUG] Redirecting to super admin dashboard:', `/super_admin/${orgSlug}/dashboard`);
           toast.success("Welcome back, Super Administrator!");
           
           sessionStorage.setItem('redirect_in_progress', 'true');
           sessionStorage.setItem('navigating_to_dashboard', 'true');
-          sessionStorage.setItem('target_dashboard', `/${orgSlug}/dashboard`);
+          sessionStorage.setItem('target_dashboard', `/super_admin/${orgSlug}/dashboard`);
           setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
           
-          window.location.href = `/${orgSlug}/dashboard`;
+          window.location.href = `/super_admin/${orgSlug}/dashboard`;
           return;
         }
       }
@@ -911,7 +912,32 @@ const UnifiedLogin = () => {
     } catch (error: any) {
       console.error('[LOGIN DEBUG] Login error occurred:', error);
       
-      if (error.message?.includes('Invalid login credentials')) {
+      // Enhanced network error detection
+      const isNetworkError = 
+        error.name === 'AuthRetryableFetchError' ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('ERR_NAME_NOT_RESOLVED') ||
+        error.message?.includes('network') ||
+        error.message?.includes('connection');
+      
+      if (isNetworkError) {
+        console.error('[LOGIN DEBUG] Network error detected, checking network health');
+        toast.error("Cannot reach the authentication server. Please check your internet connection or try again shortly.");
+        setShowRecovery(true);
+        
+        // Check network health for additional diagnostics
+        try {
+          const health = await checkNetworkHealth();
+          console.log('[LOGIN DEBUG] Network health on failure:', health);
+          if (!health.isOnline || health.quality === 'offline') {
+            toast.error("You appear to be offline or unable to reach the server. Please check your connection.", {
+              duration: 6000
+            });
+          }
+        } catch (healthError) {
+          console.warn('[LOGIN DEBUG] Network health check failed:', healthError);
+        }
+      } else if (error.message?.includes('Invalid login credentials')) {
         toast.error("Invalid email or password");
       } else if (error.message?.includes('Email not confirmed')) {
         toast.error("Please check your email and click the confirmation link");
@@ -920,10 +946,6 @@ const UnifiedLogin = () => {
         setShowRecovery(true);
       } else {
         toast.error(error.message || "Login failed. Please try again.");
-        // Show recovery options for persistent errors
-        if (error.message?.includes('network') || error.message?.includes('connection')) {
-          setShowRecovery(true);
-        }
       }
     } finally {
       console.log('[LOGIN DEBUG] Cleaning up login process');
