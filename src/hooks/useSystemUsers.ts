@@ -119,7 +119,7 @@ export const useCreateSystemUser = () => {
         p_password: userData.password,
         p_first_name: userData.first_name,
         p_last_name: userData.last_name,
-        p_role: userData.role,
+        p_role: userData.role as 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer',
       });
 
       if (error) {
@@ -265,7 +265,7 @@ export const useUpdateSystemUser = () => {
         p_email: userData.email,
         p_first_name: userData.first_name,
         p_last_name: userData.last_name,
-        p_role: userData.role,
+        p_role: userData.role as 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer',
       });
 
       if (error) {
