@@ -149,35 +149,61 @@ const TenantDashboard = () => {
           return;
         }
 
-        // Verify user access - check both organization membership and system role
+        // Verify user access - prioritize RPC for Super Admin verification
+        let hasSystemAccess = false;
+        let isSuperAdminForOrg = false;
+
+        // FIRST: Try authoritative Super Admin verification via RPC (security definer, bypasses RLS)
+        try {
+          const { data: superAdminOrg, error: superAdminOrgError } = await supabase
+            .rpc('get_super_admin_org', { p_user_id: user.id })
+            .maybeSingle();
+
+          if (!superAdminOrgError && superAdminOrg?.slug === orgData.slug) {
+            hasSystemAccess = true;
+            isSuperAdminForOrg = true;
+            console.log('[TenantDashboard] Super admin access confirmed via get_super_admin_org RPC');
+          } else {
+            console.log('[TenantDashboard] Super admin RPC result:', { superAdminOrg, superAdminOrgError });
+          }
+        } catch (rpcError) {
+          console.warn('[TenantDashboard] get_super_admin_org RPC failed:', rpcError);
+        }
+
+        // SECOND: Check organization membership (use maybeSingle to handle missing rows gracefully)
         const { data: memberData, error: memberError } = await supabase
           .from('organization_members')
           .select('role, status')
           .eq('organization_id', orgData.id)
           .eq('user_id', user.id)
           .eq('status', 'active')
-          .single();
-
-        // Check system_user_organizations directly (more reliable than waiting for React Query)
-        const { data: systemUserData } = await supabase
-          .from('system_users')
-          .select('id')
-          .eq('auth_user_id', user.id)
           .maybeSingle();
 
-        let hasSystemAccess = false;
-        if (systemUserData?.id) {
-          const { data: systemOrgAssignment } = await supabase
-            .from('system_user_organizations')
-            .select('role')
-            .eq('system_user_id', systemUserData.id)
-            .eq('organization_id', orgData.id)
+        const hasOrgAccess = !!memberData && !memberError;
+
+        // THIRD: Fallback to system_user_organizations check if RPC didn't confirm Super Admin
+        if (!hasSystemAccess) {
+          const { data: systemUserData } = await supabase
+            .from('system_users')
+            .select('id')
+            .eq('auth_user_id', user.id)
             .maybeSingle();
 
-          hasSystemAccess = systemOrgAssignment?.role === 'super_admin';
-        }
+          if (systemUserData?.id) {
+            const { data: systemOrgAssignment } = await supabase
+              .from('system_user_organizations')
+              .select('role')
+              .eq('system_user_id', systemUserData.id)
+              .eq('organization_id', orgData.id)
+              .maybeSingle();
 
-        const hasOrgAccess = memberData && !memberError;
+            if (systemOrgAssignment?.role === 'super_admin') {
+              hasSystemAccess = true;
+              isSuperAdminForOrg = true;
+              console.log('[TenantDashboard] Super admin access confirmed via system_user_organizations fallback');
+            }
+          }
+        }
 
         console.log('[TenantDashboard] Permission check:', {
           userId: user.id,
@@ -186,11 +212,17 @@ const TenantDashboard = () => {
           organizationSlug: orgData.slug,
           hasSystemAccess,
           hasOrgAccess,
-          systemUserData: systemUserData?.id,
+          isSuperAdminForOrg,
           memberRole: memberData?.role
         });
 
+        // Access denied only if user has NEITHER system access NOR org membership
         if (!hasSystemAccess && !hasOrgAccess) {
+          console.warn('[TenantDashboard] Access denied after checks', {
+            hasSystemAccess,
+            hasOrgAccess,
+            isSuperAdminForOrg
+          });
           toast({
             title: 'Access Denied',
             description: 'You don\'t have permission to access this organization.',
@@ -202,13 +234,13 @@ const TenantDashboard = () => {
         }
 
         setOrganization(orgData);
-        // Priority: 1) Organization Membership, 2) System Roles
-        // If user is an active organization member, that's their PRIMARY role
+        
+        // Set user role with proper priority
         if (memberData) {
-          // User is an organization member (owner, admin, manager, member)
+          // User is an active organization member - use their org role
           setUserRole(memberData);
-        } else if (hasSystemAccess) {
-          // User is NOT an org member, but has super_admin access via system_user_organizations
+        } else if (isSuperAdminForOrg || hasSystemAccess) {
+          // User has Super Admin access but no org membership
           setUserRole({ role: 'super_admin', status: 'active' });
         } else {
           // Fallback for edge cases
