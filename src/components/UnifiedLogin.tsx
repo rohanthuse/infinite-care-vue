@@ -528,7 +528,40 @@ const UnifiedLogin = () => {
         }
       }
 
+      // THIRD FALLBACK: Direct query to system_users + system_user_organizations
+      // This guarantees Super Admins created via System Portal can always log in
       if (!userRole) {
+        console.log('[LOGIN DEBUG] No role from RPC, checking system_user_organizations fallback');
+
+        // 1) Find system_users row for this auth user
+        const { data: systemUser, error: systemUserErr } = await supabase
+          .from('system_users')
+          .select('id')
+          .eq('auth_user_id', authData.user.id)
+          .maybeSingle();
+
+        if (!systemUserErr && systemUser?.id) {
+          // 2) Check organization assignment with role
+          const { data: systemOrg, error: systemOrgErr } = await supabase
+            .from('system_user_organizations')
+            .select('role, organizations(slug)')
+            .eq('system_user_id', systemUser.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (!systemOrgErr && systemOrg?.role === 'super_admin') {
+            userRole = 'super_admin';
+            console.log('[LOGIN DEBUG] Fallback: using system_user_organizations role super_admin');
+          }
+        }
+      }
+
+      if (!userRole) {
+        console.error('[LOGIN DEBUG] Role detection failure', {
+          userId: authData.user.id,
+          email: authData.user.email,
+          lastKnownRole: userRole,
+        });
         clearTimeout(timeoutId);
         setLoading(false);
         toast.error("Unable to determine your access level. Please try again or contact support.");
@@ -608,10 +641,25 @@ const UnifiedLogin = () => {
 
       // For super admins, route to tenant-specific dashboard if orgSlug available
       if (userRole === 'super_admin') {
-        console.log('[LOGIN DEBUG] Super admin detected, orgSlug:', orgSlug);
+        console.log('[LOGIN DEBUG] Super admin detected, orgSlug before final check:', orgSlug);
+
+        // If still missing, run ONE focused fallback using detectUserOrganization
+        if (!orgSlug) {
+          try {
+            orgSlug = await detectUserOrganization(authData.user.id);
+            console.log('[LOGIN DEBUG] Super admin orgSlug via detectUserOrganization:', orgSlug);
+          } catch (orgErr) {
+            console.error('[LOGIN DEBUG] Super admin org detection failed:', orgErr);
+          }
+        }
         
         if (!orgSlug) {
-          console.error('[LOGIN DEBUG] CRITICAL: Super admin has no organization! User:', authData.user.email);
+          console.error('[LOGIN DEBUG] Super admin aborting due to missing orgSlug', {
+            userId: authData.user.id,
+            email: authData.user.email,
+            userRole,
+            orgSlug,
+          });
           clearTimeout(timeoutId);
           setLoading(false);
           toast.error("Organization assignment missing. Please contact system administrator.");
