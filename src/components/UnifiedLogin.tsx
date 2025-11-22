@@ -651,13 +651,31 @@ const UnifiedLogin = () => {
       if (userRole === 'super_admin') {
         console.log('[LOGIN DEBUG] Super admin detected, orgSlug before final check:', orgSlug);
 
-        // If still missing, run ONE focused fallback using detectUserOrganization
+        // Primary method: Use secure RPC that bypasses RLS
+        if (!orgSlug) {
+          try {
+            const { data, error } = await supabase
+              .rpc('get_super_admin_org', { p_user_id: authData.user.id })
+              .single();
+
+            if (!error && data?.slug) {
+              orgSlug = data.slug;
+              console.log('[LOGIN DEBUG] Super admin orgSlug via get_super_admin_org RPC:', orgSlug);
+            } else {
+              console.warn('[LOGIN DEBUG] get_super_admin_org returned no slug or error:', error);
+            }
+          } catch (rpcErr) {
+            console.error('[LOGIN DEBUG] get_super_admin_org RPC failed:', rpcErr);
+          }
+        }
+
+        // Secondary fallback: detectUserOrganization
         if (!orgSlug) {
           try {
             orgSlug = await detectUserOrganization(authData.user.id);
-            console.log('[LOGIN DEBUG] Super admin orgSlug via detectUserOrganization:', orgSlug);
+            console.log('[LOGIN DEBUG] Super admin orgSlug via detectUserOrganization fallback:', orgSlug);
           } catch (orgErr) {
-            console.error('[LOGIN DEBUG] Super admin org detection failed:', orgErr);
+            console.error('[LOGIN DEBUG] Super admin org detection via detectUserOrganization failed:', orgErr);
           }
         }
         

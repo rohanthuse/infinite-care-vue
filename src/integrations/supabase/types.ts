@@ -11270,6 +11270,12 @@ export type Database = {
         }
         Returns: Json
       }
+      get_super_admin_org: {
+        Args: { p_user_id: string }
+        Returns: {
+          slug: string
+        }[]
+      }
       get_system_user_stats_with_session: {
         Args: { p_session_token: string }
         Returns: Json
