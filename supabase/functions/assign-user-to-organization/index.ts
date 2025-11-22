@@ -169,10 +169,6 @@ serve(async (req) => {
         user_id: system_user_id,
         organization_id,
         role: role || 'member'
-      })
-      .catch(err => {
-        console.log('[assign-user-to-organization] organization_members insert failed (might not exist):', err);
-        return { error: null }; // Don't fail if this table doesn't exist
       });
 
     if (memberError) {
