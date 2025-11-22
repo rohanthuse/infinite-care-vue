@@ -161,18 +161,40 @@ serve(async (req) => {
 
     console.log('[assign-user-to-organization] Successfully created assignment:', newAssignment);
 
-    // Also create entry in organization_members for consistency
-    console.log('[assign-user-to-organization] Creating organization_members entry...');
-    const { error: memberError } = await supabase
-      .from('organization_members')
-      .insert({
-        user_id: system_user_id,
-        organization_id,
-        role: role || 'member'
-      });
+    // Lookup auth_user_id from system_users to correctly populate organization_members
+    console.log('[assign-user-to-organization] Looking up auth_user_id for organization_members entry...');
+    const { data: systemUser, error: systemUserError } = await supabase
+      .from('system_users')
+      .select('auth_user_id')
+      .eq('id', system_user_id)
+      .maybeSingle();
 
-    if (memberError) {
-      console.log('[assign-user-to-organization] organization_members error (non-critical):', memberError);
+    if (systemUserError) {
+      console.error('[assign-user-to-organization] Error fetching auth_user_id:', systemUserError);
+    }
+
+    // Only create organization_members entry if we have auth_user_id
+    if (systemUser?.auth_user_id) {
+      console.log('[assign-user-to-organization] Creating organization_members entry with auth_user_id...');
+      const { error: memberError } = await supabase
+        .from('organization_members')
+        .upsert({
+          user_id: systemUser.auth_user_id, // Use auth_user_id, not system_users.id
+          organization_id,
+          role: role || 'member',
+          status: 'active',
+          joined_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,organization_id'
+        });
+
+      if (memberError) {
+        console.log('[assign-user-to-organization] organization_members error (non-critical):', memberError);
+      } else {
+        console.log('[assign-user-to-organization] Successfully created organization_members entry');
+      }
+    } else {
+      console.warn('[assign-user-to-organization] No auth_user_id found for system_user_id:', system_user_id);
     }
 
     // Log success to audit trail
