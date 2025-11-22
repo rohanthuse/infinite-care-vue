@@ -158,9 +158,37 @@ const TenantDashboard = () => {
           .eq('status', 'active')
           .single();
 
-        // Allow access if user is a super_admin (system role) or has organization membership
-        const hasSystemAccess = systemUserRole?.role === 'super_admin';
+        // Check system_user_organizations directly (more reliable than waiting for React Query)
+        const { data: systemUserData } = await supabase
+          .from('system_users')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .maybeSingle();
+
+        let hasSystemAccess = false;
+        if (systemUserData?.id) {
+          const { data: systemOrgAssignment } = await supabase
+            .from('system_user_organizations')
+            .select('role')
+            .eq('system_user_id', systemUserData.id)
+            .eq('organization_id', orgData.id)
+            .maybeSingle();
+
+          hasSystemAccess = systemOrgAssignment?.role === 'super_admin';
+        }
+
         const hasOrgAccess = memberData && !memberError;
+
+        console.log('[TenantDashboard] Permission check:', {
+          userId: user.id,
+          email: user.email,
+          organizationId: orgData.id,
+          organizationSlug: orgData.slug,
+          hasSystemAccess,
+          hasOrgAccess,
+          systemUserData: systemUserData?.id,
+          memberRole: memberData?.role
+        });
 
         if (!hasSystemAccess && !hasOrgAccess) {
           toast({
@@ -179,12 +207,12 @@ const TenantDashboard = () => {
         if (memberData) {
           // User is an organization member (owner, admin, manager, member)
           setUserRole(memberData);
-        } else if (systemUserRole?.role === 'super_admin' || systemUserRole?.role === 'branch_admin') {
-          // User is NOT an org member, but has system role (super_admin or branch_admin)
-          setUserRole({ role: systemUserRole.role, status: 'active' });
+        } else if (hasSystemAccess) {
+          // User is NOT an org member, but has super_admin access via system_user_organizations
+          setUserRole({ role: 'super_admin', status: 'active' });
         } else {
           // Fallback for edge cases
-          setUserRole({ role: systemUserRole?.role || 'member', status: 'active' });
+          setUserRole({ role: 'member', status: 'active' });
         }
         
         // Apply branding
