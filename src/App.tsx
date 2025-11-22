@@ -329,6 +329,13 @@ const AppContent = () => {
                 </TenantProvider>
               } />
               
+              {/* Super Admin tenant-specific dashboard route */}
+              <Route path="/super_admin/:tenantSlug/dashboard" element={
+                <SuperAdminGuard fallbackPath="/login">
+                  <TenantDashboard />
+                </SuperAdminGuard>
+              } />
+              
               {/* Branch Dashboard Redirect - Ensure tenant-aware URLs */}
               <Route path="/branch-dashboard/*" element={<BranchDashboardRedirect />} />
               
