@@ -24,7 +24,7 @@ interface CreateSystemUserData {
   first_name: string;
   last_name: string;
   password: string;
-  role: 'super_admin' | 'admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer';
+  role: 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer';
 }
 
 export const useSystemUsers = () => {
@@ -243,7 +243,7 @@ export interface UpdateSystemUserData {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'super_admin' | 'admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer';
+  role: 'super_admin' | 'tenant_manager' | 'support_admin' | 'analytics_viewer';
 }
 
 export const useUpdateSystemUser = () => {
