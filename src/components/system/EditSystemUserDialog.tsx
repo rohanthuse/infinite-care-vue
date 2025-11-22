@@ -9,18 +9,9 @@ import {
 import { CustomButton } from '@/components/ui/CustomButton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building2, X } from 'lucide-react';
+import { Loader2, Building2 } from 'lucide-react';
 import { useUpdateSystemUser, UpdateSystemUserData } from '@/hooks/useSystemUsers';
-import { useOrganizations } from '@/hooks/useOrganizations';
-import { useAssignUserToOrganization } from '@/hooks/useOrganizationAssignment';
 
 interface EditSystemUserDialogProps {
   open: boolean;
@@ -37,10 +28,7 @@ interface EditSystemUserDialogProps {
 
 export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open, onOpenChange, user }) => {
   const [formData, setFormData] = useState<UpdateSystemUserData | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const updateUser = useUpdateSystemUser();
-  const { data: organizations } = useOrganizations();
-  const assignUserToOrg = useAssignUserToOrganization();
 
   useEffect(() => {
     if (user) {
@@ -64,20 +52,6 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
     try {
       await updateUser.mutateAsync(formData);
       onOpenChange(false);
-    } catch (_) {
-      // toast handled in hook
-    }
-  };
-
-  const handleAssignToOrganization = async () => {
-    if (!user || !selectedOrgId) return;
-    try {
-      await assignUserToOrg.mutateAsync({
-        systemUserId: user.id,
-        organizationId: selectedOrgId,
-        role: 'super_admin'
-      });
-      setSelectedOrgId('');
     } catch (_) {
       // toast handled in hook
     }
@@ -131,55 +105,31 @@ export const EditSystemUserDialog: React.FC<EditSystemUserDialogProps> = ({ open
               </div>
             </div>
 
-            {/* Organisation Assignments */}
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center space-x-2">
+            {/* Assigned Organisation (Read-Only) */}
+            <div className="space-y-2 pt-4 border-t">
+              <Label className="flex items-center space-x-2">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Organisation Assignments</Label>
-              </div>
+                <span>Assigned Organisation</span>
+              </Label>
               
-              {/* Current Assignments */}
-              {user?.organizations && user.organizations.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground">Current Assignments</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {user.organizations.map((org) => (
-                      <Badge key={org.id} variant="outline" className="flex items-center space-x-1">
-                        <span>{org.name}</span>
-                        <span className="text-xs text-muted-foreground">({org.role})</span>
-                      </Badge>
-                    ))}
-                  </div>
+              {user?.organizations && user.organizations.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {user.organizations.map((org) => (
+                    <Badge key={org.id} variant="secondary" className="px-3 py-1.5">
+                      {org.name}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                  <Badge variant="destructive" className="text-xs">No Organisation Assigned</Badge>
                 </div>
               )}
-
-              {/* Add New Assignment */}
-              <div className="space-y-2">
-                <Select value={selectedOrgId} onValueChange={setSelectedOrgId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select organisation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {organizations?.map((org) => (
-                      <SelectItem key={org.id} value={org.id}>
-                        {org.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               
-              <CustomButton 
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAssignToOrganization}
-                disabled={!selectedOrgId || assignUserToOrg.isPending}
-                className="w-full"
-              >
-                {assignUserToOrg.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Assign as Super Admin
-              </CustomButton>
+              <p className="text-xs text-muted-foreground">
+                Organisation assignment is set during user creation and cannot be changed here. 
+                Contact system administrator if you need to modify the assigned organisation.
+              </p>
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">

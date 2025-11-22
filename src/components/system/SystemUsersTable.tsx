@@ -285,11 +285,7 @@ export const SystemUsersTable: React.FC = () => {
                       <span>Reset Password</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleEditUser(user)} className="flex items-center space-x-2">
-                      <Building2 className="h-4 w-4" />
-                      <span>Manage Organisations</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleToggleStatus(user.id, user.is_active)}
                       className="flex items-center space-x-2"
                     >
