@@ -330,13 +330,20 @@ export function ViewBookingDialog({
   const handleApproveCancellation = async () => {
     if (!booking?.id) {
       console.error('[ViewBookingDialog] No booking ID for cancellation approval');
+      toast.error('Cannot approve cancellation', {
+        description: 'Booking information is missing'
+      });
       return;
     }
     
-    console.log('[ViewBookingDialog] Starting cancellation approval for booking:', booking.id);
+    console.log('[ViewBookingDialog] Starting cancellation approval:', {
+      bookingId: booking.id,
+      branchId: booking.branchId || booking.branch_id,
+      status: booking.cancellation_request_status
+    });
     
     try {
-      // Step 1: Fetch the change request to get client and org details
+      // Step 1: Fetch the change request with better error handling
       const { data: changeRequestData, error: fetchError } = await supabase
         .from('booking_change_requests')
         .select('id, client_id, branch_id, organization_id')
@@ -345,9 +352,27 @@ export function ViewBookingDialog({
         .eq('request_type', 'cancellation')
         .maybeSingle();
       
-      if (fetchError || !changeRequestData) {
-        console.error('[ViewBookingDialog] Change request not found:', fetchError);
-        toast.error('Change request not found');
+      if (fetchError) {
+        console.error('[ViewBookingDialog] Database error fetching change request:', fetchError);
+        
+        // Check if it's an RLS policy issue
+        if (fetchError.code === 'PGRST301' || fetchError.message?.includes('policy')) {
+          toast.error('Access Denied', {
+            description: 'You do not have permission to approve requests for this branch. Please contact your system administrator.'
+          });
+        } else {
+          toast.error('Database error', {
+            description: fetchError.message
+          });
+        }
+        return;
+      }
+      
+      if (!changeRequestData) {
+        console.error('[ViewBookingDialog] No pending change request found for booking:', booking.id);
+        toast.error('Change Request Not Found', {
+          description: 'The cancellation request may have already been processed or deleted. Please refresh the page.'
+        });
         return;
       }
       
@@ -365,12 +390,14 @@ export function ViewBookingDialog({
       
       if (updateError) {
         console.error('[ViewBookingDialog] Error updating change request:', updateError);
-        toast.error('Failed to approve cancellation');
+        toast.error('Failed to approve cancellation', {
+          description: updateError.message
+        });
         return;
       }
       
       // Step 3: Send notification to client
-      await supabase
+      const { error: notificationError } = await supabase
         .from('notifications')
         .insert({
           title: 'Cancellation Approved',
@@ -387,7 +414,12 @@ export function ViewBookingDialog({
           }
         });
       
-      console.log('[ViewBookingDialog] Notification sent to client');
+      if (notificationError) {
+        console.warn('[ViewBookingDialog] Failed to send notification:', notificationError);
+        // Continue anyway - notification failure shouldn't block deletion
+      } else {
+        console.log('[ViewBookingDialog] Notification sent to client');
+      }
       
       // Step 4: Delete the booking using the existing hook
       await deleteBooking.mutateAsync({
@@ -408,6 +440,72 @@ export function ViewBookingDialog({
       
     } catch (error) {
       console.error('[ViewBookingDialog] Error in cancellation approval:', error);
+      toast.error('Failed to approve cancellation', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
+
+  const handleApproveCancellationFallback = async () => {
+    if (!booking?.id) return;
+    
+    console.log('[ViewBookingDialog] Using fallback approval method');
+    
+    try {
+      // Step 1: Try to update any pending cancellation requests for this booking
+      const { error: updateError } = await supabase
+        .from('booking_change_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          admin_notes: 'Cancellation approved via fallback method'
+        })
+        .eq('booking_id', booking.id)
+        .eq('status', 'pending')
+        .eq('request_type', 'cancellation');
+      
+      if (updateError) {
+        console.error('[ViewBookingDialog] Failed to update change request:', updateError);
+      }
+      
+      // Step 2: Send notification using booking's client_id
+      const clientId = booking.clientId || booking.client_id;
+      const branchId = booking.branchId || booking.branch_id;
+      
+      if (clientId) {
+        await supabase
+          .from('notifications')
+          .insert({
+            title: 'Cancellation Approved',
+            message: 'Your cancellation request has been approved. The booking has been removed.',
+            type: 'booking',
+            category: 'success',
+            priority: 'high',
+            user_id: clientId,
+            branch_id: branchId,
+            data: {
+              booking_id: booking.id
+            }
+          });
+      }
+      
+      // Step 3: Delete the booking
+      await deleteBooking.mutateAsync({
+        bookingId: booking.id,
+        clientId: clientId,
+        staffId: booking.carerId || booking.staff_id,
+      });
+      
+      console.log('[ViewBookingDialog] Cancellation approved successfully via fallback');
+      
+      toast.success('Cancellation Approved — Booking Deleted', {
+        description: 'The client has been notified.'
+      });
+      
+      onOpenChange(false);
+      
+    } catch (error) {
+      console.error('[ViewBookingDialog] Fallback approval failed:', error);
       toast.error('Failed to approve cancellation', {
         description: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -488,7 +586,14 @@ export function ViewBookingDialog({
                       {/* Direct Action Buttons for Cancellation */}
                       <div className="grid grid-cols-2 gap-2">
                         <Button
-                          onClick={handleApproveCancellation}
+                          onClick={async () => {
+                            try {
+                              await handleApproveCancellation();
+                            } catch (error) {
+                              console.log('[ViewBookingDialog] Primary method failed, trying fallback');
+                              await handleApproveCancellationFallback();
+                            }
+                          }}
                           disabled={deleteBooking.isPending}
                           className="w-full bg-green-600 hover:bg-green-700"
                         >
