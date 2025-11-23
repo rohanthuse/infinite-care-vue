@@ -95,38 +95,30 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   const { inspectCache } = useBookingDebug(branchId, bookings);
 
-  // Handle booking highlighting when focusBookingId is provided
+  // Handle auto-focusing booking from search
   useEffect(() => {
-    if (focusBookingId && bookings.length > 0) {
-      const targetBooking = bookings.find(b => b.id === focusBookingId);
-      if (targetBooking) {
-        console.log('[BookingsTab] Found target booking for focus:', targetBooking.id);
+    const selectedBookingId = searchParams.get('selected');
+    if (selectedBookingId && bookings.length > 0) {
+      const booking = bookings.find(b => b.id === selectedBookingId);
+      if (booking) {
+        // Set focus booking ID to highlight it
+        setHighlightedBookingId(selectedBookingId);
         
-        // Parse the booking date correctly
-        const bookingDate = parseISO(targetBooking.date);
+        // Change the calendar date to show that booking
+        const bookingDate = parseISO(booking.date);
         if (isValid(bookingDate)) {
-          console.log('[BookingsTab] Setting date to booking date:', bookingDate);
           setSelectedDate(bookingDate);
         }
         
-        // Set highlighting
-        setHighlightedBookingId(focusBookingId);
-        
-        // Remove focus parameter from URL and clear highlight after 3 seconds
+        // Clean up query parameter after 3 seconds
         setTimeout(() => {
           setHighlightedBookingId(null);
-          const params = new URLSearchParams(window.location.search);
-          params.delete('focusBookingId');
-          const newUrl = params.toString() ? 
-            `${window.location.pathname}?${params.toString()}` : 
-            window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
+          searchParams.delete('selected');
+          setSearchParams(searchParams, { replace: true });
         }, 3000);
-      } else {
-        console.warn('[BookingsTab] Target booking not found:', focusBookingId);
       }
     }
-  }, [focusBookingId, bookings, selectedDate]);
+  }, [searchParams, bookings, setSearchParams]);
 
   const {
     newBookingDialogOpen,

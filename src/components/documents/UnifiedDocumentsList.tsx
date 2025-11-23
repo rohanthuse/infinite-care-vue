@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { 
   FileText, 
@@ -19,6 +20,7 @@ import {
   Database,
   Share
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +68,31 @@ export function UnifiedDocumentsList({
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightedDocId, setHighlightedDocId] = useState<string | null>(null);
+
+  // Handle auto-highlighting document from search
+  useEffect(() => {
+    const selectedDocId = searchParams.get('selected');
+    if (selectedDocId) {
+      setHighlightedDocId(selectedDocId);
+      
+      // Scroll to the document
+      setTimeout(() => {
+        const element = document.getElementById(`doc-${selectedDocId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      
+      // Clean up after 3 seconds
+      setTimeout(() => {
+        setHighlightedDocId(null);
+        searchParams.delete('selected');
+        setSearchParams(searchParams, { replace: true });
+      }, 3000);
+    }
+  }, [searchParams, setSearchParams]);
 
   // Get unique values for filters, filtering out empty/null/undefined values
   const { categories, entities, sources } = useMemo(() => {
@@ -392,9 +419,14 @@ export function UnifiedDocumentsList({
                     {filteredDocuments.map((doc) => {
                       const isSelectable = doc.source_table === 'documents';
                       const isSelected = selectedDocumentIds.includes(doc.id);
+                      const isHighlighted = highlightedDocId === doc.id;
                       
                       return (
-                        <TableRow key={`${doc.source_table}-${doc.id}`}>
+                        <TableRow 
+                          key={`${doc.source_table}-${doc.id}`}
+                          id={`doc-${doc.id}`}
+                          className={cn(isHighlighted && "ring-2 ring-primary bg-primary/5")}
+                        >
                           <TableCell>
                             {isSelectable && (
                               <Checkbox

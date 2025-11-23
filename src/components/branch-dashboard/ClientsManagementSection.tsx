@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ export function ClientsManagementSection({
   onViewClient, 
   onEditClient 
 }: ClientsManagementSectionProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [postCodeSearch, setPostCodeSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -65,6 +67,20 @@ export function ClientsManagementSection({
   const clients = clientsData?.clients || [];
   const totalCount = clientsData?.count || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // Handle auto-opening client from search
+  useEffect(() => {
+    const selectedClientId = searchParams.get('selected');
+    if (selectedClientId && clients.length > 0) {
+      const client = clients.find(c => c.id === selectedClientId);
+      if (client) {
+        onViewClient(client);
+        // Remove the query parameter after opening
+        searchParams.delete('selected');
+        setSearchParams(searchParams, { replace: true });
+      }
+    }
+  }, [searchParams, clients, onViewClient, setSearchParams]);
 
   const handleViewClient = (client: any) => {
     // Close dropdown first to prevent focus trap conflicts
