@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ClientScheduleTab } from '@/components/client/ClientScheduleTab';
 import { useNavigate } from 'react-router-dom';
+import { useClientNavigation } from '@/hooks/useClientNavigation';
 
 const ClientSchedule: React.FC = () => {
   const navigate = useNavigate();
+  const { createClientPath } = useClientNavigation();
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -17,7 +19,7 @@ const ClientSchedule: React.FC = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/client-dashboard')}
+              onClick={() => navigate(createClientPath(''))}
               className="p-1"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -46,7 +48,7 @@ const ClientSchedule: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/client-dashboard/appointments')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/appointments'))}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-emerald-100 rounded-lg">
               <Calendar className="h-5 w-5 text-emerald-600" />
@@ -58,7 +60,7 @@ const ClientSchedule: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/client-dashboard/care-plans')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/care-plans'))}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Heart className="h-5 w-5 text-blue-600" />
@@ -70,7 +72,7 @@ const ClientSchedule: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/client-dashboard/messages')}>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/messages'))}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
               <User className="h-5 w-5 text-purple-600" />
