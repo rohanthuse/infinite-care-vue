@@ -43,10 +43,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     booking.unavailability_request.status === 'approved'
   );
 
+  // Determine if booking has pending change requests
+  const hasPendingCancellation = booking.cancellation_request_status === 'pending';
+  const hasPendingReschedule = booking.reschedule_request_status === 'pending';
+
   // Determine background color based on status
   const statusColors = {
     assigned: "bg-green-100 border-green-300 text-green-800",
-    unassigned: "bg-amber-100 border-amber-400 border-2 text-amber-900", // Enhanced styling for unassigned
+    unassigned: "bg-amber-100 border-amber-400 border-2 text-amber-900",
     done: "bg-blue-100 border-blue-300 text-blue-800",
     "in-progress": "bg-purple-100 border-purple-300 text-purple-800",
     cancelled: "bg-red-100 border-red-300 text-red-800",
@@ -54,10 +58,21 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     suspended: "bg-gray-100 border-gray-300 text-gray-800"
   };
   
-  // Override with reassignment highlight if needed
-  const backgroundColor = needsReassignment 
-    ? "bg-amber-50 border-amber-400 border-2 text-amber-900"
-    : statusColors[booking.status];
+  // Color coding for change requests (matching client side)
+  const getBookingColor = () => {
+    if (hasPendingCancellation) {
+      return "bg-orange-100 border-orange-400 border-2 text-orange-900"; // Orange for cancellation
+    }
+    if (hasPendingReschedule) {
+      return "bg-blue-100 border-blue-400 border-2 text-blue-900"; // Blue for reschedule
+    }
+    if (needsReassignment) {
+      return "bg-amber-50 border-amber-400 border-2 text-amber-900";
+    }
+    return statusColors[booking.status];
+  };
+  
+  const backgroundColor = getBookingColor();
   
   // Apply highlight styles if this booking is highlighted
   const highlightClasses = isHighlighted ? 
@@ -156,6 +171,19 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
           </div>
         </div>
 
+        {/* Request Status - NEW */}
+        {(hasPendingCancellation || hasPendingReschedule) && (
+          <div className="pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <AlertCircle className={`h-3.5 w-3.5 ${hasPendingCancellation ? 'text-orange-500' : 'text-blue-500'}`} />
+              <span className="text-xs font-medium">
+                {hasPendingCancellation && '⏱️ Cancellation Request Pending'}
+                {hasPendingReschedule && '📅 Reschedule Request Pending'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Additional Information */}
         {booking.notes && (
           <div className="border-t border-gray-100 pt-2">
@@ -210,23 +238,43 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 }}
                 onClick={handleClick}
               >
-                {booking.notes && (
-                  <div 
-                    className="absolute top-1 right-1 z-10 pointer-events-none"
-                    title="Has notes"
-                  >
-                    <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
-                      <StickyNote className="h-3 w-3" />
-                    </div>
-                  </div>
-                )}
-                <div className="p-1 overflow-hidden h-full flex flex-col">
-                  {needsReassignment && (
-                    <div className="flex items-center gap-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
-                      <AlertTriangle className="h-2.5 w-2.5" />
-                      {booking.unavailability_request?.status === 'pending' ? 'Reassign Pending' : 'Reassign Required'}
-                    </div>
-                  )}
+            {/* Request indicator badge */}
+            {(hasPendingCancellation || hasPendingReschedule) && (
+              <div className="absolute top-1 right-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  hasPendingCancellation ? 'bg-orange-500' : 'bg-blue-500'
+                } animate-pulse`} />
+              </div>
+            )}
+            {booking.notes && !hasPendingCancellation && !hasPendingReschedule && (
+              <div 
+                className="absolute top-1 right-1 z-10 pointer-events-none"
+                title="Has notes"
+              >
+                <div className="bg-blue-600 text-white rounded-full p-0.5 shadow-sm">
+                  <StickyNote className="h-3 w-3" />
+                </div>
+              </div>
+            )}
+            <div className="p-1 overflow-hidden h-full flex flex-col">
+              {needsReassignment && (
+                <div className="flex items-center gap-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
+                  <AlertTriangle className="h-2.5 w-2.5" />
+                  {booking.unavailability_request?.status === 'pending' ? 'Reassign Pending' : 'Reassign Required'}
+                </div>
+              )}
+              {hasPendingCancellation && (
+                <div className="flex items-center gap-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
+                  <AlertCircle className="h-2.5 w-2.5" />
+                  Cancel Request
+                </div>
+              )}
+              {hasPendingReschedule && (
+                <div className="flex items-center gap-1 bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
+                  <AlertCircle className="h-2.5 w-2.5" />
+                  Reschedule Request
+                </div>
+              )}
                   <div className="font-medium truncate flex items-center">
                     {booking.status === 'unassigned' && <AlertCircle className="h-3 w-3 mr-1 text-amber-600" />}
                     <span>{booking.startTime}-{booking.endTime}</span>
@@ -273,7 +321,15 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             }}
             onClick={handleClick}
           >
-            {booking.notes && (
+            {/* Request indicator badge */}
+            {(hasPendingCancellation || hasPendingReschedule) && (
+              <div className="absolute top-1 right-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  hasPendingCancellation ? 'bg-orange-500' : 'bg-blue-500'
+                } animate-pulse`} />
+              </div>
+            )}
+            {booking.notes && !hasPendingCancellation && !hasPendingReschedule && (
               <div 
                 className="absolute top-1 right-1 z-10 pointer-events-none"
                 title="Has notes"
