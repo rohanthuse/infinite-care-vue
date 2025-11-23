@@ -208,7 +208,7 @@ const ClientPayments = () => {
                 
                 return (
                   <div key={invoice.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="p-4 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="p-4 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
                         <div className="flex items-center">
                           <h4 className="font-medium">{invoice.invoice_number}</h4>
@@ -222,7 +222,7 @@ const ClientPayments = () => {
                       </div>
                     </div>
                     <div className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                         <div className="space-y-2">
                           <div className="text-sm">
                             <span className="text-gray-500">Invoice Date:</span> {format(new Date(invoice.invoice_date), 'MMM d, yyyy')}
@@ -291,9 +291,9 @@ const ClientPayments = () => {
                         </div>
                       )}
                       
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex flex-col sm:flex-row gap-2 pt-2">
                         {!isPaid && remainingBalance > 0 && (
-                          <Button onClick={() => handlePayInvoice(invoice)}>
+                          <Button onClick={() => handlePayInvoice(invoice)} className="w-full sm:w-auto">
                             Pay {remainingBalance < (invoice.total_amount || invoice.amount) ? 'Balance' : 'Now'}
                           </Button>
                         )}
@@ -302,6 +302,7 @@ const ClientPayments = () => {
                           size="icon" 
                           title="Download Invoice"
                           onClick={() => handleDownloadInvoice(invoice)}
+                          className="w-full sm:w-auto"
                         >
                           <Download className="h-4 w-4" />
                         </Button>

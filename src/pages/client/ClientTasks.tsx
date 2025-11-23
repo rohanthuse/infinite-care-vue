@@ -140,7 +140,7 @@ const ClientTasks: React.FC = () => {
               </CardHeader>
               
               <CardContent className="pt-0 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
                   {(task.assignees && task.assignees.length > 0) || task.assignee_name ? (
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />
@@ -188,7 +188,7 @@ const ClientTasks: React.FC = () => {
                     <Button 
                       onClick={() => completeTask(task.id)}
                       disabled={isCompleting}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
                     >
                       {isCompleting ? (
                         <>

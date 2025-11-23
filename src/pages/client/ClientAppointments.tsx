@@ -226,7 +226,7 @@ const ClientAppointments = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
                     <div className="flex items-center text-gray-600">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
@@ -353,7 +353,7 @@ const AppointmentWithReview = ({ appointment, onLeaveReview, getStatusColor, for
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm mb-4">
           <div className="flex items-center text-gray-600">
             <Calendar className="h-4 w-4 mr-2" />
             <span>{format(parseISO(appointment.appointment_date), 'MMM d, yyyy')}</span>
