@@ -147,7 +147,7 @@ export const useEnhancedClientBilling = (clientId: string) => {
           *,
           line_items:invoice_line_items(*),
           payment_records(*),
-          booking:bookings(
+          booking:bookings!client_billing_booking_id_fkey(
             id,
             start_time,
             end_time,
@@ -160,7 +160,7 @@ export const useEnhancedClientBilling = (clientId: string) => {
         .not('booking_id', 'is', null);
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: Boolean(clientId),
   });
