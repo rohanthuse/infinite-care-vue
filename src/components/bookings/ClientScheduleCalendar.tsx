@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { format, startOfWeek, addDays } from "date-fns";
-import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, StickyNote } from "lucide-react";
+import { Search, Filter, Users, Clock, MapPin, PoundSterling, Download, StickyNote, XCircle, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { BookingFilters } from "./BookingFilters";
 import { Booking, Client, Carer } from "./BookingTimeGrid";
 import { BookingsMonthView } from "./BookingsMonthView";
 import { getBookingStatusColor, getBookingStatusLabel } from "./utils/bookingColors";
+import { getRequestStatusColors } from "./utils/requestIndicatorHelpers";
 
 interface ClientScheduleCalendarProps {
   date: Date;
@@ -866,32 +867,58 @@ export function ClientScheduleCalendar({
                       className="border-r last:border-r-0 p-2 min-h-[80px] flex-shrink-0 space-y-1"
                       style={{ width: SLOT_WIDTH }}
                     >
-                      {(client.weekBookings[header.dateString] || []).map((booking: Booking) => (
-                        <Tooltip key={booking.id}>
-                          <TooltipTrigger asChild>
-                            <div
-                              className="text-xs p-2 rounded cursor-pointer bg-blue-100 border-blue-300 text-blue-800 border"
-                              onClick={() => onViewBooking?.(booking)}
-                            >
-                              <div className="font-semibold">
-                                {(booking as any).allCarerNames?.length > 1 
-                                  ? `${(booking as any).allCarerNames.length} Carers`
-                                  : booking.carerName}
+                      {(client.weekBookings[header.dateString] || []).map((booking: Booking) => {
+                        const requestColors = getRequestStatusColors(booking);
+                        const RequestIcon = requestColors.icon;
+                        
+                        return (
+                          <Tooltip key={booking.id}>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`text-xs p-2 rounded cursor-pointer border relative ${requestColors.background} ${requestColors.border} ${requestColors.text}`}
+                                onClick={() => onViewBooking?.(booking)}
+                              >
+                                {/* Request indicator dot */}
+                                {requestColors.hasRequest && (
+                                  <div className="absolute top-1 right-1">
+                                    <div className={`w-2 h-2 rounded-full ${requestColors.dotColor} animate-pulse`} />
+                                  </div>
+                                )}
+                                
+                                {/* Booking content */}
+                                <div className="font-semibold">
+                                  {(booking as any).allCarerNames?.length > 1 
+                                    ? `${(booking as any).allCarerNames.length} Carers`
+                                    : booking.carerName}
+                                </div>
+                                <div className="text-[10px] opacity-75">{booking.startTime} - {booking.endTime}</div>
+                                
+                                {/* Request icon */}
+                                {requestColors.hasRequest && RequestIcon && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <RequestIcon className={`h-3 w-3 ${requestColors.iconColor}`} />
+                                    <span className="text-[9px] font-medium">{requestColors.tooltip}</span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-[10px] opacity-75">{booking.startTime} - {booking.endTime}</div>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="text-sm space-y-1">
-                              <div>
-                                <strong>Staff:</strong> {(booking as any).allCarerNames?.join(', ') || booking.carerName}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-sm space-y-1">
+                                {requestColors.hasRequest && (
+                                  <div className={`font-bold ${requestColors.iconColor} mb-2`}>
+                                    ⚠️ {requestColors.tooltip}
+                                  </div>
+                                )}
+                                <div>
+                                  <strong>Staff:</strong> {(booking as any).allCarerNames?.join(', ') || booking.carerName}
+                                </div>
+                                <div><strong>Time:</strong> {booking.startTime} - {booking.endTime}</div>
+                                <div><strong>Status:</strong> {booking.status}</div>
                               </div>
-                              <div><strong>Time:</strong> {booking.startTime} - {booking.endTime}</div>
-                              <div><strong>Status:</strong> {booking.status}</div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      ))}
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
                       {(client.weekBookings[header.dateString] || []).length === 0 && (
                         <div className="text-xs text-muted-foreground text-center pt-6">No bookings</div>
                       )}
@@ -920,7 +947,14 @@ export function ClientScheduleCalendar({
                     
                     {/* Booking blocks - absolutely positioned overlays */}
                     {client.bookingBlocks?.map((block: BookingBlock, idx: number) => {
-                      const colorClass = getStatusColor({ type: block.status, booking: block.booking });
+                      const requestColors = getRequestStatusColors(block.booking);
+                      const RequestIcon = requestColors.icon;
+                      
+                      // If there's a pending request, override the status color
+                      const colorClass = requestColors.hasRequest 
+                        ? `${requestColors.background} ${requestColors.text}` 
+                        : getStatusColor({ type: block.status, booking: block.booking });
+                      
                       const isSplitFirst = block.isSplit && block.splitType === 'first';
                       const isSplitSecond = block.isSplit && block.splitType === 'second';
                       const isSelected = selectedBookings.some(b => b.id === block.booking.id);
@@ -933,6 +967,7 @@ export function ClientScheduleCalendar({
                                 absolute top-0 h-full flex items-center justify-center text-xs font-medium cursor-pointer transition-all
                                 border border-gray-300 dark:border-gray-600 rounded-sm
                                 ${colorClass}
+                                ${requestColors.hasRequest ? requestColors.border : ''}
                                 ${isSplitFirst ? 'border-r-4 border-r-blue-600 border-dashed' : ''}
                                 ${isSplitSecond ? 'border-l-4 border-l-blue-600 border-dashed' : ''}
                                 ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}
@@ -951,6 +986,7 @@ export function ClientScheduleCalendar({
                                 }
                               }}
                             >
+                              {/* Selection checkbox */}
                               {onBookingSelect && (
                                 <div 
                                   className="absolute top-1 left-1 z-10"
@@ -966,7 +1002,15 @@ export function ClientScheduleCalendar({
                                 </div>
                               )}
 
-                              {block.booking.notes && (
+                              {/* Request indicator - top right */}
+                              {requestColors.hasRequest && (
+                                <div className="absolute top-1 right-1 z-10">
+                                  <div className={`w-2 h-2 rounded-full ${requestColors.dotColor} animate-pulse`} />
+                                </div>
+                              )}
+
+                              {/* Notes indicator */}
+                              {block.booking.notes && !requestColors.hasRequest && (
                                 <div 
                                   className="absolute top-1 right-1 z-10 pointer-events-none"
                                   title="Has notes"
@@ -977,6 +1021,7 @@ export function ClientScheduleCalendar({
                                 </div>
                               )}
 
+                              {/* Booking content */}
                               <div className="flex flex-col items-center justify-center px-1 w-full">
                                 <div className="font-semibold truncate w-full text-center">
                                   {(block.booking as any).allCarerNames?.length > 1 
@@ -988,10 +1033,22 @@ export function ClientScheduleCalendar({
                                   <span>{block.booking.startTime}-{block.booking.endTime}</span>
                                   {isSplitFirst && <span className="text-blue-600">→</span>}
                                 </div>
+                                
+                                {/* Request icon indicator */}
+                                {requestColors.hasRequest && RequestIcon && (
+                                  <div className="flex items-center gap-0.5 mt-0.5">
+                                    <RequestIcon className={`h-2.5 w-2.5 ${requestColors.iconColor}`} />
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </TooltipTrigger>
                           <TooltipContent>
+                            {requestColors.hasRequest && (
+                              <div className={`font-bold ${requestColors.iconColor} mb-2 pb-2 border-b`}>
+                                ⚠️ {requestColors.tooltip}
+                              </div>
+                            )}
                             {renderTooltipContent({ type: block.status, booking: block.booking }, client.name)}
                             {block.booking.splitIndicator === 'continues-next-day' && (
                               <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
