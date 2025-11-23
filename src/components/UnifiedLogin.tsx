@@ -913,6 +913,48 @@ const UnifiedLogin = () => {
           toast.success("Welcome back!");
           break;
         case 'client':
+          // Extra defensive check for clients - ensure org is detected
+          if (!orgSlug) {
+            console.error('[LOGIN DEBUG] Client role detected but no org - forcing detection');
+            try {
+              // Force a direct query to get client's organization
+              const { data: clientData } = await supabase
+                .from('clients')
+                .select('branch_id')
+                .eq('auth_user_id', authData.user.id)
+                .single();
+              
+              if (clientData?.branch_id) {
+                const { data: branchData } = await supabase
+                  .from('branches')
+                  .select('organization_id')
+                  .eq('id', clientData.branch_id)
+                  .single();
+                
+                if (branchData?.organization_id) {
+                  const { data: orgData } = await supabase
+                    .from('organizations')
+                    .select('slug')
+                    .eq('id', branchData.organization_id)
+                    .single();
+                  
+                  if (orgData?.slug) {
+                    orgSlug = orgData.slug;
+                    console.log('[LOGIN DEBUG] Forced client org detection:', orgSlug);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('[LOGIN DEBUG] Forced client org detection failed:', error);
+            }
+          }
+          
+          if (!orgSlug) {
+            toast.error("Unable to determine your organization. Please contact support.");
+            await supabase.auth.signOut();
+            return;
+          }
+          
           dashboardPath += '/client-dashboard';
           toast.success("Welcome back!");
           break;
