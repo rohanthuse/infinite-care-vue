@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useSubmitCancellationRequest } from '@/hooks/useBookingChangeRequest';
 
 interface CancelBookingDialogProps {
   open: boolean;
@@ -30,8 +31,11 @@ interface CancelBookingDialogProps {
     appointment_date: string;
     appointment_time: string;
     location: string;
+    client_id?: string;
+    branch_id?: string;
+    organization_id?: string;
   } | null;
-  onSubmit: (data: { reason: string; notes?: string }) => void;
+  onSubmit?: (data: { reason: string; notes?: string }) => void;
   isLoading?: boolean;
 }
 
@@ -48,23 +52,39 @@ export function CancelBookingDialog({
   onOpenChange,
   booking,
   onSubmit,
-  isLoading = false,
+  isLoading: externalLoading = false,
 }: CancelBookingDialogProps) {
   const [reason, setReason] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+  
+  const submitCancellationMutation = useSubmitCancellationRequest();
 
-  const handleSubmit = () => {
-    if (!reason) return;
+  const handleSubmit = async () => {
+    if (!reason || !booking) return;
 
-    onSubmit({
-      reason,
-      notes: notes || undefined,
-    });
+    try {
+      await submitCancellationMutation.mutateAsync({
+        bookingId: booking.id,
+        clientId: booking.client_id!,
+        branchId: booking.branch_id!,
+        organizationId: booking.organization_id,
+        reason,
+        notes: notes || undefined,
+      });
 
-    // Reset form
-    setReason('');
-    setNotes('');
+      // Reset and close
+      setReason('');
+      setNotes('');
+      onOpenChange(false);
+      
+      // Call parent onSubmit if provided
+      onSubmit?.({ reason, notes });
+    } catch (error) {
+      console.error('[CancelBookingDialog] Error:', error);
+    }
   };
+
+  const isLoading = submitCancellationMutation.isPending || externalLoading;
 
   const handleCancel = () => {
     setReason('');

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, User, Heart, FileText } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Heart, FileText, RotateCcw, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,9 +8,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CalendarEvent } from '@/types/calendar';
 import { getAppointmentStatusColor, getEventTypeBadgeColor } from '@/utils/clientCalendarHelpers';
+import { RescheduleAppointmentDialog } from '@/components/client/RescheduleAppointmentDialog';
+import { CancelBookingDialog } from '@/components/client/CancelBookingDialog';
 
 interface ClientAppointmentDetailsDialogProps {
   open: boolean;
@@ -23,6 +26,9 @@ export const ClientAppointmentDetailsDialog: React.FC<ClientAppointmentDetailsDi
   onOpenChange,
   event
 }) => {
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+
   if (!event) return null;
 
   const startTime = new Date(event.startTime);
@@ -125,7 +131,51 @@ export const ClientAppointmentDetailsDialog: React.FC<ClientAppointmentDetailsDi
               </p>
             </div>
           )}
+
+          <Separator />
+
+          {/* Action Buttons */}
+          {event._rawAppointmentData && (
+            <div className="flex gap-3">
+              <Button 
+                className="flex-1"
+                variant="outline"
+                onClick={() => setRescheduleDialogOpen(true)}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Request Reschedule
+              </Button>
+              <Button 
+                className="flex-1"
+                variant="outline"
+                onClick={() => setCancelDialogOpen(true)}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Request Cancellation
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Nested Dialogs */}
+        {event._rawAppointmentData && (
+          <>
+            <RescheduleAppointmentDialog
+              open={rescheduleDialogOpen}
+              onOpenChange={setRescheduleDialogOpen}
+              appointment={event._rawAppointmentData}
+            />
+
+            <CancelBookingDialog
+              open={cancelDialogOpen}
+              onOpenChange={setCancelDialogOpen}
+              booking={event._rawAppointmentData}
+              onSubmit={async () => {
+                onOpenChange(false);
+              }}
+            />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
