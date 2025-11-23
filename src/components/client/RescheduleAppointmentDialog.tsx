@@ -49,26 +49,12 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   
   const submitRescheduleRequestMutation = useSubmitRescheduleRequest();
 
-  // Expanded available time slots including half-hour increments
-  const availableTimeSlots = [
-    "9:00 AM",
-    "9:30 AM",
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "12:00 PM",
-    "12:30 PM",
-    "1:00 PM",
-    "1:30 PM",
-    "2:00 PM",
-    "2:30 PM",
-    "3:00 PM",
-    "3:30 PM",
-    "4:00 PM",
-    "4:30 PM",
-    "5:00 PM",
-  ];
+  // Generate 24-hour time slots (00:00 to 23:30)
+  const availableTimeSlots = Array.from({ length: 48 }, (_, index) => {
+    const hour = Math.floor(index / 2);
+    const minute = (index % 2) * 30;
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  });
 
   const handleSubmit = async () => {
     if (!date || !timeSlot || !appointment || !reason.trim()) {
@@ -173,7 +159,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
             <label className="text-sm font-medium">
               Select a New Time
             </label>
-            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2">
               {availableTimeSlots.map((slot) => (
                 <Button
                   key={slot}

@@ -17,6 +17,17 @@ export interface CalendarEvent {
   staffIds: string[];
   priority: 'low' | 'medium' | 'high';
   conflictsWith?: string[];
+  _rawAppointmentData?: {
+    id: string;
+    appointment_type: string;
+    provider_name: string;
+    appointment_date: string;
+    appointment_time: string;
+    location: string;
+    client_id?: string;
+    branch_id?: string;
+    organization_id?: string;
+  };
 }
 
 export interface CalendarFilters {

@@ -29,7 +29,18 @@ export function appointmentToCalendarEvent(appointment: any): CalendarEvent {
     branchName: appointment.location,
     staffIds: appointment._booking_data?.staff_id ? [appointment._booking_data.staff_id] : [],
     priority: 'medium',
-    clientId: appointment.client_id
+    clientId: appointment.client_id,
+    _rawAppointmentData: {
+      id: appointment.id,
+      appointment_type: appointment.appointment_type,
+      provider_name: appointment.provider_name,
+      appointment_date: appointment.appointment_date,
+      appointment_time: appointment.appointment_time,
+      location: appointment.location,
+      client_id: appointment.client_id,
+      branch_id: appointment.branch_id,
+      organization_id: appointment.organization_id
+    }
   };
 }
 

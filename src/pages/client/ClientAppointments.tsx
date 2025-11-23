@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Star, MessageSquare, RotateCcw } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Star, MessageSquare, RotateCcw, XCircle } from "lucide-react";
 import { useClientAllAppointments } from "@/hooks/useClientAppointments";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
+import { CancelBookingDialog } from "@/components/client/CancelBookingDialog";
 import { useCheckExistingReview } from "@/hooks/useClientReviews";
 import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { usePendingReviews } from "@/hooks/usePendingReviews";
@@ -30,14 +31,19 @@ interface RescheduleAppointmentData {
   appointment_date: string;
   appointment_time: string;
   location: string;
+  client_id?: string;
+  branch_id?: string;
+  organization_id?: string;
 }
 
 const ClientAppointments = () => {
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [viewReviewDialogOpen, setViewReviewDialogOpen] = useState(false);
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
   const [selectedRescheduleAppointment, setSelectedRescheduleAppointment] = useState<RescheduleAppointmentData | null>(null);
+  const [selectedCancelAppointment, setSelectedCancelAppointment] = useState<any>(null);
   const [selectedReview, setSelectedReview] = useState(null);
 
   // Get authenticated client ID using centralized auth
@@ -159,10 +165,28 @@ const ClientAppointments = () => {
       provider_name: appointment.provider_name,
       appointment_date: appointment.appointment_date,
       appointment_time: appointment.appointment_time,
-      location: appointment.location
+      location: appointment.location,
+      client_id: appointment.client_id,
+      branch_id: appointment.branch_id,
+      organization_id: appointment.organization_id
     };
     setSelectedRescheduleAppointment(rescheduleData);
     setRescheduleDialogOpen(true);
+  };
+
+  const handleCancelAppointment = (appointment: any) => {
+    setSelectedCancelAppointment({
+      id: appointment.id,
+      appointment_type: appointment.appointment_type,
+      provider_name: appointment.provider_name,
+      appointment_date: appointment.appointment_date,
+      appointment_time: appointment.appointment_time,
+      location: appointment.location,
+      client_id: appointment.client_id,
+      branch_id: appointment.branch_id,
+      organization_id: appointment.organization_id
+    });
+    setCancelDialogOpen(true);
   };
 
   if (isLoading) {
@@ -252,17 +276,27 @@ const ClientAppointments = () => {
                     </div>
                   )}
 
-                  {/* Reschedule Button */}
+                  {/* Action Buttons */}
                   <div className="pt-3 border-t border-gray-100">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleRescheduleAppointment(appointment)}
-                      className="w-full"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-1" />
-                      Reschedule Appointment
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleRescheduleAppointment(appointment)}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-1" />
+                        Reschedule
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleCancelAppointment(appointment)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -329,6 +363,15 @@ const ClientAppointments = () => {
         open={rescheduleDialogOpen}
         onOpenChange={setRescheduleDialogOpen}
         appointment={selectedRescheduleAppointment}
+      />
+
+      <CancelBookingDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        booking={selectedCancelAppointment}
+        onSubmit={async (data) => {
+          // Handled by the dialog's internal hook
+        }}
       />
     </div>
   );
