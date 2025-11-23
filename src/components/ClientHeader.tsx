@@ -66,7 +66,10 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   };
   
   return (
-    <header className="bg-white shadow-sm border-b border-gray-100 py-3 lg:py-4 sticky top-0 z-[60] w-full">
+    <header 
+      className="bg-white shadow-sm border-b border-gray-100 py-3 lg:py-4 sticky top-0 z-[60] w-full"
+      style={{ height: 'var(--client-header-height, 64px)' }}
+    >
       <div className="w-full px-4 md:px-6 lg:px-8 flex justify-between items-center">
         {/* Logo and Sidebar Trigger */}
         <div className="flex items-center gap-2 lg:gap-4">
