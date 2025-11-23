@@ -2,10 +2,11 @@ import React from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
-import { Eye, Clock, User, Calendar, FileText, Trash2 } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -352,6 +353,54 @@ export function ViewBookingDialog({
           </div>
 
           <Separator />
+
+          {/* Request Status Section - NEW */}
+          {(booking.cancellation_request_status === 'pending' || booking.reschedule_request_status === 'pending') && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <AlertCircle className="h-4 w-4" />
+                  Change Request
+                </div>
+                <div className="pl-6 space-y-2">
+                  {booking.cancellation_request_status === 'pending' && (
+                    <Alert className="bg-orange-50 border-orange-200">
+                      <AlertCircle className="h-4 w-4 text-orange-600" />
+                      <AlertDescription className="text-orange-800 text-sm">
+                        <strong>Cancellation Request Pending</strong>
+                        <p className="mt-1">Client has requested to cancel this appointment.</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {booking.reschedule_request_status === 'pending' && (
+                    <Alert className="bg-blue-50 border-blue-200">
+                      <AlertCircle className="h-4 w-4 text-blue-600" />
+                      <AlertDescription className="text-blue-800 text-sm">
+                        <strong>Reschedule Request Pending</strong>
+                        <p className="mt-1">Client has requested to reschedule this appointment.</p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Review Button */}
+                  <Button
+                    onClick={() => {
+                      onOpenChange(false);
+                      // Navigate to pending requests tab
+                      const baseUrl = window.location.pathname.split('/bookings')[0];
+                      window.location.href = `${baseUrl}/bookings?tab=pending-requests&booking=${booking.id}`;
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    Review Request
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+            </>
+          )}
 
           {/* Client Information */}
           <div className="space-y-2">

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Badge as BadgeIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +22,7 @@ import { ViewBookingDialog } from "./dialogs/ViewBookingDialog";
 import { BookingOverlapAlert } from "./BookingOverlapAlert";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
+import AppointmentApprovalList from "./AppointmentApprovalList";
 import { useBookingData } from "./hooks/useBookingData";
 import { useBookingHandlers } from "./hooks/useBookingHandlers";
 import { useAuthSafe } from "@/hooks/useAuthSafe";
@@ -32,6 +34,7 @@ import { BookingValidationAlert } from "./BookingValidationAlert";
 import { useSearchParams } from "react-router-dom";
 import { parseISO, isValid } from "date-fns";
 import { useBookingDebug } from "./hooks/useBookingDebug";
+import { useQuery } from "@tanstack/react-query";
 
 interface BookingsTabProps {
   branchId?: string;
@@ -94,6 +97,31 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
   
   const { isConnected: isRealTimeConnected } = useRealTimeBookingSync(branchId);
   const { inspectCache } = useBookingDebug(branchId, bookings);
+
+  // Fetch pending request count
+  const { data: pendingRequestsData } = useQuery({
+    queryKey: ['pending-booking-requests-count', branchId],
+    queryFn: async () => {
+      if (!branchId) return { count: 0 };
+      
+      const { count, error } = await supabase
+        .from('booking_change_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .eq('branch_id', branchId);
+      
+      if (error) {
+        console.error('Error fetching pending requests count:', error);
+        return { count: 0 };
+      }
+      
+      return { count: count || 0 };
+    },
+    enabled: !!branchId,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const pendingRequestCount = pendingRequestsData?.count || 0;
 
   // Handle auto-focusing booking from search
   useEffect(() => {
@@ -225,6 +253,9 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
       end_time: fullBooking.end_time,
       service_id: fullBooking.service_id,
       created_at: fullBooking.created_at,
+      // Type-cast request statuses properly
+      cancellation_request_status: fullBooking.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
+      reschedule_request_status: fullBooking.reschedule_request_status as 'pending' | 'approved' | 'rejected' | null,
     };
 
     console.log('[BookingsTab] Enriched booking with both formats:', {
@@ -387,6 +418,14 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="pending-requests">
+            Pending Requests
+            {pendingRequestCount > 0 && (
+              <Badge className="ml-2 bg-orange-500 hover:bg-orange-600 text-white">
+                {pendingRequestCount}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="unified-schedule" className="space-y-4 w-full overflow-hidden">
@@ -476,6 +515,9 @@ export function BookingsTab({ branchId }: BookingsTabProps) {
           <BookingReport bookings={filteredBookings} />
         </TabsContent>
 
+        <TabsContent value="pending-requests">
+          <AppointmentApprovalList branchId={branchId} />
+        </TabsContent>
 
       </Tabs>
 

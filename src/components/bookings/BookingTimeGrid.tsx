@@ -53,6 +53,8 @@ export interface Booking {
     reviewed_at?: string;
     admin_notes?: string;
   } | null;
+  cancellation_request_status?: 'pending' | 'approved' | 'rejected' | null;
+  reschedule_request_status?: 'pending' | 'approved' | 'rejected' | null;
 }
 
 export interface Client {
