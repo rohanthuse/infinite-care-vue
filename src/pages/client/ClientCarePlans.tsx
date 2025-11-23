@@ -132,9 +132,9 @@ const ClientCarePlans = () => {
         return null;
     }
   };
-  return <div className="-m-6">
+  return <div className="space-y-6">
       {/* Summary Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-6 mb-0 border-b border-gray-200">
+      <div className="-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-50 to-indigo-50 py-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center text-gray-900">
@@ -160,7 +160,7 @@ const ClientCarePlans = () => {
 
       {/* Global Alert for Pending Approvals */}
       {pendingApprovals > 0 && (
-        <div className="px-6 py-6 bg-white">
+        <div>
           <div>
             <Card className="border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50 shadow-lg">
               <CardContent className="pt-5 pb-5">
@@ -185,7 +185,7 @@ const ClientCarePlans = () => {
       )}
 
     {/* Care Plans List */}
-    <div className="space-y-6 px-6 pb-6">
+    <div className="space-y-6">
         {carePlans.map(carePlan => {
         // Add data enhancer for each care plan
         const enhanceCarePlanData = clientId && (
@@ -270,7 +270,7 @@ const ClientCarePlans = () => {
             )}
 
             {/* Statistics with Icon-First Design */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="flex items-center gap-3 p-3 rounded-lg border border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                   <FileText className="h-5 w-5 text-blue-600" />

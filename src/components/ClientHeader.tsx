@@ -66,23 +66,23 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   };
   
   return (
-    <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
-      <div className="container mx-auto px-4 flex justify-between items-center relative">
+    <header className="bg-white shadow-sm border-b border-gray-100 py-3 lg:py-4 sticky top-0 z-[60] w-full">
+      <div className="w-full px-4 md:px-6 lg:px-8 flex justify-between items-center">
         {/* Logo and Sidebar Trigger */}
-        <div className="flex items-center gap-2 md:gap-4">
-          <SidebarTrigger className="h-8 w-8 md:h-10 md:w-10" />
-          <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
+        <div className="flex items-center gap-2 lg:gap-4">
+          <SidebarTrigger className="h-8 w-8 lg:h-10 lg:w-10" />
+          <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 lg:w-10 lg:h-10" />
           <div className="flex flex-col">
-            <h2 className="text-sm md:text-lg font-bold tracking-tight">
+            <h2 className="text-sm lg:text-lg font-bold tracking-tight">
               MED-INFINITE 
             </h2>
-            <span className="text-xs text-gray-500 -mt-0.5 hidden md:block">ENDLESS CARE</span>
+            <span className="text-xs text-gray-500 -mt-0.5 hidden lg:block">ENDLESS CARE</span>
           </div>
         </div>
         
-        {/* Search in center for desktop view */}
-        <div className="hidden md:flex items-center justify-center flex-1 mx-4">
-          <div className="relative max-w-md w-full">
+        {/* Search in center - responsive visibility */}
+        <div className="hidden sm:flex items-center flex-1 mx-4 max-w-md lg:max-w-lg">
+          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               placeholder="Search..." 
@@ -97,10 +97,10 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
         <div className="flex items-center gap-2">
           <NotificationDropdown onViewAll={handleViewAllNotifications} />
           
-          {/* User profile card */}
+          {/* User profile card - hidden on mobile */}
           <div className="hidden md:flex items-center gap-3 bg-white/80 backdrop-blur-sm py-2 px-4 rounded-full border border-gray-100/60 shadow-sm ml-2">
             <div>
-              <div className="text-gray-800 font-semibold">{clientName}</div>
+              <div className="text-gray-800 font-semibold text-sm">{clientName}</div>
               <div className="text-gray-500 text-xs font-medium">Client</div>
             </div>
             <div className="h-8 border-r border-gray-200/80 mx-1"></div>

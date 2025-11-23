@@ -79,8 +79,8 @@ export const ClientSidebar: React.FC = () => {
       side="right"
       collapsible="icon"
       className={cn(
-        "border-l transition-all duration-300 z-50",
-        sidebarOpen ? "w-72" : "w-14"
+        "border-l transition-all duration-300 ease-in-out z-50 shrink-0",
+        sidebarOpen ? "w-64 lg:w-72" : "w-14"
       )}
     >
       <SidebarHeader className="border-b p-4">
