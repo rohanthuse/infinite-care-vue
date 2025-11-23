@@ -2,7 +2,7 @@ import React from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
-import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X, XCircle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AppointmentApprovalDialog from "@/components/bookings/AppointmentApprovalDialog";
 import { toast } from "sonner";
@@ -390,10 +390,10 @@ export function ViewBookingDialog({
                 <div className="pl-6 space-y-3">
                   {booking.cancellation_request_status === 'pending' && (
                     <>
-                      <Alert className="bg-orange-50 border-orange-200">
-                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                        <AlertDescription className="text-orange-800 text-sm">
-                          <strong>Cancellation Request Pending</strong>
+                      <Alert className="bg-red-50 border-red-200">
+                        <XCircle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800 text-sm">
+                          <strong>Cancellation Request Pending Admin Review</strong>
                           <p className="mt-1">Client has requested to cancel this appointment.</p>
                         </AlertDescription>
                       </Alert>
@@ -425,10 +425,10 @@ export function ViewBookingDialog({
                   
                   {booking.reschedule_request_status === 'pending' && (
                     <>
-                      <Alert className="bg-blue-50 border-blue-200">
-                        <AlertCircle className="h-4 w-4 text-blue-600" />
-                        <AlertDescription className="text-blue-800 text-sm">
-                          <strong>Reschedule Request Pending</strong>
+                      <Alert className="bg-orange-50 border-orange-200">
+                        <RefreshCw className="h-4 w-4 text-orange-600" />
+                        <AlertDescription className="text-orange-800 text-sm">
+                          <strong>Reschedule Request Pending Admin Review</strong>
                           <p className="mt-1">Client has requested to reschedule this appointment.</p>
                         </AlertDescription>
                       </Alert>
@@ -440,7 +440,7 @@ export function ViewBookingDialog({
                             onOpenChange(false);
                             onEdit?.();
                           }}
-                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          className="w-full bg-orange-600 hover:bg-orange-700"
                         >
                           <Calendar className="h-4 w-4 mr-1" />
                           Edit Appointment

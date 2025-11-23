@@ -1,6 +1,6 @@
 import React from "react";
 import { Booking } from "./BookingTimeGrid";
-import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle, StickyNote, AlertTriangle } from "lucide-react";
+import { Clock, Info, MapPin, Phone, User, PoundSterling, FileText, AlertCircle, StickyNote, AlertTriangle, XCircle, RefreshCw } from "lucide-react";
 import { 
   Tooltip, 
   TooltipContent, 
@@ -58,13 +58,13 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
     suspended: "bg-gray-100 border-gray-300 text-gray-800"
   };
   
-  // Color coding for change requests (matching client side)
+  // Color coding for change requests with prominent left borders
   const getBookingColor = () => {
     if (hasPendingCancellation) {
-      return "bg-orange-100 border-orange-400 border-2 text-orange-900"; // Orange for cancellation
+      return "bg-red-50 border-red-500 border-l-4 text-red-900"; // RED for cancellation with thick left border
     }
     if (hasPendingReschedule) {
-      return "bg-blue-100 border-blue-400 border-2 text-blue-900"; // Blue for reschedule
+      return "bg-orange-50 border-orange-500 border-l-4 text-orange-900"; // ORANGE for reschedule with thick left border
     }
     if (needsReassignment) {
       return "bg-amber-50 border-amber-400 border-2 text-amber-900";
@@ -171,15 +171,26 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
           </div>
         </div>
 
-        {/* Request Status - NEW */}
+        {/* Request Status */}
         {(hasPendingCancellation || hasPendingReschedule) && (
           <div className="pt-2 border-t border-gray-100">
             <div className="flex items-center gap-2">
-              <AlertCircle className={`h-3.5 w-3.5 ${hasPendingCancellation ? 'text-orange-500' : 'text-blue-500'}`} />
-              <span className="text-xs font-medium">
-                {hasPendingCancellation && '⏱️ Cancellation Request Pending'}
-                {hasPendingReschedule && '📅 Reschedule Request Pending'}
-              </span>
+              {hasPendingCancellation && (
+                <>
+                  <XCircle className="h-3.5 w-3.5 text-red-500" />
+                  <span className="text-xs font-medium text-red-700">
+                    Client requested cancellation
+                  </span>
+                </>
+              )}
+              {hasPendingReschedule && (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 text-orange-500" />
+                  <span className="text-xs font-medium text-orange-700">
+                    Client requested reschedule
+                  </span>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -242,7 +253,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             {(hasPendingCancellation || hasPendingReschedule) && (
               <div className="absolute top-1 right-1">
                 <div className={`w-2 h-2 rounded-full ${
-                  hasPendingCancellation ? 'bg-orange-500' : 'bg-blue-500'
+                  hasPendingCancellation ? 'bg-red-500' : 'bg-orange-500'
                 } animate-pulse`} />
               </div>
             )}
@@ -264,14 +275,14 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
                 </div>
               )}
               {hasPendingCancellation && (
-                <div className="flex items-center gap-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
-                  <AlertCircle className="h-2.5 w-2.5" />
+                <div className="flex items-center gap-1 bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
+                  <XCircle className="h-2.5 w-2.5" />
                   Cancel Request
                 </div>
               )}
               {hasPendingReschedule && (
-                <div className="flex items-center gap-1 bg-blue-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
-                  <AlertCircle className="h-2.5 w-2.5" />
+                <div className="flex items-center gap-1 bg-orange-500 text-white px-1.5 py-0.5 rounded text-[10px] font-bold mb-1">
+                  <RefreshCw className="h-2.5 w-2.5" />
                   Reschedule Request
                 </div>
               )}
@@ -325,7 +336,7 @@ export const BookingEntry: React.FC<BookingEntryProps> = ({
             {(hasPendingCancellation || hasPendingReschedule) && (
               <div className="absolute top-1 right-1">
                 <div className={`w-2 h-2 rounded-full ${
-                  hasPendingCancellation ? 'bg-orange-500' : 'bg-blue-500'
+                  hasPendingCancellation ? 'bg-red-500' : 'bg-orange-500'
                 } animate-pulse`} />
               </div>
             )}

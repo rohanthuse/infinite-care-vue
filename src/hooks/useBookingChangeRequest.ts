@@ -66,8 +66,8 @@ export function useSubmitCancellationRequest() {
       await supabase
         .from('notifications')
         .insert({
-          title: 'Cancellation Request',
-          message: `Client has requested to cancel appointment`,
+          title: '🔴 New Cancellation Request',
+          message: `New cancellation request received from client`,
           type: 'booking',
           category: 'info',
           priority: 'high',
@@ -154,8 +154,8 @@ export function useSubmitRescheduleRequest() {
       await supabase
         .from('notifications')
         .insert({
-          title: 'Reschedule Request',
-          message: `Client has requested to reschedule appointment to ${formattedDate} at ${formattedTime}`,
+          title: '🟠 New Reschedule Request',
+          message: `New reschedule request received - Requested date: ${formattedDate} at ${formattedTime}`,
           type: 'booking',
           category: 'info',
           priority: 'high',
