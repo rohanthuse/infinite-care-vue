@@ -328,7 +328,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
       side="right"
       className={cn(
         "border-l border-border bg-background text-foreground z-50",
-        collapsed ? "w-16" : "w-80"
+        collapsed ? "w-[72px]" : "w-80"
       )}
       collapsible="icon"
     >
