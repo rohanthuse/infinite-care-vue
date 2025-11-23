@@ -49,6 +49,7 @@ export const ClientSidebar: React.FC = () => {
 
   const mainItems = [
     { name: "Overview", path: createClientPath(""), icon: Home },
+    { name: "My Schedule", path: createClientPath("/schedule"), icon: Calendar },
     { name: "Appointments", path: createClientPath("/appointments"), icon: Calendar },
     { name: "Tasks", path: createClientPath("/tasks"), icon: ClipboardList },
     { name: "Care Plans", path: createClientPath("/care-plans"), icon: FileText },
