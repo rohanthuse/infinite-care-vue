@@ -9,12 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
 import { useClientAuth } from "@/hooks/useClientAuth";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useClientNavigation } from "@/hooks/useClientNavigation";
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { tenantSlug } = useTenant();
   const { clientName: authClientName, user } = useClientAuth();
+  const { createClientPath } = useClientNavigation();
   
   // Get the display name from auth or fallback to email prefix or "Client"
   const clientName = authClientName || 
@@ -23,12 +25,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const [searchValue, setSearchValue] = useState("");
 
   const handleViewAllNotifications = () => {
-    // For clients, we'll navigate to their messages page which includes notifications
-    if (tenantSlug) {
-      navigate(`/${tenantSlug}/client-dashboard/messages`);
-    } else {
-      navigate("/client-dashboard/messages");
-    }
+    navigate(createClientPath('/messages'));
   };
 
   const handleLogout = async () => {
