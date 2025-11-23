@@ -1,0 +1,74 @@
+import { CalendarEvent } from '@/types/calendar';
+
+// Transform appointment to CalendarEvent format
+export function appointmentToCalendarEvent(appointment: any): CalendarEvent {
+  const startDateTime = new Date(`${appointment.appointment_date}T${appointment.appointment_time}`);
+  
+  // Calculate end time (default to +1 hour if not available)
+  let endDateTime: Date;
+  if (appointment._booking_data?.end_time) {
+    endDateTime = new Date(appointment._booking_data.end_time);
+  } else {
+    endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+  }
+  
+  return {
+    id: appointment.id,
+    type: appointment._source === 'booking' ? 'booking' : 'meeting',
+    title: appointment.appointment_type,
+    startTime: startDateTime,
+    endTime: endDateTime,
+    participants: [{
+      id: appointment.provider_name,
+      name: appointment.provider_name,
+      role: 'provider'
+    }],
+    location: appointment.location,
+    status: mapAppointmentStatus(appointment.status),
+    branchId: appointment.branch_id || '',
+    branchName: appointment.location,
+    staffIds: appointment._booking_data?.staff_id ? [appointment._booking_data.staff_id] : [],
+    priority: 'medium',
+    clientId: appointment.client_id
+  };
+}
+
+// Map appointment status to CalendarEvent status
+function mapAppointmentStatus(status: string): 'scheduled' | 'in-progress' | 'completed' | 'cancelled' {
+  const statusMap: Record<string, 'scheduled' | 'in-progress' | 'completed' | 'cancelled'> = {
+    'scheduled': 'scheduled',
+    'assigned': 'scheduled',
+    'confirmed': 'scheduled',
+    'in-progress': 'in-progress',
+    'completed': 'completed',
+    'done': 'completed',
+    'cancelled': 'cancelled'
+  };
+  
+  return statusMap[status?.toLowerCase()] || 'scheduled';
+}
+
+// Get status badge color
+export function getAppointmentStatusColor(status: string): string {
+  const statusColors: Record<string, string> = {
+    'scheduled': 'bg-blue-100 text-blue-800 border-blue-200',
+    'assigned': 'bg-purple-100 text-purple-800 border-purple-200',
+    'confirmed': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'completed': 'bg-gray-100 text-gray-800 border-gray-200',
+    'done': 'bg-green-100 text-green-800 border-green-200',
+    'cancelled': 'bg-red-100 text-red-800 border-red-200'
+  };
+  return statusColors[status?.toLowerCase()] || 'bg-secondary text-secondary-foreground';
+}
+
+// Get event type color for calendar display
+export function getEventTypeColor(source: string): string {
+  return source === 'booking' ? 'hsl(var(--primary))' : 'hsl(var(--accent))';
+}
+
+// Get event type badge color
+export function getEventTypeBadgeColor(source: string): string {
+  return source === 'booking' 
+    ? 'bg-blue-100 text-blue-800 border-blue-200' 
+    : 'bg-purple-100 text-purple-800 border-purple-200';
+}
