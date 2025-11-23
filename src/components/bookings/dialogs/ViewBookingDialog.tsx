@@ -326,6 +326,93 @@ export function ViewBookingDialog({
       onOpenChange(false);
     }
   };
+
+  const handleApproveCancellation = async () => {
+    if (!booking?.id) {
+      console.error('[ViewBookingDialog] No booking ID for cancellation approval');
+      return;
+    }
+    
+    console.log('[ViewBookingDialog] Starting cancellation approval for booking:', booking.id);
+    
+    try {
+      // Step 1: Fetch the change request to get client and org details
+      const { data: changeRequestData, error: fetchError } = await supabase
+        .from('booking_change_requests')
+        .select('id, client_id, branch_id, organization_id')
+        .eq('booking_id', booking.id)
+        .eq('status', 'pending')
+        .eq('request_type', 'cancellation')
+        .maybeSingle();
+      
+      if (fetchError || !changeRequestData) {
+        console.error('[ViewBookingDialog] Change request not found:', fetchError);
+        toast.error('Change request not found');
+        return;
+      }
+      
+      console.log('[ViewBookingDialog] Found change request:', changeRequestData);
+      
+      // Step 2: Update the change request status to 'approved'
+      const { error: updateError } = await supabase
+        .from('booking_change_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: new Date().toISOString(),
+          admin_notes: 'Cancellation approved - booking deleted'
+        })
+        .eq('id', changeRequestData.id);
+      
+      if (updateError) {
+        console.error('[ViewBookingDialog] Error updating change request:', updateError);
+        toast.error('Failed to approve cancellation');
+        return;
+      }
+      
+      // Step 3: Send notification to client
+      await supabase
+        .from('notifications')
+        .insert({
+          title: 'Cancellation Approved',
+          message: 'Your cancellation request has been approved. The booking has been removed.',
+          type: 'booking',
+          category: 'success',
+          priority: 'high',
+          user_id: changeRequestData.client_id,
+          branch_id: changeRequestData.branch_id,
+          organization_id: changeRequestData.organization_id,
+          data: {
+            booking_id: booking.id,
+            request_id: changeRequestData.id
+          }
+        });
+      
+      console.log('[ViewBookingDialog] Notification sent to client');
+      
+      // Step 4: Delete the booking using the existing hook
+      await deleteBooking.mutateAsync({
+        bookingId: booking.id,
+        clientId: booking.clientId || booking.client_id,
+        staffId: booking.carerId || booking.staff_id,
+      });
+      
+      console.log('[ViewBookingDialog] Booking deleted successfully');
+      
+      // Step 5: Show custom success toast
+      toast.success('Cancellation Approved — Booking Deleted', {
+        description: 'The client has been notified.'
+      });
+      
+      // Step 6: Close the dialog
+      onOpenChange(false);
+      
+    } catch (error) {
+      console.error('[ViewBookingDialog] Error in cancellation approval:', error);
+      toast.error('Failed to approve cancellation', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  };
   
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -401,13 +488,21 @@ export function ViewBookingDialog({
                       {/* Direct Action Buttons for Cancellation */}
                       <div className="grid grid-cols-2 gap-2">
                         <Button
-                          onClick={() => {
-                            setShowApprovalForCancellation(true);
-                          }}
+                          onClick={handleApproveCancellation}
+                          disabled={deleteBooking.isPending}
                           className="w-full bg-green-600 hover:bg-green-700"
                         >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve Cancellation
+                          {deleteBooking.isPending ? (
+                            <>
+                              <Clock className="h-4 w-4 mr-1 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Check className="h-4 w-4 mr-1" />
+                              Approve Cancellation
+                            </>
+                          )}
                         </Button>
                         <Button
                           onClick={() => {
