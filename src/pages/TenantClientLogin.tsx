@@ -93,6 +93,13 @@ const TenantClientLogin = () => {
         description: `Welcome back, ${clientData.first_name}!`,
       });
 
+      console.log('[CLIENT LOGIN] Redirecting client to:', `/${tenantSlug}/client-dashboard`, {
+        clientId: clientData.id,
+        clientName: `${clientData.first_name} ${clientData.last_name}`,
+        orgSlug: tenantSlug,
+        timestamp: new Date().toISOString()
+      });
+
       navigate(`/${tenantSlug}/client-dashboard`);
     } catch (error: any) {
       console.error('Client login error:', error);

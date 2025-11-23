@@ -15,17 +15,41 @@ import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { useTenant } from "@/contexts/TenantContext";
 import { useClientCarePlans } from "@/hooks/useClientData";
+import { useClientNavigation } from "@/hooks/useClientNavigation";
 
 const ClientOverview = () => {
   // Use the simple auth hook for better performance
   const { data: authData, isLoading: authLoading } = useSimpleClientAuth();
   const { tenantSlug } = useTenant();
+  const { createClientPath } = useClientNavigation();
 
   // State for review dialog
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
 
   const clientId = authData?.client?.id;
+
+  // TEMPORARY DEBUG PANEL - Remove after issue is resolved
+  const debugInfo = {
+    pathname: window.location.pathname,
+    expectedPath: createClientPath(""),
+    sessionData: {
+      clientId: sessionStorage.getItem('client_id'),
+      clientName: sessionStorage.getItem('client_name'),
+      clientAuthConfirmed: sessionStorage.getItem('client_auth_confirmed'),
+      redirectTimestamp: sessionStorage.getItem('client_redirect_timestamp')
+    },
+    authState: {
+      isLoading: authLoading,
+      hasClient: !!authData?.client,
+      clientId: authData?.client?.id
+    }
+  };
+
+  // Display debug info in development only
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[CLIENT DASHBOARD] Debug info:', debugInfo);
+  }
 
   const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments(clientId || undefined);
   const { data: invoices, isLoading: invoicesLoading } = useEnhancedClientBilling(clientId || undefined);

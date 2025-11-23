@@ -520,28 +520,31 @@ const UnifiedLogin = () => {
         const clientOrg = (clientCheck.branches as any)?.organizations;
         orgSlug = clientOrg?.slug || null;
         
-        console.log('[LOGIN DEBUG] ✅ Client detected via direct query:', {
+        console.log('[LOGIN DEBUG] ✅ CLIENT DETECTED - Early redirect path activated:', {
           clientId: clientCheck.id,
           clientName: `${clientCheck.first_name} ${clientCheck.last_name}`,
           branchId: clientCheck.branch_id,
-          orgSlug
+          orgSlug,
+          redirectTo: `/${orgSlug}/client-dashboard`
         });
         
         // Store client data for dashboard
         sessionStorage.setItem('client_id', clientCheck.id);
         sessionStorage.setItem('client_name', `${clientCheck.first_name} ${clientCheck.last_name}`);
         sessionStorage.setItem('client_email', clientCheck.email || '');
+        sessionStorage.setItem('client_auth_confirmed', 'true');
         
         // Early redirect for clients
         if (orgSlug) {
           const clientDashboardPath = `/${orgSlug}/client-dashboard`;
-          console.log('[LOGIN DEBUG] 🚀 Early redirect for client to:', clientDashboardPath);
+          console.log('[LOGIN DEBUG] 🚀 REDIRECTING CLIENT TO:', clientDashboardPath);
           
           toast.success(`Welcome back, ${clientCheck.first_name}!`);
           
           sessionStorage.setItem('redirect_in_progress', 'true');
           sessionStorage.setItem('navigating_to_dashboard', 'true');
           sessionStorage.setItem('target_dashboard', clientDashboardPath);
+          sessionStorage.setItem('client_redirect_timestamp', Date.now().toString());
           
           setTimeout(() => {
             sessionStorage.removeItem('redirect_in_progress');
@@ -549,7 +552,14 @@ const UnifiedLogin = () => {
           }, 3000);
           
           clearTimeout(timeoutId);
-          window.location.href = clientDashboardPath;
+          
+          // Add fallback to navigate() if window.location.href fails
+          try {
+            window.location.href = clientDashboardPath;
+          } catch (redirectError) {
+            console.error('[LOGIN DEBUG] window.location.href failed, using navigate:', redirectError);
+            navigate(clientDashboardPath, { replace: true });
+          }
           return; // Exit early, don't continue with other role detection
         } else {
           console.error('[LOGIN DEBUG] ❌ Client detected but no organization slug found');
