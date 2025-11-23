@@ -14,7 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getEventTypeColor } from '@/utils/clientCalendarHelpers';
+import { getEventTypeColor, getEventColorByRequestStatus } from '@/utils/clientCalendarHelpers';
 import {
   Dialog,
   DialogContent,
@@ -132,7 +132,11 @@ export const ClientCalendarMonthView: React.FC<ClientCalendarMonthViewProps> = (
                       key={eventIndex}
                       className="text-xs p-1 rounded text-white truncate cursor-pointer hover:opacity-80 transition-opacity"
                       style={{
-                        backgroundColor: getEventTypeColor(event.type)
+                        backgroundColor: getEventColorByRequestStatus(
+                          event._rawAppointmentData?.cancellation_request_status,
+                          event._rawAppointmentData?.reschedule_request_status,
+                          getEventTypeColor(event.type)
+                        )
                       }}
                       title={event.title}
                       onClick={() => onEventClick?.(event)}
@@ -178,7 +182,11 @@ export const ClientCalendarMonthView: React.FC<ClientCalendarMonthViewProps> = (
                   key={index}
                   className="cursor-pointer hover:shadow-md transition-shadow"
                   style={{
-                    borderLeft: `4px solid ${getEventTypeColor(event.type)}`
+                    borderLeft: `4px solid ${getEventColorByRequestStatus(
+                      event._rawAppointmentData?.cancellation_request_status,
+                      event._rawAppointmentData?.reschedule_request_status,
+                      getEventTypeColor(event.type)
+                    )}`
                   }}
                   onClick={() => {
                     onEventClick?.(event);

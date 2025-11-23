@@ -62,6 +62,26 @@ export function useSubmitCancellationRequest() {
         throw bookingError;
       }
 
+      // Create notification for admin
+      await supabase
+        .from('notifications')
+        .insert({
+          title: 'Cancellation Request',
+          message: `Client has requested to cancel appointment`,
+          type: 'booking',
+          category: 'info',
+          priority: 'high',
+          branch_id: params.branchId,
+          organization_id: params.organizationId,
+          user_id: params.clientId,
+          data: {
+            booking_id: params.bookingId,
+            client_id: params.clientId,
+            request_type: 'cancellation',
+            request_id: request.id
+          }
+        });
+
       console.log('[useSubmitCancellationRequest] Success:', request);
       return request;
     },
@@ -129,6 +149,28 @@ export function useSubmitRescheduleRequest() {
         console.error('[useSubmitRescheduleRequest] Booking update error:', bookingError);
         throw bookingError;
       }
+
+      // Create notification for admin
+      await supabase
+        .from('notifications')
+        .insert({
+          title: 'Reschedule Request',
+          message: `Client has requested to reschedule appointment to ${formattedDate} at ${formattedTime}`,
+          type: 'booking',
+          category: 'info',
+          priority: 'high',
+          branch_id: params.branchId,
+          organization_id: params.organizationId,
+          user_id: params.clientId,
+          data: {
+            booking_id: params.bookingId,
+            client_id: params.clientId,
+            request_type: 'reschedule',
+            request_id: request.id,
+            new_date: formattedDate,
+            new_time: formattedTime
+          }
+        });
 
       console.log('[useSubmitRescheduleRequest] Success:', request);
       return request;

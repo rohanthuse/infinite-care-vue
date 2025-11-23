@@ -27,6 +27,8 @@ export interface CalendarEvent {
     client_id?: string;
     branch_id?: string;
     organization_id?: string;
+    cancellation_request_status?: 'pending' | 'approved' | 'rejected' | null;
+    reschedule_request_status?: 'pending' | 'approved' | 'rejected' | null;
   };
 }
 

@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { getEventTypeColor } from '@/utils/clientCalendarHelpers';
+import { getEventTypeColor, getEventColorByRequestStatus } from '@/utils/clientCalendarHelpers';
 
 interface ClientCalendarWeekViewProps {
   date: Date;
@@ -97,7 +97,11 @@ export const ClientCalendarWeekView: React.FC<ClientCalendarWeekViewProps> = ({
                           key={`${event.id}-${eventIndex}`}
                           className="text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity"
                           style={{
-                            backgroundColor: getEventTypeColor(event.type),
+                            backgroundColor: getEventColorByRequestStatus(
+                              event._rawAppointmentData?.cancellation_request_status,
+                              event._rawAppointmentData?.reschedule_request_status,
+                              getEventTypeColor(event.type)
+                            ),
                             color: 'white'
                           }}
                           onClick={() => onEventClick?.(event)}
