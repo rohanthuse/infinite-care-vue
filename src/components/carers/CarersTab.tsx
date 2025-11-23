@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Briefcase } from "lucide-react";
 import RecruitmentSection from "./RecruitmentSection";
@@ -8,6 +9,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useSystemHealth } from "@/hooks/useSystemHealth";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface CarersTabProps {
   branchId?: string;
@@ -17,6 +19,27 @@ interface CarersTabProps {
 export function CarersTab({ branchId, branchName }: CarersTabProps) {
   const [activeTab, setActiveTab] = useState("team");
   const { degradedMode, isHealthy, forceHealthCheck } = useSystemHealth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { tenantSlug } = useTenant();
+
+  // Handle auto-navigation to staff profile from search
+  useEffect(() => {
+    const selectedStaffId = searchParams.get('selected');
+    if (selectedStaffId && branchId && branchName) {
+      // Navigate to the staff profile page
+      const basePath = tenantSlug 
+        ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`
+        : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
+      
+      const staffProfilePath = `${basePath}/carers/${selectedStaffId}`;
+      
+      // Clean up query param and navigate
+      searchParams.delete('selected');
+      setSearchParams(searchParams, { replace: true });
+      navigate(staffProfilePath, { replace: true });
+    }
+  }, [searchParams, branchId, branchName, tenantSlug, navigate, setSearchParams]);
 
   if (!branchId) {
     return (

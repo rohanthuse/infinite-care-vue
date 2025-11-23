@@ -80,7 +80,7 @@ export function BranchSearchDialog({
         navigate(`${basePath}/carers?selected=${id}`);
         break;
       case 'booking':
-        navigate(`${basePath}/schedule?selected=${id}`);
+        navigate(`${basePath}/bookings?selected=${id}`);
         break;
       case 'document':
         navigate(`${basePath}/documents?selected=${id}`);
