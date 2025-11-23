@@ -33,31 +33,53 @@ const RequireClientAuth = () => {
       userId: authData.user.id, 
       clientId: authData.client.id,
       email: authData.user.email,
+      clientName: `${authData.client.first_name} ${authData.client.last_name}`,
       isClient: authData.isClient
     } : null,
-    error: error?.message
+    error: error?.message,
+    pathname: window.location.pathname
   });
   
   if (isLoading) {
-    return <div>Loading client authentication...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifying client access...</p>
+        </div>
+      </div>
+    );
   }
   
   if (error || !authData || !authData.isClient) {
-    console.log('[RequireClientAuth] Redirecting to login - invalid client:', error?.message);
+    console.log('[RequireClientAuth] ❌ Authentication failed, redirecting to login:', {
+      error: error?.message,
+      hasAuthData: !!authData,
+      isClient: authData?.isClient,
+      pathname: window.location.pathname
+    });
+    
     // Get tenant slug from current path for redirection
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const tenantSlug = pathParts[0];
     
+    // Clear any stuck session data
+    sessionStorage.removeItem('client_auth_confirmed');
+    sessionStorage.removeItem('client_id');
+    sessionStorage.removeItem('client_name');
+    
     // If we have a tenant slug and it's not a standalone route, redirect to tenant login
     if (tenantSlug && tenantSlug !== 'client-dashboard' && tenantSlug !== 'client-login') {
+      console.log('[RequireClientAuth] Redirecting to tenant client login:', `/${tenantSlug}/client-login`);
       return <Navigate to={`/${tenantSlug}/client-login`} replace />;
     }
     
     // Otherwise redirect to general client login
+    console.log('[RequireClientAuth] Redirecting to general client login');
     return <Navigate to="/client-login" replace />;
   }
   
-  console.log('[RequireClientAuth] Client authenticated successfully');
+  console.log('[RequireClientAuth] ✅ Client authenticated successfully, rendering dashboard');
   return <Outlet />;
 };
 
