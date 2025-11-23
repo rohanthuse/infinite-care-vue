@@ -28,7 +28,10 @@ const ClientDashboard = () => {
   }, [navigate]);
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden">
+    <div 
+      className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden"
+      style={{ '--client-header-height': '64px' } as React.CSSProperties}
+    >
       <ClientHeader title={pageTitle} />
       
       <div className="flex flex-1 w-full min-w-0 overflow-hidden">
