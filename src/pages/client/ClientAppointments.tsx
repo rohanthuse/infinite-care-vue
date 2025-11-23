@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, User, Star, MessageSquare, RotateCcw } from "lucide-react";
-import { useClientAppointments } from "@/hooks/useClientAppointments";
+import { useClientAllAppointments } from "@/hooks/useClientAppointments";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
 import { RescheduleAppointmentDialog } from "@/components/client/RescheduleAppointmentDialog";
@@ -45,7 +45,7 @@ const ClientAppointments = () => {
 
   console.log('[ClientAppointments] Client ID:', clientId, 'Is Authenticated:', isAuthenticated);
 
-  const { data: appointments, isLoading, error } = useClientAppointments(clientId || undefined);
+  const { data: appointments, isLoading, error } = useClientAllAppointments(clientId || undefined);
   const { data: pendingReviewAppointments } = usePendingReviews(clientId || "");
 
   console.log('[ClientAppointments] Appointments data:', appointments);
@@ -214,7 +214,12 @@ const ClientAppointments = () => {
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+                        {appointment._source === 'booking' && (
+                          <Badge variant="outline" className="text-xs">Care Service</Badge>
+                        )}
+                      </div>
                       <div className="flex items-center text-gray-600 mt-1">
                         <User className="h-4 w-4 mr-1" />
                         <span className="text-sm">{appointment.provider_name}</span>
@@ -339,7 +344,12 @@ const AppointmentWithReview = ({ appointment, onLeaveReview, getStatusColor, for
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
+              {appointment._source === 'booking' && (
+                <Badge variant="outline" className="text-xs">Care Service</Badge>
+              )}
+            </div>
             <div className="flex items-center text-gray-600 mt-1">
               <User className="h-4 w-4 mr-1" />
               <span className="text-sm">{appointment.provider_name}</span>

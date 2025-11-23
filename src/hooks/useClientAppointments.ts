@@ -206,6 +206,111 @@ export const useDeleteClientAppointment = () => {
   });
 };
 
+// Hook to fetch all appointments (external + care bookings)
+export const useClientAllAppointments = (clientId: string) => {
+  return useQuery({
+    queryKey: ['client-all-appointments', clientId],
+    queryFn: async () => {
+      console.log('[useClientAllAppointments] Fetching all appointments for client:', clientId);
+      
+      // Fetch external appointments from client_appointments table
+      const { data: externalAppointments, error: externalError } = await supabase
+        .from('client_appointments')
+        .select('*')
+        .eq('client_id', clientId);
+      
+      if (externalError) {
+        console.error('[useClientAllAppointments] Error fetching external appointments:', externalError);
+      }
+      
+      // Fetch care bookings from bookings table
+      const { data: careBookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          services (
+            id,
+            title
+          ),
+          staff (
+            id,
+            first_name,
+            last_name
+          ),
+          branches (
+            id,
+            name
+          )
+        `)
+        .eq('client_id', clientId);
+      
+      if (bookingsError) {
+        console.error('[useClientAllAppointments] Error fetching care bookings:', bookingsError);
+      }
+      
+      // Transform care bookings to match appointment format
+      const transformedBookings = (careBookings || []).map(booking => {
+        const startTime = new Date(booking.start_time);
+        const staffName = booking.staff 
+          ? `${booking.staff.first_name} ${booking.staff.last_name}`.trim()
+          : 'Unassigned';
+        
+        return {
+          id: booking.id,
+          client_id: booking.client_id,
+          branch_id: booking.branch_id,
+          appointment_date: startTime.toISOString().split('T')[0],
+          appointment_time: startTime.toTimeString().slice(0, 5),
+          appointment_type: booking.services?.title || 'Care Service',
+          provider_name: staffName,
+          location: booking.branches?.name || 'Branch Location',
+          status: booking.status || 'scheduled',
+          notes: booking.notes || null,
+          created_at: booking.created_at,
+          updated_at: booking.created_at,
+          _source: 'booking',
+          _booking_data: {
+            service_id: booking.service_id,
+            staff_id: booking.staff_id,
+            start_time: booking.start_time,
+            end_time: booking.end_time,
+            revenue: booking.revenue
+          }
+        };
+      });
+      
+      // Mark external appointments with source
+      const markedExternalAppointments = (externalAppointments || []).map(apt => ({
+        ...apt,
+        _source: 'external'
+      }));
+      
+      // Combine both arrays
+      const allAppointments = [
+        ...markedExternalAppointments,
+        ...transformedBookings
+      ];
+      
+      // Sort by date and time
+      allAppointments.sort((a, b) => {
+        const dateA = new Date(`${a.appointment_date}T${a.appointment_time}`);
+        const dateB = new Date(`${b.appointment_date}T${b.appointment_time}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+      
+      console.log('[useClientAllAppointments] Combined appointments:', {
+        external: markedExternalAppointments.length,
+        careBookings: transformedBookings.length,
+        total: allAppointments.length
+      });
+      
+      return allAppointments;
+    },
+    enabled: !!clientId,
+    staleTime: 1000 * 60 * 2
+  });
+};
+
 // Placeholder hooks for backwards compatibility
 export const useClientAppointments = (clientId: string) => {
   return useQuery({
