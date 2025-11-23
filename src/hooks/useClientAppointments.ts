@@ -228,6 +228,8 @@ export const useClientAllAppointments = (clientId: string) => {
         .from('bookings')
         .select(`
           *,
+          cancellation_request_status,
+          reschedule_request_status,
           services (
             id,
             title
@@ -259,6 +261,7 @@ export const useClientAllAppointments = (clientId: string) => {
           id: booking.id,
           client_id: booking.client_id,
           branch_id: booking.branch_id,
+          organization_id: booking.organization_id,
           appointment_date: startTime.toISOString().split('T')[0],
           appointment_time: startTime.toTimeString().slice(0, 5),
           appointment_type: booking.services?.title || 'Care Service',
@@ -268,6 +271,8 @@ export const useClientAllAppointments = (clientId: string) => {
           notes: booking.notes || null,
           created_at: booking.created_at,
           updated_at: booking.created_at,
+          cancellation_request_status: booking.cancellation_request_status,
+          reschedule_request_status: booking.reschedule_request_status,
           _source: 'booking',
           _booking_data: {
             service_id: booking.service_id,
