@@ -332,19 +332,106 @@ export const useCompletedAppointments = (clientId?: string) => {
   return useQuery({
     queryKey: ['completed-appointments', clientId],
     queryFn: async () => {
-      let query = supabase
+      console.log('[useCompletedAppointments] Fetching completed appointments for client:', clientId);
+      
+      // Query 1: Fetch completed external appointments from client_appointments
+      let externalQuery = supabase
         .from('client_appointments')
         .select('*')
         .eq('status', 'completed');
       
       if (clientId) {
-        query = query.eq('client_id', clientId);
+        externalQuery = externalQuery.eq('client_id', clientId);
       }
       
-      const { data, error } = await query;
+      const { data: externalAppointments, error: externalError } = await externalQuery;
       
-      if (error) throw error;
-      return data || [];
-    }
+      if (externalError) {
+        console.error('[useCompletedAppointments] Error fetching external appointments:', externalError);
+      }
+      
+      // Query 2: Fetch completed care bookings from bookings table
+      let bookingsQuery = supabase
+        .from('bookings')
+        .select(`
+          *,
+          services (
+            id,
+            title
+          ),
+          staff (
+            id,
+            first_name,
+            last_name
+          ),
+          branches (
+            id,
+            name
+          )
+        `)
+        .in('status', ['done', 'completed']);
+      
+      if (clientId) {
+        bookingsQuery = bookingsQuery.eq('client_id', clientId);
+      }
+      
+      const { data: careBookings, error: bookingsError } = await bookingsQuery;
+      
+      if (bookingsError) {
+        console.error('[useCompletedAppointments] Error fetching care bookings:', bookingsError);
+      }
+      
+      // Transform care bookings to match appointment format
+      const transformedBookings = (careBookings || []).map(booking => {
+        const startTime = new Date(booking.start_time);
+        const staffName = booking.staff 
+          ? `${booking.staff.first_name} ${booking.staff.last_name}`.trim()
+          : 'Unassigned';
+        
+        return {
+          id: booking.id,
+          client_id: booking.client_id,
+          branch_id: booking.branch_id,
+          appointment_date: startTime.toISOString().split('T')[0],
+          appointment_time: startTime.toTimeString().slice(0, 5),
+          appointment_type: booking.services?.title || 'Care Service',
+          provider_name: staffName,
+          location: booking.branches?.name || 'Branch Location',
+          status: booking.status,
+          notes: booking.notes || null,
+          created_at: booking.created_at,
+          updated_at: booking.created_at,
+          _source: 'booking',
+          _booking_data: {
+            service_id: booking.service_id,
+            staff_id: booking.staff_id,
+            start_time: booking.start_time,
+            end_time: booking.end_time
+          }
+        };
+      });
+      
+      // Combine both sources
+      const allCompletedAppointments = [
+        ...(externalAppointments || []).map(apt => ({ ...apt, _source: 'external' })),
+        ...transformedBookings
+      ];
+      
+      // Sort by date (most recent first)
+      allCompletedAppointments.sort((a, b) => {
+        const dateA = new Date(`${a.appointment_date}T${a.appointment_time}`);
+        const dateB = new Date(`${b.appointment_date}T${b.appointment_time}`);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      console.log('[useCompletedAppointments] Combined completed appointments:', {
+        external: externalAppointments?.length || 0,
+        careBookings: transformedBookings.length,
+        total: allCompletedAppointments.length
+      });
+      
+      return allCompletedAppointments;
+    },
+    enabled: Boolean(clientId)
   });
 };
