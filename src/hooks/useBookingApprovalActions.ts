@@ -102,10 +102,42 @@ export const useApproveChangeRequest = () => {
 
         if (bookingError) throw bookingError;
       } else if (requestType === 'reschedule' && newDate && newTime) {
+        // First, get the current booking to calculate duration
+        const { data: currentBooking } = await supabase
+          .from('bookings')
+          .select('start_time, end_time')
+          .eq('id', bookingId)
+          .single();
+        
+        if (!currentBooking) throw new Error('Booking not found');
+        
+        // Calculate original duration in minutes
+        const originalStart = new Date(currentBooking.start_time);
+        const originalEnd = new Date(currentBooking.end_time);
+        const durationMs = originalEnd.getTime() - originalStart.getTime();
+        const durationMinutes = Math.floor(durationMs / (1000 * 60));
+        
+        // Create new start time
+        const newStartTime = new Date(`${newDate}T${newTime}:00Z`);
+        
+        // Calculate new end time by adding the original duration
+        const newEndTime = new Date(newStartTime.getTime() + (durationMinutes * 60 * 1000));
+        
+        console.log('[useApproveChangeRequest] Rescheduling booking:', {
+          bookingId,
+          originalStart: currentBooking.start_time,
+          originalEnd: currentBooking.end_time,
+          durationMinutes,
+          newStart: newStartTime.toISOString(),
+          newEnd: newEndTime.toISOString()
+        });
+        
+        // Update both start and end times
         const { error: bookingError } = await supabase
           .from('bookings')
           .update({
-            start_time: `${newDate}T${newTime}:00Z`,
+            start_time: newStartTime.toISOString(),
+            end_time: newEndTime.toISOString(),
             reschedule_request_status: 'approved'
           })
           .eq('id', bookingId);
@@ -138,10 +170,19 @@ export const useApproveChangeRequest = () => {
     },
     onSuccess: () => {
       toast.success('Request approved successfully');
+      
+      // Invalidate ALL related queries for real-time sync
       queryClient.invalidateQueries({ queryKey: ['pending-booking-requests'] });
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['client-all-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['client-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      
+      // Force refetch immediately
+      queryClient.refetchQueries({ queryKey: ['branch-bookings'], type: 'active' });
     },
     onError: (error: Error) => {
       toast.error('Failed to approve request', {
@@ -218,10 +259,19 @@ export const useRejectChangeRequest = () => {
     },
     onSuccess: () => {
       toast.success('Request rejected');
+      
+      // Invalidate ALL related queries for real-time sync
       queryClient.invalidateQueries({ queryKey: ['pending-booking-requests'] });
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['client-all-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['client-appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['carer-appointments-full'] });
+      queryClient.invalidateQueries({ queryKey: ['organization-calendar'] });
+      
+      // Force refetch immediately
+      queryClient.refetchQueries({ queryKey: ['branch-bookings'], type: 'active' });
     },
     onError: (error: Error) => {
       toast.error('Failed to reject request', {

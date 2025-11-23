@@ -2,8 +2,9 @@ import React from "react";
 import { format, parseISO } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { getUserTimezone } from "@/utils/timezoneUtils";
-import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle } from "lucide-react";
+import { Eye, Clock, User, Calendar, FileText, Trash2, AlertCircle, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import AppointmentApprovalDialog from "@/components/bookings/AppointmentApprovalDialog";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -55,6 +56,9 @@ export function ViewBookingDialog({
     id: string;
     name: string;
   }>>([]);
+  const [showApprovalForCancellation, setShowApprovalForCancellation] = React.useState(false);
+  const [showApprovalForReschedule, setShowApprovalForReschedule] = React.useState(false);
+  const [changeRequest, setChangeRequest] = React.useState<any>(null);
   
   // Early validation - prevent dialog from opening with invalid data
   React.useEffect(() => {
@@ -168,6 +172,27 @@ export function ViewBookingDialog({
     }
   }, [startTimeStr, endTimeStr]);
   
+  // Fetch change request details
+  React.useEffect(() => {
+    const fetchChangeRequest = async () => {
+      if (!open || !booking?.id) return;
+      
+      if (booking.cancellation_request_status === 'pending' || 
+          booking.reschedule_request_status === 'pending') {
+        const { data } = await supabase
+          .from('booking_change_requests')
+          .select('*')
+          .eq('booking_id', booking.id)
+          .eq('status', 'pending')
+          .single();
+        
+        if (data) setChangeRequest(data);
+      }
+    };
+    
+    fetchChangeRequest();
+  }, [open, booking?.id, booking?.cancellation_request_status, booking?.reschedule_request_status]);
+
   // Fetch all assigned staff and related bookings
   // Note: When multiple staff are assigned to the same booking,
   // the system creates separate booking records with the same
@@ -354,7 +379,7 @@ export function ViewBookingDialog({
 
           <Separator />
 
-          {/* Request Status Section - NEW */}
+          {/* Request Status Section - ENHANCED */}
           {(booking.cancellation_request_status === 'pending' || booking.reschedule_request_status === 'pending') && (
             <>
               <div className="space-y-2">
@@ -362,39 +387,77 @@ export function ViewBookingDialog({
                   <AlertCircle className="h-4 w-4" />
                   Change Request
                 </div>
-                <div className="pl-6 space-y-2">
+                <div className="pl-6 space-y-3">
                   {booking.cancellation_request_status === 'pending' && (
-                    <Alert className="bg-orange-50 border-orange-200">
-                      <AlertCircle className="h-4 w-4 text-orange-600" />
-                      <AlertDescription className="text-orange-800 text-sm">
-                        <strong>Cancellation Request Pending</strong>
-                        <p className="mt-1">Client has requested to cancel this appointment.</p>
-                      </AlertDescription>
-                    </Alert>
+                    <>
+                      <Alert className="bg-orange-50 border-orange-200">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <AlertDescription className="text-orange-800 text-sm">
+                          <strong>Cancellation Request Pending</strong>
+                          <p className="mt-1">Client has requested to cancel this appointment.</p>
+                        </AlertDescription>
+                      </Alert>
+                      
+                      {/* Direct Action Buttons for Cancellation */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          onClick={() => {
+                            setShowApprovalForCancellation(true);
+                          }}
+                          className="w-full bg-green-600 hover:bg-green-700"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Approve Cancellation
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setShowApprovalForCancellation(true);
+                          }}
+                          variant="outline"
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </>
                   )}
                   
                   {booking.reschedule_request_status === 'pending' && (
-                    <Alert className="bg-blue-50 border-blue-200">
-                      <AlertCircle className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-800 text-sm">
-                        <strong>Reschedule Request Pending</strong>
-                        <p className="mt-1">Client has requested to reschedule this appointment.</p>
-                      </AlertDescription>
-                    </Alert>
+                    <>
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-800 text-sm">
+                          <strong>Reschedule Request Pending</strong>
+                          <p className="mt-1">Client has requested to reschedule this appointment.</p>
+                        </AlertDescription>
+                      </Alert>
+                      
+                      {/* Edit Appointment Button for Reschedule */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          onClick={() => {
+                            onOpenChange(false);
+                            onEdit?.();
+                          }}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Calendar className="h-4 w-4 mr-1" />
+                          Edit Appointment
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setShowApprovalForReschedule(true);
+                          }}
+                          variant="outline"
+                          className="w-full border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Reject Request
+                        </Button>
+                      </div>
+                    </>
                   )}
-                  
-                  {/* Review Button */}
-                  <Button
-                    onClick={() => {
-                      onOpenChange(false);
-                      // Navigate to pending requests tab
-                      const baseUrl = window.location.pathname.split('/bookings')[0];
-                      window.location.href = `${baseUrl}/bookings?tab=pending-requests&booking=${booking.id}`;
-                    }}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    Review Request
-                  </Button>
                 </div>
               </div>
 
@@ -654,6 +717,34 @@ export function ViewBookingDialog({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Approval Dialog for Cancellation/Reschedule */}
+      {changeRequest && (showApprovalForCancellation || showApprovalForReschedule) && (
+        <AppointmentApprovalDialog
+          open={showApprovalForCancellation || showApprovalForReschedule}
+          onOpenChange={(open) => {
+            setShowApprovalForCancellation(false);
+            setShowApprovalForReschedule(false);
+          }}
+          appointment={{
+            ...changeRequest,
+            booking_id: booking.id,
+            client_name: booking.clientName,
+            staff_name: booking.carerName,
+            service_title: service?.title
+          }}
+          onApprove={() => {
+            setShowApprovalForCancellation(false);
+            setShowApprovalForReschedule(false);
+            onOpenChange(false);
+          }}
+          onReject={() => {
+            setShowApprovalForCancellation(false);
+            setShowApprovalForReschedule(false);
+            onOpenChange(false);
+          }}
+        />
+      )}
     </Dialog>
   );
 }
