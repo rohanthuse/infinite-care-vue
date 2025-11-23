@@ -39,7 +39,9 @@ export function appointmentToCalendarEvent(appointment: any): CalendarEvent {
       location: appointment.location,
       client_id: appointment.client_id,
       branch_id: appointment.branch_id,
-      organization_id: appointment.organization_id
+      organization_id: appointment.organization_id,
+      cancellation_request_status: appointment.cancellation_request_status,
+      reschedule_request_status: appointment.reschedule_request_status
     }
   };
 }
@@ -82,4 +84,19 @@ export function getEventTypeBadgeColor(source: string): string {
   return source === 'booking' 
     ? 'bg-blue-100 text-blue-800 border-blue-200' 
     : 'bg-purple-100 text-purple-800 border-purple-200';
+}
+
+// Get calendar event color based on request status
+export function getEventColorByRequestStatus(
+  cancellationStatus?: string | null,
+  rescheduleStatus?: string | null,
+  defaultColor?: string
+): string {
+  if (cancellationStatus === 'pending') {
+    return '#fb923c'; // Orange for pending cancellation
+  }
+  if (rescheduleStatus === 'pending') {
+    return '#3b82f6'; // Blue for pending reschedule
+  }
+  return defaultColor || 'hsl(var(--primary))';
 }

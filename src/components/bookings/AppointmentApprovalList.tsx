@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import AppointmentApprovalDialog from "./AppointmentApprovalDialog";
 import ReallocateAppointmentDialog from "./ReallocateAppointmentDialog";
 import { toast } from "sonner";
+import { useFetchPendingRequests } from "@/hooks/useBookingApprovalActions";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Appointment {
   id: string;
@@ -23,76 +25,13 @@ interface Appointment {
   requestDate?: Date;
 }
 
-// Mock data
-const mockPendingCancellations: Appointment[] = [
-  {
-    id: "1",
-    clientName: "Emma Thompson",
-    carerName: "Sarah Johnson",
-    date: new Date(),
-    time: "10:30 AM - 11:30 AM",
-    location: "15 Oak Street, Milton Keynes",
-    type: "Home Care Visit",
-    status: "pending_cancellation",
-    cancellationReason: "illness",
-    cancellationNotes: "I'm feeling unwell and don't want to risk spreading infection",
-    requestDate: new Date(new Date().setHours(new Date().getHours() - 3))
-  },
-  {
-    id: "2",
-    clientName: "Robert Johnson",
-    carerName: "Michael Wilson",
-    date: new Date(new Date().setDate(new Date().getDate() + 1)),
-    time: "2:00 PM - 3:00 PM",
-    location: "42 Pine Avenue, Milton Keynes",
-    type: "Follow-up Visit",
-    status: "pending_cancellation",
-    cancellationReason: "transport_issue",
-    cancellationNotes: "My car broke down and I can't find alternative transportation",
-    requestDate: new Date(new Date().setHours(new Date().getHours() - 1))
-  },
-  {
-    id: "3",
-    clientName: "Margaret Brown",
-    carerName: "Elizabeth Davis",
-    date: new Date(new Date().setDate(new Date().getDate() + 2)),
-    time: "4:00 PM - 5:00 PM",
-    location: "8 Cedar Lane, Milton Keynes",
-    type: "Home Care Visit",
-    status: "pending_cancellation",
-    cancellationReason: "scheduling_conflict",
-    cancellationNotes: "I have a doctor's appointment at this time",
-    requestDate: new Date(new Date().setHours(new Date().getHours() - 5))
-  }
-];
-
-const AppointmentApprovalList: React.FC = () => {
-  const [pendingCancellations, setPendingCancellations] = useState<Appointment[]>(mockPendingCancellations);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) => {
+  const { data: pendingRequests, isLoading } = useFetchPendingRequests(branchId);
+  const [selectedAppointment, setSelectedAppointment] = useState<any | null>(null);
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showReallocationDialog, setShowReallocationDialog] = useState(false);
   
-  const handleApprove = (appointmentId: string, adminNotes: string) => {
-    // In a real app, this would call an API
-    setPendingCancellations(prev => prev.filter(app => app.id !== appointmentId));
-    toast.success("Cancellation approved", {
-      description: "The appointment has been marked for reallocation"
-    });
-    setShowApprovalDialog(false);
-    setShowReallocationDialog(true);
-  };
-  
-  const handleReject = (appointmentId: string, adminNotes: string) => {
-    // In a real app, this would call an API
-    setPendingCancellations(prev => prev.filter(app => app.id !== appointmentId));
-    toast.success("Cancellation rejected", {
-      description: "The carer has been notified"
-    });
-    setShowApprovalDialog(false);
-  };
-  
   const handleReallocate = (appointmentId: string, newCarerId: string) => {
-    // In a real app, this would call an API
     toast.success("Appointment reallocated successfully", {
       description: "Both carers have been notified of the change"
     });
@@ -111,65 +50,84 @@ const AppointmentApprovalList: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  const pendingCancellations = pendingRequests?.filter(r => r.request_type === 'cancellation') || [];
+  const pendingReschedules = pendingRequests?.filter(r => r.request_type === 'reschedule') || [];
+  const totalPending = pendingRequests?.length || 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold">Pending Cancellation Requests</h2>
-          <p className="text-sm text-gray-500 mt-1">Review and manage appointment cancellation requests</p>
+          <h2 className="text-xl font-bold">Pending Change Requests</h2>
+          <p className="text-sm text-gray-500 mt-1">Review and manage appointment change requests</p>
         </div>
         <Badge variant="outline" className="bg-purple-100 text-purple-800">
-          {pendingCancellations.length} Pending
+          {totalPending} Pending
         </Badge>
       </div>
 
-      {pendingCancellations.length > 0 ? (
+      {totalPending > 0 ? (
         <div className="space-y-4">
-          {pendingCancellations.map((appointment) => (
-            <Card key={appointment.id}>
+          {pendingRequests?.map((request: any) => {
+            const booking = request.bookings;
+            const client = booking?.clients;
+            const staff = booking?.staff;
+            const service = booking?.services;
+            
+            return (
+            <Card key={request.id}>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
-                        {appointment.clientName.split(" ").map(name => name[0]).join("")}
+                        {client?.full_name?.split(" ").map((name: string) => name[0]).join("") || "?"}
                       </div>
                       
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{appointment.clientName}</h3>
-                          <Badge className="bg-purple-100 text-purple-800">
-                            Cancellation Requested
+                          <h3 className="font-medium">{client?.full_name || "Unknown Client"}</h3>
+                          <Badge className={request.request_type === 'cancellation' ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800"}>
+                            {request.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'} Requested
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-500">Assigned to: {appointment.carerName}</div>
+                        <div className="text-sm text-gray-500">
+                          Service: {service?.title || "N/A"} | Assigned to: {staff ? `${staff.first_name} ${staff.last_name}` : "N/A"}
+                        </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                           <div className="flex items-center text-sm text-gray-600">
                             <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{format(appointment.date, "EEE, MMM d, yyyy")}</span>
+                            <span>{booking?.start_time ? format(new Date(booking.start_time), "EEE, MMM d, yyyy") : "N/A"}</span>
                           </div>
                           <div className="flex items-center text-sm text-gray-600">
                             <Clock className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{appointment.time}</span>
-                          </div>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{appointment.location}</span>
-                          </div>
-                          <div className="flex items-center text-sm text-gray-600">
-                            <User className="h-3.5 w-3.5 mr-1.5" />
-                            <span>{appointment.type}</span>
+                            <span>{booking?.start_time ? format(new Date(booking.start_time), "HH:mm") : "N/A"}</span>
                           </div>
                         </div>
                         
                         <div className="mt-3 p-2 bg-gray-50 rounded-md border">
                           <div className="text-xs font-medium">
-                            Reason: {getCancellationReasonDisplay(appointment.cancellationReason || "")}
+                            Reason: {getCancellationReasonDisplay(request.reason || "")}
                           </div>
-                          <div className="text-xs mt-1">{appointment.cancellationNotes}</div>
+                          {request.notes && <div className="text-xs mt-1">{request.notes}</div>}
+                          {request.request_type === 'reschedule' && request.new_date && (
+                            <div className="text-xs mt-1 font-medium text-blue-600">
+                              New Date/Time: {format(new Date(request.new_date), "MMM d, yyyy")} at {request.new_time}
+                            </div>
+                          )}
                           <div className="text-xs text-gray-500 mt-1">
-                            Requested {format(appointment.requestDate || new Date(), "MMM d, yyyy 'at' h:mm a")}
+                            Requested {format(new Date(request.created_at), "MMM d, yyyy 'at' h:mm a")}
                           </div>
                         </div>
                       </div>
@@ -181,7 +139,13 @@ const AppointmentApprovalList: React.FC = () => {
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
                       onClick={() => {
-                        setSelectedAppointment(appointment);
+                        setSelectedAppointment({
+                          ...request,
+                          booking_id: booking?.id,
+                          client_name: client?.full_name,
+                          staff_name: staff ? `${staff.first_name} ${staff.last_name}` : "N/A",
+                          service_title: service?.title
+                        });
                         setShowApprovalDialog(true);
                       }}
                     >
@@ -193,7 +157,13 @@ const AppointmentApprovalList: React.FC = () => {
                       variant="outline"
                       className="border-red-200 text-red-600 hover:bg-red-50"
                       onClick={() => {
-                        setSelectedAppointment(appointment);
+                        setSelectedAppointment({
+                          ...request,
+                          booking_id: booking?.id,
+                          client_name: client?.full_name,
+                          staff_name: staff ? `${staff.first_name} ${staff.last_name}` : "N/A",
+                          service_title: service?.title
+                        });
                         setShowApprovalDialog(true);
                       }}
                     >
@@ -204,7 +174,8 @@ const AppointmentApprovalList: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
       ) : (
         <Card>
@@ -220,24 +191,22 @@ const AppointmentApprovalList: React.FC = () => {
         </Card>
       )}
       
-      {selectedAppointment && (
-        <>
-          <AppointmentApprovalDialog
-            open={showApprovalDialog}
-            onOpenChange={setShowApprovalDialog}
-            appointment={selectedAppointment}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
-          
-          <ReallocateAppointmentDialog
-            open={showReallocationDialog}
-            onOpenChange={setShowReallocationDialog}
-            appointment={selectedAppointment}
-            onReallocate={handleReallocate}
-          />
-        </>
-      )}
+        {selectedAppointment && (
+          <>
+            <AppointmentApprovalDialog
+              open={showApprovalDialog}
+              onOpenChange={setShowApprovalDialog}
+              appointment={selectedAppointment}
+            />
+            
+            <ReallocateAppointmentDialog
+              open={showReallocationDialog}
+              onOpenChange={setShowReallocationDialog}
+              appointment={selectedAppointment}
+              onReallocate={handleReallocate}
+            />
+          </>
+        )}
     </div>
   );
 };

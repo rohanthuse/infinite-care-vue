@@ -15,13 +15,14 @@ import { Calendar, Clock, MapPin, User, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useApproveChangeRequest, useRejectChangeRequest } from "@/hooks/useBookingApprovalActions";
 
 interface AppointmentApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appointment: any;
-  onApprove: (appointmentId: string, adminNotes: string) => void;
-  onReject: (appointmentId: string, adminNotes: string) => void;
+  onApprove?: (appointmentId: string, adminNotes: string) => void;
+  onReject?: (appointmentId: string, adminNotes: string) => void;
 }
 
 const AppointmentApprovalDialog: React.FC<AppointmentApprovalDialogProps> = ({
@@ -33,22 +34,38 @@ const AppointmentApprovalDialog: React.FC<AppointmentApprovalDialogProps> = ({
 }) => {
   const [action, setAction] = useState<"approve" | "reject">("approve");
   const [adminNotes, setAdminNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const approveRequestMutation = useApproveChangeRequest();
+  const rejectRequestMutation = useRejectChangeRequest();
 
-  const handleAction = () => {
-    setIsSubmitting(true);
-    
+  const handleAction = async () => {
+    if (!appointment) return;
+
     try {
       if (action === "approve") {
-        onApprove(appointment.id, adminNotes);
+        await approveRequestMutation.mutateAsync({
+          requestId: appointment.id,
+          bookingId: appointment.booking_id,
+          requestType: appointment.request_type,
+          adminNotes,
+          newDate: appointment.new_date,
+          newTime: appointment.new_time
+        });
+        onApprove?.(appointment.id, adminNotes);
       } else {
-        onReject(appointment.id, adminNotes);
+        await rejectRequestMutation.mutateAsync({
+          requestId: appointment.id,
+          bookingId: appointment.booking_id,
+          requestType: appointment.request_type,
+          adminNotes
+        });
+        onReject?.(appointment.id, adminNotes);
       }
+      
+      onOpenChange(false);
       resetForm();
-      setIsSubmitting(false);
     } catch (error) {
       console.error("Error processing action:", error);
-      setIsSubmitting(false);
     }
   };
 
@@ -85,45 +102,42 @@ const AppointmentApprovalDialog: React.FC<AppointmentApprovalDialogProps> = ({
         
         <div className="space-y-4 py-2">
           <div className="flex flex-col space-y-2 border rounded-lg p-3 bg-gray-50">
-            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium text-sm">
-                  {appointment.clientName?.split(" ").map((name: string) => name[0]).join("")}
+                  {appointment.client_name?.split(" ").map((name: string) => name[0]).join("") || "?"}
                 </div>
-                <p className="text-sm font-medium">{appointment.clientName}</p>
+                <p className="text-sm font-medium">{appointment.client_name || "Unknown Client"}</p>
               </div>
-              <Badge className="bg-purple-100 text-purple-800">
-                Cancellation Requested
+              <Badge className={appointment.request_type === 'cancellation' ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800"}>
+                {appointment.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'} Requested
               </Badge>
             </div>
             
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div className="flex items-center text-xs text-gray-600">
-                <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                <span>{format(appointment.date, "EEE, MMM d, yyyy")}</span>
-              </div>
-              <div className="flex items-center text-xs text-gray-600">
-                <Clock className="h-3.5 w-3.5 mr-1.5" />
-                <span>{appointment.time}</span>
-              </div>
-              <div className="flex items-center text-xs text-gray-600">
-                <MapPin className="h-3.5 w-3.5 mr-1.5" />
-                <span>{appointment.location}</span>
+                <User className="h-3.5 w-3.5 mr-1.5" />
+                <span>Staff: {appointment.staff_name || "N/A"}</span>
               </div>
               <div className="flex items-center text-xs text-gray-600">
                 <User className="h-3.5 w-3.5 mr-1.5" />
-                <span>{appointment.type}</span>
+                <span>Service: {appointment.service_title || "N/A"}</span>
               </div>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label>Cancellation Reason</Label>
+            <Label>Request Details</Label>
             <div className="border rounded-md p-3">
-              <div className="text-sm font-medium">{getCancellationReasonDisplay(appointment.cancellationReason || "")}</div>
-              <div className="text-sm mt-1">{appointment.cancellationNotes}</div>
+              <div className="text-sm font-medium">Reason: {getCancellationReasonDisplay(appointment.reason || "")}</div>
+              {appointment.notes && <div className="text-sm mt-1">{appointment.notes}</div>}
+              {appointment.request_type === 'reschedule' && appointment.new_date && (
+                <div className="text-sm mt-2 p-2 bg-blue-50 rounded">
+                  <strong>Requested new time:</strong> {format(new Date(appointment.new_date), "MMM d, yyyy")} at {appointment.new_time}
+                </div>
+              )}
               <div className="text-xs text-gray-500 mt-2">
-                Requested by: {appointment.carerName} on {format(appointment.requestDate || new Date(), "MMM d, yyyy 'at' h:mm a")}
+                Requested on {format(new Date(appointment.created_at), "MMM d, yyyy 'at' h:mm a")}
               </div>
             </div>
           </div>
@@ -176,16 +190,18 @@ const AppointmentApprovalDialog: React.FC<AppointmentApprovalDialogProps> = ({
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
+            disabled={approveRequestMutation.isPending || rejectRequestMutation.isPending}
           >
             Cancel
           </Button>
           <Button 
             onClick={handleAction}
-            disabled={action === "reject" && !adminNotes || isSubmitting}
+            disabled={(action === "reject" && !adminNotes) || approveRequestMutation.isPending || rejectRequestMutation.isPending}
             className={action === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
           >
-            {action === "approve" ? "Approve Cancellation" : "Reject Cancellation"}
+            {approveRequestMutation.isPending || rejectRequestMutation.isPending ? "Processing..." : (
+              action === "approve" ? `Approve ${appointment.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'}` : `Reject ${appointment.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'}`
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

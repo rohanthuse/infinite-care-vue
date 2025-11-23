@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, User, Heart, FileText, RotateCcw, XCircle } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Heart, FileText, RotateCcw, XCircle, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { CalendarEvent } from '@/types/calendar';
 import { getAppointmentStatusColor, getEventTypeBadgeColor } from '@/utils/clientCalendarHelpers';
@@ -134,8 +135,49 @@ export const ClientAppointmentDetailsDialog: React.FC<ClientAppointmentDetailsDi
 
           <Separator />
 
-          {/* Action Buttons */}
-          {event._rawAppointmentData && (
+          {/* Request Status Alerts */}
+          {event._rawAppointmentData?.cancellation_request_status === 'pending' && (
+            <Alert className="bg-orange-50 border-orange-200">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-800">
+                <strong>Cancellation request already submitted</strong> — awaiting admin approval.
+                You will be notified once the admin reviews your request.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {event._rawAppointmentData?.reschedule_request_status === 'pending' && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                <strong>Reschedule request already submitted</strong> — awaiting admin approval.
+                You will be notified once the admin reviews your request.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {event._rawAppointmentData?.cancellation_request_status === 'rejected' && (
+            <Alert className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                Your cancellation request was rejected by the admin.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {event._rawAppointmentData?.reschedule_request_status === 'rejected' && (
+            <Alert className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                Your reschedule request was rejected by the admin.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Action Buttons - Only show if no pending requests */}
+          {event._rawAppointmentData && 
+           !event._rawAppointmentData.cancellation_request_status &&
+           !event._rawAppointmentData.reschedule_request_status && (
             <div className="flex gap-3">
               <Button 
                 className="flex-1"

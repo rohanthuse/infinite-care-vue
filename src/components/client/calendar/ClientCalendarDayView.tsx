@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CalendarEvent } from '@/types/calendar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { getEventTypeColor } from '@/utils/clientCalendarHelpers';
+import { getEventTypeColor, getEventColorByRequestStatus } from '@/utils/clientCalendarHelpers';
 
 interface ClientCalendarDayViewProps {
   date: Date;
@@ -101,7 +101,11 @@ export const ClientCalendarDayView: React.FC<ClientCalendarDayViewProps> = ({
                         key={`${event.id}-${eventIndex}`}
                         className="cursor-pointer hover:shadow-md transition-shadow"
                         style={{
-                          borderLeft: `4px solid ${getEventTypeColor(event.type)}`
+                          borderLeft: `4px solid ${getEventColorByRequestStatus(
+                            event._rawAppointmentData?.cancellation_request_status,
+                            event._rawAppointmentData?.reschedule_request_status,
+                            getEventTypeColor(event.type)
+                          )}`
                         }}
                         onClick={() => onEventClick?.(event)}
                       >
