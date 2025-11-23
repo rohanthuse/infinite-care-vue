@@ -427,6 +427,19 @@ const UnifiedLogin = () => {
     setLoading(true);
     setLoadingMessage("Signing in...");
 
+    // Clear all session/local storage flags to prevent stale data from previous sessions
+    console.log('[LOGIN DEBUG] Clearing all stale session flags');
+    sessionStorage.removeItem('is_org_member');
+    sessionStorage.removeItem('actual_org_role');
+    sessionStorage.removeItem('client_auth_confirmed');
+    sessionStorage.removeItem('client_id');
+    sessionStorage.removeItem('client_name');
+    sessionStorage.removeItem('client_email');
+    sessionStorage.removeItem('redirect_in_progress');
+    sessionStorage.removeItem('navigating_to_dashboard');
+    sessionStorage.removeItem('target_dashboard');
+    sessionStorage.removeItem('client_redirect_timestamp');
+
     // Set navigation flags IMMEDIATELY to prevent Index page interference
     sessionStorage.setItem('redirect_in_progress', 'true');
     sessionStorage.setItem('navigating_to_dashboard', 'true');
@@ -495,6 +508,8 @@ const UnifiedLogin = () => {
 
       // PRIORITY: Detect clients FIRST to avoid role confusion
       console.log('[LOGIN DEBUG] Checking if user is a client first (direct query)');
+      
+      // Use a simpler, faster query - just check if client record exists
       const { data: clientCheck, error: clientCheckError } = await supabase
         .from('clients')
         .select(`
@@ -509,7 +524,7 @@ const UnifiedLogin = () => {
           )
         `)
         .eq('auth_user_id', authData.user.id)
-        .maybeSingle();
+        .single(); // Use single() instead of maybeSingle() to catch errors better
 
       if (clientCheckError) {
         console.warn('[LOGIN DEBUG] Client check query error:', clientCheckError);
@@ -696,6 +711,51 @@ const UnifiedLogin = () => {
           orgMembership.organizations?.slug) {
         orgSlug = orgMembership.organizations.slug;
         console.log('[LOGIN DEBUG] Client org from organization_members:', orgSlug);
+        
+        // CRITICAL: If early client detection failed but we found client in org_members,
+        // force an immediate client redirect here to prevent downstream routing issues
+        if (!clientCheck && userRole === 'client' && orgSlug) {
+          console.log('[LOGIN DEBUG] 🚨 EMERGENCY CLIENT REDIRECT - Early detection failed but role is client');
+          
+          // Fetch client details for proper welcome message
+          const { data: clientDetails } = await supabase
+            .from('clients')
+            .select('id, first_name, last_name, email')
+            .eq('auth_user_id', authData.user.id)
+            .single();
+          
+          if (clientDetails) {
+            sessionStorage.setItem('client_id', clientDetails.id);
+            sessionStorage.setItem('client_name', `${clientDetails.first_name} ${clientDetails.last_name}`);
+            sessionStorage.setItem('client_email', clientDetails.email || '');
+            sessionStorage.setItem('client_auth_confirmed', 'true');
+            
+            const clientDashboardPath = `/${orgSlug}/client-dashboard`;
+            console.log('[LOGIN DEBUG] 🚀 EMERGENCY CLIENT REDIRECT TO:', clientDashboardPath);
+            
+            toast.success(`Welcome back, ${clientDetails.first_name}!`);
+            
+            sessionStorage.setItem('redirect_in_progress', 'true');
+            sessionStorage.setItem('navigating_to_dashboard', 'true');
+            sessionStorage.setItem('target_dashboard', clientDashboardPath);
+            sessionStorage.setItem('client_redirect_timestamp', Date.now().toString());
+            
+            setTimeout(() => {
+              sessionStorage.removeItem('redirect_in_progress');
+              sessionStorage.removeItem('navigating_to_dashboard');
+            }, 3000);
+            
+            clearTimeout(timeoutId);
+            
+            try {
+              window.location.href = clientDashboardPath;
+            } catch (redirectError) {
+              console.error('[LOGIN DEBUG] window.location.href failed, using navigate:', redirectError);
+              navigate(clientDashboardPath, { replace: true });
+            }
+            return; // Exit early - critical for preventing downstream issues
+          }
+        }
       }
 
       // Handle third-party access redemption first
@@ -887,12 +947,30 @@ const UnifiedLogin = () => {
       let isOrgMember = sessionStorage.getItem('is_org_member') === 'true';
       
       // Safety check: Never route clients through org member logic
-      if (isOrgMember && sessionStorage.getItem('actual_org_role') === 'client') {
-        console.log('[LOGIN DEBUG] Client detected in org members, clearing org member flag');
+      // Check BOTH the sessionStorage flag AND the actual userRole
+      if (isOrgMember && (sessionStorage.getItem('actual_org_role') === 'client' || userRole === 'client')) {
+        console.log('[LOGIN DEBUG] Client detected in org members OR userRole, clearing org member flag');
+        console.log('[LOGIN DEBUG] Clearing flags:', {
+          isOrgMember,
+          actual_org_role: sessionStorage.getItem('actual_org_role'),
+          userRole
+        });
         sessionStorage.removeItem('is_org_member');
         sessionStorage.removeItem('actual_org_role');
         isOrgMember = false;
       }
+      
+      console.log('[LOGIN DEBUG] Pre-routing state check:', {
+        isOrgMember,
+        userRole,
+        orgSlug,
+        clientCheckSuccess: !!clientCheck,
+        sessionFlags: {
+          is_org_member: sessionStorage.getItem('is_org_member'),
+          actual_org_role: sessionStorage.getItem('actual_org_role'),
+          client_auth_confirmed: sessionStorage.getItem('client_auth_confirmed')
+        }
+      });
 
       if (isOrgMember) {
         console.log('[LOGIN DEBUG] Organization member detected, routing to organization dashboard');
