@@ -21,6 +21,7 @@ import ClientSchedule from "@/pages/client/ClientSchedule";
 import ClientAgreements from "@/pages/client/ClientAgreements";
 import { Suspense } from "react";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
+import { ClientSidebarProvider } from "@/components/client/ClientSidebarProvider";
 
 // Higher-order component to check client authentication
 const RequireClientAuth = () => {
@@ -70,7 +71,14 @@ const LoadingFallback = () => (
 // Client routes definition for use in App.tsx - returns array for consistency
 const ClientRoutes = () => [
   <Route key="client-auth" element={<RequireClientAuth />}>
-    <Route path="client-dashboard" element={<ClientDashboard />}>
+    <Route 
+      path="client-dashboard" 
+      element={
+        <ClientSidebarProvider>
+          <ClientDashboard />
+        </ClientSidebarProvider>
+      }
+    >
       <Route index element={<ClientOverview />} />
       <Route path="appointments" element={<ClientAppointments />} />
       <Route path="schedule" element={<ClientSchedule />} />
