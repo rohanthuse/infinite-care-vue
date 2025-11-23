@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Star, MessageSquare, RotateCcw, XCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Star, MessageSquare, RotateCcw, XCircle, AlertCircle } from "lucide-react";
 import { useClientAllAppointments } from "@/hooks/useClientAppointments";
 import { SubmitReviewDialog } from "@/components/client/SubmitReviewDialog";
 import { ViewReviewDialog } from "@/components/client/ViewReviewDialog";
@@ -13,6 +13,8 @@ import { ReviewPrompt } from "@/components/client/ReviewPrompt";
 import { usePendingReviews } from "@/hooks/usePendingReviews";
 import { format, parseISO, isAfter, isSameDay } from "date-fns";
 import { useClientAuth } from "@/hooks/useClientAuth";
+import { BookingRequestStatusBadge } from "@/components/client/BookingRequestStatusBadge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AppointmentData {
   id: string;
@@ -34,6 +36,27 @@ interface RescheduleAppointmentData {
   client_id?: string;
   branch_id?: string;
   organization_id?: string;
+}
+
+interface DisplayAppointment {
+  id: string;
+  appointment_date: string;
+  appointment_time: string;
+  appointment_type: string;
+  branch_id: string;
+  client_id: string;
+  organization_id?: string;
+  created_at: string;
+  location: string;
+  notes: string | null;
+  provider_name: string;
+  status: string;
+  updated_at: string;
+  _source: string;
+  cancellation_request_status?: string | null;
+  reschedule_request_status?: string | null;
+  staff_id?: string;
+  _booking_data?: any;
 }
 
 const ClientAppointments = () => {
@@ -71,7 +94,7 @@ const ClientAppointments = () => {
 
   // Improved appointment categorization with better status handling
   const now = new Date();
-  const upcomingAppointments = appointments?.filter(app => {
+  const upcomingAppointments = (appointments as DisplayAppointment[] | undefined)?.filter(app => {
     const appointmentDate = parseISO(app.appointment_date);
     const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
     
@@ -90,7 +113,7 @@ const ClientAppointments = () => {
     return isFutureOrToday && isUpcomingStatus;
   }) || [];
   
-  const completedAppointments = appointments?.filter(app => {
+  const completedAppointments = (appointments as DisplayAppointment[] | undefined)?.filter(app => {
     const appointmentDate = parseISO(app.appointment_date);
     const isPastDate = !isAfter(appointmentDate, now) && !isSameDay(appointmentDate, now);
     
@@ -142,6 +165,19 @@ const ClientAppointments = () => {
       default:
         return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
     }
+  };
+
+  const getCardBorderColor = (
+    cancellationStatus?: string | null,
+    rescheduleStatus?: string | null
+  ): string => {
+    if (cancellationStatus === 'pending') {
+      return 'border-l-4 border-l-orange-400';
+    }
+    if (rescheduleStatus === 'pending') {
+      return 'border-l-4 border-l-blue-400';
+    }
+    return '';
   };
 
   const handleLeaveReview = (appointment: any) => {
@@ -234,15 +270,34 @@ const ClientAppointments = () => {
         {upcomingAppointments.length > 0 ? (
           <div className="grid gap-4">
             {upcomingAppointments.map((appointment) => (
-              <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+              <Card 
+                key={appointment.id} 
+                className={`hover:shadow-md transition-shadow ${getCardBorderColor(
+                  appointment.cancellation_request_status,
+                  appointment.reschedule_request_status
+                )}`}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <CardTitle className="text-lg">{appointment.appointment_type}</CardTitle>
                         {appointment._source === 'booking' && (
                           <Badge variant="outline" className="text-xs">Care Service</Badge>
                         )}
+                        <BookingRequestStatusBadge
+                          requestType={
+                            appointment.cancellation_request_status 
+                              ? 'cancellation' 
+                              : appointment.reschedule_request_status 
+                              ? 'reschedule' 
+                              : null
+                          }
+                          requestStatus={
+                            (appointment.cancellation_request_status || 
+                            appointment.reschedule_request_status) as 'pending' | 'approved' | 'rejected' | null
+                          }
+                        />
                       </div>
                       <div className="flex items-center text-gray-600 mt-1">
                         <User className="h-4 w-4 mr-1" />
@@ -276,27 +331,81 @@ const ClientAppointments = () => {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="pt-3 border-t border-gray-100">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleRescheduleAppointment(appointment)}
-                      >
-                        <RotateCcw className="h-4 w-4 mr-1" />
-                        Reschedule
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleCancelAppointment(appointment)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Cancel
-                      </Button>
+                  {/* Request Status Alerts */}
+                  {appointment.cancellation_request_status === 'pending' && (
+                    <div className="mb-3">
+                      <Alert className="bg-orange-50 border-orange-200">
+                        <AlertCircle className="h-4 w-4 text-orange-600" />
+                        <AlertDescription className="text-orange-800 text-sm">
+                          <strong>Cancellation request already submitted</strong> — awaiting admin approval.
+                          You will be notified once the admin reviews your request.
+                        </AlertDescription>
+                      </Alert>
                     </div>
+                  )}
+
+                  {appointment.reschedule_request_status === 'pending' && (
+                    <div className="mb-3">
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-800 text-sm">
+                          <strong>Reschedule request already submitted</strong> — awaiting admin approval.
+                          You will be notified once the admin reviews your request.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+
+                  {appointment.cancellation_request_status === 'rejected' && (
+                    <div className="mb-3">
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800 text-sm">
+                          Your cancellation request was rejected by the admin. You can submit a new request if needed.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+
+                  {appointment.reschedule_request_status === 'rejected' && (
+                    <div className="mb-3">
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800 text-sm">
+                          Your reschedule request was rejected by the admin. You can submit a new request if needed.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  )}
+
+                  {/* Action Buttons - Only show if no pending requests */}
+                  <div className="pt-3 border-t border-gray-100">
+                    {!appointment.cancellation_request_status && 
+                     !appointment.reschedule_request_status ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleRescheduleAppointment(appointment)}
+                        >
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                          Reschedule
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleCancelAppointment(appointment)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <XCircle className="h-4 w-4 mr-1" />
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-2 text-sm text-muted-foreground">
+                        Request pending - action buttons disabled
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
