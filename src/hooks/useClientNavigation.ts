@@ -23,6 +23,11 @@ export const useClientNavigation = () => {
       icon: "Home" 
     },
     { 
+      name: "My Schedule", 
+      path: createClientPath("/schedule"), 
+      icon: "Calendar" 
+    },
+    { 
       name: "Appointments", 
       path: createClientPath("/appointments"), 
       icon: "Calendar" 

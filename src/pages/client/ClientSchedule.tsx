@@ -1,14 +1,90 @@
-import React from 'react';
-import { Calendar, Clock, User, Heart, ArrowLeft } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Calendar, Heart, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClientScheduleTab } from '@/components/client/ClientScheduleTab';
 import { useNavigate } from 'react-router-dom';
 import { useClientNavigation } from '@/hooks/useClientNavigation';
+import { useSimpleClientAuth } from '@/hooks/useSimpleClientAuth';
+import { useClientAllAppointments } from '@/hooks/useClientAppointments';
+import { appointmentToCalendarEvent } from '@/utils/clientCalendarHelpers';
+import { ClientCalendarDayView } from '@/components/client/calendar/ClientCalendarDayView';
+import { ClientCalendarWeekView } from '@/components/client/calendar/ClientCalendarWeekView';
+import { ClientCalendarMonthView } from '@/components/client/calendar/ClientCalendarMonthView';
+import { ClientAppointmentDetailsDialog } from '@/components/client/calendar/ClientAppointmentDetailsDialog';
+import { CalendarEvent } from '@/types/calendar';
+import { format, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths, startOfDay } from 'date-fns';
 
 const ClientSchedule: React.FC = () => {
   const navigate = useNavigate();
   const { createClientPath } = useClientNavigation();
+  const { data: authData } = useSimpleClientAuth();
+  
+  // Calendar state
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState<'day' | 'week' | 'month'>('week');
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  
+  const clientId = authData?.client?.id;
+  
+  // Fetch appointments
+  const { data: appointments, isLoading } = useClientAllAppointments(clientId || '');
+  
+  // Transform appointments to calendar events
+  const calendarEvents = useMemo(() => {
+    if (!appointments) return [];
+    return appointments.map(appointmentToCalendarEvent);
+  }, [appointments]);
+  
+  // Date navigation handlers
+  const handlePreviousDate = () => {
+    switch (view) {
+      case 'day':
+        setCurrentDate(subDays(currentDate, 1));
+        break;
+      case 'week':
+        setCurrentDate(subWeeks(currentDate, 1));
+        break;
+      case 'month':
+        setCurrentDate(subMonths(currentDate, 1));
+        break;
+    }
+  };
+  
+  const handleNextDate = () => {
+    switch (view) {
+      case 'day':
+        setCurrentDate(addDays(currentDate, 1));
+        break;
+      case 'week':
+        setCurrentDate(addWeeks(currentDate, 1));
+        break;
+      case 'month':
+        setCurrentDate(addMonths(currentDate, 1));
+        break;
+    }
+  };
+  
+  const handleToday = () => {
+    setCurrentDate(startOfDay(new Date()));
+  };
+  
+  const handleEventClick = (event: CalendarEvent) => {
+    setSelectedEvent(event);
+    setDetailsDialogOpen(true);
+  };
+  
+  // Format date display based on view
+  const getDateDisplay = () => {
+    switch (view) {
+      case 'day':
+        return format(currentDate, 'EEEE, MMMM d, yyyy');
+      case 'week':
+        return format(currentDate, 'MMM d, yyyy');
+      case 'month':
+        return format(currentDate, 'MMMM yyyy');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -26,23 +102,98 @@ const ClientSchedule: React.FC = () => {
             </Button>
             <h1 className="text-3xl font-bold text-foreground">My Care Schedule</h1>
           </div>
-          <p className="text-muted-foreground">View and manage your care appointments and schedule</p>
+          <p className="text-muted-foreground">View and manage your care appointments</p>
         </div>
         <div className="flex items-center gap-2">
           <Calendar className="h-8 w-8 text-primary" />
         </div>
       </div>
 
-      {/* Schedule Content */}
+      {/* Calendar Controls */}
       <Card className="shadow-sm border-0 bg-gradient-to-br from-background to-secondary/20">
         <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Heart className="h-5 w-5 text-primary" />
-            Care Schedule Overview
-          </CardTitle>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            {/* Date Navigation */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handlePreviousDate}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="min-w-[200px] text-center">
+                <CardTitle className="text-lg">{getDateDisplay()}</CardTitle>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleNextDate}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleToday}
+              >
+                Today
+              </Button>
+            </div>
+
+            {/* View Selector */}
+            <div className="flex gap-2">
+              <Button 
+                variant={view === 'day' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setView('day')}
+              >
+                Day
+              </Button>
+              <Button 
+                variant={view === 'week' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setView('week')}
+              >
+                Week
+              </Button>
+              <Button 
+                variant={view === 'month' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setView('month')}
+              >
+                Month
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <ClientScheduleTab />
+
+        {/* Calendar View */}
+        <CardContent className="p-0">
+          {view === 'day' && (
+            <ClientCalendarDayView
+              date={currentDate}
+              events={calendarEvents}
+              isLoading={isLoading}
+              onEventClick={handleEventClick}
+            />
+          )}
+          {view === 'week' && (
+            <ClientCalendarWeekView
+              date={currentDate}
+              events={calendarEvents}
+              isLoading={isLoading}
+              onEventClick={handleEventClick}
+            />
+          )}
+          {view === 'month' && (
+            <ClientCalendarMonthView
+              date={currentDate}
+              events={calendarEvents}
+              isLoading={isLoading}
+              onEventClick={handleEventClick}
+            />
+          )}
         </CardContent>
       </Card>
 
@@ -75,7 +226,7 @@ const ClientSchedule: React.FC = () => {
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(createClientPath('/messages'))}>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <User className="h-5 w-5 text-purple-600" />
+              <Calendar className="h-5 w-5 text-purple-600" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Contact Care Team</h3>
@@ -84,6 +235,13 @@ const ClientSchedule: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Appointment Details Dialog */}
+      <ClientAppointmentDetailsDialog
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        event={selectedEvent}
+      />
     </div>
   );
 };
