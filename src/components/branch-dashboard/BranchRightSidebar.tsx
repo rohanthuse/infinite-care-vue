@@ -430,6 +430,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                   <SidebarMenuItem key={tab.value}>
                       <SidebarMenuButton 
                         asChild
+                        tooltip={collapsed ? tab.label : undefined}
                         className={cn(
                           "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
                           active && "bg-primary/10 text-primary border-r-2 border-primary"
@@ -472,6 +473,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
                       <SidebarMenuItem key={tab.value}>
                          <SidebarMenuButton 
                            asChild
+                           tooltip={collapsed ? tab.label : undefined}
                            className={cn(
                              "w-full justify-start text-foreground hover:bg-accent hover:text-accent-foreground",
                              active && "bg-primary/10 text-primary border-r-2 border-primary"
