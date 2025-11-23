@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, CreditCard, Star, FileText, User, AlertCircle } from "lucide-react";
-import { useClientAppointments } from "@/hooks/useClientAppointments";
+import { useClientAllAppointments } from "@/hooks/useClientAppointments";
 import { useEnhancedClientBilling } from "@/hooks/useEnhancedClientBilling";
 import { useClientReviews } from "@/hooks/useClientReviews";
 import { usePendingReviews } from "@/hooks/usePendingReviews";
@@ -51,7 +51,7 @@ const ClientOverview = () => {
     console.log('[CLIENT DASHBOARD] Debug info:', debugInfo);
   }
 
-  const { data: appointments, isLoading: appointmentsLoading } = useClientAppointments(clientId || undefined);
+  const { data: appointments, isLoading: appointmentsLoading } = useClientAllAppointments(clientId || undefined);
   const { data: invoices, isLoading: invoicesLoading } = useEnhancedClientBilling(clientId || undefined);
   const { data: reviews, isLoading: reviewsLoading } = useClientReviews(clientId || undefined);
   const { data: pendingReviews, count: pendingReviewsCount, isLoading: pendingReviewsLoading } = usePendingReviews(clientId || undefined);
