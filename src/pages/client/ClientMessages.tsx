@@ -57,7 +57,7 @@ const ClientMessages = () => {
   
   
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col h-[calc(100vh-12rem)]">
       <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
         {/* Sidebar - Contact list */}
         <div className="w-full md:w-64 border-r border-gray-200 flex flex-col bg-white rounded-l-md shadow-sm">
