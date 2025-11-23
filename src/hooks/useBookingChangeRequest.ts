@@ -30,6 +30,17 @@ export function useSubmitCancellationRequest() {
     mutationFn: async (params: SubmitCancellationRequestParams) => {
       console.log('[useSubmitCancellationRequest] Submitting cancellation request:', params);
 
+      // Validate required fields
+      if (!params.branchId) {
+        console.error('[useSubmitCancellationRequest] Missing branch_id');
+        throw new Error('Branch information is required to submit a cancellation request');
+      }
+
+      if (!params.clientId) {
+        console.error('[useSubmitCancellationRequest] Missing client_id');
+        throw new Error('Client information is required to submit a cancellation request');
+      }
+
       // Create the change request
       const { data: request, error: requestError } = await supabase
         .from('booking_change_requests')
@@ -37,7 +48,7 @@ export function useSubmitCancellationRequest() {
           booking_id: params.bookingId,
           client_id: params.clientId,
           branch_id: params.branchId,
-          organization_id: params.organizationId,
+          organization_id: params.organizationId || null,
           request_type: 'cancellation',
           reason: params.reason,
           notes: params.notes,
@@ -112,6 +123,17 @@ export function useSubmitRescheduleRequest() {
     mutationFn: async (params: SubmitRescheduleRequestParams) => {
       console.log('[useSubmitRescheduleRequest] Submitting reschedule request:', params);
 
+      // Validate required fields
+      if (!params.branchId) {
+        console.error('[useSubmitRescheduleRequest] Missing branch_id');
+        throw new Error('Branch information is required to submit a reschedule request');
+      }
+
+      if (!params.clientId) {
+        console.error('[useSubmitRescheduleRequest] Missing client_id');
+        throw new Error('Client information is required to submit a reschedule request');
+      }
+
       // Format the new time for database
       const formattedDate = params.newDate.toISOString().split('T')[0];
       const formattedTime = params.newTime;
@@ -123,7 +145,7 @@ export function useSubmitRescheduleRequest() {
           booking_id: params.bookingId,
           client_id: params.clientId,
           branch_id: params.branchId,
-          organization_id: params.organizationId,
+          organization_id: params.organizationId || null,
           request_type: 'reschedule',
           reason: params.reason,
           new_date: formattedDate,
