@@ -229,9 +229,18 @@ export function useBookingData(branchId?: string) {
             status: bk.status || "assigned",
             notes: bk.notes || "",
             unavailability_request: bk.booking_unavailability_requests?.[0] || null,
-            cancellation_request_status: bk.cancellation_request_status,
-            reschedule_request_status: bk.reschedule_request_status,
+            cancellation_request_status: bk.cancellation_request_status as 'pending' | 'approved' | 'rejected' | null,
+            reschedule_request_status: bk.reschedule_request_status as 'pending' | 'approved' | 'rejected' | null,
           };
+
+          // Debug logging for request statuses
+          if (bk.cancellation_request_status || bk.reschedule_request_status) {
+            console.log('[useBookingData] Booking with request:', {
+              id: bk.id,
+              cancellation: bk.cancellation_request_status,
+              reschedule: bk.reschedule_request_status
+            });
+          }
 
           processedBookings.push(processedBooking);
 

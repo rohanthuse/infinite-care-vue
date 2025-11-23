@@ -92,11 +92,28 @@ export function getEventColorByRequestStatus(
   rescheduleStatus?: string | null,
   defaultColor?: string
 ): string {
+  // Pending requests
   if (cancellationStatus === 'pending') {
     return '#fb923c'; // Orange for pending cancellation
   }
   if (rescheduleStatus === 'pending') {
     return '#3b82f6'; // Blue for pending reschedule
   }
+  
+  // Approved cancellation - show as cancelled
+  if (cancellationStatus === 'approved') {
+    return '#ef4444'; // Red for approved cancellation
+  }
+  
+  // Approved reschedule - show with success indicator
+  if (rescheduleStatus === 'approved') {
+    return '#10b981'; // Green for approved reschedule
+  }
+  
+  // Rejected - return to normal
+  if (cancellationStatus === 'rejected' || rescheduleStatus === 'rejected') {
+    return defaultColor || 'hsl(var(--primary))';
+  }
+  
   return defaultColor || 'hsl(var(--primary))';
 }
