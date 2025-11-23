@@ -99,6 +99,8 @@ const Index = () => {
 
     // PHASE 7: Check if redirect is already in progress
     const redirectInProgress = sessionStorage.getItem('redirect_in_progress') === 'true';
+    const targetDashboard = sessionStorage.getItem('target_dashboard');
+    
     if (redirectInProgress) {
       console.log('[Index] Redirect in progress, skipping Index redirect logic');
       return;
@@ -108,6 +110,12 @@ const Index = () => {
     const isNavigatingFromLogin = sessionStorage.getItem('navigating_to_dashboard') === 'true';
     if (isNavigatingFromLogin) {
       console.log('[Index] Navigation from login in progress, skipping Index redirect logic');
+      return;
+    }
+
+    // PHASE 8: Respect explicit target dashboard from login (especially for clients)
+    if (targetDashboard) {
+      console.log('[Index] Target dashboard set by login, respecting redirect:', targetDashboard);
       return;
     }
 

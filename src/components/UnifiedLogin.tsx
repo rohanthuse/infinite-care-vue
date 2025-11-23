@@ -493,6 +493,76 @@ const UnifiedLogin = () => {
       let retryCount = 0;
       const maxRetries = 2;
 
+      // PRIORITY: Detect clients FIRST to avoid role confusion
+      console.log('[LOGIN DEBUG] Checking if user is a client first (direct query)');
+      const { data: clientCheck, error: clientCheckError } = await supabase
+        .from('clients')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          email,
+          branch_id,
+          branches!inner (
+            organization_id,
+            organizations!inner (slug)
+          )
+        `)
+        .eq('auth_user_id', authData.user.id)
+        .maybeSingle();
+
+      if (clientCheckError) {
+        console.warn('[LOGIN DEBUG] Client check query error:', clientCheckError);
+      }
+
+      if (clientCheck) {
+        userRole = 'client';
+        const clientOrg = (clientCheck.branches as any)?.organizations;
+        orgSlug = clientOrg?.slug || null;
+        
+        console.log('[LOGIN DEBUG] ✅ Client detected via direct query:', {
+          clientId: clientCheck.id,
+          clientName: `${clientCheck.first_name} ${clientCheck.last_name}`,
+          branchId: clientCheck.branch_id,
+          orgSlug
+        });
+        
+        // Store client data for dashboard
+        sessionStorage.setItem('client_id', clientCheck.id);
+        sessionStorage.setItem('client_name', `${clientCheck.first_name} ${clientCheck.last_name}`);
+        sessionStorage.setItem('client_email', clientCheck.email || '');
+        
+        // Early redirect for clients
+        if (orgSlug) {
+          const clientDashboardPath = `/${orgSlug}/client-dashboard`;
+          console.log('[LOGIN DEBUG] 🚀 Early redirect for client to:', clientDashboardPath);
+          
+          toast.success(`Welcome back, ${clientCheck.first_name}!`);
+          
+          sessionStorage.setItem('redirect_in_progress', 'true');
+          sessionStorage.setItem('navigating_to_dashboard', 'true');
+          sessionStorage.setItem('target_dashboard', clientDashboardPath);
+          
+          setTimeout(() => {
+            sessionStorage.removeItem('redirect_in_progress');
+            sessionStorage.removeItem('navigating_to_dashboard');
+          }, 3000);
+          
+          clearTimeout(timeoutId);
+          window.location.href = clientDashboardPath;
+          return; // Exit early, don't continue with other role detection
+        } else {
+          console.error('[LOGIN DEBUG] ❌ Client detected but no organization slug found');
+          clearTimeout(timeoutId);
+          setLoading(false);
+          toast.error("Your account is not associated with an organization. Please contact support.");
+          await supabase.auth.signOut();
+          return;
+        }
+      }
+
+      console.log('[LOGIN DEBUG] No client record found, proceeding with standard role detection');
+
       while (!userRole && retryCount < maxRetries) {
         try {
           console.log(`[LOGIN DEBUG] Role detection attempt ${retryCount + 1}/${maxRetries}`);
