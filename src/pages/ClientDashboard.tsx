@@ -32,13 +32,13 @@ const ClientDashboard = () => {
       <ClientHeader title={pageTitle} />
       
       <div className="flex flex-1 w-full min-w-0">
-        <ClientSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        
         <SidebarInset className="flex-1 min-w-0 w-full">
           <main className="w-full max-w-full min-w-0 px-6 py-6">
             <Outlet />
           </main>
         </SidebarInset>
+        
+        <ClientSidebar />
       </div>
     </div>
   );

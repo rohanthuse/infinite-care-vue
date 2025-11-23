@@ -1,5 +1,6 @@
 import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePersistentSidebar } from '@/hooks/usePersistentSidebar';
 
 interface ClientSidebarProviderProps {
@@ -30,12 +31,14 @@ export const ClientSidebarProvider: React.FC<ClientSidebarProviderProps> = ({ ch
   };
 
   return (
-    <SidebarProvider 
-      open={isMounted ? open : getDefaultOpen()} 
-      onOpenChange={setOpen}
-      defaultOpen={getDefaultOpen()}
-    >
-      {children}
-    </SidebarProvider>
+    <TooltipProvider>
+      <SidebarProvider 
+        open={isMounted ? open : getDefaultOpen()} 
+        onOpenChange={setOpen}
+        defaultOpen={getDefaultOpen()}
+      >
+        {children}
+      </SidebarProvider>
+    </TooltipProvider>
   );
 };
