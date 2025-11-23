@@ -82,7 +82,7 @@ const ClientOverview = () => {
   const upcomingAppointments = appointments?.filter(app => {
     const appointmentDate = parseISO(app.appointment_date);
     const isFutureOrToday = isAfter(appointmentDate, now) || isSameDay(appointmentDate, now);
-    return (app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
+    return (app.status === 'assigned' || app.status === 'confirmed' || app.status === 'scheduled') && isFutureOrToday;
   }) || [];
   
   const pendingInvoices = invoices?.filter(inv => 
