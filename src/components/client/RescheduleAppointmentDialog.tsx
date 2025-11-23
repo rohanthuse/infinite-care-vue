@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,7 +19,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { useRescheduleAppointment } from "@/hooks/useRescheduleAppointment";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useSubmitRescheduleRequest } from "@/hooks/useBookingChangeRequest";
 
 interface RescheduleAppointmentDialogProps {
   open: boolean;
@@ -31,6 +32,9 @@ interface RescheduleAppointmentDialogProps {
     appointment_date: string;
     appointment_time: string;
     location: string;
+    client_id?: string;
+    branch_id?: string;
+    organization_id?: string;
   } | null;
 }
 
@@ -43,7 +47,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   const [timeSlot, setTimeSlot] = useState<string>(appointment?.appointment_time || "");
   const [reason, setReason] = useState<string>("");
   
-  const rescheduleAppointmentMutation = useRescheduleAppointment();
+  const submitRescheduleRequestMutation = useSubmitRescheduleRequest();
 
   // Expanded available time slots including half-hour increments
   const availableTimeSlots = [
@@ -67,28 +71,32 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   ];
 
   const handleSubmit = async () => {
-    if (!date || !timeSlot || !appointment) {
+    if (!date || !timeSlot || !appointment || !reason.trim()) {
       console.warn('[RescheduleAppointmentDialog] Missing required fields:', {
         date: !!date,
         timeSlot: !!timeSlot,
-        appointment: !!appointment
+        appointment: !!appointment,
+        reason: !!reason.trim()
       });
       return;
     }
 
     try {
       console.log('[RescheduleAppointmentDialog] Submitting reschedule request:', {
-        appointmentId: appointment.id,
+        bookingId: appointment.id,
         newDate: date,
-        newTimeSlot: timeSlot,
+        newTime: timeSlot,
         reason: reason.trim()
       });
 
-      await rescheduleAppointmentMutation.mutateAsync({
-        appointmentId: appointment.id,
+      await submitRescheduleRequestMutation.mutateAsync({
+        bookingId: appointment.id,
+        clientId: appointment.client_id!,
+        branchId: appointment.branch_id!,
+        organizationId: appointment.organization_id,
+        reason: reason.trim(),
         newDate: date,
-        newTimeSlot: timeSlot,
-        reason: reason.trim() || undefined,
+        newTime: timeSlot,
       });
 
       // Reset form and close dialog
@@ -101,7 +109,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
   };
 
   const handleClose = () => {
-    if (!rescheduleAppointmentMutation.isPending) {
+    if (!submitRescheduleRequestMutation.isPending) {
       setReason("");
       onOpenChange(false);
     }
@@ -115,13 +123,21 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px] flex flex-col max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Reschedule Appointment</DialogTitle>
+          <DialogTitle>Request Reschedule</DialogTitle>
           <DialogDescription>
-            Please select a new date and time for your {appointment.appointment_type} appointment with {appointment.provider_name}.
+            Submit a request to reschedule your {appointment.appointment_type} appointment. Your request will be reviewed by an administrator.
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-4 py-4 flex-1 overflow-y-auto pr-2">
+          {/* Warning Alert */}
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              This appointment will remain at its current date/time until an administrator approves your reschedule request.
+            </AlertDescription>
+          </Alert>
+
           <div className="grid gap-2">
             <label htmlFor="date" className="text-sm font-medium">
               Select a New Date
@@ -175,7 +191,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
           
           <div className="grid gap-2">
             <label htmlFor="reason" className="text-sm font-medium">
-              Reason for Rescheduling (Optional)
+              Reason for Rescheduling <span className="text-destructive">*</span>
             </label>
             <Textarea
               id="reason"
@@ -183,7 +199,7 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
-              disabled={rescheduleAppointmentMutation.isPending}
+              disabled={submitRescheduleRequestMutation.isPending}
             />
           </div>
         </div>
@@ -192,17 +208,17 @@ export const RescheduleAppointmentDialog: React.FC<RescheduleAppointmentDialogPr
           <Button 
             variant="outline" 
             onClick={handleClose}
-            disabled={rescheduleAppointmentMutation.isPending}
+            disabled={submitRescheduleRequestMutation.isPending}
           >
             Cancel
           </Button>
           <Button 
             type="button" 
             onClick={handleSubmit} 
-            disabled={rescheduleAppointmentMutation.isPending || !date || !timeSlot}
+            disabled={submitRescheduleRequestMutation.isPending || !date || !timeSlot || !reason.trim()}
             className="bg-primary hover:bg-primary/90"
           >
-            {rescheduleAppointmentMutation.isPending ? "Rescheduling..." : "Confirm Reschedule"}
+            {submitRescheduleRequestMutation.isPending ? "Submitting..." : "Submit Request"}
           </Button>
         </DialogFooter>
       </DialogContent>

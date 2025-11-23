@@ -355,6 +355,8 @@ export const useCompletedAppointments = (clientId?: string) => {
         .from('bookings')
         .select(`
           *,
+          cancellation_request_status,
+          reschedule_request_status,
           services (
             id,
             title
