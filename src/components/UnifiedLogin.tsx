@@ -594,7 +594,10 @@ const UnifiedLogin = () => {
         .eq('status', 'active')
         .maybeSingle();
 
-      if (orgMembership && orgMembership.organizations?.slug) {
+      // Only treat as org member if NOT a client - clients use their own routing
+      if (orgMembership && 
+          orgMembership.organizations?.slug && 
+          orgMembership.role !== 'client') {
         console.log('[LOGIN DEBUG] User is an organization member, overriding system role');
         console.log('[LOGIN DEBUG] Organization role:', orgMembership.role, 'System role:', userRole);
         
@@ -605,6 +608,14 @@ const UnifiedLogin = () => {
         // Cache the actual organization role for later use
         sessionStorage.setItem('actual_org_role', orgMembership.role);
         sessionStorage.setItem('is_org_member', 'true');
+      }
+      
+      // For clients in organization_members, just use the org slug but keep client role
+      if (orgMembership && 
+          orgMembership.role === 'client' && 
+          orgMembership.organizations?.slug) {
+        orgSlug = orgMembership.organizations.slug;
+        console.log('[LOGIN DEBUG] Client org from organization_members:', orgSlug);
       }
 
       // Handle third-party access redemption first
@@ -793,7 +804,15 @@ const UnifiedLogin = () => {
       }
 
       // Check if user is an organization member (takes priority over system roles)
-      const isOrgMember = sessionStorage.getItem('is_org_member') === 'true';
+      let isOrgMember = sessionStorage.getItem('is_org_member') === 'true';
+      
+      // Safety check: Never route clients through org member logic
+      if (isOrgMember && sessionStorage.getItem('actual_org_role') === 'client') {
+        console.log('[LOGIN DEBUG] Client detected in org members, clearing org member flag');
+        sessionStorage.removeItem('is_org_member');
+        sessionStorage.removeItem('actual_org_role');
+        isOrgMember = false;
+      }
 
       if (isOrgMember) {
         console.log('[LOGIN DEBUG] Organization member detected, routing to organization dashboard');
