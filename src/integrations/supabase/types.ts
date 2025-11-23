@@ -851,6 +851,99 @@ export type Database = {
           },
         ]
       }
+      booking_change_requests: {
+        Row: {
+          admin_notes: string | null
+          booking_id: string
+          branch_id: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          new_date: string | null
+          new_time: string | null
+          notes: string | null
+          organization_id: string | null
+          reason: string
+          request_type: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          booking_id: string
+          branch_id?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          new_date?: string | null
+          new_time?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          reason: string
+          request_type: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          booking_id?: string
+          branch_id?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          new_date?: string | null
+          new_time?: string | null
+          notes?: string | null
+          organization_id?: string | null
+          reason?: string
+          request_type?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_change_requests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_change_requests_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_change_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_change_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_ready_for_invoicing"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_change_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_unavailability_requests: {
         Row: {
           admin_notes: string | null
@@ -935,6 +1028,7 @@ export type Database = {
         Row: {
           branch_id: string | null
           cancellation_reason: string | null
+          cancellation_request_status: string | null
           cancelled_at: string | null
           cancelled_by: string | null
           client_id: string | null
@@ -945,6 +1039,7 @@ export type Database = {
           is_invoiced: boolean | null
           notes: string | null
           organization_id: string | null
+          reschedule_request_status: string | null
           revenue: number | null
           service_id: string | null
           staff_id: string | null
@@ -955,6 +1050,7 @@ export type Database = {
         Insert: {
           branch_id?: string | null
           cancellation_reason?: string | null
+          cancellation_request_status?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           client_id?: string | null
@@ -965,6 +1061,7 @@ export type Database = {
           is_invoiced?: boolean | null
           notes?: string | null
           organization_id?: string | null
+          reschedule_request_status?: string | null
           revenue?: number | null
           service_id?: string | null
           staff_id?: string | null
@@ -975,6 +1072,7 @@ export type Database = {
         Update: {
           branch_id?: string | null
           cancellation_reason?: string | null
+          cancellation_request_status?: string | null
           cancelled_at?: string | null
           cancelled_by?: string | null
           client_id?: string | null
@@ -985,6 +1083,7 @@ export type Database = {
           is_invoiced?: boolean | null
           notes?: string | null
           organization_id?: string | null
+          reschedule_request_status?: string | null
           revenue?: number | null
           service_id?: string | null
           staff_id?: string | null
