@@ -374,7 +374,26 @@ export function EditBookingDialog({
         service_id: data.service_id || null,
         notes: data.notes,
         status: newStaffIds.length > 0 ? 'assigned' : 'unassigned',
+        reschedule_request_status: null,
+        cancellation_request_status: null,
       };
+      
+      // Mark any pending change requests as superseded when admin directly edits
+      if (booking.id) {
+        const { error: requestUpdateError } = await supabase
+          .from('booking_change_requests')
+          .update({
+            status: 'superseded',
+            admin_notes: 'Booking was directly edited by admin',
+            reviewed_at: new Date().toISOString()
+          })
+          .eq('booking_id', booking.id)
+          .eq('status', 'pending');
+        
+        if (requestUpdateError) {
+          console.warn('[EditBookingDialog] Could not update change requests:', requestUpdateError);
+        }
+      }
       
       // STEP 1: Update bookings for staff we're keeping
       for (const staffId of staffToKeep) {
