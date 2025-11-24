@@ -243,12 +243,25 @@ const TenantDashboard = () => {
         } else if (memberData) {
           // Regular organization members use their org role
           setUserRole(memberData);
+          console.log('[TenantDashboard] Using organization membership role:', memberData.role);
         } else if (isSuperAdminForOrg || hasSystemAccess) {
           // Super admins without org membership
           setUserRole({ role: 'super_admin', status: 'active' });
+          console.log('[TenantDashboard] Using system super_admin role');
         } else {
           // Fallback for edge cases
           setUserRole({ role: 'member', status: 'active' });
+          console.warn('[TenantDashboard] No system role or org membership found, using fallback member role');
+        }
+        
+        // FALLBACK: If systemUserRole is missing but user has super_admin org membership, log it
+        if (!systemUserRole?.role && memberData?.role === 'super_admin') {
+          console.warn('[TenantDashboard] User has super_admin in organization_members but missing in user_roles table', {
+            userId: user.id,
+            email: user.email,
+            orgMembershipRole: memberData.role,
+            suggestion: 'Consider adding this user to user_roles table for consistency'
+          });
         }
         
         // Apply branding
