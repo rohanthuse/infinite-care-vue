@@ -235,12 +235,16 @@ const TenantDashboard = () => {
 
         setOrganization(orgData);
         
-        // Set user role with proper priority
-        if (memberData) {
-          // User is an active organization member - use their org role
+        // Set user role with CORRECTED priority - system roles take precedence
+        if (systemUserRole?.role === 'branch_admin') {
+          // Branch admins always get restricted view, even if they have org membership
+          setUserRole({ role: 'branch_admin', status: 'active' });
+          console.log('[TenantDashboard] User is a branch_admin, using restricted view');
+        } else if (memberData) {
+          // Regular organization members use their org role
           setUserRole(memberData);
         } else if (isSuperAdminForOrg || hasSystemAccess) {
-          // User has Super Admin access but no org membership
+          // Super admins without org membership
           setUserRole({ role: 'super_admin', status: 'active' });
         } else {
           // Fallback for edge cases
@@ -318,9 +322,26 @@ const TenantDashboard = () => {
   }
 
   // Split role checks for granular permission control
-  const isSuperAdmin = userRole && userRole.role === 'super_admin';
-  const isBranchAdmin = userRole && userRole.role === 'branch_admin';
-  const isOrganizationAdmin = userRole && (userRole.role === 'owner' || userRole.role === 'admin' || userRole.role === 'super_admin');
+  // Use systemUserRole for system-level roles like branch_admin
+  const isSuperAdmin = 
+    (systemUserRole?.role === 'super_admin') || 
+    (userRole?.role === 'super_admin');
+  
+  const isBranchAdmin = systemUserRole?.role === 'branch_admin'; // Check system role first
+  
+  const isOrganizationAdmin = 
+    userRole && 
+    (userRole.role === 'owner' || userRole.role === 'admin') &&
+    !isBranchAdmin; // Exclude branch admins from org admin view
+  
+  // Debug logging for role resolution
+  console.log('[TenantDashboard] Role resolution:', {
+    systemUserRole: systemUserRole?.role,
+    orgMemberRole: userRole?.role,
+    isBranchAdmin,
+    isOrganizationAdmin,
+    isSuperAdmin
+  });
 
   // Branch Admin View - LIMITED to assigned branches ONLY
   if (isBranchAdmin) {
