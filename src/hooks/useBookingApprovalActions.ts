@@ -96,7 +96,7 @@ export const useApproveChangeRequest = () => {
           .from('bookings')
           .update({
             status: 'cancelled',
-            cancellation_request_status: 'approved'
+            cancellation_request_status: null
           })
           .eq('id', bookingId);
 
@@ -138,7 +138,7 @@ export const useApproveChangeRequest = () => {
           .update({
             start_time: newStartTime.toISOString(),
             end_time: newEndTime.toISOString(),
-            reschedule_request_status: 'approved'
+            reschedule_request_status: null
           })
           .eq('id', bookingId);
 

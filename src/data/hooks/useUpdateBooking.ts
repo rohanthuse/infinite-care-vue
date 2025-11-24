@@ -52,6 +52,8 @@ export function useUpdateBooking(branchId?: string) {
       queryClient.invalidateQueries({ queryKey: ["branch-booking-invoices"] });
       queryClient.invalidateQueries({ queryKey: ["branch-invoices"] });
       queryClient.invalidateQueries({ queryKey: ["client-billing", data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ["booking-change-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-booking-requests"] });
       
       toast.success("Booking updated successfully!");
     },
