@@ -39,98 +39,43 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
   const { data: branches, isLoading, error } = useQuery({
     queryKey: ['organization-branches', organizationId, userRole?.role],
     queryFn: async () => {
-      console.log('Fetching branches for organization:', organizationId, 'with role:', userRole?.role);
+      console.log('[TenantBranchNavigation] Fetching branches for organization:', organizationId, 'with role:', userRole?.role);
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('No authenticated user');
+        console.log('[TenantBranchNavigation] No authenticated user');
         return [];
       }
 
-      // Check organization membership first (takes priority)
-      const { data: orgMember } = await supabase
-        .from('organization_members')
-        .select('role, status')
-        .eq('organization_id', organizationId)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
+      console.log('[TenantBranchNavigation] Role check order:', {
+        userRole: userRole?.role,
+        checkingBranchAdminFirst: userRole?.role === 'branch_admin',
+        userId: user.id
+      });
 
-      // If user is an organization member (any role), they see all branches
-      if (orgMember) {
-        console.log('Fetching all branches for organization member:', orgMember.role);
-        
-        const { data, error } = await supabase
-          .from('branches')
-          .select(`
-            *,
-            clients:clients(count)
-          `)
-          .eq('organization_id', organizationId)
-          .ilike('status', 'active');
-
-        if (error) {
-          console.error('Error fetching organization branches:', error);
-          throw error;
-        }
-
-        // Transform the data to extract client count
-        const transformedData = data?.map(branch => ({
-          ...branch,
-          client_count: (branch.clients as any)?.[0]?.count || 0
-        }));
-
-        console.log('Organisation branches:', transformedData, 'for org member role:', orgMember.role);
-        return transformedData || [];
-      }
-
-      // If not an org member, check if they're a super admin
-      if (userRole?.role === 'super_admin') {
-        console.log('Fetching all branches for super admin');
-        
-        const { data, error } = await supabase
-          .from('branches')
-          .select(`
-            *,
-            clients:clients(count)
-          `)
-          .eq('organization_id', organizationId)
-          .ilike('status', 'active');
-
-        if (error) {
-          console.error('Error fetching organization branches:', error);
-          throw error;
-        }
-
-        // Transform the data to extract client count
-        const transformedData = data?.map(branch => ({
-          ...branch,
-          client_count: (branch.clients as any)?.[0]?.count || 0
-        }));
-
-        console.log('Organisation branches (super admin):', transformedData);
-        return transformedData || [];
-      }
-
-      // If branch admin, only show assigned branches
+      // PRIORITY 1: Branch admins get RESTRICTED view (assigned branches only)
+      // This check must come FIRST to prevent org membership from overriding it
       if (userRole?.role === 'branch_admin') {
+        console.log('[TenantBranchNavigation] User is branch_admin - fetching ONLY assigned branches');
+        
         const { data: adminBranches, error: adminError } = await supabase
           .from('admin_branches')
           .select('branch_id')
           .eq('admin_id', user.id);
 
         if (adminError) {
-          console.error('Error fetching admin branches:', adminError);
+          console.error('[TenantBranchNavigation] Error fetching admin branches:', adminError);
           throw adminError;
         }
 
         if (!adminBranches || adminBranches.length === 0) {
-          console.log('No branches assigned to branch admin');
+          console.log('[TenantBranchNavigation] No branches assigned to branch admin');
           return [];
         }
 
         const branchIds = adminBranches.map(ab => ab.branch_id);
+        console.log('[TenantBranchNavigation] Branch admin assigned to branches:', branchIds);
 
         const { data, error } = await supabase
           .from('branches')
@@ -143,22 +88,83 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           .in('id', branchIds);
 
         if (error) {
-          console.error('Error fetching branch admin branches:', error);
+          console.error('[TenantBranchNavigation] Error fetching branch admin branches:', error);
           throw error;
         }
 
-        // Transform the data to extract client count
         const transformedData = data?.map(branch => ({
           ...branch,
           client_count: (branch.clients as any)?.[0]?.count || 0
         }));
 
-        console.log('Branch admin branches:', transformedData);
+        console.log('[TenantBranchNavigation] Branch admin branches (filtered):', transformedData);
+        return transformedData || [];
+      }
+
+      // PRIORITY 2: Organization members get FULL access (all branches)
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('role, status')
+        .eq('organization_id', organizationId)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (orgMember) {
+        console.log('[TenantBranchNavigation] Fetching all branches for organization member:', orgMember.role);
+        
+        const { data, error } = await supabase
+          .from('branches')
+          .select(`
+            *,
+            clients:clients(count)
+          `)
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active');
+
+        if (error) {
+          console.error('[TenantBranchNavigation] Error fetching organization branches:', error);
+          throw error;
+        }
+
+        const transformedData = data?.map(branch => ({
+          ...branch,
+          client_count: (branch.clients as any)?.[0]?.count || 0
+        }));
+
+        console.log('[TenantBranchNavigation] Organisation branches (all):', transformedData, 'for org member role:', orgMember.role);
+        return transformedData || [];
+      }
+
+      // PRIORITY 3: Super admins get FULL access (all branches)
+      if (userRole?.role === 'super_admin') {
+        console.log('[TenantBranchNavigation] Fetching all branches for super admin');
+        
+        const { data, error } = await supabase
+          .from('branches')
+          .select(`
+            *,
+            clients:clients(count)
+          `)
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active');
+
+        if (error) {
+          console.error('[TenantBranchNavigation] Error fetching organization branches:', error);
+          throw error;
+        }
+
+        const transformedData = data?.map(branch => ({
+          ...branch,
+          client_count: (branch.clients as any)?.[0]?.count || 0
+        }));
+
+        console.log('[TenantBranchNavigation] Organisation branches (super admin):', transformedData);
         return transformedData || [];
       }
 
       // Unknown roles have no branch access
-      console.log('User has no branch access');
+      console.log('[TenantBranchNavigation] User has no branch access');
       return [];
     },
     enabled: !!organizationId && !!userRole && !roleLoading,
@@ -241,7 +247,8 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
           <div className="text-sm text-muted-foreground">
             {branches?.length || 0} active branches
           </div>
-          <AddBranchDialog />
+          {/* Hide "New Branch" button for branch admins */}
+          {userRole?.role !== 'branch_admin' && <AddBranchDialog />}
         </div>
       </div>
 
