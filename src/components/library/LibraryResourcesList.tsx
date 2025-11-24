@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Star,
   TrendingUp,
-  MoreHorizontal,
+  
   Link,
   AlertTriangle,
   BarChart3
@@ -528,38 +528,39 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handlePreviewResource(resource)}
+                              className="h-8 px-2"
+                              title="Preview"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewResource(resource)}
+                              className="h-8 px-2"
+                              title="Open"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteResource(resource.id)}
+                                className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handlePreviewResource(resource)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                Preview
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewResource(resource)}>
-                                <ExternalLink className="mr-2 h-4 w-4" />
-                                Open
-                              </DropdownMenuItem>
-                              {resource.file_path && (
-                                <DropdownMenuItem onClick={() => handleDownloadResource(resource)}>
-                                  <Download className="mr-2 h-4 w-4" />
-                                  Download
-                                </DropdownMenuItem>
-                              )}
-                              {canDelete && (
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteResource(resource.id)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
