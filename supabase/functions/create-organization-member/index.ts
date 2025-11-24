@@ -73,145 +73,182 @@ serve(async (req) => {
 
     console.log('Current user:', currentUser.id);
 
-    // Check if user already exists by email
-    const { data: existingUsers, error: checkError } = await supabaseAdmin.auth.admin.listUsers();
-    
-    if (checkError) {
-      console.error('Error checking existing users:', checkError);
-      throw checkError;
-    }
-
-    const existingUser = existingUsers.users.find(u => u.email === email);
     let userId: string;
+    let userAlreadyExists = false;
 
-    if (existingUser) {
-      console.log('User already exists:', existingUser.id);
-      userId = existingUser.id;
-
-      // Check if they're already in this organization
-      const { data: existingMember, error: memberCheckError } = await supabaseAdmin
-        .from('organization_members')
-        .select('id, status')
-        .eq('organization_id', organizationId)
-        .eq('user_id', userId)
-        .single();
-
-      if (memberCheckError && memberCheckError.code !== 'PGRST116') { // PGRST116 = not found
-        console.error('Error checking existing member:', memberCheckError);
-        throw memberCheckError;
+    // Try-catch pattern: Optimistically try to create user first
+    console.log('[User Creation] Attempting to create auth user for email:', email);
+    
+    const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: firstName,
+        last_name: lastName
       }
+    });
 
-      if (existingMember) {
-        if (existingMember.status === 'active') {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              error: 'This user is already an active member of this organisation' 
-            }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        } else {
-          // Reactivate inactive member
-          console.log('Reactivating inactive member');
-          
-          const { error: updateError } = await supabaseAdmin
-            .from('organization_members')
-            .update({ 
-              status: 'active',
-              role: role,
-              permissions: permissions,
-              joined_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingMember.id);
-
-          if (updateError) {
-            console.error('Error reactivating member:', updateError);
-            throw updateError;
-          }
-
-          // Send reactivation email
-          try {
-            const emailHtml = generateMedInfiniteEmailHTML({
-              title: 'Account Reactivated',
-              previewText: `Your ${organizationName} account has been reactivated`,
-              content: `
-                <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 16px;">Welcome Back, ${firstName}!</h2>
-                <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 16px;">
-                  Great news! Your account with <strong>${organizationName}</strong> has been reactivated on Med-Infinite.
-                </p>
-                <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
-                  You can now log in and access all platform features with your existing credentials.
-                </p>
-                <div style="background-color: #f3f4f6; border-left: 4px solid #2563eb; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
-                  <p style="color: #1f2937; font-size: 14px; margin: 0; font-weight: 600;">Login Email:</p>
-                  <p style="color: #4b5563; font-size: 14px; margin: 4px 0 0 0;">${email}</p>
-                </div>
-                <div style="text-align: center; margin: 32px 0;">
-                  <a href="${loginUrl}" class="button">Log In to Your Account</a>
-                </div>
-                <p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-top: 24px;">
-                  If you have any questions or need assistance, please don't hesitate to contact your organization administrator.
-                </p>
-              `,
-              footerText: 'You received this email because your account was reactivated by an administrator.'
-            });
-
-            await resend.emails.send({
-              from: 'Med-Infinite <onboarding@resend.dev>',
-              to: [email],
-              subject: `Your ${organizationName} Account Has Been Reactivated`,
-              html: emailHtml,
-            });
-
-            console.log('Reactivation email sent successfully to:', email);
-          } catch (emailError) {
-            console.error('Failed to send reactivation email:', emailError);
-            // Don't block the reactivation if email fails
-          }
-
-          return new Response(
-            JSON.stringify({ 
-              success: true, 
-              message: 'Member reactivated successfully',
-              userId: userId,
-              reactivated: true
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
-
-      // User exists but not in this organization - add them
-      console.log('Adding existing user to organization');
+    // Handle user creation result
+    if (createUserError) {
+      console.log('[User Creation] Creation failed:', createUserError.message);
       
-    } else {
-      // Create new user
-      console.log('Creating new user');
+      // Check if error is due to email already existing
+      const emailExistsErrors = [
+        'email_exists',
+        'already been registered',
+        'user_already_exists',
+        'duplicate key value'
+      ];
       
-      const { data: authData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // Auto-confirm, no email sent
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName
-        }
-      });
+      const isEmailExistsError = 
+        emailExistsErrors.some(msg => createUserError.message?.toLowerCase().includes(msg)) ||
+        createUserError.status === 422;
 
-      if (createUserError) {
-        console.error('Error creating user:', createUserError);
+      if (isEmailExistsError) {
+        console.log('[User Creation] Email exists - fetching existing user with case-insensitive match');
+        userAlreadyExists = true;
+        
+        // Fetch existing user with case-insensitive email matching
+        const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        
+        if (listError) {
+          console.error('[User Fetch] Error listing users:', listError);
+          throw new Error('Failed to fetch existing user');
+        }
+
+        // Case-insensitive email search
+        const normalizedEmail = email.toLowerCase().trim();
+        const existingUser = existingUsers.users.find(
+          u => u.email?.toLowerCase().trim() === normalizedEmail
+        );
+
+        if (!existingUser) {
+          console.error('[User Fetch] Email exists but user not found in list');
+          throw new Error('User email already exists but could not be retrieved. Please contact support.');
+        }
+
+        userId = existingUser.id;
+        console.log('[User Found] Existing user ID:', userId);
+      } else {
+        // Different error - throw it
+        console.error('[User Creation] Unexpected error:', createUserError);
         throw createUserError;
       }
+    } else {
+      // User created successfully
+      if (!authData?.user) {
+        throw new Error('User creation succeeded but no user data returned');
+      }
+      userId = authData.user.id;
+      console.log('[User Created] New user ID:', userId);
+    }
 
-      if (!authData.user) {
-        throw new Error('Failed to create user');
+    // Check if user is already a member of this organization
+    console.log('[Membership Check] Checking if user is already in organization:', organizationId);
+    
+    const { data: existingMember, error: memberCheckError } = await supabaseAdmin
+      .from('organization_members')
+      .select('id, status, role')
+      .eq('organization_id', organizationId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (memberCheckError) {
+      console.error('[Membership Check] Error checking membership:', memberCheckError);
+      throw memberCheckError;
+    }
+
+    // Handle existing member scenarios
+    if (existingMember) {
+      console.log('[Membership Check] User is already a member. Status:', existingMember.status);
+      
+      if (existingMember.status === 'active') {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: `${email} is already an active ${existingMember.role} in this organisation` 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Reactivate inactive member
+      console.log('[Membership Update] Reactivating inactive member with new role:', role);
+      
+      const { error: updateError } = await supabaseAdmin
+        .from('organization_members')
+        .update({ 
+          status: 'active',
+          role: role,
+          permissions: permissions,
+          joined_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingMember.id);
+
+      if (updateError) {
+        console.error('[Membership Update] Error reactivating:', updateError);
+        throw updateError;
       }
 
-      userId = authData.user.id;
-      console.log('New user created:', userId);
+      // Send reactivation email
+      try {
+        const emailHtml = generateMedInfiniteEmailHTML({
+          title: 'Account Reactivated',
+          previewText: `Your ${organizationName} account has been reactivated`,
+          content: `
+            <h2 style="color: #1f2937; font-size: 24px; margin-bottom: 16px;">Welcome Back, ${firstName}!</h2>
+            <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 16px;">
+              Great news! Your account with <strong>${organizationName}</strong> has been reactivated on Med-Infinite.
+            </p>
+            <p style="color: #4b5563; font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+              You can now log in and access all platform features with your existing credentials.
+            </p>
+            <div style="background-color: #f3f4f6; border-left: 4px solid #2563eb; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+              <p style="color: #1f2937; font-size: 14px; margin: 0; font-weight: 600;">Login Email:</p>
+              <p style="color: #4b5563; font-size: 14px; margin: 4px 0 0 0;">${email}</p>
+            </div>
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${loginUrl}" class="button">Log In to Your Account</a>
+            </div>
+            <p style="color: #6b7280; font-size: 14px; line-height: 20px; margin-top: 24px;">
+              If you have any questions or need assistance, please don't hesitate to contact your organization administrator.
+            </p>
+          `,
+          footerText: 'You received this email because your account was reactivated by an administrator.'
+        });
 
-      // Create profile
+        await resend.emails.send({
+          from: 'Med-Infinite <onboarding@resend.dev>',
+          to: [email],
+          subject: `Your ${organizationName} Account Has Been Reactivated`,
+          html: emailHtml,
+        });
+
+        console.log('[Email] Reactivation email sent to:', email);
+      } catch (emailError) {
+        console.error('[Email] Failed to send reactivation email:', emailError);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Member reactivated successfully',
+          userId: userId,
+          reactivated: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // New member - handle profile and welcome email for newly created users
+    console.log('[New Member] Adding user to organization. User already exists:', userAlreadyExists);
+
+    if (!userAlreadyExists) {
+      // Create profile for new users only
+      console.log('[Profile] Creating profile for new user');
+      
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .insert({
@@ -221,12 +258,11 @@ serve(async (req) => {
           email: email
         });
 
-      if (profileError && profileError.code !== '23505') { // Ignore duplicate key errors
-        console.error('Error creating profile:', profileError);
-        // Don't throw - profile might already exist
+      if (profileError && profileError.code !== '23505') {
+        console.error('[Profile] Error creating profile:', profileError);
       }
 
-      // Send welcome email for new user
+      // Send welcome email for new users only
       try {
         const emailHtml = generateMedInfiniteEmailHTML({
           title: 'Welcome to Med-Infinite',
@@ -269,11 +305,12 @@ serve(async (req) => {
           html: emailHtml,
         });
 
-        console.log('Welcome email sent successfully to:', email);
+        console.log('[Email] Welcome email sent to:', email);
       } catch (emailError) {
-        console.error('Failed to send welcome email:', emailError);
-        // Don't block the member creation if email fails
+        console.error('[Email] Failed to send welcome email:', emailError);
       }
+    } else {
+      console.log('[Profile] Skipping profile creation and welcome email - user already exists');
     }
 
     // Use the database function to create organization member with proper role assignment
@@ -307,14 +344,33 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('Error in create-organization-member:', error);
+    console.error('[Error] create-organization-member failed:', error);
+    
+    // Provide user-friendly error messages
+    let errorMessage = 'Failed to create organization member';
+    let statusCode = 500;
+
+    if (error.message?.includes('email_exists') || error.message?.includes('already been registered')) {
+      errorMessage = 'This email address is already registered in the system';
+      statusCode = 400;
+    } else if (error.message?.includes('Invalid authentication')) {
+      errorMessage = 'Authentication failed. Please log in again.';
+      statusCode = 401;
+    } else if (error.message?.includes('permission')) {
+      errorMessage = 'You do not have permission to perform this action';
+      statusCode = 403;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    console.error('[Error] Returning error to client:', { errorMessage, statusCode });
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Failed to create organization member' 
+        error: errorMessage
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
