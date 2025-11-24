@@ -93,7 +93,18 @@ export const useUserRole = () => {
           return null;
         }
 
+        // Check if role data is null or empty
+        if (!roleData || !roleData.role) {
+          console.warn('[useUserRole] No role found in user_roles table for user:', {
+            userId: user.id,
+            email: user.email,
+            message: 'User may need to be added to user_roles table or have organization membership. Check organization_members table for org-level roles.'
+          });
+          return null;
+        }
+
         const role = roleData.role as UserRole;
+        console.log('[useUserRole] Role found:', role);
         
         // Get additional user information based on role
         let additionalData: Partial<UserWithRole> = {};

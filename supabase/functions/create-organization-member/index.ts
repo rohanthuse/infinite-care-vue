@@ -332,13 +332,36 @@ serve(async (req) => {
 
     console.log('Organization member created successfully:', memberId);
 
+    // Step 6: Add system-level role to user_roles table for super_admins and owners
+    // This ensures consistent role detection across the application
+    if (role === 'super_admin' || role === 'owner') {
+      console.log('[User Roles] Adding system-level role to user_roles table for:', role);
+      
+      const { error: userRoleError } = await supabaseAdmin
+        .from('user_roles')
+        .upsert({
+          user_id: userId,
+          role: 'super_admin' // Map both 'super_admin' and 'owner' to system 'super_admin'
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (userRoleError) {
+        console.error('[User Roles] Error adding user to user_roles:', userRoleError);
+        // Don't fail the entire operation - membership is already created
+        console.warn('[User Roles] Membership created but user_roles entry failed. User may experience role detection issues.');
+      } else {
+        console.log('[User Roles] System-level role added to user_roles successfully');
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Member added successfully',
         userId: userId,
         memberId: memberId,
-        userCreated: !existingUser
+        userCreated: !userAlreadyExists
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
