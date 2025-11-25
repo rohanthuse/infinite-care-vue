@@ -108,6 +108,17 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     return name.split(' ').map(n => n.charAt(0)).join('').slice(0, 2).toUpperCase();
   };
 
+  const parseAttachments = (attachments: any): any[] => {
+    if (!attachments) return [];
+    if (Array.isArray(attachments)) return attachments;
+    try {
+      const parsed = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col h-full">
@@ -188,6 +199,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
       <div id="messages-container" className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((message, index) => {
           const isCurrentUser = message.senderId === currentUser?.id;
+          const attachmentsList = parseAttachments(message.attachments);
           const showAvatar = !isCurrentUser && (
             index === 0 || 
             messages[index - 1]?.senderId !== message.senderId ||
@@ -250,18 +262,18 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                        )}
                      </div>
                      
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      
-                       {/* Attachments */}
-                       {message.hasAttachments && message.attachments && (
-                         <div className="mt-2">
-                           <MessageAttachmentViewer 
-                             attachments={message.attachments}
-                             onPreview={previewAttachment}
-                             onDownload={downloadAttachment}
-                           />
-                         </div>
-                       )}
+                       <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                       
+                        {/* Attachments */}
+                        {message.hasAttachments && attachmentsList.length > 0 && (
+                          <div className="mt-2">
+                            <MessageAttachmentViewer 
+                              attachments={attachmentsList}
+                              onPreview={previewAttachment}
+                              onDownload={downloadAttachment}
+                            />
+                          </div>
+                        )}
                       
                       {isCurrentUser && (
                         <div className="flex items-center justify-end mt-1 space-x-1">
