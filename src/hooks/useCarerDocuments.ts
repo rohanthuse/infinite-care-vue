@@ -64,7 +64,7 @@ const fetchCarerDocuments = async (carerId: string): Promise<CarerDocument[]> =>
   const regularDocuments: CarerDocument[] = (documentsData || []).map(doc => ({
     ...doc,
     source_type: 'document' as const,
-    file_name: doc.document_type,
+    file_name: doc.file_name || doc.document_type,
     file_path: doc.file_path,
     file_size: doc.file_size?.toString()
   }));

@@ -53,7 +53,8 @@ const CarerDocuments: React.FC = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>('');
-  const [customDocumentName, setCustomDocumentName] = useState<string>('');
+  const [documentName, setDocumentName] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const [dragActive, setDragActive] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{id: string, filePath: string} | null>(null);
@@ -133,9 +134,11 @@ const CarerDocuments: React.FC = () => {
       // Create document record
       const { error: docError } = await supabase.rpc('upload_staff_document_bypass_rls', {
         p_staff_id: carerId,
-        p_document_type: documentType === 'Other' ? customDocumentName : documentType,
+        p_document_type: documentType,
         p_file_path: filePath,
-        p_file_size: formattedSize
+        p_file_size: formattedSize,
+        p_file_name: documentName,
+        p_description: description || null
       });
       
       if (docError) {
@@ -257,7 +260,8 @@ const CarerDocuments: React.FC = () => {
     setUploadDialogOpen(false);
     setSelectedFile(null);
     setDocumentType('');
-    setCustomDocumentName('');
+    setDocumentName('');
+    setDescription('');
     setDragActive(false);
   };
 
@@ -643,21 +647,32 @@ const CarerDocuments: React.FC = () => {
               </Select>
             </div>
 
-            {/* Custom Document Name - shown only for "Other" type */}
-            {documentType === 'Other' && (
-              <div className="space-y-2">
-                <Label htmlFor="custom-document-name">
-                  Document Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="custom-document-name"
-                  placeholder="Enter document name"
-                  value={customDocumentName}
-                  onChange={(e) => setCustomDocumentName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
+            {/* Document Name Field */}
+            <div className="space-y-2">
+              <Label htmlFor="document-name">
+                Document Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="document-name"
+                placeholder="Enter document name"
+                value={documentName}
+                onChange={(e) => setDocumentName(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Description Field */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description (optional)</Label>
+              <textarea
+                id="description"
+                placeholder="Add notes or description..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
           </div>
 
           <DialogFooter>
@@ -669,7 +684,7 @@ const CarerDocuments: React.FC = () => {
               disabled={
                 !selectedFile || 
                 !documentType || 
-                (documentType === 'Other' && !customDocumentName.trim()) ||
+                !documentName.trim() ||
                 uploadMutation.isPending
               }
             >
