@@ -62,6 +62,15 @@ const RequireAdminAuth = () => {
   return <Outlet />;
 };
 
+// Wrapper component for branch dashboard routes with sidebar
+const BranchDashboardLayout = () => {
+  return (
+    <BranchSidebarProvider>
+      <Outlet />
+    </BranchSidebarProvider>
+  );
+};
+
 const AdminRoutes = () => [
   <Route key="admin-auth" element={<RequireAdminAuth />}>
     {/* Tenant-specific routes - these work within a tenant context */}
@@ -87,51 +96,50 @@ const AdminRoutes = () => [
     <Route path="key-parameters" element={<KeyParameters />} />
     <Route path="booking-approvals" element={<BookingApprovals />} />
     
-    {/* Branch Dashboard Routes - All wrapped with persistent sidebar */}
-    <Route path="branch-dashboard/:id/:branchName/*" element={
-      <BranchSidebarProvider>
-        <Routes>
-          <Route path="" element={<BranchDashboard />} />
-          <Route path="dashboard" element={<BranchDashboard />} />
-          <Route path="key-parameters" element={<BranchDashboard />} />
-          <Route path="workflow" element={<BranchDashboard />} />
-          <Route path="task-matrix" element={<BranchDashboard />} />
-          <Route path="training-matrix" element={<BranchDashboard />} />
-          <Route path="bookings" element={<BranchDashboard />} />
-          <Route path="carers" element={<BranchDashboard />} />
-          <Route path="clients" element={<BranchDashboard />} />
-          <Route path="care-plan" element={<BranchDashboard />} />
-          <Route path="reviews" element={<BranchDashboard />} />
-          <Route path="communication" element={<BranchDashboard />} />
-          <Route path="medication" element={<BranchDashboard />} />
-          <Route path="finance" element={<Accounting />} />
-          <Route path="notifications" element={<BranchDashboard />} />
-          <Route path="notifications/:categoryId" element={<BranchDashboard />} />
-          
-          {/* Standalone pages using BranchLayout */}
-          <Route path="accounting" element={<Accounting />} />
-          <Route path="agreements" element={<BranchAgreements />} />
-          <Route path="forms" element={<FormBuilder />} />
-          
-          {/* Specific Branch Dashboard Sub-pages */}
-          <Route path="carers/:carerId" element={<CarerProfilePage />} />
-          <Route path="recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
-          <Route path="recruitment/post-job" element={<PostJobPage />} />
-          <Route path="care-plan/:carePlanId" element={<CarePlanView />} />
-          <Route path="organization-calendar" element={<OrganizationCalendar />} />
-          <Route path="events-logs" element={<EventsLogs />} />
-          <Route path="attendance" element={<Attendance />} />
-          <Route path="form-builder" element={<FormBuilder />} />
-          <Route path="form-builder/:formId" element={<FormBuilder />} />
-          <Route path="forms/fill/:formId" element={<CarerFillForm />} />
-          <Route path="documents" element={<Documents />} />
-          <Route path="library" element={<Library />} />
-          <Route path="third-party" element={<ThirdPartyAccess />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="booking-approvals" element={<BookingApprovals />} />
-        </Routes>
-      </BranchSidebarProvider>
-    } />
+    {/* Branch Dashboard Routes - All wrapped with persistent sidebar using nested routing */}
+    <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboardLayout />}>
+      <Route index element={<BranchDashboard />} />
+      <Route path="dashboard" element={<BranchDashboard />} />
+      <Route path="key-parameters" element={<BranchDashboard />} />
+      <Route path="workflow" element={<BranchDashboard />} />
+      <Route path="task-matrix" element={<BranchDashboard />} />
+      <Route path="training-matrix" element={<BranchDashboard />} />
+      <Route path="bookings" element={<BranchDashboard />} />
+      <Route path="carers" element={<BranchDashboard />} />
+      <Route path="clients" element={<BranchDashboard />} />
+      <Route path="care-plan" element={<BranchDashboard />} />
+      <Route path="reviews" element={<BranchDashboard />} />
+      <Route path="communication" element={<BranchDashboard />} />
+      <Route path="medication" element={<BranchDashboard />} />
+      <Route path="finance" element={<Accounting />} />
+      <Route path="notifications" element={<BranchDashboard />} />
+      <Route path="notifications/:categoryId" element={<BranchDashboard />} />
+      
+      {/* Standalone pages using BranchLayout */}
+      <Route path="accounting" element={<Accounting />} />
+      <Route path="agreements" element={<BranchAgreements />} />
+      <Route path="forms" element={<FormBuilder />} />
+      
+      {/* Specific Branch Dashboard Sub-pages */}
+      <Route path="carers/:carerId" element={<CarerProfilePage />} />
+      <Route path="recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+      <Route path="recruitment/post-job" element={<PostJobPage />} />
+      <Route path="care-plan/:carePlanId" element={<CarePlanView />} />
+      <Route path="organization-calendar" element={<OrganizationCalendar />} />
+      <Route path="events-logs" element={<EventsLogs />} />
+      <Route path="attendance" element={<Attendance />} />
+      <Route path="form-builder" element={<FormBuilder />} />
+      <Route path="form-builder/:formId" element={<FormBuilder />} />
+      <Route path="forms/fill/:formId" element={<CarerFillForm />} />
+      <Route path="documents" element={<Documents />} />
+      <Route path="library" element={<Library />} />
+      <Route path="third-party" element={<ThirdPartyAccess />} />
+      <Route path="reports" element={<Reports />} />
+      <Route path="booking-approvals" element={<BookingApprovals />} />
+      
+      {/* Catch-all for unmatched routes within branch dashboard */}
+      <Route path="*" element={<BranchDashboard />} />
+    </Route>
   </Route>
 ];
 
