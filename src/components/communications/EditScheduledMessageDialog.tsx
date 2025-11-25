@@ -14,6 +14,8 @@ import { Clock, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useEditScheduledMessage } from "@/hooks/useEditScheduledMessage";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCommunicationTypeOptions } from "@/hooks/useParameterOptions";
+import { useAdminContacts } from "@/hooks/useAdminMessaging";
 
 interface EditScheduledMessageDialogProps {
   open: boolean;
@@ -32,6 +34,19 @@ export const EditScheduledMessageDialog: React.FC<EditScheduledMessageDialogProp
   const [scheduledTime, setScheduledTime] = useState("");
 
   const editMessage = useEditScheduledMessage();
+  const { data: communicationTypes = [] } = useCommunicationTypeOptions();
+  const { data: availableContacts = [] } = useAdminContacts(branchId);
+
+  // Resolve message type UUID to title
+  const messageTypeName = communicationTypes.find(
+    (type) => type.value === message?.message_type
+  )?.label || 'N/A';
+
+  // Resolve recipient_ids (auth_user_ids) to names
+  const recipientNames = message?.recipient_ids?.map((id: string) => {
+    const contact = availableContacts.find((c) => c.id === id);
+    return contact?.name || `Unknown (${id.slice(0, 8)}...)`;
+  }) || [];
 
   useEffect(() => {
     if (open && message) {
@@ -73,23 +88,21 @@ export const EditScheduledMessageDialog: React.FC<EditScheduledMessageDialogProp
         <ScrollArea className="max-h-[calc(90vh-200px)] pr-4">
           <div className="space-y-6">
             {/* Read-only Message Details */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-muted-foreground">Message Details</h3>
                 <Badge variant="secondary" className="text-xs">Read-only</Badge>
               </div>
               
-              {message?.subject && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">Subject</Label>
-                  <p className="text-sm mt-1">{message.subject}</p>
-                </div>
-              )}
+              <div>
+                <Label className="text-xs text-muted-foreground">Subject</Label>
+                <p className="text-sm mt-1">{message?.subject || 'No Subject'}</p>
+              </div>
 
               <div>
-                <Label className="text-xs text-muted-foreground">Type</Label>
+                <Label className="text-xs text-muted-foreground">Message Type</Label>
                 <div className="mt-1">
-                  <Badge variant="outline">{message?.message_type || 'N/A'}</Badge>
+                  <Badge variant="outline">{messageTypeName}</Badge>
                 </div>
               </div>
 
@@ -107,12 +120,39 @@ export const EditScheduledMessageDialog: React.FC<EditScheduledMessageDialogProp
               </div>
 
               <div>
-                <Label className="text-xs text-muted-foreground">Recipients</Label>
+                <Label className="text-xs text-muted-foreground">Action Required</Label>
                 <div className="mt-1">
-                  <Badge variant="outline">
-                    {message?.recipient_ids?.length || 0} recipient(s)
+                  <Badge variant={message?.action_required ? 'default' : 'outline'}>
+                    {message?.action_required ? 'Yes' : 'No'}
                   </Badge>
                 </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Admin Eyes Only</Label>
+                <div className="mt-1">
+                  <Badge variant={message?.admin_eyes_only ? 'default' : 'outline'}>
+                    {message?.admin_eyes_only ? 'Yes' : 'No'}
+                  </Badge>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Recipients</Label>
+                <ScrollArea className="max-h-24 mt-1">
+                  <div className="space-y-1">
+                    {recipientNames.length > 0 ? (
+                      recipientNames.map((name, index) => (
+                        <div key={index} className="text-sm flex items-center gap-1">
+                          <span className="text-muted-foreground">•</span>
+                          <span>{name}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No recipients</p>
+                    )}
+                  </div>
+                </ScrollArea>
               </div>
 
               <div>
@@ -121,13 +161,6 @@ export const EditScheduledMessageDialog: React.FC<EditScheduledMessageDialogProp
                   <p className="text-sm whitespace-pre-wrap">{message?.content}</p>
                 </ScrollArea>
               </div>
-
-              {message?.action_required && (
-                <Badge variant="outline" className="text-xs">Action Required</Badge>
-              )}
-              {message?.admin_eyes_only && (
-                <Badge variant="outline" className="text-xs">Admin Eyes Only</Badge>
-              )}
             </div>
 
             {/* Editable Schedule Section */}
