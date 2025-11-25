@@ -701,20 +701,7 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
               )
             )}
             
-            {activeTab === "documents" && (
-              canAccessTab("documents") ? (
-                <UnifiedDocumentsList 
-                  documents={documents} 
-                  isLoading={documentsLoading} 
-                  onViewDocument={viewDocument}
-                  onDownloadDocument={downloadDocument}
-                  onDeleteDocument={deleteDocument}
-                  branchId={id || ""}
-                />
-              ) : (
-                <AccessDeniedTab tabName="Documents" />
-              )
-            )}
+            {/* Documents tab removed - Documents has a dedicated route/page */}
             
             {activeTab === "notifications" && (
               canAccessTab("notifications") ? (
