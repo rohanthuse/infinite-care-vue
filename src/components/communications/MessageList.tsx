@@ -14,6 +14,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useDeleteThread } from "@/hooks/useDeleteMessage";
 import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
 import { forceModalCleanup } from "@/lib/modal-cleanup";
+import { MessageReadReceipt } from "./MessageReadReceipt";
 
 interface MessageListProps {
   branchId: string;
@@ -277,12 +278,23 @@ export const MessageList = ({
                  </div>
                 
                 {thread.lastMessage && (
-                  <p className={`text-xs truncate mt-1 ${
-                    thread.unreadCount > 0 ? 'text-gray-700' : 'text-gray-500'
-                  }`}>
-                    <span className="font-medium">{thread.lastMessage.senderName}:</span>{' '}
-                    {thread.lastMessage.content}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <p className={`text-xs truncate flex-1 ${
+                      thread.unreadCount > 0 ? 'text-gray-700' : 'text-gray-500'
+                    }`}>
+                      <span className="font-medium">{thread.lastMessage.senderName}:</span>{' '}
+                      {thread.lastMessage.content}
+                    </p>
+                    {currentUser && thread.lastMessage.senderId === currentUser.id && (
+                      <MessageReadReceipt
+                        messageId={thread.lastMessage.id}
+                        senderId={thread.lastMessage.senderId}
+                        threadId={thread.id}
+                        isCurrentUserSender={true}
+                        className="flex-shrink-0"
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             </div>

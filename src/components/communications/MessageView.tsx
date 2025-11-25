@@ -18,6 +18,7 @@ import { useMessageAttachments } from "@/hooks/useMessageAttachments";
 import { useDeleteMessage, useDeleteThread } from "@/hooks/useDeleteMessage";
 import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
 import { forceModalCleanup } from "@/lib/modal-cleanup";
+import { MessageReadReceipt } from "./MessageReadReceipt";
 
 interface MessageViewProps {
   messageId: string;
@@ -408,9 +409,16 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                         )}
                       
                       {isCurrentUser && (
-                        <div className="flex items-center justify-end mt-1 space-x-1">
+                        <div className="flex items-center justify-end mt-1 space-x-2">
                           <Clock className="h-3 w-3 opacity-70" />
                           <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
+                          <MessageReadReceipt
+                            messageId={message.id}
+                            senderId={message.senderId}
+                            threadId={message.threadId}
+                            isCurrentUserSender={isCurrentUser}
+                            className="opacity-70"
+                          />
                         </div>
                       )}
                     </div>

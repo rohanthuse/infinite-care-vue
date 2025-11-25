@@ -11,6 +11,7 @@ import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 import { MessageAttachmentViewer } from "@/components/communications/MessageAttachmentViewer";
 import { useMessageAttachments } from "@/hooks/useMessageAttachments";
+import { MessageReadReceipt } from "@/components/communications/MessageReadReceipt";
 
 interface ClientMessageViewProps {
   messageId: string; // This is actually threadId
@@ -264,9 +265,16 @@ export const ClientMessageView = ({ messageId: threadId, onReply }: ClientMessag
                     )}
                     
                     {isCurrentUser && (
-                      <div className="flex items-center justify-end mt-1 space-x-1">
+                      <div className="flex items-center justify-end mt-1 space-x-2">
                         <Clock className="h-3 w-3 opacity-70" />
                         <span className="text-xs opacity-70">{formatTimestamp(message.timestamp)}</span>
+                        <MessageReadReceipt
+                          messageId={message.id}
+                          senderId={message.senderId}
+                          threadId={threadId}
+                          isCurrentUserSender={isCurrentUser}
+                          className="opacity-70"
+                        />
                       </div>
                     )}
                   </div>
