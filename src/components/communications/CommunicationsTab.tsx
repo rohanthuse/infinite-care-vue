@@ -245,11 +245,11 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
           </div>
         </TabsContent>
         
-        <TabsContent value="scheduled" className="flex-1 m-0 overflow-hidden">
+        <TabsContent value="scheduled" className="flex-1 m-0 min-h-0 overflow-hidden">
           <ScheduledMessagesView branchId={branchId} />
         </TabsContent>
         
-        <TabsContent value="drafts" className="flex-1 m-0 overflow-hidden">
+        <TabsContent value="drafts" className="flex-1 m-0 min-h-0 overflow-hidden">
           <DraftMessagesView />
         </TabsContent>
       </Tabs>

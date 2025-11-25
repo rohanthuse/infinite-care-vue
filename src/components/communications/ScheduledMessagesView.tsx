@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, X, Calendar, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { EditScheduledMessageDialog } from './EditScheduledMessageDialog';
 
 interface ScheduledMessagesViewProps {
@@ -43,8 +42,8 @@ export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-6 pt-4 space-y-4">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto p-6 pt-4 space-y-4">
         <h2 className="text-2xl font-bold mb-4 text-foreground">Scheduled Messages ({scheduledMessages.length})</h2>
         {scheduledMessages.map((msg: any) => (
           <Card key={msg.id} className="border-l-4 border-l-primary">
@@ -108,6 +107,6 @@ export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({
         message={editDialog.message}
         branchId={branchId}
       />
-    </ScrollArea>
+    </div>
   );
 };

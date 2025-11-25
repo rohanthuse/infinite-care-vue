@@ -3,9 +3,8 @@ import { useDraftMessages, useDeleteDraft } from '@/hooks/useMessageDraftsAndSch
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Clock, X } from 'lucide-react';
 import { format } from 'date-fns';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export const DraftMessagesView: React.FC = () => {
   const { data: drafts = [], isLoading } = useDraftMessages();
@@ -32,8 +31,8 @@ export const DraftMessagesView: React.FC = () => {
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-6 pt-4 space-y-4">
+    <div className="h-full flex flex-col">
+      <div className="flex-1 overflow-auto p-6 pt-4 space-y-4">
         <h2 className="text-2xl font-bold mb-4 text-foreground">Draft Messages ({drafts.length})</h2>
         {drafts.map((draft: any) => (
           <Card key={draft.id} className="border-l-4 border-l-amber-500">
@@ -43,20 +42,19 @@ export const DraftMessagesView: React.FC = () => {
                   <CardTitle className="text-base mb-2 text-foreground">
                     {draft.subject || 'No Subject'}
                   </CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    Last saved: {format(new Date(draft.updated_at), 'PPp')}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>Saved: {format(new Date(draft.updated_at), 'PPp')}</span>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDelete(draft.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(draft.id)}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -73,13 +71,13 @@ export const DraftMessagesView: React.FC = () => {
                 </div>
                 <p className="text-sm text-foreground line-clamp-3">{draft.content}</p>
                 <div className="text-xs text-muted-foreground">
-                  Recipients: {draft.recipient_names?.join(', ') || 'None'}
+                  Recipients: {draft.recipient_names || 'None selected'}
                 </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 };
