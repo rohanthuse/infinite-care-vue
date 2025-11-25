@@ -15,11 +15,13 @@ import {
 interface EntityDocumentsSectionProps {
   entityType: 'client' | 'staff';
   entityId: string;
+  showAdminSection?: boolean;
 }
 
 export const EntityDocumentsSection: React.FC<EntityDocumentsSectionProps> = ({
   entityType,
   entityId,
+  showAdminSection = true,
 }) => {
   const { toast } = useToast();
   const [downloadingDocIds, setDownloadingDocIds] = useState<Set<string>>(new Set());
@@ -99,6 +101,7 @@ export const EntityDocumentsSection: React.FC<EntityDocumentsSectionProps> = ({
 
   // Group documents by uploader type
   const systemDocs = documents.filter(doc => doc.uploader_type === 'system');
+  const adminDocs = documents.filter(doc => doc.uploader_type === 'admin');
   const staffDocs = documents.filter(doc => doc.uploader_type === 'staff');
   const clientDocs = documents.filter(doc => doc.uploader_type === 'client');
 
@@ -198,10 +201,29 @@ export const EntityDocumentsSection: React.FC<EntityDocumentsSectionProps> = ({
   }
 
   return (
-    <div>
+    <div className="space-y-4">
+      {/* Documents Uploaded by Admin */}
+      {showAdminSection && adminDocs.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Documents Uploaded by Admin
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renderSection(
+              'Documents Uploaded by Admin',
+              adminDocs,
+              'No admin-uploaded documents'
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Updated by System */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-4 w-4" />
             Updated by System

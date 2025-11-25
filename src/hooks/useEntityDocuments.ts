@@ -12,7 +12,7 @@ export interface EntityDocument {
   file_type?: string;
   uploaded_by: string;
   uploaded_by_name?: string;
-  uploader_type: 'system' | 'staff' | 'client';
+  uploader_type: 'system' | 'staff' | 'client' | 'admin';
   created_at: string;
   updated_at: string;
 }
@@ -37,15 +37,21 @@ export const useClientEntityDocuments = (clientId: string) => {
 
       // Map and categorize documents by uploader type
       return (data || []).map(doc => {
-        let uploaderType: 'system' | 'staff' | 'client' = 'system';
+        let uploaderType: 'system' | 'staff' | 'client' | 'admin' = 'system';
         
-        // Categorize based on uploaded_by_name
-        if (doc.uploaded_by_name) {
+        // Categorize based on uploaded_by and uploaded_by_name
+        if (doc.uploaded_by_name?.toLowerCase() === 'system') {
+          // Explicitly marked as System upload
+          uploaderType = 'system';
+        } else if (doc.uploaded_by && (!doc.uploaded_by_name || doc.uploaded_by_name === '')) {
+          // Has uploader ID but no name - Admin upload from Documents module
+          uploaderType = 'admin';
+        } else if (doc.uploaded_by_name) {
           const name = doc.uploaded_by_name.toLowerCase();
-          if (name === 'system' || name === '') {
-            uploaderType = 'system';
-          } else if (name.includes('staff') || name.includes('admin')) {
+          if (name.includes('staff')) {
             uploaderType = 'staff';
+          } else if (name.includes('admin')) {
+            uploaderType = 'admin';
           } else {
             uploaderType = 'client';
           }
@@ -92,15 +98,21 @@ export const useStaffEntityDocuments = (staffId: string) => {
 
       // Map and categorize documents by uploader type
       return (data || []).map(doc => {
-        let uploaderType: 'system' | 'staff' | 'client' = 'system';
+        let uploaderType: 'system' | 'staff' | 'client' | 'admin' = 'system';
         
-        // Categorize based on uploaded_by_name
-        if (doc.uploaded_by_name) {
+        // Categorize based on uploaded_by and uploaded_by_name
+        if (doc.uploaded_by_name?.toLowerCase() === 'system') {
+          // Explicitly marked as System upload
+          uploaderType = 'system';
+        } else if (doc.uploaded_by && (!doc.uploaded_by_name || doc.uploaded_by_name === '')) {
+          // Has uploader ID but no name - Admin upload from Documents module
+          uploaderType = 'admin';
+        } else if (doc.uploaded_by_name) {
           const name = doc.uploaded_by_name.toLowerCase();
-          if (name === 'system' || name === '') {
-            uploaderType = 'system';
-          } else if (name.includes('staff') || name.includes('admin')) {
+          if (name.includes('staff')) {
             uploaderType = 'staff';
+          } else if (name.includes('admin')) {
+            uploaderType = 'admin';
           } else {
             uploaderType = 'client';
           }
