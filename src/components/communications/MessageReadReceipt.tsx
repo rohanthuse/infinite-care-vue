@@ -93,12 +93,12 @@ export const MessageReadReceipt = ({
 
   const renderTicks = () => {
     if (readStatus.status === 'sent') {
-      return <Check className="h-3 w-3" />;
+      return <Check className="h-4 w-4" />;
     }
 
     return (
       <div className="relative">
-        <CheckCheck className={cn("h-3 w-3", getTickColor())} />
+        <CheckCheck className={cn("h-4 w-4", getTickColor())} />
       </div>
     );
   };
