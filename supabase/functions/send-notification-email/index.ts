@@ -59,6 +59,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check if email notification was requested
+    const notificationMethods = notification.data?.notification_methods || [];
+    if (!Array.isArray(notificationMethods) || !notificationMethods.includes('email')) {
+      console.log('Email notification not requested for this notification');
+      return new Response(
+        JSON.stringify({ message: "Email notification not requested" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     // Check if email was already sent
     if (notification.email_sent) {
       console.log("Email already sent for this notification");

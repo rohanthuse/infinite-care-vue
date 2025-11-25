@@ -63,7 +63,13 @@ export const useNotificationEmailSender = () => {
           if (notification.priority === 'high' || notification.priority === 'urgent') {
             // Check if email was already sent
             if (!notification.email_sent) {
-              await sendEmailForNotification(notification.id);
+              // Check if email notification was requested
+              const notificationMethods = notification.data?.notification_methods || [];
+              if (Array.isArray(notificationMethods) && notificationMethods.includes('email')) {
+                await sendEmailForNotification(notification.id);
+              } else {
+                console.log('Email notification not requested, skipping email send for notification:', notification.id);
+              }
             }
           }
         }
