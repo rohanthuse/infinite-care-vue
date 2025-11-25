@@ -6230,6 +6230,7 @@ export type Database = {
           id: string
           message_type: string | null
           notification_methods: string[] | null
+          other_email_address: string | null
           priority: string | null
           sender_id: string
           sender_type: string
@@ -6246,6 +6247,7 @@ export type Database = {
           id?: string
           message_type?: string | null
           notification_methods?: string[] | null
+          other_email_address?: string | null
           priority?: string | null
           sender_id: string
           sender_type: string
@@ -6262,6 +6264,7 @@ export type Database = {
           id?: string
           message_type?: string | null
           notification_methods?: string[] | null
+          other_email_address?: string | null
           priority?: string | null
           sender_id?: string
           sender_type?: string
@@ -7235,6 +7238,7 @@ export type Database = {
           message_type: string | null
           notification_methods: string[] | null
           organization_id: string | null
+          other_email_address: string | null
           priority: string | null
           recipient_ids: string[]
           scheduled_for: string
@@ -7257,6 +7261,7 @@ export type Database = {
           message_type?: string | null
           notification_methods?: string[] | null
           organization_id?: string | null
+          other_email_address?: string | null
           priority?: string | null
           recipient_ids: string[]
           scheduled_for: string
@@ -7279,6 +7284,7 @@ export type Database = {
           message_type?: string | null
           notification_methods?: string[] | null
           organization_id?: string | null
+          other_email_address?: string | null
           priority?: string | null
           recipient_ids?: string[]
           scheduled_for?: string

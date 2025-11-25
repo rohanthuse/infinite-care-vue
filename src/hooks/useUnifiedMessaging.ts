@@ -501,7 +501,8 @@ export const useUnifiedSendMessage = () => {
       actionRequired = false,
       adminEyesOnly = false,
       attachments = [],
-      notificationMethods = []
+      notificationMethods = [],
+      otherEmailAddress
     }: { 
       threadId: string; 
       content: string;
@@ -511,6 +512,7 @@ export const useUnifiedSendMessage = () => {
       adminEyesOnly?: boolean;
       attachments?: any[];
       notificationMethods?: string[];
+      otherEmailAddress?: string;
     }) => {
       if (!currentUser) throw new Error('Not authenticated');
 
@@ -529,7 +531,8 @@ export const useUnifiedSendMessage = () => {
           priority,
           action_required: actionRequired,
           admin_eyes_only: adminEyesOnly,
-          notification_methods: notificationMethods
+          notification_methods: notificationMethods,
+          other_email_address: otherEmailAddress
         })
         .select()
         .single();
@@ -619,7 +622,8 @@ export const useUnifiedCreateThread = () => {
       actionRequired = false,
       adminEyesOnly = false,
       attachments = [],
-      notificationMethods = []
+      notificationMethods = [],
+      otherEmailAddress
      }: { 
       recipientIds: string[];
       recipientNames: string[];
@@ -635,6 +639,7 @@ export const useUnifiedCreateThread = () => {
       adminEyesOnly?: boolean;
       attachments?: any[];
       notificationMethods?: string[];
+      otherEmailAddress?: string;
     }) => {
       console.log('[useUnifiedCreateThread] Starting thread creation...');
       
@@ -775,7 +780,8 @@ export const useUnifiedCreateThread = () => {
           priority,
           action_required: actionRequired,
           admin_eyes_only: adminEyesOnly,
-          notification_methods: notificationMethods
+          notification_methods: notificationMethods,
+          other_email_address: otherEmailAddress
         });
 
       if (messageError) {
