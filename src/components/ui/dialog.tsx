@@ -44,6 +44,14 @@ const DialogContent = React.forwardRef<
   // Provide the description ID to children context
   const contextValue = React.useMemo(() => ({ descriptionId }), [descriptionId]);
   
+  // Cleanup effect on unmount to ensure no lingering pointer-events locks
+  React.useEffect(() => {
+    return () => {
+      document.body.style.removeProperty('pointer-events');
+      document.documentElement.style.removeProperty('pointer-events');
+    };
+  }, []);
+  
   return (
     <DialogPortal>
       <DialogOverlay />
