@@ -137,6 +137,8 @@ export function UnifiedDocumentsList({
         matchesTab = new Date(doc.created_at) > weekAgo;
       } else if (activeTab === "client-docs") {
         matchesTab = doc.related_entity === "Client";
+      } else if (activeTab === "staff-docs") {
+        matchesTab = doc.related_entity === "Staff";
       } else if (activeTab === "agreements") {
         matchesTab = doc.related_entity === "Agreement";
       } else if (activeTab === "forms") {
@@ -376,10 +378,11 @@ export function UnifiedDocumentsList({
 
       {/* Tabs and Documents List */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="all">All ({documents.length})</TabsTrigger>
           <TabsTrigger value="recent">Recent</TabsTrigger>
           <TabsTrigger value="client-docs">Client Docs</TabsTrigger>
+          <TabsTrigger value="staff-docs">Staff Docs</TabsTrigger>
           <TabsTrigger value="agreements">Agreements</TabsTrigger>
           <TabsTrigger value="forms">Forms</TabsTrigger>
         </TabsList>
