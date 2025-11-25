@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical } from "lucide-react";
+import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical, Info } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -19,6 +19,7 @@ import { useDeleteMessage, useDeleteThread } from "@/hooks/useDeleteMessage";
 import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
 import { forceModalCleanup } from "@/lib/modal-cleanup";
 import { MessageReadReceipt } from "./MessageReadReceipt";
+import { MessageInfoSheet } from "./MessageInfoSheet";
 
 interface MessageViewProps {
   messageId: string;
@@ -46,12 +47,31 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     type: 'message'
   });
 
+  // State for message info sheet
+  const [messageInfoSheet, setMessageInfoSheet] = useState<{
+    open: boolean;
+    messageId?: string;
+    threadId?: string;
+  }>({ open: false });
+
   // Dropdown state management
   const [threadDropdownOpen, setThreadDropdownOpen] = useState(false);
   const [messageDropdownOpen, setMessageDropdownOpen] = useState<string | null>(null);
 
   // Check if user can delete (only admins)
   const canDelete = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+
+  // Message info handler
+  const handleMessageInfoClick = (msgId: string, threadId: string) => {
+    setMessageDropdownOpen(null); // Close dropdown first
+    setTimeout(() => {
+      setMessageInfoSheet({
+        open: true,
+        messageId: msgId,
+        threadId
+      });
+    }, 100);
+  };
 
   // Delete handlers
   const handleDeleteMessageClick = (msgId: string, threadId: string, content: string) => {
@@ -353,21 +373,29 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                              <MoreVertical className="h-4 w-4" />
                            </Button>
                          </DropdownMenuTrigger>
-                         <DropdownMenuContent 
-                           align="end"
-                           onCloseAutoFocus={(e) => e.preventDefault()}
-                           onEscapeKeyDown={() => setMessageDropdownOpen(null)}
-                           onPointerDownOutside={() => setMessageDropdownOpen(null)}
-                           onInteractOutside={() => setMessageDropdownOpen(null)}
-                         >
-                           <DropdownMenuItem
-                             onClick={() => handleDeleteMessageClick(message.id, message.threadId, message.content)}
-                             className="text-destructive focus:text-destructive"
-                           >
-                             <Trash2 className="h-4 w-4 mr-2" />
-                             Delete Message
-                           </DropdownMenuItem>
-                         </DropdownMenuContent>
+                          <DropdownMenuContent 
+                            align="end"
+                            onCloseAutoFocus={(e) => e.preventDefault()}
+                            onEscapeKeyDown={() => setMessageDropdownOpen(null)}
+                            onPointerDownOutside={() => setMessageDropdownOpen(null)}
+                            onInteractOutside={() => setMessageDropdownOpen(null)}
+                          >
+                            {isCurrentUser && (
+                              <DropdownMenuItem
+                                onClick={() => handleMessageInfoClick(message.id, message.threadId)}
+                              >
+                                <Info className="h-4 w-4 mr-2" />
+                                Message Info
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteMessageClick(message.id, message.threadId, message.content)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Message
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
                        </DropdownMenu>
                      )}
                      <div className="flex flex-wrap gap-1 mb-2">
@@ -451,6 +479,16 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
         deleteType={deleteDialog.type}
         messagePreview={deleteDialog.content}
       />
+
+      {/* Message Info Sheet */}
+      {messageInfoSheet.messageId && messageInfoSheet.threadId && (
+        <MessageInfoSheet
+          open={messageInfoSheet.open}
+          onOpenChange={(open) => setMessageInfoSheet({ ...messageInfoSheet, open })}
+          messageId={messageInfoSheet.messageId}
+          threadId={messageInfoSheet.threadId}
+        />
+      )}
     </div>
   );
 };
