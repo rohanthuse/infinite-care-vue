@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useStaffAssignedForms } from '@/hooks/useStaffAssignedForms';
 import { useCanSubmitOnBehalf } from '@/hooks/useCanSubmitOnBehalf';
-import { FillFormOnBehalfDialog } from './FillFormOnBehalfDialog';
+import { FillFormOnBehalfModal } from './FillFormOnBehalfModal';
 
 interface StaffFormsContentProps {
   branchId: string;
@@ -182,7 +182,7 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
       </div>
 
       {selectedForm && (
-        <FillFormOnBehalfDialog
+        <FillFormOnBehalfModal
           open={!!selectedForm}
           onOpenChange={(open) => !open && setSelectedForm(null)}
           formId={selectedForm.formId}
@@ -190,7 +190,6 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
           staffName={selectedForm.staffName}
           formTitle={selectedForm.formTitle}
           branchId={branchId}
-          branchName={branchName}
         />
       )}
     </div>
