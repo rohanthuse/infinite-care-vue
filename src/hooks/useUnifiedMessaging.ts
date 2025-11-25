@@ -267,6 +267,7 @@ export const useUnifiedMessageThreads = () => {
             )
           `)
           .eq('organization_id', organization.id)
+          .eq('is_deleted', false)
           .order('last_message_at', { ascending: false });
 
         if (error) {
@@ -440,6 +441,7 @@ export const useUnifiedThreadMessages = (threadId: string) => {
             created_at
           `)
           .eq('thread_id', threadId)
+          .eq('is_deleted', false)
           .order('created_at', { ascending: true });
 
       if (error) {
