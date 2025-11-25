@@ -278,9 +278,10 @@ export const useUnifiedDocuments = (branchId: string) => {
         console.log('[useUnifiedDocuments] Could not fetch profile data, using email:', profileError);
       }
 
-      const uploaderName = profileData 
+      const profileName = profileData 
         ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
-        : user.email || 'Unknown User';
+        : '';
+      const uploaderName = profileName || user.email || 'Admin';
 
       console.log('[useUnifiedDocuments] Uploader name determined:', uploaderName);
 
