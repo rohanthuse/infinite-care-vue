@@ -4611,6 +4611,97 @@ export type Database = {
           },
         ]
       }
+      draft_messages: {
+        Row: {
+          action_required: boolean | null
+          admin_eyes_only: boolean | null
+          attachments: Json | null
+          auto_saved: boolean | null
+          branch_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          message_type: string | null
+          notification_methods: string[] | null
+          organization_id: string | null
+          other_email_address: string | null
+          priority: string | null
+          recipient_ids: string[]
+          recipient_names: string[]
+          recipient_types: string[]
+          sender_id: string
+          subject: string | null
+          thread_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          action_required?: boolean | null
+          admin_eyes_only?: boolean | null
+          attachments?: Json | null
+          auto_saved?: boolean | null
+          branch_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          notification_methods?: string[] | null
+          organization_id?: string | null
+          other_email_address?: string | null
+          priority?: string | null
+          recipient_ids: string[]
+          recipient_names: string[]
+          recipient_types: string[]
+          sender_id: string
+          subject?: string | null
+          thread_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          action_required?: boolean | null
+          admin_eyes_only?: boolean | null
+          attachments?: Json | null
+          auto_saved?: boolean | null
+          branch_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          notification_methods?: string[] | null
+          organization_id?: string | null
+          other_email_address?: string | null
+          priority?: string | null
+          recipient_ids?: string[]
+          recipient_names?: string[]
+          recipient_types?: string[]
+          sender_id?: string
+          subject?: string | null
+          thread_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_messages_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_messages_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draft_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       essential_types_master: {
         Row: {
           category: string

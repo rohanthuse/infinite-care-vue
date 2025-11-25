@@ -323,9 +323,96 @@ export const MessageComposer = ({
     }
   };
 
-  const handleSaveAsDraft = () => {
-    toast.success("Message saved as draft");
-    onClose();
+  const handleSaveAsDraft = async () => {
+    // Validation
+    if (!content.trim()) {
+      toast.error('Cannot save empty draft');
+      return;
+    }
+
+    if (!isReply && recipients.length === 0) {
+      toast.error('Please select at least one recipient before saving draft');
+      return;
+    }
+
+    try {
+      // Upload files if any
+      let attachments: any[] = [];
+      if (files.length > 0) {
+        toast.info(`Uploading ${files.length} file(s)...`);
+        for (const file of files) {
+          const uploadedFile = await uploadFile(file, { category: 'attachment' });
+          attachments.push({
+            id: uploadedFile.id,
+            name: uploadedFile.file_name,
+            path: uploadedFile.storage_path,
+            type: uploadedFile.file_type,
+            size: uploadedFile.file_size,
+            bucket: 'agreement-files'
+          });
+        }
+      }
+
+      const { data: currentUserData } = await supabase.auth.getUser();
+      if (!currentUserData.user) throw new Error('Not authenticated');
+
+      // Get recipient data
+      const recipientData = recipients.map(recipientId => {
+        const contact = getContactDetails(recipientId);
+        return {
+          id: recipientId,
+          name: contact?.name || 'Unknown',
+          type: contact?.type || 'branch_admin'
+        };
+      });
+
+      // Save draft
+      const { error: draftError } = await supabase
+        .from('draft_messages')
+        .insert({
+          sender_id: currentUserData.user.id,
+          thread_id: selectedThreadId || null,
+          recipient_ids: recipientData.map(r => r.id),
+          recipient_names: recipientData.map(r => r.name),
+          recipient_types: recipientData.map(r => r.type),
+          subject: subject.trim() || null,
+          content: content.trim(),
+          message_type: messageType,
+          priority,
+          action_required: actionRequired,
+          admin_eyes_only: adminEyesOnly,
+          attachments,
+          notification_methods: Object.entries(notificationMethods)
+            .filter(([_, enabled]) => enabled)
+            .map(([method, _]) => method),
+          other_email_address: notificationMethods.otherEmail ? otherEmailAddress.trim() : null,
+          auto_saved: false
+        });
+
+      if (draftError) throw draftError;
+
+      toast.success("Draft saved successfully");
+      
+      // Clear form
+      setContent("");
+      setFiles([]);
+      setOtherEmailAddress("");
+      if (!isReply) {
+        setSubject("");
+        setRecipients([]);
+        setSelectedContacts({ carers: [], clients: [], admins: [] });
+        setMessageType("");
+        setPriority("medium");
+        setActionRequired(false);
+        setAdminEyesOnly(false);
+        setNotificationMethods({ email: false, mobileApp: false, otherEmail: false });
+      }
+      
+      onClose();
+    } catch (error: any) {
+      console.error('Save draft error:', error);
+      toast.error(`Failed to save draft: ${error.message}`);
+    }
   };
 
   const handleScheduleSend = () => {
