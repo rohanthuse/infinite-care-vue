@@ -3,10 +3,14 @@ import { useDraftMessages, useDeleteDraft } from '@/hooks/useMessageDraftsAndSch
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Clock, X } from 'lucide-react';
+import { FileText, Clock, X, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 
-export const DraftMessagesView: React.FC = () => {
+interface DraftMessagesViewProps {
+  onUseDraft?: (draft: any) => void;
+}
+
+export const DraftMessagesView: React.FC<DraftMessagesViewProps> = ({ onUseDraft }) => {
   const { data: drafts = [], isLoading } = useDraftMessages();
   const deleteDraft = useDeleteDraft();
 
@@ -47,14 +51,26 @@ export const DraftMessagesView: React.FC = () => {
                     <span>Saved: {format(new Date(draft.updated_at), 'PPp')}</span>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDelete(draft.id)}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
+                <div className="flex gap-2">
+                  {onUseDraft && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => onUseDraft(draft)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit & Send
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(draft.id)}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

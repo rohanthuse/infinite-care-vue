@@ -39,6 +39,7 @@ interface MessageComposerProps {
   clientId?: string | null;
   availableRecipients?: ClientMessageRecipient[];
   restrictToClientContext?: boolean;
+  initialDraft?: any;
 }
 
 export const MessageComposer = ({ 
@@ -48,7 +49,8 @@ export const MessageComposer = ({
   selectedThreadId,
   clientId,
   availableRecipients,
-  restrictToClientContext = false
+  restrictToClientContext = false,
+  initialDraft
 }: MessageComposerProps) => {
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
@@ -123,6 +125,49 @@ export const MessageComposer = ({
       }
     }
   }, [selectedContactId, availableContacts]);
+
+  // Pre-fill form fields when editing a draft
+  useEffect(() => {
+    if (initialDraft) {
+      setSubject(initialDraft.subject || "");
+      setContent(initialDraft.content || "");
+      setMessageType(initialDraft.message_type || "");
+      setPriority(initialDraft.priority || "medium");
+      setActionRequired(initialDraft.action_required || false);
+      setAdminEyesOnly(initialDraft.admin_eyes_only || false);
+      setRecipients(initialDraft.recipient_ids || []);
+      
+      // Parse notification methods
+      const methods = initialDraft.notification_methods || [];
+      setNotificationMethods({
+        email: methods.includes('email'),
+        mobileApp: methods.includes('mobileApp'),
+        otherEmail: methods.includes('otherEmail')
+      });
+      
+      setOtherEmailAddress(initialDraft.other_email_address || "");
+      
+      // Set selected contacts based on recipient IDs and types
+      const newSelectedContacts = {
+        carers: [] as string[],
+        clients: [] as string[],
+        admins: [] as string[]
+      };
+      
+      initialDraft.recipient_ids?.forEach((id: string, index: number) => {
+        const type = initialDraft.recipient_types?.[index];
+        if (type === 'carer') {
+          newSelectedContacts.carers.push(id);
+        } else if (type === 'client') {
+          newSelectedContacts.clients.push(id);
+        } else {
+          newSelectedContacts.admins.push(id);
+        }
+      });
+      
+      setSelectedContacts(newSelectedContacts);
+    }
+  }, [initialDraft]);
 
   const handleContactToggle = (contactId: string, contactType: "carers" | "clients" | "admins") => {
     setSelectedContacts(prev => {
@@ -526,7 +571,7 @@ export const MessageComposer = ({
             <X className="h-4 w-4" />
           </Button>
           <h2 className="text-lg font-semibold">
-            {isReply ? "Reply to Message" : "New Message"}
+            {initialDraft ? "Edit Draft" : isReply ? "Reply to Message" : "New Message"}
           </h2>
           {adminEyesOnly && (
             <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">

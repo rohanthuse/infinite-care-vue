@@ -27,9 +27,11 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   const queryClient = useQueryClient();
   
   // State management
+  const [activeTab, setActiveTab] = useState("messages");
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
   const [showComposer, setShowComposer] = useState(false);
+  const [draftToEdit, setDraftToEdit] = useState<any | null>(null);
   const [filterType, setFilterType] = useState<"all" | "carers" | "clients" | "admins" | "groups">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
@@ -116,6 +118,15 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
   // Handler to close composer
   const handleCloseComposer = () => {
     setShowComposer(false);
+    setDraftToEdit(null);
+  };
+
+  // Handler to use a draft
+  const handleUseDraft = (draft: any) => {
+    setDraftToEdit(draft);
+    setActiveTab("messages");
+    setShowComposer(true);
+    setSelectedMessageId(null);
   };
 
   // Handler for contact selection
@@ -168,7 +179,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      <Tabs defaultValue="messages" className="h-full w-full flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full w-full flex flex-col">
         <div className="border-b px-4 bg-white">
           <TabsList>
             <TabsTrigger value="messages">Messages</TabsTrigger>
@@ -241,6 +252,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
                 onClose={handleCloseComposer}
                 selectedContactId={selectedContactId}
                 selectedThreadId={selectedMessageId}
+                initialDraft={draftToEdit}
               />
             ) : selectedMessageId ? (
               <MessageView 
@@ -264,7 +276,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
         </TabsContent>
         
         <TabsContent value="drafts" className="flex-1 m-0 min-h-0 overflow-hidden">
-          <DraftMessagesView />
+          <DraftMessagesView onUseDraft={handleUseDraft} />
         </TabsContent>
       </Tabs>
     </div>
