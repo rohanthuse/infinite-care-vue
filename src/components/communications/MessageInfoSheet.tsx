@@ -10,9 +10,10 @@ interface MessageInfoSheetProps {
   onOpenChange: (open: boolean) => void;
   messageId: string;
   threadId: string;
+  senderId?: string;
 }
 
-export const MessageInfoSheet = ({ open, onOpenChange, messageId, threadId }: MessageInfoSheetProps) => {
+export const MessageInfoSheet = ({ open, onOpenChange, messageId, threadId, senderId }: MessageInfoSheetProps) => {
   const { data: readStatus, isLoading } = useMessageReadReceipts(messageId, threadId);
 
   const formatTimestamp = (timestamp: string) => {
@@ -23,9 +24,13 @@ export const MessageInfoSheet = ({ open, onOpenChange, messageId, threadId }: Me
     return name.split(' ').map(n => n.charAt(0)).join('').slice(0, 2).toUpperCase();
   };
 
-  const deliveredRecipients = readStatus?.readers.filter(r => r.deliveredAt) || [];
-  const seenRecipients = readStatus?.readers.filter(r => r.readAt) || [];
-  const notSeenRecipients = readStatus?.readers.filter(r => r.deliveredAt && !r.readAt) || [];
+  // Filter out sender from recipients
+  const allRecipients = readStatus?.readers.filter(r => r.userId !== senderId) || [];
+  
+  const seenRecipients = allRecipients.filter(r => r.readAt);
+  const deliveredRecipients = allRecipients.filter(r => r.deliveredAt);
+  const notSeenRecipients = allRecipients.filter(r => r.deliveredAt && !r.readAt);
+  const pendingRecipients = allRecipients.filter(r => !r.deliveredAt && !r.readAt);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -136,9 +141,38 @@ export const MessageInfoSheet = ({ open, onOpenChange, messageId, threadId }: Me
               </div>
             )}
 
-            {readStatus?.readers.length === 0 && (
+            {/* Pending Delivery Section */}
+            {pendingRecipients.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-semibold text-sm uppercase text-muted-foreground">
+                    Pending Delivery ({pendingRecipients.length})
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {pendingRecipients.map((recipient, index) => (
+                    <div key={index} className="flex items-start gap-3 py-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="text-xs bg-muted">
+                          {getAvatarInitials(recipient.userName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{recipient.userName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Not yet delivered
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {allRecipients.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                No delivery information available
+                No other recipients in this conversation
               </div>
             )}
           </div>
