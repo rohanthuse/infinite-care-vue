@@ -1,9 +1,18 @@
 import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Clock, Users, User, AlertTriangle, Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, Users, User, AlertTriangle, Eye, Trash2, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { useAdminMessageThreads } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useDeleteThread } from "@/hooks/useDeleteMessage";
+import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
 
 interface MessageListProps {
   branchId: string;
@@ -28,6 +37,17 @@ export const MessageList = ({
 }: MessageListProps) => {
   const { data: currentUser } = useUserRole();
   const { data: threads = [], isLoading, error } = useAdminMessageThreads();
+  const deleteThread = useDeleteThread();
+
+  // State for delete dialog
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    threadId?: string;
+    subject?: string;
+  }>({ open: false });
+
+  // Check if user can delete (only admins)
+  const canDelete = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
 
   // Filter threads based on current filters
   const filteredThreads = threads.filter(thread => {
@@ -180,6 +200,31 @@ export const MessageList = ({
                         thread.lastMessage.timestamp.toISOString() : 
                         thread.updatedAt)}
                     </span>
+                    {canDelete && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteDialog({
+                                open: true,
+                                threadId: thread.id,
+                                subject: thread.subject
+                              });
+                            }}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
                 
@@ -228,6 +273,24 @@ export const MessageList = ({
           </div>
         );
       })}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteMessageDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+        onConfirm={async () => {
+          if (deleteDialog.threadId) {
+            await deleteThread.mutateAsync(deleteDialog.threadId);
+            setDeleteDialog({ open: false });
+            if (selectedMessageId === deleteDialog.threadId) {
+              onMessageSelect(''); // Clear selection if deleting current thread
+            }
+          }
+        }}
+        isLoading={deleteThread.isPending}
+        deleteType="thread"
+        messagePreview={deleteDialog.subject}
+      />
     </div>
   );
 };

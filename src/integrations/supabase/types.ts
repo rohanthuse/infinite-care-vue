@@ -6256,8 +6256,11 @@ export type Database = {
           branch_id: string | null
           created_at: string
           created_by: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           is_archived: boolean | null
+          is_deleted: boolean | null
           last_message_at: string | null
           organization_id: string | null
           requires_action: boolean | null
@@ -6270,8 +6273,11 @@ export type Database = {
           branch_id?: string | null
           created_at?: string
           created_by: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_archived?: boolean | null
+          is_deleted?: boolean | null
           last_message_at?: string | null
           organization_id?: string | null
           requires_action?: boolean | null
@@ -6284,8 +6290,11 @@ export type Database = {
           branch_id?: string | null
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_archived?: boolean | null
+          is_deleted?: boolean | null
           last_message_at?: string | null
           organization_id?: string | null
           requires_action?: boolean | null
@@ -6317,8 +6326,11 @@ export type Database = {
           attachments: Json | null
           content: string
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           has_attachments: boolean | null
           id: string
+          is_deleted: boolean | null
           message_type: string | null
           notification_methods: string[] | null
           other_email_address: string | null
@@ -6334,8 +6346,11 @@ export type Database = {
           attachments?: Json | null
           content: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           has_attachments?: boolean | null
           id?: string
+          is_deleted?: boolean | null
           message_type?: string | null
           notification_methods?: string[] | null
           other_email_address?: string | null
@@ -6351,8 +6366,11 @@ export type Database = {
           attachments?: Json | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           has_attachments?: boolean | null
           id?: string
+          is_deleted?: boolean | null
           message_type?: string | null
           notification_methods?: string[] | null
           other_email_address?: string | null

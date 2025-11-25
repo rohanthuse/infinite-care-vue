@@ -1,14 +1,22 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye } from "lucide-react";
+import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { useAdminThreadMessages } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useMarkMessagesAsRead } from "@/hooks/useUnifiedMessaging";
 import { useThreadParticipants } from "@/hooks/useThreadParticipants";
 import { MessageAttachmentViewer } from "./MessageAttachmentViewer";
 import { useMessageAttachments } from "@/hooks/useMessageAttachments";
+import { useDeleteMessage, useDeleteThread } from "@/hooks/useDeleteMessage";
+import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
 
 interface MessageViewProps {
   messageId: string;
@@ -21,6 +29,54 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const { data: threadParticipants = [] } = useThreadParticipants(messageId);
   const markMessagesAsRead = useMarkMessagesAsRead();
   const { downloadAttachment, previewAttachment, isDownloading, isPreviewing } = useMessageAttachments();
+  const deleteMessage = useDeleteMessage();
+  const deleteThread = useDeleteThread();
+
+  // State for delete dialog
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    messageId?: string;
+    threadId?: string;
+    content?: string;
+    type: 'message' | 'thread';
+  }>({
+    open: false,
+    type: 'message'
+  });
+
+  // Check if user can delete (only admins)
+  const canDelete = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
+
+  // Delete handlers
+  const handleDeleteMessageClick = (msgId: string, threadId: string, content: string) => {
+    setDeleteDialog({
+      open: true,
+      messageId: msgId,
+      threadId,
+      content,
+      type: 'message'
+    });
+  };
+
+  const handleDeleteThreadClick = () => {
+    setDeleteDialog({
+      open: true,
+      threadId: messageId,
+      type: 'thread'
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteDialog.type === 'message' && deleteDialog.messageId && deleteDialog.threadId) {
+      await deleteMessage.mutateAsync({
+        messageId: deleteDialog.messageId,
+        threadId: deleteDialog.threadId
+      });
+    } else if (deleteDialog.type === 'thread' && deleteDialog.threadId) {
+      await deleteThread.mutateAsync(deleteDialog.threadId);
+    }
+    setDeleteDialog({ open: false, type: 'message' });
+  };
 
   // Auto-scroll to bottom when messages load
   useEffect(() => {
@@ -188,10 +244,31 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
             </div>
           </div>
           
-          <Button variant="outline" size="sm" onClick={onReply}>
-            <Reply className="h-4 w-4 mr-2" />
-            Reply
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onReply}>
+              <Reply className="h-4 w-4 mr-2" />
+              Reply
+            </Button>
+            
+            {canDelete && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={handleDeleteThreadClick}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Conversation
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </div>
 
@@ -231,12 +308,34 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                   )}
                   
                    <div
-                     className={`rounded-lg px-4 py-2 ${
+                     className={`rounded-lg px-4 py-2 relative group ${
                        isCurrentUser
                          ? 'bg-blue-600 text-white'
                          : 'bg-white text-gray-900 border border-gray-200'
                      }`}
                    >
+                     {canDelete && (
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
+                           >
+                             <MoreVertical className="h-4 w-4" />
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem
+                             onClick={() => handleDeleteMessageClick(message.id, message.threadId, message.content)}
+                             className="text-destructive focus:text-destructive"
+                           >
+                             <Trash2 className="h-4 w-4 mr-2" />
+                             Delete Message
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
+                     )}
                      <div className="flex flex-wrap gap-1 mb-2">
                        {message.messageType && (
                          <Badge variant="secondary" className={`text-xs ${getMessageTypeColor(message.messageType)}`}>
@@ -301,6 +400,16 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteMessageDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteMessage.isPending || deleteThread.isPending}
+        deleteType={deleteDialog.type}
+        messagePreview={deleteDialog.content}
+      />
     </div>
   );
 };
