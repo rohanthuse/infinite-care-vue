@@ -13,6 +13,7 @@ import { useAdminMessageThreads } from "@/hooks/useAdminMessaging";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDeleteThread } from "@/hooks/useDeleteMessage";
 import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
+import { forceModalCleanup } from "@/lib/modal-cleanup";
 
 interface MessageListProps {
   branchId: string;
@@ -45,6 +46,9 @@ export const MessageList = ({
     threadId?: string;
     subject?: string;
   }>({ open: false });
+
+  // Dropdown state management (track which thread's dropdown is open)
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   // Check if user can delete (only admins)
   const canDelete = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
@@ -201,21 +205,33 @@ export const MessageList = ({
                         thread.updatedAt)}
                     </span>
                     {canDelete && (
-                      <DropdownMenu>
+                      <DropdownMenu 
+                        open={dropdownOpen === thread.id} 
+                        onOpenChange={(open) => setDropdownOpen(open ? thread.id : null)}
+                      >
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent 
+                          align="end"
+                          onCloseAutoFocus={(e) => e.preventDefault()}
+                          onEscapeKeyDown={() => setDropdownOpen(null)}
+                          onPointerDownOutside={() => setDropdownOpen(null)}
+                          onInteractOutside={() => setDropdownOpen(null)}
+                        >
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeleteDialog({
-                                open: true,
-                                threadId: thread.id,
-                                subject: thread.subject
-                              });
+                              setDropdownOpen(null); // Close dropdown first
+                              setTimeout(() => {
+                                setDeleteDialog({
+                                  open: true,
+                                  threadId: thread.id,
+                                  subject: thread.subject
+                                });
+                              }, 100);
                             }}
                             className="text-destructive focus:text-destructive"
                           >
@@ -279,12 +295,18 @@ export const MessageList = ({
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
         onConfirm={async () => {
-          if (deleteDialog.threadId) {
-            await deleteThread.mutateAsync(deleteDialog.threadId);
-            setDeleteDialog({ open: false });
-            if (selectedMessageId === deleteDialog.threadId) {
-              onMessageSelect(''); // Clear selection if deleting current thread
+          try {
+            if (deleteDialog.threadId) {
+              await deleteThread.mutateAsync(deleteDialog.threadId);
+              if (selectedMessageId === deleteDialog.threadId) {
+                onMessageSelect(''); // Clear selection if deleting current thread
+              }
             }
+          } finally {
+            // Always cleanup, even on error
+            forceModalCleanup();
+            setDeleteDialog({ open: false });
+            setDropdownOpen(null);
           }
         }}
         isLoading={deleteThread.isPending}
