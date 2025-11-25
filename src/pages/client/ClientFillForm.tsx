@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Send, FileText, AlertCircle, Clock, CheckCircle, Upload } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { useClientNavigation } from '@/hooks/useClientNavigation';
 import { FileUploadDropzone } from '@/components/agreements/FileUploadDropzone';
@@ -64,8 +65,18 @@ const ClientFillForm = () => {
   const { validateFormData, validateRequiredFields } = useFormValidation();
   const { uploadFile, uploading } = useFileUpload();
 
-  // Auto-save functionality
-  const { autoSave, markAsChanged, hasUnsavedChanges, lastSaveTime } = useFormAutoSave({
+  // Get form settings with defaults
+  const formSettings = currentForm?.settings as any || {
+    showProgressBar: false,
+    allowSaveAsDraft: false,
+    autoSaveEnabled: false,
+    autoSaveInterval: 60,
+    redirectAfterSubmit: false,
+    submitButtonText: 'Submit',
+  };
+
+  // Auto-save functionality - use form settings
+  const { autoSave, markAsChanged, hasUnsavedChanges, lastSaveTime, updateFormData } = useFormAutoSave({
     onSave: async (data, isDraft) => {
       if (!user?.id || !formId || !branchId) return;
       
@@ -82,7 +93,8 @@ const ClientFillForm = () => {
         setTimeout(resolve, 1000);
       });
     },
-    enabled: true
+    enabled: formSettings.autoSaveEnabled,
+    delay: (formSettings.autoSaveInterval || 60) * 1000
   });
 
   // Load existing submission data
@@ -106,16 +118,30 @@ const ClientFillForm = () => {
     loadExistingSubmission();
   }, [user?.id, formId, branchId]);
 
-  // Auto-save trigger
+  // Update form data ref for auto-save when form data changes
   useEffect(() => {
-    if (hasUnsavedChanges && Object.keys(formData).length > 0) {
-      const timer = setTimeout(() => {
-        autoSave(formData);
-      }, 30000); // 30 seconds
-
-      return () => clearTimeout(timer);
+    if (formSettings.autoSaveEnabled && Object.keys(formData).length > 0) {
+      updateFormData(formData);
     }
-  }, [formData, hasUnsavedChanges, autoSave]);
+  }, [formData, formSettings.autoSaveEnabled, updateFormData]);
+
+  // Calculate progress based on filled required fields
+  const calculateProgress = () => {
+    const requiredElements = elements.filter(el => 
+      el.required && !['heading', 'paragraph', 'divider', 'section'].includes(el.type)
+    );
+    
+    if (requiredElements.length === 0) return 100;
+    
+    const filledCount = requiredElements.filter(el => {
+      const value = formData[el.id];
+      if (value === undefined || value === null || value === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    }).length;
+    
+    return Math.round((filledCount / requiredElements.length) * 100);
+  };
 
   console.log('ClientFillForm - Form ID:', formId);
   console.log('ClientFillForm - Current Form:', currentForm);
@@ -186,9 +212,16 @@ const ClientFillForm = () => {
         status
       });
 
-      // Don't navigate immediately, let the mutation handle success
+      // Handle redirect after submit
       if (status === 'completed') {
-        setTimeout(() => navigateToClientPage('/forms'), 1000);
+        setTimeout(() => {
+          // Check if redirect is configured
+          if (formSettings.redirectAfterSubmit && formSettings.redirectUrl) {
+            window.location.href = formSettings.redirectUrl;
+          } else {
+            navigateToClientPage('/forms');
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -625,6 +658,17 @@ const ClientFillForm = () => {
         </div>
       </div>
 
+      {/* Progress Bar */}
+      {formSettings.showProgressBar && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Progress</span>
+            <span className="font-medium">{calculateProgress()}%</span>
+          </div>
+          <Progress value={calculateProgress()} className="h-2" />
+        </div>
+      )}
+
       {/* Form */}
       <Card>
         <CardContent className="p-6">
@@ -638,15 +682,20 @@ const ClientFillForm = () => {
 
       {/* Actions */}
       <div className="flex items-center justify-between">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleSaveDraft}
-          disabled={isCreating}
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Draft
-        </Button>
+        {/* Save as Draft - only show if setting is enabled */}
+        {formSettings.allowSaveAsDraft ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={isCreating}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Draft
+          </Button>
+        ) : (
+          <div /> // Empty div to maintain flex spacing
+        )}
         
         <Button
           type="button"
@@ -654,7 +703,7 @@ const ClientFillForm = () => {
           disabled={isCreating}
         >
           <Send className="h-4 w-4 mr-2" />
-          Submit Form
+          {formSettings.submitButtonText || 'Submit Form'}
         </Button>
       </div>
     </div>

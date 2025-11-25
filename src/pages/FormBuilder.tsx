@@ -506,10 +506,16 @@ const FormBuilder = () => {
     }));
     setIsFormDirty(true);
     
-    toast({
-      title: 'Settings Updated',
-      description: 'Form settings have been updated successfully',
-    });
+    // Immediately persist settings to database if form exists
+    if (formId) {
+      updateForm({
+        formId: form.id,
+        updates: {
+          settings: settings,
+          updated_at: new Date().toISOString()
+        }
+      });
+    }
   };
 
   const handleUpdateValidation = (elementId: string, errorMessage: string) => {
