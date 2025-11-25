@@ -11262,7 +11262,7 @@ export type Database = {
           created_at: string
           description: string
           file_path: string
-          file_size: string
+          file_size: number
           file_type: string
           has_file: boolean
           id: string
