@@ -71,6 +71,7 @@ export const MessageComposer = ({
     mobileApp: false,
     otherEmail: false
   });
+  const [otherEmailAddress, setOtherEmailAddress] = useState("");
 
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<{
@@ -156,6 +157,11 @@ export const MessageComposer = ({
     });
   };
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSendMessage = async () => {
     if (!messageType.trim()) {
       toast.error("Please select a message type");
@@ -170,6 +176,18 @@ export const MessageComposer = ({
     if (!isReply && recipients.length === 0) {
       toast.error("Please select at least one recipient");
       return;
+    }
+
+    // Validate other email if checkbox is checked
+    if (notificationMethods.otherEmail) {
+      if (!otherEmailAddress.trim()) {
+        toast.error("Please enter an email address for 'Other Email Address'");
+        return;
+      }
+      if (!validateEmail(otherEmailAddress)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
     }
     
     try {
@@ -211,7 +229,8 @@ export const MessageComposer = ({
           attachments,
           notificationMethods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
-            .map(([method, _]) => method)
+            .map(([method, _]) => method),
+          otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined
         });
       } else {
         // Create new thread - validate subject and recipients for new messages only
@@ -277,13 +296,15 @@ export const MessageComposer = ({
           attachments,
           notificationMethods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
-            .map(([method, _]) => method)
+            .map(([method, _]) => method),
+          otherEmailAddress: notificationMethods.otherEmail ? otherEmailAddress.trim() : undefined
         });
       }
       
       // Reset form
       setContent("");
       setFiles([]);
+      setOtherEmailAddress("");
       if (!isReply) {
         setSubject("");
         setRecipients([]);
@@ -382,6 +403,7 @@ export const MessageComposer = ({
           notification_methods: Object.entries(notificationMethods)
             .filter(([_, enabled]) => enabled)
             .map(([method, _]) => method),
+          other_email_address: notificationMethods.otherEmail ? otherEmailAddress.trim() : null,
           scheduled_for: scheduledDateTime.toISOString(),
           status: 'pending'
         })
@@ -926,18 +948,41 @@ export const MessageComposer = ({
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="otherEmailNotif"
-                  checked={notificationMethods.otherEmail}
-                  onCheckedChange={(checked) => 
-                    setNotificationMethods(prev => ({ ...prev, otherEmail: checked as boolean }))
-                  }
-                />
-                <Label htmlFor="otherEmailNotif" className="flex items-center">
-                  <Mail className="h-4 w-4 mr-1" />
-                  Other Email Address
-                </Label>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="otherEmailNotif"
+                    checked={notificationMethods.otherEmail}
+                    onCheckedChange={(checked) => {
+                      setNotificationMethods(prev => ({ ...prev, otherEmail: checked as boolean }));
+                      if (!checked) {
+                        setOtherEmailAddress("");
+                      }
+                    }}
+                  />
+                  <Label htmlFor="otherEmailNotif" className="flex items-center">
+                    <Mail className="h-4 w-4 mr-1" />
+                    Other Email Address
+                  </Label>
+                </div>
+                
+                {notificationMethods.otherEmail && (
+                  <div className="ml-6 space-y-1">
+                    <Input
+                      type="email"
+                      placeholder="Enter email address..."
+                      value={otherEmailAddress}
+                      onChange={(e) => setOtherEmailAddress(e.target.value)}
+                      className={cn(
+                        "w-full",
+                        otherEmailAddress && !validateEmail(otherEmailAddress) && "border-red-500"
+                      )}
+                    />
+                    {otherEmailAddress && !validateEmail(otherEmailAddress) && (
+                      <p className="text-xs text-red-600">Please enter a valid email address</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

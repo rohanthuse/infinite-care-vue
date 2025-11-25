@@ -84,46 +84,67 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Fetch user details to get email
-    const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(
-      notification.user_id
-    );
+    // Check if alternative email should be used
+    const otherEmailAddress = notification.data?.other_email_address;
+    let recipientEmail: string;
+    let recipientName: string;
 
-    if (userError || !userData?.user?.email) {
-      throw new Error(`Failed to fetch user email: ${userError?.message}`);
+    if (otherEmailAddress) {
+      // Validate the alternative email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(otherEmailAddress)) {
+        console.error('Invalid alternative email format:', otherEmailAddress);
+        throw new Error('Invalid alternative email address format');
+      }
+      
+      recipientEmail = otherEmailAddress;
+      recipientName = 'Recipient';
+      console.log('Using alternative email address:', recipientEmail);
+    } else {
+      // Fetch user details to get email
+      const { data: userData, error: userError } = await supabaseClient.auth.admin.getUserById(
+        notification.user_id
+      );
+
+      if (userError || !userData?.user?.email) {
+        throw new Error(`Failed to fetch user email: ${userError?.message}`);
+      }
+
+      recipientEmail = userData.user.email;
+
+      // Fetch user profile to get name
+      const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('full_name')
+        .eq('id', notification.user_id)
+        .single();
+
+      recipientName = profiles?.full_name || recipientEmail.split('@')[0];
+      console.log('Using user account email:', recipientEmail);
     }
 
-    const userEmail = userData.user.email;
-
-    // Fetch user profile to get name
-    const { data: profiles } = await supabaseClient
-      .from('profiles')
-      .select('full_name')
-      .eq('id', notification.user_id)
-      .single();
-
-    const userName = profiles?.full_name || userEmail.split('@')[0];
-
     // Generate email content based on notification type
-    const emailContent = generateNotificationEmailContent(notification, userName);
+    const emailContent = generateNotificationEmailContent(notification, recipientName);
 
     // Generate branded email HTML
     const emailHTML = generateMedInfiniteEmailHTML({
       title: emailContent.subject,
       previewText: notification.title,
       content: emailContent.htmlContent,
-      footerText: "You are receiving this email because you have high-priority notifications enabled. You can manage your notification preferences in your account settings.",
+      footerText: otherEmailAddress 
+        ? "You are receiving this email because you were specified as an alternative contact for high-priority notifications."
+        : "You are receiving this email because you have high-priority notifications enabled. You can manage your notification preferences in your account settings.",
     });
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
       from: "Med-Infinite <notifications@med-infinite.care>",
-      to: [userEmail],
+      to: [recipientEmail],
       subject: emailContent.subject,
       html: emailHTML,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log(`Email sent successfully to ${recipientEmail}:`, emailResponse);
 
     // Mark notification as email sent
     const { error: updateError } = await supabaseClient
