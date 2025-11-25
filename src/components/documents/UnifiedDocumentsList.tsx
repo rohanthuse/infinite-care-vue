@@ -160,6 +160,7 @@ export function UnifiedDocumentsList({
     
     if (filePath.startsWith('client-documents/')) return 'client-documents';
     if (filePath.startsWith('agreement-files/')) return 'agreement-files';
+    if (filePath.startsWith('staff-documents/')) return 'staff-documents';
     if (filePath.startsWith('documents/')) return 'documents';
     
     return 'documents'; // default
