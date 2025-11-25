@@ -33,7 +33,7 @@ export const DraftMessagesView: React.FC = () => {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-4">
+      <div className="p-6 pt-4 space-y-4">
         <h2 className="text-2xl font-bold mb-4 text-foreground">Draft Messages ({drafts.length})</h2>
         {drafts.map((draft: any) => (
           <Card key={draft.id} className="border-l-4 border-l-amber-500">

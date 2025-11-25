@@ -44,7 +44,7 @@ export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({
 
   return (
     <ScrollArea className="h-full">
-      <div className="px-6 pb-6 pt-0 space-y-4">
+      <div className="p-6 pt-4 space-y-4">
         <h2 className="text-2xl font-bold mb-4 text-foreground">Scheduled Messages ({scheduledMessages.length})</h2>
         {scheduledMessages.map((msg: any) => (
           <Card key={msg.id} className="border-l-4 border-l-primary">
