@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { normalizeToHslVar } from '@/lib/colors';
@@ -48,11 +49,12 @@ interface TenantProviderProps {
 
 export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
   const { user } = useAuthSafe();
+  const location = useLocation();
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
 
-  // Extract tenant slug from URL path
+  // Extract tenant slug from URL path - reactive to route changes
   useEffect(() => {
-    const pathname = window.location.pathname;
+    const pathname = location.pathname;
     console.log('[TenantProvider] Current pathname:', pathname);
 
     // Extract tenant slug from URL path (e.g., /hcl/dashboard -> hcl)
@@ -105,7 +107,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     
     // No tenant slug found
     setTenantSlug(null);
-  }, [window.location.pathname]);
+  }, [location.pathname]);
 
   // Fetch organization data with optimized access checking
   const { 

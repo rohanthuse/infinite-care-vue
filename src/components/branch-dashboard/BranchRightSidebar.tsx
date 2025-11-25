@@ -37,10 +37,19 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAdminPermissions, hasTabPermission } from "@/hooks/useAdminPermissions";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTenant } from "@/contexts/TenantContext";
+
+// Helper to extract tenant slug from URL as fallback
+const getTenantSlugFromUrl = (pathname: string): string | null => {
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts.length > 1 && parts[1] === 'branch-dashboard') {
+    return parts[0];
+  }
+  return null;
+};
 
 interface TabItem {
   icon: React.ElementType;
@@ -124,10 +133,14 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
   const { open } = useSidebar();
   const collapsed = !open;
   const navigate = useNavigate();
+  const location = useLocation();
   const { id, branchName } = useParams();
   const { data: userRole } = useUserRole();
   const { data: permissions } = useAdminPermissions(id);
-  const { tenantSlug } = useTenant();
+  const { tenantSlug: contextTenantSlug } = useTenant();
+  
+  // Use context tenant slug or extract from URL as fallback
+  const tenantSlug = contextTenantSlug || getTenantSlugFromUrl(location.pathname);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
