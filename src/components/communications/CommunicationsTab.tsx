@@ -79,6 +79,20 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
           queryClient.invalidateQueries({ queryKey: ['message-threads'] });
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_read_status'
+        },
+        (payload) => {
+          console.log('Message read status update received:', payload);
+          // Invalidate read receipt queries to update tick indicators
+          queryClient.invalidateQueries({ queryKey: ['message-read-receipts'] });
+          queryClient.invalidateQueries({ queryKey: ['message-threads'] });
+        }
+      )
       .subscribe();
 
     return () => {
