@@ -97,7 +97,32 @@ const AdminRoutes = () => [
     <Route path="booking-approvals" element={<BookingApprovals />} />
     
     {/* Branch Dashboard Routes - All wrapped with persistent sidebar using nested routing */}
+    {/* IMPORTANT: Specific routes MUST come before the catch-all (*) route */}
     <Route path="branch-dashboard/:id/:branchName" element={<BranchDashboardLayout />}>
+      {/* === STANDALONE PAGES (render their own layout via BranchLayout) === */}
+      {/* These must be FIRST to take priority over BranchDashboard tab routes */}
+      <Route path="documents" element={<Documents />} />
+      <Route path="accounting" element={<Accounting />} />
+      <Route path="agreements" element={<BranchAgreements />} />
+      <Route path="forms" element={<FormBuilder />} />
+      <Route path="library" element={<Library />} />
+      <Route path="third-party" element={<ThirdPartyAccess />} />
+      <Route path="reports" element={<Reports />} />
+      <Route path="booking-approvals" element={<BookingApprovals />} />
+      <Route path="events-logs" element={<EventsLogs />} />
+      <Route path="attendance" element={<Attendance />} />
+      <Route path="form-builder" element={<FormBuilder />} />
+      <Route path="form-builder/:formId" element={<FormBuilder />} />
+      <Route path="forms/fill/:formId" element={<CarerFillForm />} />
+      <Route path="organization-calendar" element={<OrganizationCalendar />} />
+      
+      {/* === SUB-PAGES WITH DYNAMIC PARAMS === */}
+      <Route path="carers/:carerId" element={<CarerProfilePage />} />
+      <Route path="recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
+      <Route path="recruitment/post-job" element={<PostJobPage />} />
+      <Route path="care-plan/:carePlanId" element={<CarePlanView />} />
+      
+      {/* === TAB ROUTES (rendered via BranchDashboard with activeTab) === */}
       <Route index element={<BranchDashboard />} />
       <Route path="dashboard" element={<BranchDashboard />} />
       <Route path="key-parameters" element={<BranchDashboard />} />
@@ -115,29 +140,8 @@ const AdminRoutes = () => [
       <Route path="notifications" element={<BranchDashboard />} />
       <Route path="notifications/:categoryId" element={<BranchDashboard />} />
       
-      {/* Standalone pages using BranchLayout */}
-      <Route path="accounting" element={<Accounting />} />
-      <Route path="agreements" element={<BranchAgreements />} />
-      <Route path="forms" element={<FormBuilder />} />
-      
-      {/* Specific Branch Dashboard Sub-pages */}
-      <Route path="carers/:carerId" element={<CarerProfilePage />} />
-      <Route path="recruitment/application/:candidateId" element={<ApplicationDetailsPage />} />
-      <Route path="recruitment/post-job" element={<PostJobPage />} />
-      <Route path="care-plan/:carePlanId" element={<CarePlanView />} />
-      <Route path="organization-calendar" element={<OrganizationCalendar />} />
-      <Route path="events-logs" element={<EventsLogs />} />
-      <Route path="attendance" element={<Attendance />} />
-      <Route path="form-builder" element={<FormBuilder />} />
-      <Route path="form-builder/:formId" element={<FormBuilder />} />
-      <Route path="forms/fill/:formId" element={<CarerFillForm />} />
-      <Route path="documents" element={<Documents />} />
-      <Route path="library" element={<Library />} />
-      <Route path="third-party" element={<ThirdPartyAccess />} />
-      <Route path="reports" element={<Reports />} />
-      <Route path="booking-approvals" element={<BookingApprovals />} />
-      
-      {/* Catch-all for unmatched routes within branch dashboard */}
+      {/* === CATCH-ALL (must be LAST) === */}
+      {/* Only matches paths not matched by any route above */}
       <Route path="*" element={<BranchDashboard />} />
     </Route>
   </Route>
