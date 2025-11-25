@@ -246,7 +246,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
         </TabsContent>
         
         <TabsContent value="scheduled" className="flex-1 m-0 overflow-hidden">
-          <ScheduledMessagesView />
+          <ScheduledMessagesView branchId={branchId} />
         </TabsContent>
         
         <TabsContent value="drafts" className="flex-1 m-0 overflow-hidden">

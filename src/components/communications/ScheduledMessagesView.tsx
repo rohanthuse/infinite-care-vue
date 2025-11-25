@@ -1,15 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useScheduledMessages, useCancelScheduledMessage } from '@/hooks/useMessageDraftsAndScheduled';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, X, Calendar } from 'lucide-react';
+import { Clock, X, Calendar, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { EditScheduledMessageDialog } from './EditScheduledMessageDialog';
 
-export const ScheduledMessagesView: React.FC = () => {
+interface ScheduledMessagesViewProps {
+  branchId?: string;
+}
+
+export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({ 
+  branchId = "1" 
+}) => {
   const { data: scheduledMessages = [], isLoading } = useScheduledMessages();
   const cancelMessage = useCancelScheduledMessage();
+  const [editDialog, setEditDialog] = useState<{
+    open: boolean;
+    message: any | null;
+  }>({ open: false, message: null });
 
   const handleCancel = async (messageId: string) => {
     if (confirm('Are you sure you want to cancel this scheduled message?')) {
@@ -33,7 +44,7 @@ export const ScheduledMessagesView: React.FC = () => {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-4">
+      <div className="px-6 pb-6 pt-0 space-y-4">
         <h2 className="text-2xl font-bold mb-4 text-foreground">Scheduled Messages ({scheduledMessages.length})</h2>
         {scheduledMessages.map((msg: any) => (
           <Card key={msg.id} className="border-l-4 border-l-primary">
@@ -51,6 +62,14 @@ export const ScheduledMessagesView: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditDialog({ open: true, message: msg })}
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
                   <Button
                     size="sm"
                     variant="destructive"
@@ -82,6 +101,13 @@ export const ScheduledMessagesView: React.FC = () => {
           </Card>
         ))}
       </div>
+      
+      <EditScheduledMessageDialog
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog({ open, message: null })}
+        message={editDialog.message}
+        branchId={branchId}
+      />
     </ScrollArea>
   );
 };
