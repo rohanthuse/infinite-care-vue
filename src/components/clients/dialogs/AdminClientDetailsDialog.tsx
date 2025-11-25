@@ -973,10 +973,13 @@ export function AdminClientDetailsDialog({
                 </TabsContent>
 
                 <TabsContent value="documents" className="mt-0 p-6">
-                  <EntityDocumentsSection 
-                    entityType="client"
-                    entityId={client.id}
-                  />
+                  <ScrollArea className="h-[calc(100vh-400px)] pr-4">
+                    <EntityDocumentsSection 
+                      entityType="client"
+                      entityId={client.id}
+                      showAdminSection={true}
+                    />
+                  </ScrollArea>
                 </TabsContent>
 
                 <TabsContent value="appointments" className="mt-0 p-6">
