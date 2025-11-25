@@ -101,7 +101,7 @@ serve(async (req) => {
           .insert({
             thread_id: threadId,
             sender_id: scheduledMsg.sender_id,
-            sender_type: 'admin',
+            sender_type: 'super_admin',
             content: scheduledMsg.content,
             message_type: scheduledMsg.message_type,
             priority: scheduledMsg.priority,
