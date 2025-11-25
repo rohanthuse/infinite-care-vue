@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Paperclip } from "lucide-react";
 import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 import { useAdminContacts } from "@/hooks/useAdminMessaging";
 import { useFileUpload } from "@/hooks/useFileUpload";
@@ -83,10 +82,16 @@ export const MessageComposer = ({
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
+  const [contactSearchTerm, setContactSearchTerm] = useState("");
 
   const shouldUseClientRecipients = restrictToClientContext && availableRecipients;
   const { data: adminContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
   const availableContacts = shouldUseClientRecipients ? availableRecipients : adminContacts;
+  
+  // Filter contacts based on search term
+  const filteredContacts = availableContacts.filter((contact: any) => 
+    contact.name?.toLowerCase().includes(contactSearchTerm.toLowerCase())
+  );
   
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
@@ -138,6 +143,7 @@ export const MessageComposer = ({
 
   const handleApplyContacts = () => {
     setShowContactSelector(false);
+    setContactSearchTerm(""); // Clear search on close
   };
 
   const getContactDetails = (contactId: string) => {
@@ -583,7 +589,17 @@ export const MessageComposer = ({
                   </Button>
                   
                   {showContactSelector && (
-                    <div className="border rounded-md p-3 space-y-3 max-h-48 overflow-y-auto">
+                    <div className="border rounded-md p-3 space-y-3 max-h-64 overflow-y-auto">
+                      {/* Search Input */}
+                      <div className="sticky top-0 bg-white pb-2 border-b">
+                        <Input
+                          placeholder="Search clients, carers, administrators..."
+                          value={contactSearchTerm}
+                          onChange={(e) => setContactSearchTerm(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+                      
                       {contactsError ? (
                         <div className="text-red-600 text-sm p-2 bg-red-50 rounded">
                           Error loading contacts: {contactsError.message}
@@ -598,18 +614,18 @@ export const MessageComposer = ({
                         </div>
                       ) : contactsLoading ? (
                         <div className="text-gray-500 text-sm p-2">Loading contacts...</div>
-                      ) : availableContacts.length > 0 ? (
+                      ) : filteredContacts.length > 0 ? (
                         <>
                           {shouldUseClientRecipients ? (
                             // Client-specific recipient grouping
                             <>
-                              {availableContacts.filter((c: any) => c.groupLabel === 'Assigned Carers').length > 0 && (
+                              {filteredContacts.filter((c: any) => c.groupLabel === 'Assigned Carers').length > 0 && (
                                 <div>
                                   <Label className="text-sm font-semibold text-blue-700">
                                     👤 Assigned Carers
                                   </Label>
                                   <div className="space-y-1 mt-1">
-                                    {availableContacts.filter((c: any) => c.groupLabel === 'Assigned Carers').map((contact: any) => (
+                                    {filteredContacts.filter((c: any) => c.groupLabel === 'Assigned Carers').map((contact: any) => (
                                       <div key={contact.auth_user_id} className="flex items-center space-x-2">
                                         <Checkbox
                                           checked={recipients.includes(contact.auth_user_id)}
@@ -628,13 +644,13 @@ export const MessageComposer = ({
                                 </div>
                               )}
                               
-                              {availableContacts.filter((c: any) => c.groupLabel === 'Branch Admins').length > 0 && (
+                              {filteredContacts.filter((c: any) => c.groupLabel === 'Branch Admins').length > 0 && (
                                 <div>
                                   <Label className="text-sm font-semibold text-purple-700">
                                     🏢 Branch Admins
                                   </Label>
                                   <div className="space-y-1 mt-1">
-                                    {availableContacts.filter((c: any) => c.groupLabel === 'Branch Admins').map((contact: any) => (
+                                    {filteredContacts.filter((c: any) => c.groupLabel === 'Branch Admins').map((contact: any) => (
                                       <div key={contact.auth_user_id} className="flex items-center space-x-2">
                                         <Checkbox
                                           checked={recipients.includes(contact.auth_user_id)}
@@ -653,13 +669,13 @@ export const MessageComposer = ({
                                 </div>
                               )}
                               
-                              {availableContacts.filter((c: any) => c.groupLabel === 'Super Admins').length > 0 && (
+                              {filteredContacts.filter((c: any) => c.groupLabel === 'Super Admins').length > 0 && (
                                 <div>
                                   <Label className="text-sm font-semibold text-orange-700">
                                     ⭐ Super Admins
                                   </Label>
                                   <div className="space-y-1 mt-1">
-                                    {availableContacts.filter((c: any) => c.groupLabel === 'Super Admins').map((contact: any) => (
+                                    {filteredContacts.filter((c: any) => c.groupLabel === 'Super Admins').map((contact: any) => (
                                       <div key={contact.auth_user_id} className="flex items-center space-x-2">
                                         <Checkbox
                                           checked={recipients.includes(contact.auth_user_id)}
@@ -681,11 +697,11 @@ export const MessageComposer = ({
                           ) : (
                             // Original grouping for non-client context
                             <>
-                              {availableContacts.filter((c: any) => c.type === 'client').length > 0 && (
+                              {filteredContacts.filter((c: any) => c.type === 'client').length > 0 && (
                                 <div>
                                   <Label className="text-sm font-medium">Clients</Label>
                                   <div className="space-y-1 mt-1">
-                                    {availableContacts.filter((c: any) => c.type === 'client').map((contact: any) => (
+                                    {filteredContacts.filter((c: any) => c.type === 'client').map((contact: any) => (
                                       <div key={contact.id} className="flex items-center space-x-2">
                                         <Checkbox
                                           checked={selectedContacts.clients.includes(contact.id)}
@@ -705,11 +721,11 @@ export const MessageComposer = ({
                                 </div>
                               )}
                               
-                              {availableContacts.filter((c: any) => c.type === 'carer').length > 0 && (
+                              {filteredContacts.filter((c: any) => c.type === 'carer').length > 0 && (
                                 <div>
                                   <Label className="text-sm font-medium">Carers</Label>
                                   <div className="space-y-1 mt-1">
-                                    {availableContacts.filter((c: any) => c.type === 'carer').map((contact: any) => (
+                                    {filteredContacts.filter((c: any) => c.type === 'carer').map((contact: any) => (
                                       <div key={contact.id} className="flex items-center space-x-2">
                                         <Checkbox
                                           checked={selectedContacts.carers.includes(contact.id)}
@@ -729,11 +745,11 @@ export const MessageComposer = ({
                                 </div>
                               )}
                              
-                             {availableContacts.filter((c: any) => c.type === 'branch_admin' || c.type === 'super_admin').length > 0 && (
+                             {filteredContacts.filter((c: any) => c.type === 'branch_admin' || c.type === 'super_admin').length > 0 && (
                                <div>
                                  <Label className="text-sm font-medium">Administrators</Label>
                                  <div className="space-y-1 mt-1">
-                                   {availableContacts.filter((c: any) => c.type === 'branch_admin' || c.type === 'super_admin').map((contact: any) => (
+                                   {filteredContacts.filter((c: any) => c.type === 'branch_admin' || c.type === 'super_admin').map((contact: any) => (
                                      <div key={contact.id} className="flex items-center space-x-2">
                                        <Checkbox
                                          checked={selectedContacts.admins.includes(contact.id)}
@@ -932,9 +948,13 @@ export const MessageComposer = ({
                 <Checkbox 
                   id="mobileNotif"
                   checked={notificationMethods.mobileApp}
-                  onCheckedChange={(checked) => 
-                    setNotificationMethods(prev => ({ ...prev, mobileApp: checked as boolean }))
-                  }
+                  onCheckedChange={(checked) => {
+                    setNotificationMethods(prev => ({ ...prev, mobileApp: checked as boolean }));
+                    // Show toast when Mobile App is selected
+                    if (checked) {
+                      toast.info("This feature is not implemented yet.");
+                    }
+                  }}
                 />
                 <Label htmlFor="mobileNotif" className="flex items-center">
                   <Phone className="h-4 w-4 mr-1" />
@@ -984,15 +1004,7 @@ export const MessageComposer = ({
       </div>
 
       <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center justify-between">
-          <div>
-            <Button variant="outline" size="sm" className="mr-2">
-              <FileText className="h-4 w-4 mr-2" />
-              <span>Attach</span>
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
             <Button 
               variant="outline" 
               size="sm"
@@ -1029,7 +1041,6 @@ export const MessageComposer = ({
               )}
             </Button>
           </div>
-        </div>
       </div>
 
       <ScheduleMessageDialog
