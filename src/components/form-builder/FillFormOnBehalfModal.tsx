@@ -485,7 +485,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
@@ -502,7 +502,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
             <span className="ml-2">Loading form...</span>
           </div>
         ) : (
-          <ScrollArea className="flex-1 px-6">
+          <ScrollArea className="flex-1 min-h-0 px-6">
             <div className="py-4 space-y-6">
               {/* Proxy banner */}
               <Alert className="bg-orange-50 border-orange-200">
