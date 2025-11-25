@@ -11257,24 +11257,16 @@ export type Database = {
         Args: { p_branch_id: string }
         Returns: {
           category: string
-          client_id: string
-          client_name: string
-          created_at: string
-          description: string
-          file_path: string
-          file_size: number
-          file_type: string
-          has_file: boolean
           id: string
           name: string
           related_entity: string
-          source_table: string
-          staff_id: string
-          staff_name: string
+          related_entity_id: string
+          size: number
           status: string
-          tags: string[]
+          storage_path: string
           type: string
-          updated_at: string
+          uploaded_at: string
+          uploaded_by: string
           uploaded_by_name: string
         }[]
       }
