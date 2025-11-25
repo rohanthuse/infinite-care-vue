@@ -15,22 +15,26 @@ export const useMessageAttachments = () => {
     setIsDownloading(attachment.name || 'file');
     
     try {
-      // Use the correct bucket - agreement-files for all message attachments
       const filePath = attachment.path || attachment.url;
       const bucket = 'agreement-files';
       
-      const { data, error } = await supabase.storage
+      // Use public URL for reliable access
+      const { data } = supabase.storage
         .from(bucket)
-        .download(filePath);
+        .getPublicUrl(filePath);
 
-      if (error) {
-        console.error('Download error:', error);
-        toast.error('Failed to download attachment');
-        return;
+      if (!data?.publicUrl) {
+        throw new Error('Could not generate file URL');
       }
 
-      // Create download link
-      const url = URL.createObjectURL(data);
+      // Fetch the file and download
+      const response = await fetch(data.publicUrl);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = attachment.name || 'attachment';
@@ -40,9 +44,9 @@ export const useMessageAttachments = () => {
       URL.revokeObjectURL(url);
       
       toast.success('Attachment downloaded');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Download error:', error);
-      toast.error('Failed to download attachment');
+      toast.error(`Failed to download: ${error.message || 'Unknown error'}`);
     } finally {
       setIsDownloading(null);
     }
@@ -57,7 +61,6 @@ export const useMessageAttachments = () => {
     setIsPreviewing(attachment.name || 'file');
 
     try {
-      // Use the correct bucket - agreement-files for all message attachments
       const filePath = attachment.path || attachment.url;
       const bucket = 'agreement-files';
       
@@ -66,29 +69,14 @@ export const useMessageAttachments = () => {
         .getPublicUrl(filePath);
 
       if (data?.publicUrl) {
-        // Open in new tab for preview
         window.open(data.publicUrl, '_blank');
+        toast.success('Opening file preview');
       } else {
-        // Fallback: download and open
-        const { data: fileData, error } = await supabase.storage
-          .from(bucket)
-          .download(filePath);
-          
-        if (error) {
-          console.error('Preview error:', error);
-          toast.error('Failed to preview attachment');
-          return;
-        }
-
-        const url = URL.createObjectURL(fileData);
-        window.open(url, '_blank');
-        
-        // Clean up URL after a delay
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        throw new Error('Could not generate preview URL');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Preview error:', error);
-      toast.error('Failed to preview attachment');
+      toast.error(`Failed to preview: ${error.message || 'Unknown error'}`);
     } finally {
       setIsPreviewing(null);
     }
