@@ -6,6 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, X, Calendar, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { EditScheduledMessageDialog } from './EditScheduledMessageDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ScheduledMessagesViewProps {
   branchId?: string;
@@ -20,10 +30,19 @@ export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({
     open: boolean;
     message: any | null;
   }>({ open: false, message: null });
+  const [cancelDialog, setCancelDialog] = useState<{
+    open: boolean;
+    messageId: string | null;
+  }>({ open: false, messageId: null });
 
-  const handleCancel = async (messageId: string) => {
-    if (confirm('Are you sure you want to cancel this scheduled message?')) {
-      await cancelMessage.mutateAsync(messageId);
+  const handleCancelClick = (messageId: string) => {
+    setCancelDialog({ open: true, messageId });
+  };
+
+  const handleConfirmCancel = async () => {
+    if (cancelDialog.messageId) {
+      await cancelMessage.mutateAsync(cancelDialog.messageId);
+      setCancelDialog({ open: false, messageId: null });
     }
   };
 
@@ -72,7 +91,7 @@ export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleCancel(msg.id)}
+                    onClick={() => handleCancelClick(msg.id)}
                   >
                     <X className="h-4 w-4 mr-1" />
                     Cancel
@@ -107,6 +126,27 @@ export const ScheduledMessagesView: React.FC<ScheduledMessagesViewProps> = ({
         message={editDialog.message}
         branchId={branchId}
       />
+
+      <AlertDialog open={cancelDialog.open} onOpenChange={(open) => setCancelDialog({ open, messageId: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Scheduled Message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this scheduled message? This action cannot be undone.
+              The message will not be sent to recipients.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, Keep It</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Cancel Message
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

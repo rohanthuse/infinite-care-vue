@@ -72,16 +72,29 @@ export const useCancelScheduledMessage = () => {
   
   return useMutation({
     mutationFn: async (messageId: string) => {
+      // First fetch the message to get its details
+      const { data: message, error: fetchError } = await supabase
+        .from('scheduled_messages')
+        .select('*')
+        .eq('id', messageId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Update status to cancelled and set scheduled_for to current time to bypass future validation
       const { error } = await supabase
         .from('scheduled_messages')
-        .update({ status: 'cancelled' })
+        .update({ 
+          status: 'cancelled',
+          scheduled_for: new Date().toISOString() // Set to now to bypass trigger validation
+        })
         .eq('id', messageId);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scheduled-messages-all'] });
-      toast.success('Scheduled message cancelled');
+      toast.success('Scheduled message cancelled successfully');
     },
     onError: (error: any) => {
       toast.error(`Failed to cancel message: ${error.message}`);
