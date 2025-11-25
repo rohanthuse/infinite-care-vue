@@ -11261,7 +11261,7 @@ export type Database = {
           name: string
           related_entity: string
           related_entity_id: string
-          size: number
+          size: string
           status: string
           storage_path: string
           type: string
