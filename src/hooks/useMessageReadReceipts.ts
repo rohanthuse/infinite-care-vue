@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface ReadReceipt {
   userId: string;
   userName: string;
+  deliveredAt: string | null;
   readAt: string | null;
 }
 
@@ -11,6 +12,7 @@ interface MessageReadStatus {
   status: 'sent' | 'delivered' | 'partially_read' | 'all_read';
   readers: ReadReceipt[];
   totalRecipients: number;
+  deliveredCount: number;
   readCount: number;
 }
 
@@ -29,10 +31,10 @@ export const useMessageReadReceipts = (messageId: string, threadId: string) => {
         throw participantsError;
       }
 
-      // Get read status for this message
+      // Get read status for this message (including delivered_at)
       const { data: readStatuses, error: readError } = await supabase
         .from('message_read_status')
-        .select('user_id, read_at')
+        .select('user_id, delivered_at, read_at')
         .eq('message_id', messageId);
 
       if (readError) {
@@ -40,17 +42,19 @@ export const useMessageReadReceipts = (messageId: string, threadId: string) => {
         throw readError;
       }
 
-      // Build the readers list
+      // Build the readers list with delivery and read status
       const readers: ReadReceipt[] = (participants || []).map(participant => {
         const readStatus = readStatuses?.find(rs => rs.user_id === participant.user_id);
         return {
           userId: participant.user_id,
           userName: participant.user_name || 'Unknown',
+          deliveredAt: readStatus?.delivered_at || null,
           readAt: readStatus?.read_at || null
         };
       });
 
       const totalRecipients = readers.length;
+      const deliveredCount = readers.filter(r => r.deliveredAt !== null).length;
       const readCount = readers.filter(r => r.readAt !== null).length;
 
       // Determine status
@@ -62,14 +66,17 @@ export const useMessageReadReceipts = (messageId: string, threadId: string) => {
         status = 'all_read';
       } else if (readCount > 0) {
         status = 'partially_read';
-      } else {
+      } else if (deliveredCount > 0) {
         status = 'delivered';
+      } else {
+        status = 'sent';
       }
 
       return {
         status,
         readers,
         totalRecipients,
+        deliveredCount,
         readCount
       };
     },

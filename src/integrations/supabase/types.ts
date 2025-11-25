@@ -6223,18 +6223,21 @@ export type Database = {
       }
       message_read_status: {
         Row: {
+          delivered_at: string | null
           id: string
           message_id: string
           read_at: string
           user_id: string
         }
         Insert: {
+          delivered_at?: string | null
           id?: string
           message_id: string
           read_at?: string
           user_id: string
         }
         Update: {
+          delivered_at?: string | null
           id?: string
           message_id?: string
           read_at?: string
