@@ -24,6 +24,7 @@ import { PersonalInfoTab } from "@/components/clients/tabs/PersonalInfoTab";
 import { CarePlansTab } from "@/components/clients/tabs/CarePlansTab";
 import { ClientNews2Tab } from "@/components/clients/tabs/ClientNews2Tab";
 import { ClientAccountingTab } from "@/components/clients/tabs/ClientAccountingTab";
+import { EntityDocumentsSection } from "@/components/documents/EntityDocumentsSection";
 import { useClientPersonalInfo, useUpdateClientPersonalInfo } from "@/hooks/useClientPersonalInfo";
 import { useClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 import { useUpdateClient } from "@/hooks/useUpdateClient";
@@ -972,11 +973,10 @@ export function AdminClientDetailsDialog({
                 </TabsContent>
 
                 <TabsContent value="documents" className="mt-0 p-6">
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-muted-foreground">Document Management</h3>
-                    <p className="text-sm text-muted-foreground mt-2">Document storage and management coming soon...</p>
-                  </div>
+                  <EntityDocumentsSection 
+                    entityType="client"
+                    entityId={client.id}
+                  />
                 </TabsContent>
 
                 <TabsContent value="appointments" className="mt-0 p-6">

@@ -34,6 +34,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCarerDocuments } from '@/hooks/useCarerDocuments';
+import { EntityDocumentsSection } from '@/components/documents/EntityDocumentsSection';
 
 interface CarerDocumentsTabProps {
   carerId: string;
@@ -490,19 +491,33 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
 
   return (
     <div className="space-y-6">
-      {/* Header with Upload Button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Documents & Certifications</h3>
-          <p className="text-sm text-gray-600">Manage staff documents and certifications</p>
+      {/* Shared Documents from Admin (Main documents table) */}
+      <div>
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Shared Documents from Admin</h3>
+          <p className="text-sm text-gray-600">Documents uploaded through the main Documents tab</p>
         </div>
-        <Button 
-          onClick={() => setUploadDialogOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Upload Document
-        </Button>
+        <EntityDocumentsSection 
+          entityType="staff"
+          entityId={carerId}
+        />
+      </div>
+
+      {/* Staff-Specific Documents */}
+      <div className="pt-6 border-t border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Staff Documents & Certifications</h3>
+            <p className="text-sm text-gray-600">Manage staff-specific documents and certifications</p>
+          </div>
+          <Button 
+            onClick={() => setUploadDialogOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Upload Document
+          </Button>
+        </div>
       </div>
 
       {/* Documents List */}
