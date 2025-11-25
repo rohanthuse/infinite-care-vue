@@ -20,6 +20,7 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
   const [selectedForm, setSelectedForm] = useState<{
     formId: string;
     staffId: string;
+    staffAuthId: string;
     staffName: string;
     formTitle: string;
   } | null>(null);
@@ -85,13 +86,8 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
     );
   };
 
-  const handleFillForm = (formId: string, staffId: string, staffName: string, formTitle: string) => {
-    setSelectedForm({ formId, staffId, staffName, formTitle });
-  };
-
-  const handleViewSubmission = (formId: string) => {
-    // Navigate to submission view
-    console.log('View submission for form:', formId);
+  const handleFillForm = (formId: string, staffId: string, staffAuthId: string, staffName: string, formTitle: string) => {
+    setSelectedForm({ formId, staffId, staffAuthId, staffName, formTitle });
   };
 
   if (filteredStaffGroups.length === 0) {
@@ -159,7 +155,7 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
                       {form.submission_status === 'not_submitted' || form.submission_status === 'draft' ? (
                         <Button
                           size="sm"
-                          onClick={() => handleFillForm(form.form_id, group.staffId, group.staffName, form.form_title)}
+                          onClick={() => handleFillForm(form.form_id, group.staffId, group.staffAuthId, group.staffName, form.form_title)}
                         >
                           {form.submission_status === 'draft' ? 'Continue' : 'Fill on Behalf'}
                         </Button>
@@ -167,9 +163,9 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleViewSubmission(form.form_id)}
+                          onClick={() => handleFillForm(form.form_id, group.staffId, group.staffAuthId, group.staffName, form.form_title)}
                         >
-                          View
+                          View Submission
                         </Button>
                       )}
                     </div>
@@ -187,6 +183,7 @@ export const StaffFormsContent: React.FC<StaffFormsContentProps> = ({ branchId, 
           onOpenChange={(open) => !open && setSelectedForm(null)}
           formId={selectedForm.formId}
           staffId={selectedForm.staffId}
+          staffAuthId={selectedForm.staffAuthId}
           staffName={selectedForm.staffName}
           formTitle={selectedForm.formTitle}
           branchId={branchId}

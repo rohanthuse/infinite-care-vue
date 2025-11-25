@@ -28,6 +28,7 @@ interface FillFormOnBehalfModalProps {
   onOpenChange: (open: boolean) => void;
   formId: string;
   staffId: string;
+  staffAuthId: string;
   staffName: string;
   formTitle: string;
   branchId: string;
@@ -38,6 +39,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
   onOpenChange,
   formId,
   staffId,
+  staffAuthId,
   staffName,
   formTitle,
   branchId,
@@ -46,6 +48,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [existingSubmissionStatus, setExistingSubmissionStatus] = useState<string | null>(null);
 
   // Get form details
   const { data: currentForm, isLoading: isLoadingForm } = useQuery({
@@ -76,31 +79,38 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
 
   // Load existing submission for this staff member
   useEffect(() => {
-    if (!staffId || !formId || !open) return;
+    if (!staffAuthId || !formId || !open) return;
 
     const loadExistingSubmission = async () => {
       const { data } = await supabase
         .from('form_submissions')
         .select('*')
         .eq('form_id', formId)
-        .eq('submitted_by', staffId)
-        .single();
+        .eq('submitted_by', staffAuthId)
+        .maybeSingle();
 
       if (data) {
         setFormData((data.submission_data as Record<string, any>) || {});
+        setExistingSubmissionStatus(data.status);
+      } else {
+        setExistingSubmissionStatus(null);
       }
     };
 
     loadExistingSubmission();
-  }, [staffId, formId, open]);
+  }, [staffAuthId, formId, open]);
 
   // Reset form when modal closes
   useEffect(() => {
     if (!open) {
       setFormData({});
       setValidationErrors({});
+      setExistingSubmissionStatus(null);
     }
   }, [open]);
+
+  // Determine if form is read-only (already completed/approved)
+  const isReadOnly = existingSubmissionStatus === 'completed' || existingSubmissionStatus === 'approved';
 
   // Calculate progress
   const calculateProgress = () => {
@@ -171,11 +181,11 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
     try {
       createSubmission({
         form_id: formId,
-        submitted_by: staffId,
+        submitted_by: staffAuthId,
         submitted_by_type: 'carer',
         submission_data: formData,
         status,
-        submitted_on_behalf_of: staffId,
+        submitted_on_behalf_of: staffAuthId,
         submitted_by_admin: user.id,
         submission_type: 'admin_on_behalf' as const
       });
@@ -220,6 +230,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               onChange={(e) => handleInputChange(element.id, e.target.value)}
               placeholder={(element as any).placeholder}
               required={element.required}
+              disabled={isReadOnly}
               className={validationErrors[element.id] ? 'border-destructive' : ''}
             />
             {validationErrors[element.id] && (
@@ -242,6 +253,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               placeholder={(element as any).placeholder}
               rows={(element as any).rows || 3}
               required={element.required}
+              disabled={isReadOnly}
               className={validationErrors[element.id] ? 'border-destructive' : ''}
             />
             {validationErrors[element.id] && (
@@ -267,6 +279,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               max={(element as any).max}
               step={(element as any).step}
               required={element.required}
+              disabled={isReadOnly}
             />
           </div>
         );
@@ -286,6 +299,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               min={(element as any).min}
               max={(element as any).max}
               required={element.required}
+              disabled={isReadOnly}
             />
           </div>
         );
@@ -303,6 +317,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               value={value}
               onChange={(e) => handleInputChange(element.id, e.target.value)}
               required={element.required}
+              disabled={isReadOnly}
             />
           </div>
         );
@@ -321,6 +336,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
                   <Checkbox
                     id={`${element.id}-${option.id}`}
                     checked={(value || []).includes(option.value)}
+                    disabled={isReadOnly}
                     onCheckedChange={(checked) => {
                       const currentValues = value || [];
                       if (checked) {
@@ -348,6 +364,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
             <RadioGroup
               value={value}
               onValueChange={(value) => handleInputChange(element.id, value)}
+              disabled={isReadOnly}
             >
               {radioElement.options?.map((option: any) => (
                 <div key={option.id} className="flex items-center space-x-2">
@@ -367,8 +384,8 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               {element.label}
               {element.required && <span className="text-destructive ml-1">*</span>}
             </Label>
-            <Select value={value} onValueChange={(value) => handleInputChange(element.id, value)}>
-              <SelectTrigger>
+            <Select value={value} onValueChange={(value) => handleInputChange(element.id, value)} disabled={isReadOnly}>
+              <SelectTrigger disabled={isReadOnly}>
                 <SelectValue placeholder={selectElement.placeholder || "Select an option"} />
               </SelectTrigger>
               <SelectContent>
@@ -433,7 +450,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               }}
               acceptedFileTypes={fileElement.acceptedTypes || ['application/pdf', 'image/*']}
               maxFiles={fileElement.maxFiles || 5}
-              disabled={uploading}
+              disabled={uploading || isReadOnly}
             />
             {value && Array.isArray(value) && value.length > 0 && (
               <div className="mt-2 space-y-1">
@@ -459,12 +476,20 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               {element.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <div className="border border-input rounded-md p-4">
-              <SignatureCanvas
-                onSave={(signature) => handleInputChange(element.id, signature)}
-                width={500}
-                height={150}
-                initialSignature={value}
-              />
+              {isReadOnly ? (
+                value ? (
+                  <img src={value} alt="Signature" className="max-w-full h-auto" />
+                ) : (
+                  <p className="text-muted-foreground text-sm">No signature provided</p>
+                )
+              ) : (
+                <SignatureCanvas
+                  onSave={(signature) => handleInputChange(element.id, signature)}
+                  width={500}
+                  height={150}
+                  initialSignature={value}
+                />
+              )}
             </div>
             {validationErrors[element.id] && (
               <p className="text-sm text-destructive">{validationErrors[element.id]}</p>
@@ -504,14 +529,25 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
         ) : (
           <ScrollArea className="flex-1 min-h-0 h-0 px-6">
             <div className="py-4 space-y-6">
-              {/* Proxy banner */}
-              <Alert className="bg-orange-50 border-orange-200">
-                <AlertCircle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800">
-                  You are submitting this form on behalf of <strong>{staffName}</strong>. 
-                  The submission will be recorded under their name.
-                </AlertDescription>
-              </Alert>
+              {/* Read-only banner for completed submissions */}
+              {isReadOnly ? (
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Shield className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>Read-Only:</strong> This form has already been submitted by <strong>{staffName}</strong>. 
+                    Viewing completed submission.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                /* Proxy banner */
+                <Alert className="bg-orange-50 border-orange-200">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800">
+                    You are submitting this form on behalf of <strong>{staffName}</strong>. 
+                    The submission will be recorded under their name.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Progress bar */}
               {formSettings.showProgressBar && (
@@ -546,31 +582,35 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
               onClick={() => onOpenChange(false)}
               disabled={isCreating}
             >
-              Cancel
+              {isReadOnly ? 'Close' : 'Cancel'}
             </Button>
-            {formSettings.allowSaveAsDraft && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleSubmit('draft')}
-                disabled={isCreating}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save as Draft
-              </Button>
+            {!isReadOnly && (
+              <>
+                {formSettings.allowSaveAsDraft && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleSubmit('draft')}
+                    disabled={isCreating}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save as Draft
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  onClick={() => handleSubmit('completed')}
+                  disabled={isCreating}
+                >
+                  {isCreating ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-2" />
+                  )}
+                  {formSettings.submitButtonText || 'Submit Form'}
+                </Button>
+              </>
             )}
-            <Button
-              type="button"
-              onClick={() => handleSubmit('completed')}
-              disabled={isCreating}
-            >
-              {isCreating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4 mr-2" />
-              )}
-              {formSettings.submitButtonText || 'Submit Form'}
-            </Button>
           </div>
         )}
       </DialogContent>
