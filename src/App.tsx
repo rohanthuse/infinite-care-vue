@@ -41,6 +41,7 @@ import { SystemAuthProvider } from "@/contexts/SystemAuthContext";
 import { SuperAdminGuard } from "@/components/SuperAdminGuard";
 import { TenantError } from "./pages/TenantError";
 import { TenantErrorWrapper } from "@/components/TenantErrorWrapper";
+import { TenantRoutesLayout } from "@/components/TenantRoutesLayout";
 import { BranchDashboardRedirect } from "@/components/BranchDashboardRedirect";
 import { CarerDashboardRedirect } from "@/components/CarerDashboardRedirect";
 import DemoRequest from "./pages/DemoRequest";
@@ -354,18 +355,12 @@ const AppContent = () => {
                 </TenantProvider>
               } />
               
-              {/* Tenant-specific Protected Routes */}
-              <Route path="/:tenantSlug/*" element={
-                <TenantProvider>
-                  <TenantErrorWrapper>
-                    <Routes>
-                      {AdminRoutes()}
-                      {CarerRoutes()}
-                      {ClientRoutes()}
-                    </Routes>
-                  </TenantErrorWrapper>
-                </TenantProvider>
-              } />
+              {/* Tenant-specific Protected Routes - Using Outlet pattern for proper nested route matching */}
+              <Route path="/:tenantSlug" element={<TenantRoutesLayout />}>
+                {AdminRoutes()}
+                {CarerRoutes()}
+                {ClientRoutes()}
+              </Route>
               
               {/* Redirect non-tenant client dashboard routes */}
               <Route path="/client-dashboard/*" element={
