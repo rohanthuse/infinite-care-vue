@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BranchLayout } from "@/components/branch-dashboard/BranchLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,14 +8,24 @@ import { UnifiedDocumentsList } from "@/components/documents/UnifiedDocumentsLis
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
 import { UnifiedInlineUploadForm } from "@/components/documents/UnifiedInlineUploadForm";
 import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
-import { Upload, Eye } from "lucide-react";
+import { Upload, Eye, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Documents = () => {
   const [activeTab, setActiveTab] = useState("view");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const { id, branchName } = useParams<{ id: string; branchName: string }>();
+  const location = useLocation();
   const queryClient = useQueryClient();
+
+  // Debug logging to trace component mounting
+  useEffect(() => {
+    console.log('[Documents] Component mounted:', {
+      branchId: id,
+      branchName,
+      pathname: location.pathname
+    });
+  }, [id, branchName, location.pathname]);
 
   const {
     documents,
@@ -88,6 +98,21 @@ const Documents = () => {
   const handleBulkDeleteDocuments = async (documentIds: string[]) => {
     await deleteBulkDocuments(documentIds);
   };
+
+  // Show error state if no branch ID
+  if (!id) {
+    return (
+      <BranchLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-bold mb-2">Branch Not Found</h2>
+            <p className="text-muted-foreground">Unable to load documents - branch ID is missing.</p>
+          </div>
+        </div>
+      </BranchLayout>
+    );
+  }
 
   return (
     <BranchLayout onUploadDocument={() => setIsUploadDialogOpen(true)}>
