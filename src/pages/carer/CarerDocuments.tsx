@@ -39,9 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCarerSharedDocuments, useSharedDocumentActions } from "@/hooks/useAdminSharedDocuments";
-import { useMyAssignedForms } from "@/hooks/useMyAssignedForms";
 import { useCarerDocuments } from "@/hooks/useCarerDocuments";
-import { useCarerTraining } from "@/hooks/useCarerTraining";
 import { AdminSharedDocuments } from "@/components/documents/AdminSharedDocuments";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -59,6 +57,9 @@ const CarerDocuments: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{id: string, filePath: string} | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -85,27 +86,33 @@ const CarerDocuments: React.FC = () => {
 
   // Fetch data using hooks
   const { data: sharedDocuments = [], isLoading: isLoadingShared } = useCarerSharedDocuments(carerId);
-  const { data: assignedForms = [], isLoading: isLoadingForms } = useMyAssignedForms(userId, 'carer');
   const { data: carerDocuments = [], isLoading: isLoadingDocuments, refetch: refetchDocuments } = useCarerDocuments(carerId);
-  const { trainingRecords = [], isLoading: isLoadingTraining } = useCarerTraining();
   const { viewDocument, downloadDocument } = useSharedDocumentActions();
-
-  // Filter documents by category for different tabs
-  const policyDocuments = carerDocuments.filter(doc => 
-    doc.source_type === 'document' && 
-    (doc.document_type?.toLowerCase().includes('policy') || 
-     doc.document_type?.toLowerCase().includes('procedure') ||
-     doc.document_type?.toLowerCase().includes('guideline'))
-  );
-
-  const trainingDocuments = carerDocuments.filter(doc => 
-    doc.source_type === 'training_certification'
-  );
 
   // Get documents uploaded by the carer (from staff_documents table)
   const myDocuments = carerDocuments.filter(doc => 
     doc.source_type === 'document' && doc.file_path
   );
+
+  // Apply search and filter to documents
+  const filteredMyDocuments = myDocuments.filter(doc => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        doc.file_name?.toLowerCase().includes(query) ||
+        doc.document_type?.toLowerCase().includes(query);
+      if (!matchesSearch) return false;
+    }
+    // Type filter
+    if (filterType !== 'all' && doc.document_type !== filterType) {
+      return false;
+    }
+    return true;
+  });
+
+  // Get unique document types for filter dropdown
+  const documentTypes = Array.from(new Set(myDocuments.map(doc => doc.document_type).filter(Boolean)));
 
   // Upload mutation
   const uploadMutation = useMutation({
@@ -350,13 +357,27 @@ const CarerDocuments: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
         <div className="relative w-full sm:flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input placeholder="Search documents..." className="pl-9 w-full" />
+          <Input 
+            placeholder="Search documents..." 
+            className="pl-9 w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1 sm:flex-initial gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1 sm:flex-initial gap-2"
+            onClick={() => setFilterDialogOpen(true)}
+          >
             <Filter className="h-4 w-4" />
             <span>Filter</span>
+            {filterType !== 'all' && (
+              <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs px-2 py-0.5">
+                1
+              </span>
+            )}
           </Button>
           <Button onClick={() => setUploadDialogOpen(true)} className="flex-1 sm:flex-initial gap-2">
             <Upload className="h-4 w-4" />
@@ -366,12 +387,9 @@ const CarerDocuments: React.FC = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="forms" className="w-full">
-        <TabsList className="w-full mb-6 grid grid-cols-2 sm:grid-cols-5">
+      <Tabs defaultValue="my-documents" className="w-full">
+        <TabsList className="w-full mb-6 grid grid-cols-2">
           <TabsTrigger value="my-documents">My Documents</TabsTrigger>
-          <TabsTrigger value="forms">Forms</TabsTrigger>
-          <TabsTrigger value="policies">Policies</TabsTrigger>
-          <TabsTrigger value="training">Training</TabsTrigger>
           <TabsTrigger value="admin-shared">Admin Shared</TabsTrigger>
         </TabsList>
         
@@ -386,19 +404,37 @@ const CarerDocuments: React.FC = () => {
                   <Loader2 className="h-6 w-6 animate-spin" />
                   <span className="ml-2">Loading documents...</span>
                 </div>
-              ) : myDocuments.length === 0 ? (
+              ) : filteredMyDocuments.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No documents uploaded yet.</p>
-                  <p className="text-sm mt-2">Upload your first document to get started.</p>
-                  <Button 
-                    onClick={() => setUploadDialogOpen(true)} 
-                    className="mt-4"
-                    variant="outline"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Document
-                  </Button>
+                  {myDocuments.length === 0 ? (
+                    <>
+                      <p>No documents uploaded yet.</p>
+                      <p className="text-sm mt-2">Upload your first document to get started.</p>
+                      <Button 
+                        onClick={() => setUploadDialogOpen(true)} 
+                        className="mt-4"
+                        variant="outline"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Document
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p>No documents match your search or filter criteria.</p>
+                      <Button 
+                        onClick={() => {
+                          setSearchQuery('');
+                          setFilterType('all');
+                        }} 
+                        className="mt-4"
+                        variant="outline"
+                      >
+                        Clear Filters
+                      </Button>
+                    </>
+                  )}
                 </div>
               ) : (
                 <Table>
@@ -408,12 +444,11 @@ const CarerDocuments: React.FC = () => {
                       <TableHead>Type</TableHead>
                       <TableHead>File Size</TableHead>
                       <TableHead>Upload Date</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {myDocuments.map((doc) => (
+                    {filteredMyDocuments.map((doc) => (
                       <TableRow key={doc.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
@@ -424,9 +459,6 @@ const CarerDocuments: React.FC = () => {
                         <TableCell>{doc.document_type}</TableCell>
                         <TableCell>{doc.file_size || 'N/A'}</TableCell>
                         <TableCell>{formatDate(doc.created_at)}</TableCell>
-                        <TableCell>
-                          {getStatusBadge(doc.status)}
-                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button 
@@ -463,200 +495,6 @@ const CarerDocuments: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="forms" className="w-full mt-0">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Assigned Forms</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingForms ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Loading forms...</span>
-                </div>
-              ) : assignedForms.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No forms have been assigned to you.</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Form Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Assigned Date</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assignedForms.map((form) => (
-                      <TableRow key={form.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                            {form.title}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(form.submission_status || 'not-started')}
-                        </TableCell>
-                        <TableCell>{formatDate(form.assigned_at)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" disabled>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="policies" className="w-full mt-0">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Policies & Procedures</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingDocuments ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Loading policies...</span>
-                </div>
-              ) : policyDocuments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No policy documents available.</p>
-                  <p className="text-sm mt-2">Policy documents will appear here when uploaded by admin.</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Last Updated</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {policyDocuments.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                            {doc.file_name || doc.document_type}
-                          </div>
-                        </TableCell>
-                        <TableCell>{doc.document_type}</TableCell>
-                        <TableCell>{doc.document_type}</TableCell>
-                        <TableCell>{formatDate(doc.created_at)}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => doc.file_path && viewDocument(doc.file_path)}
-                              disabled={!doc.file_path}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => doc.file_path && downloadDocument(doc.file_path, doc.file_name || 'document')}
-                              disabled={!doc.file_path}
-                            >
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="training" className="w-full mt-0">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Training Records & Certificates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingTraining ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Loading training records...</span>
-                </div>
-              ) : trainingRecords.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No training records found.</p>
-                  <p className="text-sm mt-2">Training records will appear here when assigned by admin.</p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Course Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Completion Date</TableHead>
-                      <TableHead>Expiry Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {trainingRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-gray-500" />
-                            {record.training_course.title}
-                          </div>
-                        </TableCell>
-                        <TableCell className="capitalize">{record.training_course.category}</TableCell>
-                        <TableCell>
-                          {record.completion_date ? formatDate(record.completion_date) : 'Not completed'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Clock className="h-3.5 w-3.5 mr-1 text-gray-500" />
-                            {record.expiry_date ? formatDate(record.expiry_date) : 'No expiry'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(record.status)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" disabled>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" disabled>
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="admin-shared" className="w-full mt-0">
           <AdminSharedDocuments
@@ -667,6 +505,53 @@ const CarerDocuments: React.FC = () => {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Filter Dialog */}
+      <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filter Documents</DialogTitle>
+            <DialogDescription>
+              Filter documents by type
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="filter-type">Document Type</Label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {documentTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setFilterType('all');
+                setFilterDialogOpen(false);
+              }}
+            >
+              Clear
+            </Button>
+            <Button onClick={() => setFilterDialogOpen(false)}>
+              Apply Filter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Upload Document Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={handleCloseUploadDialog}>
