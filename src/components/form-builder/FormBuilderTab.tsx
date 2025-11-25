@@ -37,6 +37,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'list' | 'grid'>('list');
   const [activeTab, setActiveTab] = useState<string>('all');
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Use the new hooks
   const { 
@@ -146,6 +147,8 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   };
 
   const handleConfirmDelete = (formId: string) => {
+    // Close dropdown first to prevent UI freeze
+    setOpenDropdownId(null);
     setFormToDelete(formId);
     setConfirmDeleteOpen(true);
   };
@@ -296,29 +299,32 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
+                      <DropdownMenu 
+                        open={openDropdownId === `list-${form.id}`}
+                        onOpenChange={(open) => setOpenDropdownId(open ? `list-${form.id}` : null)}
+                      >
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                           <DropdownMenuItem onClick={() => handleViewForm(form.id)}>
+                           <DropdownMenuItem onClick={() => { setOpenDropdownId(null); handleViewForm(form.id); }}>
                              <Eye className="mr-2 h-4 w-4" />
                              View
                            </DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => handleEditForm(form.id)}>
+                           <DropdownMenuItem onClick={() => { setOpenDropdownId(null); handleEditForm(form.id); }}>
                              <Edit className="mr-2 h-4 w-4" />
                              Edit
                            </DropdownMenuItem>
                            {submissionCount > 0 && (
-                             <DropdownMenuItem onClick={() => handleViewSubmissions(form.id)}>
+                             <DropdownMenuItem onClick={() => { setOpenDropdownId(null); handleViewSubmissions(form.id); }}>
                                <FileText className="mr-2 h-4 w-4" />
                                View Submissions ({submissionCount})
                              </DropdownMenuItem>
                            )}
                           <DropdownMenuItem 
-                            onClick={() => handleDuplicateForm(form.id)}
+                            onClick={() => { setOpenDropdownId(null); handleDuplicateForm(form.id); }}
                             disabled={isDuplicating}
                           >
                             <Copy className="mr-2 h-4 w-4" />
@@ -417,7 +423,10 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                     <Button variant="outline" size="sm" onClick={() => handleEditForm(form.id)}>
                       <Edit className="mr-1 h-3.5 w-3.5" /> Edit
                     </Button>
-                    <DropdownMenu>
+                    <DropdownMenu
+                      open={openDropdownId === `grid-${form.id}`}
+                      onOpenChange={(open) => setOpenDropdownId(open ? `grid-${form.id}` : null)}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="sm">
                           <MoreHorizontal className="h-3.5 w-3.5" />
@@ -425,7 +434,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem 
-                          onClick={() => handleDuplicateForm(form.id)}
+                          onClick={() => { setOpenDropdownId(null); handleDuplicateForm(form.id); }}
                           disabled={isDuplicating}
                         >
                           <Copy className="mr-2 h-4 w-4" />
