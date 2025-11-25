@@ -491,20 +491,8 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
 
   return (
     <div className="space-y-6">
-      {/* Shared Documents from Admin (Main documents table) */}
-      <div>
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Shared Documents from Admin</h3>
-          <p className="text-sm text-gray-600">Documents uploaded through the main Documents tab</p>
-        </div>
-        <EntityDocumentsSection 
-          entityType="staff"
-          entityId={carerId}
-        />
-      </div>
-
       {/* Staff-Specific Documents */}
-      <div className="pt-6 border-t border-gray-200">
+      <div>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Staff Documents & Certifications</h3>
@@ -621,6 +609,18 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
           )}
         </CardContent>
       </Card>
+
+      {/* Shared Documents from Admin (Main documents table) */}
+      <div className="pt-6 border-t border-gray-200">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Shared Documents from Admin</h3>
+          <p className="text-sm text-gray-600">Documents uploaded through the main Documents tab</p>
+        </div>
+        <EntityDocumentsSection 
+          entityType="staff"
+          entityId={carerId}
+        />
+      </div>
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>

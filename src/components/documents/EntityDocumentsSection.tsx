@@ -198,7 +198,7 @@ export const EntityDocumentsSection: React.FC<EntityDocumentsSectionProps> = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Updated by System */}
       <Card>
         <CardHeader>
@@ -212,40 +212,6 @@ export const EntityDocumentsSection: React.FC<EntityDocumentsSectionProps> = ({
             'Updated by System',
             systemDocs,
             'No system-generated documents'
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Updated by Staff */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Updated by Staff
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {renderSection(
-            'Updated by Staff',
-            staffDocs,
-            'No staff-uploaded documents'
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Updated by Client */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Updated by Client
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {renderSection(
-            'Updated by Client',
-            clientDocs,
-            'No client-uploaded documents'
           )}
         </CardContent>
       </Card>
