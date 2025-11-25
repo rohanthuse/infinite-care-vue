@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { 
-  X, Send, Clock, ChevronDown, Save, BadgeCheck, Building2, 
+  X, Send, Clock, Save, BadgeCheck, Building2, 
   FileUp, Mail, Phone, User, Users, Bell, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,20 +13,13 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel
-} from "@/components/ui/dropdown-menu";
 import { Paperclip } from "lucide-react";
 import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 import { useAdminContacts } from "@/hooks/useAdminMessaging";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { CommunicationTypeSelector } from "@/components/messaging/CommunicationTypeSelector";
+import { ScheduleMessageDialog } from "./ScheduleMessageDialog";
 
 interface ClientMessageRecipient {
   id: string;
@@ -89,9 +82,7 @@ export const MessageComposer = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
-  const [showScheduler, setShowScheduler] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
+  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 
   const shouldUseClientRecipients = restrictToClientContext && availableRecipients;
   const { data: adminContacts = [], isLoading: contactsLoading, error: contactsError } = useAdminContacts(branchId);
@@ -415,22 +406,7 @@ export const MessageComposer = ({
     }
   };
 
-  const handleScheduleSend = () => {
-    setShowScheduler(true);
-  };
-
-  const handleCancelSchedule = () => {
-    setShowScheduler(false);
-    setScheduledDate('');
-    setScheduledTime('');
-  };
-
-  const handleConfirmSchedule = async () => {
-    if (!scheduledDate || !scheduledTime) {
-      toast.error('Please select both date and time');
-      return;
-    }
-    
+  const handleConfirmSchedule = async (scheduledDate: string, scheduledTime: string) => {
     const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
     const now = new Date();
     
@@ -500,13 +476,10 @@ export const MessageComposer = ({
       if (scheduleError) throw scheduleError;
       
       const formattedDate = format(scheduledDateTime, 'PPp');
-      toast.success(`Message scheduled for ${formattedDate}`);
+      toast.success(`Message scheduled successfully for ${formattedDate}`);
       
       setContent('');
       setFiles([]);
-      setShowScheduler(false);
-      setScheduledDate('');
-      setScheduledTime('');
       if (!isReply) {
         setSubject('');
         setRecipients([]);
@@ -557,72 +530,6 @@ export const MessageComposer = ({
         </div>
         
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Clock className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Schedule</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              {!showScheduler ? (
-                <>
-                  <DropdownMenuItem onClick={handleScheduleSend}>
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>Schedule Send</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSaveAsDraft}>
-                    <Save className="h-4 w-4 mr-2" />
-                    <span>Save as Draft</span>
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <div className="p-3 space-y-3">
-                  <DropdownMenuLabel>Schedule Message</DropdownMenuLabel>
-                  <div className="space-y-2">
-                    <Label htmlFor="schedule-date" className="text-xs">Date</Label>
-                    <Input
-                      id="schedule-date"
-                      type="date"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="schedule-time" className="text-xs">Time</Label>
-                    <Input
-                      id="schedule-time"
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCancelSchedule}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleConfirmSchedule}
-                      disabled={!scheduledDate || !scheduledTime}
-                      className="flex-1"
-                    >
-                      Confirm
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -1091,7 +998,16 @@ export const MessageComposer = ({
               size="sm"
               onClick={handleSaveAsDraft}
             >
+              <Save className="h-4 w-4 mr-2" />
               Save as Draft
+            </Button>
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => setShowScheduleDialog(true)}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Schedule
             </Button>
             <Button 
               size="sm"
@@ -1115,6 +1031,12 @@ export const MessageComposer = ({
           </div>
         </div>
       </div>
+
+      <ScheduleMessageDialog
+        open={showScheduleDialog}
+        onOpenChange={setShowScheduleDialog}
+        onConfirm={handleConfirmSchedule}
+      />
     </div>
   );
 };
