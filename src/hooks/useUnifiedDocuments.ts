@@ -516,7 +516,8 @@ export const useUnifiedDocuments = (branchId: string) => {
       console.log('Downloading document:', filePath);
 
       const bucket = filePath.startsWith('client-documents/') ? 'client-documents' :
-                    filePath.startsWith('agreement-files/') ? 'agreement-files' : 'documents';
+                    filePath.startsWith('agreement-files/') ? 'agreement-files' :
+                    filePath.startsWith('staff-documents/') ? 'staff-documents' : 'documents';
 
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -550,7 +551,8 @@ export const useUnifiedDocuments = (branchId: string) => {
       console.log('Viewing document:', filePath);
 
       const bucket = filePath.startsWith('client-documents/') ? 'client-documents' :
-                    filePath.startsWith('agreement-files/') ? 'agreement-files' : 'documents';
+                    filePath.startsWith('agreement-files/') ? 'agreement-files' :
+                    filePath.startsWith('staff-documents/') ? 'staff-documents' : 'documents';
 
       // Open a blank tab immediately to avoid popup blockers
       const newTab = window.open('about:blank', '_blank');
