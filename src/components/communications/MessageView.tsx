@@ -52,6 +52,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     open: boolean;
     messageId?: string;
     threadId?: string;
+    senderId?: string;
   }>({ open: false });
 
   // Dropdown state management
@@ -62,13 +63,14 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   const canDelete = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
 
   // Message info handler
-  const handleMessageInfoClick = (msgId: string, threadId: string) => {
+  const handleMessageInfoClick = (msgId: string, threadId: string, senderId: string) => {
     setMessageDropdownOpen(null); // Close dropdown first
     setTimeout(() => {
       setMessageInfoSheet({
         open: true,
         messageId: msgId,
-        threadId
+        threadId,
+        senderId
       });
     }, 100);
   };
@@ -382,7 +384,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                           >
                             {isCurrentUser && (
                               <DropdownMenuItem
-                                onClick={() => handleMessageInfoClick(message.id, message.threadId)}
+                                onClick={() => handleMessageInfoClick(message.id, message.threadId, message.senderId)}
                               >
                                 <Info className="h-4 w-4 mr-2" />
                                 Message Info
@@ -487,6 +489,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           onOpenChange={(open) => setMessageInfoSheet({ ...messageInfoSheet, open })}
           messageId={messageInfoSheet.messageId}
           threadId={messageInfoSheet.threadId}
+          senderId={messageInfoSheet.senderId}
         />
       )}
     </div>
