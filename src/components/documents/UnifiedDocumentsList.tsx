@@ -70,6 +70,7 @@ export function UnifiedDocumentsList({
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [highlightedDocId, setHighlightedDocId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Handle auto-highlighting document from search
   useEffect(() => {
@@ -216,8 +217,13 @@ export function UnifiedDocumentsList({
   };
 
   const handleShareWithCarer = (doc: UnifiedDocument) => {
-    setDocumentToShare(doc);
-    setShareDialogOpen(true);
+    // Close dropdown first to prevent state conflicts
+    setOpenDropdownId(null);
+    // Small delay to ensure cleanup completes before opening dialog
+    setTimeout(() => {
+      setDocumentToShare(doc);
+      setShareDialogOpen(true);
+    }, 10);
   };
 
   const handleShareSuccess = () => {
@@ -509,7 +515,11 @@ export function UnifiedDocumentsList({
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
+                          <DropdownMenu 
+                            modal={false}
+                            open={openDropdownId === doc.id}
+                            onOpenChange={(open) => setOpenDropdownId(open ? doc.id : null)}
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm">
                                 <MoreHorizontal className="h-4 w-4" />

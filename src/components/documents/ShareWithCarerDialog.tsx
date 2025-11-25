@@ -150,7 +150,17 @@ export function ShareWithCarerDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        if (!newOpen) {
+          // Ensure cleanup of any lingering pointer-events locks
+          window.document.body.style.removeProperty('pointer-events');
+          window.document.documentElement.style.removeProperty('pointer-events');
+        }
+        onOpenChange(newOpen);
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Share with Carer</DialogTitle>
