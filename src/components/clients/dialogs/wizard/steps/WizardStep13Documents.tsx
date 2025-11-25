@@ -197,7 +197,7 @@ export function WizardStep13Documents({ form, clientId }: WizardStep13DocumentsP
         form.setValue(`documents.${index}.file_size`, formattedSize);
         form.setValue(`documents.${index}.file_path`, uploadedDocument.file_path || '');
         form.setValue(`documents.${index}.upload_date`, new Date());
-        form.setValue(`documents.${index}.uploaded_by`, uploadedDocument.uploaded_by_name || 'Current User');
+        form.setValue(`documents.${index}.uploaded_by`, uploadedDocument.uploaded_by_name || 'Admin');
         form.setValue(`documents.${index}.type`, getDocumentTypeFromFile(file));
         form.setValue(`documents.${index}.uploaded_document_id`, uploadedDocument.id);
         
