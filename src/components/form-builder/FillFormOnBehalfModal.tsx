@@ -502,7 +502,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
             <span className="ml-2">Loading form...</span>
           </div>
         ) : (
-          <ScrollArea className="flex-1 min-h-0 px-6">
+          <ScrollArea className="flex-1 min-h-0 h-0 px-6">
             <div className="py-4 space-y-6">
               {/* Proxy banner */}
               <Alert className="bg-orange-50 border-orange-200">
