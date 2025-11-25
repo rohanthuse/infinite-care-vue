@@ -17,8 +17,7 @@ import {
   MoreHorizontal,
   AlertCircle,
   CheckCircle,
-  Database,
-  Share
+  Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +30,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnifiedDocument } from "@/hooks/useUnifiedDocuments";
-import { ShareWithCarerDialog } from "./ShareWithCarerDialog";
 import { DocumentBulkActionsBar } from "./DocumentBulkActionsBar";
 import { BulkDeleteDocumentsDialog } from "./BulkDeleteDocumentsDialog";
 
@@ -44,7 +42,6 @@ interface UnifiedDocumentsListProps {
   onBulkDeleteDocuments?: (documentIds: string[]) => void;
   isLoading?: boolean;
   branchId: string;
-  onDocumentShared?: () => void;
 }
 
 export function UnifiedDocumentsList({ 
@@ -55,16 +52,13 @@ export function UnifiedDocumentsList({
   onDeleteDocument,
   onBulkDeleteDocuments,
   isLoading = false,
-  branchId,
-  onDocumentShared
+  branchId
 }: UnifiedDocumentsListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [entityFilter, setEntityFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const [documentToShare, setDocumentToShare] = useState<UnifiedDocument | null>(null);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -214,20 +208,6 @@ export function UnifiedDocumentsList({
     
     // Otherwise allow - either file exists or we couldn't verify (better to try)
     return true;
-  };
-
-  const handleShareWithCarer = (doc: UnifiedDocument) => {
-    // Close dropdown first to prevent state conflicts
-    setOpenDropdownId(null);
-    // Small delay to ensure cleanup completes before opening dialog
-    setTimeout(() => {
-      setDocumentToShare(doc);
-      setShareDialogOpen(true);
-    }, 10);
-  };
-
-  const handleShareSuccess = () => {
-    onDocumentShared?.();
   };
 
   // Handle individual document selection
@@ -543,13 +523,6 @@ export function UnifiedDocumentsList({
                                   File not available
                                 </DropdownMenuItem>
                               )}
-                              {/* Share with Carer action for client documents */}
-                              {(doc.source_table === 'client_documents' || doc.source_table === 'documents') && (
-                                <DropdownMenuItem onClick={() => handleShareWithCarer(doc)}>
-                                  <Share className="mr-2 h-4 w-4" />
-                                  Share with Carer
-                                </DropdownMenuItem>
-                              )}
                               {onEditDocument && doc.source_table === 'documents' && (
                                 <DropdownMenuItem onClick={() => onEditDocument(doc)}>
                                   <Edit className="mr-2 h-4 w-4" />
@@ -594,24 +567,6 @@ export function UnifiedDocumentsList({
         onOpenChange={setBulkDeleteDialogOpen}
         onConfirm={handleConfirmBulkDelete}
         isLoading={isDeleting}
-      />
-
-      {/* Share with Carer Dialog */}
-      <ShareWithCarerDialog
-        open={shareDialogOpen}
-        onOpenChange={setShareDialogOpen}
-        document={documentToShare ? {
-          id: documentToShare.id,
-          name: documentToShare.name,
-          file_path: documentToShare.file_path!,
-          type: documentToShare.type,
-          category: documentToShare.category,
-          client_id: documentToShare.client_id,
-          uploaded_by: documentToShare.uploaded_by_name,
-          uploaded_by_name: documentToShare.uploaded_by_name
-        } : null}
-        branchId={branchId}
-        onSuccess={handleShareSuccess}
       />
     </div>
   );
