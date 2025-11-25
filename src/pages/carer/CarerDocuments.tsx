@@ -367,11 +367,12 @@ const CarerDocuments: React.FC = () => {
       </div>
       
       <Tabs defaultValue="forms" className="w-full">
-        <TabsList className="w-full mb-6 grid grid-cols-2 sm:grid-cols-4">
+        <TabsList className="w-full mb-6 grid grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="my-documents">My Documents</TabsTrigger>
           <TabsTrigger value="forms">Forms</TabsTrigger>
           <TabsTrigger value="policies">Policies</TabsTrigger>
           <TabsTrigger value="training">Training</TabsTrigger>
+          <TabsTrigger value="admin-shared">Admin Shared</TabsTrigger>
         </TabsList>
         
         <TabsContent value="my-documents" className="w-full mt-0">
@@ -656,17 +657,16 @@ const CarerDocuments: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
 
-      {/* Admin Shared Documents */}
-      <div className="mt-6">
-        <AdminSharedDocuments
-          documents={sharedDocuments}
-          isLoading={isLoadingShared}
-          title="Documents Shared by Admin"
-          emptyMessage="No documents have been shared with you by the admin."
-        />
-      </div>
+        <TabsContent value="admin-shared" className="w-full mt-0">
+          <AdminSharedDocuments
+            documents={sharedDocuments}
+            isLoading={isLoadingShared}
+            title="Documents Shared by Admin"
+            emptyMessage="No documents have been shared with you by the admin."
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Upload Document Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={handleCloseUploadDialog}>
