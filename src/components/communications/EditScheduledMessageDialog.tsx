@@ -87,56 +87,67 @@ export const EditScheduledMessageDialog: React.FC<EditScheduledMessageDialogProp
 
         <ScrollArea className="max-h-[calc(90vh-200px)] pr-4">
           <div className="space-y-6">
-            {/* Read-only Message Details */}
+            {/* Read-only Message Details - Double Row Format */}
             <div className="bg-muted/50 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-muted-foreground">Message Details</h3>
                 <Badge variant="secondary" className="text-xs">Read-only</Badge>
               </div>
               
-              <div>
-                <Label className="text-xs text-muted-foreground">Subject</Label>
-                <p className="text-sm mt-1">{message?.subject || 'No Subject'}</p>
-              </div>
+              {/* Double Row Grid Layout */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Subject</Label>
+                  <p className="text-sm mt-1">{message?.subject || 'No Subject'}</p>
+                </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground">Message Type</Label>
-                <div className="mt-1">
-                  <Badge variant="outline">{messageTypeName}</Badge>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Message Type</Label>
+                  <div className="mt-1">
+                    <Badge variant="outline">{messageTypeName}</Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-muted-foreground">Priority</Label>
+                  <div className="mt-1">
+                    <Badge variant={
+                      message?.priority === 'high' ? 'destructive' : 
+                      message?.priority === 'medium' ? 'default' : 
+                      'secondary'
+                    }>
+                      {message?.priority || 'medium'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-muted-foreground">Action Required</Label>
+                  <div className="mt-1">
+                    <Badge variant={message?.action_required ? 'default' : 'outline'}>
+                      {message?.action_required ? 'Yes' : 'No'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-muted-foreground">Admin Eyes Only</Label>
+                  <div className="mt-1">
+                    <Badge variant={message?.admin_eyes_only ? 'default' : 'outline'}>
+                      {message?.admin_eyes_only ? 'Yes' : 'No'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-muted-foreground">Recipients Count</Label>
+                  <div className="mt-1">
+                    <Badge variant="outline">{recipientNames.length} people</Badge>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs text-muted-foreground">Priority</Label>
-                <div className="mt-1">
-                  <Badge variant={
-                    message?.priority === 'high' ? 'destructive' : 
-                    message?.priority === 'medium' ? 'default' : 
-                    'secondary'
-                  }>
-                    {message?.priority || 'medium'}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-muted-foreground">Action Required</Label>
-                <div className="mt-1">
-                  <Badge variant={message?.action_required ? 'default' : 'outline'}>
-                    {message?.action_required ? 'Yes' : 'No'}
-                  </Badge>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-muted-foreground">Admin Eyes Only</Label>
-                <div className="mt-1">
-                  <Badge variant={message?.admin_eyes_only ? 'default' : 'outline'}>
-                    {message?.admin_eyes_only ? 'Yes' : 'No'}
-                  </Badge>
-                </div>
-              </div>
-
+              {/* Full Width Recipients List */}
               <div>
                 <Label className="text-xs text-muted-foreground">Recipients</Label>
                 <ScrollArea className="max-h-24 mt-1">
@@ -155,6 +166,7 @@ export const EditScheduledMessageDialog: React.FC<EditScheduledMessageDialogProp
                 </ScrollArea>
               </div>
 
+              {/* Full Width Content */}
               <div>
                 <Label className="text-xs text-muted-foreground">Content</Label>
                 <ScrollArea className="max-h-32 mt-1">
