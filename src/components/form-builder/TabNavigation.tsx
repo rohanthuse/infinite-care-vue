@@ -27,7 +27,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
           <TabsList className="grid grid-cols-7 mb-6 w-full lg:w-auto">
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="naming" className="flex items-center gap-1">
+                <TabsTrigger value="naming" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <Type className="h-4 w-4" />
                   <span className="hidden md:inline">Naming</span>
                 </TabsTrigger>
@@ -39,7 +39,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="design" className="flex items-center gap-1">
+                <TabsTrigger value="design" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <FileText className="h-4 w-4" />
                   <span className="hidden md:inline">Design</span>
                 </TabsTrigger>
@@ -51,7 +51,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="validation" className="flex items-center gap-1">
+                <TabsTrigger value="validation" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <ShieldCheck className="h-4 w-4" />
                   <span className="hidden md:inline">Validation</span>
                 </TabsTrigger>
@@ -63,7 +63,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="preview" className="flex items-center gap-1">
+                <TabsTrigger value="preview" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <Eye className="h-4 w-4" />
                   <span className="hidden md:inline">Preview</span>
                 </TabsTrigger>
@@ -75,7 +75,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="advanced" className="flex items-center gap-1">
+                <TabsTrigger value="advanced" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <Settings className="h-4 w-4" />
                   <span className="hidden md:inline">Advanced</span>
                 </TabsTrigger>
@@ -87,7 +87,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="publish" className="flex items-center gap-1">
+                <TabsTrigger value="publish" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <Upload className="h-4 w-4" />
                   <span className="hidden md:inline">Publish</span>
                 </TabsTrigger>
@@ -99,7 +99,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
             
             <Tooltip>
               <TooltipTrigger asChild>
-                <TabsTrigger value="submissions" className="flex items-center gap-1">
+                <TabsTrigger value="submissions" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm hover:bg-primary/10 hover:text-primary transition-all">
                   <Inbox className="h-4 w-4" />
                   <span className="hidden md:inline">Submissions</span>
                 </TabsTrigger>
