@@ -27,8 +27,18 @@ export const ConfirmDeleteMessageDialog: React.FC<ConfirmDeleteMessageDialogProp
   deleteType,
   messagePreview
 }) => {
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && !isLoading) {
+      // Ensure focus returns properly and cleanup pointer-events
+      requestAnimationFrame(() => {
+        document.body.style.removeProperty('pointer-events');
+      });
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

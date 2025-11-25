@@ -17,6 +17,7 @@ import { MessageAttachmentViewer } from "./MessageAttachmentViewer";
 import { useMessageAttachments } from "@/hooks/useMessageAttachments";
 import { useDeleteMessage, useDeleteThread } from "@/hooks/useDeleteMessage";
 import { ConfirmDeleteMessageDialog } from "./ConfirmDeleteMessageDialog";
+import { forceModalCleanup } from "@/lib/modal-cleanup";
 
 interface MessageViewProps {
   messageId: string;
@@ -44,38 +45,55 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
     type: 'message'
   });
 
+  // Dropdown state management
+  const [threadDropdownOpen, setThreadDropdownOpen] = useState(false);
+  const [messageDropdownOpen, setMessageDropdownOpen] = useState<string | null>(null);
+
   // Check if user can delete (only admins)
   const canDelete = currentUser?.role === 'super_admin' || currentUser?.role === 'branch_admin';
 
   // Delete handlers
   const handleDeleteMessageClick = (msgId: string, threadId: string, content: string) => {
-    setDeleteDialog({
-      open: true,
-      messageId: msgId,
-      threadId,
-      content,
-      type: 'message'
-    });
+    setMessageDropdownOpen(null); // Close dropdown first
+    setTimeout(() => {
+      setDeleteDialog({
+        open: true,
+        messageId: msgId,
+        threadId,
+        content,
+        type: 'message'
+      });
+    }, 100);
   };
 
   const handleDeleteThreadClick = () => {
-    setDeleteDialog({
-      open: true,
-      threadId: messageId,
-      type: 'thread'
-    });
+    setThreadDropdownOpen(false); // Close dropdown first
+    setTimeout(() => {
+      setDeleteDialog({
+        open: true,
+        threadId: messageId,
+        type: 'thread'
+      });
+    }, 100);
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteDialog.type === 'message' && deleteDialog.messageId && deleteDialog.threadId) {
-      await deleteMessage.mutateAsync({
-        messageId: deleteDialog.messageId,
-        threadId: deleteDialog.threadId
-      });
-    } else if (deleteDialog.type === 'thread' && deleteDialog.threadId) {
-      await deleteThread.mutateAsync(deleteDialog.threadId);
+    try {
+      if (deleteDialog.type === 'message' && deleteDialog.messageId && deleteDialog.threadId) {
+        await deleteMessage.mutateAsync({
+          messageId: deleteDialog.messageId,
+          threadId: deleteDialog.threadId
+        });
+      } else if (deleteDialog.type === 'thread' && deleteDialog.threadId) {
+        await deleteThread.mutateAsync(deleteDialog.threadId);
+      }
+    } finally {
+      // Always cleanup, even on error
+      forceModalCleanup();
+      setDeleteDialog({ open: false, type: 'message' });
+      setThreadDropdownOpen(false);
+      setMessageDropdownOpen(null);
     }
-    setDeleteDialog({ open: false, type: 'message' });
   };
 
   // Auto-scroll to bottom when messages load
@@ -251,13 +269,19 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
             </Button>
             
             {canDelete && (
-              <DropdownMenu>
+              <DropdownMenu open={threadDropdownOpen} onOpenChange={setThreadDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent 
+                  align="end"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                  onEscapeKeyDown={() => setThreadDropdownOpen(false)}
+                  onPointerDownOutside={() => setThreadDropdownOpen(false)}
+                  onInteractOutside={() => setThreadDropdownOpen(false)}
+                >
                   <DropdownMenuItem
                     onClick={handleDeleteThreadClick}
                     className="text-destructive focus:text-destructive"
@@ -315,7 +339,10 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                      }`}
                    >
                      {canDelete && (
-                       <DropdownMenu>
+                       <DropdownMenu 
+                         open={messageDropdownOpen === message.id} 
+                         onOpenChange={(open) => setMessageDropdownOpen(open ? message.id : null)}
+                       >
                          <DropdownMenuTrigger asChild>
                            <Button
                              variant="ghost"
@@ -325,7 +352,13 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
                              <MoreVertical className="h-4 w-4" />
                            </Button>
                          </DropdownMenuTrigger>
-                         <DropdownMenuContent align="end">
+                         <DropdownMenuContent 
+                           align="end"
+                           onCloseAutoFocus={(e) => e.preventDefault()}
+                           onEscapeKeyDown={() => setMessageDropdownOpen(null)}
+                           onPointerDownOutside={() => setMessageDropdownOpen(null)}
+                           onInteractOutside={() => setMessageDropdownOpen(null)}
+                         >
                            <DropdownMenuItem
                              onClick={() => handleDeleteMessageClick(message.id, message.threadId, message.content)}
                              className="text-destructive focus:text-destructive"
