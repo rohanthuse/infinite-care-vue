@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, FormSettings } from '@/types/form-builder';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Settings, AlertCircle } from 'lucide-react';
+import { Settings, AlertCircle, Loader2, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface FormAdvancedTabProps {
   form: Form;
@@ -18,6 +19,8 @@ export const FormAdvancedTab: React.FC<FormAdvancedTabProps> = ({
   form,
   onUpdateSettings
 }) => {
+  const { toast } = useToast();
+  
   const defaultSettings: FormSettings = {
     showProgressBar: false,
     allowSaveAsDraft: false,
@@ -30,16 +33,40 @@ export const FormAdvancedTab: React.FC<FormAdvancedTabProps> = ({
   const [settings, setSettings] = useState<FormSettings>(
     form.settings || defaultSettings
   );
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Sync settings when form prop changes
+  useEffect(() => {
+    if (form.settings) {
+      setSettings(form.settings);
+      setHasUnsavedChanges(false);
+    }
+  }, [form.settings]);
 
   const handleSettingChange = (key: keyof FormSettings, value: any) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleSaveSettings = () => {
+    setIsSaving(true);
+    
+    // Call the parent handler to save settings
     onUpdateSettings(settings);
+    
+    // Show saving state briefly
+    setTimeout(() => {
+      setIsSaving(false);
+      setHasUnsavedChanges(false);
+      toast({
+        title: 'Settings Saved',
+        description: 'Form settings have been saved successfully',
+      });
+    }, 500);
   };
 
   return (
@@ -163,8 +190,30 @@ export const FormAdvancedTab: React.FC<FormAdvancedTabProps> = ({
             )}
           </div>
           
-          <div className="pt-4">
-            <Button onClick={handleSaveSettings}>Save Settings</Button>
+          <div className="pt-4 flex items-center gap-3">
+            <Button 
+              onClick={handleSaveSettings}
+              disabled={isSaving || !hasUnsavedChanges}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : hasUnsavedChanges ? (
+                'Save Settings'
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Settings Saved
+                </>
+              )}
+            </Button>
+            {hasUnsavedChanges && (
+              <span className="text-sm text-muted-foreground">
+                You have unsaved changes
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>

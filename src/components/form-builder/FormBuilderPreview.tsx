@@ -1,12 +1,13 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Form } from '@/types/form-builder';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormElementRenderer } from './FormElementRenderer';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Smartphone, Monitor, AlertCircle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { FileText, Smartphone, Monitor, AlertCircle, Save, Clock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -20,6 +21,34 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
   const [showSubmitAlert, setShowSubmitAlert] = useState(false);
   const { toast } = useToast();
 
+  // Get form settings
+  const settings = form.settings || {
+    showProgressBar: false,
+    allowSaveAsDraft: false,
+    autoSaveEnabled: false,
+    autoSaveInterval: 60,
+    redirectAfterSubmit: false,
+    submitButtonText: 'Submit',
+  };
+
+  // Calculate progress based on filled required fields
+  const progress = useMemo(() => {
+    const requiredElements = form.elements.filter(el => 
+      el.required && !['heading', 'paragraph', 'divider', 'section'].includes(el.type)
+    );
+    
+    if (requiredElements.length === 0) return 100;
+    
+    const filledCount = requiredElements.filter(el => {
+      const value = previewValues[el.id];
+      if (value === undefined || value === null || value === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    }).length;
+    
+    return Math.round((filledCount / requiredElements.length) * 100);
+  }, [form.elements, previewValues]);
+
   const handleChange = (elementId: string, value: any) => {
     setPreviewValues(prev => ({
       ...prev,
@@ -29,12 +58,30 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Form Submitted",
-      description: "Your form has been submitted successfully in preview mode.",
-    });
+    
+    // Check if redirect is configured
+    if (settings.redirectAfterSubmit && settings.redirectUrl) {
+      toast({
+        title: "Form Submitted",
+        description: `In production, you would be redirected to: ${settings.redirectUrl}`,
+      });
+    } else {
+      toast({
+        title: "Form Submitted",
+        description: "Your form has been submitted successfully in preview mode.",
+      });
+    }
+    
     setShowSubmitAlert(true);
     console.log('Form submitted with values:', previewValues);
+  };
+
+  const handleSaveDraft = () => {
+    toast({
+      title: "Draft Saved",
+      description: "Your form progress has been saved as a draft in preview mode.",
+    });
+    console.log('Draft saved with values:', previewValues);
   };
 
   return (
@@ -62,6 +109,24 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
             <span className="hidden sm:inline">Mobile</span>
           </Button>
         </div>
+      </div>
+
+      {/* Settings indicators */}
+      <div className="flex flex-wrap gap-2 text-sm">
+        {settings.showProgressBar && (
+          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md">Progress Bar: ON</span>
+        )}
+        {settings.allowSaveAsDraft && (
+          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-md">Save Draft: ON</span>
+        )}
+        {settings.autoSaveEnabled && (
+          <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md">
+            Auto-Save: {settings.autoSaveInterval}s
+          </span>
+        )}
+        {settings.redirectAfterSubmit && (
+          <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-md">Redirect: ON</span>
+        )}
       </div>
       
       {showSubmitAlert && (
@@ -96,6 +161,17 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
             {form.description && (
               <CardDescription>{form.description}</CardDescription>
             )}
+            
+            {/* Progress Bar */}
+            {settings.showProgressBar && (
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-medium">{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <ScrollArea className={viewMode === 'desktop' ? 'h-[calc(100vh-400px)]' : 'h-[500px]'}>
@@ -117,9 +193,28 @@ export const FormBuilderPreview: React.FC<FormBuilderPreviewProps> = ({ form }) 
                   ))}
                   
                   <Separator className="my-6" />
+
+                  {/* Auto-save indicator */}
+                  {settings.autoSaveEnabled && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>Auto-save enabled (every {settings.autoSaveInterval} seconds)</span>
+                    </div>
+                  )}
                   
-                  <div className="flex justify-end">
-                    <Button type="submit">Submit Form</Button>
+                  <div className="flex justify-end gap-3">
+                    {/* Save as Draft button - only show if setting is enabled */}
+                    {settings.allowSaveAsDraft && (
+                      <Button type="button" variant="outline" onClick={handleSaveDraft}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save as Draft
+                      </Button>
+                    )}
+                    
+                    {/* Submit button with custom text */}
+                    <Button type="submit">
+                      {settings.submitButtonText || 'Submit'}
+                    </Button>
                   </div>
                 </form>
               )}

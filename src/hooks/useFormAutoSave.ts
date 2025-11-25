@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 interface AutoSaveOptions {
@@ -8,13 +8,15 @@ interface AutoSaveOptions {
 }
 
 export const useFormAutoSave = (options: AutoSaveOptions) => {
-  const { onSave, delay = 30000, enabled = true } = options; // Auto-save every 30 seconds
+  const { onSave, delay = 30000, enabled = true } = options;
   const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const formDataRef = useRef<Record<string, any>>({});
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const autoSave = useCallback(async (formData: Record<string, any>) => {
-    if (!enabled || isSaving || !hasUnsavedChanges) return;
+    if (!enabled || isSaving) return;
 
     try {
       setIsSaving(true);
@@ -33,7 +35,7 @@ export const useFormAutoSave = (options: AutoSaveOptions) => {
     } finally {
       setIsSaving(false);
     }
-  }, [enabled, isSaving, hasUnsavedChanges, onSave]);
+  }, [enabled, isSaving, onSave]);
 
   const markAsChanged = useCallback(() => {
     setHasUnsavedChanges(true);
@@ -44,17 +46,46 @@ export const useFormAutoSave = (options: AutoSaveOptions) => {
     setLastSaveTime(new Date());
   }, []);
 
-  // Auto-save effect
-  useEffect(() => {
-    if (!enabled || !hasUnsavedChanges) return;
+  // Update form data ref for auto-save timer
+  const updateFormData = useCallback((data: Record<string, any>) => {
+    formDataRef.current = data;
+    markAsChanged();
+  }, [markAsChanged]);
 
-    const timer = setTimeout(() => {
-      // This will be called by the component that uses this hook
-      // We can't access formData here, so we'll trigger this from the component
+  // Auto-save effect with proper timer management
+  useEffect(() => {
+    if (!enabled || !hasUnsavedChanges) {
+      // Clear timer if disabled or no changes
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      return;
+    }
+
+    // Set up auto-save timer
+    timerRef.current = setTimeout(() => {
+      if (hasUnsavedChanges && Object.keys(formDataRef.current).length > 0) {
+        autoSave(formDataRef.current);
+      }
     }, delay);
 
-    return () => clearTimeout(timer);
-  }, [hasUnsavedChanges, delay, enabled]);
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [hasUnsavedChanges, delay, enabled, autoSave]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   return {
     lastSaveTime,
@@ -62,6 +93,7 @@ export const useFormAutoSave = (options: AutoSaveOptions) => {
     hasUnsavedChanges,
     autoSave,
     markAsChanged,
-    markAsSaved
+    markAsSaved,
+    updateFormData
   };
 };
