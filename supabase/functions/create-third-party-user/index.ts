@@ -9,7 +9,8 @@ const corsHeaders = {
 interface CreateThirdPartyUserRequest {
   requestId: string;
   email: string;
-  fullName: string;
+  firstName: string;
+  surname: string;
   password: string;
   accessExpiresAt?: string;
 }
@@ -21,13 +22,13 @@ serve(async (req) => {
   }
 
   try {
-    const { requestId, email, fullName, password, accessExpiresAt } = await req.json() as CreateThirdPartyUserRequest;
+    const { requestId, email, firstName, surname, password, accessExpiresAt } = await req.json() as CreateThirdPartyUserRequest;
 
     console.log('[create-third-party-user] Creating user for request:', requestId);
 
-    if (!requestId || !email || !password) {
+    if (!requestId || !email || !password || !firstName || !surname) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: requestId, email, and password are required' }),
+        JSON.stringify({ error: 'Missing required fields: requestId, email, firstName, surname, and password are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -65,7 +66,8 @@ serve(async (req) => {
     const { data: userId, error: createError } = await supabase.rpc('create_third_party_user_with_password', {
       p_request_id: requestId,
       p_email: email,
-      p_full_name: fullName,
+      p_first_name: firstName,
+      p_surname: surname,
       p_password: password,
       p_access_expires_at: accessExpiresAt || accessRequest.access_until
     });
