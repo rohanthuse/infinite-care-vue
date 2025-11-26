@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import MedChartData from "./MedChartData";
-import { useMedicationsByClient } from "@/hooks/useMedications";
+import { useMedicationsByClient, useUpdateMedication } from "@/hooks/useMedications";
 import { useMARByClient, useRecordMedicationAdministration, useRealTimeMedicationUpdates, MedicationAdministrationRecord } from "@/hooks/useMedicationAdministration";
 import { useMedicationNavigation } from "@/hooks/useMedicationNavigation";
 import { useClientProfile } from "@/hooks/useClientData";
@@ -38,6 +38,7 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
     end: new Date().toISOString().split('T')[0]
   });
   const recordAdministration = useRecordMedicationAdministration();
+  const updateMedication = useUpdateMedication();
   const navigation = useMedicationNavigation();
   
   // Client profile and branch data for report generation
@@ -74,6 +75,36 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
         if (medication?.administered_by_staff?.id) {
           navigation.navigateToStaffProfile(medication.administered_by_staff.id);
         }
+        break;
+      case "Discontinue":
+        updateMedication.mutate(
+          { id: medicationId, status: "discontinued" },
+          {
+            onSuccess: () => {
+              toast.success("Medication discontinued successfully");
+            },
+            onError: () => {
+              toast.error("Failed to discontinue medication");
+            }
+          }
+        );
+        break;
+      case "Reactivate":
+        updateMedication.mutate(
+          { id: medicationId, status: "active" },
+          {
+            onSuccess: () => {
+              toast.success("Medication reactivated successfully");
+            },
+            onError: () => {
+              toast.error("Failed to reactivate medication");
+            }
+          }
+        );
+        break;
+      case "History":
+        setActiveTab("records");
+        toast.info("Showing administration history");
         break;
       default:
         toast.success(`${action} action for medication`, {
@@ -333,11 +364,6 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                              <DropdownMenuItem onClick={() => handleActionClick("View", medication.id, medication)}>
                                <ExternalLink className="h-4 w-4 mr-2" />
                                View Care Plan
-                             </DropdownMenuItem>
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => handleActionClick("ViewBookings", medication.id)}>
-                               <CalendarDays className="h-4 w-4 mr-2" />
-                               View Appointments
                              </DropdownMenuItem>
                              <DropdownMenuItem onClick={() => handleActionClick("History", medication.id)}>
                                <FileText className="h-4 w-4 mr-2" />
