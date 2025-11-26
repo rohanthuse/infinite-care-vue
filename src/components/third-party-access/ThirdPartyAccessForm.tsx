@@ -31,7 +31,7 @@ interface ThirdPartyAccessFormProps {
 
 // Form schema with validation
 const formSchema = z.object({
-  requestFor: z.enum(["client", "staff", "both"], {
+  requestFor: z.enum(["client", "staff"], {
     required_error: "Please select who this request is for",
   }),
   firstName: z.string().min(1, "First name is required"),
@@ -41,7 +41,6 @@ const formSchema = z.object({
     .min(1, "Email is required")
     .email("Please enter a valid email address"),
   organisation: z.string().optional(),
-  role: z.string().optional(),
   clientConsentRequired: z.enum(["yes", "no"], {
     required_error: "Please specify if client consent is required",
   }),
@@ -84,7 +83,6 @@ export const ThirdPartyAccessForm = ({
       surname: "",
       email: "",
       organisation: "",
-      role: "",
       clientConsentRequired: "yes",
       reasonForAccess: "",
       accessFrom: new Date(),
@@ -101,7 +99,6 @@ export const ThirdPartyAccessForm = ({
       surname: data.surname,
       email: data.email,
       organisation: data.organisation || undefined,
-      role: data.role || undefined,
       request_for: data.requestFor,
       client_consent_required: data.clientConsentRequired === "yes",
       reason_for_access: data.reasonForAccess,
@@ -156,14 +153,6 @@ export const ThirdPartyAccessForm = ({
                             </FormControl>
                             <FormLabel className="font-normal cursor-pointer">
                               Staff
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2">
-                            <FormControl>
-                              <RadioGroupItem value="both" />
-                            </FormControl>
-                            <FormLabel className="font-normal cursor-pointer">
-                              Both
                             </FormLabel>
                           </FormItem>
                         </RadioGroup>
@@ -224,20 +213,6 @@ export const ThirdPartyAccessForm = ({
                     <FormLabel>Organisation</FormLabel>
                     <FormControl>
                       <Input placeholder="Enter organisation" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter role" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -130,9 +130,6 @@ export const ThirdPartyAccessRequestsList: React.FC<ThirdPartyAccessRequestsList
                     <span className="font-medium">Organisation:</span> {request.organisation || "N/A"}
                   </div>
                   <div>
-                    <span className="font-medium">Role:</span> {request.role || "N/A"}
-                  </div>
-                  <div>
                     <span className="font-medium">Access From:</span>{" "}
                     {format(new Date(request.access_from), "PPP")}
                   </div>
@@ -257,10 +254,6 @@ export const ThirdPartyAccessRequestsList: React.FC<ThirdPartyAccessRequestsList
                 <div>
                   <Label>Organisation</Label>
                   <p className="text-sm">{selectedRequest.organisation || "N/A"}</p>
-                </div>
-                <div>
-                  <Label>Role</Label>
-                  <p className="text-sm">{selectedRequest.role || "N/A"}</p>
                 </div>
                 <div>
                   <Label>Access Type</Label>
