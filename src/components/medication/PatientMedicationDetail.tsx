@@ -163,6 +163,7 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                   <TableHead>Dosage</TableHead>
                   <TableHead>Schedule</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Given By</TableHead>
                   <TableHead>Care Plan</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -191,6 +192,24 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                       </div>
                     </TableCell>
                     <TableCell>{renderStatusBadge(medication.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <div className="text-sm font-medium">
+                            {medication.created_by_staff 
+                              ? `${medication.created_by_staff.first_name} ${medication.created_by_staff.last_name}`
+                              : 'System'
+                            }
+                          </div>
+                          {medication.created_by_staff?.specialization && (
+                            <div className="text-xs text-muted-foreground">
+                              ({medication.created_by_staff.specialization})
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Button 
                         variant="ghost" 

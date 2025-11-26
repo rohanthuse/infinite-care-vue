@@ -15,6 +15,13 @@ export interface Medication {
   notes?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;
+  created_by_staff?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    specialization?: string;
+  } | null;
 }
 
 export interface MedicationFormData {
@@ -26,6 +33,7 @@ export interface MedicationFormData {
   end_date?: string;
   status?: string;
   notes?: string;
+  created_by?: string;
 }
 
 // Hook to fetch medications by care plan
@@ -58,6 +66,12 @@ export function useMedicationsByClient(clientId: string) {
           client_care_plans!inner(
             client_id,
             title
+          ),
+          created_by_staff:staff!created_by(
+            id,
+            first_name,
+            last_name,
+            specialization
           )
         `)
         .eq('client_care_plans.client_id', clientId)

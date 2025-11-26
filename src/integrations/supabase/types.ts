@@ -2900,6 +2900,7 @@ export type Database = {
         Row: {
           care_plan_id: string
           created_at: string
+          created_by: string | null
           dosage: string
           end_date: string | null
           frequency: string
@@ -2913,6 +2914,7 @@ export type Database = {
         Insert: {
           care_plan_id: string
           created_at?: string
+          created_by?: string | null
           dosage: string
           end_date?: string | null
           frequency: string
@@ -2926,6 +2928,7 @@ export type Database = {
         Update: {
           care_plan_id?: string
           created_at?: string
+          created_by?: string | null
           dosage?: string
           end_date?: string | null
           frequency?: string
@@ -2942,6 +2945,13 @@ export type Database = {
             columns: ["care_plan_id"]
             isOneToOne: false
             referencedRelation: "client_care_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_medications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
