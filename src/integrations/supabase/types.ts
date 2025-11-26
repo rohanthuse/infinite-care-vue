@@ -2947,13 +2947,6 @@ export type Database = {
             referencedRelation: "client_care_plans"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "client_medications_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "staff"
-            referencedColumns: ["id"]
-          },
         ]
       }
       client_notes: {

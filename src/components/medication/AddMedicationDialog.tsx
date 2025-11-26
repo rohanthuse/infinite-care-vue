@@ -78,25 +78,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const { id: branchId } = useBranchDashboardNavigation();
   const { user } = useAuth();
 
-  // Fetch current staff ID from auth user
-  const { data: currentStaff } = useQuery({
-    queryKey: ['current-staff-for-medication', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('staff')
-        .select('id, first_name, last_name, specialization')
-        .eq('auth_user_id', user.id)
-        .single();
-      
-      if (error) {
-        console.log('[AddMedicationDialog] No staff record found for user:', user.id);
-        return null;
-      }
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  // No need to fetch staff - we use auth user ID directly for created_by
 
   // Fetch all clients in the current branch with inclusive filtering
   const { data: clients = [] } = useQuery({
@@ -237,7 +219,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         start_date: values.start_date.toISOString().split('T')[0],
         end_date: values.end_date?.toISOString().split('T')[0],
         status: values.status || "active",
-        created_by: currentStaff?.id,
+        created_by: user?.id, // Use auth user ID directly
       };
 
       console.log('[AddMedicationDialog] Medication data:', medicationData);

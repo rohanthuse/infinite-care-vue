@@ -101,6 +101,16 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
     }
   };
 
+  const formatUserRole = (role: string) => {
+    const roleMap: Record<string, string> = {
+      'super_admin': 'Super Admin',
+      'branch_admin': 'Branch Admin',
+      'carer': 'Carer',
+      'client': 'Client'
+    };
+    return roleMap[role] || role;
+  };
+
   if (medicationsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -197,14 +207,14 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                         <UserCheck className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="text-sm font-medium">
-                            {medication.created_by_staff 
-                              ? `${medication.created_by_staff.first_name} ${medication.created_by_staff.last_name}`
-                              : 'System'
+                            {medication.created_by_profile 
+                              ? `${medication.created_by_profile.first_name} ${medication.created_by_profile.last_name}`
+                              : '—'
                             }
                           </div>
-                          {medication.created_by_staff?.specialization && (
+                          {medication.created_by_role?.role && (
                             <div className="text-xs text-muted-foreground">
-                              ({medication.created_by_staff.specialization})
+                              ({formatUserRole(medication.created_by_role.role)})
                             </div>
                           )}
                         </div>
