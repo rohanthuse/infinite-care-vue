@@ -119,7 +119,8 @@ export const useThirdPartyAccess = (branchId: string) => {
         body: {
           requestId: data.id,
           email: requestData.email,
-          fullName: `${requestData.first_name} ${requestData.surname}`,
+          firstName: requestData.first_name,
+          surname: requestData.surname,
           password: requestData.password,
           accessExpiresAt: requestData.access_until?.toISOString(),
         }
