@@ -11,7 +11,7 @@ interface EventAttachmentsViewProps {
 }
 
 export function EventAttachmentsView({ attachments }: EventAttachmentsViewProps) {
-  if (!attachments || attachments.length === 0) return null;
+  const hasAttachments = attachments && attachments.length > 0;
 
   const getFileIcon = (fileType: string) => {
     if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />;
@@ -53,9 +53,14 @@ export function EventAttachmentsView({ attachments }: EventAttachmentsViewProps)
     <div className="space-y-4">
       <h4 className="font-medium text-sm flex items-center gap-2">
         <FileText className="h-4 w-4" />
-        Attachments ({attachments.length})
+        Attachments {hasAttachments && `(${attachments.length})`}
       </h4>
       
+      {!hasAttachments ? (
+        <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 text-center">
+          No files attached to this event
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {attachments.map((attachment, index) => (
           <div key={index} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
@@ -99,6 +104,7 @@ export function EventAttachmentsView({ attachments }: EventAttachmentsViewProps)
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

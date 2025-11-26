@@ -19,8 +19,6 @@ export function EventActionsView({
   lessonsLearned
 }: EventActionsViewProps) {
   const hasActionsData = immediateActionsTaken || investigationRequired || lessonsLearned;
-  
-  if (!hasActionsData) return null;
 
   return (
     <div className="space-y-4">
@@ -29,6 +27,11 @@ export function EventActionsView({
         Actions & Investigation
       </h4>
       
+      {!hasActionsData ? (
+        <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 text-center">
+          No actions or investigation recorded for this event
+        </div>
+      ) : (
       <div className="space-y-4">
         {/* Immediate Actions */}
         {immediateActionsTaken && (
@@ -82,6 +85,7 @@ export function EventActionsView({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
