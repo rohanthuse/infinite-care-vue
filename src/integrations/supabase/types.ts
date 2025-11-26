@@ -11184,6 +11184,16 @@ export type Database = {
         Args: { request_id_param: string }
         Returns: string
       }
+      create_third_party_user_with_password: {
+        Args: {
+          p_access_expires_at?: string
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_request_id: string
+        }
+        Returns: string
+      }
       current_user_branch_ids: {
         Args: never
         Returns: {
@@ -11557,6 +11567,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      hash_password: { Args: { password_text: string }; Returns: string }
       is_app_admin: { Args: { user_id_param: string }; Returns: boolean }
       is_authenticated_admin: { Args: never; Returns: boolean }
       is_current_staff_member: {

@@ -61,103 +61,24 @@ serve(async (req) => {
       );
     }
 
-    // Hash the password using PostgreSQL's crypt function (pgcrypto)
-    const { data: hashResult, error: hashError } = await supabase
-      .rpc('hash_password', { password_text: password });
+    // Create user using the database function that handles password hashing
+    const { data: userId, error: createError } = await supabase.rpc('create_third_party_user_with_password', {
+      p_request_id: requestId,
+      p_email: email,
+      p_full_name: fullName,
+      p_password: password,
+      p_access_expires_at: accessExpiresAt || accessRequest.access_until
+    });
 
-    if (hashError) {
-      console.error('[create-third-party-user] Error hashing password:', hashError);
-      // Fallback: create hash using SQL directly
-      const { data: directHash, error: directHashError } = await supabase
-        .from('third_party_users')
-        .select('id')
-        .limit(0);
-      
-      // Use raw SQL to hash and insert
-      const { data: insertResult, error: insertError } = await supabase
-        .rpc('create_third_party_user_with_password', {
-          p_request_id: requestId,
-          p_email: email,
-          p_full_name: fullName,
-          p_password: password,
-          p_access_expires_at: accessExpiresAt || accessRequest.access_until
-        });
-
-      if (insertError) {
-        console.error('[create-third-party-user] Error creating user with RPC:', insertError);
-        throw insertError;
-      }
-
-      console.log('[create-third-party-user] User created via RPC:', insertResult);
-      
+    if (createError) {
+      console.error('[create-third-party-user] Error creating user:', createError);
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          userId: insertResult,
-          message: 'Third-party user created successfully' 
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: createError.message || 'Failed to create user' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const passwordHash = hashResult;
-    console.log('[create-third-party-user] Password hashed successfully');
-
-    // Check if user already exists for this request
-    const { data: existingUser } = await supabase
-      .from('third_party_users')
-      .select('id')
-      .eq('request_id', requestId)
-      .single();
-
-    let userId: string;
-
-    if (existingUser) {
-      // Update existing user with new password
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('third_party_users')
-        .update({
-          email,
-          full_name: fullName,
-          password_hash: passwordHash,
-          access_expires_at: accessExpiresAt || accessRequest.access_until,
-          is_active: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingUser.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('[create-third-party-user] Error updating user:', updateError);
-        throw updateError;
-      }
-
-      userId = updatedUser.id;
-      console.log('[create-third-party-user] User updated:', userId);
-    } else {
-      // Create new user
-      const { data: newUser, error: createError } = await supabase
-        .from('third_party_users')
-        .insert({
-          request_id: requestId,
-          email,
-          full_name: fullName,
-          password_hash: passwordHash,
-          access_expires_at: accessExpiresAt || accessRequest.access_until,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('[create-third-party-user] Error creating user:', createError);
-        throw createError;
-      }
-
-      userId = newUser.id;
-      console.log('[create-third-party-user] User created:', userId);
-    }
+    console.log('[create-third-party-user] User created successfully:', userId);
 
     return new Response(
       JSON.stringify({ 
