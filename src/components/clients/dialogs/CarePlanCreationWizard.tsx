@@ -505,32 +505,44 @@ export function CarePlanCreationWizard({
       const completedSteps: number[] = [];
 
       // Check each step for completion with proper validation
+      // Step 1 - Basic Info
       if (formData.title?.trim()) completedSteps.push(1);
-      if (hasPersonalInfo(formData.personal_info)) completedSteps.push(2);
-      if (hasAnyValue(formData.about_me)) completedSteps.push(3);
-      if (hasMedicalInfo(formData.medical_info)) completedSteps.push(4);
-      // Step 5 - Medication (always marked as complete - it's optional)
-      completedSteps.push(5);
-      // Step 6 - Admin Medication (always marked as complete - it's optional)
-      completedSteps.push(6);
-      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(7);
-      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(8);
-      if (hasAnyValue(formData.personal_care)) completedSteps.push(9);
-      if (hasAnyValue(formData.dietary)) completedSteps.push(10);
-      if (hasRiskAssessments(formData)) completedSteps.push(11);
+      // Step 2 - About Me
+      if (hasAnyValue(formData.about_me)) completedSteps.push(2);
+      // Step 3 - Medical Info
+      if (hasMedicalInfo(formData.medical_info)) completedSteps.push(3);
+      // Step 4 - Medication (check if medical_info has medication data)
+      if (formData.medical_info && hasAnyValue(formData.medical_info)) completedSteps.push(4);
+      // Step 5 - Admin Medication (only mark complete if user has entered admin medication details)
+      // Check for any admin medication related data in medical_info or separate fields
+      if ((formData as any).admin_medication && hasAnyValue((formData as any).admin_medication)) completedSteps.push(5);
+      // Step 6 - Goals
+      if (Array.isArray(formData.goals) && formData.goals.length > 0) completedSteps.push(6);
+      // Step 7 - Activities
+      if (Array.isArray(formData.activities) && formData.activities.length > 0) completedSteps.push(7);
+      // Step 8 - Personal Care
+      if (hasAnyValue(formData.personal_care)) completedSteps.push(8);
+      // Step 9 - Dietary
+      if (hasAnyValue(formData.dietary)) completedSteps.push(9);
+      // Step 10 - Risk Assessments
+      if (hasRiskAssessments(formData)) completedSteps.push(10);
+      // Step 11 - Equipment
       if (formData.equipment && typeof formData.equipment === 'object' && (
         (Array.isArray(formData.equipment.equipment_blocks) && formData.equipment.equipment_blocks.length > 0) ||
         (formData.equipment.moving_handling && hasAnyValue(formData.equipment.moving_handling)) ||
         (formData.equipment.environment_checks && hasAnyValue(formData.equipment.environment_checks)) ||
         (formData.equipment.home_repairs && hasAnyValue(formData.equipment.home_repairs))
-      )) completedSteps.push(12);
-      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(13);
-      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(14);
-      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(15);
-      if (hasConsentInfo(formData.consent)) completedSteps.push(16);
-      
-      // Step 16 (Review) is considered completed when ready to finalize
-      if (completedSteps.length >= 4) completedSteps.push(16);
+      )) completedSteps.push(11);
+      // Step 12 - Service Plans
+      if (Array.isArray(formData.service_plans) && formData.service_plans.length > 0) completedSteps.push(12);
+      // Step 13 - Service Actions
+      if (Array.isArray(formData.service_actions) && formData.service_actions.length > 0) completedSteps.push(13);
+      // Step 14 - Documents
+      if (Array.isArray(formData.documents) && formData.documents.length > 0) completedSteps.push(14);
+      // Step 15 - Consent
+      if (hasConsentInfo(formData.consent)) completedSteps.push(15);
+      // Step 16 - Review (only mark complete after user explicitly confirms review)
+      // Do NOT auto-mark as complete
 
       return completedSteps;
     } catch (error) {
