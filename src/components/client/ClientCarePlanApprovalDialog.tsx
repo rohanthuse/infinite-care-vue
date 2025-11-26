@@ -153,7 +153,7 @@ export function ClientCarePlanApprovalDialog({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-2">
           {currentStep === 0 && (
             <div className="h-full flex flex-col min-h-0">
               {/* Care Plan Summary */}
