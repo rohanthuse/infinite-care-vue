@@ -102,47 +102,54 @@ export const MedicationTab = ({ branchId, branchName }: MedicationTabProps) => {
     const patient = getSelectedPatient();
     
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={handleBackToPatients} 
-            className="mb-4 hover:bg-gray-100"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Patients
-          </Button>
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-medium">
-                {patient?.avatar_initials || "??"}
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">{patient ? `${patient.first_name} ${patient.last_name}` : "Unknown Patient"}</h2>
-                <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                  <span>ID: {patient?.id.slice(-8)}</span>
-                  <span>DOB: {patient?.date_of_birth ? format(new Date(patient.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span>
-                  <span>Gender: {patient?.gender || 'N/A'}</span>
+      <>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <div className="mb-6">
+            <Button 
+              variant="ghost" 
+              onClick={handleBackToPatients} 
+              className="mb-4 hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Patients
+            </Button>
+            
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-medium">
+                  {patient?.avatar_initials || "??"}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{patient ? `${patient.first_name} ${patient.last_name}` : "Unknown Patient"}</h2>
+                  <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                    <span>ID: {patient?.id.slice(-8)}</span>
+                    <span>DOB: {patient?.date_of_birth ? format(new Date(patient.date_of_birth), 'dd/MM/yyyy') : 'N/A'}</span>
+                    <span>Gender: {patient?.gender || 'N/A'}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => navigation.navigateToClientProfile(selectedPatient)}>
-                <User className="h-4 w-4 mr-2" />
-                Patient Profile
-              </Button>
-              <Button onClick={handleAddMedication}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Medication
-              </Button>
+              
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => navigation.navigateToClientProfile(selectedPatient)}>
+                  <User className="h-4 w-4 mr-2" />
+                  Patient Profile
+                </Button>
+                <Button onClick={handleAddMedication}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Medication
+                </Button>
+              </div>
             </div>
           </div>
+          
+          <PatientMedicationDetail patientId={selectedPatient} />
         </div>
         
-        <PatientMedicationDetail patientId={selectedPatient} />
-      </div>
+        <AddMedicationDialog 
+          open={addMedicationDialogOpen} 
+          onOpenChange={setAddMedicationDialogOpen} 
+        />
+      </>
     );
   }
   
