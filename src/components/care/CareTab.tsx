@@ -63,6 +63,7 @@ import { CarePlanCreationWizard } from "@/components/clients/dialogs/CarePlanCre
 import { DeleteCarePlanDialog } from "@/components/clients/dialogs/DeleteCarePlanDialog";
 import { useDeleteCarePlan } from "@/hooks/useDeleteCarePlan";
 import { useControlledDialog } from "@/hooks/useDialogManager";
+import { forceModalCleanup } from "@/lib/modal-cleanup";
 
 const mockCarePlans = [
   {
@@ -310,6 +311,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [carePlanToDelete, setCarePlanToDelete] = useState<any>(null);
   const deleteCarePlanMutation = useDeleteCarePlan();
+  
+  // Track which dropdown is open to prevent UI freeze
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   const handleStatusDialogClose = useCallback(() => {
     statusControlledDialog.onOpenChange(false);
@@ -640,8 +644,13 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   
   const handleDeleteCarePlan = (plan: any) => {
     console.log('[CareTab] Preparing to delete care plan:', plan);
-    setCarePlanToDelete(plan);
-    setDeleteDialogOpen(true);
+    // Close the dropdown first to prevent UI freeze
+    setActiveDropdownId(null);
+    // Small delay to let the dropdown fully close before opening dialog
+    setTimeout(() => {
+      setCarePlanToDelete(plan);
+      setDeleteDialogOpen(true);
+    }, 50);
   };
 
   const confirmDeleteCarePlan = () => {
@@ -654,6 +663,9 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
       
       setDeleteDialogOpen(false);
       setCarePlanToDelete(null);
+      
+      // Safety cleanup to ensure no lingering overlays
+      setTimeout(() => forceModalCleanup(), 100);
     }
   };
 
@@ -995,17 +1007,26 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                     >
                       Continue Editing
                     </Button>
-                    <DropdownMenu>
+                    <DropdownMenu 
+                      open={activeDropdownId === `draft-${draft.id}`} 
+                      onOpenChange={(open) => setActiveDropdownId(open ? `draft-${draft.id}` : null)}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewCarePlan(draft.id)}>
+                      <DropdownMenuContent align="end" className="bg-background border border-border shadow-md z-50">
+                        <DropdownMenuItem onClick={() => {
+                          setActiveDropdownId(null);
+                          handleViewCarePlan(draft.id);
+                        }}>
                           <Eye className="mr-2 h-4 w-4" /> Preview
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteCarePlan(draft.id)} className="text-red-600">
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteCarePlan(draft)} 
+                          className="text-red-600 focus:text-red-600"
+                        >
                           <Trash2 className="mr-2 h-4 w-4" /> Delete Draft
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -1107,20 +1128,32 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
+                    <DropdownMenu 
+                      open={activeDropdownId === plan.id} 
+                      onOpenChange={(open) => setActiveDropdownId(open ? plan.id : null)}
+                    >
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[160px]">
-                        <DropdownMenuItem onClick={() => handleViewCarePlan(plan.id)}>
+                      <DropdownMenuContent align="end" className="w-[160px] bg-background border border-border shadow-md z-50">
+                        <DropdownMenuItem onClick={() => {
+                          setActiveDropdownId(null);
+                          handleViewCarePlan(plan.id);
+                        }}>
                           <Eye className="mr-2 h-4 w-4" /> View
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditCarePlan(plan.id)}>
+                        <DropdownMenuItem onClick={() => {
+                          setActiveDropdownId(null);
+                          handleEditCarePlan(plan.id);
+                        }}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openStatusChangeDialog(plan.id)}>
+                        <DropdownMenuItem onClick={() => {
+                          setActiveDropdownId(null);
+                          setTimeout(() => openStatusChangeDialog(plan.id), 50);
+                        }}>
                           <ClipboardCheck className="mr-2 h-4 w-4" /> Change Status
                         </DropdownMenuItem>
                         <DropdownMenuItem 
