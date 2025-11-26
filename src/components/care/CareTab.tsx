@@ -17,7 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Search, Plus, FileText, Download, 
   Filter, ChevronDown, Eye, Edit, Trash2, 
-  MoreHorizontal, Calendar, FileX
+  MoreHorizontal, ClipboardCheck, Calendar,
+  FileX
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -1143,16 +1144,22 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                         }}>
                           <Eye className="mr-2 h-4 w-4" /> View
                         </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {
-                                setActiveDropdownId(null);
-                                handleEditCarePlan(plan.id);
-                              }}>
-                                <Edit className="mr-2 h-4 w-4" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteCarePlan(plan)}
-                                className="text-red-600 focus:text-red-600"
-                              >
+                        <DropdownMenuItem onClick={() => {
+                          setActiveDropdownId(null);
+                          handleEditCarePlan(plan.id);
+                        }}>
+                          <Edit className="mr-2 h-4 w-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setActiveDropdownId(null);
+                          setTimeout(() => openStatusChangeDialog(plan.id), 50);
+                        }}>
+                          <ClipboardCheck className="mr-2 h-4 w-4" /> Change Status
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteCarePlan(plan)}
+                          className="text-red-600 focus:text-red-600"
+                        >
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
