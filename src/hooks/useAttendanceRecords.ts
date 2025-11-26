@@ -94,19 +94,17 @@ export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilte
         .filter(record => record.person_type === 'client')
         .map(record => record.person_id);
 
-      // Fetch staff data
+      // Fetch all staff for the branch to handle both id and auth_user_id lookups
       let staffData: any[] = [];
-      if (staffIds.length > 0) {
-        const { data, error: staffError } = await supabase
-          .from('staff')
-          .select('id, first_name, last_name, specialization')
-          .in('id', staffIds);
-        
-        if (staffError) {
-          console.error('Error fetching staff data:', staffError);
-        } else {
-          staffData = data || [];
-        }
+      const { data: staffResult, error: staffError } = await supabase
+        .from('staff')
+        .select('id, auth_user_id, first_name, last_name, specialization')
+        .eq('branch_id', branchId);
+
+      if (staffError) {
+        console.error('Error fetching staff data:', staffError);
+      } else {
+        staffData = staffResult || [];
       }
 
       // Fetch client data
@@ -124,8 +122,13 @@ export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilte
         }
       }
 
-      // Create lookup maps for better performance
-      const staffMap = new Map(staffData.map(staff => [staff.id, staff]));
+      // Create lookup maps for both id and auth_user_id
+      const staffByIdMap = new Map(staffData.map(staff => [staff.id, staff]));
+      const staffByAuthIdMap = new Map(
+        staffData
+          .filter(staff => staff.auth_user_id)
+          .map(staff => [staff.auth_user_id, staff])
+      );
       const clientMap = new Map(clientData.map(client => [client.id, client]));
 
       // Process the data to add person names and roles
@@ -134,7 +137,8 @@ export const useAttendanceRecords = (branchId: string, filters?: AttendanceFilte
         let personRole = 'Unknown';
 
         if (record.person_type === 'staff') {
-          const staff = staffMap.get(record.person_id);
+          // Try lookup by staff.id first, then by auth_user_id
+          const staff = staffByIdMap.get(record.person_id) || staffByAuthIdMap.get(record.person_id);
           if (staff) {
             personName = `${staff.first_name} ${staff.last_name}`;
             personRole = staff.specialization || 'Staff';
