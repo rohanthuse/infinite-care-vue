@@ -349,6 +349,8 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     }, 100); // Brief delay ensures wizard mounting starts first
   };
 
+  const { organization } = useTenant();
+
   const handleExport = () => {
     if (!carePlan) {
       toast({
@@ -361,7 +363,17 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
 
     try {
       const { carePlanData, clientData } = transformCarePlanForPDF(carePlan);
-      generateCarePlanDetailPDF(carePlanData, clientData, branchName || "Med-Infinite");
+      
+      // Pass organization data for PDF header
+      const orgData = organization ? {
+        name: organization.name,
+        logo_url: organization.logo_url,
+        address: organization.address,
+        contact_email: organization.contact_email,
+        contact_phone: organization.contact_phone
+      } : undefined;
+      
+      generateCarePlanDetailPDF(carePlanData, clientData, branchName || "Branch", orgData);
       toast({
         title: "Export Successful",
         description: "Care plan has been exported to PDF successfully.",

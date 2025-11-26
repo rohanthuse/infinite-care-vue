@@ -20,12 +20,21 @@ const BRAND_COLORS = {
   white: [255, 255, 255] as [number, number, number]
 };
 
+interface OrganizationData {
+  name?: string;
+  logo_url?: string;
+  address?: string;
+  contact_email?: string;
+  contact_phone?: string;
+}
+
 interface PdfOptions {
   title: string;
   branchName: string;
   reportType?: string;
   includeWatermark?: boolean;
   confidential?: boolean;
+  organization?: OrganizationData;
 }
 
 export class EnhancedPdfGenerator {
@@ -40,35 +49,68 @@ export class EnhancedPdfGenerator {
     this.pageHeight = this.doc.internal.pageSize.getHeight();
   }
 
-  // Add Med-Infinite header with branding
+  // Add organization header with branding
   private addHeader(options: PdfOptions): number {
+    const org = options.organization;
+    const orgName = org?.name || 'Med-Infinite';
+    
     // Header background
     this.doc.setFillColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    this.doc.rect(0, 0, this.pageWidth, 40, 'F');
+    this.doc.rect(0, 0, this.pageWidth, 50, 'F');
 
-    // Company logo/name
-    this.doc.setFontSize(24);
+    let currentY = 15;
+    const leftMargin = 20;
+    const rightColumn = this.pageWidth - 20;
+
+    // Organization name (large, white, left side)
+    this.doc.setFontSize(22);
     this.doc.setTextColor(BRAND_COLORS.white[0], BRAND_COLORS.white[1], BRAND_COLORS.white[2]);
-    this.doc.text("Med-Infinite", 20, 20);
+    this.doc.text(orgName, leftMargin, currentY);
+    currentY += 10;
 
-    // Branch name
-    this.doc.setFontSize(12);
-    this.doc.text(options.branchName, 20, 30);
+    // Organization contact details (smaller, white, below name)
+    this.doc.setFontSize(9);
+    if (org?.address) {
+      this.doc.text(org.address, leftMargin, currentY);
+      currentY += 5;
+    }
 
-    // Report title
-    this.doc.setFontSize(18);
+    // Email and phone on same line
+    const contactParts: string[] = [];
+    if (org?.contact_email) contactParts.push(org.contact_email);
+    if (org?.contact_phone) contactParts.push(org.contact_phone);
+    if (contactParts.length > 0) {
+      this.doc.text(contactParts.join('  |  '), leftMargin, currentY);
+    }
+
+    // Branch name on right side of header
+    this.doc.setFontSize(10);
+    this.doc.text(options.branchName, rightColumn, 15, { align: 'right' });
+    this.doc.setFontSize(8);
+    this.doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, rightColumn, 22, { align: 'right' });
+
+    // "CARE PLAN" title - prominent, centered below header
+    let yPosition = 62;
+    this.doc.setFontSize(24);
     this.doc.setTextColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
-    this.doc.text(options.title, 20, 55);
+    this.doc.text("CARE PLAN", this.pageWidth / 2, yPosition, { align: 'center' });
 
-    // Report type and date
+    // Decorative line under title
+    yPosition += 5;
+    this.doc.setDrawColor(BRAND_COLORS.primary[0], BRAND_COLORS.primary[1], BRAND_COLORS.primary[2]);
+    this.doc.setLineWidth(0.5);
+    this.doc.line(this.pageWidth / 2 - 40, yPosition, this.pageWidth / 2 + 40, yPosition);
+
+    // Report subtitle
+    yPosition += 10;
     this.doc.setFontSize(10);
     this.doc.setTextColor(BRAND_COLORS.accent[0], BRAND_COLORS.accent[1], BRAND_COLORS.accent[2]);
     if (options.reportType) {
-      this.doc.text(`Report Type: ${options.reportType}`, 20, 65);
+      this.doc.text(options.reportType, this.pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 8;
     }
-    this.doc.text(`Generated: ${format(new Date(), "dd MMM yyyy, HH:mm")}`, 20, 72);
 
-    return 85;
+    return yPosition + 10;
   }
 
   // Add watermark
@@ -939,7 +981,8 @@ export const generateStaffReportPDF = (
 export const generateCarePlanDetailPDF = (
   carePlan: any,
   clientData: any,
-  branchName: string
+  branchName: string,
+  organizationData?: OrganizationData
 ) => {
   const generator = new EnhancedPdfGenerator();
   generator.generateCarePlanDetailPDF(carePlan, clientData, {
@@ -947,6 +990,7 @@ export const generateCarePlanDetailPDF = (
     branchName,
     reportType: "Comprehensive Care Plan",
     includeWatermark: true,
-    confidential: true
+    confidential: true,
+    organization: organizationData
   });
 };
