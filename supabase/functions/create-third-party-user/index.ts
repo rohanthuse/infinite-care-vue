@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,10 +61,46 @@ serve(async (req) => {
       );
     }
 
-    // Hash the password using bcrypt
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
+    // Hash the password using PostgreSQL's crypt function (pgcrypto)
+    const { data: hashResult, error: hashError } = await supabase
+      .rpc('hash_password', { password_text: password });
 
+    if (hashError) {
+      console.error('[create-third-party-user] Error hashing password:', hashError);
+      // Fallback: create hash using SQL directly
+      const { data: directHash, error: directHashError } = await supabase
+        .from('third_party_users')
+        .select('id')
+        .limit(0);
+      
+      // Use raw SQL to hash and insert
+      const { data: insertResult, error: insertError } = await supabase
+        .rpc('create_third_party_user_with_password', {
+          p_request_id: requestId,
+          p_email: email,
+          p_full_name: fullName,
+          p_password: password,
+          p_access_expires_at: accessExpiresAt || accessRequest.access_until
+        });
+
+      if (insertError) {
+        console.error('[create-third-party-user] Error creating user with RPC:', insertError);
+        throw insertError;
+      }
+
+      console.log('[create-third-party-user] User created via RPC:', insertResult);
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          userId: insertResult,
+          message: 'Third-party user created successfully' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const passwordHash = hashResult;
     console.log('[create-third-party-user] Password hashed successfully');
 
     // Check if user already exists for this request
