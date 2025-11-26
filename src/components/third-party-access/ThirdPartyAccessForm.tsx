@@ -40,6 +40,12 @@ const formSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters"),
+  confirmPassword: z
+    .string()
+    .min(1, "Please confirm the password"),
   organisation: z.string().optional(),
   clientConsentRequired: z.enum(["yes", "no"], {
     required_error: "Please specify if client consent is required",
@@ -53,6 +59,12 @@ const formSchema = z.object({
     message: "You must agree to the terms and conditions",
   }),
 }).refine(
+  (data) => data.password === data.confirmPassword,
+  {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  }
+).refine(
   (data) => {
     if (data.accessUntil) {
       return data.accessUntil > data.accessFrom;
@@ -82,6 +94,8 @@ export const ThirdPartyAccessForm = ({
       firstName: "",
       surname: "",
       email: "",
+      password: "",
+      confirmPassword: "",
       organisation: "",
       clientConsentRequired: "yes",
       reasonForAccess: "",
@@ -98,6 +112,7 @@ export const ThirdPartyAccessForm = ({
       first_name: data.firstName,
       surname: data.surname,
       email: data.email,
+      password: data.password,
       organisation: data.organisation || undefined,
       request_for: data.requestFor,
       client_consent_required: data.clientConsentRequired === "yes",
@@ -199,6 +214,34 @@ export const ThirdPartyAccessForm = ({
                     <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="Enter email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter password (min 8 characters)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Confirm password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

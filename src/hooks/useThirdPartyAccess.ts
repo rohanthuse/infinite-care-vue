@@ -30,6 +30,7 @@ export interface CreateThirdPartyAccessData {
   first_name: string;
   surname: string;
   email: string;
+  password: string;
   organisation?: string;
   request_for: 'client' | 'staff';
   client_consent_required: boolean;
@@ -83,6 +84,7 @@ export const useThirdPartyAccess = (branchId: string) => {
 
       console.log('Current user:', user.id);
 
+      // Create the access request first
       const { data, error } = await supabase
         .from('third_party_access_requests')
         .insert({
@@ -97,6 +99,7 @@ export const useThirdPartyAccess = (branchId: string) => {
           reason_for_access: requestData.reason_for_access,
           access_from: requestData.access_from.toISOString(),
           access_until: requestData.access_until?.toISOString(),
+          status: 'approved', // Auto-approve since admin is setting password
         })
         .select()
         .single();
@@ -110,13 +113,37 @@ export const useThirdPartyAccess = (branchId: string) => {
       }
 
       console.log('Access request created successfully:', data);
+
+      // Now create the third-party user with hashed password via edge function
+      const { data: userResult, error: userError } = await supabase.functions.invoke('create-third-party-user', {
+        body: {
+          requestId: data.id,
+          email: requestData.email,
+          fullName: `${requestData.first_name} ${requestData.surname}`,
+          password: requestData.password,
+          accessExpiresAt: requestData.access_until?.toISOString(),
+        }
+      });
+
+      if (userError) {
+        console.error('Error creating third-party user:', userError);
+        // Don't fail the whole operation, user can be created later
+        toast({
+          title: "Warning",
+          description: "Access request created, but user account setup failed. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Third-party user created:', userResult);
+      }
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['third-party-access-requests', branchId] });
       toast({
         title: "Success",
-        description: "Third-party access request created successfully",
+        description: "Third-party access request created and user account set up successfully",
       });
     },
     onError: (error) => {

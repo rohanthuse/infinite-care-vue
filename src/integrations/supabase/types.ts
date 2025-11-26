@@ -10125,6 +10125,7 @@ export type Database = {
           last_login_at: string | null
           login_count: number
           organisation: string | null
+          password_hash: string | null
           request_id: string
           role: string | null
           surname: string
@@ -10142,6 +10143,7 @@ export type Database = {
           last_login_at?: string | null
           login_count?: number
           organisation?: string | null
+          password_hash?: string | null
           request_id: string
           role?: string | null
           surname: string
@@ -10159,6 +10161,7 @@ export type Database = {
           last_login_at?: string | null
           login_count?: number
           organisation?: string | null
+          password_hash?: string | null
           request_id?: string
           role?: string | null
           surname?: string
@@ -10993,6 +10996,10 @@ export type Database = {
       }
       admin_set_staff_password: {
         Args: { p_admin_id: string; p_new_password: string; p_staff_id: string }
+        Returns: Json
+      }
+      authenticate_third_party_user: {
+        Args: { p_email: string; p_password: string }
         Returns: Json
       }
       auto_confirm_branch_admins: { Args: never; Returns: Json }
