@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileCheck, Calendar, User } from 'lucide-react';
+import { FileCheck, Calendar, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface ReviewSectionProps {
@@ -9,8 +9,10 @@ interface ReviewSectionProps {
 }
 
 export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps) {
+  const data = carePlan || {};
+
   const formatDate = (date: string | Date | null | undefined) => {
-    if (!date) return 'Not specified';
+    if (!date) return null;
     try {
       return new Date(date).toLocaleDateString('en-US', { 
         year: 'numeric', 
@@ -32,6 +34,21 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
     }
   };
 
+  const renderDateField = (label: string, value: any, highlight = false) => {
+    const formattedDate = formatDate(value);
+    
+    return (
+      <div className={`rounded p-3 ${highlight ? 'bg-blue-50 border border-blue-200' : 'bg-muted/50'}`}>
+        <label className={`text-sm ${highlight ? 'text-blue-700 font-medium' : 'text-muted-foreground'}`}>{label}</label>
+        {formattedDate ? (
+          <p className={`font-medium mt-1 ${highlight ? 'text-blue-900' : ''}`}>{formattedDate}</p>
+        ) : (
+          <p className="text-sm mt-1 text-muted-foreground italic">Not specified</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -45,12 +62,13 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
         <div>
           <h3 className="font-semibold text-base mb-3">Current Status</h3>
           <div className="flex items-center gap-3">
-            <Badge className={getStatusColor(carePlan.status)}>
-              {carePlan.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
+            <Badge className={getStatusColor(data.status)}>
+              {data.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
             </Badge>
-            {carePlan.client_acknowledged_at && (
+            {data.client_acknowledged_at && (
               <span className="text-sm text-green-600 flex items-center gap-1">
-                ✓ Approved on {formatDate(carePlan.client_acknowledged_at)}
+                <CheckCircle className="h-4 w-4" />
+                Approved on {formatDate(data.client_acknowledged_at)}
               </span>
             )}
           </div>
@@ -63,32 +81,11 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
             Important Dates
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-muted/50 rounded p-3">
-              <label className="text-sm text-muted-foreground">Plan Created</label>
-              <p className="font-medium mt-1">{formatDate(carePlan.created_at)}</p>
-            </div>
-            <div className="bg-muted/50 rounded p-3">
-              <label className="text-sm text-muted-foreground">Last Updated</label>
-              <p className="font-medium mt-1">{formatDate(carePlan.updated_at)}</p>
-            </div>
-            {carePlan.start_date && (
-              <div className="bg-muted/50 rounded p-3">
-                <label className="text-sm text-muted-foreground">Start Date</label>
-                <p className="font-medium mt-1">{formatDate(carePlan.start_date)}</p>
-              </div>
-            )}
-            {carePlan.end_date && (
-              <div className="bg-muted/50 rounded p-3">
-                <label className="text-sm text-muted-foreground">End Date</label>
-                <p className="font-medium mt-1">{formatDate(carePlan.end_date)}</p>
-              </div>
-            )}
-            {carePlan.review_date && (
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <label className="text-sm text-blue-700 font-medium">Next Review Date</label>
-                <p className="font-medium mt-1 text-blue-900">{formatDate(carePlan.review_date)}</p>
-              </div>
-            )}
+            {renderDateField('Plan Created', data.created_at)}
+            {renderDateField('Last Updated', data.updated_at)}
+            {renderDateField('Start Date', data.start_date)}
+            {renderDateField('End Date', data.end_date)}
+            {renderDateField('Next Review Date', data.review_date, true)}
           </div>
         </div>
 
@@ -102,7 +99,7 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
             <div className="flex items-center gap-3">
               <User className="h-8 w-8 text-primary" />
               <div>
-                <p className="font-medium">{carePlan.provider_name || 'Not assigned'}</p>
+                <p className="font-medium">{data.provider_name || <span className="text-muted-foreground italic">Not assigned</span>}</p>
                 <p className="text-sm text-muted-foreground">Primary Care Provider</p>
               </div>
             </div>
@@ -114,38 +111,76 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
           <h3 className="font-semibold text-base mb-3">Care Plan Summary</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-center">
-              <p className="text-2xl font-bold text-blue-700">{carePlan.goals?.length || 0}</p>
+              <p className="text-2xl font-bold text-blue-700">{data.goals?.length || 0}</p>
               <p className="text-xs text-blue-600 mt-1">Goals</p>
             </div>
             <div className="bg-green-50 border border-green-200 rounded p-3 text-center">
-              <p className="text-2xl font-bold text-green-700">{carePlan.medications?.length || 0}</p>
+              <p className="text-2xl font-bold text-green-700">{data.medications?.length || 0}</p>
               <p className="text-xs text-green-600 mt-1">Medications</p>
             </div>
             <div className="bg-purple-50 border border-purple-200 rounded p-3 text-center">
-              <p className="text-2xl font-bold text-purple-700">{carePlan.activities?.length || 0}</p>
+              <p className="text-2xl font-bold text-purple-700">{data.activities?.length || 0}</p>
               <p className="text-xs text-purple-600 mt-1">Activities</p>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded p-3 text-center">
-              <p className="text-2xl font-bold text-amber-700">{carePlan.risk_assessments?.length || 0}</p>
+              <p className="text-2xl font-bold text-amber-700">{data.risk_assessments?.length || 0}</p>
               <p className="text-xs text-amber-600 mt-1">Risk Assessments</p>
             </div>
           </div>
         </div>
 
-        {/* Additional Notes */}
-        {additionalNotes && (
-          <div>
-            <h3 className="font-semibold text-base mb-3">Additional Notes</h3>
-            <div className="bg-muted/50 rounded p-4">
-              <p className="text-sm whitespace-pre-wrap">{additionalNotes}</p>
-            </div>
+        {/* Completion Progress */}
+        <div>
+          <h3 className="font-semibold text-base mb-3">Completion Progress</h3>
+          <div className="space-y-2">
+            {[
+              { label: 'Basic Information', complete: !!data.title },
+              { label: 'About Me', complete: !!data.about_me && Object.keys(data.about_me || {}).length > 0 },
+              { label: 'Medical Information', complete: !!data.medical_info && Object.keys(data.medical_info || {}).length > 0 },
+              { label: 'Goals', complete: (data.goals?.length || 0) > 0 },
+              { label: 'Activities', complete: (data.activities?.length || 0) > 0 },
+              { label: 'Personal Care', complete: !!data.personal_care && Object.keys(data.personal_care || {}).length > 0 },
+              { label: 'Dietary Requirements', complete: !!data.dietary && Object.keys(data.dietary || {}).length > 0 },
+              { label: 'Risk Assessments', complete: (data.risk_assessments?.length || 0) > 0 },
+              { label: 'Consent', complete: !!data.consent && Object.keys(data.consent || {}).length > 0 },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-2 rounded bg-muted/30">
+                <span className="text-sm">{item.label}</span>
+                {item.complete ? (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Complete
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Incomplete
+                  </Badge>
+                )}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+
+        {/* Additional Notes */}
+        <div>
+          <h3 className="font-semibold text-base mb-3">Additional Notes</h3>
+          <div className="bg-muted/50 rounded p-4">
+            {additionalNotes || data.additional_notes ? (
+              <p className="text-sm whitespace-pre-wrap">{additionalNotes || data.additional_notes}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">No additional notes provided</p>
+            )}
+          </div>
+        </div>
 
         {/* Approval Information */}
-        {carePlan.status === 'pending_client_approval' && (
+        {data.status === 'pending_client_approval' && (
           <div className="bg-amber-50 border border-amber-200 rounded p-4">
-            <h4 className="font-semibold text-amber-900 mb-2">⏳ Awaiting Your Approval</h4>
+            <h4 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              Awaiting Your Approval
+            </h4>
             <p className="text-sm text-amber-800">
               This care plan has been prepared by your care team and is ready for your review. 
               Please review all sections carefully and provide your approval when ready.
@@ -153,18 +188,18 @@ export function ReviewSection({ carePlan, additionalNotes }: ReviewSectionProps)
           </div>
         )}
 
-        {carePlan.client_acknowledged_at && (
+        {data.client_acknowledged_at && (
           <div className="bg-green-50 border border-green-200 rounded p-4">
             <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
-              <FileCheck className="h-5 w-5" />
-              ✓ Approved by You
+              <CheckCircle className="h-5 w-5" />
+              Approved by You
             </h4>
             <p className="text-sm text-green-800">
-              You approved this care plan on {formatDate(carePlan.client_acknowledged_at)}.
-              {carePlan.client_approval_comments && (
+              You approved this care plan on {formatDate(data.client_acknowledged_at)}.
+              {data.client_approval_comments && (
                 <>
                   <br /><br />
-                  <strong>Your comments:</strong> {carePlan.client_approval_comments}
+                  <strong>Your comments:</strong> {data.client_approval_comments}
                 </>
               )}
             </p>

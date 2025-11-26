@@ -8,24 +8,10 @@ interface MedicalSectionProps {
 }
 
 export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
-  if (!medicalInfo || Object.keys(medicalInfo).length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
-            Medical & Mental Health
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No medical information provided yet.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const data = medicalInfo || {};
 
   const renderList = (label: string, items: any[], isAlert = false) => {
-    if (!items || items.length === 0) return null;
+    const hasValue = items && Array.isArray(items) && items.length > 0;
     
     return (
       <div>
@@ -33,25 +19,33 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
           {isAlert && <AlertCircle className="h-4 w-4 text-red-500" />}
           {label}
         </label>
-        <ul className="mt-2 space-y-2">
-          {items.map((item, idx) => (
-            <li key={idx} className="flex items-start gap-2">
-              <span className={isAlert ? "text-red-500" : "text-primary"}>•</span>
-              <span className="text-base">{typeof item === 'string' ? item : item.name || item.condition || JSON.stringify(item)}</span>
-            </li>
-          ))}
-        </ul>
+        {hasValue ? (
+          <ul className="mt-2 space-y-2">
+            {items.map((item, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className={isAlert ? "text-red-500" : "text-primary"}>•</span>
+                <span className="text-base">{typeof item === 'string' ? item : item.name || item.condition || JSON.stringify(item)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm mt-1 text-muted-foreground italic">No data provided</p>
+        )}
       </div>
     );
   };
 
   const renderField = (label: string, value: any) => {
-    if (!value) return null;
+    const hasValue = value !== undefined && value !== null && value !== '';
     
     return (
       <div>
         <label className="text-sm font-medium text-muted-foreground">{label}</label>
-        <p className="text-base mt-1 whitespace-pre-wrap">{value}</p>
+        {hasValue ? (
+          <p className="text-base mt-1 whitespace-pre-wrap">{value}</p>
+        ) : (
+          <p className="text-sm mt-1 text-muted-foreground italic">No data provided</p>
+        )}
       </div>
     );
   };
@@ -65,90 +59,136 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {(medicalInfo.allergies && medicalInfo.allergies.length > 0) && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            {renderList('⚠️ Allergies', medicalInfo.allergies, true)}
-          </div>
-        )}
-        
-        {(medicalInfo.current_medications && medicalInfo.current_medications.length > 0) && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            {renderList('Current Medications', medicalInfo.current_medications)}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {renderList('Medical Conditions', medicalInfo.medical_conditions || medicalInfo.conditions)}
-          {renderList('Mental Health Conditions', medicalInfo.mental_health_conditions)}
-          {renderList('Sensory Impairments', medicalInfo.sensory_impairments)}
-          {renderField('Mobility Status', medicalInfo.mobility_status)}
-          {renderField('Mental Health Status', medicalInfo.mental_health_status)}
-          {renderField('Communication Needs', medicalInfo.communication_needs)}
-          {renderField('Sensory Needs', medicalInfo.sensory_needs)}
-          {renderField('Cognitive Status', medicalInfo.cognitive_status)}
-          {renderField('Pain Management', medicalInfo.pain_management)}
-          {renderField('Medical History', medicalInfo.medical_history)}
-          {renderField('Emergency Contacts', medicalInfo.emergency_contacts)}
-          {renderField('GP Information', medicalInfo.gp_info)}
-          {renderField('Hospital/Consultant', medicalInfo.hospital_consultant)}
+        {/* Allergies - Always show prominently */}
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h4 className="font-semibold text-red-900 mb-3 flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            Allergies
+          </h4>
+          {data.allergies && data.allergies.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {data.allergies.map((allergy: any, idx: number) => (
+                <Badge key={idx} variant="destructive">{typeof allergy === 'string' ? allergy : allergy?.name || JSON.stringify(allergy)}</Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-red-700 italic">No allergies recorded</p>
+          )}
         </div>
 
-        {medicalInfo.service_band && (medicalInfo.service_band.categories || medicalInfo.service_band.details) && (
-          <div>
-            <h4 className="font-semibold text-base mb-3">Service Band Categories</h4>
-            {medicalInfo.service_band.categories && medicalInfo.service_band.categories.length > 0 && (
-              <div className="mb-4">
-                <label className="text-sm font-medium text-muted-foreground">Selected Categories</label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {medicalInfo.service_band.categories.map((cat: string, idx: number) => (
-                    <Badge key={idx} variant="outline">{cat}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            {medicalInfo.service_band.details && Object.keys(medicalInfo.service_band.details).length > 0 && (
-              <div className="space-y-4">
-                {Object.entries(medicalInfo.service_band.details).map(([categorySlug, details]: [string, any]) => (
-                  <div key={categorySlug} className="bg-muted/50 rounded p-4">
-                    <h5 className="font-medium capitalize mb-2">{categorySlug.replace(/_/g, ' ')}</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      {Object.entries(details).map(([key, value]: [string, any]) => {
-                        if (!value) return null;
-                        return (
-                          <div key={key}>
-                            <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
-                            <span className="ml-2">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+        {/* Current Medications */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-semibold text-blue-900 mb-3">Current Medications</h4>
+          {data.current_medications && data.current_medications.length > 0 ? (
+            <ul className="space-y-1">
+              {data.current_medications.map((med: any, idx: number) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-blue-600">•</span>
+                  <span>{typeof med === 'string' ? med : med.name || JSON.stringify(med)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-blue-700 italic">No current medications recorded</p>
+          )}
+        </div>
+
+        {/* Medical Conditions */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Medical Conditions</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderList('Medical Conditions', data.medical_conditions || data.conditions)}
+            {renderList('Mental Health Conditions', data.mental_health_conditions)}
+            {renderList('Sensory Impairments', data.sensory_impairments)}
+          </div>
+        </div>
+
+        {/* Health Status */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Health Status</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {renderField('Mobility Status', data.mobility_status)}
+            {renderField('Mental Health Status', data.mental_health_status)}
+            {renderField('Cognitive Status', data.cognitive_status)}
+            {renderField('Communication Needs', data.communication_needs)}
+            {renderField('Sensory Needs', data.sensory_needs)}
+            {renderField('Pain Management', data.pain_management)}
+          </div>
+        </div>
+
+        {/* Medical History */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Medical History & Contacts</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {renderField('Medical History', data.medical_history)}
+            {renderField('Emergency Contacts', data.emergency_contacts)}
+            {renderField('GP Information', data.gp_info)}
+            {renderField('Hospital/Consultant', data.hospital_consultant)}
+          </div>
+        </div>
+
+        {/* Service Band Categories */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">Service Band Categories</h4>
+          {data.service_band?.categories && data.service_band.categories.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {data.service_band.categories.map((cat: string, idx: number) => (
+                  <Badge key={idx} variant="outline">{cat}</Badge>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-
-        {medicalInfo.news2_monitoring_enabled && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              NEWS2 Monitoring Enabled
-            </h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Frequency:</span>
-                <span className="ml-2 capitalize">{medicalInfo.news2_monitoring_frequency || 'Daily'}</span>
-              </div>
-              {medicalInfo.news2_monitoring_notes && (
-                <div className="col-span-2">
-                  <span className="text-muted-foreground">Notes:</span>
-                  <p className="mt-1">{medicalInfo.news2_monitoring_notes}</p>
+              {data.service_band.details && Object.keys(data.service_band.details).length > 0 && (
+                <div className="space-y-4">
+                  {Object.entries(data.service_band.details).map(([categorySlug, details]: [string, any]) => (
+                    <div key={categorySlug} className="bg-muted/50 rounded p-4">
+                      <h5 className="font-medium capitalize mb-2">{categorySlug.replace(/_/g, ' ')}</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        {Object.entries(details).map(([key, value]: [string, any]) => {
+                          if (value === undefined || value === null) return null;
+                          return (
+                            <div key={key}>
+                              <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                              <span className="ml-2">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No service band categories selected</p>
+          )}
+        </div>
+
+        {/* NEWS2 Monitoring */}
+        <div>
+          <h4 className="font-semibold text-base mb-3">NEWS2 Monitoring</h4>
+          {data.news2_monitoring_enabled ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="h-4 w-4 text-blue-600" />
+                <span className="font-medium text-blue-900">NEWS2 Monitoring Enabled</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Frequency:</span>
+                  <span className="ml-2 capitalize">{data.news2_monitoring_frequency || 'Daily'}</span>
+                </div>
+                {data.news2_monitoring_notes && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Notes:</span>
+                    <p className="mt-1">{data.news2_monitoring_notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">NEWS2 monitoring is not enabled</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

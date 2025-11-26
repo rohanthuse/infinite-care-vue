@@ -9,165 +9,174 @@ interface ServicesSectionProps {
 }
 
 export function ServicesSection({ servicePlans, serviceActions }: ServicesSectionProps) {
-  const hasPlans = servicePlans && servicePlans.length > 0;
-  const hasActions = serviceActions && serviceActions.length > 0;
+  const plans = servicePlans || [];
+  const actions = serviceActions || [];
 
-  if (!hasPlans && !hasActions) {
+  const renderField = (label: string, value: any) => {
+    const hasValue = value !== undefined && value !== null && value !== '';
+    
     return (
+      <div>
+        <label className="text-muted-foreground">{label}</label>
+        {hasValue ? (
+          <p className="font-medium">{value}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">Not specified</p>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Service Plans */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
-            Services
+            Service Plans ({plans.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No service plans or actions recorded yet.</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {hasPlans && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-primary" />
-              Service Plans ({servicePlans.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {servicePlans.map((plan, idx) => (
+        <CardContent className="space-y-4">
+          {plans.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-muted rounded-lg">
+              <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No service plans have been recorded yet.</p>
+              <p className="text-sm">Service plans can be added during care plan creation.</p>
+            </div>
+          ) : (
+            plans.map((plan, idx) => (
               <Card key={idx} className="border-l-4 border-l-cyan-500">
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-base">{plan.service_name || plan.name}</h4>
-                        {plan.description && (
+                        <h4 className="font-semibold text-base">{plan.service_name || plan.name || 'Unnamed Service Plan'}</h4>
+                        {plan.description ? (
                           <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic mt-1">No description provided</p>
                         )}
                       </div>
-                      {plan.status && (
-                        <Badge variant={plan.status === 'active' ? 'default' : 'secondary'}>
-                          {plan.status}
-                        </Badge>
-                      )}
+                      <Badge variant={plan.status === 'active' ? 'default' : 'secondary'}>
+                        {plan.status || 'Unknown'}
+                      </Badge>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      {plan.frequency && (
-                        <div>
-                          <label className="text-muted-foreground">Frequency</label>
-                          <p className="font-medium">{plan.frequency}</p>
-                        </div>
-                      )}
-                      {plan.start_date && (
-                        <div>
-                          <label className="text-muted-foreground flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Start Date
-                          </label>
+                      {renderField('Frequency', plan.frequency)}
+                      <div>
+                        <label className="text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Start Date
+                        </label>
+                        {plan.start_date ? (
                           <p className="font-medium">{new Date(plan.start_date).toLocaleDateString()}</p>
-                        </div>
-                      )}
-                      {plan.end_date && (
-                        <div>
-                          <label className="text-muted-foreground">End Date</label>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Not specified</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-muted-foreground">End Date</label>
+                        {plan.end_date ? (
                           <p className="font-medium">{new Date(plan.end_date).toLocaleDateString()}</p>
-                        </div>
-                      )}
-                      {plan.provider && (
-                        <div>
-                          <label className="text-muted-foreground">Provider</label>
-                          <p className="font-medium">{plan.provider}</p>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Not specified</p>
+                        )}
+                      </div>
+                      {renderField('Provider', plan.provider)}
                     </div>
 
-                    {plan.notes && (
-                      <div className="bg-muted/50 rounded p-3">
-                        <label className="text-sm font-medium">Notes</label>
-                        <p className="text-sm mt-1">{plan.notes}</p>
-                      </div>
-                    )}
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                      {plan.notes ? (
+                        <div className="bg-muted/50 rounded p-3 mt-2">
+                          <p className="text-sm">{plan.notes}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm mt-1 text-muted-foreground italic">No notes provided</p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+            ))
+          )}
+        </CardContent>
+      </Card>
 
-      {hasActions && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-primary" />
-              Service Actions ({serviceActions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {serviceActions.map((action, idx) => (
+      {/* Service Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckSquare className="h-5 w-5 text-primary" />
+            Service Actions ({actions.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {actions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-muted rounded-lg">
+              <CheckSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>No service actions have been recorded yet.</p>
+              <p className="text-sm">Service actions can be added during care plan creation.</p>
+            </div>
+          ) : (
+            actions.map((action, idx) => (
               <Card key={idx} className="border-l-4 border-l-teal-500">
                 <CardContent className="pt-4">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-base">{action.action || action.name}</h4>
-                        {action.description && (
+                        <h4 className="font-semibold text-base">{action.action || action.name || 'Unnamed Action'}</h4>
+                        {action.description ? (
                           <p className="text-sm text-muted-foreground mt-1">{action.description}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic mt-1">No description provided</p>
                         )}
                       </div>
-                      {action.status && (
-                        <Badge variant={action.status === 'completed' ? 'default' : 'secondary'}>
-                          {action.status}
-                        </Badge>
-                      )}
+                      <Badge variant={action.status === 'completed' ? 'default' : 'secondary'}>
+                        {action.status || 'Unknown'}
+                      </Badge>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      {action.responsible_person && (
-                        <div>
-                          <label className="text-muted-foreground">Responsible Person</label>
-                          <p className="font-medium">{action.responsible_person}</p>
-                        </div>
-                      )}
-                      {action.start_date && (
-                        <div>
-                          <label className="text-muted-foreground">Start Date</label>
+                      {renderField('Responsible Person', action.responsible_person)}
+                      <div>
+                        <label className="text-muted-foreground">Start Date</label>
+                        {action.start_date ? (
                           <p className="font-medium">{new Date(action.start_date).toLocaleDateString()}</p>
-                        </div>
-                      )}
-                      {action.end_date && (
-                        <div>
-                          <label className="text-muted-foreground">End Date</label>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Not specified</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-muted-foreground">End Date</label>
+                        {action.end_date ? (
                           <p className="font-medium">{new Date(action.end_date).toLocaleDateString()}</p>
-                        </div>
-                      )}
-                      {action.priority && (
-                        <div>
-                          <label className="text-muted-foreground">Priority</label>
-                          <p className="font-medium capitalize">{action.priority}</p>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Not specified</p>
+                        )}
+                      </div>
+                      {renderField('Priority', action.priority)}
                     </div>
 
-                    {action.notes && (
-                      <div className="bg-muted/50 rounded p-3">
-                        <label className="text-sm font-medium">Notes</label>
-                        <p className="text-sm mt-1">{action.notes}</p>
-                      </div>
-                    )}
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                      {action.notes ? (
+                        <div className="bg-muted/50 rounded p-3 mt-2">
+                          <p className="text-sm">{action.notes}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm mt-1 text-muted-foreground italic">No notes provided</p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+            ))
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
