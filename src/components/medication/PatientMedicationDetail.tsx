@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Clock, Pill, FileText, MoreHorizontal, AlertCircle, CheckCircle, AlertTriangle, ExternalLink, User, UserCheck, CalendarDays } from "lucide-react";
+import { Calendar, Clock, Pill, FileText, MoreHorizontal, AlertCircle, CheckCircle, AlertTriangle, ExternalLink, User, UserCheck, CalendarDays, Download } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
 import { 
   DropdownMenu,
@@ -20,6 +20,9 @@ import MedChartData from "./MedChartData";
 import { useMedicationsByClient } from "@/hooks/useMedications";
 import { useMARByClient, useRecordMedicationAdministration, useRealTimeMedicationUpdates, MedicationAdministrationRecord } from "@/hooks/useMedicationAdministration";
 import { useMedicationNavigation } from "@/hooks/useMedicationNavigation";
+import { useClientProfile } from "@/hooks/useClientData";
+import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
+import { generateMedicationReportPDF } from "@/utils/medicationReportGenerator";
 
 interface PatientMedicationDetailProps {
   patientId: string;
@@ -36,6 +39,10 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
   });
   const recordAdministration = useRecordMedicationAdministration();
   const navigation = useMedicationNavigation();
+  
+  // Client profile and branch data for report generation
+  const { data: clientProfile } = useClientProfile(patientId);
+  const { branchName } = useBranchDashboardNavigation();
   
   // Set up real-time updates
   useRealTimeMedicationUpdates();
@@ -131,6 +138,45 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
     return null;
   };
 
+  // Generate medication report PDF directly
+  const handleGenerateMedicationReport = () => {
+    if (!clientProfile) {
+      toast.error("Client information not available. Please try again.");
+      return;
+    }
+    
+    const clientName = `${clientProfile.first_name || ''} ${clientProfile.last_name || ''}`.trim() || 'Unknown Client';
+    
+    const reportData = {
+      clientName,
+      clientEmail: clientProfile.email,
+      clientPhone: clientProfile.phone,
+      clientDateOfBirth: clientProfile.date_of_birth,
+      clientGender: clientProfile.gender,
+      clientAddress: clientProfile.address,
+      branchName: branchName || undefined,
+      medications: medications.map(med => ({
+        name: med.name,
+        dosage: med.dosage,
+        frequency: med.frequency,
+        start_date: med.start_date,
+        end_date: med.end_date,
+        status: med.status,
+        notes: med.notes,
+        givenBy: getCreatorDisplayName(med.created_by_profile),
+        givenByRole: med.created_by_role?.role ? formatUserRole(med.created_by_role.role) : undefined,
+      })),
+    };
+    
+    try {
+      generateMedicationReportPDF(reportData);
+      toast.success("Medication report downloaded successfully");
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.error("Failed to generate report. Please try again.");
+    }
+  };
+
   if (medicationsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -162,8 +208,8 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
               <User className="h-4 w-4 mr-2" />
               Client Profile
             </Button>
-            <Button variant="outline" onClick={() => navigation.navigateToReports()}>
-              <FileText className="h-4 w-4 mr-2" />
+            <Button variant="outline" onClick={handleGenerateMedicationReport}>
+              <Download className="h-4 w-4 mr-2" />
               Generate Report
             </Button>
           </div>
