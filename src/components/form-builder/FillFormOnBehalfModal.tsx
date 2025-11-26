@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Save, Send, AlertCircle, Loader2, Upload, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -527,7 +527,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
             <span className="ml-2">Loading form...</span>
           </div>
         ) : (
-          <ScrollArea className="flex-1 min-h-0 h-0 px-6">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6">
             <div className="py-4 space-y-6">
               {/* Read-only banner for completed submissions */}
               {isReadOnly ? (
@@ -570,7 +570,7 @@ export const FillFormOnBehalfModal: React.FC<FillFormOnBehalfModalProps> = ({
                 {elements.map(renderFormElement)}
               </div>
             </div>
-          </ScrollArea>
+          </div>
         )}
 
         {/* Footer actions */}
