@@ -31,6 +31,11 @@ export interface MedicationAdministrationRecord {
     first_name: string;
     last_name: string;
   } | null;
+  administered_by_profile?: {
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+  administered_by_role?: string | null;
 }
 
 export interface MARFormData {
@@ -86,46 +91,112 @@ export function useMARByMedication(medicationId: string, dateRange?: { start: st
   });
 }
 
-// Hook to fetch MAR records for a client with enhanced data
+// Hook to fetch MAR records for a client with enhanced data (two-step query approach)
 export function useMARByClient(clientId: string, dateRange?: { start: string; end: string }) {
   return useQuery({
     queryKey: ['mar', 'client', clientId, dateRange],
     queryFn: async () => {
-      let query = supabase
-        .from('medication_administration_records')
+      // Step 1: Get all medication IDs for this client through their care plans
+      const { data: clientMedications, error: medError } = await supabase
+        .from('client_medications')
         .select(`
-          *,
-          client_medications!inner(
-            name,
-            dosage,
-            client_care_plans!inner(
-              client_id,
-              title,
-              clients(
-                first_name,
-                last_name,
-                branch_id
-              )
-            )
+          id,
+          name,
+          dosage,
+          client_care_plans!inner(
+            client_id,
+            title
           )
         `)
-        .eq('client_medications.client_care_plans.client_id', clientId)
+        .eq('client_care_plans.client_id', clientId);
+
+      if (medError) throw medError;
+      if (!clientMedications || clientMedications.length === 0) {
+        return [];
+      }
+
+      const medicationIds = clientMedications.map(m => m.id);
+
+      // Step 2: Get administration records for those medications
+      let query = supabase
+        .from('medication_administration_records')
+        .select('*')
+        .in('medication_id', medicationIds)
         .order('administered_at', { ascending: false });
 
       if (dateRange) {
         query = query
           .gte('administered_at', dateRange.start)
-          .lte('administered_at', dateRange.end);
+          .lte('administered_at', `${dateRange.end}T23:59:59`);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
+      const { data: marRecords, error: marError } = await query;
+      if (marError) throw marError;
+
+      if (!marRecords || marRecords.length === 0) {
+        return [];
+      }
+
+      // Step 3: Get unique administered_by values (could be emails or names)
+      const uniqueAdministeredBy = [...new Set(marRecords.map(r => r.administered_by).filter(Boolean))];
       
-      // Transform the data to match our interface
-      return (data || []).map(record => ({
-        ...record,
-        administered_by_staff: null // We'll handle staff lookup separately if needed
-      })) as MedicationAdministrationRecord[];
+      // Step 4: Fetch profile info - try matching by email first
+      let profilesMap: Record<string, { first_name: string | null; last_name: string | null; role: string | null; id: string }> = {};
+      
+      if (uniqueAdministeredBy.length > 0) {
+        // Try to find profiles by email
+        const { data: profilesByEmail } = await supabase
+          .from('profiles')
+          .select('id, email, first_name, last_name')
+          .in('email', uniqueAdministeredBy);
+        
+        // Get user roles for found profiles
+        if (profilesByEmail && profilesByEmail.length > 0) {
+          const profileIds = profilesByEmail.map(p => p.id);
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('user_id, role')
+            .in('user_id', profileIds);
+          
+          // Build profiles map by email
+          profilesByEmail.forEach(p => {
+            const userRole = roles?.find(r => r.user_id === p.id);
+            if (p.email) {
+              profilesMap[p.email] = {
+                first_name: p.first_name,
+                last_name: p.last_name,
+                role: userRole?.role || null,
+                id: p.id
+              };
+            }
+          });
+        }
+      }
+
+      // Step 5: Build lookup map for medications
+      const medicationsMap = clientMedications.reduce((acc, med) => {
+        acc[med.id] = {
+          name: med.name,
+          dosage: med.dosage,
+          client_care_plans: med.client_care_plans
+        };
+        return acc;
+      }, {} as Record<string, { name: string; dosage: string; client_care_plans: unknown }>);
+
+      // Step 6: Combine all data
+      return marRecords.map(record => {
+        const profile = profilesMap[record.administered_by] || null;
+        return {
+          ...record,
+          client_medications: medicationsMap[record.medication_id] || null,
+          administered_by_profile: profile ? {
+            first_name: profile.first_name,
+            last_name: profile.last_name
+          } : null,
+          administered_by_role: profile?.role || null,
+          administered_by_staff: null
+        };
+      }) as MedicationAdministrationRecord[];
     },
     enabled: !!clientId,
   });

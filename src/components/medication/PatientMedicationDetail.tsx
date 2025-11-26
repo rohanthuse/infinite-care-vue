@@ -535,16 +535,20 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                         </TableCell>
                         <TableCell>{renderStatusBadge(record.status)}</TableCell>
                         <TableCell>
-                          <div className="font-medium">{record.administered_by}</div>
-                          {record.administered_by_staff && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="p-0 h-auto text-xs text-blue-600 hover:text-blue-800"
-                              onClick={() => handleActionClick("ViewStaff", record.id, record)}
-                            >
-                              View Profile
-                            </Button>
+                          <div className="font-medium">
+                            {record.administered_by_profile?.first_name || record.administered_by_profile?.last_name
+                              ? `${record.administered_by_profile.first_name || ''} ${record.administered_by_profile.last_name || ''}`.trim()
+                              : record.administered_by?.includes('@') 
+                                ? record.administered_by.split('@')[0] 
+                                : record.administered_by || 'Unknown'
+                            }
+                          </div>
+                          {record.administered_by_role && (
+                            <div className="text-xs text-muted-foreground">
+                              {record.administered_by_role.split('_').map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1)
+                              ).join(' ')}
+                            </div>
                           )}
                         </TableCell>
                         <TableCell>{format(new Date(record.administered_at), 'MMM d, yyyy HH:mm')}</TableCell>
