@@ -11,8 +11,7 @@ export interface ThirdPartyAccessRequest {
   surname: string;
   email: string;
   organisation?: string;
-  role?: string;
-  request_for: 'client' | 'staff' | 'both';
+  request_for: 'client' | 'staff';
   client_consent_required: boolean;
   reason_for_access: string;
   access_from: string;
@@ -32,8 +31,7 @@ export interface CreateThirdPartyAccessData {
   surname: string;
   email: string;
   organisation?: string;
-  role?: string;
-  request_for: 'client' | 'staff' | 'both';
+  request_for: 'client' | 'staff';
   client_consent_required: boolean;
   reason_for_access: string;
   access_from: Date;
@@ -94,7 +92,6 @@ export const useThirdPartyAccess = (branchId: string) => {
           surname: requestData.surname,
           email: requestData.email,
           organisation: requestData.organisation,
-          role: requestData.role,
           request_for: requestData.request_for,
           client_consent_required: requestData.client_consent_required,
           reason_for_access: requestData.reason_for_access,
