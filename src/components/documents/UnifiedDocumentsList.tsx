@@ -115,12 +115,12 @@ export function UnifiedDocumentsList({
   // Filter documents
   const filteredDocuments = useMemo(() => {
     return documents.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.uploaded_by_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.client_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         doc.staff_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = (doc.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (doc.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (doc.type || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (doc.uploaded_by_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (doc.client_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (doc.staff_name || '').toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesCategory = categoryFilter === "all" || doc.category === categoryFilter;
       const matchesEntity = entityFilter === "all" || doc.related_entity === entityFilter;
@@ -429,7 +429,7 @@ export function UnifiedDocumentsList({
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="font-medium truncate">{doc.name}</p>
+                                <p className="font-medium truncate">{doc.name || 'Unnamed Document'}</p>
                                 {getFileStatusIcon(doc.has_file, doc.file_path)}
                                 <span title={`Storage: ${getStorageBucket(doc.file_path)}`}>
                                   <Database className="h-3 w-3 text-gray-400" />
