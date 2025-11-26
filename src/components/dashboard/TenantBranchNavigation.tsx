@@ -172,7 +172,8 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
   const handleEnterBranch = (branch: Branch) => {
     // For tenant context, navigate to tenant-specific branch dashboard
-    const encodedBranchName = encodeURIComponent(branch.name);
+    // Trim branch name to handle any leading/trailing whitespace
+    const encodedBranchName = encodeURIComponent(branch.name.trim());
     console.log('Navigating to tenant branch:', branch.id, branch.name, encodedBranchName);
     
     // Use tenant-aware path

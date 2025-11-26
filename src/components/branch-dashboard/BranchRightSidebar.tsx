@@ -289,10 +289,11 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
       return;
     }
     
-    // Use proper tenant context
+    // Use proper tenant context - trim branchName to handle whitespace
+    const trimmedBranchName = branchName?.trim() || branchName;
     const basePath = tenantSlug 
-      ? `/${tenantSlug}/branch-dashboard/${id}/${branchName}` 
-      : `/branch-dashboard/${id}/${branchName}`;
+      ? `/${tenantSlug}/branch-dashboard/${id}/${trimmedBranchName}` 
+      : `/branch-dashboard/${id}/${trimmedBranchName}`;
     
     const targetPath = `${basePath}/${tabValue}`;
     
