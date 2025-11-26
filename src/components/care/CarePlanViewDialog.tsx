@@ -32,7 +32,8 @@ import { PersonalCareSection } from '@/components/care/client-view/PersonalCareS
 import { DietarySection } from '@/components/care/client-view/DietarySection';
 import { RiskAssessmentSection } from '@/components/care/client-view/RiskAssessmentSection';
 import { EquipmentSection } from '@/components/care/client-view/EquipmentSection';
-import { ServicesSection } from '@/components/care/client-view/ServicesSection';
+import { ServicePlansSection } from '@/components/care/client-view/ServicePlansSection';
+import { ServiceActionsSection } from '@/components/care/client-view/ServiceActionsSection';
 import { DocumentsSection } from '@/components/care/client-view/DocumentsSection';
 import { ConsentSection } from '@/components/care/client-view/ConsentSection';
 import { ReviewSection } from '@/components/care/client-view/ReviewSection';
@@ -431,11 +432,10 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
         return <EquipmentSection equipment={wizardData.equipment || []} />;
       
       case 12: // Service Plans
-      case 13: // Service Actions (combined with service plans)
-        return <ServicesSection 
-          servicePlans={wizardData.service_plans || []} 
-          serviceActions={wizardData.service_actions || []} 
-        />;
+        return <ServicePlansSection servicePlans={wizardData.service_plans || []} />;
+      
+      case 13: // Service Actions
+        return <ServiceActionsSection serviceActions={wizardData.service_actions || []} />;
       
       case 14: // Documents
         return <DocumentsSection documents={wizardData.documents || []} />;
