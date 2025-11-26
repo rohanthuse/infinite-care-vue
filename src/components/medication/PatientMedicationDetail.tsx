@@ -111,6 +111,26 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
     return roleMap[role] || role;
   };
 
+  // Helper function to get display name with fallbacks
+  const getCreatorDisplayName = (profile: { first_name: string | null; last_name: string | null; email?: string | null } | null | undefined) => {
+    if (!profile) return null;
+    
+    const firstName = profile.first_name?.trim();
+    const lastName = profile.last_name?.trim();
+    
+    if (firstName && lastName) {
+      return `${firstName} ${lastName}`;
+    } else if (firstName) {
+      return firstName;
+    } else if (lastName) {
+      return lastName;
+    } else if (profile.email) {
+      // Use email username as fallback
+      return profile.email.split('@')[0];
+    }
+    return null;
+  };
+
   if (medicationsLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -207,9 +227,8 @@ const PatientMedicationDetail: React.FC<PatientMedicationDetailProps> = ({ patie
                         <UserCheck className="h-4 w-4 text-muted-foreground" />
                         <div>
                           <div className="text-sm font-medium">
-                            {medication.created_by_profile 
-                              ? `${medication.created_by_profile.first_name} ${medication.created_by_profile.last_name}`
-                              : '—'
+                            {getCreatorDisplayName(medication.created_by_profile) || 
+                              (medication.created_by ? 'Unknown User' : '—')
                             }
                           </div>
                           {medication.created_by_role?.role && (
