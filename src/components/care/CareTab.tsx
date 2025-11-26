@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Search, Plus, FileText, Download, 
   Filter, ChevronDown, Eye, Edit, Trash2, 
-  MoreHorizontal, ClipboardCheck, Calendar,
+  MoreHorizontal, Calendar,
   FileX
 } from "lucide-react";
 import { 
@@ -53,7 +53,6 @@ import { format, isAfter, isBefore, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { getCarePlanStatusOptions } from "@/utils/statusHelpers";
-import { useCarePlanStatusChange } from "@/hooks/useCarePlanStatusChange";
 import { generateCarePlanPDF } from "@/utils/pdfGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -278,14 +277,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   // Use the hook to fetch care plans - MUST be at the top
   const { data: carePlans = [], isLoading, error } = useCarePlans(branchId);
   
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
-  const [statusReason, setStatusReason] = useState<string>("");
-  const { changeStatus, isChanging } = useCarePlanStatusChange();
-  
-  const statusDialogId = 'care-plan-status-change';
-  const statusControlledDialog = useControlledDialog(statusDialogId, false);
-  
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [assignedToFilter, setAssignedToFilter] = useState<string>("all");
@@ -314,13 +305,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
   
   // Track which dropdown is open to prevent UI freeze
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
-
-  const handleStatusDialogClose = useCallback(() => {
-    statusControlledDialog.onOpenChange(false);
-    setSelectedPlan(null);
-    setSelectedStatus("");
-    setStatusReason("");
-  }, [statusControlledDialog]);
 
   // useEffect hooks MUST also be at the top - ONLY ONE useEffect with these dependencies
   useEffect(() => {
@@ -669,64 +653,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
     }
   };
 
-  const openStatusChangeDialog = (id: string) => {
-    const plan = carePlans.find(plan => plan._databaseId === id || plan.id === id);
-    if (plan) {
-      setSelectedPlan(plan._databaseId || id);
-      setSelectedStatus(plan.status);
-      statusControlledDialog.onOpenChange(true);
-    } else {
-      toast({
-        title: "Care Plan Not Found",
-        description: "Could not find the care plan to change status.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStatusChange = () => {
-    if (!selectedPlan || !selectedStatus) {
-      console.warn('[CareTab] Cannot change status: missing plan or status', {
-        selectedPlan,
-        selectedStatus
-      });
-      return;
-    }
-
-    // Convert display status to database format
-    const statusMap: Record<string, string> = {
-      'Active': 'active',
-      'Draft': 'draft',
-      'Under Review': 'under_review',
-      'On Hold': 'on_hold',
-      'Completed': 'completed',
-      'Archived': 'archived',
-      'Pending Client Approval': 'pending_client_approval',
-      'Client Approved': 'approved',
-      'Changes Requested': 'rejected'
-    };
-    
-    const databaseStatus = statusMap[selectedStatus] || selectedStatus.toLowerCase().replace(/\s+/g, '_');
-    
-    console.log('[CareTab] Changing care plan status:', {
-      carePlanId: selectedPlan,
-      displayStatus: selectedStatus,
-      databaseStatus: databaseStatus,
-      reason: statusReason
-    });
-
-    changeStatus({
-      carePlanId: selectedPlan,
-      newStatus: databaseStatus,
-      reason: statusReason || undefined
-    });
-
-    statusControlledDialog.onOpenChange(false);
-    setSelectedPlan(null);
-    setSelectedStatus("");
-    setStatusReason("");
-  };
-
   const handleFilterApply = () => {
     setIsFiltering(statusFilter !== "all" || assignedToFilter !== "all" || !!dateRangeStart || !!dateRangeEnd);
     setFilterDialogOpen(false);
@@ -779,7 +705,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
             onEdit={handleEditCarePlan}
             onEditDraft={handleEditDraft}
             onDelete={handleDeleteCarePlan}
-            onStatusChange={openStatusChangeDialog}
+            
           />
         </div>
       )}
@@ -1150,13 +1076,7 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
                         }}>
                           <Edit className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setActiveDropdownId(null);
-                          setTimeout(() => openStatusChangeDialog(plan.id), 50);
-                        }}>
-                          <ClipboardCheck className="mr-2 h-4 w-4" /> Change Status
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteCarePlan(plan)}
                           className="text-red-600 focus:text-red-600"
                         >
@@ -1239,71 +1159,6 @@ export const CareTab = ({ branchId, branchName }: CareTabProps) => {
         )}
       </div>
 
-      <Dialog open={statusControlledDialog.open} onOpenChange={handleStatusDialogClose}>
-        <DialogContent 
-          className="sm:max-w-[425px]"
-          onEscapeKeyDown={handleStatusDialogClose}
-          onPointerDownOutside={handleStatusDialogClose}
-        >
-          <DialogHeader>
-            <DialogTitle>Change Care Plan Status</DialogTitle>
-            <DialogDescription>
-              Update the status of the selected care plan. This change will be recorded in the plan's history.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="status" className="text-right text-sm font-medium">
-                Status
-              </label>
-              <div className="col-span-3">
-                <Select 
-                  value={selectedStatus} 
-                  onValueChange={setSelectedStatus}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <label htmlFor="reason" className="text-right text-sm font-medium pt-2">
-                Reason
-              </label>
-              <div className="col-span-3">
-                <textarea
-                  id="reason"
-                  placeholder="Optional reason for status change..."
-                  value={statusReason}
-                  onChange={(e) => setStatusReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-input rounded-md text-sm resize-none"
-                  rows={3}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleStatusDialogClose} disabled={isChanging}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleStatusChange} 
-              type="button"
-              disabled={!selectedStatus || isChanging}
-            >
-              {isChanging ? "Updating..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
 
       {/* Care Plan Creation Wizard */}

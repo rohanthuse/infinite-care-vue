@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/table';
 import { 
   Search, Filter, Eye, Edit, Trash2, 
-  MoreHorizontal, Users, CheckCircle, 
+  MoreHorizontal, Users, CheckCircle,
   Clock, AlertCircle, FileX, UserCheck, MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -62,7 +62,7 @@ interface AdminCarePlanManagementProps {
   onEdit: (id: string) => void;
   onEditDraft: (id: string) => void;
   onDelete: (plan: any) => void;
-  onStatusChange: (id: string) => void;
+  onStatusChange?: (id: string) => void;
   onViewChangeRequest?: (plan: CarePlan) => void;
 }
 
@@ -107,7 +107,6 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
   onEdit,
   onEditDraft,
   onDelete,
-  onStatusChange,
   onViewChangeRequest
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -277,10 +276,7 @@ export const AdminCarePlanManagement: React.FC<AdminCarePlanManagementProps> = (
                 </DropdownMenuItem>
               )}
               
-              <DropdownMenuItem onClick={() => onStatusChange(plan.id)}>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Change Status
-              </DropdownMenuItem>
+              
               
               {plan.status === 'draft' && (
                 <DropdownMenuItem 
