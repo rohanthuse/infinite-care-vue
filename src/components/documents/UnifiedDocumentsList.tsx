@@ -409,7 +409,7 @@ export function UnifiedDocumentsList({
                       
                       return (
                         <TableRow 
-                          key={`${doc.source_table}-${doc.id}`}
+                          key={`${doc.source_table || 'unknown'}-${doc.id}`}
                           id={`doc-${doc.id}`}
                           className={cn(isHighlighted && "ring-2 ring-primary bg-primary/5")}
                         >
@@ -481,8 +481,8 @@ export function UnifiedDocumentsList({
                           <span className="text-sm">{doc.uploaded_by_name || 'Admin'}</span>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`text-xs ${getSourceBadgeColor(doc.source_table)}`}>
-                            {doc.source_table.replace('_', ' ')}
+                          <Badge className={`text-xs ${getSourceBadgeColor(doc.source_table || 'unknown')}`}>
+                            {(doc.source_table || 'unknown').replace('_', ' ')}
                           </Badge>
                         </TableCell>
                         <TableCell>

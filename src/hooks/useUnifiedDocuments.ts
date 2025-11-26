@@ -82,14 +82,15 @@ export const useUnifiedDocuments = (branchId: string) => {
       }
 
       // Map RPC column names to expected interface column names
-      // The RPC returns: storage_path, uploaded_at, size
-      // The interface expects: file_path, created_at, file_size
+      // The RPC returns: storage_path, uploaded_at, size, source_table
+      // The interface expects: file_path, created_at, file_size, source_table
       const documentsWithFileStatus = data?.map((doc: any) => ({
         ...doc,
         file_path: doc.storage_path || doc.file_path,
         file_size: doc.size || doc.file_size,
         created_at: doc.uploaded_at || doc.created_at,
         updated_at: doc.uploaded_at || doc.updated_at,
+        source_table: doc.source_table || 'unknown',
         has_file: !!(doc.storage_path || doc.file_path)
       })) || [];
 

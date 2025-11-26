@@ -11294,6 +11294,7 @@ export type Database = {
           related_entity: string
           related_entity_id: string
           size: string
+          source_table: string
           status: string
           storage_path: string
           type: string
