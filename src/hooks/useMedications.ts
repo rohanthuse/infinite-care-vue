@@ -16,11 +16,13 @@ export interface Medication {
   created_at: string;
   updated_at: string;
   created_by?: string;
-  created_by_staff?: {
+  created_by_profile?: {
     id: string;
     first_name: string;
     last_name: string;
-    specialization?: string;
+  } | null;
+  created_by_role?: {
+    role: string;
   } | null;
 }
 
@@ -59,26 +61,61 @@ export function useMedicationsByClient(clientId: string) {
   return useQuery({
     queryKey: ['medications', 'client', clientId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch medications
+      const { data: medications, error } = await supabase
         .from('client_medications')
         .select(`
           *,
           client_care_plans!inner(
             client_id,
             title
-          ),
-          created_by_staff:staff!created_by(
-            id,
-            first_name,
-            last_name,
-            specialization
           )
         `)
         .eq('client_care_plans.client_id', clientId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as (Medication & { client_care_plans: { client_id: string; title: string } })[];
+      
+      // Get unique creator IDs
+      const creatorIds = [...new Set(medications?.map(m => m.created_by).filter(Boolean))] as string[];
+      
+      // Fetch profiles and roles for creators
+      let profilesMap: Record<string, { first_name: string; last_name: string }> = {};
+      let rolesMap: Record<string, string> = {};
+      
+      if (creatorIds.length > 0) {
+        const [profilesResult, rolesResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .in('id', creatorIds),
+          supabase
+            .from('user_roles')
+            .select('user_id, role')
+            .in('user_id', creatorIds)
+        ]);
+        
+        if (profilesResult.data) {
+          profilesResult.data.forEach(p => {
+            profilesMap[p.id] = { first_name: p.first_name, last_name: p.last_name };
+          });
+        }
+        
+        if (rolesResult.data) {
+          rolesResult.data.forEach(r => {
+            rolesMap[r.user_id] = r.role;
+          });
+        }
+      }
+      
+      // Merge profile and role data into medications
+      const enrichedMedications = medications?.map(med => ({
+        ...med,
+        created_by_profile: med.created_by ? profilesMap[med.created_by] || null : null,
+        created_by_role: med.created_by && rolesMap[med.created_by] ? { role: rolesMap[med.created_by] } : null,
+      }));
+      
+      return enrichedMedications as (Medication & { client_care_plans: { client_id: string; title: string } })[];
     },
     enabled: !!clientId,
   });
