@@ -325,6 +325,55 @@ export const useThirdPartyAccess = (branchId: string) => {
     },
   });
 
+  // Delete request mutation
+  const deleteRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      console.log('Deleting access request:', requestId);
+      
+      // First, delete any linked third-party users
+      const { error: userDeleteError } = await supabase
+        .from('third_party_users')
+        .delete()
+        .eq('request_id', requestId);
+
+      if (userDeleteError) {
+        console.error('Error deleting third-party user:', userDeleteError);
+        // Continue with request deletion even if user deletion fails
+      }
+
+      // Then delete the access request
+      const { error } = await supabase
+        .from('third_party_access_requests')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) {
+        console.error('Error deleting request:', error);
+        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
+          throw new Error('Access denied: You do not have permission to delete this request.');
+        }
+        throw error;
+      }
+
+      return requestId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['third-party-access-requests', branchId] });
+      toast({
+        title: "Success",
+        description: "Access request deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting request:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete request",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
     requests,
     isLoading,
@@ -333,9 +382,11 @@ export const useThirdPartyAccess = (branchId: string) => {
     approveRequest: approveRequestMutation.mutate,
     rejectRequest: rejectRequestMutation.mutate,
     revokeAccess: revokeAccessMutation.mutate,
+    deleteRequest: deleteRequestMutation.mutate,
     isCreating: createRequestMutation.isPending,
     isApproving: approveRequestMutation.isPending,
     isRejecting: rejectRequestMutation.isPending,
     isRevoking: revokeAccessMutation.isPending,
+    isDeleting: deleteRequestMutation.isPending,
   };
 };
