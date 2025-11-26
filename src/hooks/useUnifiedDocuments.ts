@@ -81,10 +81,16 @@ export const useUnifiedDocuments = (branchId: string) => {
         throw error;
       }
 
-      // Simplified file existence check to avoid 504 errors
+      // Map RPC column names to expected interface column names
+      // The RPC returns: storage_path, uploaded_at, size
+      // The interface expects: file_path, created_at, file_size
       const documentsWithFileStatus = data?.map((doc: any) => ({
         ...doc,
-        has_file: !!doc.file_path // Simple check: if file_path exists, assume file exists
+        file_path: doc.storage_path || doc.file_path,
+        file_size: doc.size || doc.file_size,
+        created_at: doc.uploaded_at || doc.created_at,
+        updated_at: doc.uploaded_at || doc.updated_at,
+        has_file: !!(doc.storage_path || doc.file_path)
       })) || [];
 
       console.log('[useUnifiedDocuments] Successfully fetched documents count:', documentsWithFileStatus.length);
