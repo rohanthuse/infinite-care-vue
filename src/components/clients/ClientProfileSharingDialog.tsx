@@ -50,8 +50,8 @@ export function ClientProfileSharingDialog({
     first_name: "",
     surname: "",
     email: "",
+    password: "",
     organisation: "",
-    role: "",
     reason_for_access: "",
     access_from: new Date(),
     access_until: undefined as Date | undefined,
@@ -65,10 +65,19 @@ export function ClientProfileSharingDialog({
   };
 
   const handleThirdPartySubmit = () => {
-    if (!formData.first_name || !formData.surname || !formData.email || !formData.reason_for_access) {
+    if (!formData.first_name || !formData.surname || !formData.email || !formData.password || !formData.reason_for_access) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including password",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (formData.password.length < 8) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters",
         variant: "destructive",
       });
       return;
@@ -87,8 +96,8 @@ export function ClientProfileSharingDialog({
       first_name: "",
       surname: "",
       email: "",
+      password: "",
       organisation: "",
-      role: "",
       reason_for_access: "",
       access_from: new Date(),
       access_until: undefined,
@@ -194,12 +203,13 @@ export function ClientProfileSharingDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
+                <Label htmlFor="password">Password *</Label>
                 <Input
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) => handleInputChange("role", e.target.value)}
-                  placeholder="Doctor, Social Worker, etc."
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  placeholder="Min 8 characters"
                 />
               </div>
             </div>

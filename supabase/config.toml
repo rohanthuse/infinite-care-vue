@@ -90,3 +90,9 @@ verify_jwt = false
 
 [functions.send-notification-email]
 verify_jwt = true
+
+[functions.create-third-party-user]
+verify_jwt = false
+
+[functions.third-party-login]
+verify_jwt = false
