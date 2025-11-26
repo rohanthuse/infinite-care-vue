@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, FileText, Eye, Download, Plus, X, AlertCircle, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
@@ -270,6 +271,7 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string; filePath?: string; name: string } | null>(null);
   const [downloadingDocIds, setDownloadingDocIds] = useState<Set<string>>(new Set());
+  const [activeDocTab, setActiveDocTab] = useState('staff-documents');
 
   // Fetch documents using existing hook
   const { data: documents = [], isLoading } = useCarerDocuments(carerId);
@@ -490,137 +492,156 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
   }
 
   return (
-    <div className="space-y-6">
-      {/* Staff-Specific Documents */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Staff Documents & Certifications</h3>
-            <p className="text-sm text-gray-600">Manage staff-specific documents and certifications</p>
-          </div>
-          <Button 
-            onClick={() => setUploadDialogOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Upload Document
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      {/* Tab Navigation */}
+      <Tabs value={activeDocTab} onValueChange={setActiveDocTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="staff-documents" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Staff Documents
+          </TabsTrigger>
+          <TabsTrigger value="admin-shared" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Shared Documents from Admin
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Documents List */}
-      <Card>
-        <CardContent className="p-6">
-          {documents.length > 0 ? (
-            <div className="space-y-4">
-              {documents.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <p className="font-semibold text-gray-900">
-                        {doc.source_type === 'training_certification' ? doc.file_name : doc.document_type}
-                      </p>
-                      <Badge 
-                        variant="outline" 
-                        className={
-                          doc.source_type === 'training_certification' 
-                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                            : 'bg-gray-50 text-gray-700 border-gray-200'
-                        }
-                      >
-                        {doc.source_type === 'training_certification' ? 'Training Certification' : 'Document'}
-                      </Badge>
-                    </div>
-                    {doc.source_type === 'training_certification' && doc.training_course_name && (
-                      <p className="text-sm text-blue-600 font-medium">
-                        Course: {doc.training_course_name}
-                      </p>
-                    )}
-                    <p className="text-sm text-gray-600">
-                      {doc.source_type === 'training_certification' && doc.completion_date
-                        ? `Completed: ${formatDate(doc.completion_date)}`
-                        : doc.expiry_date 
-                          ? `Expires: ${formatDate(doc.expiry_date)}` 
-                          : `Created: ${formatDate(doc.created_at)}`
-                      }
-                    </p>
-                    {doc.file_size && (
-                      <p className="text-xs text-gray-500">Size: {doc.file_size}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant="outline" 
-                      className={getStatusColor(doc.status)}
-                    >
-                      {doc.status}
-                    </Badge>
-                    {doc.file_path && doc.file_path.trim() !== '' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(doc)}
-                        disabled={downloadingDocIds.has(doc.file_path)}
-                        className="flex items-center gap-1"
-                      >
-                        {downloadingDocIds.has(doc.file_path) ? (
-                          <>
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
-                            Downloading...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="h-3 w-3" />
-                            Download
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    {doc.source_type === 'document' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteClick(doc)}
-                        disabled={deleteMutation.isPending}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No documents on file</p>
+        {/* Staff Documents Tab */}
+        <TabsContent value="staff-documents" className="mt-4">
+          <div className="space-y-4">
+            {/* Header with Upload Button */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Staff Documents & Certifications</h3>
+                <p className="text-sm text-gray-600">Manage staff-specific documents and certifications</p>
+              </div>
               <Button 
                 onClick={() => setUploadDialogOpen(true)}
-                variant="outline"
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Upload First Document
+                Upload Document
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Shared Documents from Admin (Main documents table) */}
-      <div className="pt-6 border-t border-gray-200">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Shared Documents from Admin</h3>
-          <p className="text-sm text-gray-600">Documents uploaded through the main Documents tab</p>
-        </div>
-        <EntityDocumentsSection 
-          entityType="staff"
-          entityId={carerId}
-        />
-      </div>
+            {/* Documents List */}
+            <Card>
+              <CardContent className="p-6">
+                {documents.length > 0 ? (
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <FileText className="h-4 w-4 text-gray-500" />
+                            <p className="font-semibold text-gray-900">
+                              {doc.source_type === 'training_certification' ? doc.file_name : doc.document_type}
+                            </p>
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                doc.source_type === 'training_certification' 
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                  : 'bg-gray-50 text-gray-700 border-gray-200'
+                              }
+                            >
+                              {doc.source_type === 'training_certification' ? 'Training Certification' : 'Document'}
+                            </Badge>
+                          </div>
+                          {doc.source_type === 'training_certification' && doc.training_course_name && (
+                            <p className="text-sm text-blue-600 font-medium">
+                              Course: {doc.training_course_name}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600">
+                            {doc.source_type === 'training_certification' && doc.completion_date
+                              ? `Completed: ${formatDate(doc.completion_date)}`
+                              : doc.expiry_date 
+                                ? `Expires: ${formatDate(doc.expiry_date)}` 
+                                : `Created: ${formatDate(doc.created_at)}`
+                            }
+                          </p>
+                          {doc.file_size && (
+                            <p className="text-xs text-gray-500">Size: {doc.file_size}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant="outline" 
+                            className={getStatusColor(doc.status)}
+                          >
+                            {doc.status}
+                          </Badge>
+                          {doc.file_path && doc.file_path.trim() !== '' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownload(doc)}
+                              disabled={downloadingDocIds.has(doc.file_path)}
+                              className="flex items-center gap-1"
+                            >
+                              {downloadingDocIds.has(doc.file_path) ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                  Downloading...
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="h-3 w-3" />
+                                  Download
+                                </>
+                              )}
+                            </Button>
+                          )}
+                          {doc.source_type === 'document' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteClick(doc)}
+                              disabled={deleteMutation.isPending}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">No documents on file</p>
+                    <Button 
+                      onClick={() => setUploadDialogOpen(true)}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Upload First Document
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Shared Documents from Admin Tab */}
+        <TabsContent value="admin-shared" className="mt-4">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Shared Documents from Admin</h3>
+              <p className="text-sm text-gray-600">Documents uploaded through the main Documents tab</p>
+            </div>
+            <EntityDocumentsSection 
+              entityType="staff"
+              entityId={carerId}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
