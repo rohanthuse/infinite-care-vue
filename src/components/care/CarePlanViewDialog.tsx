@@ -560,10 +560,6 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleEditToggle}>
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Plan
-                </Button>
               </div>
             )}
           </div>
