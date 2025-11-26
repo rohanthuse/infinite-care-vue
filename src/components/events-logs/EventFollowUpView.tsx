@@ -16,8 +16,6 @@ export function EventFollowUpView({
   followUpAssignedTo, 
   followUpNotes 
 }: EventFollowUpViewProps) {
-  if (!actionRequired) return null;
-
   return (
     <div className="space-y-4">
       <h4 className="font-medium text-sm flex items-center gap-2">
@@ -25,6 +23,11 @@ export function EventFollowUpView({
         Follow-up Requirements
       </h4>
       
+      {!actionRequired ? (
+        <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 text-center">
+          No follow-up required for this event
+        </div>
+      ) : (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-3">
           <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
@@ -62,6 +65,7 @@ export function EventFollowUpView({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

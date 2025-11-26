@@ -28,8 +28,6 @@ export function EventComplianceView({
 }: EventComplianceViewProps) {
   const hasComplianceData = familyNotified !== undefined || gpNotified !== undefined || 
                            insuranceNotified !== undefined || externalReportingRequired !== undefined;
-  
-  if (!hasComplianceData) return null;
 
   const NotificationItem = ({ 
     label, 
@@ -77,6 +75,11 @@ export function EventComplianceView({
         Notifications & Compliance
       </h4>
       
+      {!hasComplianceData ? (
+        <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 text-center">
+          No notification or compliance data recorded for this event
+        </div>
+      ) : (
       <div className="space-y-3">
         {/* Family Notification */}
         {familyNotified !== undefined && (
@@ -125,6 +128,7 @@ export function EventComplianceView({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

@@ -120,22 +120,30 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">Reporter:</span>
-                <span>{event.reporter}</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">Created:</span>
-                <span>{format(new Date(event.created_at), 'PPP')}</span>
+                <span className="font-medium">Event Date:</span>
+                <span>{event.event_date ? format(new Date(event.event_date), 'PPP') : format(new Date(event.created_at), 'PPP')}</span>
               </div>
 
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-gray-500" />
-                <span className="font-medium">Time:</span>
-                <span>{format(new Date(event.created_at), 'p')}</span>
+                <span className="font-medium">Event Time:</span>
+                <span>{event.event_time || format(new Date(event.created_at), 'p')}</span>
               </div>
+
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">Reporter:</span>
+                <span>{event.reporter}</span>
+              </div>
+
+              {event.recorded_by_staff_id && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="font-medium">Recorded By:</span>
+                  <span>{resolveStaffName(event.recorded_by_staff_id)}</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -146,6 +154,12 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
                   <span>{event.location}</span>
                 </div>
               )}
+
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-gray-500" />
+                <span className="font-medium">Recorded At:</span>
+                <span>{format(new Date(event.created_at), 'PPp')}</span>
+              </div>
 
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-gray-500" />

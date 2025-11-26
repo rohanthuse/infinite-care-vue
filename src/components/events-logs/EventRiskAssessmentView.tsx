@@ -18,8 +18,6 @@ export function EventRiskAssessmentView({
   similarIncidents
 }: EventRiskAssessmentViewProps) {
   const hasRiskData = riskLevel || contributingFactors?.length || environmentalFactors || preventable !== undefined || similarIncidents;
-  
-  if (!hasRiskData) return null;
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -37,6 +35,11 @@ export function EventRiskAssessmentView({
         Risk Assessment
       </h4>
       
+      {!hasRiskData ? (
+        <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-4 text-center">
+          No risk assessment data recorded for this event
+        </div>
+      ) : (
       <div className="space-y-4">
         {/* Risk Level */}
         {riskLevel && (
@@ -96,6 +99,7 @@ export function EventRiskAssessmentView({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
