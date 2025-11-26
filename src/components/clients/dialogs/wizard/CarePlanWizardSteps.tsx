@@ -71,13 +71,13 @@ export function CarePlanWizardSteps({ currentStep, form, clientId, effectiveCare
       case 15:
         return <WizardStepConsent form={form} />;
       case 16:
-        return <WizardStep14Review form={form} />;
-      case 17:
         return <BehaviorSupportTab clientId={clientId} clientName="" />;
-      case 18:
+      case 17:
         return <EducationDevelopmentTab clientId={clientId} clientName="" />;
-      case 19:
+      case 18:
         return <SafeguardingRisksTab clientId={clientId} clientName="" />;
+      case 19:
+        return <WizardStep14Review form={form} />;
       default:
         console.warn(`Unknown step: ${currentStep}, defaulting to step 1`);
         return <WizardStep1BasicInfo form={form} />;
