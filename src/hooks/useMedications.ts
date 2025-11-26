@@ -18,8 +18,9 @@ export interface Medication {
   created_by?: string;
   created_by_profile?: {
     id: string;
-    first_name: string;
-    last_name: string;
+    first_name: string | null;
+    last_name: string | null;
+    email?: string | null;
   } | null;
   created_by_role?: {
     role: string;
@@ -80,14 +81,14 @@ export function useMedicationsByClient(clientId: string) {
       const creatorIds = [...new Set(medications?.map(m => m.created_by).filter(Boolean))] as string[];
       
       // Fetch profiles and roles for creators
-      let profilesMap: Record<string, { first_name: string; last_name: string }> = {};
+      let profilesMap: Record<string, { first_name: string | null; last_name: string | null; email?: string | null }> = {};
       let rolesMap: Record<string, string> = {};
       
       if (creatorIds.length > 0) {
         const [profilesResult, rolesResult] = await Promise.all([
           supabase
             .from('profiles')
-            .select('id, first_name, last_name')
+            .select('id, first_name, last_name, email')
             .in('id', creatorIds),
           supabase
             .from('user_roles')
@@ -97,7 +98,7 @@ export function useMedicationsByClient(clientId: string) {
         
         if (profilesResult.data) {
           profilesResult.data.forEach(p => {
-            profilesMap[p.id] = { first_name: p.first_name, last_name: p.last_name };
+            profilesMap[p.id] = { first_name: p.first_name, last_name: p.last_name, email: p.email };
           });
         }
         
