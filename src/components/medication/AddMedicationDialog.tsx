@@ -42,6 +42,7 @@ import { useCreateMedication } from "@/hooks/useMedications";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBranchDashboardNavigation } from "@/hooks/useBranchDashboardNavigation";
+import { useAuth } from "@/hooks/useAuth";
 
 interface AddMedicationDialogProps {
   open: boolean;
@@ -75,6 +76,27 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
   const createMedication = useCreateMedication();
   const queryClient = useQueryClient();
   const { id: branchId } = useBranchDashboardNavigation();
+  const { user } = useAuth();
+
+  // Fetch current staff ID from auth user
+  const { data: currentStaff } = useQuery({
+    queryKey: ['current-staff-for-medication', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('staff')
+        .select('id, first_name, last_name, specialization')
+        .eq('auth_user_id', user.id)
+        .single();
+      
+      if (error) {
+        console.log('[AddMedicationDialog] No staff record found for user:', user.id);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
 
   // Fetch all clients in the current branch with inclusive filtering
   const { data: clients = [] } = useQuery({
@@ -215,6 +237,7 @@ export const AddMedicationDialog = ({ open, onOpenChange }: AddMedicationDialogP
         start_date: values.start_date.toISOString().split('T')[0],
         end_date: values.end_date?.toISOString().split('T')[0],
         status: values.status || "active",
+        created_by: currentStaff?.id,
       };
 
       console.log('[AddMedicationDialog] Medication data:', medicationData);
