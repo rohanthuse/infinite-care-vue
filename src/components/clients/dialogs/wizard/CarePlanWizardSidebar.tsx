@@ -52,14 +52,14 @@ export function CarePlanWizardSidebar({
                 isCurrent 
                   ? "bg-primary/10 border-primary/20 shadow-sm" 
                   : isCompleted
-                  ? "bg-green-500/10 border-green-500/20 hover:bg-green-500/15"
+                  ? "bg-primary/10 border-primary/20 hover:bg-primary/15"
                   : "bg-card border-border hover:bg-muted/50"
               )}
             >
               <div className="flex items-start space-x-2 xl:space-x-3">
                 <div className="flex-shrink-0 mt-0.5">
                   {isCompleted ? (
-                    <CheckCircle className="h-4 w-4 xl:h-5 xl:w-5 text-green-600" />
+                    <CheckCircle className="h-4 w-4 xl:h-5 xl:w-5 text-primary" />
                   ) : isCurrent ? (
                     <Clock className="h-4 w-4 xl:h-5 xl:w-5 text-primary" />
                   ) : (
@@ -72,7 +72,7 @@ export function CarePlanWizardSidebar({
                     isCurrent 
                       ? "text-primary" 
                       : isCompleted 
-                      ? "text-green-700 dark:text-green-400" 
+                      ? "text-primary" 
                       : "text-foreground"
                   )}>
                     {step.name}
@@ -82,7 +82,7 @@ export function CarePlanWizardSidebar({
                     isCurrent 
                       ? "text-primary/80" 
                       : isCompleted 
-                      ? "text-green-600 dark:text-green-500" 
+                      ? "text-primary/80" 
                       : "text-muted-foreground"
                   )}>
                     {step.description}
