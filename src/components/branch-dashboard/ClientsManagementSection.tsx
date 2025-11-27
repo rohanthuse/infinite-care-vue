@@ -72,10 +72,17 @@ export function ClientsManagementSection({
   // Handle auto-opening client from search - fetch directly from DB to handle pagination
   useEffect(() => {
     const selectedClientId = searchParams.get('selected');
+    console.log('[ClientsManagementSection] useEffect triggered:', {
+      selectedClientId,
+      branchId,
+      clientsCount: clients.length
+    });
+    
     if (selectedClientId && branchId) {
       // First check if client is already in the current page
       const clientInPage = clients.find(c => c.id === selectedClientId);
       if (clientInPage) {
+        console.log('[ClientsManagementSection] Client found in current page, opening popup');
         onViewClient(clientInPage);
         searchParams.delete('selected');
         setSearchParams(searchParams, { replace: true });
@@ -83,6 +90,7 @@ export function ClientsManagementSection({
       }
       
       // If not in current page, fetch directly from database
+      console.log('[ClientsManagementSection] Client not in page, fetching from database');
       const fetchSelectedClient = async () => {
         const { data, error } = await supabase
           .from('clients')
@@ -91,10 +99,15 @@ export function ClientsManagementSection({
           .eq('branch_id', branchId)
           .single();
         
+        console.log('[ClientsManagementSection] Fetch result:', { data, error });
+        
         if (data && !error) {
+          console.log('[ClientsManagementSection] Opening client popup');
           onViewClient(data);
           searchParams.delete('selected');
           setSearchParams(searchParams, { replace: true });
+        } else {
+          console.error('[ClientsManagementSection] Failed to fetch client:', error);
         }
       };
       fetchSelectedClient();

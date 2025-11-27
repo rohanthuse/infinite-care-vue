@@ -97,22 +97,42 @@ export function BranchSearchDropdown({
     ...limitedDocuments
   ];
 
+  // URL encode the branch name to handle spaces and special characters
   const tenantSlug = location.pathname.split('/')[1];
-  const basePath = `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}`;
+  const encodedBranchName = encodeURIComponent(branchName);
+  const basePath = `/${tenantSlug}/branch-dashboard/${branchId}/${encodedBranchName}`;
 
   const handleNavigate = (result: any) => {
+    console.log('[BranchSearchDropdown] handleNavigate called:', { 
+      type: result.type, 
+      id: result.id, 
+      basePath,
+      branchName,
+      encodedBranchName
+    });
+    
+    let targetPath = '';
     if (result.type === 'module') {
-      navigate(`${basePath}${result.path}`);
+      targetPath = `${basePath}${result.path}`;
     } else if (result.type === 'client') {
-      navigate(`${basePath}/clients?selected=${result.id}`);
+      targetPath = `${basePath}/clients?selected=${result.id}`;
     } else if (result.type === 'staff') {
-      navigate(`${basePath}/carers?selected=${result.id}`);
+      targetPath = `${basePath}/carers?selected=${result.id}`;
     } else if (result.type === 'booking') {
-      navigate(`${basePath}/bookings?selected=${result.id}`);
+      targetPath = `${basePath}/bookings?selected=${result.id}`;
     } else if (result.type === 'document') {
-      navigate(`${basePath}/documents?selected=${result.id}`);
+      targetPath = `${basePath}/documents?selected=${result.id}`;
     }
+    
+    console.log('[BranchSearchDropdown] Navigating to:', targetPath);
+    
+    // Close dropdown first, then navigate
     onResultClick();
+    
+    // Use setTimeout to ensure dropdown closes before navigation
+    setTimeout(() => {
+      navigate(targetPath);
+    }, 0);
   };
 
   // Keyboard navigation
@@ -137,17 +157,20 @@ export function BranchSearchDropdown({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, allResults, onClose]);
 
-  // Click outside to close
+  // Click outside to close - use mouseup to allow click handlers to fire first
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(e.target as Node) &&
-        anchorRef.current &&
-        !anchorRef.current.contains(e.target as Node)
-      ) {
-        onClose();
-      }
+      // Use setTimeout to allow click handlers on dropdown items to fire first
+      setTimeout(() => {
+        if (
+          dropdownRef.current && 
+          !dropdownRef.current.contains(e.target as Node) &&
+          anchorRef.current &&
+          !anchorRef.current.contains(e.target as Node)
+        ) {
+          onClose();
+        }
+      }, 10);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
