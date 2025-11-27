@@ -149,8 +149,7 @@ serve(async (req) => {
             last_name: surname,
             email,
             branch_id: branchId,
-            status: 'Active',
-            is_third_party_access: true
+            status: 'Active'
           });
 
         if (clientError) {
@@ -180,8 +179,7 @@ serve(async (req) => {
             last_name: surname,
             email,
             branch_id: branchId,
-            status: 'Active',
-            is_third_party_access: true
+            status: 'Active'
           });
 
         if (staffError) {
@@ -231,7 +229,7 @@ serve(async (req) => {
           email,
           first_name: firstName,
           surname,
-          access_scope: accessType,
+          access_type: accessType,
           access_expires_at: accessExpiresAt || accessRequest.access_until,
           is_active: true
         });
