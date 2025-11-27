@@ -478,7 +478,7 @@ export function UnifiedDocumentsList({
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">{doc.uploaded_by_name || 'Admin'}</span>
+                          <span className="text-sm">{doc.uploaded_by_name || 'Unknown User'}</span>
                         </TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${getSourceBadgeColor(doc.source_table || 'unknown')}`}>
