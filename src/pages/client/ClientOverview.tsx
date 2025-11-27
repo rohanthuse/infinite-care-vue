@@ -106,7 +106,7 @@ const ClientOverview = () => {
       provider: appointment.provider,
       date: appointment.date,
       time: appointment.time,
-      staff_id: appointment.staff_id || '',
+      staff_id: appointment.staff_id || null,
       client_id: clientId
     };
     setSelectedAppointment(appointmentForDialog);

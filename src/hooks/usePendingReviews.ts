@@ -50,7 +50,7 @@ export const usePendingReviews = (clientId: string) => {
         date: appointment.appointment_date,
         time: appointment.appointment_time,
         client_id: appointment.client_id,
-        staff_id: (appointment as any)._booking_data?.staff_id || '',
+        staff_id: (appointment as any)._booking_data?.staff_id || null,
         completed_at: appointment.appointment_date // Using appointment_date as completed_at fallback
       }));
   }, [completedAppointments, existingReviews]);

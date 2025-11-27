@@ -188,7 +188,7 @@ const ClientAppointments = () => {
       date: appointment.appointment_date,
       time: appointment.appointment_time,
       client_id: appointment.client_id,
-      staff_id: appointment.staff_id
+      staff_id: appointment._booking_data?.staff_id || appointment.staff_id || null
     };
     setSelectedAppointment(appointmentData);
     setReviewDialogOpen(true);

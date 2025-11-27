@@ -69,7 +69,7 @@ export function SubmitReviewDialog({ open, onOpenChange, appointment }: SubmitRe
       
       await createReviewMutation.mutateAsync({
         client_id: clientId,
-        staff_id: appointment.staff_id || '', // We'll need to get this from appointment data
+        staff_id: appointment.staff_id || null,
         booking_id: appointment.id, // Changed from appointment_id to booking_id
         service_date: serviceDate,
         rating: rating,
