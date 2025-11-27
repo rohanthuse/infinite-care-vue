@@ -15,6 +15,7 @@ import { useStaffScheduleEvents, StaffTrainingEvent, StaffAppointmentEvent } fro
 import { useStaffWorkingHours } from "@/hooks/useStaffWorkingHours";
 import { StaffWorkingHoursDialog } from "@/components/staff/StaffWorkingHoursDialog";
 import { useTenant } from "@/contexts/TenantContext";
+import { isHolidayOnDate } from "@/utils/holidayHelpers";
 import { DateNavigation } from "./DateNavigation";
 import { BookingFilters } from "./BookingFilters";
 import { StaffUtilizationMetrics } from "./StaffUtilizationMetrics";
@@ -263,10 +264,9 @@ export function StaffScheduleCalendar({
           );
           weekLeave[dayDate] = dayLeave || null;
           
-          // Check for holidays on this day
-          const dayHoliday = holidays.find(holiday => 
-            holiday.leave_date === dayDate
-          );
+          // Check for holidays on this day (with recurring support)
+          const dayOfWeek = addDays(weekStart, i);
+          const dayHoliday = holidays.find(holiday => isHolidayOnDate(holiday, dayOfWeek));
           weekHolidays[dayDate] = dayHoliday || null;
         }
         

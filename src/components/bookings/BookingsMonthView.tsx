@@ -6,6 +6,7 @@ import { DayBookingsDialog } from "./DayBookingsDialog";
 import { AnnualLeave } from "@/hooks/useLeaveManagement";
 import { AlertTriangle } from "lucide-react";
 import { requiresReassignment, getReassignmentBadgeText } from "./utils/bookingColors";
+import { isHolidayOnDate } from "@/utils/holidayHelpers";
 
 export interface Booking {
   id: string;
@@ -121,12 +122,11 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
       }));
   };
 
-  // Get holiday for a specific day
+  // Get holiday for a specific day (with recurring support)
   const getHolidayForDay = (day: Date): AnnualLeave | null => {
     if (!holidays) return null;
     
-    const dayString = format(day, "yyyy-MM-dd");
-    return holidays.find(holiday => holiday.leave_date === dayString) || null;
+    return holidays.find(holiday => isHolidayOnDate(holiday, day)) || null;
   };
 
   // Get status color for booking
@@ -243,18 +243,19 @@ export const BookingsMonthView: React.FC<BookingsMonthViewProps> = ({
                   if (dayHoliday) {
                     return (
                       <div
-                        className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm border-l-2 bg-purple-400 border-purple-600 text-white"
-                        title={`${dayHoliday.leave_name}${dayHoliday.is_company_wide ? ' (Company-wide)' : ''}`}
+                        className="text-xs p-1.5 rounded cursor-pointer transition-all hover:opacity-80 hover:shadow-sm border-l-2 bg-teal-400 border-teal-600 text-white"
+                        title={`${dayHoliday.leave_name}${dayHoliday.is_recurring ? ' (Recurring Annual Holiday)' : ''}${dayHoliday.is_company_wide ? '\nCompany-wide' : ''}\n${format(day, 'MMMM d, yyyy')}`}
                       >
                         <div className="font-semibold truncate flex items-center gap-1">
-                          <span className="bg-white text-purple-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                          <span className="bg-white text-teal-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                             H
                           </span>
                           <span className="truncate">{dayHoliday.leave_name}</span>
                         </div>
-                        {dayHoliday.is_company_wide && (
-                          <div className="text-[10px] opacity-90 ml-5">Company-wide Holiday</div>
-                        )}
+                        <div className="flex items-center gap-1 text-[10px] opacity-90 ml-5">
+                          {dayHoliday.is_recurring && <span>🔁 Recurring</span>}
+                          {dayHoliday.is_company_wide && <span>🏢 Company-wide</span>}
+                        </div>
                       </div>
                     );
                   }

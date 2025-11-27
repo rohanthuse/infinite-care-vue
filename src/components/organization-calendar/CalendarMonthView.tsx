@@ -67,7 +67,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
     const colors = {
       booking: 'bg-blue-500',
       meeting: 'bg-purple-500',
-      leave: 'bg-orange-500',
+      leave: 'bg-teal-500',
       training: 'bg-green-500',
       agreement: 'bg-yellow-500'
     };

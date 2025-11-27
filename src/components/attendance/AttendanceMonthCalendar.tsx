@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 import { Clock, AlertCircle } from "lucide-react";
+import { useAnnualLeave, AnnualLeave } from "@/hooks/useLeaveManagement";
+import { isHolidayOnDate } from "@/utils/holidayHelpers";
 
 interface AttendanceRecord {
   date: string;
@@ -18,12 +20,16 @@ interface AttendanceRecord {
 interface AttendanceMonthCalendarProps {
   currentMonth: Date;
   attendanceData: AttendanceRecord[];
+  branchId?: string;
 }
 
 export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = ({
   currentMonth,
   attendanceData,
+  branchId,
 }) => {
+  // Fetch holidays for the branch
+  const { data: holidays = [] } = useAnnualLeave(branchId);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -34,6 +40,10 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
   const getAllAttendanceForDay = (day: Date): AttendanceRecord[] => {
     const dateStr = format(day, "yyyy-MM-dd");
     return attendanceData.filter((a) => a.date === dateStr);
+  };
+
+  const getHolidayForDay = (day: Date): AnnualLeave | null => {
+    return holidays.find(holiday => isHolidayOnDate(holiday, day)) || null;
   };
 
   const getStatusColor = (status: string, isCurrentMonth: boolean) => {
@@ -137,6 +147,7 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
           {days.map((day, idx) => {
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const dayRecords = getAllAttendanceForDay(day);
+            const dayHoliday = getHolidayForDay(day);
             const hasAttendance = dayRecords.length > 0;
             
             // Determine overall status for coloring (prioritize present/late over absent)
@@ -168,6 +179,24 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
                 <div className="text-sm font-medium mb-1">
                   {format(day, "d")}
                 </div>
+
+                {/* Holiday indicator */}
+                {dayHoliday && isCurrentMonth && (
+                  <div className="mb-2 p-1.5 rounded bg-teal-400 border-l-2 border-teal-600 text-white text-xs">
+                    <div className="font-semibold flex items-center gap-1">
+                      <span className="bg-white text-teal-600 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                        H
+                      </span>
+                      <span className="truncate">{dayHoliday.leave_name}</span>
+                    </div>
+                    {(dayHoliday.is_recurring || dayHoliday.is_company_wide) && (
+                      <div className="text-[10px] opacity-90 ml-5 flex items-center gap-1">
+                        {dayHoliday.is_recurring && <span>🔁</span>}
+                        {dayHoliday.is_company_wide && <span>🏢</span>}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {hasAttendance && isCurrentMonth ? (
                   <div className="space-y-1 text-xs">
@@ -237,13 +266,33 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
               </div>
             );
 
-            // Only add HoverCard if there's attendance data
-            if (hasAttendance && isCurrentMonth) {
+            // Add HoverCard if there's attendance data or holiday
+            if ((hasAttendance || dayHoliday) && isCurrentMonth) {
               return (
                 <HoverCard key={idx} openDelay={200} closeDelay={100}>
                   <HoverCardTrigger asChild>{dayCell}</HoverCardTrigger>
                   <HoverCardContent className="w-80" side="top">
-                    <AttendanceDayTooltip records={dayRecords} date={day} />
+                    {dayHoliday && (
+                      <div className="mb-3 pb-3 border-b">
+                        <div className="font-semibold text-teal-600 flex items-center gap-2">
+                          <span>🎄 {dayHoliday.leave_name}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          📅 {format(day, "MMMM d, yyyy")}
+                        </div>
+                        {dayHoliday.is_recurring && (
+                          <div className="text-sm text-muted-foreground">
+                            🔁 Recurring Annual Holiday
+                          </div>
+                        )}
+                        {dayHoliday.is_company_wide && (
+                          <div className="text-sm text-muted-foreground">
+                            🏢 Company-wide
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {hasAttendance && <AttendanceDayTooltip records={dayRecords} date={day} />}
                   </HoverCardContent>
                 </HoverCard>
               );
