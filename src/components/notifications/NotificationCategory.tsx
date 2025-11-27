@@ -4,7 +4,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Clock, CheckCircle, AlertTriangle, 
   Users, User, Calendar, Pill, FileText, AlertCircle,
-  RefreshCw, Filter, ChevronDown, Eye, MoreHorizontal
+  RefreshCw, Filter, ChevronDown, Eye, MoreHorizontal,
+  MessageSquare, ClipboardList
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +75,22 @@ const categoryConfig = {
     bgColor: "bg-gray-50",
     borderColor: "border-gray-200",
     description: "Recently modified documents"
+  },
+  reports: {
+    title: "Reports",
+    icon: ClipboardList,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-200",
+    description: "Care plans and report updates"
+  },
+  message: {
+    title: "Messages",
+    icon: MessageSquare,
+    color: "text-teal-600",
+    bgColor: "bg-teal-50",
+    borderColor: "border-teal-200",
+    description: "Unread messages and communications"
   }
 };
 
@@ -180,20 +197,21 @@ const NotificationCategory: React.FC<NotificationCategoryProps> = ({
   const effectiveBranchId = branchId || params.id;
   const effectiveBranchName = branchName || params.branchName;
   
-  // Get notifications and filter by category type
-  const { notifications: allNotifications, isLoading: notificationsLoading, markAsRead } = useNotifications();
+  // Get notifications and filter by category type - pass branchId for branch-specific filtering
+  const { notifications: allNotifications, isLoading: notificationsLoading, markAsRead } = useNotifications(effectiveBranchId);
   
   const config = categoryConfig[categoryId as keyof typeof categoryConfig];
   
-  // Map category to notification types
+  // Map category to notification types - must match useNotificationCategoryCounts.ts
   const CATEGORY_TYPE_MAPPING: Record<string, string[]> = {
-    staff: ['booking', 'leave_request', 'training'],
-    client: ['client_request', 'appointment'],
-    system: ['system_alert', 'error'],
-    medication: ['medication_reminder', 'medication_alert'],
-    rota: ['rota_change', 'schedule_conflict'],
-    document: ['document_update', 'document_expiry'],
-    reports: ['report_ready', 'report_error'],
+    staff: ['booking', 'task', 'staff', 'leave_request', 'training'],
+    client: ['client', 'client_request', 'appointment'],
+    system: ['system', 'system_alert', 'error', 'demo_request'],
+    medication: ['medication', 'medication_reminder', 'medication_alert'],
+    rota: ['rota', 'rota_change', 'schedule_conflict'],
+    document: ['document', 'document_update', 'document_expiry'],
+    reports: ['care_plan', 'report_ready', 'report_error'],
+    message: ['message'],
   };
   
   // Filter notifications by category type
