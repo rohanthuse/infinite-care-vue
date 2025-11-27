@@ -81,7 +81,7 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
                 </Badge>
                 <Badge variant="secondary" className="capitalize">
                   {tenant.subscription_plan}
-                  {tenant.plan_max_users && ` (0-${tenant.plan_max_users})`}
+                  {tenant.plan_max_users && ` (${tenant.plan_max_users} Users)`}
                 </Badge>
               </div>
             </div>
@@ -101,7 +101,7 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
                 <div className="font-medium capitalize">
                   {tenant.subscription_plan}
                   {tenant.plan_max_users && (
-                    <span className="text-muted-foreground ml-1">(0-{tenant.plan_max_users})</span>
+                    <span className="text-muted-foreground ml-1">({tenant.plan_max_users} Users)</span>
                   )}
                 </div>
               </div>
