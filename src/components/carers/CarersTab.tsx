@@ -26,6 +26,13 @@ export function CarersTab({ branchId, branchName }: CarersTabProps) {
   // Handle auto-navigation to staff profile from search
   useEffect(() => {
     const selectedStaffId = searchParams.get('selected');
+    console.log('[CarersTab] useEffect triggered:', {
+      selectedStaffId,
+      branchId,
+      branchName,
+      tenantSlug
+    });
+    
     if (selectedStaffId && branchId && branchName) {
       // Navigate to the staff profile page
       const basePath = tenantSlug 
@@ -33,6 +40,8 @@ export function CarersTab({ branchId, branchName }: CarersTabProps) {
         : `/branch-dashboard/${branchId}/${encodeURIComponent(branchName)}`;
       
       const staffProfilePath = `${basePath}/carers/${selectedStaffId}`;
+      
+      console.log('[CarersTab] Navigating to staff profile:', staffProfilePath);
       
       // Clean up query param and navigate
       searchParams.delete('selected');

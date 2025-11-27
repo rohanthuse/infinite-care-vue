@@ -66,26 +66,33 @@ export function BranchSearchDialog({
   }, [open, onOpenChange]);
 
   const handleResultClick = (type: string, id: string) => {
-    onOpenChange(false);
+    console.log('[BranchSearchDialog] handleResultClick:', { type, id, branchId, branchName });
     
+    // URL encode the branch name to handle spaces and special characters
+    const encodedBranchName = branchName ? encodeURIComponent(branchName) : '';
     const basePath = tenantSlug
-      ? `/${tenantSlug}/branch-dashboard/${branchId}/${branchName}`
-      : `/branch-dashboard/${branchId}/${branchName}`;
+      ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodedBranchName}`
+      : `/branch-dashboard/${branchId}/${encodedBranchName}`;
 
+    let targetPath = '';
     switch (type) {
       case 'client':
-        navigate(`${basePath}/clients?selected=${id}`);
+        targetPath = `${basePath}/clients?selected=${id}`;
         break;
       case 'staff':
-        navigate(`${basePath}/carers?selected=${id}`);
+        targetPath = `${basePath}/carers?selected=${id}`;
         break;
       case 'booking':
-        navigate(`${basePath}/bookings?selected=${id}`);
+        targetPath = `${basePath}/bookings?selected=${id}`;
         break;
       case 'document':
-        navigate(`${basePath}/documents?selected=${id}`);
+        targetPath = `${basePath}/documents?selected=${id}`;
         break;
     }
+    
+    console.log('[BranchSearchDialog] Navigating to:', targetPath);
+    onOpenChange(false);
+    navigate(targetPath);
   };
 
   const showResults = debouncedSearchTerm.trim().length >= 2;

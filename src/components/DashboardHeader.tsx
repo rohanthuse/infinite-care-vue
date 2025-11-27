@@ -360,7 +360,7 @@ export function DashboardHeader() {
                     setSearchDropdownOpen(false);
                   }}
                   branchId={branchId}
-                  branchName={branchName}
+                  branchName={branchName || ''}
                   anchorRef={mobileSearchInputRef}
                 />
               )}
