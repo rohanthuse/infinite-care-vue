@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { CalendarEvent } from '@/types/calendar';
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, getMonth, getDate } from 'date-fns';
 import { useTenant } from '@/contexts/TenantContext';
 import { createTenantQuery } from '@/hooks/useTenantAware';
 
@@ -333,10 +333,13 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
       }
     }
 
-    // Fetch annual leave calendar events
+    // Fetch annual leave calendar events (with recurring support)
     if (!eventType || eventType === 'all' || eventType === 'leave') {
       try {
-        // Query builder for annual leave - need to handle company-wide and branch-specific separately
+        // For recurring holidays, we need to fetch ALL holidays and then filter manually
+        // because recurring holidays from any year can match the current date range
+        
+        // Build base query
         let leavesQuery = supabase
           .from('annual_leave_calendar')
           .select(`
@@ -350,8 +353,6 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
               name
             )
           `)
-          .gte('leave_date', startDate.toISOString().split('T')[0])
-          .lte('leave_date', endDate.toISOString().split('T')[0])
           .order('leave_date', { ascending: true });
 
         // Apply branch filter: include company-wide OR matching branch
@@ -362,25 +363,61 @@ const fetchOrganizationCalendarEvents = async (params: UseOrganizationCalendarPa
           leavesQuery = leavesQuery.or(`is_company_wide.eq.true,branch_id.in.(${targetBranchIds.join(',')})`);
         }
 
-        const { data: leaves, error: leavesError } = await leavesQuery;
+        const { data: allLeaves, error: leavesError } = await leavesQuery;
 
         if (leavesError) {
           console.error('[fetchOrganizationCalendarEvents] Leaves error:', leavesError);
-        } else if (leaves) {
-          const leaveEvents = leaves.map(leave => ({
-            id: leave.id,
-            type: 'leave' as const,
-            title: leave.leave_name,
-            startTime: new Date(`${leave.leave_date}T00:00:00`),
-            endTime: new Date(`${leave.leave_date}T23:59:59`),
-            status: 'scheduled' as const,
-            branchId: leave.branch_id || targetBranchIds[0],
-            branchName: leave.is_company_wide ? 'Company-wide' : (leave.branches?.name || 'Unknown Branch'),
-            participants: [],
-            location: leave.is_company_wide ? 'All Locations' : leave.branches?.name,
-            priority: 'low' as const,
-            staffIds: []
-          }));
+        } else if (allLeaves) {
+          // Filter and generate events for holidays
+          const leaveEvents: CalendarEvent[] = [];
+          
+          for (const leave of allLeaves) {
+            const holidayDate = new Date(leave.leave_date);
+            const holidayMonth = getMonth(holidayDate);
+            const holidayDay = getDate(holidayDate);
+            
+            if (leave.is_recurring) {
+              // For recurring holidays, check if month/day falls within our date range
+              // We need to check the current year's occurrence
+              const currentYearDate = new Date(startDate.getFullYear(), holidayMonth, holidayDay);
+              
+              // Check if this date falls within our view range
+              if (currentYearDate >= startDate && currentYearDate <= endDate) {
+                leaveEvents.push({
+                  id: leave.id,
+                  type: 'leave' as const,
+                  title: leave.leave_name,
+                  startTime: new Date(`${format(currentYearDate, 'yyyy-MM-dd')}T00:00:00`),
+                  endTime: new Date(`${format(currentYearDate, 'yyyy-MM-dd')}T23:59:59`),
+                  status: 'scheduled' as const,
+                  branchId: leave.branch_id || targetBranchIds[0],
+                  branchName: leave.is_company_wide ? 'Company-wide' : (leave.branches?.name || 'Unknown Branch'),
+                  participants: [],
+                  location: leave.is_company_wide ? 'All Locations' : leave.branches?.name,
+                  priority: 'low' as const,
+                  staffIds: []
+                });
+              }
+            } else {
+              // For non-recurring holidays, check exact date match
+              if (holidayDate >= startDate && holidayDate <= endDate) {
+                leaveEvents.push({
+                  id: leave.id,
+                  type: 'leave' as const,
+                  title: leave.leave_name,
+                  startTime: new Date(`${leave.leave_date}T00:00:00`),
+                  endTime: new Date(`${leave.leave_date}T23:59:59`),
+                  status: 'scheduled' as const,
+                  branchId: leave.branch_id || targetBranchIds[0],
+                  branchName: leave.is_company_wide ? 'Company-wide' : (leave.branches?.name || 'Unknown Branch'),
+                  participants: [],
+                  location: leave.is_company_wide ? 'All Locations' : leave.branches?.name,
+                  priority: 'low' as const,
+                  staffIds: []
+                });
+              }
+            }
+          }
           
           events.push(...leaveEvents);
         }

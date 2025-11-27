@@ -31,7 +31,7 @@ export const DayEventsDialog: React.FC<DayEventsDialogProps> = ({
     const colors = {
       booking: 'bg-blue-500 text-white hover:bg-blue-500/80',
       meeting: 'bg-purple-500 text-white hover:bg-purple-500/80',
-      leave: 'bg-orange-500 text-white hover:bg-orange-500/80',
+      leave: 'bg-teal-500 text-white hover:bg-teal-500/80',
       training: 'bg-green-500 text-white hover:bg-green-500/80',
       agreement: 'bg-yellow-500 text-white hover:bg-yellow-500/80'
     };

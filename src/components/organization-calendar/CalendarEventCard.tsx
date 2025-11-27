@@ -53,7 +53,7 @@ export const CalendarEventCard: React.FC<CalendarEventCardProps> = ({
     const colors = {
       booking: 'border-blue-500 bg-blue-50 dark:bg-blue-950/50',
       meeting: 'border-purple-500 bg-purple-50 dark:bg-purple-950/50',
-      leave: 'border-orange-500 bg-orange-50 dark:bg-orange-950/50',
+      leave: 'border-teal-500 bg-teal-50 dark:bg-teal-950/50',
       training: 'border-green-500 bg-green-50 dark:bg-green-950/50',
       agreement: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/50'
     };
