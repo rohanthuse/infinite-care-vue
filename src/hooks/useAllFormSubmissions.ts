@@ -39,22 +39,22 @@ export const useAllFormSubmissions = (branchId: string) => {
       // Fetch client names
       const { data: clients } = await supabase
         .from('clients')
-        .select('id, first_name, last_name')
-        .in('id', submitterIds);
+        .select('id, auth_user_id, first_name, last_name')
+        .in('auth_user_id', submitterIds);
 
       // Fetch staff names
       const { data: staff } = await supabase
         .from('staff')
-        .select('id, first_name, last_name')
-        .in('id', submitterIds);
+        .select('id, auth_user_id, first_name, last_name')
+        .in('auth_user_id', submitterIds);
 
       // Create name lookup maps
       const clientNames = new Map(
-        clients?.map(c => [c.id, `${c.first_name} ${c.last_name}`]) || []
+        clients?.map(c => [c.auth_user_id, `${c.first_name} ${c.last_name}`]) || []
       );
       
       const staffNames = new Map(
-        staff?.map(s => [s.id, `${s.first_name} ${s.last_name}`]) || []
+        staff?.map(s => [s.auth_user_id, `${s.first_name} ${s.last_name}`]) || []
       );
 
       // Combine and resolve submitter names
