@@ -1,6 +1,7 @@
 import React from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, startOfWeek, endOfWeek } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 import { Clock, AlertCircle } from "lucide-react";
 
@@ -10,6 +11,8 @@ interface AttendanceRecord {
   checkOut: string | null;
   hoursWorked: number | null;
   status: string;
+  staffName: string;
+  personType?: string;
 }
 
 interface AttendanceMonthCalendarProps {
@@ -28,9 +31,9 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
   
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  const getAttendanceForDay = (day: Date) => {
+  const getAllAttendanceForDay = (day: Date): AttendanceRecord[] => {
     const dateStr = format(day, "yyyy-MM-dd");
-    return attendanceData.find((a) => a.date === dateStr);
+    return attendanceData.filter((a) => a.date === dateStr);
   };
 
   const getStatusColor = (status: string, isCurrentMonth: boolean) => {
@@ -52,6 +55,67 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
 
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+  const AttendanceDayTooltip: React.FC<{ records: AttendanceRecord[], date: Date }> = ({ records, date }) => {
+    if (records.length === 0) return null;
+    
+    return (
+      <div className="space-y-3">
+        <div className="font-semibold border-b pb-2">
+          {format(date, "EEEE, d MMMM yyyy")}
+          <span className="ml-2 text-muted-foreground font-normal">
+            ({records.length} {records.length === 1 ? 'staff' : 'staff'})
+          </span>
+        </div>
+        
+        <div className="space-y-3 max-h-[300px] overflow-y-auto">
+          {records.map((record, idx) => (
+            <div key={idx} className="border-l-2 border-primary pl-3 py-1">
+              <div className="font-medium text-sm flex items-center gap-2">
+                {record.staffName}
+                {record.personType && (
+                  <span className="text-xs text-muted-foreground capitalize">
+                    ({record.personType})
+                  </span>
+                )}
+              </div>
+              <div className="text-xs space-y-1 mt-1">
+                {record.status.toLowerCase() === "absent" ? (
+                  <div className="flex items-center gap-1 text-destructive font-semibold">
+                    <AlertCircle className="h-3 w-3" />
+                    <span>ABSENT</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-600 dark:text-green-400">↗ Check-In:</span>
+                      <span>{record.checkIn || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-600 dark:text-red-400">↘ Check-Out:</span>
+                      <span>{record.checkOut || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3 w-3" />
+                      <span>Total Hours:</span>
+                      <span className="font-semibold">
+                        {record.hoursWorked?.toFixed(2) || '0.00'} hrs
+                      </span>
+                    </div>
+                    {record.status.toLowerCase() === "late" && (
+                      <div className="text-amber-600 dark:text-amber-400 font-semibold">
+                        LATE
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -72,55 +136,94 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
 
           {days.map((day, idx) => {
             const isCurrentMonth = isSameMonth(day, currentMonth);
-            const attendance = getAttendanceForDay(day);
-            const statusColor = getStatusColor(
-              attendance?.status || "",
-              isCurrentMonth
-            );
+            const dayRecords = getAllAttendanceForDay(day);
+            const hasAttendance = dayRecords.length > 0;
+            
+            // Determine overall status for coloring (prioritize present/late over absent)
+            const presentCount = dayRecords.filter(r => 
+              r.status.toLowerCase() === 'present' || r.status.toLowerCase() === 'late'
+            ).length;
+            const absentCount = dayRecords.filter(r => r.status.toLowerCase() === 'absent').length;
+            
+            let overallStatus = '';
+            if (hasAttendance) {
+              if (presentCount > 0) {
+                overallStatus = dayRecords.some(r => r.status.toLowerCase() === 'late') ? 'late' : 'present';
+              } else if (absentCount > 0) {
+                overallStatus = 'absent';
+              }
+            }
+            
+            const statusColor = getStatusColor(overallStatus, isCurrentMonth);
 
-            return (
+            const dayCell = (
               <div
-                key={idx}
                 className={cn(
                   "min-h-[100px] p-2 rounded-lg border-2 transition-all",
                   statusColor,
-                  !isCurrentMonth && "opacity-40"
+                  !isCurrentMonth && "opacity-40",
+                  hasAttendance && isCurrentMonth && "cursor-pointer hover:shadow-md hover:scale-[1.02]"
                 )}
               >
                 <div className="text-sm font-medium mb-1">
                   {format(day, "d")}
                 </div>
 
-                {attendance && isCurrentMonth ? (
+                {hasAttendance && isCurrentMonth ? (
                   <div className="space-y-1 text-xs">
-                    {attendance.status.toLowerCase() === "absent" ? (
-                      <div className="flex items-center gap-1 text-destructive font-semibold">
-                        <AlertCircle className="h-3 w-3" />
-                        <span>ABSENT</span>
-                      </div>
-                    ) : (
+                    <div className="font-semibold">
+                      {dayRecords.length} {dayRecords.length === 1 ? 'staff' : 'staff'}
+                    </div>
+                    {dayRecords.length === 1 ? (
+                      // Show single staff details
                       <>
-                        {attendance.checkIn && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-green-600 dark:text-green-400">↗</span>
-                            <span>{attendance.checkIn}</span>
+                        {dayRecords[0].status.toLowerCase() === "absent" ? (
+                          <div className="flex items-center gap-1 text-destructive font-semibold">
+                            <AlertCircle className="h-3 w-3" />
+                            <span>ABSENT</span>
+                          </div>
+                        ) : (
+                          <>
+                            {dayRecords[0].checkIn && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-green-600 dark:text-green-400">↗</span>
+                                <span>{dayRecords[0].checkIn}</span>
+                              </div>
+                            )}
+                            {dayRecords[0].checkOut && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-red-600 dark:text-red-400">↘</span>
+                                <span>{dayRecords[0].checkOut}</span>
+                              </div>
+                            )}
+                            {dayRecords[0].hoursWorked !== null && (
+                              <div className="flex items-center gap-1 font-semibold">
+                                <Clock className="h-3 w-3" />
+                                <span>{dayRecords[0].hoursWorked.toFixed(1)}h</span>
+                              </div>
+                            )}
+                            {dayRecords[0].status.toLowerCase() === "late" && (
+                              <div className="text-amber-600 dark:text-amber-400 font-semibold">
+                                LATE
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      // Show summary for multiple staff
+                      <>
+                        <div className="text-muted-foreground">
+                          {dayRecords.reduce((sum, r) => sum + (r.hoursWorked || 0), 0).toFixed(1)}h total
+                        </div>
+                        {presentCount > 0 && (
+                          <div className="text-green-600 dark:text-green-400 text-[10px]">
+                            {presentCount} present
                           </div>
                         )}
-                        {attendance.checkOut && (
-                          <div className="flex items-center gap-1">
-                            <span className="text-red-600 dark:text-red-400">↘</span>
-                            <span>{attendance.checkOut}</span>
-                          </div>
-                        )}
-                        {attendance.hoursWorked !== null && (
-                          <div className="flex items-center gap-1 font-semibold">
-                            <Clock className="h-3 w-3" />
-                            <span>{attendance.hoursWorked.toFixed(1)}h</span>
-                          </div>
-                        )}
-                        {attendance.status.toLowerCase() === "late" && (
-                          <div className="text-amber-600 dark:text-amber-400 font-semibold">
-                            LATE
+                        {absentCount > 0 && (
+                          <div className="text-red-600 dark:text-red-400 text-[10px]">
+                            {absentCount} absent
                           </div>
                         )}
                       </>
@@ -133,6 +236,20 @@ export const AttendanceMonthCalendar: React.FC<AttendanceMonthCalendarProps> = (
                 )}
               </div>
             );
+
+            // Only add HoverCard if there's attendance data
+            if (hasAttendance && isCurrentMonth) {
+              return (
+                <HoverCard key={idx} openDelay={200} closeDelay={100}>
+                  <HoverCardTrigger asChild>{dayCell}</HoverCardTrigger>
+                  <HoverCardContent className="w-80" side="top">
+                    <AttendanceDayTooltip records={dayRecords} date={day} />
+                  </HoverCardContent>
+                </HoverCard>
+              );
+            }
+
+            return <React.Fragment key={idx}>{dayCell}</React.Fragment>;
           })}
         </div>
       </CardContent>
