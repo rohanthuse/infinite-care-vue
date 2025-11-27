@@ -19,6 +19,7 @@ import { FormTemplatesContent } from './FormTemplatesContent';
 import { StaffFormsContent } from './StaffFormsContent';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { toast } from '@/hooks/use-toast';
+import { Suspense } from 'react';
 
 interface FormBuilderTabProps {
   branchId: string;
@@ -37,6 +38,9 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'list' | 'grid'>('list');
   const [activeTab, setActiveTab] = useState<string>('all');
+  
+  // Import AllFormResponses component dynamically
+  const AllFormResponses = React.lazy(() => import('./AllFormResponses').then(m => ({ default: m.AllFormResponses })));
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Use the new hooks
@@ -477,6 +481,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
             <TabsTrigger value="all">All Forms ({forms.length})</TabsTrigger>
             <TabsTrigger value="published">Published ({forms.filter(f => f.published).length})</TabsTrigger>
             <TabsTrigger value="drafts">Drafts ({forms.filter(f => !f.published).length})</TabsTrigger>
+            <TabsTrigger value="all-responses">All Responses ({submissions.length})</TabsTrigger>
             <TabsTrigger value="staff-submissions">Staff Submissions</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
           </TabsList>
@@ -536,6 +541,17 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
         
         <TabsContent value="drafts" className="mt-6">
           {activeView === 'list' ? renderListView() : renderGridView()}
+        </TabsContent>
+        
+        <TabsContent value="all-responses" className="mt-6">
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading responses...</span>
+            </div>
+          }>
+            <AllFormResponses branchId={branchId} />
+          </Suspense>
         </TabsContent>
         
         <TabsContent value="staff-submissions" className="mt-6">
