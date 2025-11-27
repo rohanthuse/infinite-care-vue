@@ -47,7 +47,10 @@ export const CarerHeader: React.FC = () => {
   const carerName = carerProfile ? `${carerProfile.first_name} ${carerProfile.last_name}` : "Carer";
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-100 py-3 md:py-4 sticky top-0 z-50 w-full">
+    <header 
+      className="bg-white shadow-sm border-b border-gray-100 py-3 lg:py-4 sticky top-0 z-[60] w-full"
+      style={{ height: 'var(--carer-header-height, 64px)' }}
+    >
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo and Sidebar Trigger */}
         <div className="flex items-center gap-2 md:gap-4">
