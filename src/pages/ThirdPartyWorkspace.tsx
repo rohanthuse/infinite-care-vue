@@ -4,23 +4,36 @@ import { toast } from 'sonner';
 import { CustomButton } from '@/components/ui/CustomButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shield, 
-  Clock, 
   Building, 
-  User, 
   Eye, 
   LogOut, 
   AlertTriangle,
-  Calendar
+  Calendar,
+  User,
+  Users
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import ClientDemoView from '@/components/third-party-workspace/ClientDemoView';
+import CarerDemoView from '@/components/third-party-workspace/CarerDemoView';
 
 interface ThirdPartySession {
   sessionToken: string;
-  thirdPartyUser: any;
-  branchInfo: any;
+  thirdPartyUser: {
+    id: string;
+    email: string;
+    firstName: string;
+    surname: string;
+    fullName: string;
+  };
+  branchInfo: {
+    id: string;
+    name: string;
+    organizationId: string;
+    organizationSlug?: string;
+    organizationName?: string;
+  };
   accessScope: string;
   accessExpiresAt?: string;
 }
@@ -29,21 +42,37 @@ const ThirdPartyWorkspace = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<ThirdPartySession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>('');
 
   useEffect(() => {
     loadSession();
   }, []);
+
+  // Auto-check session expiry every minute
+  useEffect(() => {
+    if (!session?.accessExpiresAt) return;
+
+    const checkExpiry = setInterval(() => {
+      const expiryDate = new Date(session.accessExpiresAt!);
+      if (new Date() > expiryDate) {
+        toast.error('Your access has expired');
+        handleSignOut();
+      }
+    }, 60000);
+
+    return () => clearInterval(checkExpiry);
+  }, [session]);
 
   const loadSession = () => {
     try {
       const sessionData = localStorage.getItem('thirdPartySession');
       if (!sessionData) {
         toast.error('No active third-party session found');
-        navigate('/login');
+        navigate('/third-party/login');
         return;
       }
 
-      const parsedSession = JSON.parse(sessionData);
+      const parsedSession = JSON.parse(sessionData) as ThirdPartySession;
       
       // Check if session is expired
       if (parsedSession.accessExpiresAt) {
@@ -56,29 +85,37 @@ const ThirdPartyWorkspace = () => {
       }
 
       setSession(parsedSession);
+      
+      // Set default active tab based on access scope
+      if (parsedSession.accessScope === 'client') {
+        setActiveTab('client');
+      } else if (parsedSession.accessScope === 'staff') {
+        setActiveTab('staff');
+      } else {
+        setActiveTab('client'); // Default to client for 'both'
+      }
     } catch (error) {
       console.error('Error loading third-party session:', error);
       toast.error('Invalid session data');
-      navigate('/login');
+      navigate('/third-party/login');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      // Clear third-party session
-      localStorage.removeItem('thirdPartySession');
-      
-      // Sign out from Supabase
-      await supabase.auth.signOut();
-      
-      toast.success('Signed out successfully');
-      navigate('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast.error('Error signing out');
-    }
+  const handleSignOut = () => {
+    localStorage.removeItem('thirdPartySession');
+    toast.success('Signed out successfully');
+    navigate('/third-party/login');
+  };
+
+  const getUserDisplayName = () => {
+    if (!session?.thirdPartyUser) return 'User';
+    const { firstName, surname, fullName } = session.thirdPartyUser;
+    if (fullName) return fullName;
+    if (firstName && surname) return `${firstName} ${surname}`;
+    if (firstName) return firstName;
+    return 'User';
   };
 
   const getAccessScopeDescription = (scope: string) => {
@@ -111,33 +148,36 @@ const ThirdPartyWorkspace = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your workspace...</p>
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your workspace...</p>
         </div>
       </div>
     );
   }
 
   if (!session) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   const isExpiringSoon = session.accessExpiresAt && 
-    new Date(session.accessExpiresAt).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000; // 24 hours
+    new Date(session.accessExpiresAt).getTime() - new Date().getTime() < 24 * 60 * 60 * 1000;
+
+  const showClientTab = session.accessScope === 'client' || session.accessScope === 'both';
+  const showStaffTab = session.accessScope === 'staff' || session.accessScope === 'both';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="h-8 w-8 mr-3" />
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Med-Infinite</h1>
-                <p className="text-sm text-gray-500">Third-Party Access Portal</p>
+                <h1 className="text-xl font-semibold text-foreground">Med-Infinite</h1>
+                <p className="text-sm text-muted-foreground">Third-Party Access Portal</p>
               </div>
             </div>
             
@@ -180,11 +220,11 @@ const ThirdPartyWorkspace = () => {
 
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome, {session.thirdPartyUser.first_name} {session.thirdPartyUser.last_name}
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Welcome, {getUserDisplayName()}
           </h2>
-          <p className="text-gray-600">
-            You have been granted third-party access to view data from {session.branchInfo.name}.
+          <p className="text-muted-foreground">
+            You have been granted third-party access to view data from {session.branchInfo?.name || 'this branch'}.
           </p>
         </div>
 
@@ -196,7 +236,7 @@ const ThirdPartyWorkspace = () => {
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{session.branchInfo.name}</div>
+              <div className="text-2xl font-bold">{session.branchInfo?.name || 'N/A'}</div>
             </CardContent>
           </Card>
 
@@ -234,40 +274,39 @@ const ThirdPartyWorkspace = () => {
           </Card>
         </div>
 
-        {/* Data Access Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Shield className="h-5 w-5 mr-2" />
-              Available Data Access
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Eye className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Data Access Coming Soon
-                </h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  The data viewing interface is currently being prepared. You will be able to access 
-                  {' '}{getAccessScopeDescription(session.accessScope).toLowerCase()}{' '}
-                  once the interface is ready.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Demo Data Section */}
+        {session.accessScope === 'both' ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="client" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Client Demo
+              </TabsTrigger>
+              <TabsTrigger value="staff" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Staff Demo
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="client">
+              <ClientDemoView branchId={session.branchInfo?.id || ''} />
+            </TabsContent>
+            <TabsContent value="staff">
+              <CarerDemoView branchId={session.branchInfo?.id || ''} />
+            </TabsContent>
+          </Tabs>
+        ) : showClientTab ? (
+          <ClientDemoView branchId={session.branchInfo?.id || ''} />
+        ) : showStaffTab ? (
+          <CarerDemoView branchId={session.branchInfo?.id || ''} />
+        ) : null}
 
         {/* Security Notice */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-gray-700">Security & Compliance</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Security & Compliance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-gray-600 space-y-2">
+            <div className="text-sm text-muted-foreground space-y-2">
               <p>• Your access is logged and monitored for security and compliance purposes</p>
               <p>• You have read-only access - no data can be modified or deleted</p>
               <p>• Only access the specific data you need for your designated purpose</p>
