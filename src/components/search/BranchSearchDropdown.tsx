@@ -14,7 +14,17 @@ import {
   MessageCircle,
   Star,
   Clock,
-  BookOpen
+  BookOpen,
+  CalendarDays,
+  PoundSterling,
+  Workflow,
+  ListChecks,
+  Bell,
+  FileUp,
+  UserPlus,
+  BarChart4,
+  GraduationCap,
+  Settings
 } from "lucide-react";
 import { useBranchSearch } from "@/hooks/useBranchSearch";
 import { SearchDropdownItem } from "./SearchDropdownItem";
@@ -27,20 +37,39 @@ interface ModuleShortcut {
   icon: any;
 }
 
+// All 22 sidebar modules with keywords for search
 const moduleShortcuts: ModuleShortcut[] = [
-  { name: 'Clients Management', keywords: ['client', 'cli', 'customer'], path: '/clients', icon: User },
-  { name: 'Carers Management', keywords: ['carer', 'car', 'staff', 'nurse'], path: '/carers', icon: Users },
-  { name: 'Schedule & Bookings', keywords: ['book', 'schedule', 'appointment'], path: '/bookings', icon: Calendar },
-  { name: 'Documents', keywords: ['doc', 'document', 'file'], path: '/documents', icon: FileText },
-  { name: 'Medication Management', keywords: ['med', 'medication', 'prescription'], path: '/medication', icon: Pill },
-  { name: 'Reports', keywords: ['report', 'service', 'serv'], path: '/reports', icon: ClipboardList },
-  { name: 'Branch Overview', keywords: ['overview', 'dashboard', 'home'], path: '', icon: LayoutDashboard },
-  { name: 'Care Plans', keywords: ['care', 'plan', 'careplan'], path: '/care-plan', icon: Heart },
-  { name: 'Agreements', keywords: ['agreement', 'contract', 'sign'], path: '/agreements', icon: FileSignature },
-  { name: 'Communication', keywords: ['comm', 'message', 'chat'], path: '/communication', icon: MessageCircle },
-  { name: 'Reviews & Feedback', keywords: ['review', 'feedback', 'rating'], path: '/reviews', icon: Star },
-  { name: 'Attendance', keywords: ['attend', 'attendance', 'checkin'], path: '/attendance', icon: Clock },
-  { name: 'Library', keywords: ['library', 'resource'], path: '/library', icon: BookOpen },
+  // Primary modules
+  { name: 'Dashboard', keywords: ['dashboard', 'home', 'overview', 'branch'], path: '', icon: LayoutDashboard },
+  { name: 'Organisation Calendar', keywords: ['calendar', 'org', 'organisation', 'organization', 'schedule'], path: '/organization-calendar', icon: CalendarDays },
+  { name: 'Bookings', keywords: ['book', 'booking', 'schedule', 'appointment'], path: '/bookings', icon: Calendar },
+  { name: 'Clients', keywords: ['client', 'cli', 'customer', 'patient', 'service user'], path: '/clients', icon: User },
+  { name: 'Staff', keywords: ['staff', 'carer', 'carers', 'nurse', 'employee', 'team'], path: '/carers', icon: Users },
+  { name: 'Training Matrix', keywords: ['training', 'train', 'course', 'matrix', 'learning'], path: '/training-matrix', icon: GraduationCap },
+  { name: 'Care Plan', keywords: ['care', 'plan', 'careplan', 'care plan'], path: '/care-plan', icon: Heart },
+  { name: 'Finance', keywords: ['finance', 'money', 'billing', 'payment', 'invoice', 'accounting'], path: '/finance', icon: PoundSterling },
+  { name: 'Feedbacks', keywords: ['feedback', 'review', 'rating', 'star', 'feedbacks'], path: '/reviews', icon: Star },
+  { name: 'Communication', keywords: ['communication', 'message', 'chat', 'email', 'sms'], path: '/communication', icon: MessageCircle },
+  
+  // Operations
+  { name: 'Workflow', keywords: ['workflow', 'process', 'automation', 'task'], path: '/workflow', icon: Workflow },
+  { name: 'Core Settings', keywords: ['settings', 'core', 'key', 'parameter', 'config'], path: '/key-parameters', icon: ListChecks },
+  { name: 'Medication', keywords: ['medication', 'med', 'medicine', 'prescription', 'drug'], path: '/medication', icon: Pill },
+  
+  // Administration
+  { name: 'Agreements', keywords: ['agreement', 'contract', 'sign', 'legal', 'document'], path: '/agreements', icon: FileSignature },
+  { name: 'Events & Logs', keywords: ['event', 'log', 'activity', 'audit', 'history'], path: '/events-logs', icon: Clock },
+  { name: 'Attendance', keywords: ['attendance', 'attend', 'checkin', 'time', 'clock'], path: '/attendance', icon: Clock },
+  
+  // Resources
+  { name: 'Form Builder', keywords: ['form', 'builder', 'create', 'template', 'build'], path: '/form-builder', icon: FileUp },
+  { name: 'Documents', keywords: ['document', 'doc', 'file', 'upload', 'pdf'], path: '/documents', icon: FileText },
+  { name: 'Notifications', keywords: ['notification', 'notify', 'alert', 'bell'], path: '/notifications', icon: Bell },
+  { name: 'Library', keywords: ['library', 'resource', 'guide', 'reference'], path: '/library', icon: BookOpen },
+  { name: 'Third Party Access', keywords: ['third', 'party', 'external', 'access', 'integration'], path: '/third-party', icon: UserPlus },
+  
+  // Reports
+  { name: 'Reports', keywords: ['report', 'analysis', 'data', 'statistics', 'analytics'], path: '/reports', icon: BarChart4 },
 ];
 
 interface BranchSearchDropdownProps {
@@ -239,7 +268,7 @@ export function BranchSearchDropdown({
                       key={`module-${idx}`}
                       icon={module.icon}
                       title={module.name}
-                      onClick={() => handleNavigate(module)}
+                      onClick={() => handleNavigate({ ...module, type: 'module' })}
                       isSelected={selectedIndex === idx}
                       type="module"
                     />
