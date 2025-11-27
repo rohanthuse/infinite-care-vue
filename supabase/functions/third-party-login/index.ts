@@ -79,6 +79,8 @@ serve(async (req) => {
         user: {
           id: authResult.user.id,
           email: authResult.user.email,
+          firstName: authResult.user.first_name,
+          surname: authResult.user.surname,
           fullName: authResult.user.full_name,
           accessScope: authResult.user.access_scope,
           branchId: authResult.user.branch_id,

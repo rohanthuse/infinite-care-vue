@@ -49,10 +49,16 @@ const ThirdPartyLoginPage = () => {
 
       console.log('[ThirdPartyLogin] Login successful:', data);
 
-      // Store session in localStorage
+      // Store session in localStorage with complete user info
       const sessionData = {
         sessionToken: data.sessionToken,
-        thirdPartyUser: data.user,
+        thirdPartyUser: {
+          id: data.user.id,
+          email: data.user.email,
+          firstName: data.user.firstName,
+          surname: data.user.surname,
+          fullName: data.user.fullName,
+        },
         branchInfo: data.branchInfo,
         accessScope: data.user.accessScope,
         accessExpiresAt: data.user.accessExpiresAt,
