@@ -110,7 +110,7 @@ export const CarerRightSidebar: React.FC = () => {
         collapsible="icon"
         className={cn(
           "border-l transition-all duration-300 ease-in-out shrink-0",
-          "[&>div]:top-[64px] [&>div]:h-[calc(100vh-64px)]",
+          "!top-[64px] !h-[calc(100vh-64px)]",
           sidebarOpen ? "w-64 lg:w-72" : "w-14"
         )}
       >

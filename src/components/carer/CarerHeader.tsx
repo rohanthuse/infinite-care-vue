@@ -48,7 +48,7 @@ export const CarerHeader: React.FC = () => {
 
   return (
     <header 
-      className="bg-white shadow-sm border-b border-gray-100 py-3 lg:py-4 sticky top-0 z-[60] w-full"
+      className="bg-white shadow-sm border-b border-gray-100 py-3 lg:py-4 sticky top-0 left-0 right-0 z-[60] w-full"
       style={{ height: 'var(--carer-header-height, 64px)' }}
     >
       <div className="container mx-auto px-4 flex justify-between items-center relative">
