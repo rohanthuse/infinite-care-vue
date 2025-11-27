@@ -20,9 +20,9 @@ export const ClientCalendarDayView: React.FC<ClientCalendarDayViewProps> = ({
   isLoading = false,
   onEventClick
 }) => {
-  // Generate time slots from 7 AM to 10 PM (30-minute intervals)
-  const timeSlots = Array.from({ length: 30 }, (_, index) => {
-    const hour = Math.floor(index / 2) + 7;
+  // Generate time slots for full 24 hours in 30-minute intervals
+  const timeSlots = Array.from({ length: 48 }, (_, index) => {
+    const hour = Math.floor(index / 2);
     const minute = (index % 2) * 30;
     const slotDate = new Date(date);
     slotDate.setHours(hour, minute, 0, 0);
@@ -33,21 +33,15 @@ export const ClientCalendarDayView: React.FC<ClientCalendarDayViewProps> = ({
     return events.filter(event => {
       const eventStart = new Date(event.startTime);
       const eventEnd = new Date(event.endTime);
-      const slotEnd = new Date(timeSlot.getTime() + 30 * 60 * 1000);
       
       if (!isSameDay(eventStart, date)) return false;
       
-      return (eventStart < slotEnd && eventEnd > timeSlot);
+      const slotEnd = new Date(timeSlot);
+      slotEnd.setMinutes(slotEnd.getMinutes() + 30);
+      
+      return eventStart < slotEnd && eventEnd > timeSlot;
     });
   };
-
-  const eventsOutsideTimeRange = events.filter(event => {
-    const eventStart = new Date(event.startTime);
-    if (!isSameDay(eventStart, date)) return false;
-    
-    const hour = eventStart.getHours();
-    return hour < 7 || hour >= 22;
-  });
 
   if (isLoading) {
     return (
@@ -58,7 +52,7 @@ export const ClientCalendarDayView: React.FC<ClientCalendarDayViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-[600px]">
+    <div className="flex flex-col h-[700px] sm:h-[750px] lg:h-[800px]">
       {/* Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-between">
@@ -70,11 +64,6 @@ export const ClientCalendarDayView: React.FC<ClientCalendarDayViewProps> = ({
               {events.filter(e => isSameDay(new Date(e.startTime), date)).length} appointments scheduled
             </p>
           </div>
-          {eventsOutsideTimeRange.length > 0 && (
-            <Badge variant="secondary">
-              {eventsOutsideTimeRange.length} outside view
-            </Badge>
-          )}
         </div>
       </div>
 
@@ -94,7 +83,7 @@ export const ClientCalendarDayView: React.FC<ClientCalendarDayViewProps> = ({
                 </div>
 
                 {/* Event Area */}
-                <div className="min-h-[60px] border-t border-border p-2 relative">
+                <div className="min-h-[40px] sm:min-h-[50px] border-t border-border p-1 sm:p-2 relative">
                   <div className="space-y-1">
                     {slotEvents.map((event, eventIndex) => (
                       <Card
