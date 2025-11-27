@@ -23,8 +23,8 @@ export const ClientCalendarWeekView: React.FC<ClientCalendarWeekViewProps> = ({
   const weekStart = startOfWeek(date, { weekStartsOn: 1 }); // Start week on Monday
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
   
-  // Generate time slots from 7 AM to 10 PM
-  const timeSlots = Array.from({ length: 15 }, (_, index) => 7 + index);
+  // Generate time slots for full 24 hours
+  const timeSlots = Array.from({ length: 24 }, (_, index) => index);
 
   const getEventsForDayAndHour = (day: Date, hour: number) => {
     return events.filter(event => {
@@ -49,9 +49,9 @@ export const ClientCalendarWeekView: React.FC<ClientCalendarWeekViewProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-[600px]">
+    <div className="flex flex-col h-[700px] sm:h-[750px] lg:h-[800px]">
       {/* Header with days */}
-      <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-border">
+      <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[70px_repeat(7,1fr)] lg:grid-cols-[80px_repeat(7,1fr)] border-b border-border">
         <div className="p-4"></div>
         {weekDays.map((day, index) => (
           <div key={index} className="p-4 text-center border-l border-border">
@@ -72,7 +72,7 @@ export const ClientCalendarWeekView: React.FC<ClientCalendarWeekViewProps> = ({
 
       {/* Time Grid */}
       <ScrollArea className="flex-1">
-        <div className="grid grid-cols-[80px_repeat(7,1fr)]">
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[70px_repeat(7,1fr)] lg:grid-cols-[80px_repeat(7,1fr)]">
           {timeSlots.map((hour, hourIndex) => (
             <React.Fragment key={hourIndex}>
               {/* Time Label */}
@@ -89,7 +89,7 @@ export const ClientCalendarWeekView: React.FC<ClientCalendarWeekViewProps> = ({
                 return (
                   <div
                     key={dayIndex}
-                    className="min-h-[60px] border-l border-t border-border p-1"
+                    className="min-h-[40px] sm:min-h-[50px] border-l border-t border-border p-1"
                   >
                     <div className="space-y-1">
                       {dayEvents.map((event, eventIndex) => (
