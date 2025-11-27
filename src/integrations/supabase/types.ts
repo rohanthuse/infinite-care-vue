@@ -9960,6 +9960,7 @@ export type Database = {
           invite_sent_at: string | null
           invite_token: string | null
           organisation: string | null
+          password: string | null
           reason_for_access: string
           rejection_reason: string | null
           request_for: Database["public"]["Enums"]["third_party_access_type"]
@@ -9983,6 +9984,7 @@ export type Database = {
           invite_sent_at?: string | null
           invite_token?: string | null
           organisation?: string | null
+          password?: string | null
           reason_for_access: string
           rejection_reason?: string | null
           request_for?: Database["public"]["Enums"]["third_party_access_type"]
@@ -10006,6 +10008,7 @@ export type Database = {
           invite_sent_at?: string | null
           invite_token?: string | null
           organisation?: string | null
+          password?: string | null
           reason_for_access?: string
           rejection_reason?: string | null
           request_for?: Database["public"]["Enums"]["third_party_access_type"]
