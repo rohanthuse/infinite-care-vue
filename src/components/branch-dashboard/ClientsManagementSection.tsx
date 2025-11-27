@@ -14,6 +14,7 @@ import { useBranchClients, useDeleteClient, useDeleteMultipleClients } from "@/d
 import { SetClientPasswordDialog } from "@/components/clients/SetClientPasswordDialog";
 import { useUpdateClientStatus } from "@/hooks/useUpdateClientStatus";
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ClientsManagementSectionProps {
   branchId?: string;
@@ -68,19 +69,37 @@ export function ClientsManagementSection({
   const totalCount = clientsData?.count || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Handle auto-opening client from search
+  // Handle auto-opening client from search - fetch directly from DB to handle pagination
   useEffect(() => {
     const selectedClientId = searchParams.get('selected');
-    if (selectedClientId && clients.length > 0) {
-      const client = clients.find(c => c.id === selectedClientId);
-      if (client) {
-        onViewClient(client);
-        // Remove the query parameter after opening
+    if (selectedClientId && branchId) {
+      // First check if client is already in the current page
+      const clientInPage = clients.find(c => c.id === selectedClientId);
+      if (clientInPage) {
+        onViewClient(clientInPage);
         searchParams.delete('selected');
         setSearchParams(searchParams, { replace: true });
+        return;
       }
+      
+      // If not in current page, fetch directly from database
+      const fetchSelectedClient = async () => {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('id', selectedClientId)
+          .eq('branch_id', branchId)
+          .single();
+        
+        if (data && !error) {
+          onViewClient(data);
+          searchParams.delete('selected');
+          setSearchParams(searchParams, { replace: true });
+        }
+      };
+      fetchSelectedClient();
     }
-  }, [searchParams, clients, onViewClient, setSearchParams]);
+  }, [searchParams, branchId, clients, onViewClient, setSearchParams]);
 
   const handleViewClient = (client: any) => {
     // Close dropdown first to prevent focus trap conflicts
