@@ -90,10 +90,15 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
       return {
         staffName,
         date: record.attendance_date,
-        checkIn: record.check_in_time,
-        checkOut: record.check_out_time,
+        checkIn: record.check_in_time
+          ? format(new Date(`2000-01-01T${record.check_in_time}`), "HH:mm")
+          : null,
+        checkOut: record.check_out_time
+          ? format(new Date(`2000-01-01T${record.check_out_time}`), "HH:mm")
+          : null,
         hoursWorked: record.hours_worked,
         status: record.status,
+        personType: record.person_type,
       };
     });
   }, [attendanceRecords, staff]);
