@@ -9,36 +9,27 @@ interface CategoryCounts {
   rota: { total: number; unread: number };
   document: { total: number; unread: number };
   reports: { total: number; unread: number };
+  message: { total: number; unread: number };
 }
 
 // Map category IDs to notification types in the database
+// These types match the actual values stored in the notifications table
 const CATEGORY_TYPE_MAPPING: Record<string, string[]> = {
-  staff: ['booking', 'leave_request', 'training'],
-  client: ['client_request', 'appointment'],
-  system: ['system_alert', 'error'],
-  medication: ['medication_reminder', 'medication_alert'],
-  rota: ['rota_change', 'schedule_conflict'],
-  document: ['document_update', 'document_expiry'],
-  reports: ['report_ready', 'report_error'],
+  staff: ['booking', 'task', 'staff', 'leave_request', 'training'],
+  client: ['client', 'client_request', 'appointment'],
+  system: ['system', 'system_alert', 'error', 'demo_request'],
+  medication: ['medication', 'medication_reminder', 'medication_alert'],
+  rota: ['rota', 'rota_change', 'schedule_conflict'],
+  document: ['document', 'document_update', 'document_expiry'],
+  reports: ['care_plan', 'report_ready', 'report_error'],
+  message: ['message'],
 };
 
 export const useNotificationCategoryCounts = (branchId?: string) => {
   const { notifications, isLoading, error } = useNotifications(branchId);
 
   const categoryCounts = useMemo(() => {
-    if (!notifications) {
-      return {
-        staff: { total: 0, unread: 0 },
-        client: { total: 0, unread: 0 },
-        system: { total: 0, unread: 0 },
-        medication: { total: 0, unread: 0 },
-        rota: { total: 0, unread: 0 },
-        document: { total: 0, unread: 0 },
-        reports: { total: 0, unread: 0 },
-      };
-    }
-
-    const counts: CategoryCounts = {
+    const defaultCounts: CategoryCounts = {
       staff: { total: 0, unread: 0 },
       client: { total: 0, unread: 0 },
       system: { total: 0, unread: 0 },
@@ -46,7 +37,14 @@ export const useNotificationCategoryCounts = (branchId?: string) => {
       rota: { total: 0, unread: 0 },
       document: { total: 0, unread: 0 },
       reports: { total: 0, unread: 0 },
+      message: { total: 0, unread: 0 },
     };
+
+    if (!notifications) {
+      return defaultCounts;
+    }
+
+    const counts: CategoryCounts = { ...defaultCounts };
 
     notifications.forEach(notification => {
       // Find which category this notification type belongs to
@@ -61,6 +59,12 @@ export const useNotificationCategoryCounts = (branchId?: string) => {
         counts[categoryKey].total++;
         if (!notification.read_at) {
           counts[categoryKey].unread++;
+        }
+      } else {
+        // Fallback: categorize unknown types as 'system'
+        counts.system.total++;
+        if (!notification.read_at) {
+          counts.system.unread++;
         }
       }
     });
