@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
-  Bell, AlertTriangle, Clock, Calendar, CheckCircle, FileWarning, LucideIcon
+  Bell, AlertTriangle, Clock, Calendar, FileWarning, MessageSquare, LucideIcon
 } from "lucide-react";
 import NotificationCard, { NotificationCardProps } from "./NotificationCard";
 import { useNotificationCategoryCounts } from "@/hooks/useNotificationCategoryCounts";
@@ -113,6 +113,16 @@ const NotificationsOverview = ({ branchId, branchName }: NotificationsOverviewPr
       description: "Recently modified documents",
       path: "document",
       icon: FileWarning
+    },
+    {
+      title: "Messages",
+      count: isLoading ? 0 : categoryCounts.message.total,
+      color: "text-teal-600",
+      bgColor: "bg-teal-50",
+      borderColor: "border-teal-200",
+      description: "Unread messages and communications",
+      path: "message",
+      icon: MessageSquare
     },
   ];
 
