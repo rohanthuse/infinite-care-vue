@@ -69,7 +69,9 @@ export function BranchSearchDialog({
     console.log('[BranchSearchDialog] handleResultClick:', { type, id, branchId, branchName });
     
     // URL encode the branch name to handle spaces and special characters
-    const encodedBranchName = branchName ? encodeURIComponent(branchName) : '';
+    // Use defensive decoding first to prevent double encoding if branchName is already encoded
+    const decodedBranchName = branchName ? decodeURIComponent(branchName) : '';
+    const encodedBranchName = decodedBranchName ? encodeURIComponent(decodedBranchName) : '';
     const basePath = tenantSlug
       ? `/${tenantSlug}/branch-dashboard/${branchId}/${encodedBranchName}`
       : `/branch-dashboard/${branchId}/${encodedBranchName}`;
