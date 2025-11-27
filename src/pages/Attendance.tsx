@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AttendanceForm } from "@/components/attendance/AttendanceForm";
 import { AttendanceList } from "@/components/attendance/AttendanceList";
 import { AttendanceLeaveManagement } from "@/components/attendance/AttendanceLeaveManagement";
+import { AttendanceCalendarView } from "@/components/attendance/AttendanceCalendarView";
 import { AddClientDialog } from "@/components/AddClientDialog";
 import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog";
 import { useBookingData } from "@/components/bookings/hooks/useBookingData";
@@ -36,12 +37,15 @@ const Attendance = () => {
         <p className="text-sm text-muted-foreground mb-4">Track staff attendance and manage leave requests</p>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid grid-cols-3 mb-6 w-full lg:w-auto">
+          <TabsList className="grid grid-cols-4 mb-6 w-full lg:w-auto">
             <TabsTrigger value="record" className="flex items-center gap-1">
               <span>Record Attendance</span>
             </TabsTrigger>
+            <TabsTrigger value="calendar" className="flex items-center gap-1">
+              <span>Calendar View</span>
+            </TabsTrigger>
             <TabsTrigger value="view" className="flex items-center gap-1">
-              <span>View Attendance</span>
+              <span>List View</span>
             </TabsTrigger>
             <TabsTrigger value="leave" className="flex items-center gap-1">
               <span>Leave Management</span>
@@ -50,6 +54,10 @@ const Attendance = () => {
           
           <TabsContent value="record" className="space-y-6">
             <AttendanceForm branchId={id || ''} />
+          </TabsContent>
+          
+          <TabsContent value="calendar" className="space-y-6">
+            <AttendanceCalendarView branchId={id || ''} branchName={branchName || ''} />
           </TabsContent>
           
           <TabsContent value="view" className="space-y-6">
