@@ -19,7 +19,7 @@ export interface ClientReview {
 
 export interface CreateReviewData {
   client_id: string;
-  staff_id: string;
+  staff_id: string | null;
   booking_id: string; // Changed from appointment_id to booking_id
   service_date: string;
   rating: number;
