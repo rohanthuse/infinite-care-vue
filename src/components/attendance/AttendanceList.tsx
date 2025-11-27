@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Download, FileDown, Filter, RefreshCw, Search, Clock, UserCheck, Users, X, Edit, Trash } from "lucide-react";
+import { CalendarIcon, Download, FileDown, RefreshCw, Search, Clock, UserCheck, Users, X, Edit, Trash } from "lucide-react";
 import { format, startOfMonth, endOfMonth, parseISO, subDays, subWeeks, subMonths } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -28,26 +28,14 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [status, setStatus] = useState("all");
-  const [attendanceType, setAttendanceType] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const recordsPerPage = 10;
 
   const { staff, clients } = useBranchStaffAndClients(branchId);
-  
-  // Get unique roles for filtering
-  const roles = useMemo(() => {
-    const staffRoles = staff.map(s => s.specialization || 'Staff').filter(Boolean);
-    const clientRole = clients.length > 0 ? ['Client'] : [];
-    return Array.from(new Set([...staffRoles, ...clientRole]));
-  }, [staff, clients]);
 
   const filters: AttendanceFilters = {
     searchQuery,
-    attendanceType: attendanceType !== 'all' ? attendanceType : undefined,
     status: status !== 'all' ? status : undefined,
-    selectedRoles: selectedRoles.length > 0 ? selectedRoles : undefined,
     dateRange,
   };
 
@@ -92,8 +80,6 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
     });
     setSearchQuery("");
     setStatus("all");
-    setAttendanceType("all");
-    setSelectedRoles([]);
     setCurrentPage(1);
     setFilterType("all");
     toast.success("Filters reset successfully");
@@ -195,68 +181,6 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                <Dialog open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9">
-                      <Filter className="h-4 w-4 mr-1" />
-                      Advanced Filter
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Advanced Filters</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="quick-filter">Quick Date Filter</Label>
-                        <Select onValueChange={applyFilter} defaultValue="none">
-                          <SelectTrigger id="quick-filter">
-                            <SelectValue placeholder="Select date range" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="yesterday">Yesterday</SelectItem>
-                            <SelectItem value="this_week">This Week</SelectItem>
-                            <SelectItem value="last_week">Last Week</SelectItem>
-                            <SelectItem value="this_month">This Month</SelectItem>
-                            <SelectItem value="last_month">Last Month</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="grid gap-2">
-                        <Label htmlFor="role-filter">Filter by Role</Label>
-                        <div className="flex flex-wrap gap-2 border p-2 rounded-md max-h-40 overflow-y-auto">
-                          {roles.map(role => (
-                            <div key={role} className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`role-${role}`}
-                                checked={selectedRoles.includes(role)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedRoles(prev => [...prev, role]);
-                                  } else {
-                                    setSelectedRoles(prev => prev.filter(r => r !== role));
-                                  }
-                                  setCurrentPage(1);
-                                }}
-                                className="h-4 w-4"
-                              />
-                              <Label htmlFor={`role-${role}`} className="text-sm">{role}</Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setShowAdvancedFilters(false)}>
-                        Close
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
                 <Button variant="outline" size="sm" className="h-9" onClick={handleExport}>
                   <FileDown className="h-4 w-4 mr-1" />
                   Export CSV
@@ -267,7 +191,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -289,32 +213,6 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                     <X className="h-4 w-4" />
                   </Button>
                 )}
-              </div>
-              
-              <div>
-                <Select value={attendanceType} onValueChange={(value) => {
-                  setAttendanceType(value);
-                  setCurrentPage(1);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="staff">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>Staff Only</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="client">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>Clients Only</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               
               <div>
@@ -343,13 +241,22 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
               <div className="w-full sm:w-auto">
                 <Label className="mb-2 block">Date Range</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyFilter("today")}
+                    className="h-9"
+                  >
+                    Today
+                  </Button>
+                  
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          "justify-start text-left font-normal",
+                          "h-9 justify-start text-left font-normal",
                           !dateRange.from && "text-muted-foreground"
                         )}
                       >
@@ -378,7 +285,7 @@ export function AttendanceList({ branchId }: AttendanceListProps) {
                       <Button
                         variant="outline"
                         className={cn(
-                          "justify-start text-left font-normal",
+                          "h-9 justify-start text-left font-normal",
                           !dateRange.to && "text-muted-foreground"
                         )}
                       >
