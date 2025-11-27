@@ -39,17 +39,6 @@ export const ThirdPartyAccessManagement: React.FC<ThirdPartyAccessManagementProp
 
   return (
     <div className="space-y-6">
-      {/* Login Portal URL Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-medium text-blue-800">Third-Party Login Portal</h4>
-        <p className="text-sm text-blue-700 mt-1">
-          Share this URL with approved third-party users:
-        </p>
-        <code className="text-sm bg-blue-100 px-2 py-1 rounded mt-2 block text-blue-900">
-          {window.location.origin}/third-party/login
-        </code>
-      </div>
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

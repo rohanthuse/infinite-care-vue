@@ -542,6 +542,43 @@ const UnifiedLogin = () => {
           orgSlug,
           redirectTo: `/${orgSlug}/client-dashboard`
         });
+
+        // CHECK THIRD-PARTY ACCESS EXPIRY FOR CLIENTS
+        console.log('[LOGIN DEBUG] Checking third-party access expiry for client');
+        const { data: thirdPartyAccess } = await supabase
+          .from('third_party_users')
+          .select('access_expires_at, is_active')
+          .eq('auth_user_id', authData.user.id)
+          .maybeSingle();
+
+        if (thirdPartyAccess) {
+          console.log('[LOGIN DEBUG] Third-party access record found:', thirdPartyAccess);
+          
+          // Check if access is revoked
+          if (!thirdPartyAccess.is_active) {
+            console.log('[LOGIN DEBUG] Third-party access has been revoked');
+            clearTimeout(timeoutId);
+            setLoading(false);
+            toast.error("Your temporary access has been revoked. Please contact the administrator.");
+            await supabase.auth.signOut();
+            return;
+          }
+          
+          // Check if access has expired
+          if (thirdPartyAccess.access_expires_at) {
+            const expiryDate = new Date(thirdPartyAccess.access_expires_at);
+            if (new Date() > expiryDate) {
+              console.log('[LOGIN DEBUG] Third-party access has expired:', thirdPartyAccess.access_expires_at);
+              clearTimeout(timeoutId);
+              setLoading(false);
+              toast.error("Your temporary access has expired. Please contact the administrator.");
+              await supabase.auth.signOut();
+              return;
+            }
+          }
+          
+          console.log('[LOGIN DEBUG] Third-party access is valid');
+        }
         
         // Store client data for dashboard
         sessionStorage.setItem('client_id', clientCheck.id);
@@ -1057,6 +1094,43 @@ const UnifiedLogin = () => {
           break;
         case 'carer':
           console.log('[CARER_LOGIN] Carer role detected, pre-fetching profile');
+          
+          // CHECK THIRD-PARTY ACCESS EXPIRY FOR STAFF/CARERS
+          console.log('[CARER_LOGIN] Checking third-party access expiry for staff');
+          const { data: staffThirdPartyAccess } = await supabase
+            .from('third_party_users')
+            .select('access_expires_at, is_active')
+            .eq('auth_user_id', authData.user.id)
+            .maybeSingle();
+
+          if (staffThirdPartyAccess) {
+            console.log('[CARER_LOGIN] Third-party access record found:', staffThirdPartyAccess);
+            
+            // Check if access is revoked
+            if (!staffThirdPartyAccess.is_active) {
+              console.log('[CARER_LOGIN] Third-party access has been revoked');
+              clearTimeout(timeoutId);
+              setLoading(false);
+              toast.error("Your temporary access has been revoked. Please contact the administrator.");
+              await supabase.auth.signOut();
+              return;
+            }
+            
+            // Check if access has expired
+            if (staffThirdPartyAccess.access_expires_at) {
+              const staffExpiryDate = new Date(staffThirdPartyAccess.access_expires_at);
+              if (new Date() > staffExpiryDate) {
+                console.log('[CARER_LOGIN] Third-party access has expired:', staffThirdPartyAccess.access_expires_at);
+                clearTimeout(timeoutId);
+                setLoading(false);
+                toast.error("Your temporary access has expired. Please contact the administrator.");
+                await supabase.auth.signOut();
+                return;
+              }
+            }
+            
+            console.log('[CARER_LOGIN] Third-party access is valid');
+          }
           
           // Pre-fetch and cache staff profile for fast dashboard load
           try {
