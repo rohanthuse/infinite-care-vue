@@ -107,26 +107,27 @@ export const CarerRightSidebar: React.FC = () => {
   return (
       <Sidebar 
         side="right" 
-        className={cn(
-          "border-l transition-all duration-300 z-50 shrink-0",
-          sidebarOpen ? "w-72 md:w-80" : "w-14 md:w-16"
-        )}
         collapsible="icon"
+        className={cn(
+          "border-l transition-all duration-300 ease-in-out shrink-0",
+          "[&>div]:top-[64px] [&>div]:h-[calc(100vh-64px)]",
+          sidebarOpen ? "w-64 lg:w-72" : "w-14"
+        )}
       >
-      <SidebarHeader className="border-b p-4">
+      <SidebarHeader className="border-b p-3 lg:p-4">
         <div className="flex items-center justify-between">
-          {sidebarOpen && <h2 className="text-lg font-semibold">Navigation</h2>}
+          {sidebarOpen && <h2 className="text-base lg:text-lg font-semibold">Navigation</h2>}
           <SidebarTrigger className={cn(!sidebarOpen && "mx-auto")} />
         </div>
         
         {sidebarOpen && (
-          <div className="mt-4 relative">
+          <div className="mt-3 lg:mt-4 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search navigation..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-9"
             />
           </div>
         )}
