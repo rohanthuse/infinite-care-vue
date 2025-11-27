@@ -75,19 +75,23 @@ const checkExistingReview = async (clientId: string, bookingId: string): Promise
   return data;
 };
 
-export const useClientReviews = (clientId: string) => {
+export const useClientReviews = (clientId: string | undefined) => {
   return useQuery({
     queryKey: ['client-reviews', clientId],
-    queryFn: () => fetchClientReviews(clientId),
-    enabled: Boolean(clientId),
+    queryFn: () => fetchClientReviews(clientId || ''),
+    enabled: !!clientId,
   });
 };
 
-export const useCheckExistingReview = (clientId: string, bookingId: string, options?: { enabled?: boolean }) => {
+export const useCheckExistingReview = (
+  clientId: string | undefined, 
+  bookingId: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
-    queryKey: ['existing-review', clientId, bookingId], // Changed from appointmentId to bookingId
-    queryFn: () => checkExistingReview(clientId, bookingId),
-    enabled: Boolean(clientId && bookingId) && (options?.enabled !== false),
+    queryKey: ['existing-review', clientId, bookingId],
+    queryFn: () => checkExistingReview(clientId || '', bookingId),
+    enabled: options?.enabled !== false && !!clientId && !!bookingId,
   });
 };
 
@@ -115,11 +119,12 @@ export const useCreateReview = () => {
     onSuccess: (data) => {
       toast.success('Review submitted successfully!');
       
-      // Invalidate and refetch reviews
+      // Invalidate all queries related to reviews
       queryClient.invalidateQueries({ queryKey: ['client-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['existing-review'] });
-      // Also invalidate branch reviews so admin can see the new review
       queryClient.invalidateQueries({ queryKey: ['branch-reviews'] });
+      // Invalidate completed appointments so pending reviews list refreshes
+      queryClient.invalidateQueries({ queryKey: ['completed-appointments'] });
     },
     onError: (error) => {
       console.error('Failed to submit review:', error);
@@ -150,11 +155,12 @@ export const useUpdateReview = () => {
     onSuccess: (data) => {
       toast.success('Review updated successfully!');
       
-      // Invalidate and refetch reviews
+      // Invalidate all queries related to reviews
       queryClient.invalidateQueries({ queryKey: ['client-reviews'] });
       queryClient.invalidateQueries({ queryKey: ['existing-review'] });
-      // Also invalidate branch reviews so admin can see the updated review
       queryClient.invalidateQueries({ queryKey: ['branch-reviews'] });
+      // Invalidate completed appointments so pending reviews list refreshes
+      queryClient.invalidateQueries({ queryKey: ['completed-appointments'] });
     },
     onError: (error) => {
       console.error('Failed to update review:', error);
