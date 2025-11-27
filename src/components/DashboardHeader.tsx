@@ -62,7 +62,10 @@ export function DashboardHeader() {
     
     const tenantSlug = branchDashboardIndex > 0 ? pathParts[0] : null;
     const branchId = pathParts[branchDashboardIndex + 1] || null;
-    const branchName = pathParts[branchDashboardIndex + 2] || null;
+    // Decode branchName to prevent double encoding when passed to search components
+    const branchName = pathParts[branchDashboardIndex + 2] 
+      ? decodeURIComponent(pathParts[branchDashboardIndex + 2]) 
+      : null;
     
     return { 
       tenantSlug, 

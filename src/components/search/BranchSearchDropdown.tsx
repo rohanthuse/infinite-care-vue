@@ -127,8 +127,10 @@ export function BranchSearchDropdown({
   ];
 
   // URL encode the branch name to handle spaces and special characters
+  // Use defensive decoding first to prevent double encoding if branchName is already encoded
   const tenantSlug = location.pathname.split('/')[1];
-  const encodedBranchName = encodeURIComponent(branchName);
+  const decodedBranchName = decodeURIComponent(branchName);
+  const encodedBranchName = encodeURIComponent(decodedBranchName);
   const basePath = `/${tenantSlug}/branch-dashboard/${branchId}/${encodedBranchName}`;
 
   const handleNavigate = (result: any) => {
