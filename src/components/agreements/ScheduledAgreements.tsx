@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, 
   TableHeader, TableRow 
@@ -22,6 +22,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ViewScheduledAgreementDialog } from "./ViewScheduledAgreementDialog";
+import { ScheduledAgreement } from "@/types/agreements";
 
 type ScheduledAgreementsProps = {
   searchQuery?: string;
@@ -38,6 +40,9 @@ export function ScheduledAgreements({
   branchId,
   isOrganizationLevel = false
 }: ScheduledAgreementsProps) {
+  const [selectedAgreement, setSelectedAgreement] = useState<ScheduledAgreement | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const { data: agreements, isLoading, isError, error } = useScheduledAgreements({
     searchQuery,
     typeFilter,
@@ -48,8 +53,9 @@ export function ScheduledAgreements({
 
   const deleteScheduledMutation = useDeleteScheduledAgreement();
   
-  const handleView = (id: string) => {
-    console.log(`View scheduled agreement ${id}`);
+  const handleView = (agreement: ScheduledAgreement) => {
+    setSelectedAgreement(agreement);
+    setDialogOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -138,7 +144,7 @@ export function ScheduledAgreements({
                       size="sm"
                       variant="ghost"
                       className="h-8 w-8 p-0"
-                      onClick={() => handleView(agreement.id)}
+                      onClick={() => handleView(agreement)}
                     >
                       <Eye className="h-4 w-4 text-primary" />
                     </Button>
@@ -187,6 +193,12 @@ export function ScheduledAgreements({
           )}
         </TableBody>
       </Table>
+      
+      <ViewScheduledAgreementDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        agreement={selectedAgreement}
+      />
     </div>
   );
 }
