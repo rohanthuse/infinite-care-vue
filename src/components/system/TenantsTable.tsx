@@ -70,7 +70,9 @@ export const TenantsTable = ({
       Name: tenant.name,
       'URL Slug': tenant.slug,
       'Contact Email': tenant.contact_email || '',
-      Plan: tenant.subscription_plan,
+      Plan: tenant.plan_max_users 
+        ? `${tenant.subscription_plan} (0-${tenant.plan_max_users})`
+        : tenant.subscription_plan,
       Status: tenant.subscription_status,
       'Subscription End Date': tenant.subscription_expires_at 
         ? format(new Date(tenant.subscription_expires_at), 'yyyy-MM-dd')
@@ -195,6 +197,9 @@ export const TenantsTable = ({
                   <TableCell>
                     <Badge variant="secondary" className="capitalize">
                       {tenant.subscription_plan}
+                      {tenant.plan_max_users && (
+                        <span className="ml-1 text-xs opacity-70">(0-{tenant.plan_max_users})</span>
+                      )}
                     </Badge>
                   </TableCell>
                   <TableCell>

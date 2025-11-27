@@ -76,6 +76,25 @@ serve(async (req) => {
             })
           })?.length || 0
 
+          // Fetch subscription plan details
+          let planDetails = { max_users: null, price_monthly: null, price_yearly: null }
+          if (org.subscription_plan_id || org.subscription_plan) {
+            const planQuery = supabaseAdmin
+              .from('subscription_plans')
+              .select('max_users, price_monthly, price_yearly')
+            
+            if (org.subscription_plan_id) {
+              planQuery.eq('id', org.subscription_plan_id)
+            } else {
+              planQuery.eq('name', org.subscription_plan)
+            }
+            
+            const { data: plan } = await planQuery.single()
+            if (plan) {
+              planDetails = plan
+            }
+          }
+
           return {
             ...org,
             subscription_expires_at: org.subscription_expires_at,
@@ -86,9 +105,9 @@ serve(async (req) => {
             super_admin_first_name: null,
             super_admin_last_name: null,
             super_admin_email: null,
-            plan_max_users: null,
-            plan_price_monthly: null,
-            plan_price_yearly: null,
+            plan_max_users: planDetails.max_users,
+            plan_price_monthly: planDetails.price_monthly,
+            plan_price_yearly: planDetails.price_yearly,
             total_branches: 0,
             total_clients: 0,
             active_clients: 0,
@@ -97,6 +116,9 @@ serve(async (req) => {
           console.error(`[list-system-tenants] Error calculating user counts for org ${org.id}:`, error)
           return {
             ...org,
+            subscription_expires_at: org.subscription_expires_at,
+            subscription_duration: org.settings?.subscription_duration || null,
+            billing_cycle: org.settings?.billing_cycle || 'monthly',
             total_users: 0,
             active_users: 0,
             super_admin_first_name: null,
