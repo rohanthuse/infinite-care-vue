@@ -10116,6 +10116,7 @@ export type Database = {
         Row: {
           access_expires_at: string
           access_type: Database["public"]["Enums"]["third_party_access_type"]
+          auth_user_id: string | null
           branch_id: string
           created_at: string
           email: string
@@ -10134,6 +10135,7 @@ export type Database = {
         Insert: {
           access_expires_at: string
           access_type: Database["public"]["Enums"]["third_party_access_type"]
+          auth_user_id?: string | null
           branch_id: string
           created_at?: string
           email: string
@@ -10152,6 +10154,7 @@ export type Database = {
         Update: {
           access_expires_at?: string
           access_type?: Database["public"]["Enums"]["third_party_access_type"]
+          auth_user_id?: string | null
           branch_id?: string
           created_at?: string
           email?: string

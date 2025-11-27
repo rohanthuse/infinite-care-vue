@@ -282,6 +282,20 @@ export const useThirdPartyAccess = (branchId: string) => {
     mutationFn: async (requestId: string) => {
       console.log('Revoking access request:', requestId);
       
+      // First, get the third-party user to find their auth_user_id
+      const { data: thirdPartyUser } = await supabase
+        .from('third_party_users')
+        .select('auth_user_id')
+        .eq('request_id', requestId)
+        .maybeSingle();
+
+      // Get access request to determine access type
+      const { data: accessRequest } = await supabase
+        .from('third_party_access_requests')
+        .select('request_for')
+        .eq('id', requestId)
+        .maybeSingle();
+
       const { data, error } = await supabase
         .from('third_party_access_requests')
         .update({
@@ -300,11 +314,31 @@ export const useThirdPartyAccess = (branchId: string) => {
         throw error;
       }
 
-      // Also deactivate any active third-party users for this request
+      // Deactivate the third-party user record
       await supabase
         .from('third_party_users')
         .update({ is_active: false })
         .eq('request_id', requestId);
+
+      // Also deactivate the client or staff record if it's a third-party access user
+      const authUserId = (thirdPartyUser as any)?.auth_user_id;
+      const accessType = accessRequest?.request_for;
+      
+      if (authUserId) {
+        console.log('Deactivating associated records for auth_user_id:', authUserId);
+        
+        if (accessType === 'client') {
+          await supabase
+            .from('clients')
+            .update({ status: 'Inactive' })
+            .eq('auth_user_id', authUserId);
+        } else if (accessType === 'staff') {
+          await supabase
+            .from('staff')
+            .update({ status: 'Inactive' })
+            .eq('auth_user_id', authUserId);
+        }
+      }
 
       return data;
     },
