@@ -39,18 +39,29 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
     filters
   );
 
-  // Filter by selected staff if needed
-  const attendanceRecords = selectedStaffId
-    ? allAttendanceRecords.filter((r) => r.person_id === selectedStaffId)
-    : allAttendanceRecords;
-
   const { staff = [], isLoading: loadingStaff } = useBranchStaffAndClients(branchId);
+
+  // Filter by selected staff if needed
+  const attendanceRecords = useMemo(() => {
+    if (!selectedStaffId) return allAttendanceRecords;
+    
+    // Find the selected staff member to get their auth_user_id
+    const selectedStaff = staff.find(s => s.id === selectedStaffId);
+    const authUserId = selectedStaff?.auth_user_id;
+    
+    // Filter by either staff.id or auth_user_id
+    return allAttendanceRecords.filter((r) => 
+      r.person_id === selectedStaffId || r.person_id === authUserId
+    );
+  }, [selectedStaffId, allAttendanceRecords, staff]);
 
   // Process staff summaries
   const staffSummaries = useMemo(() => {
     return staff.map((member) => {
-      const memberRecords = attendanceRecords.filter(
-        (r) => r.person_id === member.id && r.person_type === "staff"
+      // Match records by either staff.id or auth_user_id
+      const memberRecords = allAttendanceRecords.filter(
+        (r) => r.person_type === "staff" && 
+          (r.person_id === member.id || r.person_id === member.auth_user_id)
       );
 
       const totalHours = memberRecords.reduce(
@@ -77,7 +88,7 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
         absentDays,
       };
     });
-  }, [staff, attendanceRecords]);
+  }, [staff, allAttendanceRecords]);
 
   // Process calendar data
   const calendarData = useMemo(() => {
