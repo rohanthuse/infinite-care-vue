@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, UserPlus, Users, Clock } from "lucide-react";
+import { CalendarIcon, UserPlus, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
@@ -29,7 +29,6 @@ interface BulkAttendanceEntry {
 
 export function AttendanceForm({ branchId }: AttendanceFormProps) {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [attendanceType, setAttendanceType] = useState("staff");
   const [bulkMode, setBulkMode] = useState(false);
   const [notes, setNotes] = useState("");
   const [timeIn, setTimeIn] = useState("");
@@ -40,24 +39,20 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
   const [bulkTimeIn, setBulkTimeIn] = useState("");
   const [bulkTimeOut, setBulkTimeOut] = useState("");
 
-  const { staff, clients, isLoading } = useBranchStaffAndClients(branchId);
+  const { staff, isLoading } = useBranchStaffAndClients(branchId);
   const createAttendance = useCreateAttendanceRecord();
   const createBulkAttendance = useBulkCreateAttendance();
 
-  const currentList = attendanceType === "staff" ? staff : clients;
+  const currentList = staff;
 
   // Helper function to get person role safely
-  const getPersonRole = (person: any, type: string) => {
-    if (type === "staff") {
-      return person.specialization || "Staff";
-    } else {
-      return "Client";
-    }
+  const getPersonRole = (person: any) => {
+    return person.specialization || "Staff";
   };
 
   // Helper function to get person display text
-  const getPersonDisplayText = (person: any, type: string) => {
-    const role = getPersonRole(person, type);
+  const getPersonDisplayText = (person: any) => {
+    const role = getPersonRole(person);
     return `${person.first_name} ${person.last_name} - ${role}`;
   };
 
@@ -91,7 +86,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
 
       const attendanceRecords: CreateAttendanceData[] = bulkEntries.map(entry => ({
         person_id: entry.personId,
-        person_type: attendanceType as 'staff' | 'client',
+        person_type: 'staff',
         branch_id: branchId,
         attendance_date: dateString,
         status: entry.status as 'present' | 'absent' | 'late' | 'excused' | 'half_day',
@@ -113,13 +108,13 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
       });
     } else {
       if (!selectedPerson) {
-        toast.error(`Please select a ${attendanceType === "staff" ? "staff member" : "client"}`);
+        toast.error("Please select a staff member");
         return;
       }
 
       const attendanceData: CreateAttendanceData = {
         person_id: selectedPerson,
-        person_type: attendanceType as 'staff' | 'client',
+        person_type: 'staff',
         branch_id: branchId,
         attendance_date: dateString,
         status: selectedStatus as 'present' | 'absent' | 'late' | 'excused' | 'half_day',
@@ -148,7 +143,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
       setBulkEntries(prev => [...prev, {
         personId: person.id,
         personName: `${person.first_name} ${person.last_name}`,
-        personRole: getPersonRole(person, attendanceType),
+        personRole: getPersonRole(person),
         status: "present"
       }]);
     } else {
@@ -169,7 +164,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
       setBulkEntries(currentList.map(person => ({
         personId: person.id,
         personName: `${person.first_name} ${person.last_name}`,
-        personRole: getPersonRole(person, attendanceType),
+        personRole: getPersonRole(person),
         status: "present"
       })));
     }
@@ -206,39 +201,8 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="attendanceType">Attendance Type</Label>
-                    <Select 
-                      value={attendanceType} 
-                      onValueChange={(value) => {
-                        setAttendanceType(value);
-                        setSelectedPerson("");
-                        setBulkEntries([]);
-                      }}
-                    >
-                      <SelectTrigger id="attendanceType" className="mt-1">
-                        <SelectValue placeholder="Select attendance type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="staff">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>Staff Attendance</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="client">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>Client Attendance</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label>Date</Label>
+                <div>
+                  <Label>Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -261,22 +225,21 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                         />
                       </PopoverContent>
                     </Popover>
-                  </div>
                 </div>
                 
                 <div className="space-y-4">
                   {!bulkMode ? (
                     <>
                       <div>
-                        <Label htmlFor="person">{attendanceType === "staff" ? "Staff Member" : "Client"}</Label>
+                        <Label htmlFor="person">Staff Member</Label>
                         <Select value={selectedPerson} onValueChange={setSelectedPerson}>
                           <SelectTrigger id="person" className="mt-1">
-                            <SelectValue placeholder={`Select ${attendanceType === "staff" ? "staff member" : "client"}`} />
+                            <SelectValue placeholder="Select staff member" />
                           </SelectTrigger>
                           <SelectContent>
                             {currentList.map(person => (
                               <SelectItem key={person.id} value={person.id}>
-                                {getPersonDisplayText(person, attendanceType)}
+                                {getPersonDisplayText(person)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -332,7 +295,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                   ) : (
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <Label>{attendanceType === "staff" ? "Staff Members" : "Clients"}</Label>
+                        <Label>Staff Members</Label>
                         <Button 
                           type="button" 
                           variant="outline" 
@@ -340,11 +303,7 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                           className="h-8"
                           onClick={handleSelectAll}
                         >
-                          {attendanceType === "staff" ? (
-                            <UserPlus className="mr-1 h-3.5 w-3.5" />
-                          ) : (
-                            <Users className="mr-1 h-3.5 w-3.5" />
-                          )}
+                          <UserPlus className="mr-1 h-3.5 w-3.5" />
                           <span>{bulkEntries.length === currentList.length ? "Deselect All" : "Select All"}</span>
                         </Button>
                       </div>
@@ -357,12 +316,12 @@ export function AttendanceForm({ branchId }: AttendanceFormProps) {
                           return (
                             <div key={person.id} className="flex items-center space-x-2 py-2 border-b last:border-0">
                               <Checkbox 
-                                id={`${attendanceType}-${person.id}`}
+                                id={`staff-${person.id}`}
                                 checked={isSelected}
                                 onCheckedChange={(checked) => handleBulkPersonToggle(person, checked === true)}
                               />
-                              <Label htmlFor={`${attendanceType}-${person.id}`} className="flex-1 cursor-pointer">
-                                {person.first_name} {person.last_name} <span className="text-gray-500 text-sm">({getPersonRole(person, attendanceType)})</span>
+                              <Label htmlFor={`staff-${person.id}`} className="flex-1 cursor-pointer">
+                                {person.first_name} {person.last_name} <span className="text-gray-500 text-sm">({getPersonRole(person)})</span>
                               </Label>
                               <Select 
                                 value={entry?.status || "present"}
