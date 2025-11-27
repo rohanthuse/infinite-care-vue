@@ -10,12 +10,15 @@ export interface PendingReviewAppointment {
   date: string;
   time: string;
   client_id?: string;
+  staff_id?: string;
   completed_at?: string;
 }
 
 export const usePendingReviews = (clientId: string) => {
-  const { data: completedAppointments } = useCompletedAppointments(clientId);
-  const { data: existingReviews } = useClientReviews(clientId);
+  const { data: completedAppointments, isLoading: appointmentsLoading } = useCompletedAppointments(clientId);
+  const { data: existingReviews, isLoading: reviewsLoading } = useClientReviews(clientId);
+
+  const isLoading = appointmentsLoading || reviewsLoading;
 
   const pendingReviews = useMemo(() => {
     if (!completedAppointments || !existingReviews) return [];
@@ -47,13 +50,14 @@ export const usePendingReviews = (clientId: string) => {
         date: appointment.appointment_date,
         time: appointment.appointment_time,
         client_id: appointment.client_id,
+        staff_id: (appointment as any)._booking_data?.staff_id || '',
         completed_at: appointment.appointment_date // Using appointment_date as completed_at fallback
       }));
   }, [completedAppointments, existingReviews]);
 
   return {
     data: pendingReviews,
-    isLoading: false, // Since we're using derived data
+    isLoading,
     count: pendingReviews.length
   };
 };

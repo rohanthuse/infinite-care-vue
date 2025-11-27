@@ -316,7 +316,12 @@ const ClientOverview = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {pendingReviews && pendingReviews.length > 0 ? (
+          {pendingReviewsLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading pending reviews...</p>
+            </div>
+          ) : pendingReviews && pendingReviews.length > 0 ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600 mb-4">
                 Please share your feedback on these completed appointments:
