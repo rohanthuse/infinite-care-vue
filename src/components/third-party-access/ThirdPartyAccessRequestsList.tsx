@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Check, X, Trash2, Eye, Clock, AlertTriangle, Search } from "lucide-react";
+import { Check, X, Trash2, Eye, Clock, AlertTriangle, Search, Copy } from "lucide-react";
 import { useThirdPartyAccess, ThirdPartyAccessRequest } from "@/hooks/useThirdPartyAccess";
 import { toast } from "@/hooks/use-toast";
 
@@ -364,28 +364,63 @@ export const ThirdPartyAccessRequestsList: React.FC<ThirdPartyAccessRequestsList
                   <p className="text-sm">{selectedRequest.first_name} {selectedRequest.surname}</p>
                 </div>
                 <div>
-                  <Label>Email</Label>
-                  <p className="text-sm">{selectedRequest.email}</p>
-                </div>
-                <div>
                   <Label>Organisation</Label>
                   <p className="text-sm">{selectedRequest.organisation || "N/A"}</p>
                 </div>
+              </div>
+
+              {/* Email and Password Section */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Email</Label>
+                  <p className="text-sm font-mono bg-muted px-2 py-1.5 rounded mt-1">
+                    {selectedRequest.email}
+                  </p>
+                </div>
+                <div>
+                  <Label>Password</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm font-mono bg-muted px-2 py-1.5 rounded flex-1">
+                      {selectedRequest.password || "Not set"}
+                    </p>
+                    {selectedRequest.password && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedRequest.password!);
+                          toast({
+                            title: "Copied",
+                            description: "Password copied to clipboard.",
+                          });
+                        }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Access Type</Label>
-                  <Badge variant="outline">{selectedRequest.request_for}</Badge>
+                  <div className="mt-1">
+                    <Badge variant="outline">{selectedRequest.request_for}</Badge>
+                  </div>
                 </div>
                 <div>
                   <Label>Client Consent Required</Label>
-                  <p className="text-sm">{selectedRequest.client_consent_required ? "Yes" : "No"}</p>
+                  <p className="text-sm mt-1">{selectedRequest.client_consent_required ? "Yes" : "No"}</p>
                 </div>
                 <div>
                   <Label>Access From</Label>
-                  <p className="text-sm">{format(new Date(selectedRequest.access_from), "PPP")}</p>
+                  <p className="text-sm mt-1">{format(new Date(selectedRequest.access_from), "PPP")}</p>
                 </div>
                 <div>
                   <Label>Access Until</Label>
-                  <p className="text-sm">
+                  <p className="text-sm mt-1">
                     {selectedRequest.access_until 
                       ? format(new Date(selectedRequest.access_until), "PPP")
                       : "Indefinite"}

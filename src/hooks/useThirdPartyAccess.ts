@@ -10,6 +10,7 @@ export interface ThirdPartyAccessRequest {
   first_name: string;
   surname: string;
   email: string;
+  password?: string;
   organisation?: string;
   request_for: 'client' | 'staff';
   client_consent_required: boolean;
@@ -93,6 +94,7 @@ export const useThirdPartyAccess = (branchId: string) => {
           first_name: requestData.first_name,
           surname: requestData.surname,
           email: requestData.email,
+          password: requestData.password,
           organisation: requestData.organisation,
           request_for: requestData.request_for,
           client_consent_required: requestData.client_consent_required,
