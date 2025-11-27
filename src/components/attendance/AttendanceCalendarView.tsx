@@ -82,10 +82,9 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
   // Process calendar data
   const calendarData = useMemo(() => {
     return attendanceRecords.map((record) => {
-      const staffMember = staff.find((s) => s.id === record.person_id);
-      const staffName = staffMember
-        ? `${staffMember.first_name || ""} ${staffMember.last_name || ""}`.trim()
-        : "Unknown";
+      // Use the person_name already resolved by useAttendanceRecords
+      // which handles both staff.id and auth_user_id lookups
+      const staffName = record.person_name || "Unknown";
 
       return {
         staffName,
@@ -101,7 +100,7 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
         personType: record.person_type,
       };
     });
-  }, [attendanceRecords, staff]);
+  }, [attendanceRecords]);
 
   // Calculate summary stats
   const summaryStats = useMemo(() => {
