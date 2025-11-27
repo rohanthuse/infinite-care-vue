@@ -8,7 +8,13 @@ import {
   Pill, 
   ClipboardList, 
   LayoutDashboard,
-  Loader2
+  Loader2,
+  Heart,
+  FileSignature,
+  MessageCircle,
+  Star,
+  Clock,
+  BookOpen
 } from "lucide-react";
 import { useBranchSearch } from "@/hooks/useBranchSearch";
 import { SearchDropdownItem } from "./SearchDropdownItem";
@@ -24,11 +30,17 @@ interface ModuleShortcut {
 const moduleShortcuts: ModuleShortcut[] = [
   { name: 'Clients Management', keywords: ['client', 'cli', 'customer'], path: '/clients', icon: User },
   { name: 'Carers Management', keywords: ['carer', 'car', 'staff', 'nurse'], path: '/carers', icon: Users },
-  { name: 'Schedule & Bookings', keywords: ['book', 'schedule', 'appointment'], path: '/schedule', icon: Calendar },
+  { name: 'Schedule & Bookings', keywords: ['book', 'schedule', 'appointment'], path: '/bookings', icon: Calendar },
   { name: 'Documents', keywords: ['doc', 'document', 'file'], path: '/documents', icon: FileText },
   { name: 'Medication Management', keywords: ['med', 'medication', 'prescription'], path: '/medication', icon: Pill },
-  { name: 'Service Reports', keywords: ['report', 'service', 'serv'], path: '/service-reports', icon: ClipboardList },
+  { name: 'Reports', keywords: ['report', 'service', 'serv'], path: '/reports', icon: ClipboardList },
   { name: 'Branch Overview', keywords: ['overview', 'dashboard', 'home'], path: '', icon: LayoutDashboard },
+  { name: 'Care Plans', keywords: ['care', 'plan', 'careplan'], path: '/care-plan', icon: Heart },
+  { name: 'Agreements', keywords: ['agreement', 'contract', 'sign'], path: '/agreements', icon: FileSignature },
+  { name: 'Communication', keywords: ['comm', 'message', 'chat'], path: '/communication', icon: MessageCircle },
+  { name: 'Reviews & Feedback', keywords: ['review', 'feedback', 'rating'], path: '/reviews', icon: Star },
+  { name: 'Attendance', keywords: ['attend', 'attendance', 'checkin'], path: '/attendance', icon: Clock },
+  { name: 'Library', keywords: ['library', 'resource'], path: '/library', icon: BookOpen },
 ];
 
 interface BranchSearchDropdownProps {
@@ -96,7 +108,7 @@ export function BranchSearchDropdown({
     } else if (result.type === 'staff') {
       navigate(`${basePath}/carers?selected=${result.id}`);
     } else if (result.type === 'booking') {
-      navigate(`${basePath}/schedule?selected=${result.id}`);
+      navigate(`${basePath}/bookings?selected=${result.id}`);
     } else if (result.type === 'document') {
       navigate(`${basePath}/documents?selected=${result.id}`);
     }
@@ -312,7 +324,7 @@ export function BranchSearchDropdown({
                 {bookingResults.length > 5 && (
                   <button
                     onClick={() => {
-                      navigate(`${basePath}/schedule`);
+                      navigate(`${basePath}/bookings`);
                       onResultClick();
                     }}
                     className="w-full text-xs text-primary hover:underline py-2 text-center"
