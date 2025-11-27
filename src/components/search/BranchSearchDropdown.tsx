@@ -126,13 +126,13 @@ export function BranchSearchDropdown({
     
     console.log('[BranchSearchDropdown] Navigating to:', targetPath);
     
-    // Close dropdown first, then navigate
-    onResultClick();
+    // Navigate FIRST, then close dropdown
+    navigate(targetPath);
     
-    // Use setTimeout to ensure dropdown closes before navigation
-    setTimeout(() => {
-      navigate(targetPath);
-    }, 0);
+    // Close after navigation has started
+    requestAnimationFrame(() => {
+      onResultClick();
+    });
   };
 
   // Keyboard navigation
@@ -157,10 +157,10 @@ export function BranchSearchDropdown({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [selectedIndex, allResults, onClose]);
 
-  // Click outside to close - use mouseup to allow click handlers to fire first
+  // Click outside to close - use timeout to allow click handlers to fire first
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      // Use setTimeout to allow click handlers on dropdown items to fire first
+      // Use longer timeout to allow click handlers on dropdown items to fire first
       setTimeout(() => {
         if (
           dropdownRef.current && 
@@ -170,7 +170,7 @@ export function BranchSearchDropdown({
         ) {
           onClose();
         }
-      }, 10);
+      }, 100);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -183,9 +183,10 @@ export function BranchSearchDropdown({
   useEffect(() => {
     if (anchorRef.current) {
       const rect = anchorRef.current.getBoundingClientRect();
+      // For fixed positioning, use viewport coordinates directly (no scroll offsets)
       setPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 8,
+        left: rect.left,
         width: Math.max(rect.width, 500)
       });
     }
@@ -197,7 +198,7 @@ export function BranchSearchDropdown({
     <div
       ref={dropdownRef}
       className={cn(
-        "fixed bg-card border border-border rounded-lg shadow-lg z-50",
+        "fixed bg-card border border-border rounded-lg shadow-lg z-[100]",
         "animate-in fade-in-0 zoom-in-95 duration-200",
         "max-h-[400px] overflow-y-auto"
       )}

@@ -21,9 +21,16 @@ export function SearchDropdownItem({
   isSelected,
   type
 }: SearchDropdownItemProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[SearchDropdownItem] clicked:', { title, type });
+    onClick();
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
         "w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-left",
         "hover:bg-accent hover:text-accent-foreground cursor-pointer",
