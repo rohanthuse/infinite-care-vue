@@ -14,32 +14,51 @@ export interface PendingReviewAppointment {
   completed_at?: string;
 }
 
-export const usePendingReviews = (clientId: string) => {
-  const { data: completedAppointments, isLoading: appointmentsLoading } = useCompletedAppointments(clientId);
-  const { data: existingReviews, isLoading: reviewsLoading } = useClientReviews(clientId);
+export const usePendingReviews = (clientId: string | undefined) => {
+  const { data: completedAppointments, isLoading: appointmentsLoading } = useCompletedAppointments(clientId || '');
+  const { data: existingReviews, isLoading: reviewsLoading } = useClientReviews(clientId || '');
 
   const isLoading = appointmentsLoading || reviewsLoading;
 
   const pendingReviews = useMemo(() => {
-    if (!completedAppointments || !existingReviews) return [];
+    console.log('[usePendingReviews] Starting with clientId:', clientId);
+    console.log('[usePendingReviews] Loading state:', { appointmentsLoading, reviewsLoading });
+    console.log('[usePendingReviews] Completed appointments:', completedAppointments?.length);
+    console.log('[usePendingReviews] Existing reviews:', existingReviews?.length);
+
+    // Return empty if still loading or no data
+    if (isLoading) return [];
+    if (!completedAppointments) return [];
+    
+    // Treat missing reviews as empty array (no reviews yet)
+    const reviews = existingReviews || [];
 
     // Get booking IDs that already have reviews (changed from appointment_id to booking_id)
     const reviewedBookingIds = new Set(
-      existingReviews.map(review => review.booking_id)
+      reviews.map(review => review.booking_id)
     );
 
-    // Filter completed appointments that don't have reviews and are within the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    console.log('[usePendingReviews] Already reviewed booking IDs:', Array.from(reviewedBookingIds));
 
-    return completedAppointments
+    // Filter completed appointments that don't have reviews and are within the last 90 days
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    const filtered = completedAppointments
       .filter(appointment => {
         // Check if appointment doesn't have a review (using booking ID)
         const hasNoReview = !reviewedBookingIds.has(appointment.id);
         
-        // Check if appointment was completed within the last 30 days
+        // Check if appointment was completed within the last 90 days
         const appointmentDate = new Date(appointment.appointment_date);
-        const isRecent = appointmentDate >= thirtyDaysAgo;
+        const isRecent = appointmentDate >= ninetyDaysAgo;
+        
+        console.log('[usePendingReviews] Checking appointment:', {
+          id: appointment.id,
+          date: appointment.appointment_date,
+          hasNoReview,
+          isRecent
+        });
         
         return hasNoReview && isRecent;
       })
@@ -53,7 +72,10 @@ export const usePendingReviews = (clientId: string) => {
         staff_id: (appointment as any)._booking_data?.staff_id || null,
         completed_at: appointment.appointment_date // Using appointment_date as completed_at fallback
       }));
-  }, [completedAppointments, existingReviews]);
+
+    console.log('[usePendingReviews] Pending reviews after filter:', filtered.length);
+    return filtered;
+  }, [completedAppointments, existingReviews, isLoading, appointmentsLoading, reviewsLoading]);
 
   return {
     data: pendingReviews,

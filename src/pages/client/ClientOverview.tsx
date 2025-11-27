@@ -53,8 +53,8 @@ const ClientOverview = () => {
 
   const { data: appointments, isLoading: appointmentsLoading } = useClientAllAppointments(clientId || undefined);
   const { data: invoices, isLoading: invoicesLoading } = useEnhancedClientBilling(clientId || undefined);
-  const { data: reviews, isLoading: reviewsLoading } = useClientReviews(clientId || undefined);
-  const { data: pendingReviews, count: pendingReviewsCount, isLoading: pendingReviewsLoading } = usePendingReviews(clientId || undefined);
+  const { data: reviews, isLoading: reviewsLoading } = useClientReviews(clientId);
+  const { data: pendingReviews, count: pendingReviewsCount, isLoading: pendingReviewsLoading } = usePendingReviews(clientId);
   const { data: carePlans, isLoading: carePlansLoading } = useClientCarePlans(clientId || undefined);
 
   if (authLoading) {
