@@ -42,6 +42,9 @@ interface CarePlanContentProps {
     status: string;
     assignedTo: string;
     avatar: string;
+    news2_monitoring_enabled?: boolean;
+    news2_monitoring_frequency?: string;
+    news2_monitoring_notes?: string;
   };
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -196,6 +199,9 @@ export const CarePlanContent: React.FC<CarePlanContentProps> = ({
                   updated_at: new Date().toISOString(),
                 }}
                 onEditMedicalInfo={onEditMedicalInfo}
+                news2MonitoringEnabled={carePlan.news2_monitoring_enabled}
+                news2MonitoringFrequency={carePlan.news2_monitoring_frequency}
+                news2MonitoringNotes={carePlan.news2_monitoring_notes}
               />
             </TabsContent>
 

@@ -4,11 +4,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Stethoscope, Activity } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { ClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
 
 interface MedicalMentalTabProps {
   medicalInfo?: ClientMedicalInfo;
   onEditMedicalInfo?: () => void;
+  news2MonitoringEnabled?: boolean;
+  news2MonitoringFrequency?: string;
+  news2MonitoringNotes?: string;
 }
 
 const PHYSICAL_HEALTH_CONDITIONS = [
@@ -29,6 +33,9 @@ const MENTAL_HEALTH_CONDITIONS = [
 export const MedicalMentalTab: React.FC<MedicalMentalTabProps> = ({
   medicalInfo,
   onEditMedicalInfo,
+  news2MonitoringEnabled = false,
+  news2MonitoringFrequency = 'daily',
+  news2MonitoringNotes,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState("medical");
 
@@ -107,6 +114,56 @@ export const MedicalMentalTab: React.FC<MedicalMentalTabProps> = ({
               </CardContent>
             </Card>
           </div>
+
+          {/* NEWS2 Health Monitoring Section */}
+          <Card className="border-teal-200 bg-teal-50/50">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="h-4 w-4 text-teal-600" />
+                NEWS2 Health Monitoring
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {news2MonitoringEnabled ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-teal-500 text-white hover:bg-teal-600">
+                      Monitoring Active
+                    </Badge>
+                  </div>
+                  <div className="grid gap-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-muted-foreground min-w-[120px]">Frequency:</span>
+                      <span className="font-medium capitalize">
+                        {news2MonitoringFrequency === '12-hourly' 
+                          ? '12-Hourly' 
+                          : news2MonitoringFrequency.replace('-', ' ')}
+                      </span>
+                    </div>
+                    {news2MonitoringNotes && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-muted-foreground min-w-[120px]">Notes:</span>
+                        <p className="flex-1 text-foreground">{news2MonitoringNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-teal-200">
+                    <p className="text-xs text-muted-foreground">
+                      View detailed health monitoring data in the client's{" "}
+                      <span className="font-semibold text-teal-700">Health Monitoring</span> tab
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  <p>NEWS2 health monitoring is not currently enabled for this client.</p>
+                  <p className="mt-2 text-xs">
+                    To enable monitoring, edit the care plan through the wizard.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="serviceband" className="space-y-4">
