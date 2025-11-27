@@ -54,7 +54,7 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     let query = supabase.from('agreements').select(`
       *, 
       agreement_types ( name ),
-      agreement_signers ( id, signer_name, signer_type ),
+      agreement_signers ( id, signer_name, signer_type, signing_status ),
       expiry_date,
       renewal_date
     `);
@@ -65,6 +65,10 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     } else if (branchId) {
       query = query.eq('branch_id', branchId);
     }
+
+    // Only show agreements that are not "Pending" (i.e., have been through the signing process)
+    // Show Active, Expired, Terminated agreements in the Signed tab
+    query = query.in('status', ['Active', 'Expired', 'Terminated']);
     
     if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,signed_by_name.ilike.%${searchQuery}%`);
     if (typeFilter !== 'all') query = query.eq('type_id', typeFilter);

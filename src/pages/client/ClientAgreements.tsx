@@ -4,8 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Download, Eye, FileText, Calendar, User, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Download, Eye, FileText, Calendar, User, Clock, AlertCircle } from 'lucide-react';
 import { useClientAgreements } from '@/data/hooks/useClientAgreements';
+import { useClientScheduledAgreements } from '@/hooks/useClientScheduledAgreements';
 import { ViewAgreementDialog } from '@/components/agreements/ViewAgreementDialog';
 import { exportAgreementToPDF } from '@/lib/agreementPdfExport';
 import { Agreement } from '@/types/agreements';
@@ -22,6 +24,10 @@ const ClientAgreements = () => {
   const { data: agreements, isLoading } = useClientAgreements({
     searchQuery,
     statusFilter: statusFilter === 'all' ? undefined : statusFilter as "Active" | "Pending" | "Expired" | "Terminated"
+  });
+
+  const { data: scheduledAgreements, isLoading: isLoadingScheduled } = useClientScheduledAgreements({
+    searchQuery,
   });
 
   const handleViewAgreement = (agreement: Agreement) => {
@@ -76,7 +82,7 @@ const ClientAgreements = () => {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingScheduled) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -89,105 +95,200 @@ const ClientAgreements = () => {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">My Agreements</h1>
-          <p className="text-muted-foreground">View agreements that you have signed</p>
+          <p className="text-muted-foreground">View and manage your agreements</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-4 md:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search agreements..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full md:w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Active">Active</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Expired">Expired</SelectItem>
-            <SelectItem value="Terminated">Terminated</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <Tabs defaultValue="pending" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="pending" className="gap-2">
+            <Clock className="h-4 w-4" />
+            Pending Agreements
+            {scheduledAgreements && scheduledAgreements.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{scheduledAgreements.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="signed" className="gap-2">
+            <FileText className="h-4 w-4" />
+            Signed Agreements
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Agreements List */}
-      <div className="grid gap-4">
-        {agreements && agreements.length > 0 ? (
-          agreements.map((agreement) => (
-            <Card key={agreement.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{agreement.title}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      {agreement.agreement_types?.name && (
-                        <div className="flex items-center gap-1">
-                          <FileText className="h-4 w-4" />
-                          {agreement.agreement_types.name}
+        {/* Pending Agreements Tab */}
+        <TabsContent value="pending" className="space-y-4">
+          <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              These agreements are scheduled for your signature. Click "View" to review and sign when ready.
+            </p>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search pending agreements..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <div className="grid gap-4">
+            {scheduledAgreements && scheduledAgreements.length > 0 ? (
+              scheduledAgreements.map((agreement) => (
+                <Card key={agreement.id} className="hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{agreement.title}</CardTitle>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          {agreement.agreement_types?.name && (
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-4 w-4" />
+                              {agreement.agreement_types.name}
+                            </div>
+                          )}
+                          {agreement.scheduled_for && (
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              Due: {format(new Date(agreement.scheduled_for), 'MMM dd, yyyy')}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Created {format(new Date(agreement.created_at), 'MMM dd, yyyy')}
                       </div>
-                      {agreement.signed_at && (
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4" />
-                          Signed {format(new Date(agreement.signed_at), 'MMM dd, yyyy')}
-                        </div>
-                      )}
+                      <Badge className="bg-yellow-500/10 text-yellow-600">
+                        {agreement.status}
+                      </Badge>
                     </div>
-                  </div>
-                  {getStatusBadge(agreement.status)}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-end">
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleViewAgreement(agreement)}>
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownloadAgreement(agreement)}>
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No agreements found</h3>
-              <p className="text-muted-foreground text-center">
-                {searchQuery || statusFilter !== 'all' 
-                  ? 'Try adjusting your search or filters'
-                  : 'You don\'t have any agreements yet'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    {agreement.notes && (
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{agreement.notes}</p>
+                    )}
+                    <div className="flex items-center justify-end">
+                      <Button variant="default" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View & Sign
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No pending agreements</h3>
+                  <p className="text-muted-foreground text-center">
+                    You don't have any agreements waiting for your signature
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
 
-        <ViewAgreementDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          agreement={selectedAgreement}
-          onDownload={handleDownloadAgreement}
-        />
+        {/* Signed Agreements Tab */}
+        <TabsContent value="signed" className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col gap-4 md:flex-row">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search signed agreements..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Expired">Expired</SelectItem>
+                <SelectItem value="Terminated">Terminated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Agreements List */}
+          <div className="grid gap-4">
+            {agreements && agreements.length > 0 ? (
+              agreements.map((agreement) => (
+                <Card key={agreement.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-lg">{agreement.title}</CardTitle>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          {agreement.agreement_types?.name && (
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-4 w-4" />
+                              {agreement.agreement_types.name}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            Created {format(new Date(agreement.created_at), 'MMM dd, yyyy')}
+                          </div>
+                          {agreement.signed_at && (
+                            <div className="flex items-center gap-1">
+                              <User className="h-4 w-4" />
+                              Signed {format(new Date(agreement.signed_at), 'MMM dd, yyyy')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {getStatusBadge(agreement.status)}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-end">
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleViewAgreement(agreement)}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleDownloadAgreement(agreement)}>
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No signed agreements found</h3>
+                  <p className="text-muted-foreground text-center">
+                    {searchQuery || statusFilter !== 'all' 
+                      ? 'Try adjusting your search or filters'
+                      : 'You don\'t have any signed agreements yet'
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      <ViewAgreementDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        agreement={selectedAgreement}
+        onDownload={handleDownloadAgreement}
+      />
     </div>
   );
 };
