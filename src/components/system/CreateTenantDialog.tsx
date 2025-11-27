@@ -112,6 +112,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
           contactPhone: data.contact_phone,
           address: data.address,
           subscriptionPlanId: data.subscription_plan_id,
+          subscriptionPlanName: plans?.find(p => p.id === data.subscription_plan_id)?.name || 'basic',
           billingCycle: data.billing_cycle,
           subscriptionDuration: data.subscription_duration,
           subscriptionStartDate: data.subscription_start_date.toISOString(),
