@@ -274,21 +274,51 @@ export const useUnifiedDocuments = (branchId: string) => {
 
       console.log('[useUnifiedDocuments] File uploaded successfully to storage:', uploadResult);
 
-      // Get user name for display
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
+      // Get user name and role for display
+      // 1. Check if user is a staff member
+      const { data: staffData } = await supabase
+        .from('staff')
         .select('first_name, last_name')
-        .eq('id', user.id)
+        .eq('auth_user_id', user.id)
         .single();
 
-      if (profileError) {
-        console.log('[useUnifiedDocuments] Could not fetch profile data, using email:', profileError);
+      // 2. Determine role label from user_roles
+      let roleLabel = '';
+      if (userRoles.includes('super_admin')) {
+        roleLabel = 'Super Admin';
+      } else if (userRoles.includes('branch_admin')) {
+        roleLabel = 'Branch Admin';
+      } else if (staffData) {
+        roleLabel = 'Staff';
       }
 
-      const profileName = profileData 
-        ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
-        : '';
-      const uploaderName = profileName || user.email || 'Admin';
+      // 3. Determine uploader name (priority: staff name > profile name > email)
+      let uploaderName = '';
+
+      if (staffData && (staffData.first_name || staffData.last_name)) {
+        uploaderName = `${staffData.first_name || ''} ${staffData.last_name || ''}`.trim();
+      } else {
+        // Fall back to profile
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+        
+        uploaderName = profileData 
+          ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
+          : '';
+      }
+
+      // 4. Build final display name
+      if (!uploaderName) {
+        uploaderName = user.email || 'Unknown User';
+      }
+
+      // Add role suffix if available
+      if (roleLabel) {
+        uploaderName = `${uploaderName} (${roleLabel})`;
+      }
 
       console.log('[useUnifiedDocuments] Uploader name determined:', uploaderName);
 
