@@ -66,13 +66,13 @@ const CarerDashboard: React.FC = () => {
       <CarerHeader />
       
       <div className="flex flex-1 w-full min-w-0 overflow-hidden">
-        <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto">
+        <CarerRightSidebar />
+        
+        <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto order-first">
           <main className="w-full max-w-full min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <Outlet />
           </main>
         </SidebarInset>
-        
-        <CarerRightSidebar />
       </div>
     </div>
   );
