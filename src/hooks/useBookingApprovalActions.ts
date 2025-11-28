@@ -43,7 +43,8 @@ export const useFetchPendingRequests = (branchId?: string) => {
             ),
             clients (
               id,
-              full_name
+              first_name,
+              last_name
             )
           )
         `)
@@ -173,6 +174,7 @@ export const useApproveChangeRequest = () => {
       
       // Invalidate ALL related queries for real-time sync
       queryClient.invalidateQueries({ queryKey: ['pending-booking-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-booking-requests-count'] });
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['client-all-appointments'] });
@@ -262,6 +264,7 @@ export const useRejectChangeRequest = () => {
       
       // Invalidate ALL related queries for real-time sync
       queryClient.invalidateQueries({ queryKey: ['pending-booking-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-booking-requests-count'] });
       queryClient.invalidateQueries({ queryKey: ['client-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['branch-bookings'] });
       queryClient.invalidateQueries({ queryKey: ['client-all-appointments'] });

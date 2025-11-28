@@ -31,6 +31,22 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [showReallocationDialog, setShowReallocationDialog] = useState(false);
   
+  // Helper functions to construct client name from first_name and last_name
+  const getClientFullName = (client: any) => {
+    if (!client) return "Unknown Client";
+    const firstName = client.first_name || "";
+    const lastName = client.last_name || "";
+    return `${firstName} ${lastName}`.trim() || "Unknown Client";
+  };
+
+  const getClientInitials = (client: any) => {
+    if (!client) return "?";
+    const firstName = client.first_name || "";
+    const lastName = client.last_name || "";
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    return initials || "?";
+  };
+  
   const handleReallocate = (appointmentId: string, newCarerId: string) => {
     toast.success("Appointment reallocated successfully", {
       description: "Both carers have been notified of the change"
@@ -91,12 +107,12 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                   <div className="flex-1">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-medium">
-                        {client?.full_name?.split(" ").map((name: string) => name[0]).join("") || "?"}
+                        {getClientInitials(client)}
                       </div>
                       
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{client?.full_name || "Unknown Client"}</h3>
+                          <h3 className="font-medium">{getClientFullName(client)}</h3>
                           <Badge className={request.request_type === 'cancellation' ? "bg-orange-100 text-orange-800" : "bg-blue-100 text-blue-800"}>
                             {request.request_type === 'cancellation' ? 'Cancellation' : 'Reschedule'} Requested
                           </Badge>
@@ -142,7 +158,7 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                         setSelectedAppointment({
                           ...request,
                           booking_id: booking?.id,
-                          client_name: client?.full_name,
+                          client_name: getClientFullName(client),
                           staff_name: staff ? `${staff.first_name} ${staff.last_name}` : "N/A",
                           service_title: service?.title
                         });
@@ -160,7 +176,7 @@ const AppointmentApprovalList: React.FC<{ branchId?: string }> = ({ branchId }) 
                         setSelectedAppointment({
                           ...request,
                           booking_id: booking?.id,
-                          client_name: client?.full_name,
+                          client_name: getClientFullName(client),
                           staff_name: staff ? `${staff.first_name} ${staff.last_name}` : "N/A",
                           service_title: service?.title
                         });
