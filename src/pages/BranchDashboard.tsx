@@ -11,7 +11,6 @@ import { NewBookingDialog } from "@/components/bookings/dialogs/NewBookingDialog
 import { AddCarerDialog } from "@/components/carers/AddCarerDialog";
 import { UnifiedUploadDialog } from "@/components/documents/UnifiedUploadDialog";
 import { SignAgreementDialog } from "@/components/agreements/SignAgreementDialog";
-import { ScheduleAgreementDialog } from "@/components/agreements/ScheduleAgreementDialog";
 import { ClientDetail } from "@/components/clients/ClientDetail";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServices } from "@/data/hooks/useServices";
@@ -136,7 +135,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
   // Quick Add dialog states
   const [isQuickUploadDialogOpen, setIsQuickUploadDialogOpen] = useState(false);
   const [isSignAgreementDialogOpen, setIsSignAgreementDialogOpen] = useState(false);
-  const [isScheduleAgreementDialogOpen, setIsScheduleAgreementDialogOpen] = useState(false);
   const [isAddCarerDialogOpen, setIsAddCarerDialogOpen] = useState(false);
 
   // State for access control
@@ -797,12 +795,6 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
         <SignAgreementDialog
           open={isSignAgreementDialogOpen}
           onOpenChange={setIsSignAgreementDialogOpen}
-          branchId={id || ""}
-        />
-
-        <ScheduleAgreementDialog
-          open={isScheduleAgreementDialogOpen}
-          onOpenChange={setIsScheduleAgreementDialogOpen}
           branchId={id || ""}
         />
       </div>
