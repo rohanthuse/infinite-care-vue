@@ -292,6 +292,13 @@ export const useUnifiedMessageThreads = () => {
             return false;
           }
           
+          // SUPER ADMIN SUPPORT ACCESS: Allow super_admins to see all support threads
+          // in their organization even if not a direct participant
+          if (currentUser.role === 'super_admin' && thread.thread_type === 'support') {
+            console.log(`[useUnifiedMessageThreads] Thread ${thread.id} - super_admin support access granted`);
+            return true;
+          }
+          
           // ONLY show threads where current user is a DIRECT participant - NO exceptions
           const isDirectParticipant = thread.message_participants.some(p => 
             p.user_id === currentUser.id
