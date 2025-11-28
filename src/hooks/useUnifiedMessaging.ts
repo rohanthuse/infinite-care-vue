@@ -565,8 +565,10 @@ export const useUnifiedSendMessage = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['unified-message-threads'] });
       queryClient.invalidateQueries({ queryKey: ['unified-thread-messages', data.thread_id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-thread-messages', data.thread_id] });
       queryClient.invalidateQueries({ queryKey: ['client-message-threads'] });
       queryClient.invalidateQueries({ queryKey: ['client-thread-messages', data.thread_id] });
+      queryClient.invalidateQueries({ queryKey: ['message-threads'] });
       toast.success('Message sent successfully');
     },
     onError: (error) => {
