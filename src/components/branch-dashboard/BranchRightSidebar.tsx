@@ -5,7 +5,7 @@ import {
   FileText, ClipboardCheck, Bell, ClipboardList, 
   FileUp, Folder, UserPlus, BarChart4, Settings, 
   Search, Plus, UserPlus2, FileSignature, CalendarPlus, 
-  UserRoundPlus, ChevronDown, BookText
+  UserRoundPlus, ChevronDown, BookText, HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { 
@@ -74,6 +74,7 @@ const primaryTabs: TabItem[] = [
   { icon: PoundSterling, label: "Finance", value: "finance", description: "Financial management" },
   { icon: Star, label: "Feedbacks", value: "reviews", description: "Client feedback" },
   { icon: MessageSquare, label: "Communication", value: "communication", description: "Messages & emails" },
+  { icon: HelpCircle, label: "Support", value: "support", description: "Help desk & support tickets" },
 ];
 
 const secondaryTabGroups: TabGroup[] = [
@@ -309,7 +310,7 @@ export const BranchRightSidebar: React.FC<BranchRightSidebarProps> = ({
       'events-logs', 'attendance', 'form-builder', 'documents', 
       'library', 'third-party', 'reports', 'bookings', 'accounting', 
       'care-plan', 'agreements', 'forms', 'notifications', 'workflow', 
-      'organization-calendar'
+      'organization-calendar', 'support'
     ];
     
     if (dedicatedModules.includes(tabValue)) {
