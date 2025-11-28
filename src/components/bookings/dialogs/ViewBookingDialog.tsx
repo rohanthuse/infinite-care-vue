@@ -288,9 +288,6 @@ export function ViewBookingDialog({
   
   // Check if user can delete bookings (admins only)
   const canDelete = userRole?.role && ['super_admin', 'branch_admin'].includes(userRole.role);
-  
-  // Determine if the appointment has already started
-  const hasStarted = startTimeDate && startTimeDate <= new Date();
 
   const handleDelete = async () => {
     if (!booking) {
