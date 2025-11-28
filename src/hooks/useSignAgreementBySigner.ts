@@ -124,6 +124,9 @@ export const useSignAgreementBySigner = () => {
       queryClient.invalidateQueries({ queryKey: ['client_agreements'] });
       queryClient.invalidateQueries({ queryKey: ['agreement_signers'] });
       queryClient.invalidateQueries({ queryKey: ['agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['client_pending_agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['staff_pending_agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['signed_agreements'] });
       
       if (data.allSigned) {
         toast.success('Agreement fully signed! It has been sent to admin for review.');

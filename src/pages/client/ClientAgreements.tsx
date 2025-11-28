@@ -20,6 +20,7 @@ const ClientAgreements = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('pending');
   
   const { data: pendingAgreements, isLoading: pendingLoading } = useClientPendingAgreements({
     searchQuery
@@ -67,6 +68,11 @@ const ClientAgreements = () => {
     }
   };
 
+  const handleSigningComplete = () => {
+    setActiveTab('signed');
+    toast.success('Agreement signed successfully! View it in your Signed Agreements.');
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       'Active': { variant: 'default' as const, className: 'bg-green-100 text-green-800' },
@@ -100,7 +106,7 @@ const ClientAgreements = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="pending" className="gap-2">
             <AlertCircle className="h-4 w-4" />
@@ -300,6 +306,7 @@ const ClientAgreements = () => {
         onOpenChange={setDialogOpen}
         agreement={selectedAgreement}
         onDownload={handleDownloadAgreement}
+        onSigningComplete={handleSigningComplete}
       />
     </div>
   );

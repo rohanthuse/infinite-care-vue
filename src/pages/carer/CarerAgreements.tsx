@@ -19,6 +19,7 @@ const CarerAgreements = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('pending');
   
   const { data: pendingAgreements, isLoading: pendingLoading } = useStaffPendingAgreements({
     searchQuery
@@ -43,6 +44,11 @@ const CarerAgreements = () => {
       toast.error('Failed to download agreement');
       console.error('Download error:', error);
     }
+  };
+
+  const handleSigningComplete = () => {
+    setActiveTab('signed');
+    toast.success('Agreement signed successfully! View it in your Signed Agreements.');
   };
 
   const getStatusBadge = (status: string) => {
@@ -71,7 +77,7 @@ const CarerAgreements = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="pending" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
@@ -250,6 +256,7 @@ const CarerAgreements = () => {
         onOpenChange={setDialogOpen}
         agreement={selectedAgreement}
         onDownload={handleDownloadAgreement}
+        onSigningComplete={handleSigningComplete}
       />
     </div>
   );
