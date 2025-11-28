@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { LibraryResourcesList } from "@/components/library/LibraryResourcesList";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CarerLibrary = () => {
   const { carerProfile } = useCarerAuthSafe();
@@ -32,22 +33,25 @@ const CarerLibrary = () => {
 
   if (!branchId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-2xl font-bold">Library Resources</h2>
-        <p className="text-gray-500 mt-1">Browse and access educational and reference materials</p>
+    <div className="w-full min-w-0 max-w-full space-y-6">
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold">Library Resources</h1>
+        <p className="text-sm text-muted-foreground mt-1">Browse and access educational and reference materials</p>
       </div>
       
-      <div className="p-4 md:p-6 max-w-full">
-        <LibraryResourcesList branchId={branchId} canDelete={false} showEngagementMetrics={false} />
-      </div>
+      <LibraryResourcesList branchId={branchId} canDelete={false} showEngagementMetrics={false} />
     </div>
   );
 };

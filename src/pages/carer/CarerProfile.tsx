@@ -270,24 +270,28 @@ const CarerProfile: React.FC = () => {
     }
   };
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+    return (
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <div className="space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
           <p className="text-muted-foreground">Loading profile...</p>
         </div>
-      </div>;
+      </div>
+    );
   }
   if (error || !carerProfile) {
-    return <div className="flex items-center justify-center min-h-screen">
+    return (
+      <div className="w-full min-w-0 max-w-full space-y-6">
         <div className="text-center">
           <p className="text-red-600 mb-4">
             {error?.message || "Unable to load profile"}
           </p>
           <Button onClick={() => window.location.reload()}>Refresh</Button>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="w-full space-y-6">
+  return <div className="w-full min-w-0 max-w-full space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-xl md:text-2xl font-bold">My Profile</h1>
         {getStatusBadge(carerProfile?.status)}

@@ -38,15 +38,15 @@ const CarerMessages = () => {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-120px)]">
+    <div className="w-full min-w-0 max-w-full flex flex-col space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4 px-4 pt-4">
+      <div className="flex items-center gap-3">
         <MessageCircle className="h-5 w-5 md:h-6 md:w-6 text-primary" />
         <h1 className="text-xl md:text-2xl font-bold text-card-foreground">Messages</h1>
       </div>
 
       {/* Main 3-Panel Layout */}
-      <div className="flex h-[calc(100%-60px)] border border-gray-200 rounded-lg overflow-hidden mx-4 bg-white">
+      <div className="flex flex-1 min-h-0 overflow-hidden border border-gray-200 rounded-lg bg-white">
         {/* Left Panel - Contact Sidebar */}
         <div className="hidden lg:flex flex-col w-64 border-r border-gray-200">
           <CarerContactSidebar

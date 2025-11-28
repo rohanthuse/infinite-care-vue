@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import TaskDetailDialog from "@/components/carer/TaskDetailDialog";
 import AddTaskDialog from "@/components/tasks/AddTaskDialog";
@@ -264,13 +265,11 @@ const CarerTasks: React.FC = () => {
 
   if (isLoading || branchLoading) {
     return (
-      <div>
-        <h1 className="text-2xl font-bold mb-6">My Tasks</h1>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <Skeleton className="h-8 w-48" />
         <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-24 bg-gray-200 rounded"></div>
-            </div>
+            <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
       </div>
@@ -278,8 +277,8 @@ const CarerTasks: React.FC = () => {
   }
 
   return (
-    <div className="w-full">
-      <h1 className="text-xl md:text-2xl font-bold mb-6">My Tasks</h1>
+    <div className="w-full min-w-0 max-w-full space-y-6">
+      <h1 className="text-xl md:text-2xl font-bold">My Tasks</h1>
       
       <div className="flex flex-col gap-3 mb-6">
         <div className="relative w-full">

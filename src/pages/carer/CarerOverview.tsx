@@ -102,7 +102,7 @@ const CarerOverview: React.FC = () => {
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full space-y-4">
+    <div className="w-full min-w-0 max-w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">
