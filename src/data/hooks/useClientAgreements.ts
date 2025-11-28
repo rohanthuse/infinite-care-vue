@@ -5,6 +5,7 @@ import { Agreement } from '@/types/agreements';
 interface UseClientAgreementsParams {
   searchQuery?: string;
   statusFilter?: "Active" | "Pending" | "Expired" | "Terminated";
+  signingStatusFilter?: "pending" | "signed" | "declined";
 }
 
 const fetchClientAgreements = async (params: UseClientAgreementsParams): Promise<Agreement[]> => {
@@ -46,16 +47,25 @@ const fetchClientAgreements = async (params: UseClientAgreementsParams): Promise
   
   // Filter agreements where the current logged-in user is assigned as a signer
   const filteredAgreements = (agreements || []).filter(agreement => {
-    const isAssignedSigner = agreement.agreement_signers?.some((signer: any) => 
+    const userSigner = agreement.agreement_signers?.find((signer: any) => 
       signer.signer_type === 'client' && 
       signer.signer_auth_user_id === userId
     );
     
-    if (isAssignedSigner) {
+    if (!userSigner) return false;
+    
+    // Apply signing status filter if provided
+    if (params.signingStatusFilter) {
+      if (userSigner.signing_status !== params.signingStatusFilter) {
+        return false;
+      }
+    }
+    
+    if (userSigner) {
       console.log('[useClientAgreements] Found agreement for user:', agreement.title);
     }
     
-    return isAssignedSigner;
+    return true;
   });
   
   console.log('[useClientAgreements] Found', filteredAgreements.length, 'agreements for user');

@@ -2,16 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Agreement } from '@/types/agreements';
 
-interface UseStaffAgreementsParams {
+interface UseStaffPendingAgreementsParams {
   searchQuery?: string;
-  statusFilter?: "Active" | "Pending" | "Expired" | "Terminated";
-  signingStatusFilter?: "pending" | "signed" | "declined";
 }
 
-const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<Agreement[]> => {
+const fetchStaffPendingAgreements = async (params: UseStaffPendingAgreementsParams): Promise<Agreement[]> => {
   const userId = (await supabase.auth.getUser()).data.user?.id;
   
-  console.log('[useStaffAgreements] Fetching agreements for user:', userId);
+  console.log('[useStaffPendingAgreements] Fetching pending agreements for user:', userId);
   
   let query = supabase
     .from('agreements')
@@ -40,35 +38,27 @@ const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<A
       )
     `);
   
-  // Filter for agreements where the current user is a signer
   const { data: agreements, error } = await query.order('created_at', { ascending: false });
   
   if (error) throw new Error(error.message);
   
-  // Filter agreements where the current logged-in user is assigned as a signer
+  // Filter agreements where the current logged-in user is assigned as a signer with pending status
   const filteredAgreements = (agreements || []).filter(agreement => {
     const userSigner = agreement.agreement_signers?.find((signer: any) => 
       signer.signer_type === 'staff' && 
       signer.signer_auth_user_id === userId
     );
     
-    if (!userSigner) return false;
+    const isPending = userSigner && userSigner.signing_status === 'pending';
     
-    // Apply signing status filter if provided
-    if (params.signingStatusFilter) {
-      if (userSigner.signing_status !== params.signingStatusFilter) {
-        return false;
-      }
+    if (isPending) {
+      console.log('[useStaffPendingAgreements] Found pending agreement for user:', agreement.title);
     }
     
-    if (userSigner) {
-      console.log('[useStaffAgreements] Found agreement for user:', agreement.title);
-    }
-    
-    return true;
+    return isPending;
   });
   
-  console.log('[useStaffAgreements] Found', filteredAgreements.length, 'agreements for user');
+  console.log('[useStaffPendingAgreements] Found', filteredAgreements.length, 'pending agreements for user');
   
   let result = filteredAgreements;
 
@@ -78,16 +68,12 @@ const fetchStaffAgreements = async (params: UseStaffAgreementsParams): Promise<A
     );
   }
 
-  if (params.statusFilter) {
-    result = result.filter(a => a.status === params.statusFilter);
-  }
-
   return result as Agreement[];
 };
 
-export const useStaffAgreements = (params: UseStaffAgreementsParams = {}) => {
+export const useStaffPendingAgreements = (params: UseStaffPendingAgreementsParams = {}) => {
   return useQuery<Agreement[], Error>({
-    queryKey: ['staff_agreements', params],
-    queryFn: () => fetchStaffAgreements(params)
+    queryKey: ['staff_pending_agreements', params],
+    queryFn: () => fetchStaffPendingAgreements(params)
   });
 };
