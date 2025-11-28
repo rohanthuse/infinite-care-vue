@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
@@ -39,9 +39,14 @@ import { useClientAuth } from "@/hooks/useClientAuth";
 export const ClientSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { createClientPath } = useClientNavigation();
+  const { createClientPath, tenantSlug } = useClientNavigation();
   const { clientName: authClientName, user } = useClientAuth();
   const { open: sidebarOpen } = useSidebar();
+
+  // Log tenant context availability
+  useEffect(() => {
+    console.log('[ClientSidebar] TenantSlug:', tenantSlug);
+  }, [tenantSlug]);
 
   // Get the display name from auth or fallback to email prefix or "Client"
   const clientName = authClientName || 
@@ -73,7 +78,12 @@ export const ClientSidebar: React.FC = () => {
     { name: "Support", path: createClientPath("/support"), icon: HelpCircle },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // Normalize paths by removing trailing slashes
+    const normalizedPath = path.replace(/\/$/, '');
+    const normalizedLocation = location.pathname.replace(/\/$/, '');
+    return normalizedLocation === normalizedPath;
+  };
 
   return (
     <Sidebar
@@ -115,7 +125,10 @@ export const ClientSidebar: React.FC = () => {
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      console.log('[ClientSidebar] Navigating to:', item.path, 'Current location:', location.pathname);
+                      navigate(item.path);
+                    }}
                     isActive={isActive(item.path)}
                     tooltip={!sidebarOpen ? item.name : undefined}
                   >
@@ -136,7 +149,10 @@ export const ClientSidebar: React.FC = () => {
               {servicesItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      console.log('[ClientSidebar] Navigating to:', item.path, 'Current location:', location.pathname);
+                      navigate(item.path);
+                    }}
                     isActive={isActive(item.path)}
                     tooltip={!sidebarOpen ? item.name : undefined}
                   >
@@ -157,7 +173,10 @@ export const ClientSidebar: React.FC = () => {
               {personalItems.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    onClick={() => navigate(item.path)}
+                    onClick={() => {
+                      console.log('[ClientSidebar] Navigating to:', item.path, 'Current location:', location.pathname);
+                      navigate(item.path);
+                    }}
                     isActive={isActive(item.path)}
                     tooltip={!sidebarOpen ? item.name : undefined}
                   >

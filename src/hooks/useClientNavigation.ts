@@ -6,10 +6,15 @@ export const useClientNavigation = () => {
   const { tenantSlug } = useTenant();
 
   const createClientPath = (path: string) => {
+    console.log('[useClientNavigation] Creating path:', { tenantSlug, path });
     if (tenantSlug) {
-      return `/${tenantSlug}/client-dashboard${path}`;
+      const fullPath = `/${tenantSlug}/client-dashboard${path}`;
+      console.log('[useClientNavigation] Generated path:', fullPath);
+      return fullPath;
     }
-    return `/client-dashboard${path}`;
+    const fallbackPath = `/client-dashboard${path}`;
+    console.log('[useClientNavigation] Fallback path (no tenant):', fallbackPath);
+    return fallbackPath;
   };
 
   const navigateToClientPage = (path: string, state?: any) => {
