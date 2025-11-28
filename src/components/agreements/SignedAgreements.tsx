@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import type { VariantProps } from "class-variance-authority";
 import { UnifiedShareDialog } from "@/components/sharing/UnifiedShareDialog";
 import { Share2 } from "lucide-react";
+import { DeleteAgreementDialog } from "./DeleteAgreementDialog";
 
 type SignedAgreementsProps = {
   searchQuery?: string;
@@ -85,6 +86,8 @@ export function SignedAgreements({
   const [partyFilter, setPartyFilter] = useState<AgreementPartyFilter>("all");
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [agreementToShare, setAgreementToShare] = useState<Agreement | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [agreementToDelete, setAgreementToDelete] = useState<Agreement | null>(null);
   
   const { data: agreements, isLoading, isError, error } = useSignedAgreements({
     searchQuery,
@@ -99,9 +102,19 @@ export function SignedAgreements({
 
   const deleteAgreementMutation = useDeleteAgreement();
 
-  const handleDeleteAgreement = (id: string) => {
-    if(window.confirm("Are you sure you want to delete this agreement?")) {
-      deleteAgreementMutation.mutate(id);
+  const handleDeleteAgreement = (agreement: Agreement) => {
+    setAgreementToDelete(agreement);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (agreementToDelete) {
+      deleteAgreementMutation.mutate(agreementToDelete.id, {
+        onSuccess: () => {
+          setDeleteDialogOpen(false);
+          setAgreementToDelete(null);
+        }
+      });
     }
   };
 
@@ -298,7 +311,7 @@ export function SignedAgreements({
                         size="sm"
                         variant="ghost"
                         className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => handleDeleteAgreement(agreement.id)}
+                        onClick={() => handleDeleteAgreement(agreement)}
                         disabled={deleteAgreementMutation.isPending}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -342,6 +355,17 @@ export function SignedAgreements({
           onGeneratePDF={handleGenerateAgreementPDF}
         />
       )}
+
+      <DeleteAgreementDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setAgreementToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        agreementTitle={agreementToDelete?.title}
+        isLoading={deleteAgreementMutation.isPending}
+      />
     </>
   );
 }
