@@ -5,6 +5,7 @@ import { MessageList } from "./MessageList";
 import { MessageView } from "./MessageView";
 import { MessageComposer } from "./MessageComposer";
 import { MessageFilters } from "./MessageFilters";
+import { MessageInputBar } from "./MessageInputBar";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -142,9 +143,9 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
     setShowComposer(false);
   };
 
-  // Handler for reply
+  // Handler for reply - no longer needed as input is always visible
   const handleReply = () => {
-    setShowComposer(true);
+    // No-op: input bar is always visible
   };
 
   if (userLoading) {
@@ -246,7 +247,7 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
           
           {/* Right column - Message view or composer */}
           <div className="flex-1 flex flex-col">
-            {showComposer ? (
+            {showComposer && !selectedMessageId ? (
               <MessageComposer 
                 branchId={branchId || "1"}
                 onClose={handleCloseComposer}
@@ -255,10 +256,18 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
                 initialDraft={draftToEdit}
               />
             ) : selectedMessageId ? (
-              <MessageView 
-                messageId={selectedMessageId}
-                onReply={handleReply}
-              />
+              <div className="flex flex-col h-full">
+                {/* Conversation - scrollable area */}
+                <div className="flex-1 overflow-y-auto">
+                  <MessageView 
+                    messageId={selectedMessageId}
+                    onReply={handleReply}
+                  />
+                </div>
+                
+                {/* Input bar - fixed at bottom */}
+                <MessageInputBar threadId={selectedMessageId} />
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full bg-gray-50">
                 <p className="text-gray-400 mb-4">Select a message to view or start a new conversation</p>
