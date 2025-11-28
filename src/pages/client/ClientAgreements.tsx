@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Download, Eye, FileText, Calendar, User, Clock, AlertCircle } from 'lucide-react';
+import { Search, Download, Eye, FileText, Calendar, User, AlertCircle, PenLine } from 'lucide-react';
+import { useClientPendingAgreements } from '@/hooks/useClientPendingAgreements';
 import { useClientAgreements } from '@/data/hooks/useClientAgreements';
-import { useClientScheduledAgreements } from '@/hooks/useClientScheduledAgreements';
 import { ViewAgreementDialog } from '@/components/agreements/ViewAgreementDialog';
 import { exportAgreementToPDF } from '@/lib/agreementPdfExport';
 import { Agreement } from '@/types/agreements';
@@ -21,13 +21,14 @@ const ClientAgreements = () => {
   const [selectedAgreement, setSelectedAgreement] = useState<Agreement | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  const { data: agreements, isLoading } = useClientAgreements({
-    searchQuery,
-    statusFilter: statusFilter === 'all' ? undefined : statusFilter as "Active" | "Pending" | "Expired" | "Terminated"
+  const { data: pendingAgreements, isLoading: pendingLoading } = useClientPendingAgreements({
+    searchQuery
   });
 
-  const { data: scheduledAgreements, isLoading: isLoadingScheduled } = useClientScheduledAgreements({
+  const { data: signedAgreements, isLoading: signedLoading } = useClientAgreements({
     searchQuery,
+    statusFilter: statusFilter === 'all' ? undefined : statusFilter as "Active" | "Pending" | "Expired" | "Terminated",
+    signingStatusFilter: 'signed'
   });
 
   const handleViewAgreement = (agreement: Agreement) => {
@@ -82,7 +83,7 @@ const ClientAgreements = () => {
     );
   };
 
-  if (isLoading || isLoadingScheduled) {
+  if (pendingLoading && signedLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -102,10 +103,10 @@ const ClientAgreements = () => {
       <Tabs defaultValue="pending" className="space-y-6">
         <TabsList>
           <TabsTrigger value="pending" className="gap-2">
-            <Clock className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             Pending Agreements
-            {scheduledAgreements && scheduledAgreements.length > 0 && (
-              <Badge variant="secondary" className="ml-1">{scheduledAgreements.length}</Badge>
+            {pendingAgreements && pendingAgreements.length > 0 && (
+              <Badge variant="destructive" className="ml-1">{pendingAgreements.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="signed" className="gap-2">
@@ -135,13 +136,20 @@ const ClientAgreements = () => {
           </div>
 
           <div className="grid gap-4">
-            {scheduledAgreements && scheduledAgreements.length > 0 ? (
-              scheduledAgreements.map((agreement) => (
-                <Card key={agreement.id} className="hover:shadow-md transition-shadow border-l-4 border-l-yellow-500">
-                  <CardHeader className="pb-4">
+            {pendingLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : pendingAgreements && pendingAgreements.length > 0 ? (
+              pendingAgreements.map((agreement) => (
+                <Card key={agreement.id} className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg">{agreement.title}</CardTitle>
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-5 w-5 text-blue-600" />
+                          <CardTitle className="text-lg">{agreement.title}</CardTitle>
+                        </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           {agreement.agreement_types?.name && (
                             <div className="flex items-center gap-1">
@@ -149,27 +157,27 @@ const ClientAgreements = () => {
                               {agreement.agreement_types.name}
                             </div>
                           )}
-                          {agreement.scheduled_for && (
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              Due: {format(new Date(agreement.scheduled_for), 'MMM dd, yyyy')}
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            Created {format(new Date(agreement.created_at), 'MMM dd, yyyy')}
+                          </div>
                         </div>
                       </div>
-                      <Badge className="bg-yellow-500/10 text-yellow-600">
-                        {agreement.status}
+                      <Badge className="bg-blue-100 text-blue-800">
+                        Awaiting Signature
                       </Badge>
                     </div>
                   </CardHeader>
                   
                   <CardContent className="pt-0">
-                    {agreement.notes && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{agreement.notes}</p>
-                    )}
-                    <div className="flex items-center justify-end">
-                      <Button variant="default" size="sm">
-                        <Eye className="h-4 w-4 mr-1" />
+                    <div className="flex items-center justify-end gap-2">
+                      <Button 
+                        variant="default" 
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700"
+                        onClick={() => handleViewAgreement(agreement)}
+                      >
+                        <PenLine className="h-4 w-4 mr-1" />
                         View & Sign
                       </Button>
                     </div>
@@ -179,7 +187,7 @@ const ClientAgreements = () => {
             ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Clock className="h-12 w-12 text-muted-foreground mb-4" />
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No pending agreements</h3>
                   <p className="text-muted-foreground text-center">
                     You don't have any agreements waiting for your signature
@@ -219,8 +227,12 @@ const ClientAgreements = () => {
 
           {/* Agreements List */}
           <div className="grid gap-4">
-            {agreements && agreements.length > 0 ? (
-              agreements.map((agreement) => (
+            {signedLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : signedAgreements && signedAgreements.length > 0 ? (
+              signedAgreements.map((agreement) => (
                 <Card key={agreement.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
