@@ -19,7 +19,7 @@ export const useBranchDashboardNavigation = () => {
   // Define valid tab names - Updated to include all menu items
   const validTabs = [
     'dashboard', 'key-parameters', 'workflow', 'task-matrix', 'training-matrix',
-    'bookings', 'carers', 'clients', 'reviews', 'communication', 'medication',
+    'bookings', 'carers', 'clients', 'reviews', 'communication', 'support', 'medication',
     'accounting', 'finance', 'care-plan', 'agreements', 'forms', 'notifications',
     'events-logs', 'attendance', 'form-builder', 'documents', 'library', 
     'third-party', 'reports', 'organization-calendar'

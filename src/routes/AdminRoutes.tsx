@@ -135,6 +135,7 @@ const AdminRoutes = () => [
       <Route path="care-plan" element={<BranchDashboard />} />
       <Route path="reviews" element={<BranchDashboard />} />
       <Route path="communication" element={<BranchDashboard />} />
+      <Route path="support" element={<BranchDashboard />} />
       <Route path="medication" element={<BranchDashboard />} />
       <Route path="finance" element={<Accounting />} />
       <Route path="notifications" element={<BranchDashboard />} />
