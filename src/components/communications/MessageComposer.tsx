@@ -25,7 +25,7 @@ interface ClientMessageRecipient {
   auth_user_id: string;
   name: string;
   avatar: string;
-  type: 'branch_admin' | 'super_admin' | 'assigned_carer';
+  type: 'branch_admin' | 'super_admin' | 'carer' | 'client';
   email?: string;
   canMessage: boolean;
   groupLabel: string;

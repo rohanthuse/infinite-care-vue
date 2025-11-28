@@ -760,8 +760,9 @@ export const useUnifiedCreateThread = () => {
         participants.push({
           thread_id: thread.id,
           user_id: recipientId, // Should be pre-validated by MessageComposer
-          user_type: recipientTypes[i] === 'carer' ? 'carer' : 
-                    recipientTypes[i] === 'client' ? 'client' : 'branch_admin',
+          user_type: recipientTypes[i] === 'carer' || recipientTypes[i] === 'assigned_carer' ? 'carer' : 
+                    recipientTypes[i] === 'client' ? 'client' : 
+                    recipientTypes[i] === 'super_admin' ? 'super_admin' : 'branch_admin',
           user_name: recipientNames[i]
         });
       }
