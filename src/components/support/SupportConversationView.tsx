@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { MessageView } from '@/components/communications/MessageView';
-import { SupportReplyComposer } from './SupportReplyComposer';
+import { SupportMessageInputBar } from './SupportMessageInputBar';
 import { Button } from '@/components/ui/button';
-import { X, Reply } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface SupportConversationViewProps {
   ticketId: string;
@@ -13,44 +13,26 @@ export const SupportConversationView: React.FC<SupportConversationViewProps> = (
   ticketId,
   onClose
 }) => {
-  const [showReply, setShowReply] = useState(false);
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-border bg-card flex items-center justify-between">
         <h3 className="font-semibold text-foreground">Support Conversation</h3>
-        <div className="flex items-center gap-2">
-          {!showReply && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowReply(true)}
-            >
-              <Reply className="h-4 w-4 mr-1" />
-              Reply
-            </Button>
-          )}
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Conversation */}
-      <div className="flex-1 overflow-hidden">
-        {showReply ? (
-          <SupportReplyComposer
-            threadId={ticketId}
-            onClose={() => setShowReply(false)}
-          />
-        ) : (
-          <MessageView
-            messageId={ticketId}
-            onReply={() => setShowReply(true)}
-          />
-        )}
+      {/* Messages Area - Always visible */}
+      <div className="flex-1 overflow-y-auto">
+        <MessageView
+          messageId={ticketId}
+          onReply={() => {}}
+        />
       </div>
+
+      {/* Input Bar - Always visible at bottom */}
+      <SupportMessageInputBar threadId={ticketId} />
     </div>
   );
 };
