@@ -68,8 +68,6 @@ export const SupportMessageInputBar: React.FC<SupportMessageInputBarProps> = ({
       // Clear inputs
       setContent('');
       setAttachedFiles([]);
-      
-      toast.success('Message sent successfully');
     } catch (error: any) {
       console.error('Error sending message:', error);
       toast.error(`Failed to send message: ${error.message}`);
@@ -96,7 +94,7 @@ export const SupportMessageInputBar: React.FC<SupportMessageInputBarProps> = ({
   const isDisabled = (!content.trim() && attachedFiles.length === 0) || isSending;
 
   return (
-    <div className="border-t border-border bg-card p-2 sm:p-3">
+    <div className="border-t border-border bg-card p-2 sm:p-3 shrink-0">
       {/* Attached files preview */}
       {attachedFiles.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
