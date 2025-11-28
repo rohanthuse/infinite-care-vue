@@ -34,6 +34,11 @@ export const CarerSidebarProvider: React.FC<CarerSidebarProviderProps> = ({ chil
       open={isMounted ? open : getDefaultOpen()} 
       onOpenChange={setOpen}
       defaultOpen={getDefaultOpen()}
+      style={{
+        '--carer-header-height': '64px',
+        '--sidebar-width': '16rem',
+        '--sidebar-width-icon': '3.5rem',
+      } as React.CSSProperties}
     >
       {children}
     </SidebarProvider>

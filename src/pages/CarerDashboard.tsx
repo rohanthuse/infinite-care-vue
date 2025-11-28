@@ -60,19 +60,18 @@ const CarerDashboard: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen flex flex-col bg-gray-50 min-w-0 overflow-x-hidden"
+      className="min-h-screen flex flex-col bg-gray-50"
       style={{ '--carer-header-height': '64px' } as React.CSSProperties}
     >
       <CarerHeader />
       
-      <div className="flex flex-1 w-full min-w-0 overflow-hidden">
-        <CarerRightSidebar />
-        
-        <SidebarInset className="flex-1 min-w-0 w-full overflow-y-auto order-first">
+      <div className="flex flex-1 min-h-0 w-full">
+        <SidebarInset className="flex-1 min-w-0 overflow-y-auto">
           <main className="w-full max-w-full min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <Outlet />
           </main>
         </SidebarInset>
+        <CarerRightSidebar />
       </div>
     </div>
   );
