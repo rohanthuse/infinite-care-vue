@@ -7,7 +7,7 @@ export interface ClientMessageRecipient {
   auth_user_id: string;
   name: string;
   avatar: string;
-  type: 'branch_admin' | 'super_admin' | 'assigned_carer';
+  type: 'branch_admin' | 'super_admin' | 'carer' | 'client';
   email?: string;
   canMessage: boolean;
   groupLabel: string;
@@ -129,7 +129,7 @@ export const useClientMessageRecipients = (clientId: string) => {
                   auth_user_id: staff.auth_user_id,
                   name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Staff Member',
                   avatar: '',
-                  type: 'assigned_carer',
+                  type: 'carer',
                   email: staff.email,
                   canMessage: true,
                   groupLabel: 'Assigned Carers'
