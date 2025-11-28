@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { CarerHeader } from "@/components/carer/CarerHeader";
+import { CarerSubHeader } from "@/components/carer/CarerSubHeader";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { CarerRightSidebar } from "@/components/carer/CarerRightSidebar";
 import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
@@ -61,9 +62,14 @@ const CarerDashboard: React.FC = () => {
   return (
     <div 
       className="min-h-screen flex flex-col bg-gray-50"
-      style={{ '--carer-header-height': '64px' } as React.CSSProperties}
+      style={{ 
+        '--carer-header-height': '64px',
+        '--carer-subheader-height': '56px',
+        '--carer-total-header-height': '120px'
+      } as React.CSSProperties}
     >
       <CarerHeader />
+      <CarerSubHeader />
       
       <div className="flex flex-1 min-h-0 w-full">
         <SidebarInset className="flex-1 min-w-0 overflow-y-auto">

@@ -40,14 +40,18 @@ export const useCarerContext = () => {
       const staffProfile = data[0];
       console.log('[useCarerContext] Staff profile loaded:', staffProfile);
 
-      // Get branch info - use maybeSingle to avoid errors
+      // Get branch info with organization name - use maybeSingle to avoid errors
       const { data: branchData, error: branchError } = await supabase
         .from('branches')
         .select(`
           id,
           name,
+          status,
           address,
-          organization_id
+          organization_id,
+          organizations (
+            name
+          )
         `)
         .eq('id', staffProfile.branch_id)
         .maybeSingle();
@@ -70,7 +74,10 @@ export const useCarerContext = () => {
       return {
         staffId: staffProfile.id,
         staffProfile,
-        branchInfo: branchData
+        branchInfo: branchData ? {
+          ...branchData,
+          organization_name: (branchData.organizations as any)?.name || ''
+        } : null
       };
     },
     enabled: !!user?.id,
