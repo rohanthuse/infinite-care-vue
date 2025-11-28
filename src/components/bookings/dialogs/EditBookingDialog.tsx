@@ -488,13 +488,6 @@ export function EditBookingDialog({
     }
   };
 
-  // Check if appointment has already started
-  const hasStarted = (() => {
-    if (!booking?.start_time) return false;
-    const d = new Date(booking.start_time);
-    return isValidDate(d) && d <= new Date();
-  })();
-
   if (!booking) return null;
 
   return (
@@ -506,19 +499,12 @@ export function EditBookingDialog({
             Edit Appointment
           </DialogTitle>
           <DialogDescription>
-            Modify the appointment details. Changes can only be made before the appointment starts.
+            Modify the appointment details including time, carer, service, and notes.
           </DialogDescription>
         </DialogHeader>
 
-        {hasStarted ? (
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-yellow-800 text-sm">
-              This appointment has already started and cannot be edited.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Status Change Preview */}
+        <>
+          {/* Status Change Preview */}
             {statusWillChange && (
               <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
@@ -857,7 +843,6 @@ export function EditBookingDialog({
               </Form>
             </div>
           </>
-        )}
 
         {/* Overlap Alert Dialog */}
         <BookingOverlapAlert
@@ -880,7 +865,7 @@ export function EditBookingDialog({
 
         <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4">
           <div className="flex flex-col sm:flex-row gap-3 w-full">
-            {canDelete && !hasStarted && (
+            {canDelete && (
               <div className="flex justify-start w-full sm:w-auto">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -922,27 +907,25 @@ export function EditBookingDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              {!hasStarted && (
-                <>
-                  <Button 
-                    type="button"
-                    variant="outline"
-                    disabled={isValidating}
-                    onClick={validateCurrentBooking}
-                    className="whitespace-nowrap"
-                  >
-                    {isValidating ? "Validating..." : "Check for Conflicts"}
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={updateBooking.isPending || isValidating || (validationResult && !validationResult.isValid)}
-                    onClick={form.handleSubmit(onSubmit)}
-                    className="whitespace-nowrap"
-                  >
-                    {updateBooking.isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </>
-              )}
+              <>
+                <Button 
+                  type="button"
+                  variant="outline"
+                  disabled={isValidating}
+                  onClick={validateCurrentBooking}
+                  className="whitespace-nowrap"
+                >
+                  {isValidating ? "Validating..." : "Check for Conflicts"}
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateBooking.isPending || isValidating || (validationResult && !validationResult.isValid)}
+                  onClick={form.handleSubmit(onSubmit)}
+                  className="whitespace-nowrap"
+                >
+                  {updateBooking.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
             </div>
           </div>
         </DialogFooter>
