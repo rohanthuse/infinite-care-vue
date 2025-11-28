@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, MoreHorizontal, Reply, Clock, AlertTriangle, Eye, Users, User } from "lucide-react";
+import { ArrowLeft, ArrowRight, MoreHorizontal, Clock, AlertTriangle, Eye, Users, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,13 +11,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { MessageAttachmentViewer } from "@/components/communications/MessageAttachmentViewer";
 import { useMessageAttachments } from "@/hooks/useMessageAttachments";
 import { MessageReadReceipt } from "@/components/communications/MessageReadReceipt";
+import { MessageInputBar } from "@/components/communications/MessageInputBar";
 
 interface CarerMessageViewProps {
   threadId: string;
-  onReply: () => void;
 }
 
-export const CarerMessageView = ({ threadId, onReply }: CarerMessageViewProps) => {
+export const CarerMessageView = ({ threadId }: CarerMessageViewProps) => {
   const { data: messages = [], isLoading, error } = useUnifiedThreadMessages(threadId);
   const { data: currentUser } = useUserRole();
   const markMessagesAsRead = useMarkMessagesAsRead();
@@ -64,14 +64,37 @@ export const CarerMessageView = ({ threadId, onReply }: CarerMessageViewProps) =
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-50">
-        <div className="text-gray-400 text-lg mb-2">No messages found</div>
-        <p className="text-sm text-gray-500 max-w-md text-center">
-          Start the conversation by sending a message.
-        </p>
-        <Button variant="outline" className="mt-4" onClick={onReply}>
-          Send Message
-        </Button>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
+          <h2 className="text-lg font-semibold">Conversation</h2>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" title="Previous">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" title="Next">
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {/* Empty state */}
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
+          <div className="text-gray-400 text-lg mb-2">No messages yet</div>
+          <p className="text-sm text-gray-500 max-w-md text-center">
+            Start the conversation by sending a message below.
+          </p>
+        </div>
+        
+        {/* Input bar always visible */}
+        <MessageInputBar 
+          threadId={threadId}
+          messageType="reply"
+          placeholder="Type a message..."
+        />
       </div>
     );
   }
@@ -157,7 +180,8 @@ export const CarerMessageView = ({ threadId, onReply }: CarerMessageViewProps) =
   
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+      {/* Header - Fixed at top */}
+      <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
         <h2 className="text-lg font-semibold truncate">Conversation</h2>
         
         <div className="flex items-center gap-1">
@@ -173,8 +197,8 @@ export const CarerMessageView = ({ threadId, onReply }: CarerMessageViewProps) =
         </div>
       </div>
       
-      {/* Messages */}
-      <div id="carer-messages-container" className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      {/* Messages Area - Scrollable */}
+      <div id="carer-messages-container" className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((message, index) => {
           const isCurrentUser = message.senderType === 'carer';
           const attachmentsList = parseAttachments(message.attachments);
@@ -285,18 +309,12 @@ export const CarerMessageView = ({ threadId, onReply }: CarerMessageViewProps) =
         })}
       </div>
       
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
-          </span>
-          <Button variant="default" onClick={onReply}>
-            <Reply className="h-4 w-4 mr-2" />
-            Reply to conversation
-          </Button>
-        </div>
-      </div>
+      {/* Input Bar - Fixed at bottom, always visible */}
+      <MessageInputBar 
+        threadId={threadId}
+        messageType="reply"
+        placeholder="Type a message..."
+      />
     </div>
   );
 };

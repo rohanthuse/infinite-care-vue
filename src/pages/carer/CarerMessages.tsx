@@ -13,7 +13,6 @@ const CarerMessages = () => {
   const [contactType, setContactType] = useState<"all" | "assigned" | "branch">("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showComposer, setShowComposer] = useState(false);
-  const [isReplyMode, setIsReplyMode] = useState(false);
 
   // Enable real-time notifications
   useCarerMessageNotifications();
@@ -22,29 +21,20 @@ const CarerMessages = () => {
     setSelectedContactId(contactId);
     setSelectedMessageId(null);
     setShowComposer(true);
-    setIsReplyMode(false);
   };
 
   const handleMessageSelect = (messageId: string) => {
     setSelectedMessageId(messageId);
     setShowComposer(false);
-    setIsReplyMode(false);
   };
 
   const handleComposeClick = () => {
     setShowComposer(true);
-    setIsReplyMode(false);
     setSelectedMessageId(null);
   };
 
   const handleSendMessage = () => {
     setShowComposer(false);
-    setIsReplyMode(false);
-  };
-
-  const handleReply = () => {
-    setShowComposer(true);
-    setIsReplyMode(true);
   };
 
   return (
@@ -85,14 +75,13 @@ const CarerMessages = () => {
           {showComposer ? (
             <CarerMessageComposerEnhanced
               selectedContactId={selectedContactId}
-              selectedThreadId={isReplyMode ? selectedMessageId : null}
+              selectedThreadId={selectedMessageId}
               onClose={() => setShowComposer(false)}
               onSend={handleSendMessage}
             />
           ) : selectedMessageId ? (
             <CarerMessageView
               threadId={selectedMessageId}
-              onReply={handleReply}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full bg-gray-50">
