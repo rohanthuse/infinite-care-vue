@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Reply, Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical, Info } from "lucide-react";
+import { Users, User, Clock, AlertTriangle, CheckCircle, Eye, Trash2, MoreVertical, Info } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -253,7 +253,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
@@ -284,10 +284,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onReply}>
-              <Reply className="h-4 w-4 mr-2" />
-              Reply
-            </Button>
+            {/* Reply button removed - input bar is always visible at bottom */}
             
             {canDelete && (
               <DropdownMenu open={threadDropdownOpen} onOpenChange={setThreadDropdownOpen}>
@@ -457,19 +454,6 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
         })}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-white">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">
-            {messages.length} message{messages.length !== 1 ? 's' : ''}
-          </span>
-          <Button variant="default" onClick={onReply}>
-            <Reply className="h-4 w-4 mr-2" />
-            Reply to conversation
-          </Button>
-        </div>
-      </div>
-
       {/* Delete Confirmation Dialog */}
       <ConfirmDeleteMessageDialog
         open={deleteDialog.open}
@@ -489,6 +473,6 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           threadId={messageInfoSheet.threadId}
         />
       )}
-    </div>
+    </>
   );
 };
