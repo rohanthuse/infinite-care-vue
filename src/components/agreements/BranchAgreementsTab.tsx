@@ -1,15 +1,13 @@
 
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, PlusCircle, Calendar, Clock, FileCheck, Search, Filter, Download } from "lucide-react";
+import { FileText, PlusCircle, FileCheck, Search, Filter, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { SignedAgreements } from "./SignedAgreements";
-import { ScheduledAgreements } from "./ScheduledAgreements";
 import { AgreementTemplates } from "./AgreementTemplates";
 import { SignAgreementDialog } from "./SignAgreementDialog";
-import { ScheduleAgreementDialog } from "./ScheduleAgreementDialog";
 import { CreateTemplateDialog } from "./CreateTemplateDialog";
 import { ApprovalStatusFilter } from "@/types/agreements";
 
@@ -27,7 +25,6 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
   const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Pending" | "Expired" | "Terminated">("all");
   const [approvalFilter, setApprovalFilter] = useState<ApprovalStatusFilter>("all");
   const [showSignDialog, setShowSignDialog] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
   useEffect(() => {
@@ -86,13 +83,6 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Signed
-              </TabsTrigger>
-              <TabsTrigger 
-                value="scheduled" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none border-b-2 border-transparent px-4 pb-3"
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                Scheduled
               </TabsTrigger>
               <TabsTrigger 
                 value="templates" 
@@ -170,17 +160,6 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
                 </Button>
               )}
               
-              {activeTab === "scheduled" && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-primary border-border hover:bg-accent"
-                  onClick={() => setShowScheduleDialog(true)}
-                >
-                  <Clock className="mr-1.5 h-4 w-4" /> Schedule New
-                </Button>
-              )}
-              
               {activeTab === "templates" && (
                 <Button 
                   variant="outline" 
@@ -213,15 +192,6 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
             />
           </TabsContent>
           
-          <TabsContent value="scheduled" className="p-0 border-none">
-            <ScheduledAgreements
-              searchQuery={debouncedSearchQuery}
-              typeFilter={typeFilter}
-              dateFilter={dateFilter}
-              branchId={branchId}
-            />
-          </TabsContent>
-          
           <TabsContent value="templates" className="p-0 border-none">
             <AgreementTemplates
               searchQuery={debouncedSearchQuery}
@@ -235,12 +205,6 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
       <SignAgreementDialog 
         open={showSignDialog} 
         onOpenChange={setShowSignDialog} 
-        branchId={branchId}
-      />
-      
-      <ScheduleAgreementDialog
-        open={showScheduleDialog}
-        onOpenChange={setShowScheduleDialog}
         branchId={branchId}
       />
       
