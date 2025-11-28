@@ -23,8 +23,8 @@ export const SupportConversationView: React.FC<SupportConversationViewProps> = (
         </Button>
       </div>
 
-      {/* Messages Area - Always visible */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Messages Area - Constrained to scroll */}
+      <div className="flex-1 min-h-0 overflow-hidden">
         <MessageView
           messageId={ticketId}
           onReply={() => {}}
