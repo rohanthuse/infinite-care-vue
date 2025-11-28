@@ -50,7 +50,7 @@ export const useAgreementTypes = () => {
 
 // --- SIGNED AGREEMENTS ---
 
-const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all", isOrganizationLevel = false, approvalFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; approvalFilter?: string; }) => {
+const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dateFilter = "all", branchId, partyFilter = "all", isOrganizationLevel = false, approvalFilter = "all", statusFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; approvalFilter?: string; statusFilter?: "all" | "Active" | "Pending" | "Expired" | "Terminated"; }) => {
     let query = supabase.from('agreements').select(`
       *, 
       agreement_types ( name ),
@@ -66,9 +66,10 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
       query = query.eq('branch_id', branchId);
     }
 
-    // Only show agreements that are not "Pending" (i.e., have been through the signing process)
-    // Show Active, Expired, Terminated agreements in the Signed tab
-    query = query.in('status', ['Active', 'Expired', 'Terminated']);
+    // Filter by status - show all agreements or filter by specific status
+    if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter as "Active" | "Pending" | "Expired" | "Terminated");
+    }
     
     if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,signed_by_name.ilike.%${searchQuery}%`);
     if (typeFilter !== 'all') query = query.eq('type_id', typeFilter);
@@ -89,10 +90,10 @@ const fetchSignedAgreements = async ({ searchQuery = "", typeFilter = "all", dat
     return data as Agreement[];
 };
 
-export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel = false, approvalFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; approvalFilter?: string; }) => {
+export const useSignedAgreements = ({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel = false, approvalFilter = "all", statusFilter = "all" }: { searchQuery?: string; typeFilter?: string; dateFilter?: string; branchId?: string; partyFilter?: AgreementPartyFilter; isOrganizationLevel?: boolean; approvalFilter?: string; statusFilter?: "all" | "Active" | "Pending" | "Expired" | "Terminated"; }) => {
   return useQuery<Agreement[], Error>({
-    queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel, approvalFilter }],
-    queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel, approvalFilter }),
+    queryKey: ['agreements', { searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel, approvalFilter, statusFilter }],
+    queryFn: () => fetchSignedAgreements({ searchQuery, typeFilter, dateFilter, branchId, partyFilter, isOrganizationLevel, approvalFilter, statusFilter }),
   });
 };
 

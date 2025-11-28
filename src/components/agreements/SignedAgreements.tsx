@@ -27,6 +27,7 @@ type SignedAgreementsProps = {
   branchId?: string;
   isOrganizationLevel?: boolean;
   approvalFilter?: ApprovalStatusFilter;
+  statusFilter?: "all" | "Active" | "Pending" | "Expired" | "Terminated";
 };
 
 const getStatusBadgeVariant = (status: Agreement["status"]): VariantProps<typeof badgeVariants>["variant"] => {
@@ -77,7 +78,8 @@ export function SignedAgreements({
   dateFilter = "all",
   branchId,
   isOrganizationLevel = false,
-  approvalFilter = "all"
+  approvalFilter = "all",
+  statusFilter = "all"
 }: SignedAgreementsProps) {
   const [viewingAgreementId, setViewingAgreementId] = useState<string | null>(null);
   const [partyFilter, setPartyFilter] = useState<AgreementPartyFilter>("all");
@@ -92,6 +94,7 @@ export function SignedAgreements({
     partyFilter,
     isOrganizationLevel,
     approvalFilter,
+    statusFilter,
   });
 
   const deleteAgreementMutation = useDeleteAgreement();
@@ -167,11 +170,12 @@ export function SignedAgreements({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[5%]">#</TableHead>
-              <TableHead className="w-[20%]">Title</TableHead>
-              <TableHead className="w-[18%]">Signed By</TableHead>
-              <TableHead className="w-[12%]">Date</TableHead>
-              <TableHead className="w-[12%]">Type</TableHead>
-              <TableHead className="w-[12%]">Expiry Date</TableHead>
+              <TableHead className="w-[18%]">Title</TableHead>
+              <TableHead className="w-[16%]">Signers</TableHead>
+              <TableHead className="w-[10%]">Progress</TableHead>
+              <TableHead className="w-[10%]">Date</TableHead>
+              <TableHead className="w-[10%]">Type</TableHead>
+              <TableHead className="w-[10%]">Expiry Date</TableHead>
               <TableHead className="w-[10%]">Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -193,9 +197,6 @@ export function SignedAgreements({
                         <>
                           <Users className="h-4 w-4 text-primary" />
                           <div className="flex flex-col">
-                            <span className="font-medium">
-                              {agreement.agreement_signers.length} {agreement.agreement_signers.length === 1 ? 'Signer' : 'Signers'}
-                            </span>
                             <span className="text-xs text-muted-foreground">
                               {agreement.agreement_signers.slice(0, 2).map(s => s.signer_name).join(', ')}
                               {agreement.agreement_signers.length > 2 && ` +${agreement.agreement_signers.length - 2} more`}
@@ -209,15 +210,30 @@ export function SignedAgreements({
                           ) : (
                             <UserCheck className="h-4 w-4 text-primary" />
                           )}
-                          <span>{agreement.signed_by_name || 'No signers'}</span>
+                          <span className="text-sm">{agreement.signed_by_name || 'No signers'}</span>
                         </>
                       )}
-                      {agreement.signing_party && (
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {agreement.signing_party}
-                        </Badge>
-                      )}
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {agreement.agreement_signers && agreement.agreement_signers.length > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {agreement.agreement_signers.filter(s => s.signing_status === 'signed').length}/{agreement.agreement_signers.length}
+                        </span>
+                        {agreement.agreement_signers.every(s => s.signing_status === 'signed') ? (
+                          <Badge variant="success" className="text-xs">
+                            <CheckCircle className="h-3 w-3 mr-1" />Complete
+                          </Badge>
+                        ) : (
+                          <Badge variant="warning" className="text-xs">
+                            <Clock className="h-3 w-3 mr-1" />Pending
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">N/A</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

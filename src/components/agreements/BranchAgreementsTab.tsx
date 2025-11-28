@@ -11,6 +11,7 @@ import { AgreementTemplates } from "./AgreementTemplates";
 import { SignAgreementDialog } from "./SignAgreementDialog";
 import { ScheduleAgreementDialog } from "./ScheduleAgreementDialog";
 import { CreateTemplateDialog } from "./CreateTemplateDialog";
+import { ApprovalStatusFilter } from "@/types/agreements";
 
 interface BranchAgreementsTabProps {
   branchId: string;
@@ -23,6 +24,8 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Pending" | "Expired" | "Terminated">("all");
+  const [approvalFilter, setApprovalFilter] = useState<ApprovalStatusFilter>("all");
   const [showSignDialog, setShowSignDialog] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
@@ -126,6 +129,32 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
                   <option value="last30days">Last 30 Days</option>
                   <option value="last90days">Last 90 Days</option>
                 </select>
+                {activeTab === "signed" && (
+                  <>
+                    <select 
+                      className="px-3 py-1.5 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="Pending">Pending Signatures</option>
+                      <option value="Active">Active</option>
+                      <option value="Expired">Expired</option>
+                      <option value="Terminated">Terminated</option>
+                    </select>
+                    <select 
+                      className="px-3 py-1.5 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                      value={approvalFilter}
+                      onChange={(e) => setApprovalFilter(e.target.value as typeof approvalFilter)}
+                    >
+                      <option value="all">All Approvals</option>
+                      <option value="pending_review">Awaiting Review</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </>
+                )}
               </div>
             </div>
             
@@ -179,6 +208,8 @@ export const BranchAgreementsTab: React.FC<BranchAgreementsTabProps> = ({ branch
               typeFilter={typeFilter}
               dateFilter={dateFilter}
               branchId={branchId}
+              statusFilter={statusFilter}
+              approvalFilter={approvalFilter}
             />
           </TabsContent>
           
