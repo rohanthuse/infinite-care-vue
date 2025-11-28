@@ -50,8 +50,8 @@ export function SignAgreementDialog({
   const [title, setTitle] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [selectedClients, setSelectedClients] = useState<string[]>([]);
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedStaffMember, setSelectedStaffMember] = useState<string>("");
   const [signingParty, setSigningParty] = useState<"client" | "staff" | "other">(
     isOrganizationLevel ? "other" : "client"
   );
@@ -105,13 +105,13 @@ export function SignAgreementDialog({
     // Validate signers based on party type and level
     if (!isOrganizationLevel) {
       // Branch-level validation
-      if (signingParty === "client" && selectedClients.length === 0) {
-        toast.error("Please select at least one client");
+      if (signingParty === "client" && !selectedClient) {
+        toast.error("Please select a client");
         return false;
       }
       
-      if (signingParty === "staff" && selectedStaff.length === 0) {
-        toast.error("Please select at least one staff member");
+      if (signingParty === "staff" && !selectedStaffMember) {
+        toast.error("Please select a staff member");
         return false;
       }
     }
@@ -164,32 +164,28 @@ export function SignAgreementDialog({
         signer_auth_user_id?: string;
       }> = [];
 
-      if (signingParty === "client" && clients) {
-        selectedClients.forEach(clientId => {
-          const client = clients.find(c => c.id === clientId);
-          if (client) {
-            signersData.push({
-              agreement_id: newAgreement.id,
-              signer_type: 'client',
-              signer_id: clientId,
-              signer_name: `${client.first_name} ${client.last_name}`,
-              signer_auth_user_id: client.auth_user_id || undefined,
-            });
-          }
-        });
-      } else if (signingParty === "staff" && staff) {
-        selectedStaff.forEach(staffId => {
-          const staffMember = staff.find(s => s.id === staffId);
-          if (staffMember) {
-            signersData.push({
-              agreement_id: newAgreement.id,
-              signer_type: 'staff',
-              signer_id: staffId,
-              signer_name: `${staffMember.first_name} ${staffMember.last_name}`,
-              signer_auth_user_id: staffMember.auth_user_id || undefined,
-            });
-          }
-        });
+      if (signingParty === "client" && selectedClient && clients) {
+        const client = clients.find(c => c.id === selectedClient);
+        if (client) {
+          signersData.push({
+            agreement_id: newAgreement.id,
+            signer_type: 'client',
+            signer_id: selectedClient,
+            signer_name: `${client.first_name} ${client.last_name}`,
+            signer_auth_user_id: client.auth_user_id || undefined,
+          });
+        }
+      } else if (signingParty === "staff" && selectedStaffMember && staff) {
+        const staffMember = staff.find(s => s.id === selectedStaffMember);
+        if (staffMember) {
+          signersData.push({
+            agreement_id: newAgreement.id,
+            signer_type: 'staff',
+            signer_id: selectedStaffMember,
+            signer_name: `${staffMember.first_name} ${staffMember.last_name}`,
+            signer_auth_user_id: staffMember.auth_user_id || undefined,
+          });
+        }
       } else if (signingParty === "other") {
         otherSignerNames.filter(name => name.trim() !== "").forEach(name => {
           signersData.push({
@@ -266,8 +262,8 @@ export function SignAgreementDialog({
     setTitle("");
     setSelectedType("");
     setSelectedTemplate("");
-    setSelectedClients([]);
-    setSelectedStaff([]);
+    setSelectedClient("");
+    setSelectedStaffMember("");
     setSigningParty(isOrganizationLevel ? "other" : "client");
     setOtherSignerNames([""]);
     setSignedDate(new Date());
@@ -283,14 +279,14 @@ export function SignAgreementDialog({
   // Reset selections when signing party changes
   React.useEffect(() => {
     if (signingParty === "client") {
-      setSelectedStaff([]);
+      setSelectedStaffMember("");
       setOtherSignerNames([""]);
     } else if (signingParty === "staff") {
-      setSelectedClients([]);
+      setSelectedClient("");
       setOtherSignerNames([""]);
     } else if (signingParty === "other") {
-      setSelectedClients([]);
-      setSelectedStaff([]);
+      setSelectedClient("");
+      setSelectedStaffMember("");
     }
   }, [signingParty]);
 
@@ -299,8 +295,8 @@ export function SignAgreementDialog({
 
   const hasValidSigners = isOrganizationLevel
     ? otherSignerNames.some(name => name.trim() !== "")
-    : (signingParty === "client" && selectedClients.length > 0) ||
-      (signingParty === "staff" && selectedStaff.length > 0) ||
+    : (signingParty === "client" && selectedClient) ||
+      (signingParty === "staff" && selectedStaffMember) ||
       (signingParty === "other" && otherSignerNames.some(name => name.trim() !== ""));
 
   const canProceedToStep2 = title && selectedType && hasValidSigners && signedDate && 
@@ -449,23 +445,20 @@ export function SignAgreementDialog({
               {!isOrganizationLevel && signingParty === "client" && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Clients <span className="text-red-500">*</span>
+                    Client <span className="text-red-500">*</span>
                   </label>
-                  <MultiSelect
-                    options={clients?.map(client => ({
-                      label: `${client.first_name} ${client.last_name}`,
-                      value: client.id,
-                    })) || []}
-                    selected={selectedClients}
-                    onSelectionChange={setSelectedClients}
-                    placeholder="Select clients"
-                    emptyText="No clients found"
-                    maxDisplay={3}
-                    showSelectAll={true}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {selectedClients.length} client(s) selected
-                  </p>
+                  <Select value={selectedClient} onValueChange={setSelectedClient}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients?.map(client => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.first_name} {client.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
@@ -473,23 +466,20 @@ export function SignAgreementDialog({
               {!isOrganizationLevel && signingParty === "staff" && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Staff Members <span className="text-red-500">*</span>
+                    Staff Member <span className="text-red-500">*</span>
                   </label>
-                  <MultiSelect
-                    options={staff?.map(member => ({
-                      label: `${member.first_name} ${member.last_name}`,
-                      value: member.id,
-                    })) || []}
-                    selected={selectedStaff}
-                    onSelectionChange={setSelectedStaff}
-                    placeholder="Select staff members"
-                    emptyText="No staff members found"
-                    maxDisplay={3}
-                    showSelectAll={true}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {selectedStaff.length} staff member(s) selected
-                  </p>
+                  <Select value={selectedStaffMember} onValueChange={setSelectedStaffMember}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select staff member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {staff?.map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.first_name} {member.last_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
 
