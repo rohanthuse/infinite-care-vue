@@ -216,7 +216,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col flex-1 min-h-0">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">Loading conversation...</div>
         </div>
@@ -226,7 +226,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
 
   if (error) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col flex-1 min-h-0">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-red-500 text-center">
             <p>Error loading messages</p>
@@ -244,7 +244,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col flex-1 min-h-0">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">No messages in this conversation</div>
         </div>
@@ -253,9 +253,9 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   }
 
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-white">
+      <div className="p-4 border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <Avatar className="h-10 w-10">
@@ -315,7 +315,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
       </div>
 
       {/* Messages */}
-      <div id="messages-container" className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div id="messages-container" className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4 bg-gray-50">
         {messages.map((message, index) => {
           const isCurrentUser = message.senderId === currentUser?.id;
           const attachmentsList = parseAttachments(message.attachments);
@@ -473,6 +473,6 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
           threadId={messageInfoSheet.threadId}
         />
       )}
-    </>
+    </div>
   );
 };

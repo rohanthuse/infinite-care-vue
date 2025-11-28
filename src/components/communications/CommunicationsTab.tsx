@@ -257,15 +257,10 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
               />
             ) : selectedMessageId ? (
               <div className="flex flex-col h-full">
-                {/* Conversation - scrollable area */}
-                <div className="flex-1 overflow-y-auto">
-                  <MessageView 
-                    messageId={selectedMessageId}
-                    onReply={handleReply}
-                  />
-                </div>
-                
-                {/* Input bar - fixed at bottom */}
+                <MessageView 
+                  messageId={selectedMessageId}
+                  onReply={handleReply}
+                />
                 <MessageInputBar threadId={selectedMessageId} />
               </div>
             ) : (
