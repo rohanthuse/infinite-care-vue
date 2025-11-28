@@ -75,9 +75,9 @@ export default function CarerLeave() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full min-w-0 max-w-full space-y-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
           <Calendar className="h-6 w-6 text-blue-600" />
           Leave Management
         </h1>

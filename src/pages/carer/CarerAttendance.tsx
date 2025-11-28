@@ -18,6 +18,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCarerAuth } from "@/hooks/useCarerAuth";
 import { useCarerBranch } from "@/hooks/useCarerBranch";
 import { useAttendanceRecords } from "@/hooks/useAttendanceRecords";
@@ -47,18 +48,20 @@ const CarerAttendance: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Loading attendance data...</p>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <Skeleton className="h-8 w-48 mb-2" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
         </div>
       </div>
     );
   }
   
   return (
-    <div className="w-full">
-      <h1 className="text-2xl font-bold mb-6">Attendance</h1>
+    <div className="w-full min-w-0 max-w-full space-y-6">
+      <h1 className="text-xl md:text-2xl font-bold">Attendance</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Today's Attendance Widget */}

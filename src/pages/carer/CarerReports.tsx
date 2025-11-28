@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FileBarChart, Calendar, Download, ChevronRight, Filter, FileText, BarChart, PieChart, LineChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays } from "date-fns";
@@ -145,11 +146,12 @@ const CarerReports: React.FC = () => {
   // Show loading state while carer profile is being loaded
   if (authLoading) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">Reports</h1>
-        <div className="flex items-center justify-center py-8">
-          <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading carer profile...</p>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
         </div>
       </div>
     );
@@ -158,8 +160,8 @@ const CarerReports: React.FC = () => {
   // Show error state if no carer profile is available
   if (!carerProfile) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">Reports</h1>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <h1 className="text-xl md:text-2xl font-bold">Reports</h1>
         <div className="text-center py-8">
           <p className="text-red-500 mb-2">Unable to load carer profile</p>
           <p className="text-sm text-gray-500">Please try refreshing the page or contact support</p>
@@ -178,8 +180,8 @@ const CarerReports: React.FC = () => {
   // Show error state if no branch ID is available
   if (!carerProfile.branch_id) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">Reports</h1>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <h1 className="text-xl md:text-2xl font-bold">Reports</h1>
         <div className="text-center py-8">
           <p className="text-red-500 mb-2">Unable to load reports</p>
           <p className="text-sm text-gray-500">No valid branch information found for your account</p>
@@ -190,8 +192,8 @@ const CarerReports: React.FC = () => {
   }
 
   return (
-    <div className="w-full">
-      <h1 className="text-2xl font-bold mb-6">Reports</h1>
+    <div className="w-full min-w-0 max-w-full space-y-6">
+      <h1 className="text-xl md:text-2xl font-bold">Reports</h1>
 
       <Card className="border border-gray-200 shadow-sm mb-6">
         <CardHeader className="pb-3">

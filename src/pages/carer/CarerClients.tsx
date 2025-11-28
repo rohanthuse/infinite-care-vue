@@ -42,9 +42,9 @@ const CarerClients: React.FC = () => {
   }
 
   return (
-    <div className="w-full min-w-0 max-w-full">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">My Clients</h1>
+    <div className="w-full min-w-0 max-w-full space-y-6">
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold">My Clients</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Showing {clients?.length || 0} clients you have bookings with
         </p>

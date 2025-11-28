@@ -111,10 +111,10 @@ export default function CarerNotifications() {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full min-w-0 max-w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
+          <h1 className="text-xl md:text-2xl font-bold">Notifications</h1>
           <p className="text-muted-foreground">Stay up to date with your assignments and updates</p>
         </div>
         {stats && stats.unread_count > 0 && (

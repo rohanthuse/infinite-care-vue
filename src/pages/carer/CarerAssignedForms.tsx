@@ -130,9 +130,9 @@ const CarerAssignedForms = () => {
 
   return (
     <>
-      <div className="w-full space-y-6">
+      <div className="w-full min-w-0 max-w-full space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Assigned Forms</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">My Assigned Forms</h1>
           <p className="text-gray-600 mt-2">
             Complete the forms that have been assigned to you by your branch admin.
           </p>

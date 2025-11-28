@@ -3,6 +3,7 @@ import { Search, Filter, GraduationCap, CheckCircle, Clock, Calendar, ChevronRig
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -33,11 +34,12 @@ const CarerTraining: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">My Training</h1>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin mr-2" />
-          <span>Loading training data...</span>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <Skeleton className="h-8 w-48 mb-2" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-64 rounded-lg" />
+          ))}
         </div>
       </div>
     );
@@ -46,8 +48,8 @@ const CarerTraining: React.FC = () => {
   // Error state
   if (error) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold mb-6">My Training</h1>
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <h1 className="text-xl md:text-2xl font-bold">My Training</h1>
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-red-500 mb-2">Error loading training data</p>
@@ -180,9 +182,9 @@ const CarerTraining: React.FC = () => {
   };
 
   return (
-    <div className="w-full">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">My Training</h1>
+    <div className="w-full min-w-0 max-w-full space-y-6">
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold">My Training</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Showing {trainingRecords?.length || 0} training courses assigned to you
         </p>

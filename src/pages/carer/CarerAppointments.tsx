@@ -657,7 +657,7 @@ const CarerAppointments: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-w-0 max-w-full">
+    <div className="w-full min-w-0 max-w-full space-y-6">
       {/* Loading overlay during refetch */}
       {isFetching && !isLoading && (
         <div className="fixed top-16 right-4 z-50 bg-background shadow-lg rounded-lg p-3 flex items-center gap-2 border border-border">
@@ -666,8 +666,8 @@ const CarerAppointments: React.FC = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">My Appointments</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl md:text-2xl font-bold">My Appointments</h1>
         <Button 
           variant="outline" 
           size="sm" 
