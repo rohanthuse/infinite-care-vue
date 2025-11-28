@@ -216,7 +216,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">Loading conversation...</div>
         </div>
@@ -226,7 +226,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
 
   if (error) {
     return (
-      <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-red-500 text-center">
             <p>Error loading messages</p>
@@ -244,7 +244,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex flex-col h-full">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">No messages in this conversation</div>
         </div>
@@ -253,7 +253,7 @@ export const MessageView = ({ messageId, onReply }: MessageViewProps) => {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center justify-between">

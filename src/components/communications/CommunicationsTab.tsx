@@ -256,11 +256,15 @@ export const CommunicationsTab: React.FC<CommunicationsTabProps> = ({
                 initialDraft={draftToEdit}
               />
             ) : selectedMessageId ? (
-              <div className="flex flex-col h-full">
-                <MessageView 
-                  messageId={selectedMessageId}
-                  onReply={handleReply}
-                />
+              <div className="flex flex-col h-full min-h-0">
+                {/* Messages area - constrained to scroll */}
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <MessageView 
+                    messageId={selectedMessageId}
+                    onReply={handleReply}
+                  />
+                </div>
+                {/* Input bar - always visible at bottom */}
                 <MessageInputBar threadId={selectedMessageId} />
               </div>
             ) : (
