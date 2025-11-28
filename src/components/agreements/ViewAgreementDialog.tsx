@@ -37,6 +37,7 @@ interface ViewAgreementDialogProps {
   onOpenChange: (open: boolean) => void;
   agreement: Agreement | null | undefined;
   onDownload: (agreement: Agreement) => void;
+  onSigningComplete?: () => void;
 }
 
 const getStatusBadgeVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
@@ -58,7 +59,8 @@ export function ViewAgreementDialog({
   open,
   onOpenChange,
   agreement,
-  onDownload
+  onDownload,
+  onSigningComplete
 }: ViewAgreementDialogProps) {
   const { user } = useAuth();
   const [showStatusForm, setShowStatusForm] = useState(false);
@@ -122,6 +124,9 @@ export function ViewAgreementDialog({
       setShowSigningCanvas(false);
       setCurrentSignature("");
       onOpenChange(false);
+      
+      // Notify parent component that signing is complete
+      onSigningComplete?.();
     } catch (error) {
       console.error('Error signing agreement:', error);
     }
