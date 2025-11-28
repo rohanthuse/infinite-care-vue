@@ -34,6 +34,7 @@ import { BookingsTab } from "@/components/bookings/BookingsTab";
 import { CarersTab } from "@/components/carers/CarersTab";
 import ReviewsTab from "@/components/reviews/ReviewsTab";
 import { CommunicationsTab } from "@/components/communications/CommunicationsTab";
+import { SupportTab } from "@/components/support/SupportTab";
 import { MedicationTab } from "@/components/medication/MedicationTab";
 import { CareTab } from "@/components/care/CareTab";
 import { BranchAgreementsTab } from "@/components/agreements/BranchAgreementsTab";
@@ -656,6 +657,14 @@ const BranchDashboard: React.FC<BranchDashboardProps> = ({ tab: initialTab }) =>
                 <CommunicationsTab branchId={id} branchName={branchName} />
               ) : (
                 <AccessDeniedTab tabName="Communication" />
+              )
+            )}
+            
+            {activeTab === "support" && (
+              canAccessTab("support") ? (
+                <SupportTab branchId={id} branchName={branchName} />
+              ) : (
+                <AccessDeniedTab tabName="Support" />
               )
             )}
             

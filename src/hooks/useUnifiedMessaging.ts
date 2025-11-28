@@ -253,6 +253,9 @@ export const useUnifiedMessageThreads = () => {
           .select(`
             id,
             subject,
+            thread_type,
+            requires_action,
+            admin_only,
             created_at,
             updated_at,
             last_message_at,
@@ -395,7 +398,10 @@ export const useUnifiedMessageThreads = () => {
             } : undefined,
             unreadCount,
             createdAt: thread.created_at,
-            updatedAt: thread.updated_at
+            updatedAt: thread.updated_at,
+            threadType: thread.thread_type,
+            requiresAction: thread.requires_action,
+            adminOnly: thread.admin_only
           };
         })
       );
