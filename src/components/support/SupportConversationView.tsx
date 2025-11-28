@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MessageView } from '@/components/communications/MessageView';
-import { MessageComposer } from '@/components/communications/MessageComposer';
+import { SupportReplyComposer } from './SupportReplyComposer';
 import { Button } from '@/components/ui/button';
 import { X, Reply } from 'lucide-react';
 
@@ -40,10 +40,9 @@ export const SupportConversationView: React.FC<SupportConversationViewProps> = (
       {/* Conversation */}
       <div className="flex-1 overflow-hidden">
         {showReply ? (
-          <MessageComposer
-            branchId=""
+          <SupportReplyComposer
+            threadId={ticketId}
             onClose={() => setShowReply(false)}
-            selectedThreadId={ticketId}
           />
         ) : (
           <MessageView
