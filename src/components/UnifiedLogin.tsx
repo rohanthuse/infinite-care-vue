@@ -10,6 +10,7 @@ import { validateSessionState, clearAllAuthData, debugAuthState, nuclearReset, v
 import { checkNetworkHealth } from "@/utils/sessionRecovery";
 import { useOptimizedAuth } from "@/hooks/useOptimizedAuth";
 import { useAuth } from "@/contexts/UnifiedAuthProvider";
+import { checkTenantStatus, fetchOrganizationStatusBySlug } from "@/utils/tenantStatusValidation";
 
 
 
@@ -660,6 +661,25 @@ const UnifiedLogin = () => {
           redirectTo: `/${orgSlug}/client-dashboard`
         });
 
+        // CHECK ORGANIZATION STATUS BEFORE ALLOWING LOGIN
+        if (orgSlug) {
+          try {
+            const orgStatus = await fetchOrganizationStatusBySlug(supabase, orgSlug);
+            const statusCheck = checkTenantStatus(orgStatus);
+            
+            if (!statusCheck.isAllowed) {
+              await supabase.auth.signOut();
+              clearTimeout(timeoutId);
+              setLoading(false);
+              toast.error(statusCheck.message, { duration: 6000 });
+              return;
+            }
+          } catch (error) {
+            console.error('[LOGIN DEBUG] Error checking organization status:', error);
+            // Continue with login if status check fails (fail open for availability)
+          }
+        }
+
         // CHECK THIRD-PARTY ACCESS EXPIRY FOR CLIENTS
         console.log('[LOGIN DEBUG] Checking third-party access expiry for client');
         const { data: thirdPartyAccess } = await supabase
@@ -898,6 +918,23 @@ const UnifiedLogin = () => {
         orgSlug = orgMembership.organizations.slug;
         console.log('[LOGIN DEBUG] Client org from organization_members:', orgSlug);
         
+        // CHECK ORGANIZATION STATUS BEFORE EMERGENCY CLIENT REDIRECT
+        try {
+          const orgStatus = await fetchOrganizationStatusBySlug(supabase, orgSlug);
+          const statusCheck = checkTenantStatus(orgStatus);
+          
+          if (!statusCheck.isAllowed) {
+            await supabase.auth.signOut();
+            clearTimeout(timeoutId);
+            setLoading(false);
+            toast.error(statusCheck.message, { duration: 6000 });
+            return;
+          }
+        } catch (error) {
+          console.error('[LOGIN DEBUG] Error checking organization status:', error);
+          // Continue with login if status check fails (fail open for availability)
+        }
+        
         // CRITICAL: If early client detection failed but we found client in org_members,
         // force an immediate client redirect here to prevent downstream routing issues
         if (!clientCheck && userRole === 'client' && orgSlug) {
@@ -979,6 +1016,27 @@ const UnifiedLogin = () => {
             console.error('[LOGIN DEBUG] Both organization detection methods failed:', fallbackOrgError);
             // Don't throw here - some users might not need organization detection
           }
+        }
+      }
+
+      // CHECK ORGANIZATION STATUS FOR NON-CLIENT USERS
+      if (orgSlug && userRole !== 'client') {
+        try {
+          console.log('[LOGIN DEBUG] Checking organization status for:', orgSlug);
+          const orgStatus = await fetchOrganizationStatusBySlug(supabase, orgSlug);
+          const statusCheck = checkTenantStatus(orgStatus);
+          
+          if (!statusCheck.isAllowed) {
+            await supabase.auth.signOut();
+            clearTimeout(timeoutId);
+            setLoading(false);
+            toast.error(statusCheck.message, { duration: 6000 });
+            return;
+          }
+          console.log('[LOGIN DEBUG] Organization status check passed:', orgStatus);
+        } catch (error) {
+          console.error('[LOGIN DEBUG] Error checking organization status:', error);
+          // Continue with login if status check fails (fail open for availability)
         }
       }
 

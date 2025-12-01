@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Building2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Building2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { CustomButton } from '@/components/ui/CustomButton';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { checkTenantStatus } from '@/utils/tenantStatusValidation';
 
 // Helper function to format role names for display
 const formatRoleName = (role: string): string => {
@@ -61,6 +62,17 @@ const TenantLogin = () => {
       toast({
         title: 'Error',
         description: 'Organization not loaded.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check tenant status before allowing login
+    const statusCheck = checkTenantStatus(organization.subscription_status);
+    if (!statusCheck.isAllowed) {
+      toast({
+        title: `Organisation ${statusCheck.status === 'inactive' ? 'Inactive' : 'Suspended'}`,
+        description: statusCheck.message,
         variant: 'destructive',
       });
       return;
@@ -279,6 +291,20 @@ const TenantLogin = () => {
           </CardHeader>
           
           <CardContent>
+            {organization && organization.subscription_status !== 'active' && (
+              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-800 dark:text-amber-200">
+                    Organisation {organization.subscription_status === 'inactive' ? 'Inactive' : 'Suspended'}
+                  </p>
+                  <p className="text-amber-700 dark:text-amber-300">
+                    Login is currently disabled. Please contact your administrator.
+                  </p>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
