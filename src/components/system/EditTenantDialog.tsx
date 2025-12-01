@@ -45,6 +45,14 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
     }
   }, [tenant]);
 
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setShowConfirmDialog(false);
+      setPendingStatus(null);
+    }
+  }, [open]);
+
   const { mutate: updateTenant, isPending } = useMutation({
     mutationFn: async () => {
       if (!tenant?.id) throw new Error('Missing tenant id');
@@ -80,23 +88,17 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
   });
 
   const handleStatusChange = (newStatus: string) => {
-    const requiresConfirmation = (newStatus === 'inactive' || newStatus === 'suspended') && 
-                                 newStatus !== originalStatus;
-    
-    if (requiresConfirmation) {
-      setPendingStatus(newStatus);
-      setShowConfirmDialog(true);
-    } else {
-      setForm({ ...form, subscription_status: newStatus });
-    }
+    // Simply update the form state - no confirmation here
+    setForm({ ...form, subscription_status: newStatus });
   };
 
   const handleConfirmStatusChange = () => {
-    if (pendingStatus) {
-      setForm({ ...form, subscription_status: pendingStatus });
-      setPendingStatus(null);
-    }
+    // Close confirmation dialog first
     setShowConfirmDialog(false);
+    setPendingStatus(null);
+    
+    // Actually submit the update - this will close EditTenantDialog on success
+    updateTenant();
   };
 
   const handleCancelStatusChange = () => {
@@ -107,15 +109,15 @@ export const EditTenantDialog: React.FC<EditTenantDialogProps> = ({ open, onOpen
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if status change requires confirmation
     const statusChanged = form.subscription_status !== originalStatus;
-    const requiresConfirmation = (form.subscription_status === 'inactive' || form.subscription_status === 'suspended') && 
-                                 statusChanged;
+    const requiresConfirmation = (form.subscription_status === 'inactive' || form.subscription_status === 'suspended') && statusChanged;
     
-    if (requiresConfirmation && !pendingStatus) {
+    if (requiresConfirmation) {
+      // Just open confirmation - the actual submit happens in handleConfirmStatusChange
       setPendingStatus(form.subscription_status);
       setShowConfirmDialog(true);
     } else {
+      // No confirmation needed, submit directly
       updateTenant();
     }
   };
