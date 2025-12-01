@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useCarerMessageContacts } from "@/hooks/useCarerMessaging";
+import { useCarerAdminContacts } from "@/hooks/useCarerMessaging";
 import { useUnifiedCreateThread } from "@/hooks/useUnifiedMessaging";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Send, User } from "lucide-react";
@@ -18,28 +18,28 @@ interface CarerMessageComposerProps {
 
 const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps) => {
   const { toast } = useToast();
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [selectedRecipientId, setSelectedRecipientId] = useState<string>("");
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
   
-  const { data: contacts, isLoading: contactsLoading } = useCarerMessageContacts();
+  const { data: contacts, isLoading: contactsLoading } = useCarerAdminContacts();
   const createThreadMutation = useUnifiedCreateThread();
 
   const handleSend = async () => {
-    if (!selectedClientId || !subject.trim() || !content.trim()) {
+    if (!selectedRecipientId || !subject.trim() || !content.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please select a client and fill in all fields.",
+        description: "Please select a recipient and fill in all fields.",
         variant: "destructive",
       });
       return;
     }
 
-    const selectedContact = contacts?.find(c => c.id === selectedClientId);
+    const selectedContact = contacts?.find(c => c.id === selectedRecipientId);
     if (!selectedContact) {
       toast({
         title: "Error",
-        description: "Selected client not found.",
+        description: "Selected recipient not found.",
         variant: "destructive",
       });
       return;
@@ -49,7 +49,7 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
       await createThreadMutation.mutateAsync({
         recipientIds: [selectedContact.auth_user_id],
         recipientNames: [selectedContact.name],
-        recipientTypes: ['client'],
+        recipientTypes: [selectedContact.type],
         subject: subject.trim(),
         initialMessage: content.trim(),
         priority: 'normal',
@@ -57,7 +57,7 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
       });
 
       // Reset form and close
-      setSelectedClientId("");
+      setSelectedRecipientId("");
       setSubject("");
       setContent("");
       onOpenChange(false);
@@ -77,7 +77,7 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
   };
 
   const handleClose = () => {
-    setSelectedClientId("");
+    setSelectedRecipientId("");
     setSubject("");
     setContent("");
     onOpenChange(false);
@@ -94,32 +94,35 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
         </DialogHeader>
         
         <div className="space-y-4">
-          {/* Client Selection */}
+          {/* Recipient Selection */}
           <div className="space-y-2">
-            <Label htmlFor="client">Send to Client</Label>
+            <Label htmlFor="recipient">Send to</Label>
             {contactsLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Loading clients...</span>
+                <span>Loading recipients...</span>
               </div>
             ) : !contacts || contacts.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 <User className="h-8 w-8 mx-auto mb-2" />
-                <p className="text-sm">No clients available</p>
-                <p className="text-xs">Clients must have registered accounts to receive messages</p>
+                <p className="text-sm">No recipients available</p>
+                <p className="text-xs">Branch admins and super admins will appear here</p>
               </div>
             ) : (
-              <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+              <Select value={selectedRecipientId} onValueChange={setSelectedRecipientId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a client..." />
+                  <SelectValue placeholder="Select recipient..." />
                 </SelectTrigger>
                 <SelectContent>
                   {contacts.map((contact) => (
                     <SelectItem key={contact.id} value={contact.id}>
                       <div className="flex items-center gap-2">
                         <span>{contact.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          Active
+                        <Badge 
+                          variant="outline" 
+                          className={contact.type === 'branch_admin' ? 'text-xs bg-blue-50 text-blue-700 border-blue-200' : 'text-xs bg-purple-50 text-purple-700 border-purple-200'}
+                        >
+                          {contact.type === 'branch_admin' ? 'Branch Admin' : 'Super Admin'}
                         </Badge>
                       </div>
                     </SelectItem>
@@ -161,7 +164,7 @@ const CarerMessageComposer = ({ open, onOpenChange }: CarerMessageComposerProps)
             </Button>
             <Button 
               onClick={handleSend}
-              disabled={!selectedClientId || !subject.trim() || !content.trim() || createThreadMutation.isPending}
+              disabled={!selectedRecipientId || !subject.trim() || !content.trim() || createThreadMutation.isPending}
             >
               {createThreadMutation.isPending ? (
                 <>
