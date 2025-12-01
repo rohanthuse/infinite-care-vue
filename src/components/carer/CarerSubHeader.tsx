@@ -7,7 +7,7 @@ import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 
 export const CarerSubHeader: React.FC = () => {
-  const { data: carerContext, isLoading } = useCarerContext();
+  const { data: carerContext, isFetching } = useCarerContext();
   const { createCarerPath } = useCarerNavigation();
   const location = useLocation();
   
@@ -17,7 +17,9 @@ export const CarerSubHeader: React.FC = () => {
   
   if (isDashboard) return null;
 
-  const branchName = carerContext?.branchInfo?.name || 'Loading...';
+  // Show loading only when actively fetching and no data available yet
+  const showLoading = isFetching && !carerContext;
+  const branchName = carerContext?.branchInfo?.name || (carerContext ? 'No Branch Assigned' : 'Loading...');
   const branchStatus = carerContext?.branchInfo?.status || 'active';
   const organizationName = carerContext?.branchInfo?.organization_name || '';
   
@@ -30,7 +32,7 @@ export const CarerSubHeader: React.FC = () => {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-semibold text-foreground truncate">
-                {isLoading ? 'Loading...' : branchName}
+                {showLoading ? 'Loading...' : branchName}
               </h2>
               <Badge 
                 variant={branchStatus?.toLowerCase() === 'active' ? 'success' : 'secondary'}
