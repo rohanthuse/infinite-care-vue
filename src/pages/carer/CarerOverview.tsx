@@ -9,7 +9,6 @@ import { useCarerDashboard } from "@/hooks/useCarerDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
-import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { CarePlanStatusWidget } from "@/components/carer/CarePlanStatusWidget";
 import { ActiveVisitBanner } from "@/components/carer/ActiveVisitBanner";
@@ -23,7 +22,6 @@ const CarerOverview: React.FC = () => {
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
   const { user, isAuthenticated } = useUnifiedCarerAuth();
-  const { data: carerProfile } = useCarerProfile();
   
   // Prefetch data for common pages
   useCarerPagePrefetch();
@@ -37,8 +35,10 @@ const CarerOverview: React.FC = () => {
     improvementAreas,
     improvementAreasError,
     isLoading,
-    carerBranch,
+    carerContext,
   } = useCarerDashboard();
+
+  const carerProfile = carerContext?.staffProfile;
 
   // Debug logging for improvement areas
   console.log('[CarerOverview] Improvement areas count:', improvementAreas?.length || 0);
@@ -77,28 +77,6 @@ const CarerOverview: React.FC = () => {
   // Don't render if not authenticated
   if (!isAuthenticated) {
     return null;
-  }
-
-  if (isLoading) {
-    return (
-      <div className="w-full min-w-0 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-72" />
-            <Skeleton className="h-5 w-48" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32 rounded-lg" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-[400px] rounded-lg" />
-          <Skeleton className="h-[400px] rounded-lg" />
-        </div>
-      </div>
-    );
   }
 
   return (

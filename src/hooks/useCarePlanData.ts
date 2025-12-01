@@ -715,3 +715,140 @@ export const useCarerAssignedCarePlans = (carerId: string) => {
     enabled: Boolean(carerId),
   });
 };
+
+// Optimized version that accepts staffId and branchId directly
+export const useCarerAssignedCarePlansOptimized = (staffId: string, branchId: string) => {
+  return useQuery({
+    queryKey: ['carer-assigned-care-plans-optimized', staffId, branchId],
+    queryFn: async (): Promise<CarePlanWithDetails[]> => {
+      if (!staffId || !branchId) {
+        console.log('[useCarerAssignedCarePlansOptimized] Missing staffId or branchId');
+        return [];
+      }
+
+      console.log(`[useCarerAssignedCarePlansOptimized] Staff ID: ${staffId}, Branch ID: ${branchId}`);
+
+      // Fetch care plans assigned directly to the carer OR in their branch (fallback)
+      const directQuery = supabase
+        .from('client_care_plans')
+        .select(`
+          *,
+          client:clients(
+            id,
+            first_name,
+            last_name,
+            avatar_initials,
+            branch_id
+          ),
+          goals:client_care_plan_goals(*),
+          activities:client_activities(*),
+          medications:client_medications(*),
+          staff:staff!staff_id(
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('staff_id', staffId)
+        .in('status', ['active', 'pending_approval', 'approved', 'pending_client_approval']);
+
+      // Then get branch-level care plans where staff_id is null
+      const branchQuery = supabase
+        .from('client_care_plans')
+        .select(`
+          *,
+          client:clients!inner(
+            id,
+            first_name,
+            last_name,
+            avatar_initials,
+            branch_id
+          ),
+          goals:client_care_plan_goals(*),
+          activities:client_activities(*),
+          medications:client_medications(*),
+          staff:staff!staff_id(
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('client.branch_id', branchId)
+        .is('staff_id', null)
+        .in('status', ['active', 'pending_approval', 'approved', 'pending_client_approval']);
+
+      const [directResult, branchResult] = await Promise.all([directQuery, branchQuery]);
+
+      if (directResult.error && branchResult.error) {
+        console.error('Error fetching carer assigned care plans:', directResult.error || branchResult.error);
+        throw directResult.error || branchResult.error;
+      }
+
+      // Combine the results
+      const combinedData = [
+        ...(directResult.data || []),
+        ...(branchResult.data || [])
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Transform the data
+      const transformedData: CarePlanWithDetails[] = combinedData.map(item => {
+        const autoSaveData = typeof item.auto_save_data === 'object' && item.auto_save_data !== null ? item.auto_save_data as Record<string, any> : {};
+        
+        const goalsFromAutoSave = Array.isArray(autoSaveData.goals) ? autoSaveData.goals.map((goal: any, index: number) => ({
+          id: `goal-${index}`,
+          description: goal.description || goal.goal_description || '',
+          status: goal.status || 'active',
+          progress: goal.progress || 0,
+          notes: goal.notes || goal.additional_notes || ''
+        })) : [];
+
+        const medicationsFromAutoSave = Array.isArray(autoSaveData.medications) ? autoSaveData.medications.map((med: any, index: number) => ({
+          id: `med-${index}`,
+          name: med.medication_name || med.name || '',
+          dosage: med.dosage || '',
+          frequency: med.frequency || '',
+          start_date: med.start_date || '',
+          end_date: med.end_date || '',
+          status: med.status || 'active'
+        })) : [];
+
+        const activitiesFromAutoSave = Array.isArray(autoSaveData.activities) ? autoSaveData.activities.map((activity: any, index: number) => ({
+          id: `activity-${index}`,
+          name: activity.activity_name || activity.name || '',
+          description: activity.description || '',
+          frequency: activity.frequency || '',
+          status: activity.status || 'active'
+        })) : [];
+
+        return {
+          ...item,
+          staff: item.staff || null,
+          client_acknowledgment_ip: item.client_acknowledgment_ip as string | null,
+          goals: item.goals?.length > 0 ? item.goals : goalsFromAutoSave,
+          medications: item.medications?.length > 0 ? item.medications : medicationsFromAutoSave,
+          activities: item.activities?.length > 0 ? item.activities : activitiesFromAutoSave,
+          care_plan_type: autoSaveData.care_plan_type || item.care_plan_type,
+          priority: autoSaveData.priority || item.priority,
+          review_date: autoSaveData.review_date || item.review_date,
+          goals_progress: autoSaveData.goals_progress || item.goals_progress,
+          notes: autoSaveData.notes || item.notes,
+          personal_info: autoSaveData.personal_info || {},
+          medical_info: autoSaveData.medical_info || {},
+          personal_care: autoSaveData.personal_care || {},
+          dietary_requirements: autoSaveData.dietary_requirements || autoSaveData.dietary || {},
+          about_me: autoSaveData.about_me || {},
+          risk_assessments: Array.isArray(autoSaveData.risk_assessments) ? autoSaveData.risk_assessments : [],
+          service_actions: Array.isArray(autoSaveData.service_actions) ? autoSaveData.service_actions : [],
+          service_plans: Array.isArray(autoSaveData.service_plans) ? autoSaveData.service_plans : [],
+          equipment: Array.isArray(autoSaveData.equipment) ? autoSaveData.equipment : [],
+          documents: Array.isArray(autoSaveData.documents) ? autoSaveData.documents : [],
+          isDirectlyAssigned: item.staff_id === staffId
+        };
+      });
+
+      return transformedData;
+    },
+    enabled: Boolean(staffId) && Boolean(branchId),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};

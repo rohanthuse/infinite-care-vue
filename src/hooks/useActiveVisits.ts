@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useCarerAuth } from './useCarerAuth';
+import { useCarerContext } from './useCarerContext';
 
 export interface ActiveVisit {
   id: string;
@@ -15,12 +15,13 @@ export interface ActiveVisit {
 }
 
 export const useActiveVisits = () => {
-  const { user } = useCarerAuth();
+  const { data: carerContext } = useCarerContext();
+  const staffId = carerContext?.staffId;
 
   return useQuery({
-    queryKey: ['active-visits', user?.id],
+    queryKey: ['active-visits', staffId],
     queryFn: async (): Promise<ActiveVisit[]> => {
-      if (!user?.id) return [];
+      if (!staffId) return [];
       
       const { data, error } = await supabase
         .from('bookings')
@@ -43,7 +44,7 @@ export const useActiveVisits = () => {
             status
           )
         `)
-        .eq('staff_id', user.id)
+        .eq('staff_id', staffId)
         .eq('visit_records.status', 'in_progress');
 
       if (error) {
@@ -67,7 +68,8 @@ export const useActiveVisits = () => {
         };
       });
     },
-    enabled: !!user?.id,
+    enabled: !!staffId,
+    staleTime: 30000, // 30 seconds
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 };
