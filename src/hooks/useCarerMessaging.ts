@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useCarerContext } from "@/hooks/useCarerContext";
 import { useCarerAuthSafe } from "@/hooks/useCarerAuthSafe";
 
 export interface MessageContact {
@@ -20,18 +21,18 @@ export interface AdminContact {
 }
 
 export const useCarerAdminContacts = () => {
-  const { carerProfile } = useCarerAuthSafe();
+  const { data: carerContext } = useCarerContext();
   
   return useQuery({
-    queryKey: ['carer-admin-contacts', carerProfile?.id, carerProfile?.branchId],
+    queryKey: ['carer-admin-contacts', carerContext?.staffId, carerContext?.branchInfo?.id],
     queryFn: async (): Promise<AdminContact[]> => {
-      if (!carerProfile?.id || !carerProfile?.branchId) {
+      if (!carerContext?.staffId || !carerContext?.branchInfo?.id) {
         throw new Error('No carer context available');
       }
 
       console.log('[useCarerAdminContacts] Starting with carer:', {
-        id: carerProfile.id,
-        branchId: carerProfile.branchId
+        staffId: carerContext.staffId,
+        branchId: carerContext.branchInfo.id
       });
 
       try {
@@ -42,7 +43,7 @@ export const useCarerAdminContacts = () => {
         const { data: adminBranches, error: adminBranchesError } = await (supabase as any)
           .from('admin_branches')
           .select('admin_id')
-          .eq('branch_id', carerProfile.branchId);
+          .eq('branch_id', carerContext.branchInfo.id);
 
         if (adminBranchesError) {
           console.error('[useCarerAdminContacts] Error fetching admin_branches:', adminBranchesError);
@@ -99,7 +100,7 @@ export const useCarerAdminContacts = () => {
         const { data: branch, error: branchError } = await (supabase as any)
           .from('branches')
           .select('organization_id')
-          .eq('id', carerProfile.branchId)
+          .eq('id', carerContext.branchInfo.id)
           .single();
 
         if (branchError) {
@@ -190,7 +191,7 @@ export const useCarerAdminContacts = () => {
         throw error;
       }
     },
-    enabled: !!carerProfile?.id && !!carerProfile?.branchId,
+    enabled: !!carerContext?.staffId && !!carerContext?.branchInfo?.id,
   });
 };
 
