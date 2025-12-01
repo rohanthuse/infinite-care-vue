@@ -1059,7 +1059,8 @@ const UnifiedLogin = () => {
           
           if (!orgSlug) {
             console.error('[LOGIN DEBUG] No organisation found after retry for user role:', userRole);
-            toast.error("No organisation access found for your account. Please contact support.");
+            console.error('[LOGIN DEBUG] Failed login - user email:', email, 'detected role:', userRole);
+            toast.error("Unable to determine your organization assignment. Please contact your administrator.");
             await supabase.auth.signOut();
             return;
           }
