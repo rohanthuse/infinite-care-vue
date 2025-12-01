@@ -84,6 +84,21 @@ serve(async (req) => {
       })
     }
 
+    // Fetch current tenant data to detect status changes
+    const { data: currentTenant, error: fetchError } = await supabaseAdmin
+      .from('organizations')
+      .select('name, subscription_status')
+      .eq('id', id)
+      .single()
+
+    if (fetchError) {
+      console.error('[update-system-tenant] Fetch current tenant error:', fetchError)
+      return new Response(JSON.stringify({ success: false, error: 'Failed to fetch current tenant data' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     const allowed = [
       'name', 'subdomain', 'contact_email', 'contact_phone', 'address', 'billing_email',
       'subscription_status', 'logo_url', 'primary_color', 'secondary_color', 'slug'
@@ -95,6 +110,9 @@ serve(async (req) => {
     }
 
     filteredUpdates.updated_at = new Date().toISOString()
+
+    const statusChanged = 'subscription_status' in filteredUpdates && 
+                         currentTenant.subscription_status !== filteredUpdates.subscription_status
 
     const { data, error } = await supabaseAdmin
       .from('organizations')
@@ -111,7 +129,37 @@ serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({ success: true, tenant: data }), {
+    // Log status change to audit logs
+    if (statusChanged && requesterId) {
+      const auditLogEntry = {
+        system_user_id: requesterId,
+        action: 'update_tenant_status',
+        resource_type: 'organization',
+        resource_id: id,
+        details: {
+          tenant_name: currentTenant.name,
+          old_status: currentTenant.subscription_status,
+          new_status: filteredUpdates.subscription_status
+        }
+      }
+
+      const { error: auditError } = await supabaseAdmin
+        .from('system_audit_logs')
+        .insert(auditLogEntry)
+
+      if (auditError) {
+        console.error('[update-system-tenant] Audit log error:', auditError)
+        // Don't fail the request if audit logging fails
+      } else {
+        console.log('[update-system-tenant] Audit log created for status change:', auditLogEntry)
+      }
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      tenant: data,
+      previous_status: statusChanged ? currentTenant.subscription_status : undefined
+    }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
