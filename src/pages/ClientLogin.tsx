@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useClientAuthFallback } from "@/hooks/useClientAuthFallback";
 import { supabase } from "@/integrations/supabase/client";
+import { checkTenantStatus } from "@/utils/tenantStatusValidation";
 
 const ClientLogin = () => {
   const [email, setEmail] = useState("");
@@ -57,7 +58,7 @@ const ClientLogin = () => {
             branch_id,
             branches!inner(
               organization_id,
-              organizations!branches_organization_id_fkey!inner(slug)
+              organizations!branches_organization_id_fkey!inner(slug, subscription_status)
             )
           `)
           .eq('email', email.trim().toLowerCase())
@@ -65,6 +66,20 @@ const ClientLogin = () => {
         
         if (clientData?.branches?.organizations?.slug) {
           const orgSlug = clientData.branches.organizations.slug;
+          const orgStatus = clientData.branches.organizations.subscription_status;
+          
+          // Check organization status
+          const statusCheck = checkTenantStatus(orgStatus);
+          if (!statusCheck.isAllowed) {
+            await supabase.auth.signOut();
+            toast({
+              title: `Organisation ${statusCheck.status === 'inactive' ? 'Inactive' : 'Suspended'}`,
+              description: statusCheck.message,
+              variant: 'destructive',
+            });
+            return;
+          }
+          
           navigate(`/${orgSlug}/client-dashboard`);
           return;
         }
