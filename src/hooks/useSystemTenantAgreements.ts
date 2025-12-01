@@ -82,6 +82,7 @@ export const useCreateSystemTenantAgreement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-tenant-agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
       toast.success('Agreement created successfully');
     },
     onError: (error: Error) => {
