@@ -11436,28 +11436,17 @@ export type Database = {
       get_optimized_tenant_data: {
         Args: never
         Returns: {
-          active_clients: number
           active_users: number
-          contact_email: string
-          contact_phone: string
-          created_at: string
+          address: string
+          email: string
           has_agreement: boolean
           id: string
           name: string
-          plan_max_users: number
-          plan_price_monthly: number
-          plan_price_yearly: number
-          settings: Json
-          slug: string
-          subscription_expires_at: string
-          subscription_plan: string
+          phone: string
+          status: string
           subscription_status: string
-          super_admin_email: string
-          super_admin_first_name: string
-          super_admin_last_name: string
-          total_branches: number
-          total_clients: number
-          total_users: number
+          subscription_type: string
+          user_count: number
         }[]
       }
       get_organization_id_from_client: {
