@@ -683,7 +683,7 @@ const UnifiedLogin = () => {
             .limit(1)
             .maybeSingle();
 
-          if (!systemOrgErr && ['super_admin', 'admin', 'app_admin'].includes(systemOrg?.role)) {
+          if (!systemOrgErr && systemOrg?.role === 'super_admin') {
             userRole = 'super_admin';
             // Capture orgSlug from the same query result
             if (systemOrg.organizations?.slug) {
@@ -691,6 +691,18 @@ const UnifiedLogin = () => {
               console.log('[LOGIN DEBUG] Fallback: captured orgSlug from system_user_organizations:', orgSlug);
             }
             console.log('[LOGIN DEBUG] Fallback: using system_user_organizations role super_admin');
+          } else if (!systemOrgErr && ['admin', 'app_admin'].includes(systemOrg?.role)) {
+            // Regular admins should be treated as organization members
+            userRole = 'organization_member';
+            // Capture orgSlug from the same query result
+            if (systemOrg.organizations?.slug) {
+              orgSlug = (systemOrg.organizations as any).slug;
+              console.log('[LOGIN DEBUG] Fallback: captured orgSlug from system_user_organizations:', orgSlug);
+            }
+            // Cache the actual organization role for later use
+            sessionStorage.setItem('actual_org_role', systemOrg.role);
+            sessionStorage.setItem('is_org_member', 'true');
+            console.log('[LOGIN DEBUG] Fallback: using system_user_organizations role as organization member:', systemOrg.role);
           }
         }
       }
