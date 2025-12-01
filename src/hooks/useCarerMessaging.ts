@@ -69,7 +69,33 @@ export const useCarerAdminContacts = () => {
             const { data: adminDetails, error: adminDetailsError } = await (supabase as any)
               .rpc('get_admin_user_details', { user_ids: userIds });
             
-            if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
+            if (adminDetailsError) {
+              console.error('[useCarerAdminContacts] RPC error for branch admins, using fallback:', adminDetailsError);
+              // Fallback: Create basic entries with admin IDs
+              userIds.forEach((userId: string) => {
+                recipients.push({
+                  id: userId,
+                  auth_user_id: userId,
+                  name: 'Branch Admin',
+                  email: '',
+                  type: 'branch_admin',
+                  groupLabel: 'Branch Admins'
+                });
+              });
+            } else if (!adminDetails || !Array.isArray(adminDetails) || adminDetails.length === 0) {
+              console.log('[useCarerAdminContacts] RPC returned empty for branch admins, using fallback');
+              // RPC returned empty but we have valid IDs - use fallback
+              userIds.forEach((userId: string) => {
+                recipients.push({
+                  id: userId,
+                  auth_user_id: userId,
+                  name: 'Branch Admin',
+                  email: '',
+                  type: 'branch_admin',
+                  groupLabel: 'Branch Admins'
+                });
+              });
+            } else {
               console.log('[useCarerAdminContacts] Branch admin details fetched:', adminDetails.length);
               adminDetails.forEach((admin: any) => {
                 const firstName = admin.first_name || '';
@@ -87,8 +113,6 @@ export const useCarerAdminContacts = () => {
                   groupLabel: 'Branch Admins'
                 });
               });
-            } else if (adminDetailsError) {
-              console.error('[useCarerAdminContacts] Error fetching admin details:', adminDetailsError);
             }
           }
         }
@@ -150,7 +174,33 @@ export const useCarerAdminContacts = () => {
                   const { data: adminDetails, error: adminDetailsError } = await (supabase as any)
                     .rpc('get_admin_user_details', { user_ids: superAdminIds });
                   
-                  if (!adminDetailsError && adminDetails && Array.isArray(adminDetails)) {
+                  if (adminDetailsError) {
+                    console.error('[useCarerAdminContacts] RPC error for super admins, using fallback:', adminDetailsError);
+                    // Fallback: Create basic entries with admin IDs
+                    superAdminIds.forEach((userId: string) => {
+                      recipients.push({
+                        id: userId,
+                        auth_user_id: userId,
+                        name: 'Super Admin',
+                        email: '',
+                        type: 'super_admin',
+                        groupLabel: 'Super Admins'
+                      });
+                    });
+                  } else if (!adminDetails || !Array.isArray(adminDetails) || adminDetails.length === 0) {
+                    console.log('[useCarerAdminContacts] RPC returned empty for super admins, using fallback');
+                    // RPC returned empty but we have valid IDs - use fallback
+                    superAdminIds.forEach((userId: string) => {
+                      recipients.push({
+                        id: userId,
+                        auth_user_id: userId,
+                        name: 'Super Admin',
+                        email: '',
+                        type: 'super_admin',
+                        groupLabel: 'Super Admins'
+                      });
+                    });
+                  } else {
                     console.log('[useCarerAdminContacts] Super admin details fetched:', adminDetails.length);
                     adminDetails.forEach((admin: any) => {
                       const firstName = admin.first_name || '';
@@ -168,8 +218,6 @@ export const useCarerAdminContacts = () => {
                         groupLabel: 'Super Admins'
                       });
                     });
-                  } else if (adminDetailsError) {
-                    console.error('[useCarerAdminContacts] Error fetching super admin details:', adminDetailsError);
                   }
                 }
               }
