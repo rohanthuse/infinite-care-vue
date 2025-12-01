@@ -243,6 +243,180 @@ export const useCarerAdminContacts = () => {
   });
 };
 
+export interface InternalContact {
+  id: string;
+  name: string;
+  auth_user_id: string;
+  email?: string;
+  type: 'carer' | 'staff' | 'admin' | 'branch_admin' | 'super_admin';
+  groupLabel: string;
+}
+
+export const useCarerInternalContacts = () => {
+  const { data: carerContext } = useCarerContext();
+  
+  return useQuery({
+    queryKey: ['carer-internal-contacts', carerContext?.staffId, carerContext?.branchInfo?.organization_id],
+    queryFn: async (): Promise<InternalContact[]> => {
+      if (!carerContext?.staffId || !carerContext?.branchInfo?.organization_id) {
+        throw new Error('No carer context available');
+      }
+
+      console.log('[useCarerInternalContacts] Starting with carer:', {
+        staffId: carerContext.staffId,
+        organizationId: carerContext.branchInfo.organization_id
+      });
+
+      try {
+        const recipients: InternalContact[] = [];
+        const organizationId = carerContext.branchInfo.organization_id;
+
+        // 1. Fetch all active staff/carers from the same organization (excluding current carer)
+        console.log('[useCarerInternalContacts] Fetching staff/carers...');
+        const { data: orgStaff, error: staffError } = await supabase
+          .from('staff')
+          .select('id, first_name, last_name, email, auth_user_id, status')
+          .eq('organization_id', organizationId)
+          .eq('status', 'active')
+          .not('auth_user_id', 'is', null)
+          .neq('id', carerContext.staffId); // Exclude self
+
+        if (staffError) {
+          console.error('[useCarerInternalContacts] Error fetching staff:', staffError);
+        } else if (orgStaff && orgStaff.length > 0) {
+          console.log('[useCarerInternalContacts] Found staff:', orgStaff.length);
+          
+          orgStaff.forEach((staff) => {
+            const firstName = staff.first_name || '';
+            const lastName = staff.last_name || '';
+            const displayName = `${firstName} ${lastName}`.trim() || 
+                              staff.email?.split('@')[0] || 
+                              'Staff Member';
+            
+            recipients.push({
+              id: staff.id,
+              auth_user_id: staff.auth_user_id,
+              name: displayName,
+              email: staff.email || undefined,
+              type: 'carer',
+              groupLabel: 'Carers / Staff'
+            });
+          });
+        }
+
+        // 2. Fetch all branches in the organization
+        const { data: orgBranches, error: orgBranchesError } = await supabase
+          .from('branches')
+          .select('id')
+          .eq('organization_id', organizationId);
+
+        if (orgBranchesError) {
+          console.error('[useCarerInternalContacts] Error fetching org branches:', orgBranchesError);
+        } else if (orgBranches && orgBranches.length > 0) {
+          console.log('[useCarerInternalContacts] Found org branches:', orgBranches.length);
+          
+          const branchIds = orgBranches.map((b) => b.id);
+          
+          // 3. Get all admin_ids for branches in the org
+          const { data: orgAdminBranches, error: orgAdminBranchesError } = await supabase
+            .from('admin_branches')
+            .select('admin_id')
+            .in('branch_id', branchIds);
+
+          if (orgAdminBranchesError) {
+            console.error('[useCarerInternalContacts] Error fetching org admin_branches:', orgAdminBranchesError);
+          } else if (orgAdminBranches && orgAdminBranches.length > 0) {
+            console.log('[useCarerInternalContacts] Found org admin_branches:', orgAdminBranches.length);
+            
+            const adminIds = [...new Set(orgAdminBranches.map((ab) => ab.admin_id))];
+            
+            // 4. Get user roles for these admins
+            const { data: adminRoles, error: adminRolesError } = await supabase
+              .from('user_roles')
+              .select('user_id, role')
+              .in('user_id', adminIds)
+              .in('role', ['branch_admin', 'admin', 'super_admin']);
+
+            if (adminRolesError) {
+              console.error('[useCarerInternalContacts] Error fetching admin roles:', adminRolesError);
+            } else if (adminRoles && adminRoles.length > 0) {
+              console.log('[useCarerInternalContacts] Found admin roles:', adminRoles.length);
+              
+              // Create a map of user_id to their highest role
+              const userRoleMap = new Map<string, string>();
+              const roleHierarchy = { 'super_admin': 3, 'admin': 2, 'branch_admin': 1 };
+              
+              adminRoles.forEach((ar) => {
+                const currentRole = userRoleMap.get(ar.user_id);
+                if (!currentRole || roleHierarchy[ar.role as keyof typeof roleHierarchy] > roleHierarchy[currentRole as keyof typeof roleHierarchy]) {
+                  userRoleMap.set(ar.user_id, ar.role);
+                }
+              });
+              
+              const adminUserIds = Array.from(userRoleMap.keys());
+              
+              // 5. Get profile details for admins
+              const { data: adminProfiles, error: adminProfilesError } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name, email')
+                .in('id', adminUserIds);
+
+              if (adminProfilesError) {
+                console.error('[useCarerInternalContacts] Error fetching admin profiles:', adminProfilesError);
+              } else if (adminProfiles && adminProfiles.length > 0) {
+                console.log('[useCarerInternalContacts] Found admin profiles:', adminProfiles.length);
+                
+                adminProfiles.forEach((profile) => {
+                  const firstName = profile.first_name || '';
+                  const lastName = profile.last_name || '';
+                  const displayName = `${firstName} ${lastName}`.trim() || 
+                                    profile.email?.split('@')[0] || 
+                                    'Admin';
+                  
+                  const role = userRoleMap.get(profile.id) as 'admin' | 'branch_admin' | 'super_admin';
+                  const groupLabel = role === 'super_admin' ? 'Super Admins' : 
+                                   role === 'admin' ? 'Admins' : 
+                                   'Branch Admins';
+                  
+                  recipients.push({
+                    id: profile.id,
+                    auth_user_id: profile.id,
+                    name: displayName,
+                    email: profile.email || undefined,
+                    type: role,
+                    groupLabel
+                  });
+                });
+              }
+            }
+          }
+        }
+
+        console.log('[useCarerInternalContacts] Total recipients found:', recipients.length);
+        
+        // Sort by type hierarchy and then by name
+        const typeOrder = { 
+          'super_admin': 1, 
+          'admin': 2, 
+          'branch_admin': 3, 
+          'carer': 4, 
+          'staff': 5 
+        };
+        
+        return recipients.sort((a, b) => {
+          const typeCompare = typeOrder[a.type] - typeOrder[b.type];
+          if (typeCompare !== 0) return typeCompare;
+          return a.name.localeCompare(b.name);
+        });
+      } catch (error) {
+        console.error('Error in useCarerInternalContacts:', error);
+        throw error;
+      }
+    },
+    enabled: !!carerContext?.staffId && !!carerContext?.branchInfo?.organization_id,
+  });
+};
+
 export const useCarerMessageContacts = () => {
   const { carerProfile } = useCarerAuthSafe();
   
