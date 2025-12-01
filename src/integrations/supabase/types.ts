@@ -11471,6 +11471,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_staff_branch_id: { Args: never; Returns: string }
       get_staff_profile: {
         Args: { staff_user_id: string }
         Returns: {
@@ -11599,6 +11600,7 @@ export type Database = {
         Args: { _branch_id: string; _user_id: string }
         Returns: boolean
       }
+      is_staff_user: { Args: never; Returns: boolean }
       is_system_admin: { Args: { user_id_param: string }; Returns: boolean }
       is_system_super_admin: {
         Args: { _system_user_id: string }
