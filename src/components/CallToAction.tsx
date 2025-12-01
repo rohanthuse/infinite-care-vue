@@ -1,10 +1,11 @@
-
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ArrowRight } from "lucide-react";
 
 const CallToAction = () => {
   const ctaRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -52,6 +53,7 @@ const CallToAction = () => {
                 size="lg" 
                 variant="pill" 
                 className="bg-card text-primary hover:bg-accent"
+                onClick={() => navigate('/login')}
               >
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </CustomButton>
@@ -59,6 +61,7 @@ const CallToAction = () => {
                 size="lg" 
                 variant="pill" 
                 className="bg-primary/30 text-primary-foreground hover:bg-primary/50 backdrop-blur-sm border-primary-foreground/20"
+                onClick={() => navigate('/demo-request')}
               >
                 Request Demo
               </CustomButton>
