@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SafeSelect, SafeSelectContent, SafeSelectItem, SafeSelectTrigger, SafeSelectValue } from "@/components/ui/safe-select";
+import { Combobox } from "@/components/ui/combobox";
+import { getSubscriptionLimit, formatSubscriptionPlan } from "@/lib/subscriptionLimits";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,7 +25,7 @@ export function CreateSystemTenantAgreementDialog() {
   const createAgreement = useCreateSystemTenantAgreement();
 
   // Dropdown data
-  const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>([]);
+  const [tenants, setTenants] = useState<Array<{ id: string; name: string; subscription_plan: string | null; max_users: number }>>([]);
   const [agreementTypes, setAgreementTypes] = useState<Array<{ id: string; name: string }>>([]);
   const [templates, setTemplates] = useState<Array<{ id: string; title: string }>>([]);
   const [createdAgreementId, setCreatedAgreementId] = useState<string | null>(null);
@@ -163,13 +165,31 @@ export function CreateSystemTenantAgreementDialog() {
         // @ts-ignore - Known Supabase TypeScript depth issue
         const tenantsResult = await supabase
           .from('organizations')
-          .select('id, name')
+          .select(`
+            id, 
+            name, 
+            subscription_plan,
+            subscription_plan_id,
+            subscription_plans!organizations_subscription_plan_id_fkey (
+              name,
+              max_users
+            )
+          `)
           .order('name');
         
-        const tenantsData: Array<{ id: string; name: string }> = [];
+        const tenantsData: Array<{ id: string; name: string; subscription_plan: string | null; max_users: number }> = [];
         if (tenantsResult.data) {
           for (const item of tenantsResult.data) {
-            tenantsData.push({ id: String(item.id), name: String(item.name) });
+            const linkedPlan = item.subscription_plans as { name: string; max_users: number } | null;
+            const maxUsers = linkedPlan?.max_users || getSubscriptionLimit(item.subscription_plan, null);
+            const planName = linkedPlan?.name || item.subscription_plan;
+            
+            tenantsData.push({ 
+              id: String(item.id), 
+              name: String(item.name),
+              subscription_plan: planName,
+              max_users: maxUsers
+            });
           }
         }
         setTenants(tenantsData);
@@ -526,25 +546,20 @@ export function CreateSystemTenantAgreementDialog() {
                     
                     <div>
                       <Label>Tenant Name <span className="text-red-500">*</span></Label>
-                      <SafeSelect
-                        value={agreementDetails.tenant_id || undefined}
+                      <Combobox
+                        options={tenants.map(tenant => ({
+                          value: tenant.id,
+                          label: tenant.name,
+                          description: tenant.subscription_plan 
+                            ? `${formatSubscriptionPlan(tenant.subscription_plan)} (${tenant.max_users} Users)`
+                            : 'No Plan'
+                        }))}
+                        value={agreementDetails.tenant_id}
                         onValueChange={(value) => setAgreementDetails(prev => ({ ...prev, tenant_id: value || '' }))}
-                      >
-                        <SafeSelectTrigger>
-                          <SafeSelectValue placeholder="Select tenant" />
-                        </SafeSelectTrigger>
-                        <SafeSelectContent>
-                          {tenants.length === 0 ? (
-                            <div className="p-2 text-sm text-muted-foreground">Loading tenants...</div>
-                          ) : (
-                            tenants.map(tenant => (
-                              <SafeSelectItem key={tenant.id} value={tenant.id}>
-                                {tenant.name}
-                              </SafeSelectItem>
-                            ))
-                          )}
-                        </SafeSelectContent>
-                      </SafeSelect>
+                        placeholder="Select tenant..."
+                        searchPlaceholder="Search by tenant name or plan..."
+                        emptyText={tenants.length === 0 ? "Loading tenants..." : "No tenants found"}
+                      />
                     </div>
                     
                     <div>
