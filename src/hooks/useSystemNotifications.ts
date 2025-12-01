@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useSystemAuth } from "@/contexts/SystemAuthContext";
 
 export interface SystemNotification {
   id: string;
@@ -22,6 +23,7 @@ export interface SystemNotification {
  */
 export const useSystemNotifications = () => {
   const queryClient = useQueryClient();
+  const { user: systemUser } = useSystemAuth();
 
   // Fetch notifications for the current system user
   const {
@@ -29,22 +31,19 @@ export const useSystemNotifications = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['system-notifications'],
+    queryKey: ['system-notifications', systemUser?.id],
     queryFn: async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          console.warn('No authenticated user for system notifications');
+        if (!systemUser?.id) {
+          console.warn('No system user authenticated for notifications');
           return [];
         }
 
+        // Use the RPC function to fetch notifications for this system user
         const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .in('type', ['demo_request', 'system'])
-          .order('created_at', { ascending: false })
-          .limit(50);
+          .rpc('get_system_notifications', { 
+            p_system_user_id: systemUser.id 
+          });
 
         if (error) {
           console.error('Error fetching system notifications:', error);
@@ -57,6 +56,7 @@ export const useSystemNotifications = () => {
         return [];
       }
     },
+    enabled: !!systemUser?.id,
     retry: 2,
     retryDelay: 1000,
     refetchInterval: 30000, // Poll every 30 seconds
@@ -76,7 +76,7 @@ export const useSystemNotifications = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
     },
     onError: () => {
       toast({
@@ -90,20 +90,22 @@ export const useSystemNotifications = () => {
   // Mark all as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!systemUser?.id) throw new Error('Not authenticated');
+
+      // Get all unread notification IDs for this user
+      const unreadIds = notifications.filter(n => !n.read_at).map(n => n.id);
+      
+      if (unreadIds.length === 0) return;
 
       const { error } = await supabase
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
-        .eq('user_id', user.id)
-        .in('type', ['demo_request', 'system'])
-        .is('read_at', null);
+        .in('id', unreadIds);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['system-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['system-notifications', systemUser?.id] });
       toast({
         title: "Success",
         description: "All notifications marked as read",

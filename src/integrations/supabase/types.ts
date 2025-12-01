@@ -11536,6 +11536,22 @@ export type Database = {
           slug: string
         }[]
       }
+      get_system_notifications: {
+        Args: { p_system_user_id: string }
+        Returns: {
+          category: string
+          created_at: string
+          data: Json
+          id: string
+          message: string
+          priority: string
+          read_at: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
       get_system_user_stats_with_session: {
         Args: { p_session_token: string }
         Returns: Json
