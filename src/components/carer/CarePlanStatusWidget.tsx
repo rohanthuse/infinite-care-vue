@@ -3,15 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Clock, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
-import { useCarerAssignedCarePlans } from '@/hooks/useCarePlanData';
-import { useCarerAuth } from '@/hooks/useCarerAuth';
+import { useCarerAssignedCarePlansOptimized } from '@/hooks/useCarePlanData';
+import { useCarerContext } from '@/hooks/useCarerContext';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 export const CarePlanStatusWidget: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useCarerAuth();
-  const { data: carePlans, isLoading } = useCarerAssignedCarePlans(user?.id || '');
+  const { data: carerContext } = useCarerContext();
+  const staffId = carerContext?.staffId || '';
+  const branchId = carerContext?.branchInfo?.id || '';
+  const { data: carePlans, isLoading } = useCarerAssignedCarePlansOptimized(staffId, branchId);
 
   if (isLoading) {
     return (

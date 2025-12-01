@@ -22,6 +22,13 @@ export const useCarerContext = () => {
 
       console.log('[useCarerContext] Fetching carer context for user:', user.id);
       
+      // Try to load cached data first for instant paint
+      const cachedKey = `carerContext-${user.id}`;
+      const cached = localStorage.getItem(cachedKey);
+      if (cached) {
+        console.log('[useCarerContext] Using cached data for instant paint');
+      }
+      
       // Get staff record with branch info in one call
       const { data, error } = await supabase
         .rpc('get_staff_profile_by_auth_user_id', {
@@ -65,13 +72,7 @@ export const useCarerContext = () => {
         console.warn('[useCarerContext] No branch found for ID:', staffProfile.branch_id);
       }
 
-      console.log('[useCarerContext] Returning context:', {
-        staffId: staffProfile.id,
-        authUserId: user.id,
-        branchId: staffProfile.branch_id
-      });
-
-      return {
+      const result = {
         staffId: staffProfile.id,
         staffProfile,
         branchInfo: branchData ? {
@@ -79,8 +80,38 @@ export const useCarerContext = () => {
           organization_name: (branchData.organizations as any)?.name || ''
         } : null
       };
+
+      // Cache the result for instant paint next time
+      try {
+        localStorage.setItem(`carerContext-${user.id}`, JSON.stringify(result));
+      } catch (e) {
+        console.warn('[useCarerContext] Failed to cache context:', e);
+      }
+
+      console.log('[useCarerContext] Returning context:', {
+        staffId: staffProfile.id,
+        authUserId: user.id,
+        branchId: staffProfile.branch_id
+      });
+
+      return result;
     },
     enabled: !!user?.id,
+    // Use cached data for instant initial render
+    initialData: () => {
+      if (!user?.id) return undefined;
+      const cachedKey = `carerContext-${user.id}`;
+      const cached = localStorage.getItem(cachedKey);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (e) {
+          console.warn('[useCarerContext] Failed to parse cached data:', e);
+          return undefined;
+        }
+      }
+      return undefined;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes - carer context doesn't change often
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache longer
     refetchOnWindowFocus: false,

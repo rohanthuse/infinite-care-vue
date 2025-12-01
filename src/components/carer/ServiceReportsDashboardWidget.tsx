@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileBarChart2, Plus, Clock, CheckCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useUnifiedCarerAuth } from '@/hooks/useUnifiedCarerAuth';
+import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,12 +13,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export const ServiceReportsDashboardWidget: React.FC = () => {
   const navigate = useNavigate();
   const { createCarerPath } = useCarerNavigation();
-  const { carerProfile, isCarerRole } = useUnifiedCarerAuth();
+  const { data: carerContext } = useCarerContext();
+  const staffId = carerContext?.staffId;
 
   const { data: reportsData, isLoading } = useQuery({
-    queryKey: ['carer-service-reports-summary', carerProfile?.id],
+    queryKey: ['carer-service-reports-summary', staffId],
     queryFn: async () => {
-      if (!carerProfile || !isCarerRole) return null;
+      if (!staffId) return null;
 
       const { data, error } = await supabase
         .from('client_service_reports')
@@ -31,17 +32,15 @@ export const ServiceReportsDashboardWidget: React.FC = () => {
             last_name
           )
         `)
-        .eq('staff_id', carerProfile.id)
+        .eq('staff_id', staffId)
         .order('service_date', { ascending: false })
         .limit(5);
 
       if (error) throw error;
       return data;
     },
-    enabled: !!carerProfile && isCarerRole
+    enabled: !!staffId
   });
-
-  if (!isCarerRole) return null;
 
   if (isLoading) {
     return (
