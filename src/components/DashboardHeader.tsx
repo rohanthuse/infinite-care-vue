@@ -14,6 +14,7 @@ import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { useTenant } from "@/contexts/TenantContext";
 import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
 import { SuperAdminSearchDropdown } from "@/components/search/SuperAdminSearchDropdown";
+import { SystemPortalSearchDropdown } from "@/components/search/SystemPortalSearchDropdown";
 
 export function DashboardHeader() {
   const navigate = useNavigate();
@@ -79,6 +80,9 @@ export function DashboardHeader() {
   
   // Detect if user is super admin on main dashboard (not in a branch context)
   const isSuperAdminDashboard = userRole?.role === 'super_admin' && !isBranchContext;
+  
+  // Detect if we're in the System Portal
+  const isSystemPortal = location.pathname.startsWith('/system-dashboard');
 
   // Close mobile menu when resizing to desktop
   useEffect(() => {
@@ -237,9 +241,11 @@ export function DashboardHeader() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               ref={searchInputRef}
-              placeholder={isSuperAdminDashboard 
-                ? "Search branches, admins, system modules..." 
-                : "Search clients, carers, bookings, documents..."
+              placeholder={isSystemPortal 
+                ? "Search tenants, users, agreements, subscriptions..." 
+                : isSuperAdminDashboard 
+                  ? "Search branches, admins, system modules..." 
+                  : "Search clients, carers, bookings, documents..."
               }
               className="pl-10 pr-4 py-2 rounded-full bg-background border-border w-full transition-all duration-300"
               value={searchValue}
@@ -260,7 +266,17 @@ export function DashboardHeader() {
             
             {/* Dropdown renders here */}
             {searchDropdownOpen && searchValue.trim().length >= 2 && (
-              isSuperAdminDashboard ? (
+              isSystemPortal ? (
+                <SystemPortalSearchDropdown
+                  searchValue={searchValue}
+                  onClose={() => setSearchDropdownOpen(false)}
+                  onResultClick={() => {
+                    setSearchValue("");
+                    setSearchDropdownOpen(false);
+                  }}
+                  anchorRef={searchInputRef}
+                />
+              ) : isSuperAdminDashboard ? (
                 <SuperAdminSearchDropdown
                   searchValue={searchValue}
                   onClose={() => setSearchDropdownOpen(false)}
@@ -335,7 +351,10 @@ export function DashboardHeader() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
                 ref={mobileSearchInputRef}
-                placeholder="Search clients, carers, bookings, documents..." 
+                placeholder={isSystemPortal 
+                  ? "Search tenants, users, agreements..." 
+                  : "Search clients, carers, bookings, documents..."
+                }
                 className="pl-10 pr-4 py-2 rounded-full bg-background border-border"
                 value={searchValue}
                 onChange={(e) => {
@@ -354,18 +373,30 @@ export function DashboardHeader() {
               />
               
               {/* Mobile Dropdown */}
-              {searchDropdownOpen && searchValue.trim().length >= 2 && isBranchContext && branchId && (
-                <BranchSearchDropdown
-                  searchValue={searchValue}
-                  onClose={() => setSearchDropdownOpen(false)}
-                  onResultClick={() => {
-                    setSearchValue("");
-                    setSearchDropdownOpen(false);
-                  }}
-                  branchId={branchId}
-                  branchName={branchName || ''}
-                  anchorRef={mobileSearchInputRef}
-                />
+              {searchDropdownOpen && searchValue.trim().length >= 2 && (
+                isSystemPortal ? (
+                  <SystemPortalSearchDropdown
+                    searchValue={searchValue}
+                    onClose={() => setSearchDropdownOpen(false)}
+                    onResultClick={() => {
+                      setSearchValue("");
+                      setSearchDropdownOpen(false);
+                    }}
+                    anchorRef={mobileSearchInputRef}
+                  />
+                ) : isBranchContext && branchId ? (
+                  <BranchSearchDropdown
+                    searchValue={searchValue}
+                    onClose={() => setSearchDropdownOpen(false)}
+                    onResultClick={() => {
+                      setSearchValue("");
+                      setSearchDropdownOpen(false);
+                    }}
+                    branchId={branchId}
+                    branchName={branchName || ''}
+                    anchorRef={mobileSearchInputRef}
+                  />
+                ) : null
               )}
             </div>
             <div className="ml-2 flex items-center gap-2">
