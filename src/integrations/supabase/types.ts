@@ -11536,6 +11536,7 @@ export type Database = {
           slug: string
         }[]
       }
+      get_system_analytics: { Args: never; Returns: Json }
       get_system_notifications: {
         Args: { p_system_user_id: string }
         Returns: {
