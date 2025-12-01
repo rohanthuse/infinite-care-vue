@@ -601,12 +601,16 @@ const UnifiedLogin = () => {
           duration: 5000,             // Show for 5 seconds
         });
         
-        // Fire and forget sign out - don't await to prevent auth state changes from interrupting toast
-        supabase.auth.signOut().catch(err => {
-          console.error('[LOGIN DEBUG] Sign out error:', err);
-        });
+        // Delay the sign out to allow the toast to display for a few seconds
+        // The toast will stay visible during this delay, then sign out will occur
+        setTimeout(() => {
+          console.log('[LOGIN DEBUG] Delayed sign out for inactive user');
+          supabase.auth.signOut().catch(err => {
+            console.error('[LOGIN DEBUG] Sign out error:', err);
+          });
+        }, 3000); // Wait 3 seconds before signing out - gives user time to read the message
         
-        console.log('[LOGIN DEBUG] Inactive user handled, returning');
+        console.log('[LOGIN DEBUG] Inactive user handled, toast displayed, sign out scheduled');
         return;
       }
 
