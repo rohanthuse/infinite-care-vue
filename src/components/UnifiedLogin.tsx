@@ -847,8 +847,49 @@ const UnifiedLogin = () => {
 
       setLoadingMessage("Redirecting to dashboard...");
 
-      // For super admins, route to tenant-specific dashboard if orgSlug available
-      if (userRole === 'super_admin') {
+      // Check if super admin should be routed as org admin instead
+      const actualOrgRole = sessionStorage.getItem('actual_org_role');
+      const hasOrgMembership = sessionStorage.getItem('is_org_member') === 'true';
+
+      // For super admins with organization membership as admin, route to org dashboard
+      if (userRole === 'super_admin' && hasOrgMembership && 
+          ['admin', 'owner', 'branch_admin'].includes(actualOrgRole || '')) {
+        console.log('[LOGIN DEBUG] Super admin has org membership, routing as org admin with role:', actualOrgRole);
+        
+        if (!orgSlug) {
+          // Try to get orgSlug if not already set
+          try {
+            orgSlug = await detectUserOrganization(authData.user.id);
+            console.log('[LOGIN DEBUG] Org admin orgSlug via detectUserOrganization:', orgSlug);
+          } catch (orgErr) {
+            console.error('[LOGIN DEBUG] Org admin org detection failed:', orgErr);
+          }
+        }
+
+        if (!orgSlug) {
+          console.error('[LOGIN DEBUG] Org admin aborting due to missing orgSlug');
+          clearTimeout(timeoutId);
+          setLoading(false);
+          toast.error("Organization assignment missing. Please contact system administrator.");
+          await supabase.auth.signOut();
+          return;
+        }
+
+        const dashboardPath = `/${orgSlug}/dashboard`;
+        toast.success(`Login Successful – Role: ${formatRoleName(actualOrgRole || 'admin')}`);
+        
+        sessionStorage.setItem('redirect_in_progress', 'true');
+        sessionStorage.setItem('navigating_to_dashboard', 'true');
+        sessionStorage.setItem('target_dashboard', dashboardPath);
+        setTimeout(() => sessionStorage.removeItem('redirect_in_progress'), 3000);
+        
+        console.log('[LOGIN DEBUG] Redirecting to org admin dashboard:', dashboardPath);
+        window.location.href = dashboardPath;
+        return;
+      }
+
+      // For super admins without org membership, route to tenant-specific dashboard if orgSlug available
+      if (userRole === 'super_admin' && !hasOrgMembership) {
         console.log('[LOGIN DEBUG] Super admin detected, orgSlug before final check:', orgSlug);
 
         // Primary method: Use secure RPC that bypasses RLS
