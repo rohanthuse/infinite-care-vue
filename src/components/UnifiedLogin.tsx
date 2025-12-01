@@ -595,18 +595,18 @@ const UnifiedLogin = () => {
         clearTimeout(timeoutId);
         setLoading(false);
         
-        // Show the error toast FIRST (before sign out disrupts the UI)
+        // Show the error toast with explicit id to prevent duplicates
         toast.error("Your account is inactive. Please contact your organization administrator.", {
-          duration: 5000, // Show for 5 seconds
+          id: 'inactive-user-toast',  // Unique ID to prevent duplicate toasts
+          duration: 5000,             // Show for 5 seconds
         });
         
-        // Small delay to ensure toast is visible before auth state changes
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Fire and forget sign out - don't await to prevent auth state changes from interrupting toast
+        supabase.auth.signOut().catch(err => {
+          console.error('[LOGIN DEBUG] Sign out error:', err);
+        });
         
-        // Sign out the inactive user
-        await supabase.auth.signOut();
-        
-        console.log('[LOGIN DEBUG] Cleaning up login process');
+        console.log('[LOGIN DEBUG] Inactive user handled, returning');
         return;
       }
 
