@@ -50,12 +50,46 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
       console.log('[TenantBranchNavigation] Role check order:', {
         userRole: userRole?.role,
-        checkingBranchAdminFirst: userRole?.role === 'branch_admin',
         userId: user.id
       });
 
-      // PRIORITY 1: Branch admins get RESTRICTED view (assigned branches only)
-      // This check must come FIRST to prevent org membership from overriding it
+      // PRIORITY 1: Organization members with admin/owner role get FULL access
+      // Check organization membership BEFORE branch_admin role to prioritize org-level access
+      const { data: orgMember } = await supabase
+        .from('organization_members')
+        .select('role, status')
+        .eq('organization_id', organizationId)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (orgMember && ['admin', 'owner'].includes(orgMember.role)) {
+        console.log('[TenantBranchNavigation] User is organization admin/owner - fetching ALL branches');
+        
+        const { data, error } = await supabase
+          .from('branches')
+          .select(`
+            *,
+            clients:clients(count)
+          `)
+          .eq('organization_id', organizationId)
+          .ilike('status', 'active');
+
+        if (error) {
+          console.error('[TenantBranchNavigation] Error fetching organization branches:', error);
+          throw error;
+        }
+
+        const transformedData = data?.map(branch => ({
+          ...branch,
+          client_count: (branch.clients as any)?.[0]?.count || 0
+        }));
+
+        console.log('[TenantBranchNavigation] Organisation branches (all):', transformedData, 'for org member role:', orgMember.role);
+        return transformedData || [];
+      }
+
+      // PRIORITY 2: Branch admins without org admin role get RESTRICTED view (assigned branches only)
       if (userRole?.role === 'branch_admin') {
         console.log('[TenantBranchNavigation] User is branch_admin - fetching ONLY assigned branches');
         
@@ -98,41 +132,6 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
         }));
 
         console.log('[TenantBranchNavigation] Branch admin branches (filtered):', transformedData);
-        return transformedData || [];
-      }
-
-      // PRIORITY 2: Organization members get FULL access (all branches)
-      const { data: orgMember } = await supabase
-        .from('organization_members')
-        .select('role, status')
-        .eq('organization_id', organizationId)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .maybeSingle();
-
-      if (orgMember) {
-        console.log('[TenantBranchNavigation] Fetching all branches for organization member:', orgMember.role);
-        
-        const { data, error } = await supabase
-          .from('branches')
-          .select(`
-            *,
-            clients:clients(count)
-          `)
-          .eq('organization_id', organizationId)
-          .ilike('status', 'active');
-
-        if (error) {
-          console.error('[TenantBranchNavigation] Error fetching organization branches:', error);
-          throw error;
-        }
-
-        const transformedData = data?.map(branch => ({
-          ...branch,
-          client_count: (branch.clients as any)?.[0]?.count || 0
-        }));
-
-        console.log('[TenantBranchNavigation] Organisation branches (all):', transformedData, 'for org member role:', orgMember.role);
         return transformedData || [];
       }
 
