@@ -66,8 +66,15 @@ export function TenantSystemAgreementsTable() {
 
   if (isError) {
     return (
-      <div className="p-8 text-center text-destructive">
-        Error: {error?.message || 'Failed to load agreements'}
+      <div className="p-8 text-center">
+        <div className="text-destructive mb-4">
+          {error?.message === 'No organization found' 
+            ? 'Unable to identify your organization. Please refresh the page.'
+            : `Error loading agreements: ${error?.message || 'Unknown error'}`}
+        </div>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Refresh Page
+        </Button>
       </div>
     );
   }
