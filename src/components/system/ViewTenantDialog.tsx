@@ -33,6 +33,7 @@ interface ViewTenantDialogProps {
     active_clients?: number;
     total_users?: number;
     active_users?: number;
+    has_agreement?: boolean;
   } | null;
 }
 
@@ -75,7 +76,7 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
                   med-infinite.care/{tenant.slug}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={tenant.subscription_status === 'active' ? 'default' : 'destructive'} className="capitalize">
                   {tenant.subscription_status}
                 </Badge>
@@ -83,6 +84,11 @@ export const ViewTenantDialog: React.FC<ViewTenantDialogProps> = ({ open, onOpen
                   {tenant.subscription_plan}
                   {tenant.plan_max_users && ` (${tenant.plan_max_users} Users)`}
                 </Badge>
+                {tenant.has_agreement && (
+                  <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                    Agreement Created
+                  </Badge>
+                )}
               </div>
             </div>
           </div>

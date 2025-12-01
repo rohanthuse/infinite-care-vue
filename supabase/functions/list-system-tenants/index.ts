@@ -95,6 +95,24 @@ serve(async (req) => {
             }
           }
 
+          // Fetch branches count
+          const { count: totalBranches } = await supabaseAdmin
+            .from('branches')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', org.id)
+
+          // Fetch clients counts
+          const { count: totalClients } = await supabaseAdmin
+            .from('clients')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', org.id)
+
+          const { count: activeClients } = await supabaseAdmin
+            .from('clients')
+            .select('*', { count: 'exact', head: true })
+            .eq('organization_id', org.id)
+            .eq('status', 'Active')
+
           // Check if tenant has agreements
           const { count: agreementCount } = await supabaseAdmin
             .from('system_tenant_agreements')
@@ -114,9 +132,9 @@ serve(async (req) => {
             plan_max_users: planDetails.max_users,
             plan_price_monthly: planDetails.price_monthly,
             plan_price_yearly: planDetails.price_yearly,
-            total_branches: 0,
-            total_clients: 0,
-            active_clients: 0,
+            total_branches: totalBranches || 0,
+            total_clients: totalClients || 0,
+            active_clients: activeClients || 0,
             has_agreement: (agreementCount || 0) > 0,
           }
         } catch (error) {
