@@ -24,7 +24,8 @@ const fetchSystemAuditLogs = async (): Promise<SystemAuditLog[]> => {
       created_at,
       system_user_id,
       system_users!inner (
-        name
+        first_name,
+        last_name
       )
     `)
     .order('created_at', { ascending: false })
@@ -44,7 +45,9 @@ const fetchSystemAuditLogs = async (): Promise<SystemAuditLog[]> => {
     details: log.details,
     created_at: log.created_at,
     system_user_id: log.system_user_id,
-    performed_by_name: log.system_users?.name || 'Unknown User',
+    performed_by_name: log.system_users 
+      ? `${log.system_users.first_name || ''} ${log.system_users.last_name || ''}`.trim() || 'Unknown User'
+      : 'Unknown User',
   }));
 };
 
