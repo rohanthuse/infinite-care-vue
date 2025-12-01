@@ -238,9 +238,9 @@ const UnifiedLogin = () => {
           .limit(1)
           .maybeSingle();
 
-        // If user is super_admin or app_admin in system_user_organizations, use that org
+        // If user is super_admin, admin, or app_admin in system_user_organizations, use that org
         if (systemOrgAssignment?.organizations?.slug && 
-            (systemOrgAssignment.role === 'super_admin' || systemOrgAssignment.role === 'app_admin')) {
+            ['super_admin', 'app_admin', 'admin'].includes(systemOrgAssignment.role)) {
           const orgSlug = (systemOrgAssignment.organizations as any).slug;
           console.log('[detectUserOrganization] Found admin organization via system_user_organizations:', orgSlug);
           return orgSlug;
@@ -683,7 +683,7 @@ const UnifiedLogin = () => {
             .limit(1)
             .maybeSingle();
 
-          if (!systemOrgErr && systemOrg?.role === 'super_admin') {
+          if (!systemOrgErr && ['super_admin', 'admin', 'app_admin'].includes(systemOrg?.role)) {
             userRole = 'super_admin';
             // Capture orgSlug from the same query result
             if (systemOrg.organizations?.slug) {
