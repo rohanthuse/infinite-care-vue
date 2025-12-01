@@ -27,6 +27,72 @@ const formatRoleName = (role: string): string => {
   return roleMap[role] || role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
+const checkUserActiveStatus = async (userId: string, userEmail: string): Promise<{
+  isActive: boolean;
+  userType: 'system_user' | 'staff' | 'client' | 'org_member' | 'unknown';
+  message?: string;
+}> => {
+  // 1. Check system_users (Super Admins)
+  const { data: systemUser } = await supabase
+    .from('system_users')
+    .select('is_active')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+
+  if (systemUser) {
+    return {
+      isActive: systemUser.is_active === true,
+      userType: 'system_user'
+    };
+  }
+
+  // 2. Check staff (Carers)
+  const { data: staffMember } = await supabase
+    .from('staff')
+    .select('status')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+
+  if (staffMember) {
+    return {
+      isActive: staffMember.status === 'Active',
+      userType: 'staff'
+    };
+  }
+
+  // 3. Check clients
+  const { data: clientMember } = await supabase
+    .from('clients')
+    .select('status')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+
+  if (clientMember) {
+    // Active clients have status 'Active', not 'Inactive'
+    return {
+      isActive: clientMember.status !== 'Inactive',
+      userType: 'client'
+    };
+  }
+
+  // 4. Check organization_members
+  const { data: orgMember } = await supabase
+    .from('organization_members')
+    .select('status')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (orgMember) {
+    return {
+      isActive: orgMember.status === 'active',
+      userType: 'org_member'
+    };
+  }
+
+  // If no record found, allow login (new user or admin without specific record)
+  return { isActive: true, userType: 'unknown' };
+};
+
 const UnifiedLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -518,6 +584,26 @@ const UnifiedLogin = () => {
       }
 
       console.log('[LOGIN DEBUG] Authentication successful, user ID:', authData.user.id);
+      setLoadingMessage("Verifying account status...");
+
+      // Check if user account is active
+      console.log('[LOGIN DEBUG] Checking user active status...');
+      const statusCheck = await checkUserActiveStatus(authData.user.id, authData.user.email || '');
+
+      if (!statusCheck.isActive) {
+        console.log('[LOGIN DEBUG] User account is inactive:', statusCheck.userType);
+        clearTimeout(timeoutId);
+        setLoading(false);
+        
+        // Sign out the inactive user
+        await supabase.auth.signOut();
+        
+        // Show the error toast
+        toast.error("Your account is inactive. Please contact your organization administrator.");
+        return;
+      }
+
+      console.log('[LOGIN DEBUG] User active status verified:', statusCheck.userType);
       setLoadingMessage("Verifying access level...");
 
       // Add longer timeout and better error handling for role detection
