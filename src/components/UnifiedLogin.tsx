@@ -1058,7 +1058,44 @@ const UnifiedLogin = () => {
           orgSlug = await detectUserOrganization(authData.user.id);
           
           if (!orgSlug) {
-            console.error('[LOGIN DEBUG] No organisation found after retry for user role:', userRole);
+            // ULTIMATE FALLBACK: Direct query without nested select
+            console.log('[LOGIN DEBUG] 🔍 Attempting direct organization_members query without nested select...');
+            
+            const { data: directMembership, error: directError } = await supabase
+              .from('organization_members')
+              .select('organization_id, role, status')
+              .eq('user_id', authData.user.id)
+              .eq('status', 'active')
+              .maybeSingle();
+            
+            if (directError) {
+              console.error('[LOGIN DEBUG] ❌ Direct membership query failed:', directError);
+            } else if (directMembership?.organization_id) {
+              console.log('[LOGIN DEBUG] ✅ Direct membership found! Fetching organization slug...');
+              
+              const { data: directOrg, error: directOrgError } = await supabase
+                .from('organizations')
+                .select('slug')
+                .eq('id', directMembership.organization_id)
+                .single();
+              
+              if (directOrg?.slug) {
+                console.log('[LOGIN DEBUG] 🎉 Ultimate fallback successful! Org slug:', directOrg.slug);
+                orgSlug = directOrg.slug;
+                userRole = 'organization_member';
+                sessionStorage.setItem('actual_org_role', directMembership.role);
+                sessionStorage.setItem('is_org_member', 'true');
+              } else {
+                console.error('[LOGIN DEBUG] ❌ Could not fetch organization by ID:', directOrgError);
+              }
+            } else {
+              console.log('[LOGIN DEBUG] ℹ️ No active organization membership found in direct query');
+            }
+          }
+          
+          // Only show error if ALL fallbacks failed
+          if (!orgSlug) {
+            console.error('[LOGIN DEBUG] ❌ FINAL FAILURE - No organisation found after all fallbacks');
             console.error('[LOGIN DEBUG] Failed login - user email:', email, 'detected role:', userRole);
             toast.error("Unable to determine your organization assignment. Please contact your administrator.");
             await supabase.auth.signOut();
