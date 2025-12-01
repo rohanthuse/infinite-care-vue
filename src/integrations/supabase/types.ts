@@ -11441,6 +11441,7 @@ export type Database = {
           contact_email: string
           contact_phone: string
           created_at: string
+          has_agreement: boolean
           id: string
           name: string
           plan_max_users: number

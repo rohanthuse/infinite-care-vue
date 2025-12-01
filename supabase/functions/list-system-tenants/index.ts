@@ -95,6 +95,12 @@ serve(async (req) => {
             }
           }
 
+          // Check if tenant has agreements
+          const { count: agreementCount } = await supabaseAdmin
+            .from('system_tenant_agreements')
+            .select('*', { count: 'exact', head: true })
+            .eq('tenant_id', org.id)
+
           return {
             ...org,
             subscription_expires_at: org.subscription_expires_at,
@@ -111,6 +117,7 @@ serve(async (req) => {
             total_branches: 0,
             total_clients: 0,
             active_clients: 0,
+            has_agreement: (agreementCount || 0) > 0,
           }
         } catch (error) {
           console.error(`[list-system-tenants] Error calculating user counts for org ${org.id}:`, error)
@@ -130,6 +137,7 @@ serve(async (req) => {
             total_branches: 0,
             total_clients: 0,
             active_clients: 0,
+            has_agreement: false,
           }
         }
       }))
@@ -159,6 +167,7 @@ serve(async (req) => {
       total_branches: parseInt(tenant.total_branches) || 0,
       total_clients: parseInt(tenant.total_clients) || 0,
       active_clients: parseInt(tenant.active_clients) || 0,
+      has_agreement: tenant.has_agreement || false,
     }))
 
     return new Response(

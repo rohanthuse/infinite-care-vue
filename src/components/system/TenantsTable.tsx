@@ -35,6 +35,7 @@ interface Tenant {
   active_clients?: number;
   total_users?: number;
   active_users?: number;
+  has_agreement?: boolean;
 }
 interface TenantsTableProps {
   tenants: Tenant[] | undefined;
@@ -186,6 +187,11 @@ export const TenantsTable = ({
                       <div>
                         <div className="font-medium text-foreground">{tenant.name}</div>
                         {tenant.contact_email && <div className="text-sm text-muted-foreground">{tenant.contact_email}</div>}
+                        {tenant.has_agreement && (
+                          <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
+                            Agreement Created
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>
