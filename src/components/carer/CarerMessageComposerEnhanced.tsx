@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCarerAdminContacts } from "@/hooks/useCarerMessaging";
+import { Badge } from "@/components/ui/badge";
+import { useCarerInternalContacts } from "@/hooks/useCarerMessaging";
 import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { toast } from "sonner";
@@ -29,13 +30,24 @@ export const CarerMessageComposerEnhanced = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { data: contacts = [] } = useCarerAdminContacts();
+  const { data: contacts = [], isLoading: contactsLoading } = useCarerInternalContacts();
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   const { uploadFile, uploading } = useFileUpload();
   
   const isReply = !!selectedThreadId;
   const selectedRecipient = contacts.find(contact => contact.id === recipientId);
+
+  // Group contacts by type for organized display
+  const groupedContacts = React.useMemo(() => {
+    if (!contacts) return { admins: [], branchAdmins: [], carers: [] };
+    
+    return {
+      admins: contacts.filter(c => ['super_admin', 'admin'].includes(c.type)),
+      branchAdmins: contacts.filter(c => c.type === 'branch_admin'),
+      carers: contacts.filter(c => ['carer', 'staff'].includes(c.type))
+    };
+  }, [contacts]);
 
   // Handle file selection
   const handleFileSelect = () => {
@@ -185,22 +197,77 @@ export const CarerMessageComposerEnhanced = ({
                   <SelectTrigger>
                     <SelectValue placeholder="Select recipient" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white z-50">
+                  <SelectContent className="bg-white z-50 max-h-80">
                     {contacts.length > 0 ? (
-                      contacts.map((contact) => (
-                        <SelectItem key={contact.id} value={contact.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{contact.name}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              contact.type === 'branch_admin' 
-                                ? 'bg-blue-100 text-blue-700' 
-                                : 'bg-purple-100 text-purple-700'
-                            }`}>
-                              {contact.type === 'branch_admin' ? 'Branch Admin' : 'Super Admin'}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
+                      <>
+                        {/* Super Admins and Admins Group */}
+                        {groupedContacts.admins.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                              Admins
+                            </div>
+                            {groupedContacts.admins.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{contact.name}</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={contact.type === 'super_admin' 
+                                      ? 'text-xs bg-purple-50 text-purple-700 border-purple-200' 
+                                      : 'text-xs bg-indigo-50 text-indigo-700 border-indigo-200'}
+                                  >
+                                    {contact.type === 'super_admin' ? 'Super Admin' : 'Admin'}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        
+                        {/* Branch Admins Group */}
+                        {groupedContacts.branchAdmins.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                              Branch Admins
+                            </div>
+                            {groupedContacts.branchAdmins.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{contact.name}</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                  >
+                                    Branch Admin
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        
+                        {/* Carers/Staff Group */}
+                        {groupedContacts.carers.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                              Carers / Staff
+                            </div>
+                            {groupedContacts.carers.map((contact) => (
+                              <SelectItem key={contact.id} value={contact.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{contact.name}</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className="text-xs bg-green-50 text-green-700 border-green-200"
+                                  >
+                                    Carer
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </>
                     ) : (
                       <div className="p-2 text-sm text-gray-500">
                         No recipients found
@@ -210,7 +277,7 @@ export const CarerMessageComposerEnhanced = ({
                 </Select>
                 {contacts.length === 0 && (
                   <p className="text-xs text-gray-500 mt-1">
-                    No recipients available. Please contact support if you need assistance.
+                    No recipients available. Staff and admins will appear here.
                   </p>
                 )}
               </div>
@@ -270,7 +337,7 @@ export const CarerMessageComposerEnhanced = ({
           <div className="p-3 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-700">
               <strong>Note:</strong> Your message will be sent to {selectedRecipient ? 
-                `your ${selectedRecipient.type === 'branch_admin' ? 'Branch Admin' : 'Super Admin'}` : 
+                selectedRecipient.name : 
                 'your selected recipient'}. They will receive your message and respond as soon as possible.
             </p>
           </div>
