@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSystemAuth } from '@/contexts/SystemAuthContext';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 import { SystemDashboardStats } from '@/components/system/SystemDashboardStats';
 import { useDemoRequestStats } from '@/hooks/useDemoRequests';
+import { SystemAnalyticsModal } from '@/components/system/SystemAnalyticsModal';
+import { SystemRecentActivityModal } from '@/components/system/SystemRecentActivityModal';
 
 import { Button } from '@/components/ui/button';
 import { 
@@ -32,6 +34,10 @@ import { SystemNotifications } from '@/components/system/SystemNotifications';
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
   const navigate = useNavigate();
+  
+  // Modal states
+  const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
+  const [activityModalOpen, setActivityModalOpen] = useState(false);
 
   // Control tabs via URL param to keep consistency across pages
   const location = useLocation();
@@ -191,7 +197,7 @@ export default function SystemDashboard() {
                 <Button
                   variant="outline"
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                  onClick={() => navigate('/system-dashboard/analytics')}
+                  onClick={() => setAnalyticsModalOpen(true)}
                 >
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <BarChart3 className="h-6 w-6 text-primary" />
@@ -202,7 +208,7 @@ export default function SystemDashboard() {
                 <Button
                   variant="outline"
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                  onClick={() => navigate('/system-dashboard/audit')}
+                  onClick={() => setActivityModalOpen(true)}
                 >
                   <div className="p-2 bg-primary/10 rounded-lg">
                     <FileText className="h-6 w-6 text-primary" />
@@ -241,6 +247,16 @@ export default function SystemDashboard() {
         {/* Reports Content */}
         {tab === 'reports' && <ReportsTab />}
       </main>
+      
+      {/* Modals */}
+      <SystemAnalyticsModal 
+        open={analyticsModalOpen} 
+        onOpenChange={setAnalyticsModalOpen} 
+      />
+      <SystemRecentActivityModal 
+        open={activityModalOpen} 
+        onOpenChange={setActivityModalOpen} 
+      />
     </div>
   );
 }
