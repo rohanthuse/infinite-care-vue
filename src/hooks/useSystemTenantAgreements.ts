@@ -82,6 +82,7 @@ export const useCreateSystemTenantAgreement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-tenant-agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-system-agreements'] });
       queryClient.invalidateQueries({ queryKey: ['system-tenants'] });
       toast.success('Agreement created successfully');
     },
@@ -110,6 +111,7 @@ export const useUpdateSystemTenantAgreement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-tenant-agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-system-agreements'] });
       toast.success('Agreement updated successfully');
     },
     onError: (error: Error) => {
@@ -134,6 +136,7 @@ export const useDeleteSystemTenantAgreement = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-tenant-agreements'] });
+      queryClient.invalidateQueries({ queryKey: ['tenant-system-agreements'] });
       toast.success('Agreement deleted successfully');
     },
     onError: (error: Error) => {
