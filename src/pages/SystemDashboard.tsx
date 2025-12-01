@@ -6,7 +6,6 @@ import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 import { SystemDashboardStats } from '@/components/system/SystemDashboardStats';
 import { useDemoRequestStats } from '@/hooks/useDemoRequests';
 import { SystemAnalyticsModal } from '@/components/system/SystemAnalyticsModal';
-import { SystemRecentActivityModal } from '@/components/system/SystemRecentActivityModal';
 
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,7 +16,6 @@ import {
   Settings,
   Globe,
   Database,
-  FileText,
   Plus,
   Activity,
   MessageSquare
@@ -37,7 +35,6 @@ export default function SystemDashboard() {
   
   // Modal states
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
-  const [activityModalOpen, setActivityModalOpen] = useState(false);
 
   // Control tabs via URL param to keep consistency across pages
   const location = useLocation();
@@ -207,17 +204,6 @@ export default function SystemDashboard() {
                 
                 <Button
                   variant="outline"
-                  className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
-                  onClick={() => setActivityModalOpen(true)}
-                >
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <span className="font-medium">Recent Activity</span>
-                </Button>
-                
-                <Button
-                  variant="outline"
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow relative"
                   onClick={() => navigate('/system-dashboard?tab=reports')}
                 >
@@ -252,10 +238,6 @@ export default function SystemDashboard() {
       <SystemAnalyticsModal 
         open={analyticsModalOpen} 
         onOpenChange={setAnalyticsModalOpen} 
-      />
-      <SystemRecentActivityModal 
-        open={activityModalOpen} 
-        onOpenChange={setActivityModalOpen} 
       />
     </div>
   );
