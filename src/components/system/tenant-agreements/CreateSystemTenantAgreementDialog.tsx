@@ -8,6 +8,8 @@ import { SafeSelect, SafeSelectContent, SafeSelectItem, SafeSelectTrigger, SafeS
 import { Combobox } from "@/components/ui/combobox";
 import { getSubscriptionLimit, formatSubscriptionPlan } from "@/lib/subscriptionLimits";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SystemTenantAgreementFileUpload } from "./SystemTenantAgreementFileUpload";
+import { useSystemTenantAgreementFileUpload } from "@/hooks/useSystemTenantAgreementFileUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, FileText, Users, CreditCard, Settings, Scale, Paperclip, PenTool } from "lucide-react";
@@ -23,12 +25,14 @@ export function CreateSystemTenantAgreementDialog() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const createAgreement = useCreateSystemTenantAgreement();
+  const { uploadFile } = useSystemTenantAgreementFileUpload();
 
   // Dropdown data
   const [tenants, setTenants] = useState<Array<{ id: string; name: string; subscription_plan: string | null; max_users: number }>>([]);
   const [agreementTypes, setAgreementTypes] = useState<Array<{ id: string; name: string }>>([]);
   const [templates, setTemplates] = useState<Array<{ id: string; title: string }>>([]);
   const [createdAgreementId, setCreatedAgreementId] = useState<string | null>(null);
+  const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
   // State slices to avoid TypeScript depth issues
   const [agreementDetails, setAgreementDetails] = useState<{
@@ -419,15 +423,36 @@ export function CreateSystemTenantAgreementDialog() {
       
       const result = await createAgreement.mutateAsync(agreementData);
       
-      // Store created agreement ID for file uploads
-      if (result?.id) {
-        setCreatedAgreementId(result.id);
-      }
-      
       toast({
         title: 'Success',
         description: 'Agreement created successfully'
       });
+      
+      // Store created agreement ID and upload pending attachments
+      if (result?.id) {
+        setCreatedAgreementId(result.id);
+        
+        // Upload pending attachments
+        if (pendingAttachments.length > 0) {
+          try {
+            for (const file of pendingAttachments) {
+              await uploadFile(file, result.id, 'attachment');
+            }
+            setPendingAttachments([]);
+            toast({
+              title: 'Files Uploaded',
+              description: `Successfully uploaded ${pendingAttachments.length} file(s)`
+            });
+          } catch (uploadError) {
+            console.error('Error uploading attachments:', uploadError);
+            toast({
+              title: 'Partial Success',
+              description: 'Agreement created but some attachments failed to upload',
+              variant: 'destructive'
+            });
+          }
+        }
+      }
       
       resetForm();
       setOpen(false);
@@ -497,6 +522,7 @@ export function CreateSystemTenantAgreementDialog() {
       system_signature_date: ''
     });
     setCreatedAgreementId(null);
+    setPendingAttachments([]);
   };
 
   const handleCancel = (): void => {
@@ -1036,38 +1062,13 @@ export function CreateSystemTenantAgreementDialog() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
-                  {!createdAgreementId ? (
-                    <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-lg text-center mt-2">
-                      <Paperclip className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                      <p className="text-sm text-gray-700 font-medium">
-                        Files can be uploaded after creating the agreement
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Save the agreement first, then you can upload documents
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 mt-2">
-                      <div>
-                        <Label>Primary Agreement Document</Label>
-                        <FileUploadDropzone
-                          agreementId={createdAgreementId}
-                          category="document"
-                          maxFiles={1}
-                          acceptedFileTypes={['.pdf', '.doc', '.docx']}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label>Supporting Documents (Optional)</Label>
-                        <FileUploadDropzone
-                          agreementId={createdAgreementId}
-                          category="attachment"
-                          maxFiles={5}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <SystemTenantAgreementFileUpload
+                    agreementId={createdAgreementId || undefined}
+                    category="attachment"
+                    maxFiles={10}
+                    pendingFiles={pendingAttachments}
+                    onPendingFilesChange={setPendingAttachments}
+                  />
                 </AccordionContent>
               </AccordionItem>
 
