@@ -27,6 +27,7 @@ import { SystemSectionTabs, SystemTabValue } from '@/components/system/SystemSec
 import { useSystemDashboard } from '@/hooks/useSystemDashboard';
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
 import { DevTenantSwitcher } from '@/components/system/DevTenantSwitcher';
+import { SystemNotifications } from '@/components/system/SystemNotifications';
 
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
@@ -102,6 +103,11 @@ export default function SystemDashboard() {
       <DashboardHeader />
       
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Notifications Bell in Header Area */}
+        <div className="flex justify-end mb-4">
+          <SystemNotifications />
+        </div>
+
         <SystemInfoHeader 
           systemInfo={systemInfo}
           onQuickAction={handleQuickAction}
