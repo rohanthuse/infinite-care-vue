@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCarerMessageContacts } from "@/hooks/useCarerMessaging";
+import { useCarerAdminContacts } from "@/hooks/useCarerMessaging";
 import { useUnifiedCreateThread, useUnifiedSendMessage } from "@/hooks/useUnifiedMessaging";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import { toast } from "sonner";
@@ -29,7 +29,7 @@ export const CarerMessageComposerEnhanced = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { data: contacts = [] } = useCarerMessageContacts();
+  const { data: contacts = [] } = useCarerAdminContacts();
   const createThread = useUnifiedCreateThread();
   const sendMessage = useUnifiedSendMessage();
   const { uploadFile, uploading } = useFileUpload();
@@ -137,7 +137,7 @@ export const CarerMessageComposerEnhanced = ({
         await createThread.mutateAsync({
           recipientIds: [recipient.id],
           recipientNames: [recipient.name],
-          recipientTypes: ['client'],
+          recipientTypes: [recipient.type],
           subject: subject.trim(),
           initialMessage: message.trim(),
           attachments: uploadedFiles
@@ -183,7 +183,7 @@ export const CarerMessageComposerEnhanced = ({
                 <label className="block text-sm font-medium mb-2">To:</label>
                 <Select value={recipientId} onValueChange={setRecipientId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select client" />
+                    <SelectValue placeholder="Select recipient" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
                     {contacts.length > 0 ? (
@@ -191,22 +191,26 @@ export const CarerMessageComposerEnhanced = ({
                         <SelectItem key={contact.id} value={contact.id}>
                           <div className="flex items-center gap-2">
                             <span>{contact.name}</span>
-                            <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700">
-                              Client
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              contact.type === 'branch_admin' 
+                                ? 'bg-blue-100 text-blue-700' 
+                                : 'bg-purple-100 text-purple-700'
+                            }`}>
+                              {contact.type === 'branch_admin' ? 'Branch Admin' : 'Super Admin'}
                             </span>
                           </div>
                         </SelectItem>
                       ))
                     ) : (
                       <div className="p-2 text-sm text-gray-500">
-                        No clients found
+                        No recipients found
                       </div>
                     )}
                   </SelectContent>
                 </Select>
                 {contacts.length === 0 && (
                   <p className="text-xs text-gray-500 mt-1">
-                    No clients available. Please contact support if you need assistance.
+                    No recipients available. Please contact support if you need assistance.
                   </p>
                 )}
               </div>
@@ -266,8 +270,8 @@ export const CarerMessageComposerEnhanced = ({
           <div className="p-3 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-700">
               <strong>Note:</strong> Your message will be sent to {selectedRecipient ? 
-                'your client' : 
-                'your selected client'}. For urgent matters, please contact your coordinator directly.
+                `your ${selectedRecipient.type === 'branch_admin' ? 'Branch Admin' : 'Super Admin'}` : 
+                'your selected recipient'}. They will receive your message and respond as soon as possible.
             </p>
           </div>
         </div>
