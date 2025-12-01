@@ -281,6 +281,26 @@ const UnifiedLogin = () => {
           return primaryMembership.organizations.slug;
         }
       }
+      
+      // DEFENSIVE FALLBACK: If memberships exist but nested organizations.slug is missing, fetch it separately
+      if (memberships && memberships.length > 0) {
+        const membershipWithoutSlug = memberships.find(m => m.organization_id && !m.organizations?.slug);
+        if (membershipWithoutSlug) {
+          console.log('[detectUserOrganization] 🔧 Nested org select failed, fetching org separately for organization_id:', membershipWithoutSlug.organization_id);
+          const { data: orgData, error: orgFetchError } = await supabase
+            .from('organizations')
+            .select('slug')
+            .eq('id', membershipWithoutSlug.organization_id)
+            .single();
+          
+          if (orgData?.slug) {
+            console.log('[detectUserOrganization] ✅ Defensive fallback successful! Found org slug:', orgData.slug);
+            return orgData.slug;
+          } else {
+            console.error('[detectUserOrganization] ❌ Defensive fallback failed:', orgFetchError);
+          }
+        }
+      }
 
       // Then check staff table (for carers) - use separate queries to avoid join issues
       const { data: staffMember, error: staffError } = await supabase
@@ -752,6 +772,26 @@ const UnifiedLogin = () => {
         // Cache the actual organization role for later use
         sessionStorage.setItem('actual_org_role', orgMembership.role);
         sessionStorage.setItem('is_org_member', 'true');
+      }
+      
+      // DEFENSIVE FALLBACK: If orgMembership exists but nested organizations.slug is missing, fetch it separately
+      if (orgMembership && orgMembership.organization_id && !orgMembership.organizations?.slug && orgMembership.role !== 'client') {
+        console.log('[LOGIN DEBUG] 🔧 Nested org select failed, fetching org separately for organization_id:', orgMembership.organization_id);
+        const { data: orgData, error: orgFetchError } = await supabase
+          .from('organizations')
+          .select('slug')
+          .eq('id', orgMembership.organization_id)
+          .single();
+        
+        if (orgData?.slug) {
+          console.log('[LOGIN DEBUG] ✅ Defensive fallback successful! Found org slug:', orgData.slug);
+          orgSlug = orgData.slug;
+          userRole = 'organization_member';
+          sessionStorage.setItem('actual_org_role', orgMembership.role);
+          sessionStorage.setItem('is_org_member', 'true');
+        } else {
+          console.error('[LOGIN DEBUG] ❌ Defensive fallback failed:', orgFetchError);
+        }
       }
       
       // For clients in organization_members, just use the org slug but keep client role
