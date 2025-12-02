@@ -433,18 +433,94 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   // === PAGE 1: HEADER ===
   let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
   
-  // === REPORT TITLE ===
-  pdf.setFontSize(18);
-  pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(30, 30, 30);
-  pdf.text('Event Details Report', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 7;
+  // === EVENT TITLE BANNER ===
+  // Add colored banner with event title and metadata
+  const bannerHeight = 35;
+  const severityColors: Record<string, { r: number; g: number; b: number }> = {
+    'Critical': { r: 239, g: 68, b: 68 },
+    'High': { r: 251, g: 191, b: 36 },
+    'Medium': { r: 59, g: 130, b: 246 },
+    'Low': { r: 34, g: 197, b: 94 }
+  };
   
+  const bannerColor = severityColors[event.severity] || { r: 107, g: 114, b: 128 };
+  
+  // Draw gradient-like banner (top darker, bottom lighter)
+  pdf.setFillColor(bannerColor.r, bannerColor.g, bannerColor.b);
+  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, bannerHeight, 'F');
+  
+  // Event Title
+  pdf.setFontSize(16);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(255, 255, 255);
+  const titleText = event.title || 'Untitled Event';
+  const titleLines = pdf.splitTextToSize(titleText, rightMargin - leftMargin - 20);
+  pdf.text(titleLines[0], leftMargin + 5, currentY + 8);
+  
+  // Event ID badge
   pdf.setFontSize(9);
   pdf.setFont(undefined, 'normal');
-  pdf.setTextColor(100, 100, 100);
-  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 12;
+  const eventIdShort = event.id?.substring(0, 8).toUpperCase() || 'N/A';
+  pdf.text(`ID: ${eventIdShort}`, leftMargin + 5, currentY + 16);
+  
+  // Event Date & Time
+  if (event.event_date || event.event_time) {
+    const dateTimeText = `${event.event_date || ''} ${event.event_time || ''}`.trim();
+    pdf.text(dateTimeText, leftMargin + 5, currentY + 22);
+  }
+  
+  // Severity Badge (right side)
+  if (event.severity) {
+    pdf.setFillColor(255, 255, 255);
+    pdf.setTextColor(bannerColor.r, bannerColor.g, bannerColor.b);
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    const sevText = event.severity.toUpperCase();
+    const sevWidth = pdf.getTextWidth(sevText) + 8;
+    const sevX = rightMargin - sevWidth - 5;
+    pdf.roundedRect(sevX, currentY + 5, sevWidth, 8, 2, 2, 'F');
+    pdf.text(sevText, sevX + 4, currentY + 11);
+  }
+  
+  // Status Badge (right side, below severity)
+  if (event.status) {
+    const statusColors: Record<string, { r: number; g: number; b: number }> = {
+      'Open': { r: 59, g: 130, b: 246 },
+      'In Progress': { r: 139, g: 92, b: 246 },
+      'Resolved': { r: 34, g: 197, b: 94 },
+      'Closed': { r: 107, g: 114, b: 128 }
+    };
+    const statusColor = statusColors[event.status] || { r: 107, g: 114, b: 128 };
+    
+    pdf.setFillColor(255, 255, 255);
+    pdf.setTextColor(statusColor.r, statusColor.g, statusColor.b);
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'bold');
+    const statText = event.status;
+    const statWidth = pdf.getTextWidth(statText) + 8;
+    const statX = rightMargin - statWidth - 5;
+    pdf.roundedRect(statX, currentY + 16, statWidth, 7, 2, 2, 'F');
+    pdf.text(statText, statX + 4, currentY + 21);
+  }
+  
+  currentY += bannerHeight + 3;
+  
+  // === DOCUMENT INFO BOX ===
+  pdf.setFillColor(249, 250, 251);
+  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, 18, 'F');
+  
+  pdf.setFontSize(8);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(75, 85, 99);
+  
+  const infoY = currentY + 5;
+  pdf.text(`Client: ${event.client_name || 'N/A'}`, leftMargin + 5, infoY);
+  pdf.text(`Branch: ${event.branch_name || 'N/A'}`, leftMargin + 5, infoY + 5);
+  pdf.text(`Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 5, infoY + 10);
+  
+  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, rightMargin - 5, infoY + 10, { align: 'right' });
+  
+  currentY += 22;
   
   // Reset text color
   pdf.setTextColor(0, 0, 0);
@@ -809,12 +885,71 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === ATTACHMENTS INFO ===
   if (event.attachments && event.attachments.length > 0) {
+    // Check if we need a new page
+    if (currentY > 220) {
+      pdf.addPage();
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+    }
+    
     await addSectionHeader('Attachments');
     
-    pdf.setFontSize(9);
-    pdf.setFont(undefined, 'normal');
-    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, leftMargin, currentY);
-    currentY += 10;
+    // Create attachments table data
+    const attachmentsTableData = event.attachments.map((attachment: any, index: number) => {
+      const fileName = attachment.file_name || attachment.name || 'Unknown File';
+      const fileType = attachment.file_type || attachment.type || 'Unknown';
+      const fileSize = attachment.file_size || attachment.size;
+      
+      // Format file size
+      let sizeDisplay = 'N/A';
+      if (fileSize) {
+        if (fileSize < 1024) {
+          sizeDisplay = `${fileSize} B`;
+        } else if (fileSize < 1024 * 1024) {
+          sizeDisplay = `${(fileSize / 1024).toFixed(1)} KB`;
+        } else {
+          sizeDisplay = `${(fileSize / (1024 * 1024)).toFixed(1)} MB`;
+        }
+      }
+      
+      return [
+        (index + 1).toString(),
+        fileName,
+        fileType,
+        sizeDisplay
+      ];
+    });
+    
+    // Add attachments table
+    autoTable(pdf, {
+      head: [['#', 'File Name', 'Type', 'Size']],
+      body: attachmentsTableData,
+      startY: currentY,
+      theme: 'striped',
+      styles: { 
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [107, 114, 128],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      columnStyles: { 
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 25, halign: 'right' }
+      },
+      margin: { left: leftMargin, right: rightMargin },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251]
+      }
+    });
+    
+    currentY = (pdf as any).lastAutoTable.finalY + 10;
   }
 
   // === ADD FOOTERS TO ALL PAGES ===
@@ -853,18 +988,94 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   // === PAGE 1: HEADER ===
   let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
   
-  // === REPORT TITLE ===
-  pdf.setFontSize(18);
-  pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(30, 30, 30);
-  pdf.text('Event Details Report', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 7;
+  // === EVENT TITLE BANNER ===
+  // Add colored banner with event title and metadata
+  const bannerHeight = 35;
+  const severityColors: Record<string, { r: number; g: number; b: number }> = {
+    'Critical': { r: 239, g: 68, b: 68 },
+    'High': { r: 251, g: 191, b: 36 },
+    'Medium': { r: 59, g: 130, b: 246 },
+    'Low': { r: 34, g: 197, b: 94 }
+  };
   
+  const bannerColor = severityColors[event.severity] || { r: 107, g: 114, b: 128 };
+  
+  // Draw gradient-like banner (top darker, bottom lighter)
+  pdf.setFillColor(bannerColor.r, bannerColor.g, bannerColor.b);
+  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, bannerHeight, 'F');
+  
+  // Event Title
+  pdf.setFontSize(16);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(255, 255, 255);
+  const titleText = event.title || 'Untitled Event';
+  const titleLines = pdf.splitTextToSize(titleText, rightMargin - leftMargin - 20);
+  pdf.text(titleLines[0], leftMargin + 5, currentY + 8);
+  
+  // Event ID badge
   pdf.setFontSize(9);
   pdf.setFont(undefined, 'normal');
-  pdf.setTextColor(100, 100, 100);
-  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, pageWidth / 2, currentY, { align: 'center' });
-  currentY += 12;
+  const eventIdShort = event.id?.substring(0, 8).toUpperCase() || 'N/A';
+  pdf.text(`ID: ${eventIdShort}`, leftMargin + 5, currentY + 16);
+  
+  // Event Date & Time
+  if (event.event_date || event.event_time) {
+    const dateTimeText = `${event.event_date || ''} ${event.event_time || ''}`.trim();
+    pdf.text(dateTimeText, leftMargin + 5, currentY + 22);
+  }
+  
+  // Severity Badge (right side)
+  if (event.severity) {
+    pdf.setFillColor(255, 255, 255);
+    pdf.setTextColor(bannerColor.r, bannerColor.g, bannerColor.b);
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, 'bold');
+    const sevText = event.severity.toUpperCase();
+    const sevWidth = pdf.getTextWidth(sevText) + 8;
+    const sevX = rightMargin - sevWidth - 5;
+    pdf.roundedRect(sevX, currentY + 5, sevWidth, 8, 2, 2, 'F');
+    pdf.text(sevText, sevX + 4, currentY + 11);
+  }
+  
+  // Status Badge (right side, below severity)
+  if (event.status) {
+    const statusColors: Record<string, { r: number; g: number; b: number }> = {
+      'Open': { r: 59, g: 130, b: 246 },
+      'In Progress': { r: 139, g: 92, b: 246 },
+      'Resolved': { r: 34, g: 197, b: 94 },
+      'Closed': { r: 107, g: 114, b: 128 }
+    };
+    const statusColor = statusColors[event.status] || { r: 107, g: 114, b: 128 };
+    
+    pdf.setFillColor(255, 255, 255);
+    pdf.setTextColor(statusColor.r, statusColor.g, statusColor.b);
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'bold');
+    const statText = event.status;
+    const statWidth = pdf.getTextWidth(statText) + 8;
+    const statX = rightMargin - statWidth - 5;
+    pdf.roundedRect(statX, currentY + 16, statWidth, 7, 2, 2, 'F');
+    pdf.text(statText, statX + 4, currentY + 21);
+  }
+  
+  currentY += bannerHeight + 3;
+  
+  // === DOCUMENT INFO BOX ===
+  pdf.setFillColor(249, 250, 251);
+  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, 18, 'F');
+  
+  pdf.setFontSize(8);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(75, 85, 99);
+  
+  const infoY = currentY + 5;
+  pdf.text(`Client: ${event.client_name || 'N/A'}`, leftMargin + 5, infoY);
+  pdf.text(`Branch: ${event.branch_name || 'N/A'}`, leftMargin + 5, infoY + 5);
+  pdf.text(`Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 5, infoY + 10);
+  
+  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, rightMargin - 5, infoY + 10, { align: 'right' });
+  
+  currentY += 22;
   
   // Reset text color
   pdf.setTextColor(0, 0, 0);
@@ -1229,12 +1440,71 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === ATTACHMENTS INFO ===
   if (event.attachments && event.attachments.length > 0) {
+    // Check if we need a new page
+    if (currentY > 220) {
+      pdf.addPage();
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+    }
+    
     await addSectionHeader('Attachments');
     
-    pdf.setFontSize(9);
-    pdf.setFont(undefined, 'normal');
-    pdf.text(`This event has ${event.attachments.length} file(s) attached.`, leftMargin, currentY);
-    currentY += 10;
+    // Create attachments table data
+    const attachmentsTableData = event.attachments.map((attachment: any, index: number) => {
+      const fileName = attachment.file_name || attachment.name || 'Unknown File';
+      const fileType = attachment.file_type || attachment.type || 'Unknown';
+      const fileSize = attachment.file_size || attachment.size;
+      
+      // Format file size
+      let sizeDisplay = 'N/A';
+      if (fileSize) {
+        if (fileSize < 1024) {
+          sizeDisplay = `${fileSize} B`;
+        } else if (fileSize < 1024 * 1024) {
+          sizeDisplay = `${(fileSize / 1024).toFixed(1)} KB`;
+        } else {
+          sizeDisplay = `${(fileSize / (1024 * 1024)).toFixed(1)} MB`;
+        }
+      }
+      
+      return [
+        (index + 1).toString(),
+        fileName,
+        fileType,
+        sizeDisplay
+      ];
+    });
+    
+    // Add attachments table
+    autoTable(pdf, {
+      head: [['#', 'File Name', 'Type', 'Size']],
+      body: attachmentsTableData,
+      startY: currentY,
+      theme: 'striped',
+      styles: { 
+        fontSize: 8,
+        cellPadding: 3,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [107, 114, 128],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'left'
+      },
+      columnStyles: { 
+        0: { cellWidth: 15, halign: 'center' },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 25, halign: 'right' }
+      },
+      margin: { left: leftMargin, right: rightMargin },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251]
+      }
+    });
+    
+    currentY = (pdf as any).lastAutoTable.finalY + 10;
   }
 
   // === ADD FOOTERS TO ALL PAGES ===
