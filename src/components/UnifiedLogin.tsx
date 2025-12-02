@@ -55,9 +55,14 @@ const checkUserActiveStatus = async (userId: string, userEmail: string): Promise
     .maybeSingle();
 
   if (staffMember) {
+    // Only block Inactive status - On Leave and Training can still log in
+    const blockedStatuses = ['Inactive'];
+    const isBlocked = blockedStatuses.includes(staffMember.status);
+    
     return {
-      isActive: staffMember.status === 'Active',
-      userType: 'staff'
+      isActive: !isBlocked,
+      userType: 'staff',
+      message: isBlocked ? 'Your account is inactive. Please contact your organisation admin.' : undefined
     };
   }
 
