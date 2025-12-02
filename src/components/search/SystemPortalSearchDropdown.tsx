@@ -9,7 +9,8 @@ import {
   Settings,
   BarChart,
   Loader2,
-  Users
+  Users,
+  Bell
 } from "lucide-react";
 import { useSystemPortalSearch } from "@/hooks/useSystemPortalSearch";
 import { SearchDropdownItem } from "./SearchDropdownItem";
@@ -28,6 +29,7 @@ const systemPortalModules: ModuleShortcut[] = [
   { name: 'Users', keywords: ['user', 'admin', 'people'], path: '/system-dashboard/users', icon: Users },
   { name: 'Agreements', keywords: ['agreement', 'contract', 'sign'], path: '/system-dashboard/tenant-agreements', icon: FileSignature },
   { name: 'Subscriptions', keywords: ['subscription', 'plan', 'pricing', 'billing'], path: '/system-dashboard/subscription-plans', icon: CreditCard },
+  { name: 'Notifications', keywords: ['notification', 'alert', 'message', 'bell'], path: '/system-dashboard?tab=notifications', icon: Bell },
   { name: 'Analytics', keywords: ['analytic', 'stats', 'report', 'data'], path: '/system-dashboard/analytics', icon: BarChart },
   { name: 'Settings', keywords: ['setting', 'config', 'preference'], path: '/system-dashboard/settings', icon: Settings },
 ];

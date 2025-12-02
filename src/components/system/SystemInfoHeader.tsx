@@ -1,7 +1,14 @@
 import React from "react";
-import { Shield, Server, Activity, Clock } from "lucide-react";
+import { Shield, Server, Activity, Clock, MoreVertical, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useNavigate } from "react-router-dom";
 interface SystemInfoHeaderProps {
   systemInfo: {
     status: string;
@@ -16,6 +23,8 @@ export const SystemInfoHeader = ({
   systemInfo,
   onQuickAction
 }: SystemInfoHeaderProps) => {
+  const navigate = useNavigate();
+
   return <div className="bg-card rounded-lg shadow-sm border border-border p-4 md:p-6 mb-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
@@ -28,12 +37,22 @@ export const SystemInfoHeader = ({
               {systemInfo.status}
             </Badge>
           </div>
-          
-          
         </div>
         
         <div className="flex justify-start md:justify-end">
-          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate('/system-dashboard?tab=notifications')}>
+                <Bell className="h-4 w-4 mr-2" />
+                Notifications
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>;

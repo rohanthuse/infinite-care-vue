@@ -18,7 +18,8 @@ import {
   Database,
   Plus,
   Activity,
-  MessageSquare
+  MessageSquare,
+  Bell
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -26,8 +27,10 @@ import { useLocation } from 'react-router-dom';
 import { SystemSectionTabs, SystemTabValue } from '@/components/system/SystemSectionTabs';
 import { useSystemDashboard } from '@/hooks/useSystemDashboard';
 import { ReportsTab } from '@/components/system/dashboard/ReportsTab';
+import { NotificationsTab } from '@/components/system/dashboard/NotificationsTab';
 import { DevTenantSwitcher } from '@/components/system/DevTenantSwitcher';
 import { SystemNotifications } from '@/components/system/SystemNotifications';
+import { useSystemNotifications } from '@/hooks/useSystemNotifications';
 
 export default function SystemDashboard() {
   const { user, hasRole } = useSystemAuth();
@@ -41,7 +44,7 @@ export default function SystemDashboard() {
   const getTabFromSearch = (): SystemTabValue => {
     const params = new URLSearchParams(location.search);
     const t = (params.get('tab') || 'dashboard') as SystemTabValue;
-    return ['dashboard', 'reports', 'tenants', 'users'].includes(t) ? t : 'dashboard';
+    return ['dashboard', 'reports', 'tenants', 'users', 'notifications'].includes(t) ? t : 'dashboard';
   };
   const [tab, setTab] = React.useState<SystemTabValue>(getTabFromSearch());
   React.useEffect(() => {
@@ -64,6 +67,7 @@ export default function SystemDashboard() {
 
   const { systemStats, isLoading } = useSystemDashboard();
   const { data: demoStats } = useDemoRequestStats();
+  const { unreadCount } = useSystemNotifications();
 
   // Mock system info - in real app, this would come from API
   const systemInfo = {
@@ -217,6 +221,22 @@ export default function SystemDashboard() {
                     </span>
                   )}
                 </Button>
+                
+                <Button
+                  variant="outline"
+                  className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow relative"
+                  onClick={() => navigate('/system-dashboard?tab=notifications')}
+                >
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bell className="h-6 w-6 text-primary" />
+                  </div>
+                  <span className="font-medium">Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs rounded-full h-6 w-6 flex items-center justify-center font-semibold">
+                      {unreadCount}
+                    </span>
+                  )}
+                </Button>
               </div>
             </div>
 
@@ -232,6 +252,9 @@ export default function SystemDashboard() {
 
         {/* Reports Content */}
         {tab === 'reports' && <ReportsTab />}
+
+        {/* Notifications Content */}
+        {tab === 'notifications' && <NotificationsTab />}
       </main>
       
       {/* Modals */}
