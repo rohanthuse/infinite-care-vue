@@ -103,9 +103,40 @@ export const useUploadClientDocument = () => {
       console.log('Document saved successfully:', documentRecord);
       return documentRecord;
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
       toast.success('Document uploaded successfully');
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+      
+      // Trigger notification for the client
+      try {
+        // Get the client's branch_id
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('branch_id')
+          .eq('id', variables.clientId)
+          .single();
+
+        if (clientData?.branch_id) {
+          console.log('[useClientDocuments] Triggering notification for client document');
+          const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-document-notifications', {
+            body: {
+              document_id: data.id,
+              document_name: variables.name,
+              branch_id: clientData.branch_id,
+              client_ids: [variables.clientId],
+              staff_ids: []
+            }
+          });
+
+          if (notifError) {
+            console.error('[useClientDocuments] Error creating notification:', notifError);
+          } else {
+            console.log('[useClientDocuments] Notification result:', notifResult);
+          }
+        }
+      } catch (notifErr) {
+        console.error('[useClientDocuments] Failed to trigger notification:', notifErr);
+      }
     },
     onError: (error) => {
       console.error('Upload error:', error);

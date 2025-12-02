@@ -63,13 +63,50 @@ export const useCreateSigners = () => {
   
   return useMutation({
     mutationFn: createSigners,
-    onSuccess: (_, variables) => {
+    onSuccess: async (data, variables) => {
       if (variables.length > 0) {
         queryClient.invalidateQueries({ 
           queryKey: ['agreement_signers', variables[0].agreement_id] 
         });
       }
       toast.success(`${variables.length} signer(s) added successfully`);
+
+      // Trigger notifications for agreement signers
+      try {
+        // Get agreement title and branch_id
+        const { data: agreementData } = await supabase
+          .from('agreements')
+          .select('title, branch_id')
+          .eq('id', variables[0].agreement_id)
+          .single();
+
+        if (agreementData) {
+          // Collect signer auth_user_ids from the created signers
+          const signerAuthUserIds = data
+            ?.filter((signer: any) => signer.signer_auth_user_id)
+            .map((signer: any) => signer.signer_auth_user_id) || [];
+
+          if (signerAuthUserIds.length > 0) {
+            console.log('[useAgreementSigners] Triggering notifications for agreement signers:', signerAuthUserIds.length);
+            const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-agreement-notifications', {
+              body: {
+                agreement_id: variables[0].agreement_id,
+                agreement_title: agreementData.title,
+                signer_auth_user_ids: signerAuthUserIds,
+                branch_id: agreementData.branch_id
+              }
+            });
+
+            if (notifError) {
+              console.error('[useAgreementSigners] Error creating notifications:', notifError);
+            } else {
+              console.log('[useAgreementSigners] Notification result:', notifResult);
+            }
+          }
+        }
+      } catch (notifErr) {
+        console.error('[useAgreementSigners] Failed to trigger notifications:', notifErr);
+      }
     },
     onError: (error) => {
       toast.error(`Failed to add signers: ${error.message}`);

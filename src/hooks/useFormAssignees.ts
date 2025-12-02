@@ -48,12 +48,43 @@ export const useFormAssignees = (formId: string) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['form-assignees', formId] });
       toast({
         title: "Success",
         description: "Assignee added successfully",
       });
+
+      // Trigger notification for the assignee
+      try {
+        // Get form title and branch_id
+        const { data: formData } = await supabase
+          .from('forms')
+          .select('title, branch_id')
+          .eq('id', variables.form_id)
+          .single();
+
+        if (formData) {
+          console.log('[useFormAssignees] Triggering notification for form assignment');
+          const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-form-assignment-notifications', {
+            body: {
+              form_id: variables.form_id,
+              form_title: formData.title,
+              assignee_id: variables.assignee_id,
+              assignee_type: variables.assignee_type,
+              branch_id: formData.branch_id
+            }
+          });
+
+          if (notifError) {
+            console.error('[useFormAssignees] Error creating notification:', notifError);
+          } else {
+            console.log('[useFormAssignees] Notification result:', notifResult);
+          }
+        }
+      } catch (notifErr) {
+        console.error('[useFormAssignees] Failed to trigger notification:', notifErr);
+      }
     },
     onError: (error) => {
       toast({

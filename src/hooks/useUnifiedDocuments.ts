@@ -407,6 +407,39 @@ export const useUnifiedDocuments = (branchId: string) => {
       // Invalidate and refetch documents
       queryClient.invalidateQueries({ queryKey: ['unified-documents', branchId] });
       
+      // Trigger notifications for document recipients
+      try {
+        const clientIds = documentRecords
+          .filter((doc: any) => doc.client_id)
+          .map((doc: any) => doc.client_id);
+        const staffIds = documentRecords
+          .filter((doc: any) => doc.staff_id)
+          .map((doc: any) => doc.staff_id);
+
+        if (clientIds.length > 0 || staffIds.length > 0) {
+          console.log('[useUnifiedDocuments] Triggering document notifications for clients:', clientIds.length, 'staff:', staffIds.length);
+          
+          const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-document-notifications', {
+            body: {
+              document_id: documentRecords[0].id,
+              document_name: uploadData.name,
+              branch_id: branchId,
+              client_ids: [...new Set(clientIds)],
+              staff_ids: [...new Set(staffIds)]
+            }
+          });
+
+          if (notifError) {
+            console.error('[useUnifiedDocuments] Error creating notifications:', notifError);
+          } else {
+            console.log('[useUnifiedDocuments] Notification result:', notifResult);
+          }
+        }
+      } catch (notifErr) {
+        console.error('[useUnifiedDocuments] Failed to trigger notifications:', notifErr);
+        // Don't throw - document upload succeeded, notification is secondary
+      }
+      
       return documentRecords[0];
     } catch (error) {
       console.error('[useUnifiedDocuments] Upload error:', {
