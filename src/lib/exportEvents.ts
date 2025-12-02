@@ -567,7 +567,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   pdf.setLineWidth(0.5);
   pdf.setFillColor(HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b);
   const cardHeight = 42;
-  pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, cardHeight, 2, 2, 'FD');
+  pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, cardHeight, 2, 2, 'F');
   
   // Event title box
   pdf.setFillColor(HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b);
@@ -586,23 +586,42 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   const eventIdShort = `ID: ${event.id?.substring(0, 8).toUpperCase() || 'N/A'}`;
   pdf.text(eventIdShort, rightMargin - 6 - pdf.getTextWidth(eventIdShort), currentY + 10);
   
-  // Metadata with icons
-  let metaY = currentY + 20;
-  pdf.setFontSize(8);
-  pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
-  
+  // Event Information Table
   const eventDate = event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'N/A';
-  pdf.text(`📅 Date: ${eventDate}`, leftMargin + 6, metaY);
+  const eventInfoData = [
+    ['Event Type', event.event_type || 'N/A'],
+    ['Event Date', eventDate],
+    ['Event Time', event.event_time || 'N/A'],
+    ['Client', event.client_name || 'N/A'],
+    ['Location', event.location || 'Location not specified'],
+    ['Recorded By', event.recorded_by_staff_name || event.reporter || 'N/A']
+  ];
+
+  autoTable(pdf, {
+    body: eventInfoData,
+    startY: currentY + 18,
+    theme: 'plain',
+    styles: { 
+      fontSize: 8,
+      cellPadding: { top: 3, right: 6, bottom: 3, left: 6 },
+      textColor: [55, 65, 81],
+      halign: 'left',
+      overflow: 'linebreak'
+    },
+    columnStyles: { 
+      0: { 
+        fontStyle: 'bold',
+        cellWidth: 40,
+        textColor: [31, 41, 55]
+      },
+      1: {
+        cellWidth: 90
+      }
+    },
+    margin: { left: leftMargin + 6, right: rightMargin }
+  });
   
-  pdf.text(`🕐 Time: ${event.event_time || 'N/A'}`, leftMargin + 55, metaY);
-  
-  metaY += 5;
-  pdf.text(`👤 Client: ${event.client_name || 'N/A'}`, leftMargin + 6, metaY);
-  
-  pdf.text(`📍 ${event.location || 'Location not specified'}`, leftMargin + 55, metaY);
-  
-  metaY += 5;
-  pdf.text(`📝 Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 6, metaY);
+  let metaY = (pdf as any).lastAutoTable.finalY + 2;
   
   // Status badges at bottom
   metaY += 7;
@@ -1155,12 +1174,12 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
       const fileType = attachment.file_type || attachment.type || 'Unknown';
       const fileSize = attachment.file_size || attachment.size;
       
-      // File type icon
-      let icon = '📄';
-      if (fileType.includes('image')) icon = '🖼️';
-      else if (fileType.includes('pdf')) icon = '📋';
-      else if (fileType.includes('video')) icon = '🎥';
-      else if (fileType.includes('word') || fileType.includes('doc')) icon = '📝';
+      // File type prefix (no emojis)
+      let typePrefix = 'File';
+      if (fileType.includes('image')) typePrefix = 'Image';
+      else if (fileType.includes('pdf')) typePrefix = 'PDF';
+      else if (fileType.includes('video')) typePrefix = 'Video';
+      else if (fileType.includes('word') || fileType.includes('doc')) typePrefix = 'Document';
       
       // Format file size
       let sizeDisplay = 'N/A';
@@ -1176,7 +1195,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
       
       return [
         (index + 1).toString(),
-        `${icon} ${fileName}`,
+        `${typePrefix}: ${fileName}`,
         fileType.split('/').pop()?.toUpperCase() || 'N/A',
         sizeDisplay
       ];
@@ -1258,7 +1277,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   pdf.setLineWidth(0.5);
   pdf.setFillColor(HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b);
   const cardHeightBlob = 42;
-  pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, cardHeightBlob, 2, 2, 'FD');
+  pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, cardHeightBlob, 2, 2, 'F');
   
   pdf.setFillColor(HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b);
   pdf.roundedRect(leftMargin + 3, currentY + 3, rightMargin - leftMargin - 6, 12, 1, 1, 'F');
@@ -1275,19 +1294,42 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   const eventIdShortBlob = `ID: ${event.id?.substring(0, 8).toUpperCase() || 'N/A'}`;
   pdf.text(eventIdShortBlob, rightMargin - 6 - pdf.getTextWidth(eventIdShortBlob), currentY + 10);
   
-  let metaYBlob = currentY + 20;
-  pdf.setFontSize(8);
-  pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
-  
+  // Event Information Table
   const eventDateBlob = event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'N/A';
-  pdf.text(`📅 Date: ${eventDateBlob}`, leftMargin + 6, metaYBlob);
-  pdf.text(`🕐 Time: ${event.event_time || 'N/A'}`, leftMargin + 55, metaYBlob);
-  metaYBlob += 5;
-  pdf.text(`👤 Client: ${event.client_name || 'N/A'}`, leftMargin + 6, metaYBlob);
-  pdf.text(`📍 ${event.location || 'Location not specified'}`, leftMargin + 55, metaYBlob);
-  metaYBlob += 5;
-  pdf.text(`📝 Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 6, metaYBlob);
-  metaYBlob += 7;
+  const eventInfoDataBlob = [
+    ['Event Type', event.event_type || 'N/A'],
+    ['Event Date', eventDateBlob],
+    ['Event Time', event.event_time || 'N/A'],
+    ['Client', event.client_name || 'N/A'],
+    ['Location', event.location || 'Location not specified'],
+    ['Recorded By', event.recorded_by_staff_name || event.reporter || 'N/A']
+  ];
+
+  autoTable(pdf, {
+    body: eventInfoDataBlob,
+    startY: currentY + 18,
+    theme: 'plain',
+    styles: { 
+      fontSize: 8,
+      cellPadding: { top: 3, right: 6, bottom: 3, left: 6 },
+      textColor: [55, 65, 81],
+      halign: 'left',
+      overflow: 'linebreak'
+    },
+    columnStyles: { 
+      0: { 
+        fontStyle: 'bold',
+        cellWidth: 40,
+        textColor: [31, 41, 55]
+      },
+      1: {
+        cellWidth: 90
+      }
+    },
+    margin: { left: leftMargin + 6, right: rightMargin }
+  });
+  
+  let metaYBlob = (pdf as any).lastAutoTable.finalY + 2;
   
   const severityColorsBlob: Record<string, { r: number; g: number; b: number }> = {
     'Critical': HEALTHCARE_COLORS.danger,
