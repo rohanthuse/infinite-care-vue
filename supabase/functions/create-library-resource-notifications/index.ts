@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
     const notifications = validUserIds.map(userId => ({
       user_id: userId,
       branch_id: branch_id,
-      type: 'document',
+      type: 'info',
       category: 'info',
       priority: 'low',
       title: 'New Library Resource',
