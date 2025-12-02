@@ -42,7 +42,7 @@ export const useSystemNotifications = () => {
         // Use the RPC function to fetch notifications for this system user
         const { data, error } = await supabase
           .rpc('get_system_notifications', { 
-            p_system_user_id: systemUser.id 
+            p_user_id: systemUser.id 
           });
 
         if (error) {
