@@ -15,9 +15,11 @@ import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
 import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
+import { format } from "date-fns";
 
 import { useBranchCarers, CarerDB, useDeleteCarer, useUpdateCarer } from "@/data/hooks/useBranchCarers";
 import { useDialogManager } from "@/hooks/useDialogManager";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -64,6 +66,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const navigate = useNavigate();
   const { tenantSlug } = useTenant();
   const { closeAllDropdowns } = useDialogManager();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [specializationFilter, setSpecializationFilter] = useState("all");
@@ -190,6 +193,12 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
           description: reason ? `Reason: ${reason}` : undefined
         });
         
+        // Force immediate refetch of staff list
+        queryClient.invalidateQueries({ 
+          queryKey: ["branch-carers", branchId],
+          refetchType: 'all'
+        });
+        
         // Clear selection with delay to prevent race conditions
         updateTimeoutRef.current = setTimeout(() => {
           if (!isUnmountedRef.current) {
@@ -204,7 +213,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         });
       }
     }
-  }, [updateCarerMutation]);
+  }, [updateCarerMutation, branchId, queryClient]);
 
   const handleCarerSelection = useCallback((carer: CarerDB, checked: boolean) => {
     if (isUnmountedRef.current) return;
@@ -247,10 +256,6 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
-  };
-
-  const hasAuthAccount = (carer: CarerDB) => {
-    return carer.invitation_accepted_at || carer.first_login_completed;
   };
 
   const LoadingSkeleton = () => (
@@ -339,7 +344,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
               <TableHead className="hidden lg:table-cell whitespace-nowrap">Phone</TableHead>
               <TableHead className="hidden lg:table-cell whitespace-nowrap">Specialization</TableHead>
               <TableHead className="whitespace-nowrap">Status</TableHead>
-              <TableHead className="hidden md:table-cell whitespace-nowrap">Auth Account</TableHead>
+              <TableHead className="hidden md:table-cell whitespace-nowrap">Registered</TableHead>
               <TableHead className="w-[70px] table-actions-column">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -367,17 +372,11 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
-                  {hasAuthAccount(carer) ? (
-                    <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                      <UserCheck className="h-3 w-3 mr-1" />
-                      Set up
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Pending
-                    </Badge>
-                  )}
+                  <span className="text-sm text-gray-600">
+                    {carer.created_at 
+                      ? format(new Date(carer.created_at), 'dd MMM yyyy')
+                      : '-'}
+                  </span>
                 </TableCell>
                 <TableCell className="table-actions-column">
                   <DropdownMenu>
