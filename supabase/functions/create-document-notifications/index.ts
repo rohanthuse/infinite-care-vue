@@ -128,11 +128,10 @@ Deno.serve(async (req) => {
       priority: 'low',
       title: 'New Document Uploaded',
       message: `A new document has been uploaded: ${document_name}`,
-      data: JSON.stringify({
+      data: {
         document_id,
         notification_type: 'document_upload'
-      }),
-      status: 'unread'
+      }
     }));
 
     console.log('[create-document-notifications] Creating notifications:', notifications.length);

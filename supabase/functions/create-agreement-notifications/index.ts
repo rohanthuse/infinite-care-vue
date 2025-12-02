@@ -89,11 +89,10 @@ Deno.serve(async (req) => {
       priority: 'medium',
       title: 'New Agreement Shared',
       message: `A new agreement has been shared: ${agreement_title}`,
-      data: JSON.stringify({
+      data: {
         agreement_id,
         notification_type: 'agreement_assignment'
-      }),
-      status: 'unread'
+      }
     }));
 
     console.log('[create-agreement-notifications] Creating notifications:', notifications.length);
