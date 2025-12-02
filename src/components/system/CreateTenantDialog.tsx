@@ -51,6 +51,9 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     total_amount: 0,
   });
 
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+
   // Calculate end date and total amount when any relevant field changes
   useEffect(() => {
     if (formData.subscription_start_date && formData.subscription_duration > 0 && plans) {
@@ -99,9 +102,47 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     setFormData(prev => ({ ...prev, subscription_duration: 1 }));
   }, [formData.billing_cycle]);
 
+  const checkSlugAvailability = async (slug: string): Promise<boolean> => {
+    if (!slug || slug.length < 3) return false;
+    
+    setIsCheckingSlug(true);
+    setSlugError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('slug', slug.toLowerCase())
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking slug:', error);
+        return false;
+      }
+      
+      if (data) {
+        setSlugError('This slug is already taken');
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error checking slug availability:', error);
+      return false;
+    } finally {
+      setIsCheckingSlug(false);
+    }
+  };
+
   const createTenant = useMutation({
     mutationFn: async (data: typeof formData) => {
       if (!user) throw new Error('User not authenticated');
+
+      // Check slug availability before proceeding
+      const isAvailable = await checkSlugAvailability(data.slug);
+      if (!isAvailable) {
+        throw new Error('Slug already exists');
+      }
 
       // Call the system edge function to create organization
       const { data: result, error } = await supabase.functions.invoke('create-system-tenant', {
@@ -125,10 +166,13 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       });
       
       if (error) {
-        throw new Error(error.message);
+        // Handle edge function error
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to call edge function');
       }
       
       if (!result?.success) {
+        // Handle edge function response error
         throw new Error(result?.error || 'Failed to create organisation');
       }
       
@@ -146,10 +190,13 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
     },
     onError: (error: any) => {
       console.error('Error creating organisation:', error);
-      if (error.message?.includes('slug')) {
+      const errorMessage = error.message || 'Unknown error';
+      
+      if (errorMessage.toLowerCase().includes('slug')) {
+        setSlugError('This slug is already taken');
         toast.error('URL slug already exists. Please choose a different slug.');
       } else {
-        toast.error('Failed to create organisation. Please try again.');
+        toast.error(`Failed to create organisation: ${errorMessage}`);
       }
     },
   });
@@ -173,6 +220,17 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
 
   const handleInputChange = (field: string, value: string | Date | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear slug error when user modifies slug
+    if (field === 'slug') {
+      setSlugError(null);
+    }
+  };
+
+  const handleSlugBlur = () => {
+    if (formData.slug && formData.slug.length >= 3) {
+      checkSlugAvailability(formData.slug);
+    }
   };
 
   const resetForm = () => {
@@ -190,6 +248,7 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
       discount: 0,
       total_amount: 0,
     });
+    setSlugError(null);
   };
 
   return (
@@ -223,17 +282,30 @@ export function CreateTenantDialog({ open, onOpenChange, onSuccess }: CreateTena
 
             <div className="space-y-2">
               <Label htmlFor="slug">URL Slug *</Label>
-              <Input
-                id="slug"
-                placeholder="abc-care"
-                value={formData.slug}
-                onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase())}
-                pattern="^[a-z0-9-]+$"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Organisation will be accessible at: med-infinite.care/{formData.slug || 'slug'}
-              </p>
+              <div className="relative">
+                <Input
+                  id="slug"
+                  placeholder="abc-care"
+                  value={formData.slug}
+                  onChange={(e) => handleInputChange('slug', e.target.value.toLowerCase())}
+                  onBlur={handleSlugBlur}
+                  pattern="^[a-z0-9-]+$"
+                  required
+                  className={slugError ? 'border-destructive' : ''}
+                />
+                {isCheckingSlug && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+              {slugError ? (
+                <p className="text-xs text-destructive">{slugError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Organisation will be accessible at: med-infinite.care/{formData.slug || 'slug'}
+                </p>
+              )}
             </div>
           </div>
 
