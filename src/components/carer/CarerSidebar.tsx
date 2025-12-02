@@ -18,6 +18,7 @@ import {
   GraduationCap,
   X,
   AlertTriangle,
+  Files,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -97,6 +98,11 @@ export const CarerSidebar: React.FC<CarerSidebarProps> = ({ isOpen, onClose }) =
       name: "My Assignments", 
       path: getCarerMenuItems().find(item => item.name === "My Assignments")?.path || "/carer-dashboard/my-tasks", 
       icon: AlertTriangle 
+    },
+    { 
+      name: "Events & Logs", 
+      path: getCarerMenuItems().find(item => item.name === "Events & Logs")?.path || "/carer-dashboard/events-logs", 
+      icon: Files 
     },
     
     // Documents & Agreements

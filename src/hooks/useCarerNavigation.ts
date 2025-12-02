@@ -106,6 +106,11 @@ export const useCarerNavigation = () => {
       icon: "AlertTriangle" 
     },
     { 
+      name: "Events & Logs", 
+      path: createCarerPath("/events-logs"), 
+      icon: "ClipboardList" 
+    },
+    { 
       name: "Messages", 
       path: createCarerPath("/messages"), 
       icon: "MessageCircle" 
