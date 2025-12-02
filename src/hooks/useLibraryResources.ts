@@ -214,12 +214,29 @@ export const useLibraryResources = (branchId: string) => {
       console.log('Resource created successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['library-resources', branchId] });
       toast({
         title: "Success",
         description: "Resource added to library successfully",
       });
+
+      // Trigger notifications for clients and carers
+      if (data?.id && data?.title) {
+        supabase.functions.invoke('create-library-resource-notifications', {
+          body: {
+            resource_id: data.id,
+            resource_title: data.title,
+            branch_id: branchId,
+          }
+        }).then(response => {
+          if (response.error) {
+            console.error('Failed to send library resource notifications:', response.error);
+          } else {
+            console.log('Library resource notifications sent:', response.data);
+          }
+        });
+      }
     },
     onError: (error) => {
       console.error('Error creating resource:', error);
