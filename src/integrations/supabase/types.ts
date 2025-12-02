@@ -11681,6 +11681,7 @@ export type Database = {
       }
       notify_unassigned_bookings: { Args: never; Returns: undefined }
       process_expiring_agreements: { Args: never; Returns: Json }
+      process_subscription_expiry: { Args: never; Returns: Json }
       repair_system_user_organization_sync: { Args: never; Returns: Json }
       reset_system_user_password_with_session:
         | {

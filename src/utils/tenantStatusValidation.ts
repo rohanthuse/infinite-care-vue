@@ -6,7 +6,8 @@ import { SupabaseClient } from '@supabase/supabase-js';
 export const TENANT_STATUS = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
-  SUSPENDED: 'suspended'
+  SUSPENDED: 'suspended',
+  EXPIRED: 'expired'
 } as const;
 
 export type TenantStatus = typeof TENANT_STATUS[keyof typeof TENANT_STATUS];
@@ -26,6 +27,14 @@ export interface TenantStatusCheckResult {
  * @returns Object indicating if login is allowed and appropriate message
  */
 export const checkTenantStatus = (subscriptionStatus: string): TenantStatusCheckResult => {
+  if (subscriptionStatus === TENANT_STATUS.EXPIRED) {
+    return {
+      isAllowed: false,
+      status: 'expired',
+      message: 'Your subscription has expired. Please contact your organisation administrator to renew.'
+    };
+  }
+  
   if (subscriptionStatus === TENANT_STATUS.INACTIVE) {
     return {
       isAllowed: false,
@@ -84,12 +93,22 @@ export const fetchOrganizationStatusBySlug = async (
 ): Promise<string> => {
   const { data, error } = await supabase
     .from('organizations')
-    .select('subscription_status')
+    .select('subscription_status, subscription_expires_at')
     .eq('slug', slug)
     .single();
     
   if (error) {
     throw new Error('Failed to verify organisation status');
+  }
+  
+  // Check if subscription has expired (even if not yet processed by CRON)
+  if (data?.subscription_expires_at) {
+    const expiryDate = new Date(data.subscription_expires_at);
+    const now = new Date();
+    
+    if (expiryDate < now && data.subscription_status === 'active') {
+      return 'expired';
+    }
   }
   
   return data?.subscription_status || 'active';
