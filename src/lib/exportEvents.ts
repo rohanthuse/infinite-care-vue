@@ -618,7 +618,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         cellWidth: 90
       }
     },
-    margin: { left: leftMargin + 6, right: rightMargin }
+    margin: { left: leftMargin + 6, right: 20 }
   });
   
   let metaY = (pdf as any).lastAutoTable.finalY + 2;
@@ -669,7 +669,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   pdf.roundedRect(typeX, metaY - 3, typeWidth, 6, 1, 1, 'F');
   pdf.text(typeText, typeX + 3, metaY + 1);
   
-  currentY += cardHeight + 8;
+  currentY = metaY + 12;
   
   // Reset text color
   pdf.setTextColor(0, 0, 0);
@@ -1326,7 +1326,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
         cellWidth: 90
       }
     },
-    margin: { left: leftMargin + 6, right: rightMargin }
+    margin: { left: leftMargin + 6, right: 20 }
   });
   
   let metaYBlob = (pdf as any).lastAutoTable.finalY + 2;
@@ -1371,7 +1371,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   pdf.roundedRect(typeXBlob, metaYBlob - 3, typeWidthBlob, 6, 1, 1, 'F');
   pdf.text(typeTextBlob, typeXBlob + 3, metaYBlob + 1);
   
-  currentY += cardHeightBlob + 8;
+  currentY = metaYBlob + 12;
   pdf.setTextColor(0, 0, 0);
 
   // Helper matches exportEventToPDF styling
