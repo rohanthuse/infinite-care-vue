@@ -99,3 +99,6 @@ verify_jwt = false
 
 [functions.send-event-share-email]
 verify_jwt = false
+
+[functions.create-library-resource-notifications]
+verify_jwt = false
