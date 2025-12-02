@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTenant } from "@/contexts/TenantContext";
-import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Shield, UserCheck, Eye, Settings, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import { ViewFullCarerProfileDialog } from "./ViewFullCarerProfileDialog";
 import { SetCarerPasswordDialog } from "./SetCarerPasswordDialog";
 import { StatusChangeDialog } from "./StatusChangeDialog";
 import { BulkActionsBar } from "./BulkActionsBar";
+import { SendInvitationDialog } from "./SendInvitationDialog";
+import { useSendInvitationEmail } from "@/hooks/useSendInvitationEmail";
 import { StatusFilterStats } from "./StatusFilterStats";
 import { CarerFilters } from "./CarerFilters";
 import { format } from "date-fns";
@@ -75,6 +77,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const [editingCarer, setEditingCarer] = useState<CarerDB | null>(null);
   const [viewingFullProfile, setViewingFullProfile] = useState<{ carerId: string } | null>(null);
   const [settingPasswordCarer, setSettingPasswordCarer] = useState<CarerDB | null>(null);
+  const [sendingInvitationCarer, setSendingInvitationCarer] = useState<CarerDB | null>(null);
   const [deletingCarer, setDeletingCarer] = useState<CarerDB | null>(null);
   const [selectedCarers, setSelectedCarers] = useState<CarerDB[]>([]);
   const [showStatusChangeDialog, setShowStatusChangeDialog] = useState(false);
@@ -87,6 +90,7 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
   const { data: carers = [], isLoading } = useBranchCarers(branchId);
   const deleteMutation = useDeleteCarer();
   const updateCarerMutation = useUpdateCarer();
+  const sendInvitationMutation = useSendInvitationEmail();
 
   // Cleanup on unmount
   useEffect(() => {
@@ -168,6 +172,22 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
       // Error is handled by the mutation
     }
   };
+
+  const handleSendInvitation = useCallback(async () => {
+    if (!sendingInvitationCarer) return;
+    
+    try {
+      await sendInvitationMutation.mutateAsync({
+        staffId: sendingInvitationCarer.id,
+        email: sendingInvitationCarer.email || '',
+        firstName: sendingInvitationCarer.first_name,
+        lastName: sendingInvitationCarer.last_name
+      });
+      setSendingInvitationCarer(null);
+    } catch (error) {
+      // Error handled by mutation
+    }
+  }, [sendingInvitationCarer, sendInvitationMutation]);
 
   const handleBulkStatusChange = useCallback(async (carerIds: string[], newStatus: string, reason?: string) => {
     if (isUnmountedRef.current) return;
@@ -367,9 +387,16 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                 <TableCell className="hidden lg:table-cell">{carer.phone}</TableCell>
                 <TableCell className="hidden lg:table-cell">{carer.specialization}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={getStatusColor(carer.status)}>
-                    {carer.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={getStatusColor(carer.status)}>
+                      {carer.status}
+                    </Badge>
+                    {carer.invitation_sent_at && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        Invited
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <span className="text-sm text-gray-600">
@@ -411,6 +438,13 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
                       >
                         <Settings className="h-4 w-4 mr-2" />
                         Change Status
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        closeAllDropdowns();
+                        setTimeout(() => setSendingInvitationCarer(carer), 50);
+                      }}>
+                        <Mail className="h-4 w-4 mr-2" />
+                        Send Invitation Email
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         closeAllDropdowns();
@@ -529,6 +563,15 @@ export function TeamManagementSection({ branchId, branchName }: TeamManagementSe
         onStatusChange={handleBulkStatusChange}
       />
 
+      <SendInvitationDialog
+        open={!!sendingInvitationCarer}
+        onOpenChange={(open) => {
+          if (!open) setSendingInvitationCarer(null);
+        }}
+        carer={sendingInvitationCarer}
+        onConfirm={handleSendInvitation}
+        isLoading={sendInvitationMutation.isPending}
+      />
 
       <AlertDialog open={!!deletingCarer} onOpenChange={(open) => !open && setDeletingCarer(null)}>
         <AlertDialogContent onCloseAutoFocus={() => {
