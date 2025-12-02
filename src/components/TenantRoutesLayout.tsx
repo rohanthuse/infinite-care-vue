@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, useLocation, useParams } from 'react-router-dom';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { TenantErrorWrapper } from '@/components/TenantErrorWrapper';
+import { TenantStatusGuard } from '@/components/TenantStatusGuard';
 
 /**
  * Layout component for tenant-specific routes.
@@ -22,7 +23,9 @@ export const TenantRoutesLayout: React.FC = () => {
   return (
     <TenantProvider>
       <TenantErrorWrapper>
-        <Outlet />
+        <TenantStatusGuard>
+          <Outlet />
+        </TenantStatusGuard>
       </TenantErrorWrapper>
     </TenantProvider>
   );
