@@ -12,7 +12,9 @@ import { SystemTenantAgreementFileUpload } from "./SystemTenantAgreementFileUplo
 import { useSystemTenantAgreementFileUpload } from "@/hooks/useSystemTenantAgreementFileUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, FileText, Users, CreditCard, Settings, Scale, Paperclip, PenTool } from "lucide-react";
+import { Plus, FileText, Users, CreditCard, Settings, Scale, Paperclip, PenTool, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCreateSystemTenantAgreement } from "@/hooks/useSystemTenantAgreements";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +35,21 @@ export function CreateSystemTenantAgreementDialog() {
   const [templates, setTemplates] = useState<Array<{ id: string; title: string }>>([]);
   const [createdAgreementId, setCreatedAgreementId] = useState<string | null>(null);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
+  const [tenantSubscription, setTenantSubscription] = useState<{
+    planName: string;
+    planDuration: 'Monthly' | 'Yearly' | '';
+    userLimit: number | null;
+    priceMonthly: number;
+    priceYearly: number;
+    maxBranches: number | null;
+    subscriptionStatus: string;
+    subscriptionExpiresAt: string | null;
+    trialEndsAt: string | null;
+    isTrial: boolean;
+    createdAt: string | null;
+    hasSubscriptionPlan: boolean;
+  } | null>(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
 
   // State slices to avoid TypeScript depth issues
   const [agreementDetails, setAgreementDetails] = useState<{
@@ -258,24 +275,107 @@ export function CreateSystemTenantAgreementDialog() {
     }
   }, [open, agreementDetails.agreement_reference]);
 
-  // Auto-fill tenant name when selected
+  // Auto-fill tenant details and subscription info when selected
   useEffect(() => {
-    const fetchTenantName = async (): Promise<void> => {
-      if (!agreementDetails.tenant_id) return;
+    const fetchTenantDetails = async (): Promise<void> => {
+      if (!agreementDetails.tenant_id) {
+        setTenantSubscription(null);
+        return;
+      }
       
-      // @ts-ignore - Known Supabase TypeScript depth issue
-      const result = await supabase
-        .from('organizations')
-        .select('name')
-        .eq('id', agreementDetails.tenant_id)
-        .single();
+      setIsLoadingSubscription(true);
       
-      if (result.data && result.data.name) {
-        setTenantDetails(prev => ({ ...prev, name: String(result.data.name) }));
+      try {
+        // Fetch tenant with subscription plan details
+        // @ts-ignore - Known Supabase TypeScript depth issue
+        const result = await supabase
+          .from('organizations')
+          .select(`
+            name,
+            subscription_plan,
+            subscription_plan_id,
+            subscription_status,
+            subscription_expires_at,
+            trial_ends_at,
+            is_trial,
+            max_users,
+            created_at,
+            subscription_plans!organizations_subscription_plan_id_fkey (
+              name,
+              price_monthly,
+              price_yearly,
+              max_users,
+              max_branches
+            )
+          `)
+          .eq('id', agreementDetails.tenant_id)
+          .single();
+        
+        if (result.data) {
+          // Auto-fill tenant name
+          setTenantDetails(prev => ({ ...prev, name: String(result.data.name) }));
+          
+          const linkedPlan = result.data.subscription_plans as {
+            name: string;
+            price_monthly: number;
+            price_yearly: number;
+            max_users: number;
+            max_branches: number;
+          } | null;
+          
+          const hasActivePlan = !!linkedPlan || !!result.data.subscription_plan;
+          
+          const subscriptionInfo = {
+            planName: linkedPlan?.name || result.data.subscription_plan || '',
+            planDuration: '' as 'Monthly' | 'Yearly' | '',
+            userLimit: linkedPlan?.max_users || result.data.max_users || null,
+            priceMonthly: linkedPlan?.price_monthly || 0,
+            priceYearly: linkedPlan?.price_yearly || 0,
+            maxBranches: linkedPlan?.max_branches || null,
+            subscriptionStatus: result.data.subscription_status || 'unknown',
+            subscriptionExpiresAt: result.data.subscription_expires_at,
+            trialEndsAt: result.data.trial_ends_at,
+            isTrial: result.data.is_trial || false,
+            createdAt: result.data.created_at,
+            hasSubscriptionPlan: hasActivePlan
+          };
+          
+          setTenantSubscription(subscriptionInfo);
+          
+          // Auto-populate Financial Terms if subscription exists
+          if (hasActivePlan) {
+            setFinancialTerms(prev => ({
+              ...prev,
+              subscription_plan: subscriptionInfo.planName,
+              price_amount: subscriptionInfo.priceMonthly, // Default to monthly
+              payment_terms: 'Monthly' as PaymentTerms
+            }));
+            
+            // Auto-populate Service Scope with user limitations
+            if (subscriptionInfo.userLimit) {
+              setServiceScope(prev => ({
+                ...prev,
+                user_limitations: `Maximum ${subscriptionInfo.userLimit} users allowed under the ${subscriptionInfo.planName} plan.${subscriptionInfo.maxBranches ? ` Up to ${subscriptionInfo.maxBranches} branches.` : ''}`
+              }));
+            }
+            
+            // Auto-suggest expiry date if subscription has one
+            if (subscriptionInfo.subscriptionExpiresAt && !agreementDetails.expiry_date) {
+              setAgreementDetails(prev => ({
+                ...prev,
+                expiry_date: subscriptionInfo.subscriptionExpiresAt?.split('T')[0] || prev.expiry_date
+              }));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching tenant subscription details:', error);
+      } finally {
+        setIsLoadingSubscription(false);
       }
     };
     
-    fetchTenantName();
+    fetchTenantDetails();
   }, [agreementDetails.tenant_id]);
 
   // Auto-fill from template
@@ -469,6 +569,39 @@ export function CreateSystemTenantAgreementDialog() {
     }
   };
 
+  // Helper function to calculate subscription status
+  const getSubscriptionStatus = (): { label: string; color: string } => {
+    if (!tenantSubscription) return { label: 'Unknown', color: 'bg-gray-100 text-gray-800' };
+    
+    const now = new Date();
+    
+    if (tenantSubscription.isTrial) {
+      const trialEnd = tenantSubscription.trialEndsAt ? new Date(tenantSubscription.trialEndsAt) : null;
+      if (trialEnd && trialEnd < now) {
+        return { label: 'Trial Expired', color: 'bg-red-100 text-red-800' };
+      }
+      return { label: 'On Trial', color: 'bg-yellow-100 text-yellow-800' };
+    }
+    
+    if (tenantSubscription.subscriptionExpiresAt) {
+      const expiresAt = new Date(tenantSubscription.subscriptionExpiresAt);
+      const daysUntilExpiry = Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilExpiry < 0) {
+        return { label: 'Expired', color: 'bg-red-100 text-red-800' };
+      }
+      if (daysUntilExpiry <= 30) {
+        return { label: 'Expiring Soon', color: 'bg-orange-100 text-orange-800' };
+      }
+    }
+    
+    if (tenantSubscription.subscriptionStatus === 'active') {
+      return { label: 'Active', color: 'bg-green-100 text-green-800' };
+    }
+    
+    return { label: tenantSubscription.subscriptionStatus, color: 'bg-gray-100 text-gray-800' };
+  };
+
   const resetForm = (): void => {
     setAgreementDetails({
       agreement_reference: '',
@@ -523,6 +656,8 @@ export function CreateSystemTenantAgreementDialog() {
     });
     setCreatedAgreementId(null);
     setPendingAttachments([]);
+    setTenantSubscription(null);
+    setIsLoadingSubscription(false);
   };
 
   const handleCancel = (): void => {
@@ -823,7 +958,125 @@ export function CreateSystemTenantAgreementDialog() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-4 mt-2">
+                    {/* Auto-populated Subscription Info Card */}
+                    {agreementDetails.tenant_id && (
+                      <div className="col-span-2">
+                        {isLoadingSubscription ? (
+                          <div className="flex items-center gap-2 p-4 border rounded-lg bg-muted">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-sm text-muted-foreground">Loading subscription details...</span>
+                          </div>
+                        ) : tenantSubscription?.hasSubscriptionPlan ? (
+                          <Card className="border-green-200 bg-green-50">
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                Subscription Plan Found - Auto-populated
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-4 gap-4 text-sm">
+                                <div>
+                                  <span className="text-muted-foreground">Plan Name:</span>
+                                  <p className="font-medium">{tenantSubscription.planName}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">User Limit:</span>
+                                  <p className="font-medium">{tenantSubscription.userLimit || 'Unlimited'} users</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Monthly Price:</span>
+                                  <p className="font-medium">£{tenantSubscription.priceMonthly?.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Yearly Price:</span>
+                                  <p className="font-medium">£{tenantSubscription.priceYearly?.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Status:</span>
+                                  <Badge className={getSubscriptionStatus().color}>
+                                    {getSubscriptionStatus().label}
+                                  </Badge>
+                                </div>
+                                {tenantSubscription.subscriptionExpiresAt && (
+                                  <div>
+                                    <span className="text-muted-foreground">Expires:</span>
+                                    <p className="font-medium">
+                                      {new Date(tenantSubscription.subscriptionExpiresAt).toLocaleDateString('en-GB')}
+                                    </p>
+                                  </div>
+                                )}
+                                {tenantSubscription.isTrial && tenantSubscription.trialEndsAt && (
+                                  <div>
+                                    <span className="text-muted-foreground">Trial Ends:</span>
+                                    <p className="font-medium">
+                                      {new Date(tenantSubscription.trialEndsAt).toLocaleDateString('en-GB')}
+                                    </p>
+                                  </div>
+                                )}
+                                {tenantSubscription.maxBranches && (
+                                  <div>
+                                    <span className="text-muted-foreground">Max Branches:</span>
+                                    <p className="font-medium">{tenantSubscription.maxBranches}</p>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-3">
+                                These values have been auto-populated. You can still edit them below if needed.
+                              </p>
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <Alert className="bg-yellow-50 border-yellow-200">
+                            <AlertCircle className="h-4 w-4 text-yellow-600" />
+                            <AlertTitle className="text-yellow-800">No Active Subscription Plan Found</AlertTitle>
+                            <AlertDescription className="text-yellow-700">
+                              This tenant does not have an active subscription plan. Please fill in the financial terms manually.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-4 mt-2">
+                    {/* Billing Cycle Toggle (if subscription exists) */}
+                    {tenantSubscription?.hasSubscriptionPlan && (
+                      <div>
+                        <Label>Billing Cycle</Label>
+                        <SafeSelect
+                          value={financialTerms.payment_terms || undefined}
+                          onValueChange={(value) => {
+                            const terms = value as PaymentTerms;
+                            setFinancialTerms(prev => ({
+                              ...prev,
+                              payment_terms: terms,
+                              // Auto-update price based on selection
+                              price_amount: terms === 'Yearly' 
+                                ? (tenantSubscription?.priceYearly || 0)
+                                : terms === 'Monthly'
+                                ? (tenantSubscription?.priceMonthly || 0)
+                                : prev.price_amount
+                            }));
+                          }}
+                        >
+                          <SafeSelectTrigger>
+                            <SafeSelectValue placeholder="Select billing cycle" />
+                          </SafeSelectTrigger>
+                          <SafeSelectContent>
+                            <SafeSelectItem value="Monthly">
+                              Monthly (£{tenantSubscription?.priceMonthly?.toFixed(2)}/month)
+                            </SafeSelectItem>
+                            <SafeSelectItem value="Quarterly">Quarterly</SafeSelectItem>
+                            <SafeSelectItem value="Yearly">
+                              Yearly (£{tenantSubscription?.priceYearly?.toFixed(2)}/year)
+                            </SafeSelectItem>
+                          </SafeSelectContent>
+                        </SafeSelect>
+                      </div>
+                    )}
+                    
                     <div>
                       <Label>Subscription Plan</Label>
                       <Input
@@ -833,22 +1086,24 @@ export function CreateSystemTenantAgreementDialog() {
                       />
                     </div>
                     
-                    <div>
-                      <Label>Payment Terms</Label>
-                      <SafeSelect
-                        value={financialTerms.payment_terms || undefined}
-                        onValueChange={(value) => setFinancialTerms(prev => ({ ...prev, payment_terms: value as PaymentTerms }))}
-                      >
-                        <SafeSelectTrigger>
-                          <SafeSelectValue placeholder="Select payment terms" />
-                        </SafeSelectTrigger>
-                        <SafeSelectContent>
-                          <SafeSelectItem value="Monthly">Monthly</SafeSelectItem>
-                          <SafeSelectItem value="Quarterly">Quarterly</SafeSelectItem>
-                          <SafeSelectItem value="Yearly">Yearly</SafeSelectItem>
-                        </SafeSelectContent>
-                      </SafeSelect>
-                    </div>
+                    {!tenantSubscription?.hasSubscriptionPlan && (
+                      <div>
+                        <Label>Payment Terms</Label>
+                        <SafeSelect
+                          value={financialTerms.payment_terms || undefined}
+                          onValueChange={(value) => setFinancialTerms(prev => ({ ...prev, payment_terms: value as PaymentTerms }))}
+                        >
+                          <SafeSelectTrigger>
+                            <SafeSelectValue placeholder="Select payment terms" />
+                          </SafeSelectTrigger>
+                          <SafeSelectContent>
+                            <SafeSelectItem value="Monthly">Monthly</SafeSelectItem>
+                            <SafeSelectItem value="Quarterly">Quarterly</SafeSelectItem>
+                            <SafeSelectItem value="Yearly">Yearly</SafeSelectItem>
+                          </SafeSelectContent>
+                        </SafeSelect>
+                      </div>
+                    )}
                     
                     <div>
                       <Label>Price/Fees (£)</Label>
