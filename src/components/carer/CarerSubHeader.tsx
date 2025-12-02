@@ -19,9 +19,11 @@ export const CarerSubHeader: React.FC = () => {
 
   // Show loading only when actively fetching and no data available yet
   const showLoading = isFetching && !carerContext;
-  const branchName = carerContext?.branchInfo?.name || (carerContext ? 'No Branch Assigned' : 'Loading...');
+  const branchName = carerContext?.branchInfo?.name || 
+                     (carerContext?.staffProfile ? 'No Branch Assigned' : 'Loading...');
   const branchStatus = carerContext?.branchInfo?.status || 'active';
-  const organizationName = carerContext?.branchInfo?.organization_name || '';
+  const organizationName = carerContext?.branchInfo?.organization_name || 
+                           (carerContext?.branchInfo ? 'No Organization Assigned' : '');
   
   return (
     <div className="bg-card border-b border-border px-4 sm:px-6 lg:px-8 py-3 shrink-0 sticky top-[64px] z-[55]">
