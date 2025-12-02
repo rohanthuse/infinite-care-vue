@@ -99,16 +99,17 @@ export const useCarerContext = () => {
     enabled: !!user?.id,
     // Use cached data for instant initial render
     initialData: () => {
-      if (!user?.id) return undefined;
-      const cachedKey = `carerContext-${user.id}`;
-      const cached = localStorage.getItem(cachedKey);
-      if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch (e) {
-          console.warn('[useCarerContext] Failed to parse cached data:', e);
-          return undefined;
+      try {
+        if (user?.id) {
+          const cachedKey = `carerContext-${user.id}`;
+          const cached = localStorage.getItem(cachedKey);
+          if (cached) {
+            console.log('[useCarerContext] Using cached data as initialData');
+            return JSON.parse(cached);
+          }
         }
+      } catch (e) {
+        console.warn('[useCarerContext] Failed to parse cached data in initialData:', e);
       }
       return undefined;
     },

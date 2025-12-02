@@ -8,7 +8,7 @@ import { useCarerNavigation } from '@/hooks/useCarerNavigation';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 
 export const CarerSubHeader: React.FC = () => {
-  const { data: carerContext, isLoading, isPending } = useCarerContext();
+  const { data: carerContext, isLoading, isPending, isError, error } = useCarerContext();
   const { user, loading: authLoading } = useAuthSafe();
   const { createCarerPath } = useCarerNavigation();
   const location = useLocation();
@@ -21,16 +21,34 @@ export const CarerSubHeader: React.FC = () => {
 
   // Show loading if auth is loading OR if query is pending/loading with no data
   const showLoading = authLoading || isLoading || (isPending && !carerContext);
+
+  // Debug current state to help diagnose stuck loading issues
+  console.log('[CarerSubHeader] State:', {
+    authLoading,
+    userId: user?.id,
+    isLoading,
+    isPending,
+    isError,
+    hasCarerContext: !!carerContext,
+    branchInfo: carerContext?.branchInfo,
+  });
   
-  const branchName = showLoading 
-    ? 'Loading...' 
-    : (carerContext?.branchInfo?.name || 'No Branch Assigned');
+  let branchName: string;
+  let organizationName = '';
+
+  if (showLoading) {
+    branchName = 'Loading...';
+  } else if (isError) {
+    branchName = 'Error loading branch';
+    console.error('[CarerSubHeader] Query error:', error);
+  } else if (carerContext?.branchInfo?.name) {
+    branchName = carerContext.branchInfo.name;
+    organizationName = carerContext.branchInfo.organization_name || '';
+  } else {
+    branchName = 'No Branch Assigned';
+  }
     
   const branchStatus = carerContext?.branchInfo?.status || 'active';
-  
-  const organizationName = showLoading 
-    ? '' 
-    : (carerContext?.branchInfo?.organization_name || '');
   
   return (
     <div className="bg-card border-b border-border px-4 sm:px-6 lg:px-8 py-3 shrink-0 sticky top-[64px] z-[55]">
