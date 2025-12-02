@@ -37,6 +37,9 @@ import { ServiceActionsSection } from '@/components/care/client-view/ServiceActi
 import { DocumentsSection } from '@/components/care/client-view/DocumentsSection';
 import { ConsentSection } from '@/components/care/client-view/ConsentSection';
 import { ReviewSection } from '@/components/care/client-view/ReviewSection';
+import { BehaviorSupportSection } from '@/components/care/client-view/BehaviorSupportSection';
+import { EducationDevelopmentSection } from '@/components/care/client-view/EducationDevelopmentSection';
+import { SafeguardingRisksSection } from '@/components/care/client-view/SafeguardingRisksSection';
 
 interface CarePlanViewDialogProps {
   carePlanId: string;
@@ -46,22 +49,27 @@ interface CarePlanViewDialogProps {
 }
 
 const viewSteps = [
-  { id: 1, name: "Basic Information", description: "Care plan title and basic details" },
-  { id: 2, name: "About Me", description: "Client preferences and background" },
-  { id: 3, name: "Medical and Mental", description: "Health conditions and medications" },
-  { id: 4, name: "Medication", description: "Medication management and calendar" },
-  { id: 5, name: "Admin Medication", description: "Medication administration details" },
-  { id: 6, name: "Goals", description: "Care goals and objectives" },
-  { id: 7, name: "Activities", description: "Daily activities and routines" },
-  { id: 8, name: "Personal Care", description: "Personal care requirements" },
-  { id: 9, name: "Dietary", description: "Dietary needs and restrictions" },
-  { id: 10, name: "Risk Assessments", description: "Safety and risk evaluations" },
-  { id: 11, name: "Equipment", description: "Required equipment and aids" },
-  { id: 12, name: "Service Plans", description: "Service delivery plans" },
-  { id: 13, name: "Service Actions", description: "Specific service actions" },
-  { id: 14, name: "Documents", description: "Supporting documents" },
-  { id: 15, name: "Consent", description: "Consent and capacity assessment" },
-  { id: 16, name: "Review", description: "Review and finalize care plan" },
+  { id: 1, name: "Basic Information", description: "Care plan title and basic details", childOnly: false },
+  { id: 2, name: "About Me", description: "Client preferences and background", childOnly: false },
+  { id: 3, name: "Medical and Mental", description: "Health conditions and medications", childOnly: false },
+  { id: 4, name: "Medication", description: "Medication management and calendar", childOnly: false },
+  { id: 5, name: "Admin Medication", description: "Medication administration details", childOnly: false },
+  { id: 6, name: "Goals", description: "Care goals and objectives", childOnly: false },
+  { id: 7, name: "Activities", description: "Daily activities and routines", childOnly: false },
+  { id: 8, name: "Personal Care", description: "Personal care requirements", childOnly: false },
+  { id: 9, name: "Dietary", description: "Dietary needs and restrictions", childOnly: false },
+  { id: 10, name: "Risk Assessments", description: "Safety and risk evaluations", childOnly: false },
+  { id: 11, name: "Equipment", description: "Required equipment and aids", childOnly: false },
+  { id: 12, name: "Service Plans", description: "Service delivery plans", childOnly: false },
+  { id: 13, name: "Service Actions", description: "Specific service actions", childOnly: false },
+  { id: 14, name: "Documents", description: "Supporting documents", childOnly: false },
+  { id: 15, name: "Consent", description: "Consent and capacity assessment", childOnly: false },
+  // Young Person (0-17 years) specific tabs
+  { id: 16, name: "Behavior Support", description: "Challenging behaviors and crisis management", childOnly: true },
+  { id: 17, name: "Education & Development", description: "Educational placement and development goals", childOnly: true },
+  { id: 18, name: "Safeguarding & Risks", description: "Safeguarding assessments and risk plans", childOnly: true },
+  // Review is always last
+  { id: 19, name: "Review", description: "Review and finalize care plan", childOnly: false },
 ];
 
 // Transform care plan data for PDF generation
@@ -300,6 +308,18 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
   
   const carePlanWithDetails = carePlan as CarePlanWithDetails;
 
+  // Filter steps based on client age group (show child-specific tabs only for young persons)
+  const filteredViewSteps = React.useMemo(() => {
+    const clientAgeGroup = (carePlanWithDetails?.client as any)?.age_group;
+    const isYoungPerson = clientAgeGroup === 'child' || clientAgeGroup === 'young_person';
+    
+    if (!isYoungPerson) {
+      // Filter out child-only steps for adults
+      return viewSteps.filter(step => !step.childOnly);
+    }
+    return viewSteps; // Show all steps for children/young persons
+  }, [carePlanWithDetails?.client]);
+
   // Handle dialog close
   const handleClose = useCallback((newOpen: boolean) => {
     onOpenChange(newOpen);
@@ -316,7 +336,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
     }
   }, [carePlanWithDetails, isLoading, form]);
 
-  const completedSteps = viewSteps.map(step => step.id); // All steps considered completed for viewing
+  const completedSteps = filteredViewSteps.map(step => step.id); // All steps considered completed for viewing
   const completionPercentage = 100;
 
   const getStatusColor = (status: string) => {
@@ -397,7 +417,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
 
     // QA Logging: Track what data is available for current step
     if (context === 'client') {
-      console.log(`[CarePlanView QA] Step ${currentStep}: ${viewSteps[currentStep - 1]?.name}`, {
+      console.log(`[CarePlanView QA] Step ${currentStep}: ${filteredViewSteps.find(s => s.id === currentStep)?.name}`, {
         hasData: !!wizardData,
         dataKeys: Object.keys(wizardData),
         stepSpecificData: currentStep === 2 ? wizardData.about_me : 
@@ -455,7 +475,17 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
       case 15: // Consent
         return <ConsentSection consent={wizardData.consent} />;
       
-      case 16: // Review
+      // Young Person (0-17 years) specific tabs
+      case 16: // Behavior Support
+        return <BehaviorSupportSection clientId={carePlanWithDetails.client_id} />;
+      
+      case 17: // Education & Development
+        return <EducationDevelopmentSection clientId={carePlanWithDetails.client_id} />;
+      
+      case 18: // Safeguarding & Risks
+        return <SafeguardingRisksSection clientId={carePlanWithDetails.client_id} />;
+      
+      case 19: // Review
         return <ReviewSection 
           carePlan={carePlanWithDetails} 
           additionalNotes={wizardData.additional_notes} 
@@ -596,16 +626,16 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
                     <SelectValue>
                       <div className="flex items-center justify-between w-full">
                         <span className="font-medium">
-                          {viewSteps.find(step => step.id === currentStep)?.name || "Select Section"}
+                          {filteredViewSteps.find(step => step.id === currentStep)?.name || "Select Section"}
                         </span>
                         <Badge variant="outline" className="ml-2">
-                          {currentStep} of {viewSteps.length}
+                          {currentStep} of {filteredViewSteps.length}
                         </Badge>
                       </div>
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="max-h-60">
-                    {viewSteps.map((step) => (
+                    {filteredViewSteps.map((step) => (
                       <SelectItem key={step.id} value={step.id.toString()}>
                         <div className="flex items-center justify-between w-full">
                           <div>
@@ -634,7 +664,7 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
           <div className="hidden lg:flex flex-1 min-h-0 gap-6">
             <div className="hidden lg:block flex-shrink-0">
               <CarePlanWizardSidebar
-                steps={viewSteps}
+                steps={filteredViewSteps}
                 currentStep={currentStep}
                 completedSteps={completedSteps}
                 onStepClick={(stepId) => setCurrentStep(stepId)}

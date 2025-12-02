@@ -25,6 +25,7 @@ export interface CarePlanData {
     first_name: string;
     last_name: string;
     avatar_initials?: string;
+    age_group?: string;
   };
   staff?: {
     id: string;
@@ -100,6 +101,7 @@ const fetchCarePlanData = async (carePlanId: string): Promise<CarePlanWithDetail
         address,
         email,
         additional_information,
+        age_group,
         client_personal_info(
           emergency_contact_name,
           emergency_contact_phone,
@@ -348,6 +350,7 @@ const fetchClientCarePlansWithDetails = async (clientId: string): Promise<CarePl
         address,
         email,
         additional_information,
+        age_group,
         client_personal_info(
           emergency_contact_name,
           emergency_contact_phone,
