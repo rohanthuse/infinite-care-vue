@@ -20,7 +20,6 @@ interface StatusChangeDialogProps {
 const statusOptions = [
   { value: "Active", label: "Active", icon: CheckCircle, color: "bg-green-100 text-green-800 border-green-200" },
   { value: "Inactive", label: "Inactive", icon: UserX, color: "bg-red-100 text-red-800 border-red-200" },
-  { value: "Pending Invitation", label: "Pending Invitation", icon: Clock, color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
   { value: "On Leave", label: "On Leave", icon: AlertTriangle, color: "bg-blue-100 text-blue-800 border-blue-200" },
   { value: "Training", label: "Training", icon: Clock, color: "bg-purple-100 text-purple-800 border-purple-200" },
 ];
@@ -143,10 +142,9 @@ export const StatusChangeDialog = ({ open, onOpenChange, carers, onStatusChange 
               </Badge>
               <p className="text-sm text-gray-600 mt-1">
                 {newStatus === "Active" && "Carer will be able to receive new bookings and access the system."}
-                {newStatus === "Inactive" && "Carer will not receive new bookings but will retain system access."}
-                {newStatus === "Pending Invitation" && "Carer has not yet accepted their invitation to join."}
-                {newStatus === "On Leave" && "Carer is temporarily unavailable but will return."}
-                {newStatus === "Training" && "Carer is currently in training and has limited availability."}
+                {newStatus === "Inactive" && "Carer will be blocked from logging in. They can be reactivated later."}
+                {newStatus === "On Leave" && "Carer is temporarily unavailable but will return. Can still log in."}
+                {newStatus === "Training" && "Carer is currently in training and has limited availability. Can still log in."}
               </p>
             </div>
           )}

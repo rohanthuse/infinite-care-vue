@@ -38,7 +38,8 @@ export const CarerFilters = ({
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="pending invitation">Pending Invitation</SelectItem>
+              <SelectItem value="on leave">On Leave</SelectItem>
+              <SelectItem value="training">Training</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

@@ -15,7 +15,7 @@ export const StatusFilterStats = ({ carers, currentFilter }: StatusFilterStatsPr
     return acc;
   }, {} as Record<string, number>);
 
-  const allStatuses = ["Active", "Inactive", "Pending Invitation", "On Leave", "Training"];
+  const allStatuses = ["Active", "Inactive", "On Leave", "Training"];
   
   return (
     <div className="flex items-center gap-2 text-sm text-gray-600">
