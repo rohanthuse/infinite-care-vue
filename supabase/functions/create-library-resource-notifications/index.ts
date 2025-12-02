@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       .from('clients')
       .select('auth_user_id')
       .eq('branch_id', branch_id)
-      .eq('status', 'active')
+      .eq('status', 'Active')
       .not('auth_user_id', 'is', null);
 
     if (clientsError) {
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       .from('staff')
       .select('auth_user_id')
       .eq('branch_id', branch_id)
-      .eq('status', 'active')
+      .eq('status', 'Active')
       .not('auth_user_id', 'is', null);
 
     if (staffError) {
