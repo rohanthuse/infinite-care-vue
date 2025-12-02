@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCarerContext } from '@/hooks/useCarerContext';
 import { useCarerNavigation } from '@/hooks/useCarerNavigation';
+import { useAuthSafe } from '@/hooks/useAuthSafe';
 
 export const CarerSubHeader: React.FC = () => {
-  const { data: carerContext, isFetching } = useCarerContext();
+  const { data: carerContext, isLoading, isPending } = useCarerContext();
+  const { user, loading: authLoading } = useAuthSafe();
   const { createCarerPath } = useCarerNavigation();
   const location = useLocation();
   
@@ -17,13 +19,18 @@ export const CarerSubHeader: React.FC = () => {
   
   if (isDashboard) return null;
 
-  // Show loading only when actively fetching and no data available yet
-  const showLoading = isFetching && !carerContext;
-  const branchName = carerContext?.branchInfo?.name || 
-                     (carerContext?.staffProfile ? 'No Branch Assigned' : 'Loading...');
+  // Show loading if auth is loading OR if query is pending/loading with no data
+  const showLoading = authLoading || isLoading || (isPending && !carerContext);
+  
+  const branchName = showLoading 
+    ? 'Loading...' 
+    : (carerContext?.branchInfo?.name || 'No Branch Assigned');
+    
   const branchStatus = carerContext?.branchInfo?.status || 'active';
-  const organizationName = carerContext?.branchInfo?.organization_name || 
-                           (carerContext?.branchInfo ? 'No Organization Assigned' : '');
+  
+  const organizationName = showLoading 
+    ? '' 
+    : (carerContext?.branchInfo?.organization_name || '');
   
   return (
     <div className="bg-card border-b border-border px-4 sm:px-6 lg:px-8 py-3 shrink-0 sticky top-[64px] z-[55]">
@@ -34,14 +41,16 @@ export const CarerSubHeader: React.FC = () => {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="font-semibold text-foreground truncate">
-                {showLoading ? 'Loading...' : branchName}
+                {branchName}
               </h2>
-              <Badge 
-                variant={branchStatus?.toLowerCase() === 'active' ? 'success' : 'secondary'}
-                className="shrink-0"
-              >
-                {branchStatus}
-              </Badge>
+              {!showLoading && (
+                <Badge 
+                  variant={branchStatus?.toLowerCase() === 'active' ? 'success' : 'secondary'}
+                  className="shrink-0"
+                >
+                  {branchStatus}
+                </Badge>
+              )}
             </div>
             {organizationName && (
               <p className="text-sm text-muted-foreground truncate">
