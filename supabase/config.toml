@@ -96,3 +96,6 @@ verify_jwt = false
 
 [functions.third-party-login]
 verify_jwt = false
+
+[functions.send-event-share-email]
+verify_jwt = false
