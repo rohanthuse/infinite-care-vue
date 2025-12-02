@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '@/components/DashboardHeader';
 import { SystemInfoHeader } from '@/components/system/SystemInfoHeader';
 import { SystemSectionTabs } from '@/components/system/SystemSectionTabs';
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function SystemSubscriptionPlans() {
+  const navigate = useNavigate();
   const { data: plans, isLoading } = useSubscriptionPlans();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -84,17 +86,20 @@ export default function SystemSubscriptionPlans() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/30">
       <DashboardHeader />
       
-      <main className="flex-1 container mx-auto p-6">
-        <div className="mb-6">
-          <div className="bg-card rounded-lg shadow-sm border border-border p-4 md:p-6">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-bold">System Portal - Subscription Plans</h1>
-            </div>
-          </div>
-        </div>
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <SystemInfoHeader
+          systemInfo={{
+            status: "Operational",
+            version: "v1.0.0",
+            uptime: "99.99%",
+            serverLocation: "EU-West",
+            lastUpdate: new Date().toLocaleString(),
+          }}
+          onQuickAction={() => navigate('/system-dashboard')}
+        />
 
         <Tabs value="subscription-plans" className="space-y-6">
           <SystemSectionTabs value="subscription-plans" />
