@@ -210,6 +210,7 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
     },
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes to check tenant status
   });
 
   // Apply organization branding to CSS custom properties
