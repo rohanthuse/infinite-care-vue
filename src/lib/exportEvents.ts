@@ -115,100 +115,146 @@ const fetchOrganizationSettings = async (branchId: string): Promise<{
   }
 };
 
-// Helper function to add header to each page
+// Healthcare color palette
+const HEALTHCARE_COLORS = {
+  primary: { r: 20, g: 184, b: 166 },        // Teal
+  primaryLight: { r: 204, g: 251, b: 241 },  // Light Teal
+  secondary: { r: 59, g: 130, b: 246 },      // Blue
+  secondaryLight: { r: 219, g: 234, b: 254 }, // Light Blue
+  accent: { r: 79, g: 70, b: 229 },          // Indigo
+  dark: { r: 31, g: 41, b: 55 },             // Dark Gray
+  text: { r: 55, g: 65, b: 81 },             // Text Gray
+  textMuted: { r: 107, g: 114, b: 128 },     // Muted Gray
+  background: { r: 249, g: 250, b: 251 },    // Light Background
+  white: { r: 255, g: 255, b: 255 },
+  border: { r: 229, g: 231, b: 235 },        // Border Gray
+  success: { r: 16, g: 185, b: 129 },        // Green
+  warning: { r: 245, g: 158, b: 11 },        // Amber
+  danger: { r: 239, g: 68, b: 68 },          // Red
+};
+
+// Helper function to add healthcare-styled header to each page
 const addPDFHeader = async (
   pdf: jsPDF, 
   orgSettings: any, 
-  logoBase64: string | null
+  logoBase64: string | null,
+  isFirstPage: boolean = false
 ): Promise<number> => {
   const pageWidth = pdf.internal.pageSize.width;
   const leftMargin = 20;
   const rightMargin = pageWidth - 20;
-  let headerY = 15;
-
-  // LEFT SIDE: Company Information
-  if (orgSettings) {
-    pdf.setFontSize(11);
-    pdf.setFont(undefined, 'bold');
-    pdf.setTextColor(40, 40, 40);
-    
-    // Company Name
-    pdf.text(orgSettings.name, leftMargin, headerY);
-    headerY += 5;
-    
-    pdf.setFont(undefined, 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(80, 80, 80);
-    
-    // Address
-    if (orgSettings.address) {
-      const addressLines = pdf.splitTextToSize(orgSettings.address, 90);
-      addressLines.forEach((line: string) => {
-        pdf.text(line, leftMargin, headerY);
-        headerY += 3.5;
-      });
-    }
-    
-    // Contact Details
-    const contactDetails = [];
-    if (orgSettings.telephone) contactDetails.push(`Tel: ${orgSettings.telephone}`);
-    if (orgSettings.website) contactDetails.push(`Web: ${orgSettings.website}`);
-    if (orgSettings.email) contactDetails.push(`Email: ${orgSettings.email}`);
-    
-    contactDetails.forEach(detail => {
-      pdf.text(detail, leftMargin, headerY);
-      headerY += 3.5;
-    });
-  }
-
-  // RIGHT SIDE: Company Logo
+  
+  // Top colored bar
+  pdf.setFillColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+  pdf.rect(0, 0, pageWidth, 4, 'F');
+  
+  let headerY = 12;
+  
+  // Logo (properly sized)
   if (logoBase64) {
     try {
-      // Position logo on right side (max width: 50, max height: 30)
-      const logoX = rightMargin - 50;
-      pdf.addImage(logoBase64, 'PNG', logoX, 12, 50, 30);
+      // Calculate logo dimensions maintaining aspect ratio
+      const maxWidth = 45;
+      const maxHeight = 35;
+      pdf.addImage(logoBase64, 'PNG', leftMargin, headerY, maxWidth, maxHeight, undefined, 'FAST');
     } catch (error) {
       console.error('Error adding logo to header:', error);
     }
   }
-
-  // Add separator line below header
-  const separatorY = Math.max(headerY + 2, 45);
-  pdf.setDrawColor(200, 200, 200);
-  pdf.setLineWidth(0.5);
-  pdf.line(leftMargin, separatorY, rightMargin, separatorY);
+  
+  // Organization info (next to logo)
+  const textStartX = leftMargin + 50;
+  if (orgSettings) {
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
+    pdf.text(orgSettings.name, textStartX, headerY + 5);
+    
+    pdf.setFontSize(8);
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
+    
+    let contactY = headerY + 10;
+    
+    // Contact line (compact)
+    const contactParts = [];
+    if (orgSettings.telephone) contactParts.push(orgSettings.telephone);
+    if (orgSettings.email) contactParts.push(orgSettings.email);
+    if (orgSettings.website) contactParts.push(orgSettings.website);
+    
+    if (contactParts.length > 0) {
+      pdf.text(contactParts.join(' | '), textStartX, contactY);
+      contactY += 4;
+    }
+  }
+  
+  // Document title (centered, only on first page)
+  if (isFirstPage) {
+    headerY = 55;
+    
+    // Separator line
+    pdf.setDrawColor(HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b);
+    pdf.setLineWidth(0.3);
+    pdf.line(leftMargin, headerY, rightMargin, headerY);
+    
+    headerY += 10;
+    
+    // Document title with icon
+    pdf.setFontSize(16);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+    pdf.text('📋 EVENT & LOG REPORT', pageWidth / 2, headerY, { align: 'center' });
+    
+    headerY += 6;
+    
+    // Generation timestamp
+    pdf.setFontSize(8);
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
+    pdf.text(`Generated: ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')}`, pageWidth / 2, headerY, { align: 'center' });
+    
+    headerY += 10;
+  } else {
+    headerY = 52;
+  }
   
   // Reset colors
   pdf.setTextColor(0, 0, 0);
   
-  return separatorY + 8; // Return Y position for content start
+  return headerY;
 };
 
-// Helper function to add footer to each page
+// Helper function to add healthcare-styled footer to each page
 const addPDFFooter = (pdf: jsPDF, orgSettings: any, pageNumber: number, totalPages: number) => {
   const pageWidth = pdf.internal.pageSize.width;
   const pageHeight = pdf.internal.pageSize.height;
-  const footerY = pageHeight - 15;
+  const footerY = pageHeight - 12;
   
-  // Add subtle line above footer
-  pdf.setDrawColor(220, 220, 220);
+  // Separator line
+  pdf.setDrawColor(HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b);
   pdf.setLineWidth(0.3);
-  pdf.line(20, footerY - 5, pageWidth - 20, footerY - 5);
+  pdf.line(20, footerY - 6, pageWidth - 20, footerY - 6);
   
-  // Footer text
-  pdf.setFontSize(8);
+  // Confidential notice (left)
+  pdf.setFontSize(7);
+  pdf.setFont(undefined, 'bold');
+  pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
+  pdf.text('🔒 CONFIDENTIAL', 20, footerY);
+  
   pdf.setFont(undefined, 'normal');
-  pdf.setTextColor(120, 120, 120);
+  pdf.setFontSize(6);
+  pdf.text('For authorized personnel only', 20, footerY + 3);
   
-  const footerText = orgSettings 
-    ? `© ${orgSettings.name} | ${orgSettings.website || 'www.company.com'} | All Rights Reserved`
-    : '© Company Name | All Rights Reserved';
-  
-  pdf.text(footerText, pageWidth / 2, footerY, { align: 'center' });
-  
-  // Page number
+  // Page numbers (right)
   pdf.setFontSize(7);
   pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 20, footerY, { align: 'right' });
+  
+  // Organization info (center)
+  if (orgSettings) {
+    pdf.setFontSize(6);
+    const orgText = `© ${orgSettings.name} | ${orgSettings.website || ''} | ${format(new Date(), 'yyyy-MM-dd')}`;
+    pdf.text(orgText, pageWidth / 2, footerY + 3, { align: 'center' });
+  }
   
   // Reset colors
   pdf.setTextColor(0, 0, 0);
@@ -431,117 +477,129 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   const rightMargin = pageWidth - 20;
 
   // === PAGE 1: HEADER ===
-  let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+  let currentY = await addPDFHeader(pdf, orgSettings, logoBase64, true);
   
-  // === EVENT TITLE BANNER ===
-  // Add colored banner with event title and metadata
-  const bannerHeight = 35;
-  const severityColors: Record<string, { r: number; g: number; b: number }> = {
-    'Critical': { r: 239, g: 68, b: 68 },
-    'High': { r: 251, g: 191, b: 36 },
-    'Medium': { r: 59, g: 130, b: 246 },
-    'Low': { r: 34, g: 197, b: 94 }
-  };
+  // === EVENT SUMMARY CARD ===
+  // Outer card border
+  pdf.setDrawColor(HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b);
+  pdf.setLineWidth(0.5);
+  pdf.setFillColor(HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b);
+  const cardHeight = 42;
+  pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, cardHeight, 2, 2, 'FD');
   
-  const bannerColor = severityColors[event.severity] || { r: 107, g: 114, b: 128 };
+  // Event title box
+  pdf.setFillColor(HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b);
+  pdf.roundedRect(leftMargin + 3, currentY + 3, rightMargin - leftMargin - 6, 12, 1, 1, 'F');
   
-  // Draw gradient-like banner (top darker, bottom lighter)
-  pdf.setFillColor(bannerColor.r, bannerColor.g, bannerColor.b);
-  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, bannerHeight, 'F');
-  
-  // Event Title
-  pdf.setFontSize(16);
+  pdf.setFontSize(14);
   pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(255, 255, 255);
+  pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
   const titleText = event.title || 'Untitled Event';
-  const titleLines = pdf.splitTextToSize(titleText, rightMargin - leftMargin - 20);
-  pdf.text(titleLines[0], leftMargin + 5, currentY + 8);
+  const titleLines = pdf.splitTextToSize(titleText, rightMargin - leftMargin - 50);
+  pdf.text(titleLines[0], leftMargin + 6, currentY + 10);
   
-  // Event ID badge
-  pdf.setFontSize(9);
-  pdf.setFont(undefined, 'normal');
-  const eventIdShort = event.id?.substring(0, 8).toUpperCase() || 'N/A';
-  pdf.text(`ID: ${eventIdShort}`, leftMargin + 5, currentY + 16);
-  
-  // Event Date & Time
-  if (event.event_date || event.event_time) {
-    const dateTimeText = `${event.event_date || ''} ${event.event_time || ''}`.trim();
-    pdf.text(dateTimeText, leftMargin + 5, currentY + 22);
-  }
-  
-  // Severity Badge (right side)
-  if (event.severity) {
-    pdf.setFillColor(255, 255, 255);
-    pdf.setTextColor(bannerColor.r, bannerColor.g, bannerColor.b);
-    pdf.setFontSize(10);
-    pdf.setFont(undefined, 'bold');
-    const sevText = event.severity.toUpperCase();
-    const sevWidth = pdf.getTextWidth(sevText) + 8;
-    const sevX = rightMargin - sevWidth - 5;
-    pdf.roundedRect(sevX, currentY + 5, sevWidth, 8, 2, 2, 'F');
-    pdf.text(sevText, sevX + 4, currentY + 11);
-  }
-  
-  // Status Badge (right side, below severity)
-  if (event.status) {
-    const statusColors: Record<string, { r: number; g: number; b: number }> = {
-      'Open': { r: 59, g: 130, b: 246 },
-      'In Progress': { r: 139, g: 92, b: 246 },
-      'Resolved': { r: 34, g: 197, b: 94 },
-      'Closed': { r: 107, g: 114, b: 128 }
-    };
-    const statusColor = statusColors[event.status] || { r: 107, g: 114, b: 128 };
-    
-    pdf.setFillColor(255, 255, 255);
-    pdf.setTextColor(statusColor.r, statusColor.g, statusColor.b);
-    pdf.setFontSize(9);
-    pdf.setFont(undefined, 'bold');
-    const statText = event.status;
-    const statWidth = pdf.getTextWidth(statText) + 8;
-    const statX = rightMargin - statWidth - 5;
-    pdf.roundedRect(statX, currentY + 16, statWidth, 7, 2, 2, 'F');
-    pdf.text(statText, statX + 4, currentY + 21);
-  }
-  
-  currentY += bannerHeight + 3;
-  
-  // === DOCUMENT INFO BOX ===
-  pdf.setFillColor(249, 250, 251);
-  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, 18, 'F');
-  
+  // Event ID
   pdf.setFontSize(8);
   pdf.setFont(undefined, 'normal');
-  pdf.setTextColor(75, 85, 99);
+  const eventIdShort = `ID: ${event.id?.substring(0, 8).toUpperCase() || 'N/A'}`;
+  pdf.text(eventIdShort, rightMargin - 6 - pdf.getTextWidth(eventIdShort), currentY + 10);
   
-  const infoY = currentY + 5;
-  pdf.text(`Client: ${event.client_name || 'N/A'}`, leftMargin + 5, infoY);
-  pdf.text(`Branch: ${event.branch_name || 'N/A'}`, leftMargin + 5, infoY + 5);
-  pdf.text(`Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 5, infoY + 10);
+  // Metadata with icons
+  let metaY = currentY + 20;
+  pdf.setFontSize(8);
+  pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
   
-  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, rightMargin - 5, infoY + 10, { align: 'right' });
+  const eventDate = event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'N/A';
+  pdf.text(`📅 Date: ${eventDate}`, leftMargin + 6, metaY);
   
-  currentY += 22;
+  pdf.text(`🕐 Time: ${event.event_time || 'N/A'}`, leftMargin + 55, metaY);
+  
+  metaY += 5;
+  pdf.text(`👤 Client: ${event.client_name || 'N/A'}`, leftMargin + 6, metaY);
+  
+  pdf.text(`📍 ${event.location || 'Location not specified'}`, leftMargin + 55, metaY);
+  
+  metaY += 5;
+  pdf.text(`📝 Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 6, metaY);
+  
+  // Status badges at bottom
+  metaY += 7;
+  
+  // Severity badge
+  const severityColors: Record<string, { r: number; g: number; b: number }> = {
+    'Critical': HEALTHCARE_COLORS.danger,
+    'High': HEALTHCARE_COLORS.warning,
+    'Medium': HEALTHCARE_COLORS.secondary,
+    'Low': HEALTHCARE_COLORS.success
+  };
+  const sevColor = severityColors[event.severity] || HEALTHCARE_COLORS.textMuted;
+  
+  pdf.setFillColor(sevColor.r, sevColor.g, sevColor.b);
+  pdf.setTextColor(HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b);
+  pdf.setFontSize(7);
+  pdf.setFont(undefined, 'bold');
+  const sevText = event.severity?.toUpperCase() || 'UNKNOWN';
+  const sevWidth = pdf.getTextWidth(sevText) + 6;
+  pdf.roundedRect(leftMargin + 6, metaY - 3, sevWidth, 6, 1, 1, 'F');
+  pdf.text(sevText, leftMargin + 9, metaY + 1);
+  
+  // Status badge
+  const statusColors: Record<string, { r: number; g: number; b: number }> = {
+    'Open': HEALTHCARE_COLORS.secondary,
+    'In Progress': HEALTHCARE_COLORS.accent,
+    'Resolved': HEALTHCARE_COLORS.success,
+    'Closed': HEALTHCARE_COLORS.textMuted
+  };
+  const statColor = statusColors[event.status] || HEALTHCARE_COLORS.textMuted;
+  
+  pdf.setFillColor(statColor.r, statColor.g, statColor.b);
+  const statText = event.status || 'Unknown';
+  const statWidth = pdf.getTextWidth(statText) + 6;
+  const statX = leftMargin + 6 + sevWidth + 4;
+  pdf.roundedRect(statX, metaY - 3, statWidth, 6, 1, 1, 'F');
+  pdf.text(statText, statX + 3, metaY + 1);
+  
+  // Event Type badge
+  pdf.setFillColor(HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b);
+  pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+  const typeText = event.event_type || 'Event';
+  const typeWidth = pdf.getTextWidth(typeText) + 6;
+  const typeX = statX + statWidth + 4;
+  pdf.roundedRect(typeX, metaY - 3, typeWidth, 6, 1, 1, 'F');
+  pdf.text(typeText, typeX + 3, metaY + 1);
+  
+  currentY += cardHeight + 8;
   
   // Reset text color
   pdf.setTextColor(0, 0, 0);
 
-  // Helper to add section header with background
-  const addSectionHeader = async (title: string) => {
+
+  // Helper to add section header with healthcare styling
+  const addSectionHeader = async (title: string, accentColor: { r: number; g: number; b: number } = HEALTHCARE_COLORS.primary) => {
     // Check if we need a new page
     if (currentY > 240) {
       pdf.addPage();
-      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false);
     }
     
-    // Section header with background
-    pdf.setFillColor(245, 247, 250);
-    pdf.rect(leftMargin, currentY - 5, rightMargin - leftMargin, 10, 'F');
+    // Left accent bar
+    pdf.setFillColor(accentColor.r, accentColor.g, accentColor.b);
+    pdf.rect(leftMargin, currentY - 2, 3, 8, 'F');
     
-    pdf.setFontSize(12);
+    // Section title
+    pdf.setFontSize(11);
     pdf.setFont(undefined, 'bold');
-    pdf.setTextColor(40, 40, 40);
-    pdf.text(title, leftMargin + 3, currentY);
-    currentY += 8;
+    pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
+    pdf.text(title.toUpperCase(), leftMargin + 6, currentY + 3);
+    
+    currentY += 6;
+    
+    // Underline separator
+    pdf.setDrawColor(accentColor.r, accentColor.g, accentColor.b);
+    pdf.setLineWidth(0.5);
+    pdf.line(leftMargin, currentY, rightMargin, currentY);
+    
+    currentY += 5;
     
     // Reset
     pdf.setFont(undefined, 'normal');
@@ -549,7 +607,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   };
   
   // === BASIC EVENT DETAILS ===
-  await addSectionHeader('Event Information');
+  await addSectionHeader('Event Information', HEALTHCARE_COLORS.primary);
   
   const basicEventData = [
     ['Event ID', event.id?.substring(0, 13) + '...' || 'N/A'],
@@ -571,44 +629,54 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   autoTable(pdf, {
     body: basicEventData,
     startY: currentY,
-    theme: 'striped',
+    theme: 'plain',
     styles: { 
       fontSize: 9,
-      cellPadding: 3
+      cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+      lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      lineWidth: 0.2,
+      textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
     },
     columnStyles: { 
       0: { 
         fontStyle: 'bold', 
-        fillColor: [240, 243, 246],
+        fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
         cellWidth: 55,
-        textColor: [40, 40, 40]
+        textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
       },
       1: {
+        fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
         cellWidth: 115
       }
     },
-    margin: { left: leftMargin, right: rightMargin }
+    margin: { left: leftMargin, right: rightMargin },
+    tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+    tableLineWidth: 0.3
   });
 
   currentY = (pdf as any).lastAutoTable.finalY + 10;
   
   // === DESCRIPTION ===
   if (event.description) {
-    await addSectionHeader('Event Description');
+    await addSectionHeader('Event Description', HEALTHCARE_COLORS.secondary);
     
-    // Add description in a bordered box
-    pdf.setDrawColor(220, 220, 220);
-    pdf.setFillColor(252, 252, 252);
+    // Add description in a bordered box with healthcare styling
+    pdf.setDrawColor(HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b);
+    pdf.setFillColor(HEALTHCARE_COLORS.background.r, HEALTHCARE_COLORS.background.g, HEALTHCARE_COLORS.background.b);
     
     pdf.setFontSize(9);
     pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
     const splitDescription = pdf.splitTextToSize(event.description, 160);
     
     const boxHeight = (splitDescription.length * 5) + 10;
-    pdf.rect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 'FD');
+    pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, boxHeight, 1, 1, 'FD');
     
     pdf.text(splitDescription, leftMargin + 5, currentY + 7);
     currentY += boxHeight + 10;
+    
+    // Reset color
+    pdf.setTextColor(0, 0, 0);
   }
   
   // === STAFF INFORMATION ===
@@ -616,7 +684,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
       (event.staff_aware && event.staff_aware.length > 0) || 
       (event.other_people_present && event.other_people_present.length > 0)) {
     
-    await addSectionHeader('Staff & People Information');
+    await addSectionHeader('Staff & People Information', HEALTHCARE_COLORS.success);
     
     const staffData = [];
     if (event.staff_present && event.staff_present.length > 0) {
@@ -635,20 +703,28 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: staffData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: leftMargin, right: rightMargin },
+      tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      tableLineWidth: 0.3
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -656,7 +732,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === FOLLOW-UP INFORMATION ===
   if (event.action_required || event.follow_up_date || event.follow_up_assigned_to || event.follow_up_notes) {
-    await addSectionHeader('Follow-Up Details');
+    await addSectionHeader('Follow-Up Details', HEALTHCARE_COLORS.warning);
     
     const followUpData = [
       ['Action Required', event.action_required ? 'Yes' : 'No'],
@@ -668,20 +744,28 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: followUpData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: leftMargin, right: rightMargin },
+      tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      tableLineWidth: 0.3
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -689,7 +773,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === ACTIONS TAKEN ===
   if (event.immediate_actions_taken || event.investigation_required || event.lessons_learned) {
-    await addSectionHeader('Actions & Investigation');
+    await addSectionHeader('Actions & Investigation', HEALTHCARE_COLORS.accent);
     
     const actionsData = [];
     if (event.immediate_actions_taken) {
@@ -709,20 +793,28 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: actionsData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: leftMargin, right: rightMargin },
+      tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      tableLineWidth: 0.3
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -730,7 +822,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === RISK ASSESSMENT ===
   if (event.risk_level || event.contributing_factors || event.environmental_factors || event.preventable !== undefined) {
-    await addSectionHeader('Risk Assessment');
+    await addSectionHeader('Risk Assessment', HEALTHCARE_COLORS.danger);
     
     const riskData = [
       ['Risk Level', event.risk_level || 'Not assessed'],
@@ -750,20 +842,28 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: riskData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: leftMargin, right: rightMargin },
+      tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      tableLineWidth: 0.3
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -771,7 +871,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   
   // === COMPLIANCE & NOTIFICATIONS ===
   if (event.family_notified || event.gp_notified || event.insurance_notified || event.external_reporting_required) {
-    await addSectionHeader('Compliance & Notifications');
+    await addSectionHeader('Compliance & Notifications', HEALTHCARE_COLORS.accent);
     
     const complianceData = [];
     
@@ -807,20 +907,28 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     autoTable(pdf, {
       body: complianceData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: leftMargin, right: rightMargin },
+      tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      tableLineWidth: 0.3
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -830,10 +938,10 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
   if (event.body_map_front_image_url || event.body_map_back_image_url) {
     if (currentY > 180) {
       pdf.addPage();
-      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false);
     }
     
-    await addSectionHeader('Body Map');
+    await addSectionHeader('Body Map', HEALTHCARE_COLORS.textMuted);
     
     if (event.body_map_front_image_url) {
       try {
@@ -841,24 +949,29 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         if (frontImageBase64) {
           pdf.setFontSize(10);
           pdf.setFont(undefined, 'bold');
+          pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
           pdf.text('Front View:', 20, currentY);
           currentY += 5;
           
           pdf.addImage(frontImageBase64, 'PNG', 20, currentY, 80, 100);
           currentY += 105;
+          
+          pdf.setTextColor(0, 0, 0);
         }
       } catch (error) {
         console.error('Error adding front body map image:', error);
         pdf.setFontSize(9);
         pdf.setFont(undefined, 'italic');
+        pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
         pdf.text('Front body map image could not be loaded', 20, currentY);
         currentY += 10;
+        pdf.setTextColor(0, 0, 0);
       }
     }
     
     if (event.body_map_back_image_url && currentY > 180) {
       pdf.addPage();
-      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false);
     }
     
     if (event.body_map_back_image_url) {
@@ -867,18 +980,23 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         if (backImageBase64) {
           pdf.setFontSize(10);
           pdf.setFont(undefined, 'bold');
+          pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
           pdf.text('Back View:', 20, currentY);
           currentY += 5;
           
           pdf.addImage(backImageBase64, 'PNG', 20, currentY, 80, 100);
           currentY += 105;
+          
+          pdf.setTextColor(0, 0, 0);
         }
       } catch (error) {
         console.error('Error adding back body map image:', error);
         pdf.setFontSize(9);
         pdf.setFont(undefined, 'italic');
+        pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
         pdf.text('Back body map image could not be loaded', 20, currentY);
         currentY += 10;
+        pdf.setTextColor(0, 0, 0);
       }
     }
   }
@@ -888,16 +1006,23 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
     // Check if we need a new page
     if (currentY > 220) {
       pdf.addPage();
-      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false);
     }
     
-    await addSectionHeader('Attachments');
+    await addSectionHeader(`Attachments (${event.attachments.length} files)`, HEALTHCARE_COLORS.textMuted);
     
-    // Create attachments table data
+    // Create attachments table data with file type icons
     const attachmentsTableData = event.attachments.map((attachment: any, index: number) => {
       const fileName = attachment.file_name || attachment.name || 'Unknown File';
       const fileType = attachment.file_type || attachment.type || 'Unknown';
       const fileSize = attachment.file_size || attachment.size;
+      
+      // File type icon
+      let icon = '📄';
+      if (fileType.includes('image')) icon = '🖼️';
+      else if (fileType.includes('pdf')) icon = '📋';
+      else if (fileType.includes('video')) icon = '🎥';
+      else if (fileType.includes('word') || fileType.includes('doc')) icon = '📝';
       
       // Format file size
       let sizeDisplay = 'N/A';
@@ -913,40 +1038,44 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
       
       return [
         (index + 1).toString(),
-        fileName,
-        fileType,
+        `${icon} ${fileName}`,
+        fileType.split('/').pop()?.toUpperCase() || 'N/A',
         sizeDisplay
       ];
     });
     
-    // Add attachments table
+    // Add attachments table with healthcare styling
     autoTable(pdf, {
       head: [['#', 'File Name', 'Type', 'Size']],
       body: attachmentsTableData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 8,
-        cellPadding: 3,
-        lineColor: [200, 200, 200],
-        lineWidth: 0.1
+        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
       },
       headStyles: {
-        fillColor: [107, 114, 128],
-        textColor: [255, 255, 255],
+        fillColor: [HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b],
+        textColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
         fontStyle: 'bold',
-        halign: 'left'
+        halign: 'left',
+        fontSize: 9
       },
       columnStyles: { 
-        0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 80 },
-        2: { cellWidth: 50 },
-        3: { cellWidth: 25, halign: 'right' }
+        0: { cellWidth: 12, halign: 'center', fillColor: [HEALTHCARE_COLORS.background.r, HEALTHCARE_COLORS.background.g, HEALTHCARE_COLORS.background.b] },
+        1: { cellWidth: 90, fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b] },
+        2: { cellWidth: 40, fillColor: [HEALTHCARE_COLORS.background.r, HEALTHCARE_COLORS.background.g, HEALTHCARE_COLORS.background.b] },
+        3: { cellWidth: 28, halign: 'right', fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b] }
       },
       margin: { left: leftMargin, right: rightMargin },
       alternateRowStyles: {
-        fillColor: [249, 250, 251]
-      }
+        fillColor: [HEALTHCARE_COLORS.background.r, HEALTHCARE_COLORS.background.g, HEALTHCARE_COLORS.background.b]
+      },
+      tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      tableLineWidth: 0.3
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -965,13 +1094,12 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
 };
 
 export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob> => {
+  // Use the same implementation as exportEventToPDF but return blob
   const pdf = new jsPDF();
   
-  // Fetch staff names and organization settings if branch_id is available
   const staffMap = event.branch_id ? await fetchStaffNames(event.branch_id) : new Map();
   const orgSettings = event.branch_id ? await fetchOrganizationSettings(event.branch_id) : null;
 
-  // Pre-load logo once for reuse across pages
   let logoBase64: string | null = null;
   if (orgSettings?.logo_url) {
     try {
@@ -985,120 +1113,104 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   const leftMargin = 20;
   const rightMargin = pageWidth - 20;
 
-  // === PAGE 1: HEADER ===
-  let currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+  let currentY = await addPDFHeader(pdf, orgSettings, logoBase64, true);
   
-  // === EVENT TITLE BANNER ===
-  // Add colored banner with event title and metadata
-  const bannerHeight = 35;
-  const severityColors: Record<string, { r: number; g: number; b: number }> = {
-    'Critical': { r: 239, g: 68, b: 68 },
-    'High': { r: 251, g: 191, b: 36 },
-    'Medium': { r: 59, g: 130, b: 246 },
-    'Low': { r: 34, g: 197, b: 94 }
-  };
+  // Reuse same styling - create summary card
+  pdf.setDrawColor(HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b);
+  pdf.setLineWidth(0.5);
+  pdf.setFillColor(HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b);
+  const cardHeightBlob = 42;
+  pdf.roundedRect(leftMargin, currentY, rightMargin - leftMargin, cardHeightBlob, 2, 2, 'FD');
   
-  const bannerColor = severityColors[event.severity] || { r: 107, g: 114, b: 128 };
+  pdf.setFillColor(HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b);
+  pdf.roundedRect(leftMargin + 3, currentY + 3, rightMargin - leftMargin - 6, 12, 1, 1, 'F');
   
-  // Draw gradient-like banner (top darker, bottom lighter)
-  pdf.setFillColor(bannerColor.r, bannerColor.g, bannerColor.b);
-  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, bannerHeight, 'F');
-  
-  // Event Title
-  pdf.setFontSize(16);
+  pdf.setFontSize(14);
   pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(255, 255, 255);
-  const titleText = event.title || 'Untitled Event';
-  const titleLines = pdf.splitTextToSize(titleText, rightMargin - leftMargin - 20);
-  pdf.text(titleLines[0], leftMargin + 5, currentY + 8);
-  
-  // Event ID badge
-  pdf.setFontSize(9);
-  pdf.setFont(undefined, 'normal');
-  const eventIdShort = event.id?.substring(0, 8).toUpperCase() || 'N/A';
-  pdf.text(`ID: ${eventIdShort}`, leftMargin + 5, currentY + 16);
-  
-  // Event Date & Time
-  if (event.event_date || event.event_time) {
-    const dateTimeText = `${event.event_date || ''} ${event.event_time || ''}`.trim();
-    pdf.text(dateTimeText, leftMargin + 5, currentY + 22);
-  }
-  
-  // Severity Badge (right side)
-  if (event.severity) {
-    pdf.setFillColor(255, 255, 255);
-    pdf.setTextColor(bannerColor.r, bannerColor.g, bannerColor.b);
-    pdf.setFontSize(10);
-    pdf.setFont(undefined, 'bold');
-    const sevText = event.severity.toUpperCase();
-    const sevWidth = pdf.getTextWidth(sevText) + 8;
-    const sevX = rightMargin - sevWidth - 5;
-    pdf.roundedRect(sevX, currentY + 5, sevWidth, 8, 2, 2, 'F');
-    pdf.text(sevText, sevX + 4, currentY + 11);
-  }
-  
-  // Status Badge (right side, below severity)
-  if (event.status) {
-    const statusColors: Record<string, { r: number; g: number; b: number }> = {
-      'Open': { r: 59, g: 130, b: 246 },
-      'In Progress': { r: 139, g: 92, b: 246 },
-      'Resolved': { r: 34, g: 197, b: 94 },
-      'Closed': { r: 107, g: 114, b: 128 }
-    };
-    const statusColor = statusColors[event.status] || { r: 107, g: 114, b: 128 };
-    
-    pdf.setFillColor(255, 255, 255);
-    pdf.setTextColor(statusColor.r, statusColor.g, statusColor.b);
-    pdf.setFontSize(9);
-    pdf.setFont(undefined, 'bold');
-    const statText = event.status;
-    const statWidth = pdf.getTextWidth(statText) + 8;
-    const statX = rightMargin - statWidth - 5;
-    pdf.roundedRect(statX, currentY + 16, statWidth, 7, 2, 2, 'F');
-    pdf.text(statText, statX + 4, currentY + 21);
-  }
-  
-  currentY += bannerHeight + 3;
-  
-  // === DOCUMENT INFO BOX ===
-  pdf.setFillColor(249, 250, 251);
-  pdf.rect(leftMargin, currentY, rightMargin - leftMargin, 18, 'F');
+  pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+  const titleTextBlob = event.title || 'Untitled Event';
+  const titleLinesBlob = pdf.splitTextToSize(titleTextBlob, rightMargin - leftMargin - 50);
+  pdf.text(titleLinesBlob[0], leftMargin + 6, currentY + 10);
   
   pdf.setFontSize(8);
   pdf.setFont(undefined, 'normal');
-  pdf.setTextColor(75, 85, 99);
+  const eventIdShortBlob = `ID: ${event.id?.substring(0, 8).toUpperCase() || 'N/A'}`;
+  pdf.text(eventIdShortBlob, rightMargin - 6 - pdf.getTextWidth(eventIdShortBlob), currentY + 10);
   
-  const infoY = currentY + 5;
-  pdf.text(`Client: ${event.client_name || 'N/A'}`, leftMargin + 5, infoY);
-  pdf.text(`Branch: ${event.branch_name || 'N/A'}`, leftMargin + 5, infoY + 5);
-  pdf.text(`Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 5, infoY + 10);
+  let metaYBlob = currentY + 20;
+  pdf.setFontSize(8);
+  pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
   
-  pdf.text(`Generated: ${format(new Date(), 'PPP p')}`, rightMargin - 5, infoY + 10, { align: 'right' });
+  const eventDateBlob = event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy') : 'N/A';
+  pdf.text(`📅 Date: ${eventDateBlob}`, leftMargin + 6, metaYBlob);
+  pdf.text(`🕐 Time: ${event.event_time || 'N/A'}`, leftMargin + 55, metaYBlob);
+  metaYBlob += 5;
+  pdf.text(`👤 Client: ${event.client_name || 'N/A'}`, leftMargin + 6, metaYBlob);
+  pdf.text(`📍 ${event.location || 'Location not specified'}`, leftMargin + 55, metaYBlob);
+  metaYBlob += 5;
+  pdf.text(`📝 Recorded By: ${event.recorded_by_staff_name || event.reporter || 'N/A'}`, leftMargin + 6, metaYBlob);
+  metaYBlob += 7;
   
-  currentY += 22;
+  const severityColorsBlob: Record<string, { r: number; g: number; b: number }> = {
+    'Critical': HEALTHCARE_COLORS.danger,
+    'High': HEALTHCARE_COLORS.warning,
+    'Medium': HEALTHCARE_COLORS.secondary,
+    'Low': HEALTHCARE_COLORS.success
+  };
+  const sevColorBlob = severityColorsBlob[event.severity] || HEALTHCARE_COLORS.textMuted;
   
-  // Reset text color
+  pdf.setFillColor(sevColorBlob.r, sevColorBlob.g, sevColorBlob.b);
+  pdf.setTextColor(HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b);
+  pdf.setFontSize(7);
+  pdf.setFont(undefined, 'bold');
+  const sevTextBlob = event.severity?.toUpperCase() || 'UNKNOWN';
+  const sevWidthBlob = pdf.getTextWidth(sevTextBlob) + 6;
+  pdf.roundedRect(leftMargin + 6, metaYBlob - 3, sevWidthBlob, 6, 1, 1, 'F');
+  pdf.text(sevTextBlob, leftMargin + 9, metaYBlob + 1);
+  
+  const statusColorsBlob: Record<string, { r: number; g: number; b: number }> = {
+    'Open': HEALTHCARE_COLORS.secondary,
+    'In Progress': HEALTHCARE_COLORS.accent,
+    'Resolved': HEALTHCARE_COLORS.success,
+    'Closed': HEALTHCARE_COLORS.textMuted
+  };
+  const statColorBlob = statusColorsBlob[event.status] || HEALTHCARE_COLORS.textMuted;
+  
+  pdf.setFillColor(statColorBlob.r, statColorBlob.g, statColorBlob.b);
+  const statTextBlob = event.status || 'Unknown';
+  const statWidthBlob = pdf.getTextWidth(statTextBlob) + 6;
+  const statXBlob = leftMargin + 6 + sevWidthBlob + 4;
+  pdf.roundedRect(statXBlob, metaYBlob - 3, statWidthBlob, 6, 1, 1, 'F');
+  pdf.text(statTextBlob, statXBlob + 3, metaYBlob + 1);
+  
+  pdf.setFillColor(HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b);
+  pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+  const typeTextBlob = event.event_type || 'Event';
+  const typeWidthBlob = pdf.getTextWidth(typeTextBlob) + 6;
+  const typeXBlob = statXBlob + statWidthBlob + 4;
+  pdf.roundedRect(typeXBlob, metaYBlob - 3, typeWidthBlob, 6, 1, 1, 'F');
+  pdf.text(typeTextBlob, typeXBlob + 3, metaYBlob + 1);
+  
+  currentY += cardHeightBlob + 8;
   pdf.setTextColor(0, 0, 0);
 
-  // Helper to add section header with background
-  const addSectionHeader = async (title: string) => {
-    // Check if we need a new page
+  // Helper matches exportEventToPDF styling
+  const addSectionHeaderBlob = async (title: string, accentColor: { r: number; g: number; b: number } = HEALTHCARE_COLORS.primary) => {
     if (currentY > 240) {
       pdf.addPage();
-      currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
+      currentY = await addPDFHeader(pdf, orgSettings, logoBase64, false);
     }
-    
-    // Section header with background
-    pdf.setFillColor(245, 247, 250);
-    pdf.rect(leftMargin, currentY - 5, rightMargin - leftMargin, 10, 'F');
-    
-    pdf.setFontSize(12);
+    pdf.setFillColor(accentColor.r, accentColor.g, accentColor.b);
+    pdf.rect(leftMargin, currentY - 2, 3, 8, 'F');
+    pdf.setFontSize(11);
     pdf.setFont(undefined, 'bold');
-    pdf.setTextColor(40, 40, 40);
-    pdf.text(title, leftMargin + 3, currentY);
-    currentY += 8;
-    
-    // Reset
+    pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
+    pdf.text(title.toUpperCase(), leftMargin + 6, currentY + 3);
+    currentY += 6;
+    pdf.setDrawColor(accentColor.r, accentColor.g, accentColor.b);
+    pdf.setLineWidth(0.5);
+    pdf.line(leftMargin, currentY, rightMargin, currentY);
+    currentY += 5;
     pdf.setFont(undefined, 'normal');
     pdf.setTextColor(0, 0, 0);
   };
