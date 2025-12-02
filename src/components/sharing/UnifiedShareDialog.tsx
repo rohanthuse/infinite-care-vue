@@ -3,8 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Share2, Users, Download, Loader2 } from "lucide-react";
+import { Share2, Users, Download, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { shareViaWebAPI, shareWithStaff, downloadFile, ShareRecord } from "@/utils/sharingUtils";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -22,7 +23,30 @@ interface UnifiedShareDialogProps {
   reportType?: string;
   reportData?: any;
   fileFormat?: 'pdf' | 'csv' | 'excel';
+  eventSummary?: {
+    eventType: string;
+    severity: string;
+    eventDate: string;
+    clientName: string;
+    location?: string;
+    description?: string;
+  };
+  organizationName?: string;
 }
+
+// Helper function to convert Blob to base64
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      // Remove the data:application/pdf;base64, prefix
+      resolve(base64.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 
 export function UnifiedShareDialog({
   open,
@@ -35,11 +59,15 @@ export function UnifiedShareDialog({
   reportType,
   reportData,
   fileFormat = 'pdf',
+  eventSummary,
+  organizationName = 'Care Management System',
 }: UnifiedShareDialogProps) {
   const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
   const [shareNote, setShareNote] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [activeTab, setActiveTab] = useState("web");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   // Fetch staff for the branch
   const { data: staffList = [] } = useQuery({
@@ -61,6 +89,20 @@ export function UnifiedShareDialog({
     value: staff.id,
     label: `${staff.first_name} ${staff.last_name}`,
   }));
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError("Email address is required");
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
 
   const handleWebShare = async () => {
     setIsSharing(true);
@@ -110,6 +152,52 @@ export function UnifiedShareDialog({
     }
   };
 
+  const handleEmailShare = async () => {
+    if (!validateEmail(emailAddress)) {
+      return;
+    }
+
+    setIsSharing(true);
+    try {
+      // Generate PDF
+      const pdfBlob = await onGeneratePDF();
+      
+      // Convert blob to base64
+      const pdfBase64 = await blobToBase64(pdfBlob);
+
+      // Call edge function to send email
+      const { data, error } = await supabase.functions.invoke('send-event-share-email', {
+        body: {
+          recipientEmail: emailAddress,
+          eventTitle: contentTitle,
+          eventSummary: eventSummary || {
+            eventType: contentType,
+            severity: 'N/A',
+            eventDate: new Date().toLocaleDateString(),
+            clientName: 'N/A',
+          },
+          pdfBase64,
+          organizationName,
+        },
+      });
+
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw new Error(error.message || 'Failed to send email');
+      }
+
+      toast.success("Event Log shared successfully via email.");
+      setEmailAddress("");
+      setEmailError("");
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error sharing via email:', error);
+      toast.error(error.message || "Failed to send email. Please try again.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const handleDownload = async () => {
     setIsSharing(true);
     try {
@@ -126,6 +214,13 @@ export function UnifiedShareDialog({
 
   const supportsWebShare = navigator.share !== undefined;
 
+  // Calculate grid columns based on available tabs
+  const getGridCols = () => {
+    let count = 3; // team, email, download always present
+    if (supportsWebShare) count++;
+    return `grid-cols-${count}`;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -140,7 +235,7 @@ export function UnifiedShareDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${supportsWebShare ? 'grid-cols-4' : 'grid-cols-3'}`}>
             {supportsWebShare && (
               <TabsTrigger value="web">
                 <Share2 className="h-4 w-4 mr-2" />
@@ -150,6 +245,10 @@ export function UnifiedShareDialog({
             <TabsTrigger value="team">
               <Users className="h-4 w-4 mr-2" />
               Team
+            </TabsTrigger>
+            <TabsTrigger value="email">
+              <Mail className="h-4 w-4 mr-2" />
+              Email
             </TabsTrigger>
             <TabsTrigger value="download">
               <Download className="h-4 w-4 mr-2" />
@@ -218,6 +317,48 @@ export function UnifiedShareDialog({
                 <>
                   <Users className="mr-2 h-4 w-4" />
                   Share with {selectedStaff.length || 0} {selectedStaff.length === 1 ? 'Person' : 'People'}
+                </>
+              )}
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="email" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email-address">Email Address</Label>
+              <Input
+                id="email-address"
+                type="email"
+                placeholder="Enter recipient's email address"
+                value={emailAddress}
+                onChange={(e) => {
+                  setEmailAddress(e.target.value);
+                  if (emailError) setEmailError("");
+                }}
+                className={emailError ? "border-destructive" : ""}
+              />
+              {emailError && (
+                <p className="text-sm text-destructive">{emailError}</p>
+              )}
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              The {contentType} will be sent as a PDF attachment to the provided email address.
+            </p>
+
+            <Button
+              onClick={handleEmailShare}
+              disabled={isSharing || !emailAddress}
+              className="w-full"
+            >
+              {isSharing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Share via Email
                 </>
               )}
             </Button>
