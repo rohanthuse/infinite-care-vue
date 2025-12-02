@@ -124,7 +124,6 @@ Deno.serve(async (req) => {
         resource_title: resource_title,
         notification_type: 'library_resource'
       },
-      is_read: false,
     }));
 
     console.log('Inserting notifications:', notifications.length);
