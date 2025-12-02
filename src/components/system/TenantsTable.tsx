@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { formatSafeDate } from '@/lib/dateUtils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -56,10 +56,43 @@ export const TenantsTable = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  // Calculate expiry badge
+  const getExpiryBadge = (tenant: Tenant) => {
+    if (!tenant.subscription_expires_at) return null;
+    
+    const expiryDate = new Date(tenant.subscription_expires_at);
+    const now = new Date();
+    const daysRemaining = differenceInDays(expiryDate, now);
+    
+    if (daysRemaining < 0) {
+      return <Badge variant="destructive" className="ml-2">Expired</Badge>;
+    }
+    
+    if (daysRemaining <= 7) {
+      return <Badge className="bg-red-500 hover:bg-red-600 ml-2">Expiring ({daysRemaining}d)</Badge>;
+    }
+    
+    if (daysRemaining <= 30) {
+      return <Badge className="bg-yellow-500 hover:bg-yellow-600 ml-2">Expiring ({daysRemaining}d)</Badge>;
+    }
+    
+    return null;
+  };
+
   // Filter tenants based on search and status
   const filteredTenants = tenants?.filter(tenant => {
     const matchesSearch = tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.slug.toLowerCase().includes(searchTerm.toLowerCase()) || tenant.contact_email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || tenant.subscription_status === statusFilter;
+    
+    // Enhanced status filter to include expiry
+    let matchesStatus = true;
+    if (statusFilter === 'expired') {
+      matchesStatus = tenant.subscription_expires_at 
+        ? new Date(tenant.subscription_expires_at) < new Date()
+        : false;
+    } else if (statusFilter !== 'all') {
+      matchesStatus = tenant.subscription_status === statusFilter;
+    }
+    
     return matchesSearch && matchesStatus;
   }) || [];
   const handleExport = () => {
@@ -157,6 +190,7 @@ export const TenantsTable = ({
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="suspended">Suspended</option>
+              <option value="expired">Expired</option>
             </select>
           </div>
         </div>
@@ -209,9 +243,12 @@ export const TenantsTable = ({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={tenant.subscription_status === 'active' ? 'default' : 'destructive'} className="capitalize">
-                      {tenant.subscription_status}
-                    </Badge>
+                    <div className="flex items-center">
+                      <Badge variant={tenant.subscription_status === 'active' ? 'default' : 'destructive'} className="capitalize">
+                        {tenant.subscription_status}
+                      </Badge>
+                      {getExpiryBadge(tenant)}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {tenant.subscription_expires_at ? (
