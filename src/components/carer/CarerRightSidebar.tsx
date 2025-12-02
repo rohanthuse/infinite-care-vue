@@ -33,6 +33,7 @@ import { ChevronDown } from "lucide-react";
     { icon: Users, label: "My Clients", value: "clients", description: "Client list" },
     { icon: ClipboardList, label: "My Tasks", value: "tasks", description: "Task management" },
     { icon: AlertTriangle, label: "My Assignments", value: "my-tasks", description: "Assigned tasks" },
+    { icon: FileText, label: "Events & Logs", value: "events-logs", description: "Assigned events and logs" },
   ];
 
   const secondaryGroups = [
