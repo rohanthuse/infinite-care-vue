@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Check, CheckCheck, MessageSquare, FileText, AlertCircle } from "lucide-react";
 import {
   Popover,
@@ -13,6 +14,8 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
 export const SystemNotifications: React.FC = () => {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead } = useSystemNotifications();
 
   const getNotificationIcon = (type: string) => {
@@ -40,7 +43,7 @@ export const SystemNotifications: React.FC = () => {
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
@@ -127,6 +130,19 @@ export const SystemNotifications: React.FC = () => {
             </div>
           </ScrollArea>
         )}
+        
+        <div className="border-t mt-4 pt-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              setOpen(false);
+              navigate('/system-dashboard?tab=notifications');
+            }}
+          >
+            View All Notifications
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
