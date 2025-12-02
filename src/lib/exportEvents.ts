@@ -70,6 +70,7 @@ const loadImageAsBase64 = async (imageUrl: string): Promise<string | null> => {
 // Helper function to fetch organization/company settings
 const fetchOrganizationSettings = async (branchId: string): Promise<{
   name: string;
+  branchName: string | null;
   address: string | null;
   telephone: string | null;
   website: string | null;
@@ -77,10 +78,10 @@ const fetchOrganizationSettings = async (branchId: string): Promise<{
   logo_url: string | null;
 } | null> => {
   try {
-    // First get the organization_id from the branch
+    // First get the organization_id and branch name from the branch
     const { data: branchData, error: branchError } = await supabase
       .from('branches')
-      .select('organization_id')
+      .select('organization_id, name')
       .eq('id', branchId)
       .single();
 
@@ -103,6 +104,7 @@ const fetchOrganizationSettings = async (branchId: string): Promise<{
 
     return {
       name: orgData.name || 'Company Name',
+      branchName: branchData.name || null,
       address: orgData.address,
       telephone: orgData.contact_phone,
       website: orgData.website,
@@ -115,13 +117,13 @@ const fetchOrganizationSettings = async (branchId: string): Promise<{
   }
 };
 
-// Healthcare color palette
+// Healthcare color palette with blue theme
 const HEALTHCARE_COLORS = {
-  primary: { r: 20, g: 184, b: 166 },        // Teal
-  primaryLight: { r: 204, g: 251, b: 241 },  // Light Teal
-  secondary: { r: 59, g: 130, b: 246 },      // Blue
-  secondaryLight: { r: 219, g: 234, b: 254 }, // Light Blue
-  accent: { r: 79, g: 70, b: 229 },          // Indigo
+  primary: { r: 30, g: 136, b: 229 },        // Healthcare Blue #1E88E5
+  primaryLight: { r: 227, g: 242, b: 253 },  // Light Blue #E3F2FD
+  secondary: { r: 66, g: 165, b: 245 },      // Light Blue #42A5F5
+  secondaryLight: { r: 187, g: 222, b: 251 }, // Very Light Blue #BBDEFB
+  accent: { r: 13, g: 71, b: 161 },          // Dark Blue #0D47A1
   dark: { r: 31, g: 41, b: 55 },             // Dark Gray
   text: { r: 55, g: 65, b: 81 },             // Text Gray
   textMuted: { r: 107, g: 114, b: 128 },     // Muted Gray
@@ -138,80 +140,126 @@ const addPDFHeader = async (
   pdf: jsPDF, 
   orgSettings: any, 
   logoBase64: string | null,
-  isFirstPage: boolean = false
+  isFirstPage: boolean = false,
+  generatedBy?: string
 ): Promise<number> => {
   const pageWidth = pdf.internal.pageSize.width;
   const leftMargin = 20;
   const rightMargin = pageWidth - 20;
   
-  // Top colored bar
+  // Top colored healthcare blue bar
   pdf.setFillColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
   pdf.rect(0, 0, pageWidth, 4, 'F');
   
   let headerY = 12;
   
-  // Logo (properly sized)
+  // LEFT SIDE: Organization Information
+  if (orgSettings) {
+    pdf.setFontSize(13);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
+    pdf.text(orgSettings.name, leftMargin, headerY + 5);
+    
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
+    
+    let infoY = headerY + 11;
+    
+    // Branch Name
+    if (orgSettings.branchName) {
+      pdf.text(orgSettings.branchName, leftMargin, infoY);
+      infoY += 5;
+    }
+    
+    // Address
+    if (orgSettings.address) {
+      const addressLines = pdf.splitTextToSize(orgSettings.address, 90);
+      pdf.text(addressLines, leftMargin, infoY);
+      infoY += addressLines.length * 5;
+    }
+    
+    // Contact Number
+    if (orgSettings.telephone) {
+      pdf.text(`Tel: ${orgSettings.telephone}`, leftMargin, infoY);
+      infoY += 5;
+    }
+    
+    // Email
+    if (orgSettings.email) {
+      pdf.text(`Email: ${orgSettings.email}`, leftMargin, infoY);
+    }
+  }
+  
+  // RIGHT SIDE: Company Logo (properly sized and aligned)
   if (logoBase64) {
     try {
-      // Calculate logo dimensions maintaining aspect ratio
-      const maxWidth = 45;
-      const maxHeight = 35;
-      pdf.addImage(logoBase64, 'PNG', leftMargin, headerY, maxWidth, maxHeight, undefined, 'FAST');
+      const maxWidth = 40;
+      const maxHeight = 30;
+      const logoX = rightMargin - maxWidth;
+      const logoY = headerY;
+      pdf.addImage(logoBase64, 'PNG', logoX, logoY, maxWidth, maxHeight, undefined, 'FAST');
     } catch (error) {
       console.error('Error adding logo to header:', error);
     }
   }
   
-  // Organization info (next to logo)
-  const textStartX = leftMargin + 50;
-  if (orgSettings) {
-    pdf.setFontSize(12);
-    pdf.setFont(undefined, 'bold');
-    pdf.setTextColor(HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b);
-    pdf.text(orgSettings.name, textStartX, headerY + 5);
-    
-    pdf.setFontSize(8);
-    pdf.setFont(undefined, 'normal');
-    pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
-    
-    let contactY = headerY + 10;
-    
-    // Contact line (compact)
-    const contactParts = [];
-    if (orgSettings.telephone) contactParts.push(orgSettings.telephone);
-    if (orgSettings.email) contactParts.push(orgSettings.email);
-    if (orgSettings.website) contactParts.push(orgSettings.website);
-    
-    if (contactParts.length > 0) {
-      pdf.text(contactParts.join(' | '), textStartX, contactY);
-      contactY += 4;
-    }
-  }
-  
-  // Document title (centered, only on first page)
+  // REPORT META INFORMATION (only on first page)
   if (isFirstPage) {
     headerY = 55;
     
     // Separator line
     pdf.setDrawColor(HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b);
-    pdf.setLineWidth(0.3);
+    pdf.setLineWidth(0.5);
     pdf.line(leftMargin, headerY, rightMargin, headerY);
+    
+    headerY += 8;
+    
+    // Report meta block
+    pdf.setFontSize(9);
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+    pdf.text('Report Name:', leftMargin, headerY);
+    
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
+    pdf.text('Event & Log Report', leftMargin + 30, headerY);
+    
+    headerY += 5;
+    
+    pdf.setFont(undefined, 'bold');
+    pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+    pdf.text('Generated On:', leftMargin, headerY);
+    
+    pdf.setFont(undefined, 'normal');
+    pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
+    pdf.text(format(new Date(), 'MMMM d, yyyy \'at\' h:mm a'), leftMargin + 30, headerY);
+    
+    if (generatedBy) {
+      headerY += 5;
+      
+      pdf.setFont(undefined, 'bold');
+      pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+      pdf.text('Generated By:', leftMargin, headerY);
+      
+      pdf.setFont(undefined, 'normal');
+      pdf.setTextColor(HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b);
+      pdf.text(generatedBy, leftMargin + 30, headerY);
+    }
     
     headerY += 10;
     
-    // Document title with icon
-    pdf.setFontSize(16);
+    // "Event Details Report" heading with blue underline
+    pdf.setFontSize(14);
     pdf.setFont(undefined, 'bold');
     pdf.setTextColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
-    pdf.text('📋 EVENT & LOG REPORT', pageWidth / 2, headerY, { align: 'center' });
+    pdf.text('Event Details Report', leftMargin, headerY);
     
-    headerY += 6;
-    
-    // Generation timestamp
-    pdf.setFontSize(8);
-    pdf.setFont(undefined, 'normal');
-    pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
-    pdf.text(`Generated: ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')}`, pageWidth / 2, headerY, { align: 'center' });
+    // Blue underline
+    const headingWidth = pdf.getTextWidth('Event Details Report');
+    pdf.setDrawColor(HEALTHCARE_COLORS.primary.r, HEALTHCARE_COLORS.primary.g, HEALTHCARE_COLORS.primary.b);
+    pdf.setLineWidth(1);
+    pdf.line(leftMargin, headerY + 2, leftMargin + headingWidth, headerY + 2);
     
     headerY += 10;
   } else {
@@ -235,25 +283,17 @@ const addPDFFooter = (pdf: jsPDF, orgSettings: any, pageNumber: number, totalPag
   pdf.setLineWidth(0.3);
   pdf.line(20, footerY - 6, pageWidth - 20, footerY - 6);
   
-  // Confidential notice (left)
-  pdf.setFontSize(7);
-  pdf.setFont(undefined, 'bold');
-  pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
-  pdf.text('🔒 CONFIDENTIAL', 20, footerY);
-  
-  pdf.setFont(undefined, 'normal');
-  pdf.setFontSize(6);
-  pdf.text('For authorized personnel only', 20, footerY + 3);
-  
   // Page numbers (right)
   pdf.setFontSize(7);
+  pdf.setFont(undefined, 'normal');
+  pdf.setTextColor(HEALTHCARE_COLORS.textMuted.r, HEALTHCARE_COLORS.textMuted.g, HEALTHCARE_COLORS.textMuted.b);
   pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 20, footerY, { align: 'right' });
   
   // Organization info (center)
   if (orgSettings) {
     pdf.setFontSize(6);
     const orgText = `© ${orgSettings.name} | ${orgSettings.website || ''} | ${format(new Date(), 'yyyy-MM-dd')}`;
-    pdf.text(orgText, pageWidth / 2, footerY + 3, { align: 'center' });
+    pdf.text(orgText, pageWidth / 2, footerY, { align: 'center' });
   }
   
   // Reset colors
@@ -709,17 +749,21 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
         lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
         lineWidth: 0.2,
-        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b]
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+        halign: 'left'
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
           fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b],
+          halign: 'left'
         },
         1: {
-          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115,
+          halign: 'left'
         }
       },
       margin: { left: leftMargin, right: rightMargin },
@@ -1216,7 +1260,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   };
   
   // === BASIC EVENT DETAILS ===
-  await addSectionHeader('Event Information');
+  await addSectionHeaderBlob('Event Information');
   
   const basicEventData = [
     ['Event ID', event.id?.substring(0, 13) + '...' || 'N/A'],
@@ -1261,7 +1305,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === DESCRIPTION ===
   if (event.description) {
-    await addSectionHeader('Event Description');
+    await addSectionHeaderBlob('Event Description');
     
     // Add description in a bordered box
     pdf.setDrawColor(220, 220, 220);
@@ -1283,7 +1327,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
       (event.staff_aware && event.staff_aware.length > 0) || 
       (event.other_people_present && event.other_people_present.length > 0)) {
     
-    await addSectionHeader('Staff & People Information');
+    await addSectionHeaderBlob('Staff & People Information');
     
     const staffData = [];
     if (event.staff_present && event.staff_present.length > 0) {
@@ -1323,7 +1367,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === FOLLOW-UP INFORMATION ===
   if (event.action_required || event.follow_up_date || event.follow_up_assigned_to || event.follow_up_notes) {
-    await addSectionHeader('Follow-Up Details');
+    await addSectionHeaderBlob('Follow-Up Details');
     
     const followUpData = [
       ['Action Required', event.action_required ? 'Yes' : 'No'],
@@ -1356,7 +1400,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === ACTIONS TAKEN ===
   if (event.immediate_actions_taken || event.investigation_required || event.lessons_learned) {
-    await addSectionHeader('Actions & Investigation');
+    await addSectionHeaderBlob('Actions & Investigation');
     
     const actionsData = [];
     if (event.immediate_actions_taken) {
@@ -1397,7 +1441,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === RISK ASSESSMENT ===
   if (event.risk_level || event.contributing_factors || event.environmental_factors || event.preventable !== undefined) {
-    await addSectionHeader('Risk Assessment');
+    await addSectionHeaderBlob('Risk Assessment');
     
     const riskData = [
       ['Risk Level', event.risk_level || 'Not assessed'],
@@ -1438,7 +1482,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   
   // === COMPLIANCE & NOTIFICATIONS ===
   if (event.family_notified || event.gp_notified || event.insurance_notified || event.external_reporting_required) {
-    await addSectionHeader('Compliance & Notifications');
+    await addSectionHeaderBlob('Compliance & Notifications');
     
     const complianceData = [];
     
@@ -1500,7 +1544,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
       currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
     }
     
-    await addSectionHeader('Body Map');
+    await addSectionHeaderBlob('Body Map');
     
     if (event.body_map_front_image_url) {
       try {
@@ -1558,7 +1602,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
       currentY = await addPDFHeader(pdf, orgSettings, logoBase64);
     }
     
-    await addSectionHeader('Attachments');
+    await addSectionHeaderBlob('Attachments');
     
     // Create attachments table data
     const attachmentsTableData = event.attachments.map((attachment: any, index: number) => {
