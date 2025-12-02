@@ -9064,6 +9064,38 @@ export type Database = {
           },
         ]
       }
+      subscription_expiry_notifications: {
+        Row: {
+          created_at: string | null
+          days_before_expiry: number
+          id: string
+          notification_sent_at: string | null
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          days_before_expiry: number
+          id?: string
+          notification_sent_at?: string | null
+          organization_id: string
+        }
+        Update: {
+          created_at?: string | null
+          days_before_expiry?: number
+          id?: string
+          notification_sent_at?: string | null
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_expiry_notifications_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -11083,6 +11115,7 @@ export type Database = {
         Args: { p_branch_id: string }
         Returns: Json
       }
+      check_pending_agreements: { Args: never; Returns: Json }
       check_user_role_health: {
         Args: never
         Returns: {
@@ -11539,7 +11572,7 @@ export type Database = {
       }
       get_system_analytics: { Args: never; Returns: Json }
       get_system_notifications: {
-        Args: { p_system_user_id: string }
+        Args: { p_user_id?: string }
         Returns: {
           category: string
           created_at: string
@@ -11550,7 +11583,6 @@ export type Database = {
           read_at: string
           title: string
           type: string
-          updated_at: string
           user_id: string
         }[]
       }
@@ -11682,6 +11714,7 @@ export type Database = {
       notify_unassigned_bookings: { Args: never; Returns: undefined }
       process_expiring_agreements: { Args: never; Returns: Json }
       process_subscription_expiry: { Args: never; Returns: Json }
+      process_subscription_expiry_notifications: { Args: never; Returns: Json }
       repair_system_user_organization_sync: { Args: never; Returns: Json }
       reset_system_user_password_with_session:
         | {
