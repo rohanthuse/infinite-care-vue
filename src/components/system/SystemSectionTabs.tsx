@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 // Shared system-level tabs shown across System Dashboard, Tenants, Users, Tenant Agreements, Subscription Plans, and Reports
 // This component only renders the TabsList + Triggers. Parent should wrap with <Tabs value=...>
 // Navigation is handled here to keep behavior consistent.
-export type SystemTabValue = "dashboard" | "tenants" | "users" | "tenant-agreements" | "subscription-plans" | "reports";
+// Note: "notifications" is a hidden tab accessible only via URL parameter and menu
+export type SystemTabValue = "dashboard" | "tenants" | "users" | "tenant-agreements" | "subscription-plans" | "reports" | "notifications";
 
 interface SystemSectionTabsProps {
   value: SystemTabValue;
