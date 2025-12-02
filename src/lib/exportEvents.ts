@@ -1282,23 +1282,29 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
   autoTable(pdf, {
     body: basicEventData,
     startY: currentY,
-    theme: 'striped',
+    theme: 'plain',
     styles: { 
       fontSize: 9,
-      cellPadding: 3
+      cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+      lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+      lineWidth: 0.2,
+      textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+      halign: 'left',
+      overflow: 'linebreak'
     },
     columnStyles: { 
       0: { 
         fontStyle: 'bold', 
-        fillColor: [240, 243, 246],
+        fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
         cellWidth: 55,
-        textColor: [40, 40, 40]
+        textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
       },
       1: {
+        fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
         cellWidth: 115
       }
     },
-    margin: { left: leftMargin, right: rightMargin }
+    margin: { left: 20, right: 20 }
   });
 
   currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1346,20 +1352,29 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: staffData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+        halign: 'left',
+        overflow: 'linebreak'
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1379,20 +1394,29 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: followUpData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+        halign: 'left',
+        overflow: 'linebreak'
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1420,20 +1444,29 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: actionsData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+        halign: 'left',
+        overflow: 'linebreak'
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1461,20 +1494,29 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: riskData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+        halign: 'left',
+        overflow: 'linebreak'
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1518,20 +1560,29 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
     autoTable(pdf, {
       body: complianceData,
       startY: currentY,
-      theme: 'striped',
+      theme: 'plain',
       styles: { 
         fontSize: 9,
-        cellPadding: 3
+        cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+        lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        lineWidth: 0.2,
+        textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+        halign: 'left',
+        overflow: 'linebreak'
       },
       columnStyles: { 
         0: { 
           fontStyle: 'bold', 
-          fillColor: [240, 243, 246],
+          fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
           cellWidth: 55,
-          textColor: [40, 40, 40]
+          textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+        },
+        1: {
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
     
     currentY = (pdf as any).lastAutoTable.finalY + 10;
