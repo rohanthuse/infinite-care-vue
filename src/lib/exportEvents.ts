@@ -135,6 +135,48 @@ const HEALTHCARE_COLORS = {
   danger: { r: 239, g: 68, b: 68 },          // Red
 };
 
+// Helper function to generate body map summary from points data
+const generateBodyMapSummary = (bodyMapPoints: any[]): { 
+  totalMarks: number;
+  frontCount: number;
+  backCount: number;
+  types: string[];
+  severities: string[];
+  notes: string[];
+} => {
+  if (!bodyMapPoints || !Array.isArray(bodyMapPoints) || bodyMapPoints.length === 0) {
+    return {
+      totalMarks: 0,
+      frontCount: 0,
+      backCount: 0,
+      types: [],
+      severities: [],
+      notes: []
+    };
+  }
+  
+  const frontPoints = bodyMapPoints.filter(p => p.side === 'front');
+  const backPoints = bodyMapPoints.filter(p => p.side === 'back');
+  
+  // Extract unique types
+  const types = [...new Set(bodyMapPoints.map(p => p.type).filter(Boolean))];
+  
+  // Extract unique severities
+  const severities = [...new Set(bodyMapPoints.map(p => p.severity).filter(Boolean))];
+  
+  // Extract all notes
+  const notes = bodyMapPoints.map(p => p.notes).filter(Boolean);
+  
+  return {
+    totalMarks: bodyMapPoints.length,
+    frontCount: frontPoints.length,
+    backCount: backPoints.length,
+    types,
+    severities,
+    notes
+  };
+};
+
 // Helper function to add healthcare-styled header to each page
 const addPDFHeader = async (
   pdf: jsPDF, 
@@ -689,7 +731,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         cellWidth: 115
       }
     },
-    margin: { left: leftMargin, right: rightMargin },
+    margin: { left: 20, right: 20 },
     tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
     tableLineWidth: 0.3
   });
@@ -766,7 +808,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
           halign: 'left'
         }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
       tableLineWidth: 0.3
     });
@@ -804,10 +846,11 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
           textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
         },
         1: {
-          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
       tableLineWidth: 0.3
     });
@@ -853,10 +896,11 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
           textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
         },
         1: {
-          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
       tableLineWidth: 0.3
     });
@@ -902,10 +946,11 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
           textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
         },
         1: {
-          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
       tableLineWidth: 0.3
     });
@@ -967,10 +1012,11 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
           textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
         },
         1: {
-          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b]
+          fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+          cellWidth: 115
         }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
       tableLineWidth: 0.3
     });
@@ -1043,6 +1089,54 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         pdf.setTextColor(0, 0, 0);
       }
     }
+    
+    // Add Body Map Summary after images
+    if (event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0) {
+      const summary = generateBodyMapSummary(event.body_map_points);
+      
+      currentY += 10;
+      
+      const summaryData = [
+        ['Total Marks', `${summary.totalMarks} recorded`],
+        ['Front Side', `${summary.frontCount} marks`],
+        ['Back Side', `${summary.backCount} marks`],
+        ['Types', summary.types.length > 0 ? summary.types.join(', ') : 'Not specified'],
+        ['Severity Levels', summary.severities.length > 0 ? summary.severities.join(', ') : 'Not specified'],
+        ['Notes', summary.notes.length > 0 ? summary.notes.join('; ') : 'No notes recorded']
+      ];
+      
+      autoTable(pdf, {
+        body: summaryData,
+        startY: currentY,
+        theme: 'plain',
+        styles: { 
+          fontSize: 9,
+          cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+          lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+          lineWidth: 0.2,
+          textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+          halign: 'left',
+          overflow: 'linebreak'
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
+            cellWidth: 55,
+            textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+          },
+          1: {
+            fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+            cellWidth: 115
+          }
+        },
+        margin: { left: 20, right: 20 },
+        tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        tableLineWidth: 0.3
+      });
+      
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+    }
   }
   
   // === ATTACHMENTS INFO ===
@@ -1114,7 +1208,7 @@ export const exportEventToPDF = async (event: ExportableEvent, filename?: string
         2: { cellWidth: 40, fillColor: [HEALTHCARE_COLORS.background.r, HEALTHCARE_COLORS.background.g, HEALTHCARE_COLORS.background.b] },
         3: { cellWidth: 28, halign: 'right', fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b] }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       alternateRowStyles: {
         fillColor: [HEALTHCARE_COLORS.background.r, HEALTHCARE_COLORS.background.g, HEALTHCARE_COLORS.background.b]
       },
@@ -1643,6 +1737,54 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
         currentY += 10;
       }
     }
+    
+    // Add Body Map Summary after images
+    if (event.body_map_points && Array.isArray(event.body_map_points) && event.body_map_points.length > 0) {
+      const summary = generateBodyMapSummary(event.body_map_points);
+      
+      currentY += 10;
+      
+      const summaryData = [
+        ['Total Marks', `${summary.totalMarks} recorded`],
+        ['Front Side', `${summary.frontCount} marks`],
+        ['Back Side', `${summary.backCount} marks`],
+        ['Types', summary.types.length > 0 ? summary.types.join(', ') : 'Not specified'],
+        ['Severity Levels', summary.severities.length > 0 ? summary.severities.join(', ') : 'Not specified'],
+        ['Notes', summary.notes.length > 0 ? summary.notes.join('; ') : 'No notes recorded']
+      ];
+      
+      autoTable(pdf, {
+        body: summaryData,
+        startY: currentY,
+        theme: 'plain',
+        styles: { 
+          fontSize: 9,
+          cellPadding: { top: 4, right: 6, bottom: 4, left: 6 },
+          lineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+          lineWidth: 0.2,
+          textColor: [HEALTHCARE_COLORS.text.r, HEALTHCARE_COLORS.text.g, HEALTHCARE_COLORS.text.b],
+          halign: 'left',
+          overflow: 'linebreak'
+        },
+        columnStyles: { 
+          0: { 
+            fontStyle: 'bold', 
+            fillColor: [HEALTHCARE_COLORS.primaryLight.r, HEALTHCARE_COLORS.primaryLight.g, HEALTHCARE_COLORS.primaryLight.b],
+            cellWidth: 55,
+            textColor: [HEALTHCARE_COLORS.dark.r, HEALTHCARE_COLORS.dark.g, HEALTHCARE_COLORS.dark.b]
+          },
+          1: {
+            fillColor: [HEALTHCARE_COLORS.white.r, HEALTHCARE_COLORS.white.g, HEALTHCARE_COLORS.white.b],
+            cellWidth: 115
+          }
+        },
+        margin: { left: 20, right: 20 },
+        tableLineColor: [HEALTHCARE_COLORS.border.r, HEALTHCARE_COLORS.border.g, HEALTHCARE_COLORS.border.b],
+        tableLineWidth: 0.3
+      });
+      
+      currentY = (pdf as any).lastAutoTable.finalY + 10;
+    }
   }
   
   // === ATTACHMENTS INFO ===
@@ -1705,7 +1847,7 @@ export const exportEventToPDFBlob = async (event: ExportableEvent): Promise<Blob
         2: { cellWidth: 50 },
         3: { cellWidth: 25, halign: 'right' }
       },
-      margin: { left: leftMargin, right: rightMargin },
+      margin: { left: 20, right: 20 },
       alternateRowStyles: {
         fillColor: [249, 250, 251]
       }
@@ -1962,7 +2104,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
           cellWidth: 110
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
 
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -1998,7 +2140,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
           cellWidth: 110
         }
       },
-      margin: { left: leftMargin, right: rightMargin }
+      margin: { left: 20, right: 20 }
     });
 
     currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2035,7 +2177,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2074,7 +2216,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2111,7 +2253,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2149,7 +2291,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2188,7 +2330,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2221,7 +2363,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2312,7 +2454,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
               cellWidth: 110
             }
           },
-          margin: { left: leftMargin, right: rightMargin }
+          margin: { left: 20, right: 20 }
         });
 
         currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2349,7 +2491,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             cellWidth: 110
           }
         },
-        margin: { left: leftMargin, right: rightMargin }
+        margin: { left: 20, right: 20 }
       });
 
       currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2412,7 +2554,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
             textColor: [40, 40, 40],
             fontStyle: 'bold'
           },
-          margin: { left: leftMargin, right: rightMargin }
+          margin: { left: 20, right: 20 }
         });
 
         currentY = (pdf as any).lastAutoTable.finalY + 10;
@@ -2455,7 +2597,7 @@ export const exportClientProfileToPDF = async (clientId: string, filename?: stri
               cellWidth: 110
             }
           },
-          margin: { left: leftMargin, right: rightMargin }
+          margin: { left: 20, right: 20 }
         });
 
         currentY = (pdf as any).lastAutoTable.finalY + 10;
