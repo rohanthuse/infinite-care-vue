@@ -56,7 +56,7 @@ export const useCarerContext = () => {
           status,
           address,
           organization_id,
-          organizations (
+          organizations!branches_organization_id_fkey (
             name
           )
         `)
