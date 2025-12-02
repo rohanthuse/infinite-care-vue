@@ -129,7 +129,7 @@ serve(async (req) => {
       })
     }
 
-    // Log status change to audit logs
+    // Log status change to audit logs and create notifications
     if (statusChanged && requesterId) {
       const auditLogEntry = {
         system_user_id: requesterId,
@@ -152,6 +152,39 @@ serve(async (req) => {
         // Don't fail the request if audit logging fails
       } else {
         console.log('[update-system-tenant] Audit log created for status change:', auditLogEntry)
+      }
+
+      // Create notifications for all system admins about status change
+      const { data: systemUsers, error: sysUserError } = await supabaseAdmin
+        .from('system_users')
+        .select('auth_user_id')
+        .eq('is_active', true)
+
+      if (!sysUserError && systemUsers && systemUsers.length > 0) {
+        const notifications = systemUsers.map(sysUser => ({
+          user_id: sysUser.auth_user_id,
+          type: 'tenant_status_change',
+          category: filteredUpdates.subscription_status === 'suspended' ? 'system' : 'info',
+          priority: filteredUpdates.subscription_status === 'suspended' ? 'high' : 'medium',
+          title: 'Tenant Status Changed',
+          message: `Tenant "${currentTenant.name}" status changed to ${filteredUpdates.subscription_status}`,
+          data: {
+            tenant_id: id,
+            tenant_name: currentTenant.name,
+            old_status: currentTenant.subscription_status,
+            new_status: filteredUpdates.subscription_status
+          }
+        }))
+
+        const { error: notifError } = await supabaseAdmin
+          .from('notifications')
+          .insert(notifications)
+
+        if (notifError) {
+          console.error('[update-system-tenant] Notification creation error:', notifError)
+        } else {
+          console.log(`[update-system-tenant] Created ${notifications.length} status change notifications`)
+        }
       }
     }
 

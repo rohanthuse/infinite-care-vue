@@ -18,6 +18,17 @@ serve(async (req) => {
 
     console.log('[process-subscription-expiry] Starting subscription expiry processing...');
 
+    // First, process expiry notifications
+    console.log('[process-subscription-expiry] Processing expiry notifications...');
+    const { data: notifData, error: notifError } = await supabase.rpc('process_subscription_expiry_notifications');
+    
+    if (notifError) {
+      console.error('[process-subscription-expiry] Notification error:', notifError);
+    } else {
+      console.log('[process-subscription-expiry] Notifications sent:', notifData);
+    }
+
+    // Then, mark expired subscriptions as inactive
     const { data, error } = await supabase.rpc('process_subscription_expiry');
 
     if (error) {
