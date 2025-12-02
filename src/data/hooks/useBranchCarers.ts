@@ -385,8 +385,11 @@ export function useUpdateCarer() {
     onSuccess: (data, variables) => {
       console.log("[useUpdateCarer] Success:", data);
       
-      // Invalidate all related queries to ensure UI updates
-      queryClient.invalidateQueries({ queryKey: ["branch-carers"] });
+      // Invalidate all related queries with immediate refetch to ensure UI updates
+      queryClient.invalidateQueries({ 
+        queryKey: ["branch-carers"],
+        refetchType: 'all'
+      });
       queryClient.invalidateQueries({ queryKey: ["carer-profile"] });
       queryClient.invalidateQueries({ queryKey: ["carer-profile", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["carer-profile-by-id"] });
@@ -396,7 +399,10 @@ export function useUpdateCarer() {
       // Update the carer in the cache if available
       const branchId = data?.branch_id;
       if (branchId) {
-        queryClient.invalidateQueries({ queryKey: ["branch-carers", branchId] });
+        queryClient.invalidateQueries({ 
+          queryKey: ["branch-carers", branchId],
+          refetchType: 'all'
+        });
       }
 
       // Also invalidate any auth-related queries that might cache profile data
