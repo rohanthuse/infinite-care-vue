@@ -437,7 +437,14 @@ export function CarePlanViewDialog({ carePlanId, open, onOpenChange, context = '
         return <AboutMeSection aboutMe={wizardData.about_me} />;
       
       case 3: // Medical and Mental
-        return <MedicalSection medicalInfo={wizardData.medical_info} />;
+        return (
+          <MedicalSection 
+            medicalInfo={wizardData.medical_info}
+            news2MonitoringEnabled={wizardData.news2_monitoring_enabled}
+            news2MonitoringFrequency={wizardData.news2_monitoring_frequency}
+            news2MonitoringNotes={wizardData.news2_monitoring_notes}
+          />
+        );
       
       case 4: // Medication
         return <MedicationSection medications={medications} />;

@@ -6,9 +6,17 @@ import { formatNews2Frequency } from '@/utils/news2FrequencyUtils';
 
 interface MedicalSectionProps {
   medicalInfo: any;
+  news2MonitoringEnabled?: boolean;
+  news2MonitoringFrequency?: string;
+  news2MonitoringNotes?: string;
 }
 
-export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
+export function MedicalSection({ 
+  medicalInfo, 
+  news2MonitoringEnabled,
+  news2MonitoringFrequency,
+  news2MonitoringNotes 
+}: MedicalSectionProps) {
   const data = medicalInfo || {};
 
   const renderList = (label: string, items: any[], isAlert = false) => {
@@ -167,7 +175,7 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
         {/* NEWS2 Monitoring */}
         <div>
           <h4 className="font-semibold text-base mb-3">NEWS2 Monitoring</h4>
-          {data.news2_monitoring_enabled ? (
+          {news2MonitoringEnabled ? (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="h-4 w-4 text-blue-600" />
@@ -176,12 +184,12 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Frequency:</span>
-                  <span className="ml-2">{formatNews2Frequency(data.news2_monitoring_frequency)}</span>
+                  <span className="ml-2">{formatNews2Frequency(news2MonitoringFrequency)}</span>
                 </div>
-                {data.news2_monitoring_notes && (
+                {news2MonitoringNotes && (
                   <div className="col-span-2">
                     <span className="text-muted-foreground">Notes:</span>
-                    <p className="mt-1">{data.news2_monitoring_notes}</p>
+                    <p className="mt-1">{news2MonitoringNotes}</p>
                   </div>
                 )}
               </div>
