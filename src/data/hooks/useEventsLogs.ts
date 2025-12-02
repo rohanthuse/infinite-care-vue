@@ -321,43 +321,115 @@ export const useCreateEventLog = () => {
         }
       }
 
-      // Create notifications for assigned staff
-      const assignedStaffIds = [];
-      if (eventData.follow_up_assigned_to) assignedStaffIds.push(eventData.follow_up_assigned_to);
-      if (eventData.investigation_assigned_to) assignedStaffIds.push(eventData.investigation_assigned_to);
+      // Create notifications for assigned staff with enhanced details
+      const staffAssignments: { staffId: string; type: string; additionalInfo?: string; priority: string }[] = [];
 
-      for (const staffId of assignedStaffIds) {
+      // Add recorded_by_staff notification
+      if (eventData.recorded_by_staff_id) {
+        staffAssignments.push({
+          staffId: eventData.recorded_by_staff_id,
+          type: 'Recording',
+          additionalInfo: 'You have recorded this event and can view it on your portal.',
+          priority: 'low'
+        });
+      }
+
+      // Add follow-up assignment notification
+      if (eventData.follow_up_assigned_to && eventData.follow_up_assigned_to !== eventData.recorded_by_staff_id) {
+        const followUpInfo = eventData.follow_up_date 
+          ? `Follow-up required by ${eventData.follow_up_date}.${eventData.follow_up_notes ? ' Notes: ' + eventData.follow_up_notes : ''}`
+          : eventData.follow_up_notes || 'Follow-up action required.';
+        
+        staffAssignments.push({
+          staffId: eventData.follow_up_assigned_to,
+          type: 'Follow-up',
+          additionalInfo: followUpInfo,
+          priority: 'medium'
+        });
+      }
+
+      // Add investigation assignment notification
+      if (eventData.investigation_assigned_to && 
+          eventData.investigation_assigned_to !== eventData.recorded_by_staff_id &&
+          eventData.investigation_assigned_to !== eventData.follow_up_assigned_to) {
+        const investigationInfo = eventData.expected_resolution_date
+          ? `Investigation required. Expected resolution by ${eventData.expected_resolution_date}.`
+          : 'Investigation required.';
+        
+        staffAssignments.push({
+          staffId: eventData.investigation_assigned_to,
+          type: 'Investigation',
+          additionalInfo: investigationInfo,
+          priority: 'high'
+        });
+      }
+
+      // Create notifications for each staff assignment
+      for (const assignment of staffAssignments) {
         try {
-          // Get staff auth_user_id
           const { data: staff } = await supabase
             .from('staff')
             .select('auth_user_id, first_name, last_name')
-            .eq('id', staffId)
+            .eq('id', assignment.staffId)
             .single();
 
           if (staff?.auth_user_id) {
-            const assignmentType = staffId === eventData.follow_up_assigned_to ? 'Follow-up' : 'Investigation';
             await supabase
               .from('notifications')
               .insert({
                 user_id: staff.auth_user_id,
                 branch_id: eventData.branch_id,
                 type: 'task',
-                category: 'info',
-                priority: 'medium',
-                title: `${assignmentType} Assignment: ${data.title}`,
-                message: `You have been assigned to handle the ${assignmentType.toLowerCase()} for this event.`,
+                category: assignment.type === 'Investigation' ? 'warning' : 'info',
+                priority: assignment.priority,
+                title: `${assignment.type} Assignment: ${data.title}`,
+                message: assignment.additionalInfo || `You have been assigned to this event.`,
                 data: {
                   event_id: data.id,
                   client_id: data.client_id,
                   event_type: data.event_type,
-                  assignment_type: assignmentType.toLowerCase()
+                  assignment_type: assignment.type.toLowerCase(),
+                  follow_up_date: eventData.follow_up_date || null,
+                  expected_resolution_date: eventData.expected_resolution_date || null
                 }
               });
+            console.log(`${assignment.type} notification created for staff:`, staff.first_name, staff.last_name);
           }
         } catch (notificationError) {
-          console.error('Error creating staff assignment notification:', notificationError);
+          console.error(`Error creating ${assignment.type} notification:`, notificationError);
         }
+      }
+
+      // Create client notification
+      try {
+        const { data: client } = await supabase
+          .from('clients')
+          .select('auth_user_id, first_name, last_name')
+          .eq('id', eventData.client_id)
+          .single();
+
+        if (client?.auth_user_id) {
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: client.auth_user_id,
+              branch_id: eventData.branch_id,
+              type: 'event_log',
+              category: 'info',
+              priority: data.severity === 'critical' ? 'high' : data.severity === 'high' ? 'medium' : 'low',
+              title: 'Care Action Recorded',
+              message: `A care event "${data.title}" has been recorded and is being followed up by your care team.`,
+              data: {
+                event_id: data.id,
+                event_type: data.event_type,
+                event_title: data.title,
+                severity: data.severity
+              }
+            });
+          console.log('Client notification created successfully');
+        }
+      } catch (clientNotificationError) {
+        console.error('Error creating client notification:', clientNotificationError);
       }
       
       console.log('Created event log:', data);
@@ -366,6 +438,8 @@ export const useCreateEventLog = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['events-logs'] });
       queryClient.invalidateQueries({ queryKey: ['client-events', data.client_id] });
+      queryClient.invalidateQueries({ queryKey: ['carer-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success("Event log created successfully");
     },
     onError: (error: any) => {
