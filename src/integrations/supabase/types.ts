@@ -2541,14 +2541,19 @@ export type Database = {
           event_time: string | null
           event_type: string
           expected_resolution_date: string | null
+          external_reporting_details: string | null
           external_reporting_required: boolean | null
+          family_notification_date: string | null
+          family_notification_method: string | null
           family_notified: boolean | null
           follow_up_assigned_to: string | null
           follow_up_date: string | null
           follow_up_notes: string | null
+          gp_notification_date: string | null
           gp_notified: boolean | null
           id: string
           immediate_actions_taken: string | null
+          insurance_notification_date: string | null
           insurance_notified: boolean | null
           investigation_assigned_to: string | null
           investigation_required: boolean | null
@@ -2561,6 +2566,7 @@ export type Database = {
           reporter: string
           risk_level: string | null
           severity: string
+          similar_incidents: string | null
           staff_aware: string[] | null
           staff_present: string[] | null
           status: string
@@ -2584,14 +2590,19 @@ export type Database = {
           event_time?: string | null
           event_type: string
           expected_resolution_date?: string | null
+          external_reporting_details?: string | null
           external_reporting_required?: boolean | null
+          family_notification_date?: string | null
+          family_notification_method?: string | null
           family_notified?: boolean | null
           follow_up_assigned_to?: string | null
           follow_up_date?: string | null
           follow_up_notes?: string | null
+          gp_notification_date?: string | null
           gp_notified?: boolean | null
           id?: string
           immediate_actions_taken?: string | null
+          insurance_notification_date?: string | null
           insurance_notified?: boolean | null
           investigation_assigned_to?: string | null
           investigation_required?: boolean | null
@@ -2604,6 +2615,7 @@ export type Database = {
           reporter: string
           risk_level?: string | null
           severity?: string
+          similar_incidents?: string | null
           staff_aware?: string[] | null
           staff_present?: string[] | null
           status?: string
@@ -2627,14 +2639,19 @@ export type Database = {
           event_time?: string | null
           event_type?: string
           expected_resolution_date?: string | null
+          external_reporting_details?: string | null
           external_reporting_required?: boolean | null
+          family_notification_date?: string | null
+          family_notification_method?: string | null
           family_notified?: boolean | null
           follow_up_assigned_to?: string | null
           follow_up_date?: string | null
           follow_up_notes?: string | null
+          gp_notification_date?: string | null
           gp_notified?: boolean | null
           id?: string
           immediate_actions_taken?: string | null
+          insurance_notification_date?: string | null
           insurance_notified?: boolean | null
           investigation_assigned_to?: string | null
           investigation_required?: boolean | null
@@ -2647,6 +2664,7 @@ export type Database = {
           reporter?: string
           risk_level?: string | null
           severity?: string
+          similar_incidents?: string | null
           staff_aware?: string[] | null
           staff_present?: string[] | null
           status?: string

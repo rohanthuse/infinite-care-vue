@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Download, Image, FileIcon, Calendar } from 'lucide-react';
+import { FileText, Download, Image, FileIcon, Calendar, Eye, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -29,24 +29,48 @@ export function EventAttachmentsView({ attachments }: EventAttachmentsViewProps)
 
   const handleDownload = async (attachment: any) => {
     try {
-      const { data } = await supabase.storage
+      // Check if attachment has file_path (new structure) or just path (legacy)
+      const filePath = attachment.file_path || attachment.path || attachment;
+      
+      if (!filePath) {
+        toast.error('File path not found');
+        return;
+      }
+      
+      const { data, error } = await supabase.storage
         .from('documents')
-        .download(attachment.file_path || attachment.path);
+        .download(filePath);
+      
+      if (error) throw error;
       
       if (data) {
         const url = URL.createObjectURL(data);
         const a = document.createElement('a');
         a.href = url;
-        a.download = attachment.name;
+        a.download = attachment.name || 'download';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        toast.success('File downloaded successfully');
       }
     } catch (error) {
       console.error('Error downloading file:', error);
       toast.error('Failed to download file');
     }
+  };
+
+  const handlePreview = (attachment: any) => {
+    // Use public_url if available, otherwise show message
+    if (attachment.public_url) {
+      window.open(attachment.public_url, '_blank');
+    } else {
+      toast.info('Preview not available for this file');
+    }
+  };
+
+  const isImage = (fileType: string) => {
+    return fileType && fileType.startsWith('image/');
   };
 
   return (
@@ -61,49 +85,87 @@ export function EventAttachmentsView({ attachments }: EventAttachmentsViewProps)
           No files attached to this event
         </div>
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {attachments.map((attachment, index) => (
-          <div key={index} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-2 flex-1 min-w-0">
-                <div className="text-gray-600 mt-1">
-                  {getFileIcon(attachment.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate" title={attachment.name}>
-                    {attachment.name}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                    <span>{formatFileSize(attachment.size)}</span>
-                    {attachment.uploadDate && (
-                      <>
-                        <span>•</span>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(new Date(attachment.uploadDate), 'MMM d, yyyy')}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {attachment.type && (
-                    <Badge variant="outline" className="text-xs mt-1">
-                      {attachment.type.split('/')[1]?.toUpperCase()}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDownload(attachment)}
-                className="h-8 w-8 p-0"
-              >
-                <Download className="h-3 w-3" />
-              </Button>
+        <div className="space-y-2">
+          {/* Warning for legacy attachments without file_path */}
+          {attachments.some(a => !a.file_path && !a.path) && (
+            <div className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+              <AlertCircle className="h-3 w-3" />
+              <span>Some attachments may not be downloadable (legacy format)</span>
             </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {attachments.map((attachment, index) => {
+              const hasFilePath = !!(attachment.file_path || attachment.path);
+              return (
+                <div key={index} className="border rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2 flex-1 min-w-0">
+                      <div className="text-gray-600 mt-1">
+                        {getFileIcon(attachment.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate" title={attachment.name}>
+                          {attachment.name}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                          <span>{formatFileSize(attachment.size || 0)}</span>
+                          {attachment.uploadDate && (
+                            <>
+                              <span>•</span>
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(new Date(attachment.uploadDate), 'MMM d, yyyy')}
+                              </div>
+                            </>
+                          )}
+                          {!hasFilePath && (
+                            <>
+                              <span>•</span>
+                              <Badge variant="outline" className="text-[10px] bg-yellow-50 text-yellow-800">
+                                Legacy
+                              </Badge>
+                            </>
+                          )}
+                        </div>
+                        {attachment.type && (
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {attachment.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      {/* Preview button for images */}
+                      {isImage(attachment.type) && attachment.public_url && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePreview(attachment)}
+                          className="h-8 w-8 p-0"
+                          title="Preview image"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {/* Download button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDownload(attachment)}
+                        className="h-8 w-8 p-0"
+                        disabled={!hasFilePath}
+                        title={hasFilePath ? "Download file" : "File not available"}
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        </div>
       )}
     </div>
   );

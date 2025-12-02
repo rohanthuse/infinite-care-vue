@@ -36,12 +36,13 @@ export function FileAttachmentsSection({ form }: FileAttachmentsSectionProps) {
     const updatedFiles = [...attachedFiles, ...newFiles];
     setAttachedFiles(updatedFiles);
     
-    // Update form with file references (would need to implement actual file upload)
+    // Update form with actual File objects for upload
     form.setValue('attachments', updatedFiles.map(f => ({
       id: f.id,
       name: f.name,
       size: f.size,
-      type: f.type
+      type: f.type,
+      file: f.file // Include the actual File object for upload
     })));
 
     toast.success(`${acceptedFiles.length} file(s) added`);
@@ -67,7 +68,8 @@ export function FileAttachmentsSection({ form }: FileAttachmentsSectionProps) {
       id: f.id,
       name: f.name,
       size: f.size,
-      type: f.type
+      type: f.type,
+      file: f.file // Include the actual File object
     })));
     toast.info("File removed");
   };
