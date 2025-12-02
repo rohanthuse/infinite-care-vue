@@ -71,12 +71,18 @@ const ClientLogin = () => {
           // Check organization status
           const statusCheck = checkTenantStatus(orgStatus);
           if (!statusCheck.isAllowed) {
-            await supabase.auth.signOut();
+            console.log('[ClientLogin] ❌ Tenant status blocked - showing toast:', statusCheck.message);
+            // Show toast FIRST
             toast({
               title: `Organisation ${statusCheck.status === 'inactive' ? 'Inactive' : 'Suspended'}`,
               description: statusCheck.message,
               variant: 'destructive',
             });
+            console.log('[ClientLogin] Toast displayed, scheduling signOut in 3 seconds');
+            // Delay signOut to allow toast to display
+            setTimeout(() => {
+              supabase.auth.signOut();
+            }, 3000);
             return;
           }
           

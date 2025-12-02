@@ -668,10 +668,19 @@ const UnifiedLogin = () => {
             const statusCheck = checkTenantStatus(orgStatus);
             
             if (!statusCheck.isAllowed) {
-              await supabase.auth.signOut();
               clearTimeout(timeoutId);
               setLoading(false);
-              toast.error(statusCheck.message, { duration: 6000 });
+              console.log('[LOGIN DEBUG] ❌ Tenant status blocked (client) - showing toast:', statusCheck.message);
+              // Show toast FIRST with unique ID
+              toast.error(statusCheck.message, { 
+                id: 'tenant-status-blocked',
+                duration: 6000 
+              });
+              console.log('[LOGIN DEBUG] Toast displayed, scheduling signOut in 3 seconds');
+              // Delay signOut to allow toast to display
+              setTimeout(() => {
+                supabase.auth.signOut();
+              }, 3000);
               return;
             }
           } catch (error) {
@@ -924,10 +933,19 @@ const UnifiedLogin = () => {
           const statusCheck = checkTenantStatus(orgStatus);
           
           if (!statusCheck.isAllowed) {
-            await supabase.auth.signOut();
             clearTimeout(timeoutId);
             setLoading(false);
-            toast.error(statusCheck.message, { duration: 6000 });
+            console.log('[LOGIN DEBUG] ❌ Tenant status blocked (emergency client) - showing toast:', statusCheck.message);
+            // Show toast FIRST with unique ID
+            toast.error(statusCheck.message, { 
+              id: 'tenant-status-blocked',
+              duration: 6000 
+            });
+            console.log('[LOGIN DEBUG] Toast displayed, scheduling signOut in 3 seconds');
+            // Delay signOut to allow toast to display
+            setTimeout(() => {
+              supabase.auth.signOut();
+            }, 3000);
             return;
           }
         } catch (error) {
@@ -1027,10 +1045,19 @@ const UnifiedLogin = () => {
           const statusCheck = checkTenantStatus(orgStatus);
           
           if (!statusCheck.isAllowed) {
-            await supabase.auth.signOut();
             clearTimeout(timeoutId);
             setLoading(false);
-            toast.error(statusCheck.message, { duration: 6000 });
+            console.log('[LOGIN DEBUG] ❌ Tenant status blocked (non-client) - showing toast:', statusCheck.message);
+            // Show toast FIRST with unique ID
+            toast.error(statusCheck.message, { 
+              id: 'tenant-status-blocked',
+              duration: 6000 
+            });
+            console.log('[LOGIN DEBUG] Toast displayed, scheduling signOut in 3 seconds');
+            // Delay signOut to allow toast to display
+            setTimeout(() => {
+              supabase.auth.signOut();
+            }, 3000);
             return;
           }
           console.log('[LOGIN DEBUG] Organization status check passed:', orgStatus);
