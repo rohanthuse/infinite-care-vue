@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ClientMedicalInfo } from "@/hooks/useClientMedicalInfo";
+import { formatNews2Frequency } from "@/utils/news2FrequencyUtils";
 
 interface MedicalMentalTabProps {
   medicalInfo?: ClientMedicalInfo;
@@ -134,10 +135,8 @@ export const MedicalMentalTab: React.FC<MedicalMentalTabProps> = ({
                   <div className="grid gap-3 text-sm">
                     <div className="flex items-start gap-2">
                       <span className="text-muted-foreground min-w-[120px]">Frequency:</span>
-                      <span className="font-medium capitalize">
-                        {news2MonitoringFrequency === '12-hourly' 
-                          ? '12-Hourly' 
-                          : news2MonitoringFrequency.replace('-', ' ')}
+                      <span className="font-medium">
+                        {formatNews2Frequency(news2MonitoringFrequency)}
                       </span>
                     </div>
                     {news2MonitoringNotes && (
