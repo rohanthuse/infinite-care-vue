@@ -101,11 +101,10 @@ Deno.serve(async (req) => {
             priority: 'low',
             title: 'New Form Assigned',
             message: `A new form has been assigned: ${form_title}`,
-            data: JSON.stringify({
+            data: {
               form_id,
               notification_type: 'form_assignment'
-            }),
-            status: 'unread'
+            }
           }));
 
           const { data: inserted, error: insertError } = await supabase
@@ -166,11 +165,10 @@ Deno.serve(async (req) => {
       priority: 'low',
       title: 'New Form Assigned',
       message: `A new form has been assigned: ${form_title}`,
-      data: JSON.stringify({
+      data: {
         form_id,
         notification_type: 'form_assignment'
-      }),
-      status: 'unread'
+      }
     };
 
     console.log('[create-form-assignment-notifications] Creating notification');
