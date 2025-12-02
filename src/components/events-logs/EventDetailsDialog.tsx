@@ -144,6 +144,22 @@ export function EventDetailsDialog({ event, open, onOpenChange, onEdit }: EventD
                   <span>{resolveStaffName(event.recorded_by_staff_id)}</span>
                 </div>
               )}
+
+              {event.follow_up_assigned_to && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-blue-500" />
+                  <span className="font-medium">Follow-up Assigned To:</span>
+                  <span className="text-blue-700">{resolveStaffName(event.follow_up_assigned_to)}</span>
+                </div>
+              )}
+
+              {event.investigation_assigned_to && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="h-4 w-4 text-purple-500" />
+                  <span className="font-medium">Investigation Assigned To:</span>
+                  <span className="text-purple-700">{resolveStaffName(event.investigation_assigned_to)}</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-3">

@@ -187,40 +187,56 @@ export const useCreateEventLog = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (eventData: CreateEventLogData & { attachments?: File[] }) => {
+    mutationFn: async (eventData: CreateEventLogData & { attachments?: any[] }) => {
       console.log('Creating event log:', eventData);
       
-      // Handle file attachments first
-      let attachmentUrls: string[] = [];
+      // Handle file attachments - upload to storage and create metadata array
+      let processedAttachments: any[] = [];
       
       if (eventData.attachments && eventData.attachments.length > 0) {
         try {
-          for (const file of eventData.attachments) {
-            const filePath = `${eventData.client_id}/${Date.now()}-${file.name}`;
-            
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('documents')
-              .upload(filePath, file);
-            
-            if (uploadError) throw uploadError;
-            
-            attachmentUrls.push(uploadData.path);
-            
-            // Insert metadata into documents table
-            await supabase
-              .from('documents')
-              .insert({
-                name: file.name,
-                type: 'attachment',
-                category: 'event_attachment',
+          for (const attachment of eventData.attachments) {
+            // Check if it's a File object (with .file property)
+            if (attachment.file instanceof File) {
+              const filePath = `event-attachments/${eventData.client_id}/${Date.now()}-${attachment.name}`;
+              
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('documents')
+                .upload(filePath, attachment.file);
+              
+              if (uploadError) throw uploadError;
+              
+              // Get public URL
+              const { data: urlData } = supabase.storage
+                .from('documents')
+                .getPublicUrl(uploadData.path);
+              
+              processedAttachments.push({
+                id: attachment.id,
+                name: attachment.name,
+                size: attachment.size,
+                type: attachment.type,
                 file_path: uploadData.path,
-                file_size: file.size.toString(),
-                file_type: file.type,
-                storage_bucket: 'documents',
-                client_id: eventData.client_id,
-                branch_id: eventData.branch_id,
-                uploaded_by_name: 'System'
+                public_url: urlData.publicUrl,
+                uploadDate: new Date().toISOString()
               });
+              
+              // Insert metadata into documents table for tracking
+              await supabase
+                .from('documents')
+                .insert({
+                  name: attachment.name,
+                  type: 'attachment',
+                  category: 'event_attachment',
+                  file_path: uploadData.path,
+                  file_size: attachment.size.toString(),
+                  file_type: attachment.type,
+                  storage_bucket: 'documents',
+                  client_id: eventData.client_id,
+                  branch_id: eventData.branch_id,
+                  uploaded_by_name: 'System'
+                });
+            }
           }
         } catch (error) {
           console.error('Error uploading attachments:', error);
@@ -228,12 +244,11 @@ export const useCreateEventLog = () => {
         }
       }
       
-      // Create the event record
+      // Create the event record with processed attachments metadata
       const eventRecord = {
         ...eventData,
-        attachments: attachmentUrls.length > 0 ? attachmentUrls : undefined
+        attachments: processedAttachments.length > 0 ? processedAttachments : null
       };
-      delete eventRecord.attachments; // Remove File objects from the database insert
       
       const { data, error } = await supabase
         .from('client_events_logs')
