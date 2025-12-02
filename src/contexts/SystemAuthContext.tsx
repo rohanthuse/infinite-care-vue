@@ -55,12 +55,11 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
         }
 
         const userRole = roleData.role;
-        // CRITICAL FIX: SystemAuth should ONLY handle app_admin users
-        // Do not interfere with super_admin, branch_admin, carer, or client authentication
-        const isSystemAdmin = userRole === 'app_admin';
+        // SystemAuth handles both super_admin and app_admin roles for system portal access
+        const isSystemAdmin = userRole === 'super_admin' || userRole === 'app_admin';
 
         if (!isSystemAdmin) {
-          console.log(`[SystemAuth] User role '${userRole}' is not app_admin, ignoring for system auth`);
+          console.log(`[SystemAuth] User role '${userRole}' is not a system administrator, ignoring for system auth`);
           if (mounted) {
             setUser(null);
             setIsLoading(false);
@@ -232,20 +231,20 @@ export const SystemAuthProvider: React.FC<{ children: ReactNode }> = ({ children
         }
 
         const userRole = roleData.role;
-        // CRITICAL FIX: SystemAuth should ONLY handle app_admin users
-        const isSystemAdmin = userRole === 'app_admin';
+        // SystemAuth handles both super_admin and app_admin roles for system portal access
+        const isSystemAdmin = userRole === 'super_admin' || userRole === 'app_admin';
 
         if (!isSystemAdmin) {
-          console.log(`[SystemAuth] User role '${userRole}' is not app_admin, rejecting system auth`);
+          console.log(`[SystemAuth] User role '${userRole}' is not a system administrator, rejecting system auth`);
           // Don't sign out other user types - they should use regular AuthContext
           setError('This account is not a system administrator');
           return { error: 'This account is not a system administrator' };
         }
 
-        // Create system session token for app_admin users
+        // Create system session token for system administrators
         // This ensures RLS policies that check system sessions will work
         try {
-          console.log('[SystemAuth] Creating system session token for app_admin user');
+          console.log('[SystemAuth] Creating system session token for system administrator');
           const { data: systemSessionData, error: systemSessionError } = await supabase.rpc('system_create_session_for_auth_user', {
             p_auth_user_id: authData.user.id,
             p_ip_address: null,
