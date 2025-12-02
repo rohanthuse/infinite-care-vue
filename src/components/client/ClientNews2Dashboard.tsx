@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ClientNews2History } from "./ClientNews2History";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AIRecommendationsCard } from "@/components/news2/AIRecommendationsCard";
+import { formatNews2Frequency } from "@/utils/news2FrequencyUtils";
 
 export const ClientNews2Dashboard = ({ isAdminView = false }: { isAdminView?: boolean } = {}) => {
   const { data: news2Data, isLoading, error } = useClientNews2Data();
@@ -167,7 +168,7 @@ export const ClientNews2Dashboard = ({ isAdminView = false }: { isAdminView?: bo
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Monitoring Frequency</p>
-                <p className="text-2xl font-bold capitalize">{news2Data.monitoring_frequency}</p>
+                <p className="text-2xl font-bold">{formatNews2Frequency(news2Data.monitoring_frequency)}</p>
                 <p className="text-xs text-gray-500 mt-1">Check intervals</p>
               </div>
               <Clock className="h-8 w-8 text-green-500" />

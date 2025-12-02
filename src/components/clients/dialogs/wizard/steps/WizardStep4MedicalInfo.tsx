@@ -369,13 +369,36 @@ export function WizardStep4MedicalInfo({
                               <SelectContent>
                                 <SelectItem value="daily">Daily</SelectItem>
                                 <SelectItem value="twice_daily">Twice Daily</SelectItem>
+                                <SelectItem value="three_times_daily">Three Times Daily</SelectItem>
+                                <SelectItem value="four_times_daily">Four Times Daily</SelectItem>
                                 <SelectItem value="weekly">Weekly</SelectItem>
+                                <SelectItem value="custom">Custom Schedule</SelectItem>
                               </SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      
+                      {form.watch("news2_monitoring_frequency") === "custom" && (
+                        <FormField
+                          control={form.control}
+                          name="news2_monitoring_custom_schedule"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Custom Schedule Details *</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Enter custom monitoring schedule (e.g., 8am, 12pm, 4pm, 8pm)"
+                                  className="min-h-[80px]"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                       
                       <FormField
                         control={form.control}

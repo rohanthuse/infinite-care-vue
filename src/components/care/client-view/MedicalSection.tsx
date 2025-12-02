@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { formatNews2Frequency } from '@/utils/news2FrequencyUtils';
 
 interface MedicalSectionProps {
   medicalInfo: any;
@@ -175,7 +176,7 @@ export function MedicalSection({ medicalInfo }: MedicalSectionProps) {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Frequency:</span>
-                  <span className="ml-2 capitalize">{data.news2_monitoring_frequency || 'Daily'}</span>
+                  <span className="ml-2">{formatNews2Frequency(data.news2_monitoring_frequency)}</span>
                 </div>
                 {data.news2_monitoring_notes && (
                   <div className="col-span-2">
