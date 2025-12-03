@@ -15,6 +15,7 @@ const EXTENDED_TYPES: Record<string, string> = {
   'agreement_assignment': 'agreement',
   'agreement_shared': 'agreement',
   'pending_agreement': 'agreement',
+  'agreement_signed': 'agreement_signed',
   'training_assignment': 'training',
   'form_assignment': 'form',
   'form_submission': 'form_submission',

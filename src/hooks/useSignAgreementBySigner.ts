@@ -78,6 +78,40 @@ const signAgreementBySigner = async (params: SignAgreementParams) => {
     throw new Error(signerError.message);
   }
   
+  // Fetch agreement and signer details for notification
+  const { data: agreementData } = await supabase
+    .from('agreements')
+    .select('title, branch_id')
+    .eq('id', agreementId)
+    .single();
+
+  const { data: signerData } = await supabase
+    .from('agreement_signers')
+    .select('signer_name, signer_type, signer_auth_user_id')
+    .eq('id', signerId)
+    .single();
+
+  // Send notification to admins about signature
+  if (agreementData && signerData && agreementData.branch_id) {
+    try {
+      console.log('[useSignAgreementBySigner] Sending admin notification...');
+      await supabase.functions.invoke('create-agreement-signed-notifications', {
+        body: {
+          agreement_id: agreementId,
+          agreement_title: agreementData.title,
+          signer_name: signerData.signer_name,
+          signer_type: signerData.signer_type,
+          signer_auth_user_id: signerData.signer_auth_user_id,
+          branch_id: agreementData.branch_id
+        }
+      });
+      console.log('[useSignAgreementBySigner] Admin notification sent');
+    } catch (notifErr) {
+      console.error('[useSignAgreementBySigner] Notification error:', notifErr);
+      // Don't throw - signing was successful, just notification failed
+    }
+  }
+  
   // Check if all signers have signed
   const { data: allSigners, error: signersError } = await supabase
     .from('agreement_signers')
