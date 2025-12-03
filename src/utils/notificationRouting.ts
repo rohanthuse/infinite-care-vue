@@ -5,6 +5,36 @@
 
 import { Notification } from "@/hooks/useNotifications";
 
+// Extended type mappings from data.notification_type to standard types
+const EXTENDED_TYPES: Record<string, string> = {
+  'library_resource': 'library',
+  'document_upload': 'document',
+  'document_shared': 'document',
+  'agreement_assignment': 'agreement',
+  'agreement_shared': 'agreement',
+  'pending_agreement': 'agreement',
+  'training_assignment': 'training',
+  'form_assignment': 'form',
+  'care_plan_update': 'care_plan',
+  'care_plan_activation': 'care_plan',
+  'care_plan_status': 'care_plan',
+  'booking_reminder': 'booking',
+  'booking_update': 'booking',
+  'leave_request': 'leave',
+  'leave_approved': 'leave',
+  'leave_rejected': 'leave',
+  'message_received': 'message',
+  'new_message': 'message',
+  'service_report_shared': 'service_report',
+  'medication_reminder': 'medication',
+  'health_update': 'health',
+  'payment_due': 'payment',
+  'invoice_generated': 'payment',
+  'review_request': 'review',
+  'event_shared': 'events_logs',
+  'task_assigned': 'task',
+};
+
 // Client portal route mappings
 const CLIENT_ROUTES: Record<string, string> = {
   booking: '/appointments',
@@ -24,6 +54,7 @@ const CLIENT_ROUTES: Record<string, string> = {
   health: '/health-monitoring',
   schedule: '/schedule',
   system: '',
+  info: '', // Generic info type - no specific route
 };
 
 // Carer/Staff portal route mappings
@@ -46,6 +77,7 @@ const CARER_ROUTES: Record<string, string> = {
   payment: '/payments',
   schedule: '/schedule',
   system: '',
+  info: '', // Generic info type - no specific route
 };
 
 export type UserContext = 'client' | 'carer' | 'branch' | 'unknown';
@@ -61,6 +93,29 @@ export const detectUserContext = (pathname: string): UserContext => {
 };
 
 /**
+ * Get the effective notification type by checking data.notification_type first
+ */
+export const getEffectiveNotificationType = (notification: Notification): string => {
+  const data = notification.data as Record<string, any> | null;
+  
+  // First check data.notification_type
+  const extendedType = data?.notification_type as string | undefined;
+  
+  if (extendedType) {
+    // Map extended type to standard type, or use extendedType if no mapping exists
+    const standardType = EXTENDED_TYPES[extendedType];
+    if (standardType) {
+      return standardType;
+    }
+    // Try using the extended type directly if it matches a route
+    return extendedType;
+  }
+  
+  // Fall back to notification.type
+  return notification.type as string;
+};
+
+/**
  * Get the appropriate route for a notification based on user context
  */
 export const getNotificationRoute = (
@@ -68,7 +123,17 @@ export const getNotificationRoute = (
   userContext: UserContext
 ): string => {
   const routeMap = userContext === 'client' ? CLIENT_ROUTES : CARER_ROUTES;
-  return routeMap[notification.type] || '';
+  const effectiveType = getEffectiveNotificationType(notification);
+  
+  console.log('[notificationRouting] getNotificationRoute:', {
+    notificationType: notification.type,
+    dataNotificationType: (notification.data as any)?.notification_type,
+    effectiveType,
+    userContext,
+    route: routeMap[effectiveType] || ''
+  });
+  
+  return routeMap[effectiveType] || '';
 };
 
 /**
@@ -81,84 +146,117 @@ export const storeDeepLinkData = (notification: Notification): void => {
   // Clear previous deep-link data
   clearDeepLinkData();
 
-  const notificationType = notification.type as string;
+  // Get the effective notification type
+  const effectiveType = getEffectiveNotificationType(notification);
+  const extendedType = data.notification_type as string | undefined;
+  
+  console.log('[notificationRouting] storeDeepLinkData:', {
+    effectiveType,
+    extendedType,
+    data
+  });
 
-  // Store relevant IDs based on notification type
-  if (notificationType === 'care_plan') {
+  // Handle library/library_resource type
+  if (effectiveType === 'library' || extendedType === 'library_resource') {
+    if (data.resource_id) {
+      sessionStorage.setItem('openResourceId', data.resource_id);
+    }
+  }
+  // Handle document types
+  else if (effectiveType === 'document' || extendedType === 'document_upload' || extendedType === 'document_shared') {
+    if (data.document_id) {
+      sessionStorage.setItem('openDocumentId', data.document_id);
+    }
+  }
+  // Handle agreement types
+  else if (effectiveType === 'agreement' || extendedType === 'agreement_assignment' || extendedType === 'agreement_shared' || extendedType === 'pending_agreement') {
+    if (data.agreement_id) {
+      sessionStorage.setItem('openAgreementId', data.agreement_id);
+    }
+  }
+  // Handle training types
+  else if (effectiveType === 'training' || extendedType === 'training_assignment') {
+    if (data.training_course_id || data.training_id || data.assignment_id) {
+      sessionStorage.setItem('openTrainingId', data.training_course_id || data.training_id || data.assignment_id);
+    }
+  }
+  // Handle form types
+  else if (effectiveType === 'form' || extendedType === 'form_assignment') {
+    if (data.form_id) {
+      sessionStorage.setItem('openFormId', data.form_id);
+    }
+    if (data.form_assignment_id || data.assignment_id) {
+      sessionStorage.setItem('openFormAssignmentId', data.form_assignment_id || data.assignment_id);
+    }
+  }
+  // Handle care_plan types
+  else if (effectiveType === 'care_plan') {
     if (data.care_plan_id) {
       sessionStorage.setItem('openCarePlanId', data.care_plan_id);
     }
-  } else if (notificationType === 'task' || notificationType === 'events_logs') {
+  }
+  // Handle task/events_logs types
+  else if (effectiveType === 'task' || effectiveType === 'events_logs') {
     if (data.event_id) {
       sessionStorage.setItem('openEventId', data.event_id);
     }
     if (data.client_id) {
       sessionStorage.setItem('openEventClientId', data.client_id);
     }
-  } else if (notificationType === 'message') {
+  }
+  // Handle message types
+  else if (effectiveType === 'message') {
     if (data.thread_id) {
       sessionStorage.setItem('openThreadId', data.thread_id);
     }
     if (data.conversation_id) {
       sessionStorage.setItem('openConversationId', data.conversation_id);
     }
-  } else if (notificationType === 'document') {
-    if (data.document_id) {
-      sessionStorage.setItem('openDocumentId', data.document_id);
+  }
+  // Handle leave types
+  else if (effectiveType === 'leave' || effectiveType === 'leave_request') {
+    if (data.leave_request_id || data.leave_id) {
+      sessionStorage.setItem('openLeaveRequestId', data.leave_request_id || data.leave_id);
     }
-  } else if (notificationType === 'form') {
-    if (data.form_id) {
-      sessionStorage.setItem('openFormId', data.form_id);
-    }
-    if (data.form_assignment_id) {
-      sessionStorage.setItem('openFormAssignmentId', data.form_assignment_id);
-    }
-  } else if (notificationType === 'agreement') {
-    if (data.agreement_id) {
-      sessionStorage.setItem('openAgreementId', data.agreement_id);
-    }
-  } else if (notificationType === 'library') {
-    if (data.resource_id) {
-      sessionStorage.setItem('openResourceId', data.resource_id);
-    }
-  } else if (notificationType === 'training') {
-    if (data.training_id) {
-      sessionStorage.setItem('openTrainingId', data.training_id);
-    }
-    if (data.assignment_id) {
-      sessionStorage.setItem('openTrainingAssignmentId', data.assignment_id);
-    }
-  } else if (notificationType === 'leave_request' || notificationType === 'leave') {
-    if (data.leave_request_id) {
-      sessionStorage.setItem('openLeaveRequestId', data.leave_request_id);
-    }
-  } else if (notificationType === 'booking' || notificationType === 'appointment') {
+  }
+  // Handle booking/appointment types
+  else if (effectiveType === 'booking' || effectiveType === 'appointment') {
     if (data.booking_id) {
       sessionStorage.setItem('openBookingId', data.booking_id);
     }
     if (data.appointment_id) {
       sessionStorage.setItem('openAppointmentId', data.appointment_id);
     }
-  } else if (notificationType === 'service_report') {
+  }
+  // Handle service_report types
+  else if (effectiveType === 'service_report') {
     if (data.report_id) {
       sessionStorage.setItem('openServiceReportId', data.report_id);
     }
-  } else if (notificationType === 'medication' || notificationType === 'health') {
+  }
+  // Handle medication/health types
+  else if (effectiveType === 'medication' || effectiveType === 'health') {
     if (data.medication_id) {
       sessionStorage.setItem('openMedicationId', data.medication_id);
     }
-  } else if (notificationType === 'payment') {
+  }
+  // Handle payment types
+  else if (effectiveType === 'payment') {
     if (data.payment_id) {
       sessionStorage.setItem('openPaymentId', data.payment_id);
     }
     if (data.invoice_id) {
       sessionStorage.setItem('openInvoiceId', data.invoice_id);
     }
-  } else if (notificationType === 'review') {
+  }
+  // Handle review types
+  else if (effectiveType === 'review') {
     if (data.review_id) {
       sessionStorage.setItem('openReviewId', data.review_id);
     }
-  } else if (notificationType === 'client') {
+  }
+  // Handle client types
+  else if (effectiveType === 'client') {
     if (data.client_id) {
       sessionStorage.setItem('openClientId', data.client_id);
     }

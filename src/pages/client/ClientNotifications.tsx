@@ -26,6 +26,7 @@ import { useClientNavigation } from "@/hooks/useClientNavigation";
 import { 
   getNotificationRoute, 
   storeDeepLinkData,
+  getEffectiveNotificationType,
 } from "@/utils/notificationRouting";
 
 export default function ClientNotifications() {
@@ -80,6 +81,16 @@ export default function ClientNotifications() {
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    const effectiveType = getEffectiveNotificationType(notification);
+    
+    console.log('[ClientNotifications] Click:', {
+      id: notification.id,
+      type: notification.type,
+      dataNotificationType: (notification.data as any)?.notification_type,
+      effectiveType,
+      data: notification.data
+    });
+    
     // Mark notification as read
     markAsRead(notification.id);
     
@@ -90,7 +101,11 @@ export default function ClientNotifications() {
     const route = getNotificationRoute(notification, 'client');
     
     if (route) {
-      navigate(createClientPath(route));
+      const fullPath = createClientPath(route);
+      console.log('[ClientNotifications] Navigating to:', fullPath);
+      navigate(fullPath);
+    } else {
+      console.log('[ClientNotifications] No route found for type:', effectiveType);
     }
   };
 

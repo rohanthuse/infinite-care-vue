@@ -20,6 +20,7 @@ import {
   detectUserContext, 
   getNotificationRoute, 
   storeDeepLinkData,
+  getEffectiveNotificationType,
   UserContext,
 } from "@/utils/notificationRouting";
 
@@ -98,14 +99,23 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
   const handleNotificationClick = (notification: Notification) => {
     try {
+      const currentPath = location.pathname;
+      const effectiveType = getEffectiveNotificationType(notification);
+      
+      console.log('[NotificationDropdown] Click:', {
+        id: notification.id,
+        type: notification.type,
+        dataNotificationType: (notification.data as any)?.notification_type,
+        effectiveType,
+        userContext,
+        currentPath
+      });
+      
       // Mark notification as read
       markAsRead(notification.id);
       
       // Store deep-link data for auto-opening
       storeDeepLinkData(notification);
-      
-      const currentPath = location.pathname;
-      const notificationType = notification.type as string;
       
       // Handle branch dashboard context
       if (userContext === 'branch') {
@@ -114,23 +124,27 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         if (branchMatch) {
           const [, branchId, branchName] = branchMatch;
           
-          // Route based on notification type
-          if (notificationType === 'message') {
+          // Route based on effective notification type
+          if (effectiveType === 'message') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/communication`);
-          } else if (notificationType === 'task' || notificationType === 'events_logs') {
+          } else if (effectiveType === 'task' || effectiveType === 'events_logs') {
             if (notification.data?.client_id) {
               navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${notification.data.client_id}/events`);
             }
-          } else if (notificationType === 'care_plan') {
+          } else if (effectiveType === 'care_plan') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/careplan`);
-          } else if (notificationType === 'booking' || notificationType === 'appointment') {
+          } else if (effectiveType === 'booking' || effectiveType === 'appointment') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/booking`);
-          } else if (notificationType === 'document') {
+          } else if (effectiveType === 'document') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/documents`);
-          } else if (notificationType === 'form') {
+          } else if (effectiveType === 'form') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
-          } else if (notificationType === 'agreement') {
+          } else if (effectiveType === 'agreement') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/agreements`);
+          } else if (effectiveType === 'library') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/library`);
+          } else if (effectiveType === 'training') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/training`);
           }
         }
         return;
@@ -142,10 +156,13 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         const tenantSlug = tenantMatch ? tenantMatch[1] : '';
         const route = getNotificationRoute(notification, 'client');
         
+        console.log('[NotificationDropdown] Client route:', { tenantSlug, route });
+        
         if (route) {
           const fullPath = tenantSlug 
             ? `/${tenantSlug}/client-dashboard${route}`
             : `/client-dashboard${route}`;
+          console.log('[NotificationDropdown] Navigating to:', fullPath);
           navigate(fullPath);
         }
         return;
@@ -157,11 +174,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         const tenantSlug = tenantMatch ? tenantMatch[1] : '';
         const route = getNotificationRoute(notification, 'carer');
         
+        console.log('[NotificationDropdown] Carer route:', { tenantSlug, route, effectiveType });
+        
         // Special handling for task/events with client_id
-        if ((notificationType === 'task' || notificationType === 'events_logs') && notification.data?.client_id) {
+        if ((effectiveType === 'task' || effectiveType === 'events_logs') && notification.data?.client_id) {
           const clientPath = tenantSlug 
             ? `/${tenantSlug}/carer-dashboard/clients/${notification.data.client_id}`
             : `/carer-dashboard/clients/${notification.data.client_id}`;
+          console.log('[NotificationDropdown] Navigating to client:', clientPath);
           navigate(clientPath);
           return;
         }
@@ -170,15 +190,16 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
           const fullPath = tenantSlug 
             ? `/${tenantSlug}/carer-dashboard${route}`
             : `/carer-dashboard${route}`;
+          console.log('[NotificationDropdown] Navigating to:', fullPath);
           navigate(fullPath);
         }
         return;
       }
       
       // Unknown context - just mark as read
-      console.log('Unknown user context for notification navigation');
+      console.log('[NotificationDropdown] Unknown user context for notification navigation');
     } catch (error) {
-      console.error('Error handling notification click:', error);
+      console.error('[NotificationDropdown] Error handling notification click:', error);
     }
   };
 
