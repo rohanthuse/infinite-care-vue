@@ -27,7 +27,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Helper function to persist form assignees to database
+// Helper function to persist form assignees to database and trigger notifications
 const persistFormAssignees = async (formId: string, assignees: any[], assignedBy: string) => {
   try {
     // Filter to only include client and staff types (exclude 'branch_admin' etc.)
@@ -71,6 +71,46 @@ const persistFormAssignees = async (formId: string, assignees: any[], assignedBy
     }
 
     console.log(`Form assignees persisted successfully: ${assigneeRecords.length} records`);
+
+    // Fetch form details for notifications
+    const { data: formData, error: formError } = await supabase
+      .from('forms')
+      .select('title, branch_id')
+      .eq('id', formId)
+      .single();
+
+    if (formError) {
+      console.error('Error fetching form data for notifications:', formError);
+      return; // Don't throw - assignees were saved, just notification failed
+    }
+
+    if (formData && formData.branch_id) {
+      console.log('[persistFormAssignees] Triggering notifications for assignees');
+      
+      // Trigger notifications for each assignee
+      for (const assignee of assigneeRecords) {
+        try {
+          const { error: notifError } = await supabase.functions.invoke('create-form-assignment-notifications', {
+            body: {
+              form_id: formId,
+              form_title: formData.title,
+              assignee_id: assignee.assignee_id,
+              assignee_type: assignee.assignee_type,
+              branch_id: formData.branch_id
+            }
+          });
+
+          if (notifError) {
+            console.error(`[persistFormAssignees] Notification error for ${assignee.assignee_name}:`, notifError);
+          } else {
+            console.log(`[persistFormAssignees] Notification sent for ${assignee.assignee_name}`);
+          }
+        } catch (notifErr) {
+          console.error('[persistFormAssignees] Failed to invoke notification function:', notifErr);
+          // Continue with next assignee even if notification fails
+        }
+      }
+    }
   } catch (error) {
     console.error('Failed to persist form assignees:', error);
     throw error;
