@@ -157,6 +157,9 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             }
           } else if (effectiveType === 'agreement') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/agreements`);
+          } else if (effectiveType === 'agreement_signed') {
+            // Agreement signed notification - navigate to agreements with signed tab
+            navigate(`/branch-dashboard/${branchId}/${branchName}/agreements?tab=signed`);
           } else if (effectiveType === 'library') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/library`);
           } else if (effectiveType === 'training') {
