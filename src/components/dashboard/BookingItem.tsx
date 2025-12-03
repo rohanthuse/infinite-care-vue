@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Clock } from 'lucide-react';
 
@@ -18,30 +19,41 @@ export const BookingItem = ({
   onClick?: () => void;
 }) => {
   let statusColor = 'bg-muted text-muted-foreground';
-  if (status === 'Done') statusColor = 'bg-green-100 text-green-700';
-  else if (status === 'Booked') statusColor = 'bg-blue-100 text-blue-700';
-  else if (status === 'Waiting') statusColor = 'bg-amber-100 text-amber-700';
+  let badgeColor = 'bg-slate-100 text-slate-600 border-slate-200';
+  
+  if (status === 'Done') {
+    statusColor = 'bg-green-100 text-green-700 border border-green-200';
+    badgeColor = 'bg-green-500 text-white border-green-600';
+  } else if (status === 'Booked') {
+    statusColor = 'bg-blue-100 text-blue-700 border border-blue-200';
+    badgeColor = 'bg-blue-500 text-white border-blue-600';
+  } else if (status === 'Waiting') {
+    statusColor = 'bg-amber-100 text-amber-700 border border-amber-200';
+    badgeColor = 'bg-amber-500 text-white border-amber-600';
+  }
 
   return (
     <div 
-      className={`py-2 border-b last:border-0 flex items-center justify-between ${
-        onClick ? 'cursor-pointer hover:bg-accent transition-colors' : ''
+      className={`py-3 px-2 border-b last:border-0 flex items-center justify-between rounded-lg transition-all duration-200 ${
+        onClick ? 'cursor-pointer hover:bg-gradient-to-r hover:from-green-50/50 hover:to-transparent hover:shadow-sm' : ''
       }`}
       onClick={onClick}
     >
-      <div className="flex items-center">
-        <div className="w-5 text-xs text-muted-foreground mr-2">{number}.</div>
+      <div className="flex items-center gap-3">
+        <div className={`w-7 h-7 rounded-full ${badgeColor} flex items-center justify-center text-xs font-bold shadow-sm`}>
+          {number}
+        </div>
         <div>
-          <div className="text-xs md:text-sm font-medium">{staff}</div>
+          <div className="text-xs md:text-sm font-semibold text-foreground">{staff}</div>
           <div className="text-xs text-muted-foreground">{client}</div>
         </div>
       </div>
-      <div className="flex items-center">
-        <div className="flex items-center mr-3">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center bg-muted/50 rounded-full px-2 py-1">
           <Clock className="h-3 w-3 text-muted-foreground mr-1" />
-          <span className="text-xs text-muted-foreground">{time}</span>
+          <span className="text-xs text-muted-foreground font-medium">{time}</span>
         </div>
-        <div className={`${statusColor} rounded-full px-2 py-0.5 text-xs font-medium`}>
+        <div className={`${statusColor} rounded-full px-3 py-1 text-xs font-semibold shadow-sm`}>
           {status}
         </div>
       </div>

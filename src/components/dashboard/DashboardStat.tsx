@@ -14,6 +14,9 @@ export const DashboardStat = ({
   onClick,
   iconBgClass,
   iconColorClass,
+  gradientClass,
+  borderColorClass,
+  shadowColorClass,
 }: {
   title: string;
   value: string;
@@ -24,9 +27,22 @@ export const DashboardStat = ({
   onClick?: () => void;
   iconBgClass?: string;
   iconColorClass?: string;
+  gradientClass?: string;
+  borderColorClass?: string;
+  shadowColorClass?: string;
 }) => {
   return (
-    <Card className={onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""} onClick={onClick}>
+    <Card 
+      className={`
+        ${onClick ? "cursor-pointer" : ""} 
+        border-l-4 ${borderColorClass || 'border-l-primary'}
+        ${gradientClass || 'bg-gradient-to-br from-card to-card'}
+        hover:shadow-lg ${shadowColorClass || 'hover:shadow-primary/10'}
+        transition-all duration-300
+        group
+      `} 
+      onClick={onClick}
+    >
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-start">
           <div>
@@ -38,7 +54,7 @@ export const DashboardStat = ({
               </div>
             ) : (
               <>
-                <h3 className="text-lg md:text-2xl font-bold mt-1">{value}</h3>
+                <h3 className="text-lg md:text-2xl font-bold mt-1 group-hover:scale-105 transition-transform origin-left">{value}</h3>
                 <div className={`flex items-center mt-1 text-xs ${positive ? 'text-green-600' : 'text-red-600'}`}>
                   {positive ? <ArrowUp className="h-3 w-3 mr-1" /> : <ArrowDown className="h-3 w-3 mr-1" />}
                   <span>{change}</span>
@@ -46,7 +62,7 @@ export const DashboardStat = ({
               </>
             )}
           </div>
-          <div className={`p-2 rounded-md border border-border ${iconBgClass || 'bg-muted'} ${iconColorClass || ''}`}>
+          <div className={`p-3 rounded-xl ${iconBgClass || 'bg-muted'} ${iconColorClass || ''} group-hover:scale-110 transition-transform`}>
             {icon}
           </div>
         </div>

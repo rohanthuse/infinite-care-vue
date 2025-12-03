@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, BarChart4, PieChart as PieChartIcon } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, PieChart, Pie, Cell } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBranchChartData } from "@/data/hooks/useBranchChartData";
@@ -50,12 +50,17 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
-      <Card className="lg:col-span-2 border-l-4 border-l-indigo-500">
-        <CardHeader className="pb-2">
+      <Card className="lg:col-span-2 border-l-4 border-l-indigo-500 hover:shadow-lg hover:shadow-indigo-100/30 transition-all duration-300 overflow-hidden">
+        <CardHeader className="pb-2 bg-gradient-to-r from-indigo-50/70 to-transparent dark:from-indigo-950/30">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base md:text-lg font-semibold">Weekly Statistics</CardTitle>
-              <CardDescription>Appointments, visits and revenue</CardDescription>
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-indigo-500/20 shadow-sm">
+                <BarChart4 className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base md:text-lg font-semibold">Weekly Statistics</CardTitle>
+                <CardDescription>Appointments, visits and revenue</CardDescription>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button 
@@ -112,10 +117,17 @@ export const DashboardChartsSection: React.FC<DashboardChartsSectionProps> = ({ 
         </CardContent>
       </Card>
       
-      <Card className="border-l-4 border-l-emerald-500">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base md:text-lg font-semibold">Client Status</CardTitle>
-          <CardDescription>Distribution by current status</CardDescription>
+      <Card className="border-l-4 border-l-emerald-500 hover:shadow-lg hover:shadow-emerald-100/30 transition-all duration-300 overflow-hidden">
+        <CardHeader className="pb-2 bg-gradient-to-r from-emerald-50/70 to-transparent dark:from-emerald-950/30">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 shadow-sm">
+              <PieChartIcon className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <CardTitle className="text-base md:text-lg font-semibold">Client Status</CardTitle>
+              <CardDescription>Distribution by current status</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[180px] md:h-[240px] flex items-center justify-center">
