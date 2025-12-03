@@ -10,11 +10,16 @@ import { UnifiedInlineUploadForm } from "@/components/documents/UnifiedInlineUpl
 import { useUnifiedDocuments } from "@/hooks/useUnifiedDocuments";
 import { Upload, Eye, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
 const Documents = () => {
   const [activeTab, setActiveTab] = useState("view");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const { id, branchName } = useParams<{ id: string; branchName: string }>();
+  const {
+    id,
+    branchName
+  } = useParams<{
+    id: string;
+    branchName: string;
+  }>();
   const location = useLocation();
   const queryClient = useQueryClient();
 
@@ -26,7 +31,6 @@ const Documents = () => {
       pathname: location.pathname
     });
   }, [id, branchName, location.pathname]);
-
   const {
     documents,
     isLoading: documentsLoading,
@@ -39,46 +43,42 @@ const Documents = () => {
   } = useUnifiedDocuments(id || '');
 
   // Fetch clients and staff for the upload dialog
-  const { data: clients = [] } = useQuery({
+  const {
+    data: clients = []
+  } = useQuery({
     queryKey: ['clients', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name')
-        .eq('branch_id', id)
-        .order('first_name');
-      
+      const {
+        data,
+        error
+      } = await supabase.from('clients').select('id, first_name, last_name').eq('branch_id', id).order('first_name');
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id
   });
-
-  const { data: staff = [] } = useQuery({
+  const {
+    data: staff = []
+  } = useQuery({
     queryKey: ['staff', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('staff')
-        .select('id, first_name, last_name')
-        .eq('branch_id', id)
-        .order('first_name');
-      
+      const {
+        data,
+        error
+      } = await supabase.from('staff').select('id, first_name, last_name').eq('branch_id', id).order('first_name');
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!id
   });
-
   useEffect(() => {
     if (branchName) {
       document.title = `Documents - ${decodeURIComponent(branchName)}`;
     }
   }, [branchName]);
-
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
-
   const handleUploadDocument = async (uploadData: any) => {
     try {
       await uploadDocument(uploadData);
@@ -88,21 +88,18 @@ const Documents = () => {
       // Error is already handled by the uploadDocument function with toast notifications
     }
   };
-
   const handleDeleteDocument = async (documentId: string) => {
     if (window.confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
       await deleteDocument(documentId);
     }
   };
-
   const handleBulkDeleteDocuments = async (documentIds: string[]) => {
     await deleteBulkDocuments(documentIds);
   };
 
   // Show error state if no branch ID
   if (!id) {
-    return (
-      <BranchLayout>
+    return <BranchLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -110,25 +107,16 @@ const Documents = () => {
             <p className="text-muted-foreground">Unable to load documents - branch ID is missing.</p>
           </div>
         </div>
-      </BranchLayout>
-    );
+      </BranchLayout>;
   }
-
-  return (
-    <BranchLayout onUploadDocument={() => setIsUploadDialogOpen(true)}>
+  return <BranchLayout onUploadDocument={() => setIsUploadDialogOpen(true)}>
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-xl font-bold mb-1">Documents</h2>
             <p className="text-sm text-muted-foreground">Manage and organize branch documents</p>
           </div>
-          <Button 
-            onClick={() => setIsUploadDialogOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Document
-          </Button>
+          
         </div>
         
         <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-2">
@@ -144,38 +132,17 @@ const Documents = () => {
           </TabsList>
           
           <TabsContent value="view" className="space-y-6">
-            <UnifiedDocumentsList
-              documents={documents}
-              isLoading={documentsLoading}
-              onDeleteDocument={handleDeleteDocument}
-              onBulkDeleteDocuments={handleBulkDeleteDocuments}
-              onDownloadDocument={downloadDocument}
-              onViewDocument={viewDocument}
-              branchId={id || ""}
-            />
+            <UnifiedDocumentsList documents={documents} isLoading={documentsLoading} onDeleteDocument={handleDeleteDocument} onBulkDeleteDocuments={handleBulkDeleteDocuments} onDownloadDocument={downloadDocument} onViewDocument={viewDocument} branchId={id || ""} />
           </TabsContent>
           
           <TabsContent value="upload" className="space-y-6">
-            <UnifiedInlineUploadForm
-              onSave={handleUploadDocument}
-              isUploading={isUploading}
-              clients={clients || []}
-              staff={staff || []}
-            />
+            <UnifiedInlineUploadForm onSave={handleUploadDocument} isUploading={isUploading} clients={clients || []} staff={staff || []} />
           </TabsContent>
         </Tabs>
       </div>
 
       {/* Upload Dialog */}
-      <UnifiedUploadDialog
-        open={isUploadDialogOpen}
-        onOpenChange={setIsUploadDialogOpen}
-        onSave={handleUploadDocument}
-        clients={clients || []}
-        staff={staff || []}
-      />
-    </BranchLayout>
-  );
+      <UnifiedUploadDialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen} onSave={handleUploadDocument} clients={clients || []} staff={staff || []} />
+    </BranchLayout>;
 };
-
 export default Documents;
