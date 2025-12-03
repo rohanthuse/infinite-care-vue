@@ -280,7 +280,7 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
   const uploadMutation = useMutation({
     mutationFn: ({ file, documentType }: { file: File; documentType: string }) => 
       uploadStaffDocument(file, carerId, documentType),
-    onSuccess: () => {
+    onSuccess: async (data) => {
       toast({
         title: "Success",
         description: "Document uploaded successfully",
@@ -289,6 +289,34 @@ export const CarerDocumentsTab: React.FC<CarerDocumentsTabProps> = ({ carerId })
       setUploadDialogOpen(false);
       setSelectedFile(null);
       setDocumentType('');
+      
+      // Trigger notification for Branch Admins
+      try {
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('branch_id, first_name, last_name')
+          .eq('id', carerId)
+          .single();
+
+        if (staffData?.branch_id) {
+          const staffName = `${staffData.first_name || ''} ${staffData.last_name || ''}`.trim() || 'A staff member';
+          
+          await supabase.functions.invoke('create-document-notifications', {
+            body: {
+              document_id: data?.id || 'unknown',
+              document_name: data?.document_type || documentType,
+              branch_id: staffData.branch_id,
+              notify_admins_staff: true,
+              staff_id: carerId,
+              staff_name: staffName,
+              upload_timestamp: new Date().toISOString()
+            }
+          });
+          console.log('[CarerDocumentsTab] Admin notification triggered for staff upload');
+        }
+      } catch (notifErr) {
+        console.error('[CarerDocumentsTab] Failed to trigger notification:', notifErr);
+      }
     },
     onError: (error: Error) => {
       toast({

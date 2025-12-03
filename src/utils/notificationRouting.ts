@@ -10,6 +10,8 @@ const EXTENDED_TYPES: Record<string, string> = {
   'library_resource': 'library',
   'document_upload': 'document',
   'document_shared': 'document',
+  'client_document_upload': 'document',
+  'staff_document_upload': 'staff_document',
   'agreement_assignment': 'agreement',
   'agreement_shared': 'agreement',
   'pending_agreement': 'agreement',

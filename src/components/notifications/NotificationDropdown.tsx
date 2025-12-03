@@ -137,6 +137,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             navigate(`/branch-dashboard/${branchId}/${branchName}/booking`);
           } else if (effectiveType === 'document') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/documents`);
+          } else if (effectiveType === 'staff_document') {
+            // Staff document upload - redirect to staff profile
+            const data = notification.data as any;
+            if (data?.staff_id) {
+              navigate(`/branch-dashboard/${branchId}/${branchName}/carers/${data.staff_id}`);
+            } else {
+              navigate(`/branch-dashboard/${branchId}/${branchName}/carers`);
+            }
           } else if (effectiveType === 'form') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
           } else if (effectiveType === 'agreement') {

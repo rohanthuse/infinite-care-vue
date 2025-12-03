@@ -18,6 +18,10 @@ interface DocumentNotificationRequest {
   client_id?: string;
   client_name?: string;
   upload_timestamp?: string;
+  // Fields for staff document uploads
+  notify_admins_staff?: boolean;
+  staff_id?: string;
+  staff_name?: string;
 }
 
 Deno.serve(async (req) => {
@@ -42,7 +46,10 @@ Deno.serve(async (req) => {
       notify_admins,
       client_id,
       client_name,
-      upload_timestamp
+      upload_timestamp,
+      notify_admins_staff,
+      staff_id,
+      staff_name
     }: DocumentNotificationRequest = await req.json();
 
     console.log('[create-document-notifications] Request received:', {
@@ -55,7 +62,10 @@ Deno.serve(async (req) => {
       staff_ids_count: staff_ids?.length || 0,
       notify_admins,
       client_id,
-      client_name
+      client_name,
+      notify_admins_staff,
+      staff_id,
+      staff_name
     });
 
     if (!document_id || !document_name || !branch_id) {
@@ -102,7 +112,43 @@ Deno.serve(async (req) => {
           }
         });
       }
-    } 
+    }
+    // Handle staff document uploads - notify branch admins
+    else if (notify_admins_staff) {
+      console.log('[create-document-notifications] Staff upload - fetching branch admins for branch:', branch_id);
+      
+      const { data: branchAdmins, error: adminError } = await supabase
+        .from('admin_branches')
+        .select('admin_id')
+        .eq('branch_id', branch_id);
+
+      if (adminError) {
+        console.error('[create-document-notifications] Error fetching branch admins:', adminError);
+      } else if (branchAdmins && branchAdmins.length > 0) {
+        console.log('[create-document-notifications] Found branch admins:', branchAdmins.length);
+        branchAdmins.forEach(admin => {
+          if (admin.admin_id) {
+            userIdsToNotify.push(admin.admin_id);
+          }
+        });
+      }
+
+      const { data: superAdmins, error: superAdminError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'super_admin');
+
+      if (superAdminError) {
+        console.error('[create-document-notifications] Error fetching super admins:', superAdminError);
+      } else if (superAdmins && superAdmins.length > 0) {
+        console.log('[create-document-notifications] Found super admins:', superAdmins.length);
+        superAdmins.forEach(admin => {
+          if (admin.user_id) {
+            userIdsToNotify.push(admin.user_id);
+          }
+        });
+      }
+    }
     // Handle document sharing based on access level
     else if (access_level === 'public' && organization_id) {
       // PUBLIC: Notify all clients and staff in the entire organization
@@ -303,6 +349,18 @@ Deno.serve(async (req) => {
         notification_type: 'client_document_upload',
         redirect_url: '/documents',
         upload_timestamp
+      };
+    } else if (notify_admins_staff && staff_name) {
+      // Staff document upload notification for admins
+      notificationTitle = 'New Document Uploaded by Staff';
+      notificationMessage = `${staff_name} has uploaded a new document. Click to view.`;
+      notificationData = {
+        document_id,
+        staff_id,
+        staff_name,
+        document_name,
+        notification_type: 'staff_document_upload',
+        redirect_url: `/carers/${staff_id}/documents`
       };
     } else {
       // Standard document shared notification
