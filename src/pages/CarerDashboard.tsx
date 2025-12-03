@@ -63,7 +63,7 @@ const CarerDashboard: React.FC = () => {
 
   return (
     <div 
-      className="min-h-screen flex flex-col bg-gray-50"
+      className="h-screen overflow-hidden flex flex-col bg-gray-50"
       style={{ 
         '--carer-header-height': '64px',
         '--carer-subheader-height': '56px',
@@ -76,7 +76,10 @@ const CarerDashboard: React.FC = () => {
       {/* Attendance Check-In Popup - shows only if not checked in today */}
       <CarerAttendanceCheckInModal />
       
-      <div className="flex flex-1 min-h-0 w-full">
+      <div 
+        className="flex flex-1 min-h-0 w-full"
+        style={{ marginTop: 'var(--carer-total-header-height, 120px)' }}
+      >
         {/* Left Sidebar */}
         <CarerSidebar />
         
