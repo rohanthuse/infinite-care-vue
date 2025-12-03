@@ -34,11 +34,9 @@ export interface UploadDocumentData {
   file: File;
   tags: string[];
   access_level: string;
-  client_id?: string;
-  staff_id?: string;
   expiry_date?: string;
-  shared_with_clients?: string[];
-  shared_with_staff?: string[];
+  shared_with_clients?: string[];  // For restricted access only
+  shared_with_staff?: string[];    // For restricted access only
 }
 
 interface DocumentUploadAccessCheck {
@@ -107,7 +105,7 @@ export const useUnifiedDocuments = (branchId: string) => {
       fileName: uploadData.file.name,
       fileSize: uploadData.file.size,
       category: uploadData.category,
-      clientId: uploadData.client_id
+      accessLevel: uploadData.access_level
     });
     
     setIsUploading(true);
@@ -373,10 +371,11 @@ export const useUnifiedDocuments = (branchId: string) => {
         }
       } else {
         // For public and branch access, create one document record
+        // DO NOT set client_id or staff_id - visibility is controlled by access_level only
         documentsToCreate.push({
           ...baseDocumentData,
-          client_id: uploadData.client_id || null,
-          staff_id: uploadData.staff_id || null
+          client_id: null,
+          staff_id: null
         });
       }
 

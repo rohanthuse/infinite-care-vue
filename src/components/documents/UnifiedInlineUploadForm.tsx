@@ -105,8 +105,6 @@ export function UnifiedInlineUploadForm({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
-  const [relatedEntity, setRelatedEntity] = useState<string>("none");
-  const [relatedEntityId, setRelatedEntityId] = useState<string>("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileError, setFileError] = useState<string>("");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -268,12 +266,6 @@ export function UnifiedInlineUploadForm({
         shared_with_staff: sharedWithStaff.length > 0 ? sharedWithStaff : undefined,
       };
 
-      // Add related entity if selected
-      if (relatedEntity === "client" && relatedEntityId) {
-        uploadData.client_id = relatedEntityId;
-      } else if (relatedEntity === "staff" && relatedEntityId) {
-        uploadData.staff_id = relatedEntityId;
-      }
 
       setUploadProgress(50);
       await onSave(uploadData);
@@ -283,8 +275,6 @@ export function UnifiedInlineUploadForm({
       form.reset();
       setSelectedFile(null);
       setTags([]);
-      setRelatedEntity("none");
-      setRelatedEntityId("");
       setSharedWithClients([]);
       setSharedWithStaff([]);
       setFileError("");
@@ -561,50 +551,6 @@ export function UnifiedInlineUploadForm({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Related Entity Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Related To</label>
-                <Select value={relatedEntity} onValueChange={setRelatedEntity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select entity type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Related Entity Selection */}
-            {relatedEntity && relatedEntity !== "none" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Select {relatedEntity === "client" ? "Client" : "Staff Member"}
-                </label>
-                <Select value={relatedEntityId} onValueChange={setRelatedEntityId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Select ${relatedEntity}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {relatedEntity === "client" ? 
-                      clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.first_name} {client.last_name}
-                        </SelectItem>
-                      )) :
-                      staff.map((staffMember) => (
-                        <SelectItem key={staffMember.id} value={staffMember.id}>
-                          {staffMember.first_name} {staffMember.last_name}
-                        </SelectItem>
-                      ))
-                    }
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             <FormField
               control={form.control}
@@ -678,8 +624,6 @@ export function UnifiedInlineUploadForm({
                   form.reset();
                   setSelectedFile(null);
                   setTags([]);
-                  setRelatedEntity("none");
-                  setRelatedEntityId("");
                   setSharedWithClients([]);
                   setSharedWithStaff([]);
                   setFileError("");

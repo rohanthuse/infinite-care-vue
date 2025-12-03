@@ -91,8 +91,6 @@ export function UnifiedUploadDialog({
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [relatedEntity, setRelatedEntity] = useState<string>("none");
-  const [relatedEntityId, setRelatedEntityId] = useState<string>("");
   const [sharedWithClients, setSharedWithClients] = useState<string[]>([]);
   const [sharedWithStaff, setSharedWithStaff] = useState<string[]>([]);
   
@@ -163,12 +161,6 @@ export function UnifiedUploadDialog({
         shared_with_staff: sharedWithStaff.length > 0 ? sharedWithStaff : undefined,
       };
 
-      // Add related entity if selected
-      if (relatedEntity === "client" && relatedEntityId) {
-        uploadData.client_id = relatedEntityId;
-      } else if (relatedEntity === "staff" && relatedEntityId) {
-        uploadData.staff_id = relatedEntityId;
-      }
 
       await onSave(uploadData);
       
@@ -176,8 +168,6 @@ export function UnifiedUploadDialog({
       form.reset();
       setSelectedFile(null);
       setTags([]);
-      setRelatedEntity("none");
-      setRelatedEntityId("");
       setSharedWithClients([]);
       setSharedWithStaff([]);
       onOpenChange(false);
@@ -371,49 +361,6 @@ export function UnifiedUploadDialog({
               </div>
             )}
 
-            {/* Related Entity Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Related To</label>
-                <Select value={relatedEntity} onValueChange={setRelatedEntity}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select entity type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="staff">Staff</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {relatedEntity && relatedEntity !== "none" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Select {relatedEntity === "client" ? "Client" : "Staff Member"}
-                  </label>
-                  <Select value={relatedEntityId} onValueChange={setRelatedEntityId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${relatedEntity}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relatedEntity === "client" ? 
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.first_name} {client.last_name}
-                          </SelectItem>
-                        )) :
-                        staff.map((staffMember) => (
-                          <SelectItem key={staffMember.id} value={staffMember.id}>
-                            {staffMember.first_name} {staffMember.last_name}
-                          </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
 
             <FormField
               control={form.control}
