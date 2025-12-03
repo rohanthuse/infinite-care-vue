@@ -374,23 +374,40 @@ export const useCreateEventLog = () => {
             .single();
 
           if (staff?.auth_user_id) {
+            // Create appropriate message based on assignment type
+            let notificationTitle = '';
+            let notificationMessage = '';
+            
+            if (assignment.type === 'Follow-up') {
+              notificationTitle = 'Event/Log Follow-up Assignment';
+              notificationMessage = 'You have been assigned for Follow-up on a new Event/Log.';
+            } else if (assignment.type === 'Investigation') {
+              notificationTitle = 'Event/Log Investigation Assignment';
+              notificationMessage = 'You have been assigned for Investigation on a new Event/Log.';
+            } else {
+              notificationTitle = `Event/Log ${assignment.type}: ${data.title}`;
+              notificationMessage = assignment.additionalInfo || 'You have been assigned to this event.';
+            }
+            
             await supabase
               .from('notifications')
               .insert({
                 user_id: staff.auth_user_id,
                 branch_id: eventData.branch_id,
-                type: 'task',
+                type: 'info',
                 category: assignment.type === 'Investigation' ? 'warning' : 'info',
                 priority: assignment.priority,
-                title: `${assignment.type} Assignment: ${data.title}`,
-                message: assignment.additionalInfo || `You have been assigned to this event.`,
+                title: notificationTitle,
+                message: notificationMessage,
                 data: {
                   event_id: data.id,
                   client_id: data.client_id,
                   event_type: data.event_type,
+                  event_title: data.title,
                   assignment_type: assignment.type.toLowerCase(),
                   follow_up_date: eventData.follow_up_date || null,
-                  expected_resolution_date: eventData.expected_resolution_date || null
+                  expected_resolution_date: eventData.expected_resolution_date || null,
+                  notification_type: 'event_log'
                 }
               });
             console.log(`${assignment.type} notification created for staff:`, staff.first_name, staff.last_name);
@@ -414,16 +431,17 @@ export const useCreateEventLog = () => {
             .insert({
               user_id: client.auth_user_id,
               branch_id: eventData.branch_id,
-              type: 'event_log',
+              type: 'info',
               category: 'info',
               priority: data.severity === 'critical' ? 'high' : data.severity === 'high' ? 'medium' : 'low',
-              title: 'Care Action Recorded',
-              message: `A care event "${data.title}" has been recorded and is being followed up by your care team.`,
+              title: 'New Event/Log Added',
+              message: 'A new Event/Log has been added to your profile.',
               data: {
                 event_id: data.id,
                 event_type: data.event_type,
                 event_title: data.title,
-                severity: data.severity
+                severity: data.severity,
+                notification_type: 'event_log'
               }
             });
           console.log('Client notification created successfully');

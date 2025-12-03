@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { useClientAuth } from "@/hooks/useClientAuth";
 import { useClientEvents } from "@/hooks/useClientEvents";
 import { EventDetailsDialog } from "@/components/events-logs/EventDetailsDialog";
+import { getDeepLinkData, clearDeepLinkKey } from "@/utils/notificationRouting";
 
 const ClientEventsLogs = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,6 +29,19 @@ const ClientEventsLogs = () => {
 
   // Fetch client events
   const { data: events, isLoading, error } = useClientEvents(clientId || "");
+
+  // Auto-open event from notification deep link
+  useEffect(() => {
+    const openEventId = getDeepLinkData('openEventId');
+    if (openEventId && events && events.length > 0) {
+      const eventToOpen = events.find((e: any) => e.id === openEventId);
+      if (eventToOpen) {
+        setSelectedEvent(eventToOpen);
+        setDialogOpen(true);
+        clearDeepLinkKey('openEventId');
+      }
+    }
+  }, [events]);
 
   if (!isAuthenticated || !clientId) {
     return (

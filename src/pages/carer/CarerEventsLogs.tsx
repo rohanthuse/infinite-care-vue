@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useEventsLogs } from '@/data/hooks/useEventsLogs';
 import { EventDetailsDialog } from '@/components/events-logs/EventDetailsDialog';
 import type { EventLog } from '@/data/hooks/useEventsLogs';
+import { getDeepLinkData, clearDeepLinkKey } from '@/utils/notificationRouting';
 
 const CarerEventsLogs: React.FC = () => {
   const { data: userRole } = useUserRole();
@@ -23,6 +24,19 @@ const CarerEventsLogs: React.FC = () => {
     userRole?.branchId, 
     filters
   );
+
+  // Auto-open event from notification deep link
+  useEffect(() => {
+    const openEventId = getDeepLinkData('openEventId');
+    if (openEventId && assignedEvents && assignedEvents.length > 0) {
+      const eventToOpen = assignedEvents.find((e) => e.id === openEventId);
+      if (eventToOpen) {
+        setSelectedEvent(eventToOpen);
+        setIsDetailsOpen(true);
+        clearDeepLinkKey('openEventId');
+      }
+    }
+  }, [assignedEvents]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
