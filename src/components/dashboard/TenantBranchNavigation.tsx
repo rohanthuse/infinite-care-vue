@@ -231,12 +231,15 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="bg-card rounded-lg border border-border p-6 mb-8"
+      className="bg-gradient-to-br from-card via-card to-blue-50/30 dark:to-blue-950/10 rounded-xl border border-border shadow-md shadow-blue-100/20 dark:shadow-blue-900/10 p-6 mb-8 relative overflow-hidden"
     >
+      {/* Gradient accent */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500" />
+      
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Building2 className="h-6 w-6 text-primary" />
+          <div className="p-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl shadow-sm">
+            <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-foreground">Organisation Branches</h2>
@@ -282,11 +285,11 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="hover:shadow-md transition-shadow cursor-pointer border-border hover:border-primary/50">
+              <Card className="hover:shadow-lg hover:shadow-blue-100/30 dark:hover:shadow-blue-900/20 transition-all cursor-pointer border-border hover:border-primary/50 bg-gradient-to-br from-card to-blue-50/20 dark:to-blue-950/10 border-t-2 border-t-blue-500 group">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-foreground mb-1 line-clamp-1">
+                      <h3 className="font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {branch.name}
                       </h3>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -324,7 +327,7 @@ export const TenantBranchNavigation: React.FC<TenantBranchNavigationProps> = ({
 
                   <Button
                     onClick={() => handleEnterBranch(branch)}
-                    className="w-full"
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-sm shadow-blue-200/50 dark:shadow-blue-900/30"
                     size="sm"
                   >
                     Enter Branch

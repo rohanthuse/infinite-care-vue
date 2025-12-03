@@ -16,7 +16,7 @@ export const SystemSectionTabs: React.FC<SystemSectionTabsProps> = ({ value }) =
   const navigate = useNavigate();
 
   return (
-    <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 mb-6">
+    <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 mb-6 bg-gradient-to-r from-muted/80 via-muted to-blue-50/50 dark:to-blue-950/30 p-1.5 rounded-xl shadow-sm">
       <TabsTrigger
         value="dashboard"
         data-active={value === "dashboard"}

@@ -428,13 +428,13 @@ export const TabNavigation = ({
 
         <div className="hidden md:flex md:flex-col md:space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="w-full overflow-x-auto hide-scrollbar bg-white border border-gray-100 rounded-xl shadow-sm">
+            <div className="w-full overflow-x-auto hide-scrollbar bg-gradient-to-r from-white via-white to-blue-50/30 dark:from-card dark:via-card dark:to-blue-950/20 border border-gray-100 dark:border-border rounded-xl shadow-sm shadow-blue-100/20 dark:shadow-blue-900/10">
               <Tabs 
                 value={activeTab} 
                 onValueChange={handleTabNavigation}
                 className="w-full"
               >
-                <TabsList className="bg-white p-1 rounded-xl w-full justify-start">
+                <TabsList className="bg-transparent p-1.5 rounded-xl w-full justify-start">
                   {filteredPrimaryTabs.map((tab) => {
                     const Icon = tab.icon;
                     return (
@@ -442,8 +442,10 @@ export const TabNavigation = ({
                         key={tab.value}
                         value={tab.value}
                         className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600",
-                          "transition-all duration-200 flex-shrink-0"
+                          "flex items-center gap-2 px-4 py-2 rounded-lg",
+                          "data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/10 data-[state=active]:to-cyan-500/10 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400",
+                          "data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-sm",
+                          "transition-all duration-200 flex-shrink-0 hover:bg-blue-50/50 dark:hover:bg-blue-950/30"
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -458,7 +460,7 @@ export const TabNavigation = ({
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700">
+                  <Button variant="outline" size="sm" className="flex items-center gap-2 border-blue-200 dark:border-blue-800 bg-white dark:bg-card hover:bg-blue-50 dark:hover:bg-blue-950/30 text-blue-700 dark:text-blue-300">
                     <Search className="h-4 w-4" />
                     <span className="hidden sm:inline">Search</span>
                   </Button>

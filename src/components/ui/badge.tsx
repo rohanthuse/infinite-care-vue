@@ -4,23 +4,25 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "border-transparent bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 shadow-sm shadow-primary/20",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border-transparent bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground hover:from-secondary/90 hover:to-secondary/80",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+          "border-transparent bg-gradient-to-r from-destructive to-red-600 text-destructive-foreground hover:from-destructive/90 hover:to-red-600/90 shadow-sm shadow-red-200/30",
         success:
-          "border-transparent bg-green-500 text-white hover:bg-green-500/80",
+          "border-transparent bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-500/90 hover:to-emerald-500/90 shadow-sm shadow-green-200/30",
         info:
-          "border-transparent bg-blue-500 text-white hover:bg-blue-500/80",
+          "border-transparent bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-500/90 hover:to-cyan-500/90 shadow-sm shadow-blue-200/30",
         warning:
-          "border-transparent bg-yellow-500 text-white hover:bg-yellow-500/80",
-        outline: "text-foreground",
+          "border-transparent bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-500/90 hover:to-amber-500/90 shadow-sm shadow-yellow-200/30",
+        outline: "text-foreground border-border/50",
+        premium:
+          "border-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white shadow-sm shadow-purple-200/30",
       },
     },
     defaultVariants: {

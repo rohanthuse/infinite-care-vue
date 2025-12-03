@@ -38,14 +38,17 @@ const NavTile = ({
         "relative flex flex-col items-center justify-center p-4 cursor-pointer rounded-xl transition-all duration-300",
         "border border-border w-full",
         isActive 
-          ? "bg-primary/10 shadow-sm border-primary/50" 
-          : "bg-card hover:bg-accent hover:border-primary/30"
+          ? "bg-gradient-to-br from-primary/15 via-primary/10 to-cyan-500/10 shadow-md shadow-primary/10 border-primary/50 border-t-2 border-t-primary" 
+          : "bg-card hover:bg-gradient-to-br hover:from-accent hover:to-primary/5 hover:border-primary/30 hover:shadow-sm hover:shadow-primary/5"
       )}
       onClick={onClick}
     >
-      <div className="relative">
+      <div className={cn(
+        "relative p-2 rounded-lg mb-1 transition-all",
+        isActive ? "bg-primary/20" : "bg-muted/50"
+      )}>
         <Icon className={cn(
-          "h-6 w-6 mb-2",
+          "h-5 w-5",
           isActive ? "text-primary" : "text-muted-foreground"
         )} />
       </div>
@@ -97,15 +100,18 @@ const SubNavTile = ({
         "relative cursor-pointer rounded-xl transition-all duration-300 p-3",
         "hover:shadow-soft border", 
         isActive 
-          ? "bg-card border-primary/50 shadow-soft" 
-          : "bg-card/60 backdrop-blur-sm border-transparent hover:border-primary/20"
+          ? "bg-gradient-to-br from-card to-primary/10 border-primary/50 shadow-md shadow-primary/10 border-l-2 border-l-primary" 
+          : "bg-card/60 backdrop-blur-sm border-transparent hover:border-primary/20 hover:bg-gradient-to-br hover:from-card hover:to-accent/50"
       )}
       onClick={onClick}
     >
       <div className="flex flex-col items-center">
-        <div className="relative mb-1.5">
+        <div className={cn(
+          "relative mb-1.5 p-1.5 rounded-lg transition-all",
+          isActive ? "bg-primary/20" : "bg-muted/30"
+        )}>
           <Icon className={cn(
-            "h-5 w-5",
+            "h-4 w-4",
             isActive ? "text-primary" : "text-muted-foreground"
           )} />
         </div>
@@ -208,7 +214,7 @@ export function DashboardNavbar() {
 
   return (
     <div className="sticky top-[4.5rem] z-10">
-      <nav className="bg-card/80 backdrop-blur-md border-b border-border/40 py-6">
+      <nav className="bg-gradient-to-r from-card/90 via-card/80 to-blue-50/30 dark:to-blue-950/20 backdrop-blur-md border-b border-border/40 py-6 shadow-sm shadow-blue-100/10 dark:shadow-blue-900/10">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {mainNavItems.map((item) => (
@@ -234,7 +240,7 @@ export function DashboardNavbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-muted/80 backdrop-blur-sm py-8 shadow-sm border-b border-border"
+            className="bg-gradient-to-r from-muted/80 via-muted/70 to-primary/5 backdrop-blur-sm py-8 shadow-sm border-b border-border"
           >
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-4 md:grid-cols-8 gap-4">

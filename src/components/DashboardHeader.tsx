@@ -210,7 +210,7 @@ export function DashboardHeader() {
     navigate(adminPath);
   };
   
-  return <header className="bg-background shadow-sm border-b border-border py-3 md:py-4 sticky top-0 z-50 w-full">
+  return <header className="bg-gradient-to-r from-background via-background to-blue-50/30 dark:to-blue-950/20 shadow-sm shadow-blue-100/20 dark:shadow-blue-900/10 border-b border-border py-3 md:py-4 sticky top-0 z-50 w-full relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gradient-to-r after:from-blue-500 after:via-cyan-500 after:to-emerald-500">
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo aligned to the left - simplified for mobile */}
         <div 
