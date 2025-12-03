@@ -106,28 +106,26 @@ export const CarerRightSidebar: React.FC = () => {
   })).filter(group => group.items.length > 0);
 
   return (
-    <div 
+    <aside 
       className={cn(
-        "hidden md:block shrink-0 transition-all duration-200",
+        "hidden lg:flex flex-col shrink-0 border-l bg-sidebar transition-all duration-200 overflow-y-auto",
         sidebarOpen ? "w-64" : "w-14"
       )}
+      style={{
+        height: 'calc(100vh - var(--carer-total-header-height, 120px))',
+        position: 'sticky',
+        top: 'var(--carer-total-header-height, 120px)'
+      }}
     >
-      <div 
-        className="fixed right-0 border-l bg-sidebar z-50"
+      <Sidebar 
+        side="right" 
+        collapsible="icon"
+        className="h-full border-none bg-transparent"
         style={{
-          top: 'var(--carer-total-header-height, 64px)',
-          height: 'calc(100vh - var(--carer-total-header-height, 64px))'
-        }}
+          '--sidebar-width': '16rem',
+          '--sidebar-width-icon': '3.5rem',
+        } as React.CSSProperties}
       >
-        <Sidebar 
-          side="right" 
-          collapsible="icon"
-          className="h-full border-none bg-transparent"
-          style={{
-            '--sidebar-width': '16rem',
-            '--sidebar-width-icon': '3.5rem',
-          } as React.CSSProperties}
-        >
       <SidebarHeader className="border-b p-3 lg:p-4">
         <div className="flex items-center justify-between">
           {sidebarOpen && <h2 className="text-base lg:text-lg font-semibold">Navigation</h2>}
@@ -226,8 +224,7 @@ export const CarerRightSidebar: React.FC = () => {
           </p>
         )}
       </SidebarFooter>
-        </Sidebar>
-      </div>
-    </div>
+      </Sidebar>
+    </aside>
   );
 };
