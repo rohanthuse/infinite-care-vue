@@ -28,6 +28,7 @@ interface AttendanceRecord {
 }
 
 interface AttendanceExportDropdownProps {
+  branchId: string;
   branchName: string;
   currentDate: Date;
   attendanceData: AttendanceRecord[];
@@ -38,6 +39,7 @@ interface AttendanceExportDropdownProps {
 }
 
 export const AttendanceExportDropdown: React.FC<AttendanceExportDropdownProps> = ({
+  branchId,
   branchName,
   currentDate,
   attendanceData,
@@ -46,9 +48,9 @@ export const AttendanceExportDropdown: React.FC<AttendanceExportDropdownProps> =
   absentDays,
   lateDays,
 }) => {
-  const generateReport = (
+  const generateReport = async (
     type: "daily" | "weekly" | "monthly",
-    format: "pdf" | "excel"
+    reportFormat: "pdf" | "excel"
   ) => {
     let startDate: Date;
     let endDate: Date;
@@ -81,6 +83,7 @@ export const AttendanceExportDropdown: React.FC<AttendanceExportDropdownProps> =
     }
 
     const metadata = {
+      branchId,
       branchName,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -102,14 +105,20 @@ export const AttendanceExportDropdown: React.FC<AttendanceExportDropdownProps> =
 
     const filename = `attendance_${type}_${startDate.toISOString().split("T")[0]}`;
 
-    if (format === "pdf") {
-      const doc = generateAttendancePDF(reportData, metadata, summary);
-      downloadPDF(doc, `${filename}.pdf`);
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} PDF report generated`);
-    } else {
-      const csv = generateAttendanceExcel(reportData, metadata, summary);
-      downloadExcel(csv, `${filename}.csv`);
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} Excel report generated`);
+    try {
+      if (reportFormat === "pdf") {
+        toast.loading("Generating PDF report...", { id: "pdf-generation" });
+        const doc = await generateAttendancePDF(reportData, metadata, summary);
+        downloadPDF(doc, `${filename}.pdf`);
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} PDF report generated`, { id: "pdf-generation" });
+      } else {
+        const csv = generateAttendanceExcel(reportData, metadata, summary);
+        downloadExcel(csv, `${filename}.csv`);
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} Excel report generated`);
+      }
+    } catch (error) {
+      console.error("Error generating report:", error);
+      toast.error("Failed to generate report", { id: "pdf-generation" });
     }
   };
 
