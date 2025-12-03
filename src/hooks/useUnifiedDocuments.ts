@@ -406,8 +406,9 @@ export const useUnifiedDocuments = (branchId: string) => {
       // Invalidate and refetch documents
       queryClient.invalidateQueries({ queryKey: ['unified-documents', branchId] });
       
-      // Trigger notifications for document recipients
+      // Trigger notifications for document recipients based on access level
       try {
+        // For restricted access, get specific client/staff IDs from document records
         const clientIds = documentRecords
           .filter((doc: any) => doc.client_id)
           .map((doc: any) => doc.client_id);
@@ -415,24 +416,40 @@ export const useUnifiedDocuments = (branchId: string) => {
           .filter((doc: any) => doc.staff_id)
           .map((doc: any) => doc.staff_id);
 
-        if (clientIds.length > 0 || staffIds.length > 0) {
-          console.log('[useUnifiedDocuments] Triggering document notifications for clients:', clientIds.length, 'staff:', staffIds.length);
-          
-          const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-document-notifications', {
-            body: {
-              document_id: documentRecords[0].id,
-              document_name: uploadData.name,
-              branch_id: branchId,
-              client_ids: [...new Set(clientIds)],
-              staff_ids: [...new Set(staffIds)]
-            }
-          });
+        // Get organization_id for public access notifications
+        let organizationId: string | null = null;
+        if (uploadData.access_level === 'public') {
+          const { data: branchData } = await supabase
+            .from('branches')
+            .select('organization_id')
+            .eq('id', branchId)
+            .single();
+          organizationId = branchData?.organization_id || null;
+        }
 
-          if (notifError) {
-            console.error('[useUnifiedDocuments] Error creating notifications:', notifError);
-          } else {
-            console.log('[useUnifiedDocuments] Notification result:', notifResult);
+        console.log('[useUnifiedDocuments] Triggering document notifications:', {
+          access_level: uploadData.access_level,
+          clientIds: clientIds.length,
+          staffIds: staffIds.length,
+          organizationId
+        });
+        
+        const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-document-notifications', {
+          body: {
+            document_id: documentRecords[0].id,
+            document_name: uploadData.name,
+            branch_id: branchId,
+            access_level: uploadData.access_level,
+            organization_id: organizationId,
+            client_ids: [...new Set(clientIds)],
+            staff_ids: [...new Set(staffIds)]
           }
+        });
+
+        if (notifError) {
+          console.error('[useUnifiedDocuments] Error creating notifications:', notifError);
+        } else {
+          console.log('[useUnifiedDocuments] Notification result:', notifResult);
         }
       } catch (notifErr) {
         console.error('[useUnifiedDocuments] Failed to trigger notifications:', notifErr);
