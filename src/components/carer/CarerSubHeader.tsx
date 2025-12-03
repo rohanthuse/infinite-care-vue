@@ -51,7 +51,7 @@ export const CarerSubHeader: React.FC = () => {
   const branchStatus = carerContext?.branchInfo?.status || 'active';
   
   return (
-    <div className="bg-gradient-to-br from-green-50/40 via-card to-teal-50/30 dark:from-green-950/20 dark:via-card dark:to-teal-950/20 border-b border-border border-l-4 border-l-green-500 px-4 sm:px-6 lg:px-8 py-3 shrink-0 fixed top-[64px] left-0 right-0 z-[55] shadow-sm shadow-green-100/10 dark:shadow-green-900/10">
+    <div className="bg-gradient-to-br from-green-50/40 via-card to-teal-50/30 dark:from-green-950/20 dark:via-card dark:to-teal-950/20 border-b border-border border-l-4 border-l-green-500 px-4 sm:px-6 lg:px-8 py-3 shrink-0 fixed top-[72px] left-0 right-0 z-[55] shadow-sm shadow-green-100/10 dark:shadow-green-900/10">
       <div className="flex items-center justify-between gap-4">
         {/* Left side - Branch & Org Info */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
