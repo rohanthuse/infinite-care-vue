@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ClipboardCheck } from "lucide-react";
+import { ArrowUpRight, ClipboardCheck, Calendar, Star, AlertTriangle } from "lucide-react";
 import { BookingItem } from "@/components/dashboard/BookingItem";
 import { ReviewItem, ReviewItemSkeleton } from "@/components/dashboard/ReviewItem";
 import { ActionItem } from "@/components/dashboard/ActionItem";
@@ -68,11 +68,14 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        <Card>
+        <Card className="border-l-4 border-l-green-500">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base md:text-lg font-semibold">Today's Bookings</CardTitle>
+                <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-green-600" />
+                  Today's Bookings
+                </CardTitle>
                 <CardDescription>Appointments for today</CardDescription>
               </div>
               <Button 
@@ -139,9 +142,12 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base md:text-lg font-semibold">Recent Feedbacks</CardTitle>
+            <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
+              <Star className="h-4 w-4 text-amber-600" />
+              Recent Feedbacks
+            </CardTitle>
             <CardDescription>Latest client feedback</CardDescription>
           </CardHeader>
           <CardContent>
@@ -176,11 +182,14 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        <Card>
+        <Card className="border-l-4 border-l-rose-500">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base md:text-lg font-semibold">Action Items</CardTitle>
+                <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4 text-rose-600" />
+                  Action Items
+                </CardTitle>
                 <CardDescription>Tasks requiring attention</CardDescription>
               </div>
               <Button 
@@ -236,11 +245,14 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
       </div>
       
       <div className="grid grid-cols-1 gap-4 md:gap-6 mb-6">
-        <Card>
+        <Card className="border-l-4 border-l-red-500">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base md:text-lg font-semibold">Expiry Alerts</CardTitle>
+                <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  Expiry Alerts
+                </CardTitle>
                 <CardDescription>Staff documents requiring attention</CardDescription>
               </div>
             </div>
