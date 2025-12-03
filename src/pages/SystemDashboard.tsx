@@ -130,7 +130,7 @@ export default function SystemDashboard() {
         {tab === 'dashboard' && (
           <>
             {/* Welcome Section */}
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
+            <div className="bg-gradient-to-br from-blue-50/50 via-card/50 to-cyan-50/30 dark:from-blue-950/20 dark:via-card/50 dark:to-cyan-950/20 backdrop-blur-sm border border-border/50 rounded-xl p-6 mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-2">
                 Welcome back, {user.name}
               </h2>
@@ -146,7 +146,7 @@ export default function SystemDashboard() {
                     user.roles.map((role) => (
                       <span
                         key={role}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-primary border border-primary/20"
                       >
                         {role.replace('_', ' ').toUpperCase()}
                       </span>
@@ -176,8 +176,8 @@ export default function SystemDashboard() {
                       className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
                       onClick={() => navigate('/system-dashboard/tenants?action=create')}
                     >
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Building className="h-6 w-6 text-primary" />
+                      <div className="p-2 bg-blue-500/10 rounded-lg">
+                        <Building className="h-6 w-6 text-blue-600" />
                       </div>
                       <span className="font-medium">Create Tenant</span>
                     </Button>
@@ -187,8 +187,8 @@ export default function SystemDashboard() {
                       className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
                       onClick={() => navigate('/system-dashboard/users?action=create')}
                     >
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Users className="h-6 w-6 text-primary" />
+                      <div className="p-2 bg-emerald-500/10 rounded-lg">
+                        <Users className="h-6 w-6 text-emerald-600" />
                       </div>
                       <span className="font-medium">Add Tenant User</span>
                     </Button>
@@ -200,8 +200,8 @@ export default function SystemDashboard() {
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow"
                   onClick={() => setAnalyticsModalOpen(true)}
                 >
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <BarChart3 className="h-6 w-6 text-primary" />
+                  <div className="p-2 bg-amber-500/10 rounded-lg">
+                    <BarChart3 className="h-6 w-6 text-amber-600" />
                   </div>
                   <span className="font-medium">View Analytics</span>
                 </Button>
@@ -211,8 +211,8 @@ export default function SystemDashboard() {
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow relative"
                   onClick={() => navigate('/system-dashboard?tab=reports')}
                 >
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <MessageSquare className="h-6 w-6 text-primary" />
+                  <div className="p-2 bg-purple-500/10 rounded-lg">
+                    <MessageSquare className="h-6 w-6 text-purple-600" />
                   </div>
                   <span className="font-medium">Demo Requests</span>
                   {demoStats?.pendingRequests && demoStats.pendingRequests > 0 && (
@@ -227,8 +227,8 @@ export default function SystemDashboard() {
                   className="h-auto p-6 flex flex-col items-center space-y-3 hover:shadow-md transition-shadow relative"
                   onClick={() => navigate('/system-dashboard?tab=notifications')}
                 >
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Bell className="h-6 w-6 text-primary" />
+                  <div className="p-2 bg-rose-500/10 rounded-lg">
+                    <Bell className="h-6 w-6 text-rose-600" />
                   </div>
                   <span className="font-medium">Notifications</span>
                   {unreadCount > 0 && (
