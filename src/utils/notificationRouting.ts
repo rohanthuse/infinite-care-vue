@@ -37,6 +37,7 @@ const EXTENDED_TYPES: Record<string, string> = {
   'review_request': 'review',
   'event_shared': 'events_logs',
   'task_assigned': 'task',
+  'event_log': 'events_logs',
 };
 
 // Client portal route mappings
