@@ -8,6 +8,7 @@ import { CarerRightSidebar } from "@/components/carer/CarerRightSidebar";
 import { useUnifiedCarerAuth } from "@/hooks/useUnifiedCarerAuth";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
+import { CarerAttendanceCheckInModal } from "@/components/carer/CarerAttendanceCheckInModal";
 
 const CarerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -70,6 +71,9 @@ const CarerDashboard: React.FC = () => {
     >
       <CarerHeader />
       <CarerSubHeader />
+      
+      {/* Attendance Check-In Popup - shows only if not checked in today */}
+      <CarerAttendanceCheckInModal />
       
       <div className="flex flex-1 min-h-0 w-full">
         <SidebarInset className="flex-1 min-w-0 overflow-y-auto">
