@@ -13,6 +13,7 @@ import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { 
   getNotificationRoute, 
   storeDeepLinkData,
+  getEffectiveNotificationType,
 } from "@/utils/notificationRouting";
 
 export default function CarerNotifications() {
@@ -55,23 +56,35 @@ export default function CarerNotifications() {
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    const effectiveType = getEffectiveNotificationType(notification);
+    
+    console.log('[CarerNotifications] Click:', {
+      id: notification.id,
+      type: notification.type,
+      dataNotificationType: (notification.data as any)?.notification_type,
+      effectiveType,
+      data: notification.data
+    });
+    
     // Mark notification as read
     markAsRead(notification.id);
     
     // Store deep-link data for auto-opening
     storeDeepLinkData(notification);
     
-    const notificationType = notification.type as string;
-    
     // Special handling for task/events with client_id - navigate to client page
-    if ((notificationType === 'task' || notificationType === 'events_logs') && notification.data?.client_id) {
-      navigate(createCarerPath(`/clients/${notification.data.client_id}`));
+    if ((effectiveType === 'task' || effectiveType === 'events_logs') && notification.data?.client_id) {
+      const path = createCarerPath(`/clients/${notification.data.client_id}`);
+      console.log('[CarerNotifications] Navigating to client:', path);
+      navigate(path);
       return;
     }
     
     // Special handling for client notifications
-    if (notificationType === 'client' && notification.data?.client_id) {
-      navigate(createCarerPath(`/clients/${notification.data.client_id}`));
+    if (effectiveType === 'client' && notification.data?.client_id) {
+      const path = createCarerPath(`/clients/${notification.data.client_id}`);
+      console.log('[CarerNotifications] Navigating to client:', path);
+      navigate(path);
       return;
     }
     
@@ -79,7 +92,11 @@ export default function CarerNotifications() {
     const route = getNotificationRoute(notification, 'carer');
     
     if (route) {
-      navigate(createCarerPath(route));
+      const fullPath = createCarerPath(route);
+      console.log('[CarerNotifications] Navigating to:', fullPath);
+      navigate(fullPath);
+    } else {
+      console.log('[CarerNotifications] No route found for type:', effectiveType);
     }
   };
 
