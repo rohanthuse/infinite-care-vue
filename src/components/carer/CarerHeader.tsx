@@ -12,6 +12,7 @@ import { useCarerProfile } from "@/hooks/useCarerProfile";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
 import { useCarerContext } from "@/hooks/useCarerContext";
 import { BranchSearchDropdown } from "@/components/search/BranchSearchDropdown";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export const CarerHeader: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +52,9 @@ export const CarerHeader: React.FC = () => {
       style={{ height: 'var(--carer-header-height, 72px)' }}
     >
       <div className="container mx-auto px-4 flex justify-between items-center relative">
-        {/* Logo */}
+        {/* Logo and Sidebar Trigger */}
         <div className="flex items-center gap-2 md:gap-4">
+          <SidebarTrigger className="h-8 w-8 md:h-10 md:w-10" />
           <img src="/lovable-uploads/3c8cdaf9-5267-424f-af69-9a1ce56b7ec5.png" alt="Med-Infinite Logo" className="w-8 h-8 md:w-10 md:h-10" />
           <div className="flex flex-col">
             <h2 className="text-sm md:text-lg font-bold tracking-tight">
