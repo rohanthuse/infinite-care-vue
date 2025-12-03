@@ -26,7 +26,7 @@ export const useTrainingManagement = (branchId: string) => {
 
       return newCourse;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ['training-courses', branchId],
         refetchType: 'active'
@@ -67,9 +67,32 @@ export const useTrainingManagement = (branchId: string) => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['staff-training-records', branchId] });
       queryClient.invalidateQueries({ queryKey: ['carer-training'] });
+      
+      // Fetch the course title for notification
+      try {
+        const { data: course } = await supabase
+          .from('training_courses')
+          .select('title')
+          .eq('id', variables.courseId)
+          .single();
+        
+        // Send notification to assigned staff
+        await supabase.functions.invoke('create-training-assignment-notifications', {
+          body: {
+            training_course_id: variables.courseId,
+            training_title: course?.title || 'Training Program',
+            staff_ids: variables.staffIds,
+            branch_id: branchId
+          }
+        });
+        console.log('[useTrainingManagement] Training assignment notifications sent');
+      } catch (notifError) {
+        console.error('[useTrainingManagement] Failed to send notifications:', notifError);
+      }
+      
       toast({
         title: "Training assigned",
         description: `Training assigned to ${data?.length || 0} staff members.`,

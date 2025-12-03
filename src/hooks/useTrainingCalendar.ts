@@ -61,6 +61,27 @@ export const useScheduleTraining = () => {
       
       console.log('✅ Calendar refetched after training creation');
       
+      // Send notification to the assigned staff member
+      try {
+        const { data: course } = await supabase
+          .from('training_courses')
+          .select('title')
+          .eq('id', variables.training_course_id)
+          .single();
+        
+        await supabase.functions.invoke('create-training-assignment-notifications', {
+          body: {
+            training_course_id: variables.training_course_id,
+            training_title: course?.title || 'Training Program',
+            staff_ids: [variables.staff_id],
+            branch_id: variables.branch_id
+          }
+        });
+        console.log('✅ Training assignment notification sent');
+      } catch (notifError) {
+        console.error('Failed to send training notification:', notifError);
+      }
+      
       toast.success(
         `Training scheduled for ${variables.scheduled_date}`,
         {
