@@ -259,7 +259,7 @@ export const generateComprehensiveAttendancePDF = async (
   currentY = addSectionHeader(doc, "Report Information", currentY, PDF_COLORS.gray[100]);
   
   doc.setFontSize(9);
-  doc.setFont(undefined!, "normal");
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
   
   const infoItems = [
@@ -276,9 +276,9 @@ export const generateComprehensiveAttendancePDF = async (
     const x = leftMargin + col * 100;
     const y = currentY + row * 6;
 
-    doc.setFont(undefined!, "bold");
+    doc.setFont("helvetica", "bold");
     doc.text(item.label, x, y);
-    doc.setFont(undefined!, "normal");
+    doc.setFont("helvetica", "normal");
     doc.text(item.value, x + 30, y);
   });
 
@@ -334,12 +334,12 @@ export const generateComprehensiveAttendancePDF = async (
     doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, "FD");
 
     doc.setFontSize(7);
-    doc.setFont(undefined!, "normal");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
     doc.text(item.label, boxX + 3, boxY + 7);
 
     doc.setFontSize(11);
-    doc.setFont(undefined!, "bold");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(item.color.r, item.color.g, item.color.b);
     doc.text(item.value, boxX + 3, boxY + 15);
   });
@@ -509,7 +509,7 @@ const generateDetailedTable = (
 // Add legend to PDF
 const addLegend = (doc: jsPDF, startY: number, leftMargin: number): number => {
   doc.setFontSize(8);
-  doc.setFont(undefined!, "bold");
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(PDF_COLORS.gray[700].r, PDF_COLORS.gray[700].g, PDF_COLORS.gray[700].b);
   doc.text("Legend:", leftMargin, startY);
 
@@ -530,12 +530,12 @@ const addLegend = (doc: jsPDF, startY: number, leftMargin: number): number => {
     doc.roundedRect(x, y, 12, 6, 1, 1, "FD");
     
     doc.setFontSize(7);
-    doc.setFont(undefined!, "bold");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(item.colors.text.r, item.colors.text.g, item.colors.text.b);
     doc.text(item.abbr, x + 4, y + 4.5);
 
     doc.setFontSize(7);
-    doc.setFont(undefined!, "normal");
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(PDF_COLORS.gray[600].r, PDF_COLORS.gray[600].g, PDF_COLORS.gray[600].b);
     doc.text(`= ${item.label}`, x + 14, y + 4.5);
 
@@ -568,7 +568,7 @@ export const generateAttendancePDF = async (
 
   let currentY = 20;
   doc.setFontSize(16);
-  doc.setFont(undefined!, "bold");
+  doc.setFont("helvetica", "bold");
   doc.text("ATTENDANCE REPORT", leftMargin, currentY);
   currentY += 15;
 

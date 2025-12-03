@@ -10,12 +10,13 @@ export const PDF_COLORS = {
   success: { r: 34, g: 197, b: 94 },
   warning: { r: 251, g: 191, b: 36 },
   danger: { r: 239, g: 68, b: 68 },
-  gray: {
+gray: {
     50: { r: 249, g: 250, b: 251 },
     100: { r: 243, g: 244, b: 246 },
     200: { r: 229, g: 231, b: 235 },
     300: { r: 209, g: 213, b: 219 },
     500: { r: 107, g: 114, b: 128 },
+    600: { r: 75, g: 85, b: 99 },
     700: { r: 55, g: 65, b: 81 },
     900: { r: 17, g: 24, b: 39 }
   }
@@ -145,14 +146,14 @@ export const addPDFHeader = async (
   // LEFT SIDE: Company Information
   if (orgSettings) {
     pdf.setFontSize(11);
-    pdf.setFont(undefined, 'bold');
+    pdf.setFont("helvetica", 'bold');
     pdf.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
     
     // Company Name
     pdf.text(orgSettings.name, leftMargin, headerY);
     headerY += 5;
     
-    pdf.setFont(undefined, 'normal');
+    pdf.setFont("helvetica", 'normal');
     pdf.setFontSize(8);
     pdf.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
     
@@ -180,9 +181,17 @@ export const addPDFHeader = async (
   // RIGHT SIDE: Company Logo
   if (logoBase64) {
     try {
+      // Detect image format from base64 string
+      const getImageFormat = (base64: string): 'PNG' | 'JPEG' | 'GIF' => {
+        if (base64.includes('data:image/jpeg') || base64.includes('data:image/jpg')) return 'JPEG';
+        if (base64.includes('data:image/gif')) return 'GIF';
+        return 'PNG'; // default fallback
+      };
+      
       // Position logo on right side (max width: 50, max height: 30)
       const logoX = rightMargin - 50;
-      pdf.addImage(logoBase64, 'PNG', logoX, 12, 50, 30);
+      const format = getImageFormat(logoBase64);
+      pdf.addImage(logoBase64, format, logoX, 12, 50, 30);
     } catch (error) {
       console.error('Error adding logo to header:', error);
     }
@@ -221,7 +230,7 @@ export const addPDFFooter = (
   
   // Footer text
   pdf.setFontSize(8);
-  pdf.setFont(undefined, 'normal');
+  pdf.setFont("helvetica", 'normal');
   pdf.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
   
   const footerText = orgSettings 
@@ -263,12 +272,12 @@ export const addSectionHeader = (
   pdf.rect(leftMargin, currentY - 5, rightMargin - leftMargin, 10, 'F');
   
   pdf.setFontSize(12);
-  pdf.setFont(undefined, 'bold');
+  pdf.setFont("helvetica", 'bold');
   pdf.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
   pdf.text(title, leftMargin + 3, currentY);
   
   // Reset
-  pdf.setFont(undefined, 'normal');
+  pdf.setFont("helvetica", 'normal');
   pdf.setTextColor(0, 0, 0);
   
   return currentY + 8;
@@ -288,14 +297,14 @@ export const addDocumentTitle = (
   
   // Main title
   pdf.setFontSize(18);
-  pdf.setFont(undefined, 'bold');
+  pdf.setFont("helvetica", 'bold');
   pdf.setTextColor(PDF_COLORS.gray[900].r, PDF_COLORS.gray[900].g, PDF_COLORS.gray[900].b);
   pdf.text(title, pageWidth / 2, currentY, { align: 'center' });
   currentY += 7;
   
   // Subtitle
   pdf.setFontSize(9);
-  pdf.setFont(undefined, 'normal');
+  pdf.setFont("helvetica", 'normal');
   pdf.setTextColor(PDF_COLORS.gray[500].r, PDF_COLORS.gray[500].g, PDF_COLORS.gray[500].b);
   pdf.text(subtitle, pageWidth / 2, currentY, { align: 'center' });
   currentY += 12;
@@ -351,7 +360,7 @@ export const addStatusBadge = (
   pdf.setFillColor(color.r, color.g, color.b);
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(8);
-  pdf.setFont(undefined, 'bold');
+  pdf.setFont("helvetica", 'bold');
   
   const textWidth = pdf.getTextWidth(status);
   const padding = 3;
@@ -364,7 +373,7 @@ export const addStatusBadge = (
   
   // Reset
   pdf.setTextColor(0, 0, 0);
-  pdf.setFont(undefined, 'normal');
+  pdf.setFont("helvetica", 'normal');
 };
 
 /**
