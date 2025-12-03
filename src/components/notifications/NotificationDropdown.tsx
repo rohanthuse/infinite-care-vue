@@ -15,7 +15,13 @@ import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { 
+  detectUserContext, 
+  getNotificationRoute, 
+  storeDeepLinkData,
+  UserContext,
+} from "@/utils/notificationRouting";
 
 interface NotificationDropdownProps {
   branchId?: string;
@@ -28,6 +34,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 }) => {
   const { notifications, stats, markAsRead, markAllAsRead, isMarkingAllAsRead, error } = useNotifications(branchId);
   const navigate = useNavigate();
+  const location = useLocation();
+  const userContext = detectUserContext(location.pathname);
 
   const getIcon = (type: Notification['type'], category: Notification['category']) => {
     const iconClass = "h-4 w-4";
@@ -93,40 +101,82 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       // Mark notification as read
       markAsRead(notification.id);
       
-      // Handle navigation for message notifications
-      if (notification.type === 'message' && notification.data?.thread_id) {
-        const currentPath = window.location.pathname;
+      // Store deep-link data for auto-opening
+      storeDeepLinkData(notification);
+      
+      const currentPath = location.pathname;
+      const notificationType = notification.type as string;
+      
+      // Handle branch dashboard context
+      if (userContext === 'branch') {
         const branchMatch = currentPath.match(/\/branch-dashboard\/([^/]+)\/([^/]+)/);
         
         if (branchMatch) {
           const [, branchId, branchName] = branchMatch;
-          navigate(`/branch-dashboard/${branchId}/${branchName}/communication`);
           
-          // Store thread_id in session storage so the communications page can open it
-          sessionStorage.setItem('openThreadId', notification.data.thread_id);
+          // Route based on notification type
+          if (notificationType === 'message') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/communication`);
+          } else if (notificationType === 'task' || notificationType === 'events_logs') {
+            if (notification.data?.client_id) {
+              navigate(`/branch-dashboard/${branchId}/${branchName}/clients/${notification.data.client_id}/events`);
+            }
+          } else if (notificationType === 'care_plan') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/careplan`);
+          } else if (notificationType === 'booking' || notificationType === 'appointment') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/booking`);
+          } else if (notificationType === 'document') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/documents`);
+          } else if (notificationType === 'form') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
+          } else if (notificationType === 'agreement') {
+            navigate(`/branch-dashboard/${branchId}/${branchName}/agreements`);
+          }
         }
+        return;
       }
       
-      // Handle task notifications with deep-linking to events
-      if (notification.type === 'task' && notification.data?.event_id && notification.data?.client_id) {
-        // Store event details in sessionStorage for auto-opening
-        sessionStorage.setItem('openEventId', notification.data.event_id);
-        sessionStorage.setItem('openEventClientId', notification.data.client_id);
+      // Handle client dashboard context
+      if (userContext === 'client') {
+        const tenantMatch = currentPath.match(/\/([^/]+)\/client-dashboard/);
+        const tenantSlug = tenantMatch ? tenantMatch[1] : '';
+        const route = getNotificationRoute(notification, 'client');
         
-        // Check if we're in carer context and navigate accordingly
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/carer-dashboard/')) {
-          const tenantMatch = currentPath.match(/\/([^/]+)\/carer-dashboard/);
-          if (tenantMatch) {
-            navigate(`/${tenantMatch[1]}/carer-dashboard/clients/${notification.data.client_id}`);
-          } else {
-            navigate(`/carer-dashboard/clients/${notification.data.client_id}`);
-          }
-        } else {
-          // Default fallback for branch dashboard or other contexts
-          navigate(`/client/${notification.data.client_id}/events`);
+        if (route) {
+          const fullPath = tenantSlug 
+            ? `/${tenantSlug}/client-dashboard${route}`
+            : `/client-dashboard${route}`;
+          navigate(fullPath);
         }
+        return;
       }
+      
+      // Handle carer dashboard context
+      if (userContext === 'carer') {
+        const tenantMatch = currentPath.match(/\/([^/]+)\/carer-dashboard/);
+        const tenantSlug = tenantMatch ? tenantMatch[1] : '';
+        const route = getNotificationRoute(notification, 'carer');
+        
+        // Special handling for task/events with client_id
+        if ((notificationType === 'task' || notificationType === 'events_logs') && notification.data?.client_id) {
+          const clientPath = tenantSlug 
+            ? `/${tenantSlug}/carer-dashboard/clients/${notification.data.client_id}`
+            : `/carer-dashboard/clients/${notification.data.client_id}`;
+          navigate(clientPath);
+          return;
+        }
+        
+        if (route) {
+          const fullPath = tenantSlug 
+            ? `/${tenantSlug}/carer-dashboard${route}`
+            : `/carer-dashboard${route}`;
+          navigate(fullPath);
+        }
+        return;
+      }
+      
+      // Unknown context - just mark as read
+      console.log('Unknown user context for notification navigation');
     } catch (error) {
       console.error('Error handling notification click:', error);
     }
