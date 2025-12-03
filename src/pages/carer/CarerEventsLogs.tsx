@@ -192,11 +192,11 @@ const CarerEventsLogs: React.FC = () => {
                     <div className="flex-1 space-y-3">
                       {/* Header with badges */}
                       <div className="flex flex-wrap items-start gap-2">
-                        <Badge className={getSeverityColor(event.severity)}>
+                        <Badge variant="outline" className={getSeverityColor(event.severity)}>
                           {event.severity}
                         </Badge>
                         <Badge variant="outline">{event.event_type}</Badge>
-                        <Badge className={assignmentType.color}>
+                        <Badge variant="outline" className={assignmentType.color}>
                           {assignmentType.label}
                         </Badge>
                       </div>
@@ -259,7 +259,7 @@ const CarerEventsLogs: React.FC = () => {
 
                       {/* Status Badge */}
                       <div>
-                        <Badge className={getStatusColor(event.status)}>
+                        <Badge variant="outline" className={getStatusColor(event.status)}>
                           Status: {event.status}
                         </Badge>
                       </div>
