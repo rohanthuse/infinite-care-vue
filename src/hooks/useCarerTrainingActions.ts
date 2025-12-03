@@ -82,13 +82,16 @@ export const useCarerTrainingActions = () => {
         .update(updateData)
         .eq('id', recordId)
         .eq('staff_id', carerProfile.id)
-        .select()
+        .select(`
+          *,
+          training_course:training_courses(title)
+        `)
         .single();
 
       if (error) throw error;
-      return data;
+      return { ...data, newStatus: status };
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['carer-training'] });
       queryClient.invalidateQueries({ queryKey: ['staff-training-by-id'] });
       queryClient.invalidateQueries({ queryKey: ['staff-training-records'] });
@@ -97,6 +100,36 @@ export const useCarerTrainingActions = () => {
         toast.success('Training completed successfully!');
       } else {
         toast.success('Training status updated');
+      }
+
+      // Send notification to branch admins
+      if (carerProfile?.id && carerProfile?.branch_id) {
+        try {
+          const staffName = `${carerProfile.first_name || ''} ${carerProfile.last_name || ''}`.trim() || 'Staff Member';
+          const trainingTitle = data.training_course?.title || 'Training Course';
+          
+          const { error: notificationError } = await supabase.functions.invoke(
+            'create-training-status-update-notifications',
+            {
+              body: {
+                staff_id: carerProfile.id,
+                staff_name: staffName,
+                training_title: trainingTitle,
+                new_status: data.newStatus,
+                branch_id: carerProfile.branch_id,
+                training_record_id: variables.recordId,
+              },
+            }
+          );
+
+          if (notificationError) {
+            console.error('Failed to send training status notification:', notificationError);
+          } else {
+            console.log('Training status update notification sent to branch admins');
+          }
+        } catch (err) {
+          console.error('Error sending training status notification:', err);
+        }
       }
     },
     onError: (error: Error) => {

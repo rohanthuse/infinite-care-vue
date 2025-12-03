@@ -117,3 +117,6 @@ verify_jwt = false
 
 [functions.create-training-assignment-notifications]
 verify_jwt = false
+
+[functions.create-training-status-update-notifications]
+verify_jwt = false
