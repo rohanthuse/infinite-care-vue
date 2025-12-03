@@ -182,7 +182,10 @@ export const CarerSidebar: React.FC = () => {
   return (
     <Sidebar 
       collapsible="icon" 
-      className="border-r shrink-0 !top-[var(--carer-total-header-height,120px)] !h-[calc(100vh-var(--carer-total-header-height,120px))]"
+      className="border-r shrink-0"
+      style={{
+        '--sidebar-top-offset': 'var(--carer-total-header-height, 120px)'
+      } as React.CSSProperties}
     >
       <SidebarContent className="overflow-y-auto">
         {/* User Header */}
