@@ -178,7 +178,10 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
 
   const handleDownloadResource = (resource: LibraryResource) => {
     if (resource.file_path) {
-      downloadResource(resource.id, resource.file_path, resource.title);
+      // Extract extension from file_path and append to title for proper filename
+      const fileExtension = resource.file_path.split('.').pop() || '';
+      const fileName = `${resource.title}.${fileExtension}`;
+      downloadResource(resource.id, resource.file_path, fileName);
     }
   };
 
@@ -581,8 +584,10 @@ export const LibraryResourcesList: React.FC<LibraryResourcesListProps> = ({
         onOpenDocumentFile={previewResource ? (resource) => {
           // Check if it has a file path first (means file was uploaded)
           if (previewResource.file_path) {
-            // Download the file
-            downloadResource(previewResource.id, previewResource.file_path, previewResource.title);
+            // Extract extension from file_path and append to title for proper filename
+            const fileExtension = previewResource.file_path.split('.').pop() || '';
+            const fileName = `${previewResource.title}.${fileExtension}`;
+            downloadResource(previewResource.id, previewResource.file_path, fileName);
           } else if (previewResource.url) {
             // Only has a link, show message
             toast("No file to download. Use the link shown in the preview above.");

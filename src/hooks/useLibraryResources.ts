@@ -368,32 +368,68 @@ export const useLibraryResources = (branchId: string) => {
     }
   };
 
-  // Download resource
+  // Download resource with signed URL fallback
   const downloadResource = async (resourceId: string, filePath: string, fileName: string) => {
     try {
-      console.log('Downloading resource:', resourceId, filePath);
+      console.log('[Library Download] Starting:', { resourceId, filePath, fileName });
       
+      // Extract file extension from path for proper filename
+      const fileExtension = filePath.split('.').pop() || '';
+      const safeFileName = fileName.includes('.') 
+        ? fileName 
+        : `${fileName.replace(/[^a-zA-Z0-9-_ ]/g, '')}.${fileExtension}`;
+      
+      console.log('[Library Download] Using filename:', safeFileName);
+
+      let blob: Blob | null = null;
+
+      // Primary method: Try direct download
       const { data, error } = await supabase.storage
         .from('library-resources')
         .download(filePath);
 
       if (error) {
-        console.error('Download error:', error);
-        if (error.message?.includes('RLS') || error.message?.includes('policy')) {
-          throw new Error('Access denied: You do not have permission to download this file.');
+        console.log('[Library Download] Direct download failed, trying signed URL fallback...', error.message);
+        
+        // Fallback: Use signed URL
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('library-resources')
+          .createSignedUrl(filePath, 3600); // 1 hour expiry
+          
+        if (signedUrlError) {
+          console.error('[Library Download] Signed URL creation failed:', signedUrlError);
+          if (signedUrlError.message?.includes('RLS') || signedUrlError.message?.includes('policy')) {
+            throw new Error('Access denied: You do not have permission to download this file.');
+          }
+          throw signedUrlError;
         }
-        throw error;
+        
+        // Download via signed URL
+        console.log('[Library Download] Using signed URL to download');
+        const response = await fetch(signedUrlData.signedUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status} - ${response.statusText}`);
+        }
+        blob = await response.blob();
+      } else {
+        blob = data;
       }
 
-      // Create download link
-      const url = URL.createObjectURL(data);
+      if (!blob) {
+        throw new Error('Failed to download file - no data received');
+      }
+
+      // Create download link and trigger download
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName;
+      a.download = safeFileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+
+      console.log('[Library Download] File download triggered successfully');
 
       // Update download count and log access
       const { data: { user } } = await supabase.auth.getUser();
@@ -420,11 +456,11 @@ export const useLibraryResources = (branchId: string) => {
         title: "Success",
         description: "Resource downloaded successfully",
       });
-    } catch (error) {
-      console.error('Error downloading resource:', error);
+    } catch (error: any) {
+      console.error('[Library Download] Failed:', { error, filePath });
       toast({
-        title: "Error",
-        description: error.message || "Failed to download resource",
+        title: "Download Failed",
+        description: error.message || "Failed to download resource. Please try again.",
         variant: "destructive",
       });
     }
