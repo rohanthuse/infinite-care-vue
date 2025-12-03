@@ -34,6 +34,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useBranchServices } from "@/data/hooks/useBranchServices";
+import { useTenant } from "@/contexts/TenantContext";
 
 const formSchema = z.object({
   type: z.string().min(1, "Type is required"),
@@ -70,7 +71,8 @@ export const AddServiceActionV2Dialog: React.FC<AddServiceActionV2DialogProps> =
   branchId,
   isLoading = false,
 }) => {
-  const { data: services } = useBranchServices(branchId);
+  const { organization } = useTenant();
+  const { data: services } = useBranchServices(branchId, organization?.id);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({

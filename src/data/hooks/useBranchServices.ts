@@ -11,21 +11,29 @@ export interface BranchService {
   status: string;
   created_at: string;
   updated_at: string;
+  organization_id?: string;
 }
 
-export async function fetchBranchServices(branchId?: string) {
-  console.log("[fetchBranchServices] Fetching services for branch:", branchId);
+export async function fetchBranchServices(branchId?: string, organizationId?: string) {
+  console.log("[fetchBranchServices] Fetching services for branch:", branchId, "organization:", organizationId);
   
   if (!branchId) {
     console.log("[fetchBranchServices] No branch ID provided");
     return [];
   }
   
-  const { data, error } = await supabase
+  let query = supabase
     .from("services")
     .select("*")
     .eq("status", "active")
     .order("title", { ascending: true });
+
+  // Filter by organization if provided
+  if (organizationId) {
+    query = query.eq("organization_id", organizationId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("[fetchBranchServices] Error fetching services:", error);
@@ -36,10 +44,10 @@ export async function fetchBranchServices(branchId?: string) {
   return data || [];
 }
 
-export function useBranchServices(branchId?: string) {
+export function useBranchServices(branchId?: string, organizationId?: string) {
   return useQuery({
-    queryKey: ["branch-services", branchId],
-    queryFn: () => fetchBranchServices(branchId),
+    queryKey: ["branch-services", branchId, organizationId],
+    queryFn: () => fetchBranchServices(branchId, organizationId),
     enabled: !!branchId,
   });
 }

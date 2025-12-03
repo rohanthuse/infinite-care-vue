@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBookingNavigation } from "@/hooks/useBookingNavigation";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface AppointmentsTabProps {
   clientId: string;
@@ -35,10 +36,11 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
   const branchName = params.branchName;
   const queryClient = useQueryClient();
   const { navigateToBookings } = useBookingNavigation();
+  const { organization } = useTenant();
   
   // Get carers and services for the booking dialog
   const { data: carers = [] } = useBranchCarers(branchId);
-  const { data: services = [] } = useBranchServices(branchId);
+  const { data: services = [] } = useBranchServices(branchId, organization?.id);
   
   // Create booking mutation - will use client's actual branch_id in handleCreateBooking
   const createBookingMutation = useCreateBooking();
