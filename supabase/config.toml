@@ -109,6 +109,9 @@ verify_jwt = false
 [functions.create-form-assignment-notifications]
 verify_jwt = false
 
+[functions.create-form-submission-notifications]
+verify_jwt = false
+
 [functions.create-agreement-notifications]
 verify_jwt = false
 

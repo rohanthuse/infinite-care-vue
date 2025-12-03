@@ -169,7 +169,7 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
         return { data, isUpdate: false };
       }
     },
-    onSuccess: (result, variables) => {
+    onSuccess: async (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ['form-submissions', branchId] });
       queryClient.invalidateQueries({ queryKey: ['my-assigned-forms'] });
       
@@ -181,6 +181,51 @@ export const useFormSubmissions = (branchId: string, formId?: string) => {
           title: "Success",
           description: isUpdate ? "Form updated and submitted successfully" : "Form submitted successfully",
         });
+
+        // Trigger admin notification for completed submissions
+        try {
+          // Get form details
+          const { data: formData } = await supabase
+            .from('forms')
+            .select('title, branch_id')
+            .eq('id', variables.form_id)
+            .single();
+
+          // Get submitter name based on type
+          let submitterName = 'Unknown User';
+          if (variables.submitted_by_type === 'client') {
+            const { data: client } = await supabase
+              .from('clients')
+              .select('first_name, last_name')
+              .eq('auth_user_id', variables.submitted_by)
+              .single();
+            submitterName = client ? `${client.first_name || ''} ${client.last_name || ''}`.trim() : 'A client';
+          } else {
+            const { data: staff } = await supabase
+              .from('staff')
+              .select('first_name, last_name')
+              .eq('auth_user_id', variables.submitted_by)
+              .single();
+            submitterName = staff ? `${staff.first_name || ''} ${staff.last_name || ''}`.trim() : 'A staff member';
+          }
+
+          if (formData) {
+            console.log('[useFormSubmissions] Triggering form submission notification');
+            await supabase.functions.invoke('create-form-submission-notifications', {
+              body: {
+                form_id: variables.form_id,
+                form_title: formData.title,
+                submitter_id: variables.submitted_by,
+                submitter_name: submitterName,
+                submitter_type: variables.submitted_by_type,
+                branch_id: formData.branch_id || branchId,
+                submission_id: result.data?.id
+              }
+            });
+          }
+        } catch (notifErr) {
+          console.error('[useFormSubmissions] Failed to trigger notification:', notifErr);
+        }
       }
     },
     onError: (error) => {
