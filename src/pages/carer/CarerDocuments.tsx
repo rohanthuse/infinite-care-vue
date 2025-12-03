@@ -148,7 +148,7 @@ const CarerDocuments: React.FC = () => {
 
       return { filePath };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['carer-documents', carerId] });
       refetchDocuments();
       toast({
@@ -156,6 +156,34 @@ const CarerDocuments: React.FC = () => {
         description: "Document uploaded successfully",
       });
       handleCloseUploadDialog();
+      
+      // Trigger notification for Branch Admins
+      try {
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('branch_id, first_name, last_name')
+          .eq('id', carerId)
+          .single();
+
+        if (staffData?.branch_id) {
+          const staffName = `${staffData.first_name || ''} ${staffData.last_name || ''}`.trim() || 'A staff member';
+          
+          await supabase.functions.invoke('create-document-notifications', {
+            body: {
+              document_id: data?.filePath || 'unknown',
+              document_name: documentName || documentType,
+              branch_id: staffData.branch_id,
+              notify_admins_staff: true,
+              staff_id: carerId,
+              staff_name: staffName,
+              upload_timestamp: new Date().toISOString()
+            }
+          });
+          console.log('[CarerDocuments] Admin notification triggered for staff upload');
+        }
+      } catch (notifErr) {
+        console.error('[CarerDocuments] Failed to trigger notification:', notifErr);
+      }
     },
     onError: (error) => {
       toast({
