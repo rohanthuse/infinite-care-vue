@@ -113,8 +113,9 @@ export const CarerRightSidebar: React.FC = () => {
       )}
       style={{
         height: 'calc(100vh - var(--carer-total-header-height, 120px))',
-        position: 'sticky',
-        top: 'var(--carer-total-header-height, 120px)'
+        position: 'fixed',
+        top: 'var(--carer-total-header-height, 120px)',
+        right: 0
       }}
     >
       <Sidebar 
