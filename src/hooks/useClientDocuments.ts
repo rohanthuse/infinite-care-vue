@@ -107,24 +107,29 @@ export const useUploadClientDocument = () => {
       toast.success('Document uploaded successfully');
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
       
-      // Trigger notification for the client
+      // Trigger notification for Branch Admins (NOT the uploading client)
       try {
-        // Get the client's branch_id
+        // Get the client's branch_id and name
         const { data: clientData } = await supabase
           .from('clients')
-          .select('branch_id')
+          .select('branch_id, first_name, last_name')
           .eq('id', variables.clientId)
           .single();
 
         if (clientData?.branch_id) {
-          console.log('[useClientDocuments] Triggering notification for client document');
+          const clientName = `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim() || 'Unknown Client';
+          const uploadTimestamp = new Date().toISOString();
+          
+          console.log('[useClientDocuments] Triggering notification for branch admins');
           const { data: notifResult, error: notifError } = await supabase.functions.invoke('create-document-notifications', {
             body: {
               document_id: data.id,
               document_name: variables.name,
               branch_id: clientData.branch_id,
-              client_ids: [variables.clientId],
-              staff_ids: []
+              notify_admins: true, // Notify branch admins instead of client
+              client_id: variables.clientId,
+              client_name: clientName,
+              upload_timestamp: uploadTimestamp
             }
           });
 
