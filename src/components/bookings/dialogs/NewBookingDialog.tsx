@@ -340,15 +340,8 @@ export function NewBookingDialog({
         carerId: null, // No carer assigned
       };
       onCreateBooking(unassignedBooking, carers);
-      
       handleClose();
-      
-      const bookingType = data.bookingMode === "single" ? "Single booking" : "Unassigned bookings";
-      toast(`${bookingType} created`, {
-        description: data.bookingMode === "single" 
-          ? "Single booking created without carer assignment." 
-          : "Booking created without carer assignment. Remember to assign a carer before the scheduled time.",
-      });
+      // Toast is handled by the parent component (AppointmentsTab) after booking creation completes
     } else {
       // Create bookings for each selected carer
       const bookingsToCreate = data.carerIds.map(carerId => ({
@@ -360,15 +353,8 @@ export function NewBookingDialog({
       bookingsToCreate.forEach(bookingDataForCarer => {
         onCreateBooking(bookingDataForCarer, carers);
       });
-      
       handleClose();
-      
-      const bookingType = data.bookingMode === "single" ? "Single booking" : "Recurring bookings";
-      toast(`${bookingType} submitted`, {
-        description: data.bookingMode === "single"
-          ? `Created single booking for ${data.carerIds.length} carer(s)`
-          : `Created recurring bookings for ${data.carerIds.length} carer(s)`,
-      });
+      // Toast is handled by the parent component (AppointmentsTab) after booking creation completes
     }
   }
 

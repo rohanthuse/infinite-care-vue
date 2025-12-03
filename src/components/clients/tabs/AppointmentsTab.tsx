@@ -156,11 +156,11 @@ export const AppointmentsTab: React.FC<AppointmentsTabProps> = ({ clientId }) =>
               const bookingInput = {
                 branch_id: client.branch_id, // Use client's actual branch_id
                 client_id: actualClientId,   // Use the correct client_id from props
-                staff_id: bookingData.carerId, // Individual carer ID passed from dialog
+                staff_id: bookingData.carerId || undefined, // Pass undefined if no carer - useCreateBooking will auto-set status
                 start_time: bookingStartTime.toISOString(),
                 end_time: bookingEndTime.toISOString(),
                 service_id: serviceId, // ✅ Each service gets its own booking
-                status: "assigned",
+                // Status is auto-determined by useCreateBooking based on staff_id presence
                 notes: bookingData.notes || null,
               };
 
