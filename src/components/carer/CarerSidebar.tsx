@@ -29,13 +29,11 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  useSidebar,
 } from "@/components/ui/sidebar";
 
 export const CarerSidebar: React.FC = () => {
   const location = useLocation();
   const { getCarerMenuItems, tenantSlug } = useCarerNavigation();
-  const { open } = useSidebar();
 
   // Debug logging for development
   React.useEffect(() => {
@@ -181,11 +179,8 @@ export const CarerSidebar: React.FC = () => {
 
   return (
     <Sidebar 
-      collapsible="icon" 
-      className="border-r shrink-0"
-      style={{
-        '--sidebar-top-offset': 'var(--carer-total-header-height, 120px)'
-      } as React.CSSProperties}
+      collapsible="none" 
+      className="border-r shrink-0 fixed left-0 top-[var(--carer-total-header-height,128px)] h-[calc(100vh-var(--carer-total-header-height,128px))]"
     >
       <SidebarContent className="overflow-y-auto">
         {/* User Header */}
@@ -194,14 +189,14 @@ export const CarerSidebar: React.FC = () => {
             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
               {carerName.charAt(0).toUpperCase()}
             </div>
-            {open && <span className="font-semibold text-foreground">{carerName}</span>}
+            <span className="font-semibold text-foreground">{carerName}</span>
           </div>
         </div>
 
         {/* Menu Sections */}
         {menuSections.map((section) => (
           <SidebarGroup key={section.label}>
-            {open && <SidebarGroupLabel>{section.label}</SidebarGroupLabel>}
+            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {section.items.map((item) => {
@@ -223,12 +218,10 @@ export const CarerSidebar: React.FC = () => {
         ))}
 
         {/* Footer */}
-        {open && (
-          <div className="mt-auto p-4 border-t">
-            <div className="text-xs text-muted-foreground mb-1">Med-Infinite</div>
-            <div className="text-xs text-muted-foreground">Version 1.0.0</div>
-          </div>
-        )}
+        <div className="mt-auto p-4 border-t">
+          <div className="text-xs text-muted-foreground mb-1">Med-Infinite</div>
+          <div className="text-xs text-muted-foreground">Version 1.0.0</div>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
