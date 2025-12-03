@@ -286,9 +286,19 @@ export const generateComprehensiveAttendancePDF = async (
 
   // Generate appropriate table based on report type
   if (reportType === "monthly" && dates.length > 7) {
-    // Monthly Calendar Grid
+    // Monthly Calendar Grid (Overview)
     currentY = addSectionHeader(doc, "Staff Attendance Calendar", currentY, PDF_COLORS.primaryLight);
     currentY = generateMonthlyCalendarTable(doc, statusMatrix, dates, currentY, leftMargin);
+    
+    // Add page break if needed
+    if (currentY + 50 > pageHeight - 30) {
+      doc.addPage();
+      currentY = await addPDFHeader(doc, orgSettings, logoBase64);
+    }
+    
+    // Also show detailed table with times for monthly reports
+    currentY = addSectionHeader(doc, "Detailed Attendance Records", currentY, PDF_COLORS.primaryLight);
+    currentY = generateDetailedTable(doc, statusMatrix, currentY, leftMargin);
   } else {
     // Detailed table for daily/weekly
     currentY = addSectionHeader(doc, "Attendance Records", currentY, PDF_COLORS.primaryLight);
@@ -428,6 +438,65 @@ const generateMonthlyCalendarTable = (
   return (doc as any).lastAutoTable.finalY + 10;
 };
 
+// Helper function to format time in AM/PM format
+const formatTimeAMPM = (time: string | null): string => {
+  if (!time) return "–";
+  try {
+    return format(new Date(`2000-01-01T${time}`), "hh:mm a");
+  } catch {
+    return time; // fallback to raw value
+  }
+};
+
+// Helper function to calculate worked hours from check-in/check-out times
+const calculateWorkedHours = (
+  checkInTime: string | null,
+  checkOutTime: string | null,
+  existingHours: number | null
+): number | null => {
+  // Use existing hours if available and > 0
+  if (existingHours && existingHours > 0) return existingHours;
+  
+  // Calculate from times if both exist
+  if (checkInTime && checkOutTime) {
+    try {
+      const inTime = new Date(`2000-01-01T${checkInTime}`);
+      const outTime = new Date(`2000-01-01T${checkOutTime}`);
+      const diffMs = outTime.getTime() - inTime.getTime();
+      return diffMs > 0 ? diffMs / (1000 * 60 * 60) : null;
+    } catch {
+      return null;
+    }
+  }
+  
+  return null;
+};
+
+// Helper function to display hours based on status
+const formatHoursDisplay = (
+  status: AttendanceStatus,
+  checkInTime: string | null,
+  checkOutTime: string | null,
+  hoursWorked: number | null
+): string => {
+  if (status === "Leave") return "On Leave";
+  if (status === "Absent") return "–";
+  
+  const calculatedHours = calculateWorkedHours(checkInTime, checkOutTime, hoursWorked);
+  
+  if (status === "Half Day") {
+    return calculatedHours && calculatedHours > 0 
+      ? `${calculatedHours.toFixed(1)}h` 
+      : "Half Day";
+  }
+  
+  if (calculatedHours && calculatedHours > 0) {
+    return `${calculatedHours.toFixed(1)}h`;
+  }
+  
+  return "–";
+};
+
 // Generate detailed attendance table
 const generateDetailedTable = (
   doc: jsPDF,
@@ -441,13 +510,14 @@ const generateDetailedTable = (
     const staffName = `${staffData.staff.first_name} ${staffData.staff.last_name}`;
     
     staffData.statuses.forEach((status) => {
-      const checkIn = status.record?.check_in_time
-        ? format(new Date(`2000-01-01T${status.record.check_in_time}`), "HH:mm")
-        : "-";
-      const checkOut = status.record?.check_out_time
-        ? format(new Date(`2000-01-01T${status.record.check_out_time}`), "HH:mm")
-        : "-";
-      const hours = status.record?.hours_worked?.toFixed(2) || "0.00";
+      const checkIn = formatTimeAMPM(status.record?.check_in_time);
+      const checkOut = formatTimeAMPM(status.record?.check_out_time);
+      const hours = formatHoursDisplay(
+        status.status,
+        status.record?.check_in_time || null,
+        status.record?.check_out_time || null,
+        status.record?.hours_worked || null
+      );
 
       rows.push([
         staffName,
@@ -462,7 +532,7 @@ const generateDetailedTable = (
 
   autoTable(doc, {
     startY,
-    head: [["Staff Name", "Date", "Check In", "Check Out", "Hours", "Status"]],
+    head: [["Staff Name", "Date", "Check-In", "Check-Out", "Hours Worked", "Status"]],
     body: rows,
     theme: "grid",
     headStyles: {
@@ -482,12 +552,12 @@ const generateDetailedTable = (
       fillColor: [PDF_COLORS.gray[50].r, PDF_COLORS.gray[50].g, PDF_COLORS.gray[50].b],
     },
     columnStyles: {
-      0: { cellWidth: 45, halign: "left" },
-      1: { cellWidth: 25, halign: "center" },
-      2: { cellWidth: 22, halign: "center" },
-      3: { cellWidth: 22, halign: "center" },
-      4: { cellWidth: 18, halign: "center" },
-      5: { cellWidth: 25, halign: "center" },
+      0: { cellWidth: 42, halign: "left" },
+      1: { cellWidth: 24, halign: "center" },
+      2: { cellWidth: 26, halign: "center" },  // Wider for AM/PM
+      3: { cellWidth: 26, halign: "center" },  // Wider for AM/PM
+      4: { cellWidth: 26, halign: "center" },  // Hours Worked
+      5: { cellWidth: 22, halign: "center" },
     },
     didParseCell: (hookData) => {
       if (hookData.section === "body" && hookData.column.index === 5) {
