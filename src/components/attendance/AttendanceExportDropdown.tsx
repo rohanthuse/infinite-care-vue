@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, FileText, Sheet } from "lucide-react";
 import {
-  generateAttendancePDF,
+  generateComprehensiveAttendancePDF,
   generateAttendanceExcel,
   downloadPDF,
   downloadExcel,
@@ -54,71 +54,75 @@ export const AttendanceExportDropdown: React.FC<AttendanceExportDropdownProps> =
   ) => {
     let startDate: Date;
     let endDate: Date;
-    let reportData: AttendanceRecord[];
 
     switch (type) {
       case "daily":
         startDate = startOfDay(currentDate);
         endDate = endOfDay(currentDate);
-        reportData = attendanceData.filter((record) => {
-          const recordDate = new Date(record.date);
-          return recordDate >= startDate && recordDate <= endDate;
-        });
         break;
       case "weekly":
         startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
         endDate = endOfWeek(currentDate, { weekStartsOn: 1 });
-        reportData = attendanceData.filter((record) => {
-          const recordDate = new Date(record.date);
-          return recordDate >= startDate && recordDate <= endDate;
-        });
         break;
       case "monthly":
         startDate = startOfMonth(currentDate);
         endDate = endOfMonth(currentDate);
-        reportData = attendanceData;
         break;
       default:
         return;
     }
 
-    const metadata = {
-      branchId,
-      branchName,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      reportType: type,
-    };
-
-    const presentDays = reportData.filter(
-      (r) => r.status.toLowerCase() === "present" || r.status.toLowerCase() === "late"
-    ).length;
-
-    const summary = {
-      totalWorkingDays: reportData.length,
-      totalHours,
-      presentDays,
-      absentDays,
-      lateDays,
-      attendanceRate,
-    };
-
-    const filename = `attendance_${type}_${startDate.toISOString().split("T")[0]}`;
+    const filename = `attendance_${type}_${format(startDate, "yyyy-MM-dd")}`;
 
     try {
       if (reportFormat === "pdf") {
-        toast.loading("Generating PDF report...", { id: "pdf-generation" });
-        const doc = await generateAttendancePDF(reportData, metadata, summary);
+        toast.loading("Generating comprehensive PDF report...", { id: "pdf-generation" });
+        
+        // Use the new comprehensive PDF generator that fetches all staff and leave data
+        const doc = await generateComprehensiveAttendancePDF(
+          branchId,
+          branchName,
+          startDate,
+          endDate,
+          type
+        );
+        
         downloadPDF(doc, `${filename}.pdf`);
-        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} PDF report generated`, { id: "pdf-generation" });
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} PDF report generated successfully`, { id: "pdf-generation" });
       } else {
+        // Excel export uses existing data
+        const reportData = attendanceData.filter((record) => {
+          const recordDate = new Date(record.date);
+          return recordDate >= startDate && recordDate <= endDate;
+        });
+
+        const presentDays = reportData.filter(
+          (r) => r.status.toLowerCase() === "present" || r.status.toLowerCase() === "late"
+        ).length;
+
+        const summary = {
+          totalWorkingDays: reportData.length,
+          totalHours,
+          presentDays,
+          absentDays,
+          lateDays,
+          attendanceRate,
+        };
+
+        const metadata = {
+          branchName,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          reportType: type,
+        };
+
         const csv = generateAttendanceExcel(reportData, metadata, summary);
         downloadExcel(csv, `${filename}.csv`);
         toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} Excel report generated`);
       }
     } catch (error) {
       console.error("Error generating report:", error);
-      toast.error("Failed to generate report", { id: "pdf-generation" });
+      toast.error("Failed to generate report. Please try again.", { id: "pdf-generation" });
     }
   };
 
