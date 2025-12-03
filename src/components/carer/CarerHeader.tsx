@@ -48,8 +48,8 @@ export const CarerHeader: React.FC = () => {
 
   return (
     <header 
-      className="bg-gradient-to-r from-white via-white to-green-50/40 dark:from-card dark:via-card dark:to-green-950/20 shadow-sm shadow-green-100/20 dark:shadow-green-900/10 border-b border-gray-100 dark:border-border fixed top-0 left-0 right-0 z-[60] w-full h-16 flex items-center relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gradient-to-r after:from-green-500 after:via-teal-500 after:to-cyan-500"
-      style={{ height: 'var(--carer-header-height, 64px)' }}
+      className="bg-gradient-to-r from-white via-white to-green-50/40 dark:from-card dark:via-card dark:to-green-950/20 shadow-sm shadow-green-100/20 dark:shadow-green-900/10 border-b border-gray-100 dark:border-border fixed top-0 left-0 right-0 z-[60] w-full h-[72px] flex items-center relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-gradient-to-r after:from-green-500 after:via-teal-500 after:to-cyan-500"
+      style={{ height: 'var(--carer-header-height, 72px)' }}
     >
       <div className="container mx-auto px-4 flex justify-between items-center relative">
         {/* Logo and Sidebar Trigger */}

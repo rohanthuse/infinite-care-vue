@@ -65,9 +65,9 @@ const CarerDashboard: React.FC = () => {
     <div 
       className="h-screen overflow-hidden flex flex-col bg-gray-50"
       style={{ 
-        '--carer-header-height': '64px',
+        '--carer-header-height': '72px',
         '--carer-subheader-height': '56px',
-        '--carer-total-header-height': '120px'
+        '--carer-total-header-height': '128px'
       } as React.CSSProperties}
     >
       <CarerHeader />
