@@ -68,20 +68,24 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="pb-2">
+        <Card className="border-l-4 border-l-green-500 hover:shadow-lg hover:shadow-green-100/30 transition-all duration-300 overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-50/70 to-transparent dark:from-green-950/30">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-green-600" />
-                  Today's Bookings
-                </CardTitle>
-                <CardDescription>Appointments for today</CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-green-500/20 shadow-sm">
+                  <Calendar className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base md:text-lg font-semibold">
+                    Today's Bookings
+                  </CardTitle>
+                  <CardDescription>Appointments for today</CardDescription>
+                </div>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-primary border-primary/20 hover:bg-primary/10"
+                className="text-green-600 border-green-200 hover:bg-green-50 hover:border-green-300"
                 onClick={handleViewAllBookings}
               >
                 View All
@@ -142,13 +146,19 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
           </CardContent>
         </Card>
         
-        <Card className="border-l-4 border-l-amber-500">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
-              <Star className="h-4 w-4 text-amber-600" />
-              Recent Feedbacks
-            </CardTitle>
-            <CardDescription>Latest client feedback</CardDescription>
+        <Card className="border-l-4 border-l-amber-500 hover:shadow-lg hover:shadow-amber-100/30 transition-all duration-300 overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-amber-50/70 to-transparent dark:from-amber-950/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 shadow-sm">
+                <Star className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base md:text-lg font-semibold">
+                  Recent Feedbacks
+                </CardTitle>
+                <CardDescription>Latest client feedback</CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
@@ -182,20 +192,24 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-        <Card className="border-l-4 border-l-rose-500">
-          <CardHeader className="pb-2">
+        <Card className="border-l-4 border-l-rose-500 hover:shadow-lg hover:shadow-rose-100/30 transition-all duration-300 overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-rose-50/70 to-transparent dark:from-rose-950/30">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4 text-rose-600" />
-                  Action Items
-                </CardTitle>
-                <CardDescription>Tasks requiring attention</CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/20 shadow-sm">
+                  <ClipboardCheck className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base md:text-lg font-semibold">
+                    Action Items
+                  </CardTitle>
+                  <CardDescription>Tasks requiring attention</CardDescription>
+                </div>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="text-primary border-primary/20 hover:bg-primary/10"
+                className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
                 onClick={handleViewAllTasks}
               >
                 View All Tasks
@@ -245,15 +259,19 @@ export const DashboardActivitySection: React.FC<DashboardActivitySectionProps> =
       </div>
       
       <div className="grid grid-cols-1 gap-4 md:gap-6 mb-6">
-        <Card className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-2">
+        <Card className="border-l-4 border-l-red-500 hover:shadow-lg hover:shadow-red-100/30 transition-all duration-300 overflow-hidden">
+          <CardHeader className="pb-2 bg-gradient-to-r from-red-50/70 to-transparent dark:from-red-950/30">
             <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                  Expiry Alerts
-                </CardTitle>
-                <CardDescription>Staff documents requiring attention</CardDescription>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-500/20 shadow-sm">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-base md:text-lg font-semibold">
+                    Expiry Alerts
+                  </CardTitle>
+                  <CardDescription>Staff documents requiring attention</CardDescription>
+                </div>
               </div>
             </div>
           </CardHeader>

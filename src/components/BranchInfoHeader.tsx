@@ -62,7 +62,7 @@ export const BranchInfoHeader = ({
     );
   }
 
-  return <div className="bg-card rounded-lg shadow-sm border border-border p-4 md:p-6 mb-6 relative overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-blue-500 before:via-cyan-500 before:to-emerald-500 before:rounded-t-lg">
+  return <div className="bg-gradient-to-br from-blue-50/40 via-card to-emerald-50/30 dark:from-blue-950/20 dark:via-card dark:to-emerald-950/20 rounded-lg shadow-md shadow-blue-100/20 dark:shadow-blue-900/10 border border-border p-4 md:p-6 mb-6 relative overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1.5 before:bg-gradient-to-r before:from-blue-500 before:via-cyan-500 before:to-emerald-500 before:rounded-t-lg">
       {/* Back Button and Breadcrumbs */}
       <div className="flex items-center gap-4 mb-4">
         <BackButton 

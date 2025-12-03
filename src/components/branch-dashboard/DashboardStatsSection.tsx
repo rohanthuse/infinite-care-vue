@@ -54,56 +54,56 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
       <div className="grid grid-cols-2 gap-3 mb-6">
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
+          className="h-auto py-3 px-4 border-l-4 border-l-blue-500 border border-border shadow-sm bg-gradient-to-r from-blue-50/50 to-card hover:from-blue-100/70 hover:shadow-md hover:shadow-blue-100/30 text-left justify-start transition-all duration-300 group"
           onClick={onNewClient}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-primary/10 flex items-center justify-center">
-            <Plus className="h-3.5 md:h-4 w-3.5 md:w-4 text-primary" />
+          <div className="mr-2 md:mr-3 h-8 md:h-9 w-8 md:w-9 rounded-xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Plus className="h-4 md:h-4.5 w-4 md:w-4.5 text-blue-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm text-card-foreground">New Client</div>
+            <div className="font-semibold text-xs md:text-sm text-card-foreground">New Client</div>
             <div className="text-xs text-muted-foreground hidden md:block">Add client details</div>
           </div>
         </Button>
         
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
+          className="h-auto py-3 px-4 border-l-4 border-l-green-500 border border-border shadow-sm bg-gradient-to-r from-green-50/50 to-card hover:from-green-100/70 hover:shadow-md hover:shadow-green-100/30 text-left justify-start transition-all duration-300 group"
           onClick={() => onTabChange("bookings")}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-green-500/10 flex items-center justify-center">
-            <Calendar className="h-3.5 md:h-4 w-3.5 md:w-4 text-green-600" />
+          <div className="mr-2 md:mr-3 h-8 md:h-9 w-8 md:w-9 rounded-xl bg-green-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Calendar className="h-4 md:h-4.5 w-4 md:w-4.5 text-green-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm text-card-foreground">Schedule</div>
+            <div className="font-semibold text-xs md:text-sm text-card-foreground">Schedule</div>
             <div className="text-xs text-muted-foreground hidden md:block">View calendar</div>
           </div>
         </Button>
         
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
+          className="h-auto py-3 px-4 border-l-4 border-l-amber-500 border border-border shadow-sm bg-gradient-to-r from-amber-50/50 to-card hover:from-amber-100/70 hover:shadow-md hover:shadow-amber-100/30 text-left justify-start transition-all duration-300 group"
           onClick={() => onTabChange("reports")}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-amber-500/10 flex items-center justify-center">
-            <FileText className="h-3.5 md:h-4 w-3.5 md:w-4 text-amber-600" />
+          <div className="mr-2 md:mr-3 h-8 md:h-9 w-8 md:w-9 rounded-xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <FileText className="h-4 md:h-4.5 w-4 md:w-4.5 text-amber-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm text-card-foreground">Reports</div>
+            <div className="font-semibold text-xs md:text-sm text-card-foreground">Reports</div>
             <div className="text-xs text-muted-foreground hidden md:block">Generate reports</div>
           </div>
         </Button>
         
         <Button
           variant="outline"
-          className="h-auto py-3 px-4 border border-border shadow-sm bg-card hover:bg-accent text-left justify-start"
+          className="h-auto py-3 px-4 border-l-4 border-l-purple-500 border border-border shadow-sm bg-gradient-to-r from-purple-50/50 to-card hover:from-purple-100/70 hover:shadow-md hover:shadow-purple-100/30 text-left justify-start transition-all duration-300 group"
           onClick={() => onTabChange("carers")}
         >
-          <div className="mr-2 md:mr-3 h-7 md:h-8 w-7 md:w-8 rounded-md bg-purple-500/10 flex items-center justify-center">
-            <Users className="h-3.5 md:h-4 w-3.5 md:w-4 text-purple-600" />
+          <div className="mr-2 md:mr-3 h-8 md:h-9 w-8 md:w-9 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Users className="h-4 md:h-4.5 w-4 md:w-4.5 text-purple-600" />
           </div>
           <div>
-            <div className="font-medium text-xs md:text-sm text-card-foreground">Carers</div>
+            <div className="font-semibold text-xs md:text-sm text-card-foreground">Carers</div>
             <div className="text-xs text-muted-foreground hidden md:block">Manage carers</div>
           </div>
         </Button>
@@ -118,8 +118,11 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.clientsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handleTotalClientsClick}
-          iconBgClass="bg-blue-500/10"
+          iconBgClass="bg-blue-500/20"
           iconColorClass="text-blue-600"
+          gradientClass="bg-gradient-to-br from-blue-50/80 to-card dark:from-blue-950/30"
+          borderColorClass="border-l-blue-500"
+          shadowColorClass="hover:shadow-blue-200/50 dark:hover:shadow-blue-900/30"
         />
         <DashboardStat 
           title="Today's Bookings" 
@@ -129,8 +132,11 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.todaysBookingsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handleTodaysBookingsClick}
-          iconBgClass="bg-green-500/10"
+          iconBgClass="bg-green-500/20"
           iconColorClass="text-green-600"
+          gradientClass="bg-gradient-to-br from-green-50/80 to-card dark:from-green-950/30"
+          borderColorClass="border-l-green-500"
+          shadowColorClass="hover:shadow-green-200/50 dark:hover:shadow-green-900/30"
         />
         <DashboardStat 
           title="Pending Feedbacks" 
@@ -140,8 +146,11 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.pendingReviewsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handlePendingFeedbacksClick}
-          iconBgClass="bg-amber-500/10"
+          iconBgClass="bg-amber-500/20"
           iconColorClass="text-amber-600"
+          gradientClass="bg-gradient-to-br from-amber-50/80 to-card dark:from-amber-950/30"
+          borderColorClass="border-l-amber-500"
+          shadowColorClass="hover:shadow-amber-200/50 dark:hover:shadow-amber-900/30"
         />
         <DashboardStat 
           title="Monthly Revenue" 
@@ -151,8 +160,11 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.monthlyRevenueChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handleMonthlyRevenueClick}
-          iconBgClass="bg-purple-500/10"
+          iconBgClass="bg-purple-500/20"
           iconColorClass="text-purple-600"
+          gradientClass="bg-gradient-to-br from-purple-50/80 to-card dark:from-purple-950/30"
+          borderColorClass="border-l-purple-500"
+          shadowColorClass="hover:shadow-purple-200/50 dark:hover:shadow-purple-900/30"
         />
       </div>
     </motion.div>

@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { ThumbsUp } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const ReviewItem = ({
@@ -17,23 +18,26 @@ export const ReviewItem = ({
   comment: string;
 }) => {
   return (
-    <div className="py-2 border-b last:border-0">
-      <div className="flex justify-between">
+    <div className="py-3 px-3 border-b last:border-0 hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-transparent rounded-lg transition-all duration-200 border-l-2 border-l-amber-400">
+      <div className="flex justify-between items-start mb-2">
         <div>
-          <div className="text-xs md:text-sm font-medium">{client}</div>
-          <div className="text-xs text-muted-foreground">for {staff}</div>
+          <div className="text-xs md:text-sm font-semibold text-foreground">{client}</div>
+          <div className="text-xs text-muted-foreground">{staff}</div>
         </div>
-        <div className="text-xs text-muted-foreground">{date}</div>
+        <div className="text-xs text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">{date}</div>
       </div>
-      <div className="flex items-center mt-1">
-        <div className="flex">
-          {Array(rating)
+      <div className="flex items-start gap-2">
+        <div className="flex items-center bg-gradient-to-r from-amber-100 to-yellow-100 rounded-full px-2 py-1 gap-0.5 shadow-sm">
+          {Array(5)
             .fill(0)
             .map((_, i) => (
-              <ThumbsUp key={i} className="h-3 w-3 text-yellow-500" />
+              <Star 
+                key={i} 
+                className={`h-3.5 w-3.5 ${i < rating ? 'text-amber-500 fill-amber-500' : 'text-gray-300'}`} 
+              />
             ))}
         </div>
-        <p className="ml-2 text-xs md:text-sm text-foreground">{comment}</p>
+        <p className="text-xs md:text-sm text-muted-foreground flex-1 line-clamp-2">{comment}</p>
       </div>
     </div>
   );
