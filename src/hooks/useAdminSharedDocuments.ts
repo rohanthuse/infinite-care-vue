@@ -14,6 +14,7 @@ export interface AdminSharedDocument {
   created_at: string;
   updated_at: string;
   tags?: string[];
+  access_level?: string;
 }
 
 // Hook for clients to see documents shared by admin
@@ -23,11 +24,37 @@ export const useClientSharedDocuments = (clientId: string) => {
     queryFn: async (): Promise<AdminSharedDocument[]> => {
       console.log('[useClientSharedDocuments] Fetching admin-shared documents for client:', clientId);
       
+      // First get client's branch_id
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('branch_id')
+        .eq('id', clientId)
+        .single();
+
+      if (clientError) {
+        console.error('[useClientSharedDocuments] Error fetching client branch:', clientError);
+        throw clientError;
+      }
+
+      const branchId = clientData?.branch_id;
+      console.log('[useClientSharedDocuments] Client branch_id:', branchId);
+
+      // Build query with OR conditions for visibility:
+      // 1. Direct sharing (client_id matches)
+      // 2. Branch-level (access_level = 'branch' AND same branch)
+      // 3. Public (access_level = 'public')
+      let orConditions = `client_id.eq.${clientId}`;
+      
+      if (branchId) {
+        orConditions += `,and(access_level.eq.branch,branch_id.eq.${branchId})`;
+      }
+      orConditions += `,access_level.eq.public`;
+
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .eq('client_id', clientId)
         .eq('status', 'active')
+        .or(orConditions)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -50,11 +77,37 @@ export const useCarerSharedDocuments = (carerId: string) => {
     queryFn: async (): Promise<AdminSharedDocument[]> => {
       console.log('[useCarerSharedDocuments] Fetching admin-shared documents for carer:', carerId);
       
+      // First get staff's branch_id
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('branch_id')
+        .eq('id', carerId)
+        .single();
+
+      if (staffError) {
+        console.error('[useCarerSharedDocuments] Error fetching staff branch:', staffError);
+        throw staffError;
+      }
+
+      const branchId = staffData?.branch_id;
+      console.log('[useCarerSharedDocuments] Staff branch_id:', branchId);
+
+      // Build query with OR conditions for visibility:
+      // 1. Direct sharing (staff_id matches)
+      // 2. Branch-level (access_level = 'branch' AND same branch)
+      // 3. Public (access_level = 'public')
+      let orConditions = `staff_id.eq.${carerId}`;
+      
+      if (branchId) {
+        orConditions += `,and(access_level.eq.branch,branch_id.eq.${branchId})`;
+      }
+      orConditions += `,access_level.eq.public`;
+
       const { data, error } = await supabase
         .from('documents')
         .select('*')
-        .eq('staff_id', carerId)
         .eq('status', 'active')
+        .or(orConditions)
         .order('created_at', { ascending: false });
 
       if (error) {
