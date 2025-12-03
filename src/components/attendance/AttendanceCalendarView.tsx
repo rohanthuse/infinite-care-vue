@@ -191,6 +191,7 @@ export const AttendanceCalendarView: React.FC<AttendanceCalendarViewProps> = ({
         </div>
 
         <AttendanceExportDropdown
+          branchId={branchId}
           branchName={branchName}
           currentDate={currentMonth}
           attendanceData={calendarData.map((d) => ({
