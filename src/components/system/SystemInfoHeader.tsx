@@ -25,7 +25,7 @@ export const SystemInfoHeader = ({
 }: SystemInfoHeaderProps) => {
   const navigate = useNavigate();
 
-  return <div className="bg-card rounded-lg shadow-sm border border-border p-4 md:p-6 mb-6">
+  return <div className="bg-card rounded-lg shadow-sm border border-border p-4 md:p-6 mb-6 relative overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-blue-500 before:via-cyan-500 before:to-emerald-500">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 mb-2">

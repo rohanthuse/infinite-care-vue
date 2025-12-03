@@ -12,6 +12,8 @@ export const DashboardStat = ({
   positive,
   isLoading,
   onClick,
+  iconBgClass,
+  iconColorClass,
 }: {
   title: string;
   value: string;
@@ -20,6 +22,8 @@ export const DashboardStat = ({
   positive: boolean;
   isLoading?: boolean;
   onClick?: () => void;
+  iconBgClass?: string;
+  iconColorClass?: string;
 }) => {
   return (
     <Card className={onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""} onClick={onClick}>
@@ -42,7 +46,7 @@ export const DashboardStat = ({
               </>
             )}
           </div>
-          <div className="p-2 rounded-md bg-muted border border-border">
+          <div className={`p-2 rounded-md border border-border ${iconBgClass || 'bg-muted'} ${iconColorClass || ''}`}>
             {icon}
           </div>
         </div>

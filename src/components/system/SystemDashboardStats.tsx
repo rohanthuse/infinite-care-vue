@@ -35,6 +35,8 @@ export const SystemDashboardStats = ({
         positive={true}
         isLoading={isLoading}
         onClick={() => onStatClick?.('tenants')}
+        iconBgClass="bg-blue-500/10"
+        iconColorClass="text-blue-600"
       />
       
       <DashboardStat
@@ -45,6 +47,8 @@ export const SystemDashboardStats = ({
         positive={true}
         isLoading={isLoading}
         onClick={() => onStatClick?.('users')}
+        iconBgClass="bg-emerald-500/10"
+        iconColorClass="text-emerald-600"
       />
       
       <DashboardStat
@@ -55,6 +59,8 @@ export const SystemDashboardStats = ({
         positive={stats.demoRequests.pending === 0}
         isLoading={isLoading}
         onClick={() => onStatClick?.('demo_requests')}
+        iconBgClass="bg-purple-500/10"
+        iconColorClass="text-purple-600"
       />
       
     </div>
