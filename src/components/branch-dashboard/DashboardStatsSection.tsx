@@ -118,6 +118,8 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.clientsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handleTotalClientsClick}
+          iconBgClass="bg-blue-500/10"
+          iconColorClass="text-blue-600"
         />
         <DashboardStat 
           title="Today's Bookings" 
@@ -127,6 +129,8 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.todaysBookingsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handleTodaysBookingsClick}
+          iconBgClass="bg-green-500/10"
+          iconColorClass="text-green-600"
         />
         <DashboardStat 
           title="Pending Feedbacks" 
@@ -136,6 +140,8 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.pendingReviewsChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handlePendingFeedbacksClick}
+          iconBgClass="bg-amber-500/10"
+          iconColorClass="text-amber-600"
         />
         <DashboardStat 
           title="Monthly Revenue" 
@@ -145,6 +151,8 @@ export const DashboardStatsSection: React.FC<DashboardStatsSectionProps> = ({
           positive={dashboardStats?.monthlyRevenueChangePositive ?? true} 
           isLoading={isLoadingDashboardStats}
           onClick={handleMonthlyRevenueClick}
+          iconBgClass="bg-purple-500/10"
+          iconColorClass="text-purple-600"
         />
       </div>
     </motion.div>
