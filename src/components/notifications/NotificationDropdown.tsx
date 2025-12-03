@@ -207,7 +207,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
     console.warn("Error in notification dropdown:", error);
   }
 
-  const recentNotifications = notifications?.slice(0, 6) || [];
+  // Only show unread notifications in dropdown - clicked ones disappear immediately
+  const recentNotifications = notifications?.filter(n => !n.read_at).slice(0, 6) || [];
 
   return (
     <ErrorBoundary fallback={
