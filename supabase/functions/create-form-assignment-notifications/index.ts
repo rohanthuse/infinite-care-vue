@@ -98,12 +98,14 @@ Deno.serve(async (req) => {
             branch_id: branch_id,
             type: 'info',
             category: 'info',
-            priority: 'low',
+            priority: 'medium',
             title: 'New Form Assigned',
-            message: `A new form has been assigned: ${form_title}`,
+            message: 'A new form has been assigned to you. Click to open.',
             data: {
               form_id,
-              notification_type: 'form_assignment'
+              form_title,
+              notification_type: 'form_assignment',
+              redirect_url: '/forms'
             }
           }));
 
@@ -162,12 +164,14 @@ Deno.serve(async (req) => {
       branch_id: branch_id,
       type: 'info',
       category: 'info',
-      priority: 'low',
+      priority: 'medium',
       title: 'New Form Assigned',
-      message: `A new form has been assigned: ${form_title}`,
+      message: 'A new form has been assigned to you. Click to open.',
       data: {
         form_id,
-        notification_type: 'form_assignment'
+        form_title,
+        notification_type: 'form_assignment',
+        redirect_url: '/forms'
       }
     };
 

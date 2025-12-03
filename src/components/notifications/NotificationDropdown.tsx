@@ -147,6 +147,14 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             }
           } else if (effectiveType === 'form') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
+          } else if (effectiveType === 'form_submission') {
+            // Form submission notification - redirect to Form Builder responses tab
+            const data = notification.data as any;
+            if (data?.form_id) {
+              navigate(`/branch-dashboard/${branchId}/${branchName}/form-builder/${data.form_id}?tab=responses`);
+            } else {
+              navigate(`/branch-dashboard/${branchId}/${branchName}/forms`);
+            }
           } else if (effectiveType === 'agreement') {
             navigate(`/branch-dashboard/${branchId}/${branchName}/agreements`);
           } else if (effectiveType === 'library') {
