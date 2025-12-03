@@ -10,6 +10,10 @@ import { cn } from "@/lib/utils";
 import { ErrorBoundary } from "@/components/care/ErrorBoundary";
 import { useNavigate } from "react-router-dom";
 import { useCarerNavigation } from "@/hooks/useCarerNavigation";
+import { 
+  getNotificationRoute, 
+  storeDeepLinkData,
+} from "@/utils/notificationRouting";
 
 export default function CarerNotifications() {
   const { notifications, stats, markAsRead, markAllAsRead, isMarkingAllAsRead, error } = useNotifications();
@@ -54,20 +58,28 @@ export default function CarerNotifications() {
     // Mark notification as read
     markAsRead(notification.id);
     
-    // Handle task notifications with deep-linking to events
-    if (notification.type === 'task' && notification.data?.event_id && notification.data?.client_id) {
-      // Store event details in sessionStorage for auto-opening
-      sessionStorage.setItem('openEventId', notification.data.event_id);
-      sessionStorage.setItem('openEventClientId', notification.data.client_id);
-      
-      // Navigate to client detail page
+    // Store deep-link data for auto-opening
+    storeDeepLinkData(notification);
+    
+    const notificationType = notification.type as string;
+    
+    // Special handling for task/events with client_id - navigate to client page
+    if ((notificationType === 'task' || notificationType === 'events_logs') && notification.data?.client_id) {
       navigate(createCarerPath(`/clients/${notification.data.client_id}`));
+      return;
     }
     
-    // Handle other notification types as needed
-    if (notification.type === 'message' && notification.data?.thread_id) {
-      // For future message handling
-      sessionStorage.setItem('openThreadId', notification.data.thread_id);
+    // Special handling for client notifications
+    if (notificationType === 'client' && notification.data?.client_id) {
+      navigate(createCarerPath(`/clients/${notification.data.client_id}`));
+      return;
+    }
+    
+    // Get route for this notification type
+    const route = getNotificationRoute(notification, 'carer');
+    
+    if (route) {
+      navigate(createCarerPath(route));
     }
   };
 

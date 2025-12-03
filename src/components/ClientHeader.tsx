@@ -25,7 +25,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const [searchValue, setSearchValue] = useState("");
 
   const handleViewAllNotifications = () => {
-    navigate(createClientPath('/messages'));
+    navigate(createClientPath('/notifications'));
   };
 
   const handleLogout = async () => {

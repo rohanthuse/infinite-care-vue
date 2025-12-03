@@ -16,6 +16,7 @@ import {
   MessageCircle,
   User,
   HelpCircle,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -73,6 +74,7 @@ export const ClientSidebar: React.FC = () => {
   const personalItems = [
     { name: "Payments", path: createClientPath("/payments"), icon: CreditCard },
     { name: "Documents", path: createClientPath("/documents"), icon: File },
+    { name: "Notifications", path: createClientPath("/notifications"), icon: Bell },
     { name: "Messages", path: createClientPath("/messages"), icon: MessageCircle },
     { name: "Profile", path: createClientPath("/profile"), icon: User },
     { name: "Support", path: createClientPath("/support"), icon: HelpCircle },

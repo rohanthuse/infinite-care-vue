@@ -19,6 +19,7 @@ import ClientLibrary from "@/pages/client/ClientLibrary";
 import ClientTasks from "@/pages/client/ClientTasks";
 import ClientSchedule from "@/pages/client/ClientSchedule";
 import ClientAgreements from "@/pages/client/ClientAgreements";
+import ClientNotifications from "@/pages/client/ClientNotifications";
 import { Suspense } from "react";
 import { useSimpleClientAuth } from "@/hooks/useSimpleClientAuth";
 import { ClientSidebarProvider } from "@/components/client/ClientSidebarProvider";
@@ -119,6 +120,7 @@ const ClientRoutes = () => [
       <Route path="messages" element={<ClientMessages />} />
       <Route path="profile" element={<ClientProfile />} />
       <Route path="support" element={<ClientSupport />} />
+      <Route path="notifications" element={<ClientNotifications />} />
     </Route>
   </Route>
 ];
