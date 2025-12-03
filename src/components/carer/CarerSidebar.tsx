@@ -180,8 +180,16 @@ export const CarerSidebar: React.FC = () => {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
-      <SidebarContent>
+    <Sidebar 
+      collapsible="icon" 
+      className="border-r shrink-0"
+      style={{
+        height: 'calc(100vh - var(--carer-total-header-height, 120px))',
+        position: 'sticky',
+        top: 'var(--carer-total-header-height, 120px)'
+      } as React.CSSProperties}
+    >
+      <SidebarContent className="overflow-y-auto">
         {/* User Header */}
         <div className="p-4 border-b">
           <div className="flex items-center gap-2">
