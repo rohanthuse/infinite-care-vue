@@ -112,9 +112,9 @@ export const CarerRightSidebar: React.FC = () => {
         sidebarOpen ? "w-64" : "w-14"
       )}
       style={{
-        height: 'calc(100vh - var(--carer-total-header-height, 120px))',
+        height: 'calc(100vh - var(--sidebar-top-offset, 120px))',
         position: 'fixed',
-        top: 'var(--carer-total-header-height, 120px)',
+        top: 'var(--sidebar-top-offset, 120px)',
         right: 0
       }}
     >

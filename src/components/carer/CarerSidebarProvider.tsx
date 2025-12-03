@@ -36,8 +36,11 @@ export const CarerSidebarProvider: React.FC<CarerSidebarProviderProps> = ({ chil
       defaultOpen={getDefaultOpen()}
       style={{
         '--carer-header-height': '64px',
+        '--carer-subheader-height': '56px',
+        '--carer-total-header-height': '120px',
         '--sidebar-width': '16rem',
         '--sidebar-width-icon': '3.5rem',
+        '--sidebar-top-offset': '120px',
       } as React.CSSProperties}
     >
       {children}
