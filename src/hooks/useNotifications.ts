@@ -153,33 +153,70 @@ export const useNotifications = (branchId?: string) => {
     [queryClient]
   );
 
-  // Mark notification as read with error handling
+  // Mark notification as read with optimistic updates
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      try {
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read_at: new Date().toISOString() })
-          .eq('id', notificationId);
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', notificationId);
 
-        if (error) {
-          console.error('Error marking notification as read:', error);
-          throw error;
-        }
-      } catch (error) {
-        console.error('Failed to mark notification as read:', error);
+      if (error) {
+        console.error('Error marking notification as read:', error);
         throw error;
       }
     },
-    onSuccess: () => {
-      debouncedInvalidateQueries();
+    // Optimistic update for instant UI feedback
+    onMutate: async (notificationId: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['notifications', branchId] });
+      await queryClient.cancelQueries({ queryKey: ['notification-stats', branchId] });
+
+      // Snapshot previous values for rollback
+      const previousNotifications = queryClient.getQueryData<Notification[]>(['notifications', branchId]);
+      const previousStats = queryClient.getQueryData<NotificationStats>(['notification-stats', branchId]);
+
+      // Check if this notification is currently unread
+      const notification = previousNotifications?.find(n => n.id === notificationId);
+      const wasUnread = notification && !notification.read_at;
+
+      // Optimistically update notifications list
+      queryClient.setQueryData<Notification[]>(['notifications', branchId], (old) =>
+        old?.map(n => n.id === notificationId 
+          ? { ...n, read_at: new Date().toISOString() } 
+          : n
+        ) || []
+      );
+
+      // Optimistically update stats (only decrement if was unread)
+      if (wasUnread) {
+        queryClient.setQueryData<NotificationStats>(['notification-stats', branchId], (old) => ({
+          total_count: old?.total_count || 0,
+          unread_count: Math.max(0, (old?.unread_count || 0) - 1),
+          high_priority_count: old?.high_priority_count || 0,
+          by_type: old?.by_type || {}
+        }));
+      }
+
+      return { previousNotifications, previousStats };
     },
-    onError: (error) => {
+    onError: (error, notificationId, context) => {
+      // Rollback on error
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(['notifications', branchId], context.previousNotifications);
+      }
+      if (context?.previousStats) {
+        queryClient.setQueryData(['notification-stats', branchId], context.previousStats);
+      }
       toast({
         title: "Error",
         description: "Failed to mark notification as read",
         variant: "destructive",
       });
+    },
+    onSettled: () => {
+      // Always refetch after mutation settles to ensure consistency
+      debouncedInvalidateQueries();
     },
   });
 
