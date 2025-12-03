@@ -96,19 +96,19 @@ export const ClientSidebar: React.FC = () => {
         sidebarOpen ? "w-64 lg:w-72" : "w-14"
       )}
     >
-      <SidebarHeader className="border-b p-4">
+      <SidebarHeader className="border-b p-4 bg-gradient-to-br from-indigo-50/50 via-transparent to-purple-50/30 dark:from-indigo-950/30 dark:to-purple-950/20">
         {sidebarOpen ? (
           <div className="flex items-center gap-2 mb-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-blue-100 text-blue-600">
+            <Avatar className="h-8 w-8 ring-2 ring-indigo-200 dark:ring-indigo-800">
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                 {clientName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <span className="font-semibold">{clientName}</span>
           </div>
         ) : (
-          <Avatar className="h-8 w-8 mx-auto mb-2">
-            <AvatarFallback className="bg-blue-100 text-blue-600">
+          <Avatar className="h-8 w-8 mx-auto mb-2 ring-2 ring-indigo-200 dark:ring-indigo-800">
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
               {clientName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -119,7 +119,7 @@ export const ClientSidebar: React.FC = () => {
       <SidebarContent>
         {/* Main Group */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel>Main</SidebarGroupLabel>}
+          {sidebarOpen && <SidebarGroupLabel className="text-indigo-600 dark:text-indigo-400 font-semibold">Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -143,7 +143,7 @@ export const ClientSidebar: React.FC = () => {
 
         {/* Services Group */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel>Services</SidebarGroupLabel>}
+          {sidebarOpen && <SidebarGroupLabel className="text-purple-600 dark:text-purple-400 font-semibold">Services</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {servicesItems.map((item) => (
@@ -167,7 +167,7 @@ export const ClientSidebar: React.FC = () => {
 
         {/* Personal Group */}
         <SidebarGroup>
-          {sidebarOpen && <SidebarGroupLabel>Personal</SidebarGroupLabel>}
+          {sidebarOpen && <SidebarGroupLabel className="text-blue-600 dark:text-blue-400 font-semibold">Personal</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {personalItems.map((item) => (
@@ -191,8 +191,8 @@ export const ClientSidebar: React.FC = () => {
       </SidebarContent>
 
       {sidebarOpen && (
-        <SidebarFooter className="border-t p-4">
-          <div className="text-xs text-muted-foreground mb-1">Med-Infinite</div>
+        <SidebarFooter className="border-t p-4 bg-gradient-to-r from-indigo-50/30 to-transparent dark:from-indigo-950/20">
+          <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mb-1">Med-Infinite</div>
           <div className="text-xs text-muted-foreground">Version 1.0.0</div>
         </SidebarFooter>
       )}

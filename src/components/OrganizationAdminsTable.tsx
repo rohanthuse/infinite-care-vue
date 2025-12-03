@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -239,30 +240,30 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-950/20 p-4 rounded-lg mb-4">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-4 w-4" />
           <Input
             placeholder="Search super admins..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 border-blue-200 dark:border-blue-800 focus:border-blue-500"
           />
         </div>
         <AddMemberDialog />
       </div>
 
       {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden shadow-sm shadow-blue-100/20 dark:shadow-blue-900/10 border-l-4 border-l-blue-500">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="bg-gradient-to-r from-blue-50/70 via-blue-50/50 to-transparent dark:from-blue-950/30 dark:to-transparent">
+              <TableHead className="font-semibold text-blue-700 dark:text-blue-300">Name</TableHead>
+              <TableHead className="font-semibold text-blue-700 dark:text-blue-300">Email</TableHead>
+              <TableHead className="font-semibold text-blue-700 dark:text-blue-300">Role</TableHead>
+              <TableHead className="font-semibold text-blue-700 dark:text-blue-300">Status</TableHead>
+              <TableHead className="font-semibold text-blue-700 dark:text-blue-300">Joined</TableHead>
+              <TableHead className="text-right font-semibold text-blue-700 dark:text-blue-300">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -285,7 +286,10 @@ export const OrganizationAdminsTable: React.FC<OrganizationAdminsTableProps> = (
               filteredMembers.map((member) => (
                 <TableRow 
                   key={member.id}
-                  className={member.status === 'inactive' ? 'opacity-60 bg-muted/30' : ''}
+                  className={cn(
+                    "transition-all hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-transparent dark:hover:from-blue-950/20",
+                    member.status === 'inactive' ? 'opacity-60 bg-muted/30' : ''
+                  )}
                 >
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">

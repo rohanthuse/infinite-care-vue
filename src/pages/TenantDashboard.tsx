@@ -359,7 +359,7 @@ const TenantDashboard = () => {
   // Branch Admin View - LIMITED to assigned branches ONLY
   if (isBranchAdmin) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-background dark:via-background dark:to-blue-950/10">
         <DashboardHeader />
         {/* NO DashboardNavbar for Branch Admins */}
         
@@ -371,10 +371,10 @@ const TenantDashboard = () => {
         >
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent tracking-tight">
                 Organisation Branches
               </h1>
-              <p className="text-gray-500 mt-2 font-medium">
+              <p className="text-muted-foreground mt-2 font-medium">
                 Access your assigned branches below.
               </p>
             </div>
@@ -393,7 +393,7 @@ const TenantDashboard = () => {
   // Super Admin View - FULL organization management access
   if (isSuperAdmin || isOrganizationAdmin) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-white">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-background dark:via-background dark:to-blue-950/10">
         <DashboardHeader />
         <DashboardNavbar />
         
@@ -408,10 +408,10 @@ const TenantDashboard = () => {
           
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent tracking-tight">
                 {organization.name} - Organisation Management
               </h1>
-              <p className="text-gray-500 mt-2 font-medium">
+              <p className="text-muted-foreground mt-2 font-medium">
                 Manage and monitor all {organization.name} administrators and branches.
               </p>
             </div>
