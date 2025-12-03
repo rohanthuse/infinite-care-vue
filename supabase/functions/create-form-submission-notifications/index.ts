@@ -53,47 +53,44 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch branch admins (staff with is_admin: true) for the branch
+    // Collect all admin user IDs
+    const adminUserIds = new Set<string>();
+
+    // Fetch branch admins from admin_branches table
     const { data: branchAdmins, error: adminError } = await supabase
-      .from('staff')
-      .select('auth_user_id')
-      .eq('branch_id', branch_id)
-      .eq('is_admin', true)
-      .eq('status', 'active')
-      .not('auth_user_id', 'is', null);
+      .from('admin_branches')
+      .select('admin_id')
+      .eq('branch_id', branch_id);
 
     if (adminError) {
       console.error('[create-form-submission-notifications] Error fetching branch admins:', adminError);
-    }
-
-    // Fetch super admins (profiles with role 'admin' or 'super_admin')
-    const { data: superAdmins, error: superAdminError } = await supabase
-      .from('profiles')
-      .select('id')
-      .in('role', ['admin', 'super_admin']);
-
-    if (superAdminError) {
-      console.error('[create-form-submission-notifications] Error fetching super admins:', superAdminError);
-    }
-
-    // Collect all admin user IDs
-    const adminUserIds = new Set<string>();
-    
-    if (branchAdmins) {
+    } else if (branchAdmins && branchAdmins.length > 0) {
+      console.log('[create-form-submission-notifications] Found branch admins:', branchAdmins.length);
       branchAdmins.forEach(admin => {
-        if (admin.auth_user_id) {
-          adminUserIds.add(admin.auth_user_id);
+        if (admin.admin_id) {
+          adminUserIds.add(admin.admin_id);
         }
       });
     }
 
-    if (superAdmins) {
+    // Fetch super admins from user_roles table
+    const { data: superAdmins, error: superAdminError } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'super_admin');
+
+    if (superAdminError) {
+      console.error('[create-form-submission-notifications] Error fetching super admins:', superAdminError);
+    } else if (superAdmins && superAdmins.length > 0) {
+      console.log('[create-form-submission-notifications] Found super admins:', superAdmins.length);
       superAdmins.forEach(admin => {
-        adminUserIds.add(admin.id);
+        if (admin.user_id) {
+          adminUserIds.add(admin.user_id);
+        }
       });
     }
 
-    console.log('[create-form-submission-notifications] Found admin user IDs:', Array.from(adminUserIds));
+    console.log('[create-form-submission-notifications] Total admin user IDs:', Array.from(adminUserIds));
 
     if (adminUserIds.size === 0) {
       console.log('[create-form-submission-notifications] No admins found to notify');
@@ -119,9 +116,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Determine submitter label
-    const submitterLabel = submitter_type === 'client' ? 'A client' : 'A staff member';
-    const displayName = submitter_name || submitterLabel;
+    // Determine submitter message based on type
+    const submitterMessage = submitter_type === 'client' 
+      ? 'A client has submitted a form.' 
+      : 'A carer/staff has submitted a form.';
+
+    const displayName = submitter_name || (submitter_type === 'client' ? 'A client' : 'A staff member');
 
     // Create notifications for all admins
     const notifications = validUserIds.map(userId => ({
@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
       category: 'info',
       priority: 'medium',
       title: 'Form Submitted',
-      message: `${displayName} has submitted the assigned form: ${form_title}`,
+      message: `${displayName} has submitted the form: ${form_title}`,
       data: {
         form_id,
         form_title,
