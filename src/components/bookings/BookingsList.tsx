@@ -71,6 +71,29 @@ export const BookingsList: React.FC<BookingsListProps> = ({
     return acc;
   }, {});
 
+  // Pre-calculate related carer counts for each booking (multi-carer detection)
+  const relatedCarerCounts = useMemo(() => {
+    const counts = new Map<string, { count: number; carerNames: string[] }>();
+    
+    bookings.forEach(booking => {
+      const relatedBookings = bookings.filter(b => 
+        b.clientId === booking.clientId &&
+        b.date === booking.date &&
+        b.startTime === booking.startTime &&
+        b.endTime === booking.endTime
+      );
+      
+      counts.set(booking.id, {
+        count: relatedBookings.length,
+        carerNames: relatedBookings
+          .map(b => b.carerName)
+          .filter((name): name is string => !!name && name !== 'Not Assigned')
+      });
+    });
+    
+    return counts;
+  }, [bookings]);
+
   // Sort bookings by date and time
   const sortedBookings = [...bookings].sort((a, b) => {
     const dateCompare = a.date.localeCompare(b.date);
@@ -495,7 +518,21 @@ export const BookingsList: React.FC<BookingsListProps> = ({
                     <TableCell>
                       <div className="flex items-center">
                         <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {booking.carerName}
+                        {(() => {
+                          const related = relatedCarerCounts.get(booking.id);
+                          if (related && related.count > 1 && related.carerNames.length > 1) {
+                            // Multi-carer indicator
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span>{booking.carerName}</span>
+                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
+                                  +{related.count - 1} more
+                                </Badge>
+                              </div>
+                            );
+                          }
+                          return booking.carerName || 'Not Assigned';
+                        })()}
                       </div>
                     </TableCell>
                     <TableCell>
