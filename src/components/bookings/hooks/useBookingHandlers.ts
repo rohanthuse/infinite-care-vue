@@ -608,9 +608,11 @@ export function useBookingHandlers(branchId?: string, user?: any) {
       recurrenceWeeks: summary.recurrenceWeeks
     });
 
-    toast.info("Creating Bookings...", {
-      description: `Generating ${result.bookings.length} bookings for ${dayNames} from ${summary.dateRange.start} to ${summary.dateRange.end}`,
-      duration: 3000
+    // Log booking creation (removed info toast to avoid multiple popups)
+    console.log("[useBookingHandlers] Creating bookings:", {
+      total: result.bookings.length,
+      days: dayNames,
+      range: `${summary.dateRange.start} to ${summary.dateRange.end}`
     });
 
     createMultipleBookingsMutation.mutate(result.bookings, {
@@ -633,30 +635,38 @@ export function useBookingHandlers(branchId?: string, user?: any) {
         setNewBookingDialogOpen(false);
         createMultipleBookingsMutation.reset();
         
-        // Enhanced success message with details
+        // Build comprehensive summary for SINGLE toast
         const actualCount = data?.length || result.bookings.length;
-        const preview = previewRecurringBookings(bookingData, branchId);
         
-        let successDescription = `Created ${actualCount} bookings successfully!`;
-        if (preview.dayBreakdown.length > 0) {
-          const breakdown = preview.dayBreakdown
-            .map(d => `${d.day}: ${d.dates.length}`)
-            .join(', ');
-          successDescription += ` (${breakdown})`;
+        // Get date range from created bookings
+        let dateRangeText = '';
+        if (data && Array.isArray(data) && data.length > 0) {
+          const dates = data.map((b: any) => new Date(b.start_time)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+          const startDate = format(dates[0], 'dd MMM yyyy');
+          const endDate = format(dates[dates.length - 1], 'dd MMM yyyy');
+          dateRangeText = startDate === endDate ? startDate : `${startDate} to ${endDate}`;
         }
-
-        toast.success("Bookings Created Successfully! ✅", {
-          description: successDescription,
-          duration: 3000
+        
+        // Build summary description
+        const summaryParts: string[] = [];
+        summaryParts.push(`${actualCount} session${actualCount > 1 ? 's' : ''} scheduled`);
+        if (dateRangeText) {
+          summaryParts.push(dateRangeText);
+        }
+        
+        // Show SINGLE comprehensive success toast
+        toast.success("Recurring Booking Created Successfully!", {
+          description: summaryParts.join(' • '),
+          duration: 5000
         });
         
-        // Verify bookings appear in calendar
+        // Navigate to first booking date and verify (without additional toasts)
         if (data && Array.isArray(data) && data.length > 0) {
           const createdBookingIds = data.map((booking: any) => booking.id).filter(Boolean);
           if (createdBookingIds.length > 0) {
             console.log("[useBookingHandlers] Starting verification for booking IDs:", createdBookingIds);
             
-            // Navigate to the first booking's date immediately
+            // Navigate to the first booking's date
             const firstBooking = data[0];
             if (firstBooking?.start_time) {
               const bookingDate = new Date(firstBooking.start_time);
@@ -664,46 +674,34 @@ export function useBookingHandlers(branchId?: string, user?: any) {
               
               console.log("[useBookingHandlers] Navigating to booking date:", dateStr);
               
-              // Update URL to show the booking date and focus on the first booking
               const params = new URLSearchParams(window.location.search);
               params.set('date', dateStr);
               params.set('focusBookingId', createdBookingIds[0]);
               
               const newUrl = `${window.location.pathname}?${params.toString()}`;
-              console.log("[useBookingHandlers] New URL:", newUrl);
-              
-              // Use history.pushState to navigate without reloading
               window.history.pushState({}, '', newUrl);
-              
-              // Trigger a window location change event to notify components
               window.dispatchEvent(new PopStateEvent('popstate'));
-              
-              toast.success(`Booking created for ${dateStr}!`, {
-                description: 'Navigating to booking date...',
-                duration: 2000
-              });
             }
             
-            // Start verification process
+            // Start verification process (only show warning if needed)
             const verificationSuccess = await verifyBookingsAppear(createdBookingIds);
             
             if (!verificationSuccess) {
-              toast.warning('Bookings created but may not be visible', {
-                description: 'Click "Force Refresh" if you don\'t see your bookings on the calendar',
+              toast.warning('Calendar may need refresh', {
+                description: 'Click "Force Refresh" if bookings are not visible',
                 duration: 8000,
                 action: {
                   label: 'Force Refresh',
                   onClick: forceRefresh
                 }
               });
-             } else {
-               // Bookings verified successfully - data already refreshed via query invalidation
-               console.log("[useBookingHandlers] Bookings verified and visible in calendar");
-             }
-           }
-         }
-       },
-     });
+            } else {
+              console.log("[useBookingHandlers] Bookings verified and visible in calendar");
+            }
+          }
+        }
+      },
+    });
   };
 
   const handleCreateBooking = (bookingData: any, carers: any[] = []) => {

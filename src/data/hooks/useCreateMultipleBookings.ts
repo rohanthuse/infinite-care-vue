@@ -99,11 +99,8 @@ export function useCreateMultipleBookings(branchId?: string) {
                 const successful = invoiceResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
                 const failed = invoiceResults.length - successful;
                 
+                // Log invoice generation results (toast handled by useBookingHandlers for consolidated message)
                 console.log(`[useCreateMultipleBookings] Generated ${successful} invoices, ${failed} failed/skipped`);
-                
-                if (successful > 0) {
-                  toast.success(`Created ${data.length} bookings and ${successful} invoices`);
-                }
                 
                 // Invalidate invoice queries
                 await Promise.all([
