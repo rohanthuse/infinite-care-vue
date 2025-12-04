@@ -106,21 +106,18 @@ export const CarerRightSidebar: React.FC = () => {
   })).filter(group => group.items.length > 0);
 
   return (
-    <aside 
+    <Sidebar 
+      side="right" 
+      collapsible="icon"
       className={cn(
-        "hidden lg:flex flex-col shrink-0 border-l bg-sidebar transition-all duration-200 overflow-y-auto sticky top-[128px] h-[calc(100vh-128px)]",
+        "hidden lg:flex border-l bg-sidebar z-40",
         sidebarOpen ? "w-64" : "w-14"
       )}
+      style={{
+        '--sidebar-width': '16rem',
+        '--sidebar-width-icon': '3.5rem',
+      } as React.CSSProperties}
     >
-      <Sidebar 
-        side="right" 
-        collapsible="icon"
-        className="h-full border-none bg-transparent"
-        style={{
-          '--sidebar-width': '16rem',
-          '--sidebar-width-icon': '3.5rem',
-        } as React.CSSProperties}
-      >
       <SidebarHeader className="border-b p-3 lg:p-4">
         <div className="flex items-center justify-between">
           {sidebarOpen && <h2 className="text-base lg:text-lg font-semibold">Navigation</h2>}
@@ -219,7 +216,6 @@ export const CarerRightSidebar: React.FC = () => {
           </p>
         )}
       </SidebarFooter>
-      </Sidebar>
-    </aside>
+    </Sidebar>
   );
 };
