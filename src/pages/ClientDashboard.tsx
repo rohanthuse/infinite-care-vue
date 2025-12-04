@@ -28,14 +28,11 @@ const ClientDashboard = () => {
   }, [navigate]);
   
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 w-full">
       <ClientHeader title={pageTitle} />
       
-      <div 
-        className="flex flex-1 min-h-0 w-full"
-        style={{ paddingTop: 'var(--client-header-height, 64px)' }}
-      >
-        <SidebarInset className="flex-1 min-w-0 overflow-y-auto">
+      <div className="flex flex-1 w-full">
+        <SidebarInset className="flex-1 min-w-0 overflow-x-hidden">
           <main className="w-full max-w-full min-w-0 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <Outlet />
           </main>
