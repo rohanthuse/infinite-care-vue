@@ -93,9 +93,19 @@ Deno.serve(async (req) => {
         const validUserIds = validProfiles?.map(p => p.id) || [];
 
         if (validUserIds.length > 0) {
+          // Fetch organization_id from branch
+          let branchOrganizationId: string | null = null;
+          const { data: branchData } = await supabase
+            .from('branches')
+            .select('organization_id')
+            .eq('id', branch_id)
+            .single();
+          branchOrganizationId = branchData?.organization_id || null;
+
           const notifications = validUserIds.map(userId => ({
             user_id: userId,
             branch_id: branch_id,
+            organization_id: branchOrganizationId,
             type: 'info',
             category: 'info',
             priority: 'medium',
@@ -158,10 +168,20 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch organization_id from branch
+    let branchOrganizationId: string | null = null;
+    const { data: branchData } = await supabase
+      .from('branches')
+      .select('organization_id')
+      .eq('id', branch_id)
+      .single();
+    branchOrganizationId = branchData?.organization_id || null;
+
     // Create notification
     const notification = {
       user_id: authUserId,
       branch_id: branch_id,
+      organization_id: branchOrganizationId,
       type: 'info',
       category: 'info',
       priority: 'medium',

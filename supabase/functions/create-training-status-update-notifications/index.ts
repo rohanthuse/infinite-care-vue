@@ -75,6 +75,21 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${adminBranches.length} admins for branch ${branch_id}`);
 
+    // Fetch organization_id from branch for proper notification separation
+    let branchOrganizationId: string | null = null;
+    const { data: branchData, error: branchOrgError } = await supabase
+      .from('branches')
+      .select('organization_id')
+      .eq('id', branch_id)
+      .single();
+
+    if (branchOrgError) {
+      console.warn('Error fetching branch organization:', branchOrgError);
+    } else {
+      branchOrganizationId = branchData?.organization_id || null;
+    }
+    console.log('Branch organization_id:', branchOrganizationId);
+
     // Format status for display
     const statusDisplay = STATUS_DISPLAY_NAMES[new_status] || new_status;
     const updatedAt = new Date().toISOString();
@@ -82,6 +97,8 @@ Deno.serve(async (req) => {
     // Create notifications for each admin
     const notifications = adminBranches.map(({ admin_id }) => ({
       user_id: admin_id,
+      branch_id,
+      organization_id: branchOrganizationId,
       type: 'training',
       category: 'info',
       priority: 'medium',

@@ -26,14 +26,16 @@ import {
 
 interface NotificationDropdownProps {
   branchId?: string;
+  organizationId?: string;
   onViewAll?: () => void;
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   branchId,
+  organizationId,
   onViewAll,
 }) => {
-  const { notifications, stats, markAsRead, markAllAsRead, isMarkingAllAsRead, error } = useNotifications(branchId);
+  const { notifications, stats, markAsRead, markAllAsRead, isMarkingAllAsRead, error } = useNotifications(branchId, organizationId);
   const navigate = useNavigate();
   const location = useLocation();
   const userContext = detectUserContext(location.pathname);

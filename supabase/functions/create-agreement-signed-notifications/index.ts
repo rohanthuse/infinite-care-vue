@@ -118,6 +118,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch organization_id from branch for proper notification separation
+    let branchOrganizationId: string | null = null;
+    const { data: branchData, error: branchOrgError } = await supabase
+      .from('branches')
+      .select('organization_id')
+      .eq('id', branch_id)
+      .single();
+
+    if (branchOrgError) {
+      console.warn('[create-agreement-signed-notifications] Error fetching branch organization:', branchOrgError);
+    } else {
+      branchOrganizationId = branchData?.organization_id || null;
+    }
+    console.log('[create-agreement-signed-notifications] Branch organization_id:', branchOrganizationId);
+
     // Determine signer message based on type
     const signerMessage = signer_type === 'client' 
       ? 'A client has signed an agreement.' 
@@ -129,6 +144,7 @@ Deno.serve(async (req) => {
     const notifications = validUserIds.map(userId => ({
       user_id: userId,
       branch_id: branch_id,
+      organization_id: branchOrganizationId,
       type: 'info',
       category: 'info',
       priority: 'medium',

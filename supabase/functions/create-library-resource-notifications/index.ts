@@ -110,10 +110,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch organization_id from branch for proper notification separation
+    let branchOrganizationId: string | null = null;
+    const { data: branchData, error: branchOrgError } = await supabaseAdmin
+      .from('branches')
+      .select('organization_id')
+      .eq('id', branch_id)
+      .single();
+
+    if (branchOrgError) {
+      console.warn('Error fetching branch organization:', branchOrgError);
+    } else {
+      branchOrganizationId = branchData?.organization_id || null;
+    }
+    console.log('Branch organization_id:', branchOrganizationId);
+
     // Create notifications for each valid user
     const notifications = validUserIds.map(userId => ({
       user_id: userId,
       branch_id: branch_id,
+      organization_id: branchOrganizationId,
       type: 'info',
       category: 'info',
       priority: 'low',

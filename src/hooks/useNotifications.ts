@@ -28,7 +28,7 @@ export interface NotificationStats {
   by_type: Record<string, { total: number; unread: number }>;
 }
 
-export const useNotifications = (branchId?: string) => {
+export const useNotifications = (branchId?: string, organizationId?: string) => {
   const queryClient = useQueryClient();
   const channelRef = useRef<any>(null);
   const failureCountRef = useRef(0);
@@ -42,7 +42,7 @@ export const useNotifications = (branchId?: string) => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['notifications', branchId],
+    queryKey: ['notifications', branchId, organizationId],
     queryFn: async () => {
       try {
         // Get current user first
@@ -60,8 +60,16 @@ export const useNotifications = (branchId?: string) => {
           .limit(50);
 
         if (branchId) {
+          // Branch-specific: show ONLY this branch's notifications
           query = query.eq('branch_id', branchId);
+        } else if (organizationId) {
+          // Organization-level: show notifications for the organization
+          // These are notifications where organization_id matches AND branch_id is null
+          query = query
+            .eq('organization_id', organizationId)
+            .is('branch_id', null);
         }
+        // If neither branchId nor organizationId, show all user notifications (fallback)
 
         const { data, error } = await query;
 
@@ -87,7 +95,7 @@ export const useNotifications = (branchId?: string) => {
     data: stats,
     isLoading: statsLoading,
   } = useQuery({
-    queryKey: ['notification-stats', branchId],
+    queryKey: ['notification-stats', branchId, organizationId],
     queryFn: async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -97,6 +105,38 @@ export const useNotifications = (branchId?: string) => {
             total_count: 0,
             unread_count: 0,
             high_priority_count: 0,
+            by_type: {}
+          };
+        }
+
+        // For organization-level stats, we need to calculate manually
+        // since the RPC doesn't support organization filtering
+        if (organizationId && !branchId) {
+          const { data: orgNotifications, error: orgError } = await supabase
+            .from('notifications')
+            .select('id, read_at, priority')
+            .eq('user_id', user.id)
+            .eq('organization_id', organizationId)
+            .is('branch_id', null);
+
+          if (orgError) {
+            console.error('Error fetching org notification stats:', orgError);
+            return {
+              total_count: 0,
+              unread_count: 0,
+              high_priority_count: 0,
+              by_type: {}
+            };
+          }
+
+          const total_count = orgNotifications?.length || 0;
+          const unread_count = orgNotifications?.filter(n => !n.read_at).length || 0;
+          const high_priority_count = orgNotifications?.filter(n => n.priority === 'high' || n.priority === 'urgent').length || 0;
+
+          return {
+            total_count,
+            unread_count,
+            high_priority_count,
             by_type: {}
           };
         }

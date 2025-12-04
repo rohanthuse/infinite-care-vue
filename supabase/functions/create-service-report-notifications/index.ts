@@ -99,10 +99,26 @@ Deno.serve(async (req) => {
 
     const validAdminIds = validAdmins ? validAdmins.map(a => a.id) : adminIds;
 
+    // Fetch organization_id from branch for proper notification separation
+    let branchOrganizationId: string | null = null;
+    const { data: branchData, error: branchOrgError } = await supabaseAdmin
+      .from('branches')
+      .select('organization_id')
+      .eq('id', report.branch_id)
+      .single();
+
+    if (branchOrgError) {
+      console.warn('Error fetching branch organization:', branchOrgError);
+    } else {
+      branchOrganizationId = branchData?.organization_id || null;
+    }
+    console.log('Branch organization_id:', branchOrganizationId);
+
     // Batch insert notifications for all valid admins
     const notifications = validAdminIds.map(adminId => ({
       user_id: adminId,
       branch_id: report.branch_id,
+      organization_id: branchOrganizationId,
       type: 'service_report',
       category: 'info',
       priority: 'high',
