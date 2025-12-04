@@ -30,6 +30,8 @@ import SystemTenants from "./pages/system/SystemTenants";
 import SystemUsers from "./pages/system/SystemUsers";
 import SystemTenantAgreements from "./pages/system/SystemTenantAgreements";
 import SystemSubscriptionPlans from "./pages/system/SystemSubscriptionPlans";
+import SystemTemplates from "./pages/system/SystemTemplates";
+import SystemTemplateBuilder from "./pages/system/SystemTemplateBuilder";
 import SystemAnalytics from "./pages/system/SystemAnalytics";
 import SystemSettings from "./pages/system/SystemSettings";
 import Dashboard from "./pages/Dashboard";
@@ -291,6 +293,20 @@ const AppContent = () => {
                 <SystemAuthProvider>
                   <SystemGuard>
                     <SystemSubscriptionPlans />
+                  </SystemGuard>
+                </SystemAuthProvider>
+              } />
+              <Route path="/system-dashboard/system-templates" element={
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemTemplates />
+                  </SystemGuard>
+                </SystemAuthProvider>
+              } />
+              <Route path="/system-dashboard/system-templates/:templateId" element={
+                <SystemAuthProvider>
+                  <SystemGuard>
+                    <SystemTemplateBuilder />
                   </SystemGuard>
                 </SystemAuthProvider>
               } />

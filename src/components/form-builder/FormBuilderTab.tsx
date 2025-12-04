@@ -17,6 +17,7 @@ import { useFormManagement } from '@/hooks/useFormManagement';
 import { useFormSubmissions } from '@/hooks/useFormSubmissions';
 import { FormTemplatesContent } from './FormTemplatesContent';
 import { StaffFormsContent } from './StaffFormsContent';
+import { SystemTemplatesContent } from './SystemTemplatesContent';
 import { useAuthSafe } from '@/hooks/useAuthSafe';
 import { toast } from '@/hooks/use-toast';
 import { Suspense } from 'react';
@@ -484,6 +485,7 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
             <TabsTrigger value="all-responses">All Responses ({submissions.length})</TabsTrigger>
             <TabsTrigger value="staff-submissions">Staff Submissions</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="system-templates">System Templates</TabsTrigger>
           </TabsList>
           
           <div className="flex gap-2">
@@ -560,6 +562,10 @@ export const FormBuilderTab: React.FC<FormBuilderTabProps> = ({ branchId, branch
         
         <TabsContent value="templates" className="mt-6">
           <FormTemplatesContent branchId={branchId} branchName={branchName} />
+        </TabsContent>
+        
+        <TabsContent value="system-templates" className="mt-6">
+          <SystemTemplatesContent branchId={branchId} branchName={branchName} />
         </TabsContent>
       </Tabs>
 

@@ -2,11 +2,11 @@ import React from "react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 
-// Shared system-level tabs shown across System Dashboard, Tenants, Users, Tenant Agreements, Subscription Plans, and Reports
+// Shared system-level tabs shown across System Dashboard, Tenants, Users, Tenant Agreements, Subscription Plans, System Templates, and Reports
 // This component only renders the TabsList + Triggers. Parent should wrap with <Tabs value=...>
 // Navigation is handled here to keep behavior consistent.
 // Note: "notifications" is a hidden tab accessible only via URL parameter and menu
-export type SystemTabValue = "dashboard" | "tenants" | "users" | "tenant-agreements" | "subscription-plans" | "reports" | "notifications";
+export type SystemTabValue = "dashboard" | "tenants" | "users" | "tenant-agreements" | "subscription-plans" | "system-templates" | "reports" | "notifications";
 
 interface SystemSectionTabsProps {
   value: SystemTabValue;
@@ -16,7 +16,7 @@ export const SystemSectionTabs: React.FC<SystemSectionTabsProps> = ({ value }) =
   const navigate = useNavigate();
 
   return (
-    <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 mb-6 bg-gradient-to-r from-muted/80 via-muted to-blue-50/50 dark:to-blue-950/30 p-1.5 rounded-xl shadow-sm">
+    <TabsList className="w-full grid grid-cols-2 md:grid-cols-7 mb-6 bg-gradient-to-r from-muted/80 via-muted to-blue-50/50 dark:to-blue-950/30 p-1.5 rounded-xl shadow-sm">
       <TabsTrigger
         value="dashboard"
         data-active={value === "dashboard"}
@@ -51,6 +51,13 @@ export const SystemSectionTabs: React.FC<SystemSectionTabsProps> = ({ value }) =
         onClick={() => navigate("/system-dashboard/subscription-plans")}
       >
         Subscription Plans
+      </TabsTrigger>
+      <TabsTrigger
+        value="system-templates"
+        data-active={value === "system-templates"}
+        onClick={() => navigate("/system-dashboard/system-templates")}
+      >
+        System Templates
       </TabsTrigger>
       <TabsTrigger
         value="reports"
