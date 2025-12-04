@@ -108,15 +108,9 @@ export const CarerRightSidebar: React.FC = () => {
   return (
     <aside 
       className={cn(
-        "hidden lg:flex flex-col shrink-0 border-l bg-sidebar transition-all duration-200 overflow-y-auto",
+        "hidden lg:flex flex-col shrink-0 border-l bg-sidebar transition-all duration-200 overflow-y-auto sticky top-[128px] h-[calc(100vh-128px)]",
         sidebarOpen ? "w-64" : "w-14"
       )}
-      style={{
-        height: 'calc(100vh - var(--sidebar-top-offset, 120px))',
-        position: 'fixed',
-        top: 'var(--sidebar-top-offset, 120px)',
-        right: 0
-      }}
     >
       <Sidebar 
         side="right" 
